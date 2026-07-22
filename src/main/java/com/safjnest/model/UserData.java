@@ -2,11 +2,10 @@ package com.safjnest.model;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import com.safjnest.core.Bot;
 import com.safjnest.mongo.MongoDB;
-import com.safjnest.mongo.MongoRecord;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;
@@ -67,7 +66,7 @@ public class UserData {
     private void retriveAlies() {
         this.aliases = new HashMap<>();
         
-        QueryResult result = BotDB.getAliases(USER_ID);
+        List<QueryRecord> result = BotDB.getAliases(USER_ID);
         if (result == null) { return; }
 
         for(QueryRecord row: result){
@@ -187,7 +186,7 @@ public class UserData {
 
     private void retriveRiotAccounts() {
         this.riotAccounts = new LinkedHashMap<>();
-        for (MongoRecord row : MongoDB.findAccountsByUserId(USER_ID)) {
+        for (QueryRecord row : MongoDB.findAccountsByUserId(USER_ID)) {
             String puuid = row.getAsString("puuid");
             if (puuid == null) puuid = row.getAsString("_id");
             String region = row.getAsString("region");

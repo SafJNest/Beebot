@@ -11,7 +11,7 @@ import org.json.JSONObject;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.mongo.MongoDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecordParser;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -51,19 +51,17 @@ public final class ChampionStatsProvider {
         return new ChampionStatsData.RawBatch(metadata, byMatch);
     }
 
-    public static QueryResult loadTrendParticipants(List<String> matchIds) {
-        QueryResult result = new QueryResult();
+    public static List<QueryRecord> loadTrendParticipants(List<String> matchIds) {
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : MongoDB.findChampionRawDocuments(matchIds)) {
             for (Document participant : participants(document.get("participants"))) {
-                QueryRecord row = new QueryRecord();
-                row.put("champion", String.valueOf(participant.getInteger("champion", 0)));
                 LaneType lane = lane(participant);
-                row.put("lane", lane == null ? null : lane.name());
-                row.put("win", String.valueOf(participant.getBoolean("win", false)));
-                result.add(row);
+                result.add(QueryRecordParser.fromMap(Map.of(
+                        "champion", participant.getInteger("champion", 0),
+                        "lane", lane == null ? "" : lane.name(),
+                        "win", participant.getBoolean("win", false))));
             }
         }
-        result.setSuccess(true);
         return result;
     }
 

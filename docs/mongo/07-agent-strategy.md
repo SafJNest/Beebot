@@ -8,7 +8,7 @@ Ridurre il rischio dividendo inventario, implementazione, verifica e migrazione 
 |---|---|---|
 | Guardian | controlla AGENTS.md, ADR, schema, nomi e invarianti | nessuna astrazione vietata |
 | Query inventory | cataloga ogni query/write LoLDB e la controparte Mongo | nessuna query usata senza mapping |
-| Mongo core | implementa MongoDB, MongoRecord, schema e indici | tre file, test conversione |
+| Mongo core | implementa MongoDB, QueryRecordParser, schema e indici | test conversione |
 | Write-path | porta le scritture runtime LoL direttamente su MongoDB | nessuna query MariaDB fuori migration |
 | Read migration | porta i consumer LoL a Mongo-only | nessun fallback MariaDB |
 | Data migration | implementa MongoMigration e checkpoint | dry-run, resume, high-water mark, bulk write |

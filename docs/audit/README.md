@@ -35,7 +35,7 @@ Prima di correggere i consumer bisogna eseguire un caso reale con un `puuid` e u
 2. documento Mongo dopo ogni write;
 3. `acknowledged`, `matchedCount`, `modifiedCount` e `upsertedId` di ogni write;
 4. numero e `puuid` dei participant nel documento match;
-5. chiavi effettivamente presenti nel `QueryResult` Mongo consegnato al consumer;
+5. chiavi effettivamente presenti nella `List<QueryRecord>` Mongo consegnata al consumer;
 6. contenuto delle cache Redis prima e dopo il test.
 
 Il test Mongo reale resta necessario con `MONGO_TEST_URI`; l’assenza di questa variabile impedisce di distinguere i mismatch statici dai problemi di connessione, autenticazione o schema sul server.

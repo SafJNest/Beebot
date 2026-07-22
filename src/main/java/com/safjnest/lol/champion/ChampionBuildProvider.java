@@ -3,7 +3,8 @@ package com.safjnest.lol.champion;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.mongo.MongoDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
+
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,7 +13,7 @@ public final class ChampionBuildProvider {
 
     private ChampionBuildProvider() {}
 
-    public static QueryResult load(Filter filter) {
+    public static List<QueryRecord> load(Filter filter) {
         return MongoDB.getChampionBuildsRaw(filter);
     }
 

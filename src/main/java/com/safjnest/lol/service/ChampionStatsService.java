@@ -17,7 +17,6 @@ import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -557,7 +556,7 @@ public final class ChampionStatsService {
             int batchSize = matchIds.size();
             System.out.println("stats previous batch " + batchNumber + "/" + previousBatches
                 + " started: " + matchIds.size() + " games");
-            QueryResult result = ChampionStatsProvider.loadTrendParticipants(matchIds);
+            List<QueryRecord> result = ChampionStatsProvider.loadTrendParticipants(matchIds);
             mergePrevious(previous, previousPickWin(result, filter));
             previousGames += batchSize;
             lastMatchId = matchIds.get(matchIds.size() - 1);
@@ -585,7 +584,7 @@ public final class ChampionStatsService {
         }
     }
 
-    private static Map<Integer, int[]> previousPickWin(QueryResult result, Filter filter) {
+    private static Map<Integer, int[]> previousPickWin(List<QueryRecord> result, Filter filter) {
         Map<Integer, int[]> values = new HashMap<>();
         if (result == null) return values;
         for (QueryRecord record : result) {

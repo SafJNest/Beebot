@@ -42,7 +42,6 @@ import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.Accumulator;
 import com.safjnest.utils.DateHandler;
@@ -425,11 +424,12 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false);
 
 
-        QueryResult advanceData = LeagueService.getAdvancedLOLData(s.getPUUID(), s.getPlatform(), parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
+        List<QueryRecord> advanceData = LeagueService.getAdvancedLOLData(s.getPUUID(), s.getPlatform(), parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
 
         if (!advanceData.isEmpty()) {
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
-            for (String stats : advanceData.arrayColumn("lanes_played")) {
+            for (QueryRecord advanceRow : advanceData) {
+                String stats = advanceRow.get("lanes_played");
                 String[] lanes = stats.split(",");
                 for (String lane : lanes) {
                     lane = lane.trim();
@@ -474,7 +474,7 @@ public class LeagueMessage {
             }
 
             if (parameter.getQueueType() == null) {
-                QueryResult gameData = MongoDB.getAllGamesForAccount(s.getPUUID(), parameter.getTimeStart(), parameter.getTimeEnd());
+                List<QueryRecord> gameData = MongoDB.getAllGamesForAccount(s.getPUUID(), parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = row.getAsGameQueueType("queue");
@@ -827,7 +827,7 @@ public class LeagueMessage {
                 String redSide = "";
 
                 String lpLabel = "";
-                QueryResult result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
+                List<QueryRecord> result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
                 for (int j = 0; j < result.size(); j ++) {
                     QueryRecord row = result.get(j);
                     QueryRecord previousRow = j > 0 ? result.get(j - 1) : null;
@@ -957,7 +957,7 @@ public class LeagueMessage {
         return gameIds;
     }
 
-    private static EmbedBuilder getOpggEmbedMatch(EmbedBuilder eb, LOLMatch match, Summoner s, QueryResult result) {
+    private static EmbedBuilder getOpggEmbedMatch(EmbedBuilder eb, LOLMatch match, Summoner s, List<QueryRecord> result) {
         MatchParticipant me = null;
         for(MatchParticipant mp : match.getParticipants()){
             if(mp.getPuuid().equals(s.getPUUID())){
@@ -1363,7 +1363,7 @@ public class LeagueMessage {
         eb.setColor(Bot.getColor());
         eb.setTitle("Showing matches from " + LeagueShardUtils.getRegionFlag(shard) + " " + shard.getRealmValue());
 
-        QueryResult result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
+        List<QueryRecord> result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
 
         for (LOLMatch match : matches) {
             try {
@@ -1572,9 +1572,6 @@ public class LeagueMessage {
                     builder.addField("**RED SIDE**", "**Bans\n**" + redBans + "\n\n**Picks**\n" + redSide, true);
                     break;
             }
-
-            LeagueHandler.updateSummonerDB(game);
-
 
             builder.setFooter("For every gamemode would be use the SoloQ ranked data. Flex would be shown only if the game is a Flex game.");
             return builder;

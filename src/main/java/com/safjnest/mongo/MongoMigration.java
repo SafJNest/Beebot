@@ -12,7 +12,6 @@ import org.bson.Document;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 
 public final class MongoMigration {
@@ -66,7 +65,7 @@ public final class MongoMigration {
         boolean completed = true;
 
         while (true) {
-            QueryResult keys = queryMatchKeyPage(highWaterMark, pageSize("matches", options.batchSize()));
+            List<QueryRecord> keys = queryMatchKeyPage(highWaterMark, pageSize("matches", options.batchSize()));
             if (keys.isEmpty()) break;
             Map<Integer, String> identities = new LinkedHashMap<>();
             long batchHighWaterMark = highWaterMark;
@@ -160,7 +159,7 @@ public final class MongoMigration {
         int batchesSinceCollection = 0;
         for (int start = 0; start < missingEventIds.size(); start += MATCH_READ_BATCH_SIZE) {
             int end = Math.min(missingEventIds.size(), start + MATCH_READ_BATCH_SIZE);
-            QueryResult rows = queryMatchEventsByIds(missingEventIds.subList(start, end));
+            List<QueryRecord> rows = queryMatchEventsByIds(missingEventIds.subList(start, end));
             try {
                 for (QueryRecord row : rows) {
                     String identity = matchIdentity(row);
@@ -187,7 +186,7 @@ public final class MongoMigration {
         boolean completed = true;
 
         while (true) {
-            QueryResult rows = querySummonerKeyPage(highWaterMark, options.batchSize());
+            List<QueryRecord> rows = querySummonerKeyPage(highWaterMark, options.batchSize());
             if (rows.isEmpty()) break;
             List<Long> sourceIds = new ArrayList<>();
             List<String> sourcePuuids = new ArrayList<>();
@@ -242,7 +241,7 @@ public final class MongoMigration {
         for (int start = 0; start < missingIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
             int end = Math.min(missingIds.size(), start + MONGO_WRITE_BATCH_SIZE);
             List<Long> batchIds = missingIds.subList(start, end);
-            QueryResult rows = querySummonerRowsByIds(batchIds);
+            List<QueryRecord> rows = querySummonerRowsByIds(batchIds);
             Map<String, Document> documents = new LinkedHashMap<>();
             try {
                 for (QueryRecord row : rows) {
@@ -264,38 +263,30 @@ public final class MongoMigration {
         }
     }
 
-    private static QueryResult querySummonerKeyPage(long highWaterMark, int pageSize) {
+    private static List<QueryRecord> querySummonerKeyPage(long highWaterMark, int pageSize) {
         String query = "SELECT id, puuid FROM summoner WHERE id > "
                 + highWaterMark + " ORDER BY id ASC LIMIT " + pageSize;
-        QueryResult result = LeagueDB.get().query(query);
-        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=summoners");
-        return result;
+        return LeagueDB.get().query(query);
     }
 
-    private static QueryResult queryMatchKeyPage(long highWaterMark, int pageSize) {
+    private static List<QueryRecord> queryMatchKeyPage(long highWaterMark, int pageSize) {
         String query = "SELECT id, game_id, region FROM `match` WHERE id > "
                 + highWaterMark + " ORDER BY id ASC LIMIT " + pageSize;
-        QueryResult result = LeagueDB.get().query(query);
-        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=matches_keys");
-        return result;
+        return LeagueDB.get().query(query);
     }
 
-    private static QueryResult queryMatchEventsByIds(List<Integer> ids) {
+    private static List<QueryRecord> queryMatchEventsByIds(List<Integer> ids) {
         String query = "SELECT id, game_id, region, events FROM `match` WHERE id IN " + sqlIds(ids) + " ORDER BY id ASC";
-        QueryResult result = LeagueDB.get().query(query);
-        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=match_events_missing");
-        return result;
+        return LeagueDB.get().query(query);
     }
 
-    private static QueryResult querySummonerRowsByIds(List<Long> ids) {
+    private static List<QueryRecord> querySummonerRowsByIds(List<Long> ids) {
         String query = "SELECT id, puuid, riot_id, region, level, icon, user_id, tracking, last_update FROM summoner WHERE id IN "
                 + sqlIds(ids) + " ORDER BY id ASC";
-        QueryResult result = LeagueDB.get().query(query);
-        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=summoners_missing");
-        return result;
+        return LeagueDB.get().query(query);
     }
 
-    private static QueryResult queryEmbeddedPage(String phase, List<Long> summonerIds, long afterId) {
+    private static List<QueryRecord> queryEmbeddedPage(String phase, List<Long> summonerIds, long afterId) {
         String query = switch (phase) {
             case "ranks" -> "SELECT r.id, r.summoner_id, s.puuid, r.region, r.queue, r.`rank`, r.lp, r.mmr, r.wins, r.losses, r.last_update "
                     + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id WHERE r.id > " + afterId
@@ -307,9 +298,7 @@ public final class MongoMigration {
                     + " ORDER BY m.id ASC LIMIT " + EMBEDDED_BATCH_SIZE;
             default -> throw new IllegalArgumentException("Unknown embedded migration phase " + phase);
         };
-        QueryResult result = LeagueDB.get().query(query);
-        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=" + phase);
-        return result;
+        return LeagueDB.get().query(query);
     }
 
     private static String sqlIds(List<? extends Number> ids) {
@@ -326,7 +315,7 @@ public final class MongoMigration {
         long afterId = 0;
         int batchesSinceCollection = 0;
         while (true) {
-            QueryResult rows = queryEmbeddedPage(phase, summonerIds, afterId);
+            List<QueryRecord> rows = queryEmbeddedPage(phase, summonerIds, afterId);
             if (rows.isEmpty()) return;
             try {
                 for (QueryRecord row : rows) {
@@ -431,7 +420,7 @@ public final class MongoMigration {
     }
 
     private static Checkpoint readCheckpoint(String runId, String phase) {
-        MongoRecord record = MongoDB.findRecord(CHECKPOINT_COLLECTION, checkpointId(runId, phase));
+        QueryRecord record = MongoDB.findRecord(CHECKPOINT_COLLECTION, checkpointId(runId, phase));
         if (record == null) return Checkpoint.empty();
         return new Checkpoint(record.getAsLong("highWaterMark"), record.getAsLong("processed"));
     }

@@ -20,14 +20,14 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 
 ## Struttura del codice
 
-La persistenza Mongo LoL ha tre file:
+La persistenza Mongo LoL ha quattro file principali:
 
 - MongoDB.java: URI, database, schema, indici, query, mapping e write runtime;
+- QueryRecordParser.java: parser detached comune per righe MariaDB e documenti Mongo;
 - LeagueDB.java: adapter SQL ridotto alle query necessarie a MongoMigration;
-- MongoRecord.java: wrapper leggero per projection e risultati locali;
 - MongoMigration.java: backfill batchabile MariaDB → Mongo.
 
-Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni, outbox, proxy dual-write, MongoResult o classi *Document.
+Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni, outbox, proxy dual-write o classi *Document.
 
 ## Ordine di lettura
 

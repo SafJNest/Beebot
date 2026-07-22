@@ -111,7 +111,7 @@ Il flusso runtime non usa più un id MariaDB intermedio. Il controllo da mantene
 
 ### P2 — testo LP precedente calcolato dalla riga corrente
 
-Nel ramo OP.GG che legge `QueryResult`, `previousRow` viene individuata correttamente ma `prevRank` viene letto da `row` invece che da `previousRow`. Il dato `rank/lp/gain` arriva quindi dal nuovo contratto, ma il testo di promozione può mostrare il rank corrente anche come valore precedente.
+Nel ramo OP.GG che legge `List<QueryRecord>`, `previousRow` viene individuata correttamente ma `prevRank` viene letto da `row` invece che da `previousRow`. Il dato `rank/lp/gain` arriva quindi dal nuovo contratto, ma il testo di promozione può mostrare il rank corrente anche come valore precedente.
 
 ### P2 — sincronizzazione cache
 

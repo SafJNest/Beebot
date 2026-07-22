@@ -7,11 +7,12 @@
 
 ## Current state
 
-- MariaDB is the current primary store.
+- MongoDB is the LoL runtime store.
+- MariaDB is retained only as the migration source through `MongoMigration`.
 - Redis owns cache and temporary asynchronous state.
-- `LeagueDB` still combines SQL execution, mapping and domain persistence methods.
-- Mongo runtime is now concentrated in `MongoDB`, `MongoRecord` and `MongoMigration`.
-- `QueryRecord` and `QueryResult` remain valid for MariaDB and are not new Mongo contracts.
+- `LeagueDB` is reduced to SQL execution and migration reads.
+- Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`.
+- `QueryRecord` and `List<QueryRecord>` are the common flat/nested projection contract.
 
 ## Canonical models
 
@@ -27,7 +28,7 @@ Champion capability metrics are not summoner metrics. Champion stats remain in t
 
 ## Migration invariant
 
-During transition MariaDB remains primary. Mongo writes are idempotent mirrors, schema/index creation is code-owned and non-destructive, and every read cutover is gated by model-level reconciliation.
+During transition MariaDB remains available as migration source. Mongo writes are idempotent runtime writes, schema/index creation is code-owned and non-destructive, and every migration read is gated by checkpoint and reconciliation.
 
 ## Evidence and remaining gate
 

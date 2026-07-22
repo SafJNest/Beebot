@@ -1,13 +1,13 @@
 package com.safjnest.commands.audio.list;
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -83,7 +83,7 @@ public class ListUser extends SlashCommand{
         eb.setTitle("List of " + mentionedUser.getName());
         eb.setColor(Bot.getColor());
 
-        QueryResult sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
+        List<QueryRecord> sounds = (mentionedUser.getId().equals(event.getMember().getId()))
                            ? BotDB.getlistUserSounds(mentionedUser.getId()) 
                            : BotDB.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
 
@@ -131,7 +131,7 @@ public class ListUser extends SlashCommand{
         eb.setTitle("List of " + mentionedUser.getName());
         eb.setColor(Bot.getColor());
 
-        QueryResult sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
+        List<QueryRecord> sounds = (mentionedUser.getId().equals(event.getMember().getId()))
                            ? BotDB.getlistUserSounds(mentionedUser.getId()) 
                            : BotDB.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
 

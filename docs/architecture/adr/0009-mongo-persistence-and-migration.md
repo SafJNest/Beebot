@@ -40,7 +40,7 @@ Mongo userà:
 
 `LeagueService` resta il boundary LoL cache-aware. La persistenza runtime Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` è confinato al percorso di lettura della migration.
 
-Spring continua a possedere solo controller, configurazione HTTP ed error model. `MongoRecord` è interno alle projection; gli oggetti complessi usano i modelli LoL già esistenti. Non esiste un `MongoResult` generico.
+Spring continua a possedere solo controller, configurazione HTTP ed error model. `QueryRecord` è il contenitore comune delle projection; gli oggetti complessi usano i modelli LoL già esistenti.
 
 ## Regole di serializzazione
 
@@ -79,7 +79,7 @@ I campi numerici dei modelli pubblici restano compatibili con il modello storico
 
 - profile e match detail eliminano join caldi;
 - participant e dati di profile possono essere letti con access pattern naturali;
-- le projection locali possono usare `MongoRecord`;
+- le projection locali possono usare `QueryRecord` e `List<QueryRecord>`, anche annidate;
 - gli oggetti complessi riusano i modelli canonici, senza DTO Mongo duplicati;
 - MariaDB resta disponibile per il backfill e per gli altri domini;
 - la stessa infrastruttura Mongo potrà essere riusata dagli altri domini.

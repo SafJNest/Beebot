@@ -1,6 +1,6 @@
 package com.safjnest.commands.guild;
 
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -46,7 +47,7 @@ public class Leaderboard extends SlashCommand {
     protected void execute(CommandEvent event) {
         int limit = (SafJNest.intIsParsable(event.getArgs())) ? Integer.parseInt(event.getArgs()) : 10;
 
-        QueryResult users = BotDB.getUsersByExp(event.getGuild().getId(), limit);
+        List<QueryRecord> users = BotDB.getUsersByExp(event.getGuild().getId(), limit);
 
         if(users.isEmpty()) {
             event.reply("```No Results```");
@@ -89,7 +90,7 @@ public class Leaderboard extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         int limit = (event.getOption("limit") != null) ? event.getOption("limit").getAsInt() : 10;
 
-        QueryResult users = BotDB.getUsersByExp(event.getGuild().getId(), limit);
+        List<QueryRecord> users = BotDB.getUsersByExp(event.getGuild().getId(), limit);
         
         if(users.isEmpty()) {
             event.reply("```No Results```");

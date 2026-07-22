@@ -38,7 +38,6 @@ import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.TimeConstant;
@@ -91,7 +90,7 @@ public class Tracker {
 
     static void retrieveSummoners() {
         try {
-            QueryResult result = MongoDB.getRegisteredLolAccounts(SeasonUtils.getCurrentSplitRange()[0]);
+            List<QueryRecord> result = MongoDB.getRegisteredLolAccounts(SeasonUtils.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
             for (QueryRecord account : result) {
                 Summoner summoner = null;
@@ -1276,8 +1275,8 @@ public class Tracker {
         String[] parts = PatchUtils.getPatch().split("\\.", 3);
         String patch = parts[0] + "." + parts[1];
     
-        QueryResult matchDatas = MongoDB.findMatchBans(patch);
-        QueryResult championDatas = MongoDB.findChampionWins(patch, champion, lane);
+        List<QueryRecord> matchDatas = MongoDB.findMatchBans(patch);
+        List<QueryRecord> championDatas = MongoDB.findChampionWins(patch, champion, lane);
     
         int totalGames = matchDatas.size();
         int totalBans = 0;

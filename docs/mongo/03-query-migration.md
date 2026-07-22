@@ -4,20 +4,20 @@ Ogni query LoL usata dal runtime deve avere una controparte in MongoDB.java. Le 
 
 ## Ownership
 
-MongoDB.java è l'unico proprietario di filtri, projection, collection, conversione Document/MongoRecord, mapping verso i modelli canonici e operazioni di scrittura Mongo.
+MongoDB.java è l'unico proprietario di filtri, projection, collection, conversione Document/QueryRecord, mapping verso i modelli canonici e operazioni di scrittura Mongo.
 
 I service chiamano MongoDB direttamente. Non esiste LeagueStore e non c'è fallback MariaDB in caso di errore di lettura.
 
 ## Matrice
 
 - PUUID, nome, user id e count: scalar diretto.
-- Più campi locali: MongoRecord.
-- Lista di projection: List<MongoRecord>.
+- Più campi locali: QueryRecord.
+- Lista di projection: List<QueryRecord>.
 - Summoner, Rank e Mastery: modello esistente.
 - Match detail e history: Match o MatchResult esistente.
 - Leaderboard, profile e champion aggregate: projection Mongo mappata in MongoDB.
 
-Una query a più campi viene prima rappresentata come MongoRecord e solo dopo, se serve, convertita in un modello canonico. Un singolo valore non viene avvolto inutilmente.
+Una query a più campi viene rappresentata come QueryRecord detached e solo dopo, se serve, convertita in un modello canonico. Un singolo valore non viene avvolto inutilmente.
 
 ## Copertura
 

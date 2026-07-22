@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -15,7 +16,6 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.guild.AutomatedAction;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;
@@ -86,7 +86,7 @@ public class AutomatedActionTimer {
         return () -> {
             try {
                 nextReschedule = LocalDateTime.now().plusNanos(rescheduleTiming * 1000 * 1000);
-                QueryResult tasks = BotDB.getAutomatedActionsExpiring();
+                List<QueryRecord> tasks = BotDB.getAutomatedActionsExpiring();
                 BotLogger.info("[AutomatedActionTimer] Rescheduling tasks: " + tasks.size());
                 for (QueryRecord task : tasks) {
                     LocalDateTime dateTime = task.getAsLocalDateTime("time");

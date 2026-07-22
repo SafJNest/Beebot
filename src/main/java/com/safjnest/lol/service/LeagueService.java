@@ -16,13 +16,11 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.mongo.MongoRecord;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
 
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 
@@ -308,17 +306,15 @@ public class LeagueService {
         }
     }
 
-    public static QueryResult getAdvancedLOLData(String puuid, LeagueShard shard, long time_start, long time_end, GameQueueType queue) {
+    public static List<QueryRecord> getAdvancedLOLData(String puuid, LeagueShard shard, long time_start, long time_end, GameQueueType queue) {
         String key = RedisKey.ADVANCED_LOL_DATA.of(puuid, time_start, time_end, queue != null ? queue.name() : "null");
-        QueryResult cached = RedisClient.get(key, QueryResult.class);
+        List<QueryRecord> cached = RedisClient.get(key, new TypeReference<List<QueryRecord>>() {});
         if (cached != null) {
             return cached;
         }
-        QueryResult result = puuid == null || shard == null ? toQueryResult(List.of()) : toQueryResult(MongoDB.findAdvancedProfileProjections(
-                puuid, shard, time_start, time_end, queue));
-        if (result != null) {
-            RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
-        }
+        List<QueryRecord> result = puuid == null || shard == null ? new ArrayList<>() : MongoDB.findAdvancedProfileProjections(
+                puuid, shard, time_start, time_end, queue);
+        RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
         return result;
     }
 
@@ -388,17 +384,15 @@ public class LeagueService {
       return gameId;
     }
 
-    public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
+    public static List<QueryRecord> getSummonerData(String puuid, LeagueShard shard) {
       String key = RedisKey.SUMMONER_DATA.of(puuid, shard.name());
-      QueryResult cached = RedisClient.get(key, QueryResult.class);
+      List<QueryRecord> cached = RedisClient.get(key, new TypeReference<List<QueryRecord>>() {});
       if (cached != null) {
         return cached;
       }
-      QueryResult result = toQueryResult(MongoDB.findSummonerData(
-          puuid, shard, 0, Long.MAX_VALUE, GameQueueType.TEAM_BUILDER_RANKED_SOLO));
-      if (result != null) {
-        RedisClient.set(key, result, TTL_MATCH);
-      }
+      List<QueryRecord> result = MongoDB.findSummonerData(
+          puuid, shard, 0, Long.MAX_VALUE, GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+      RedisClient.set(key, result, TTL_MATCH);
       return result;
     }
 
@@ -486,23 +480,6 @@ public class LeagueService {
         }
     
         return choices;
-    }
-
-    private static QueryResult toQueryResult(List<MongoRecord> records) {
-        QueryResult result = new QueryResult();
-        if (records == null) {
-            result.setSuccess(true);
-            return result;
-        }
-        for (MongoRecord record : records) {
-            QueryRecord row = new QueryRecord();
-            for (Map.Entry<String, Object> entry : record.toDocument().entrySet()) {
-                if (entry.getValue() != null) row.put(entry.getKey(), String.valueOf(entry.getValue()));
-            }
-            result.add(row);
-        }
-        result.setSuccess(true);
-        return result;
     }
 
 }

@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.IEventSubConduit;
@@ -47,7 +48,6 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -131,7 +131,7 @@ public class Test extends Command{
     @Override
     protected void execute(CommandEvent e) {
         String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
-        QueryResult res;
+        List<QueryRecord> res;
         String query = "";
 
         String args[] = e.getArgs().split(" ", 2);
@@ -501,7 +501,7 @@ public class Test extends Command{
                 }
             case "soundsgozzing":
                 query = "SELECT id from sound";
-                QueryResult res1 = BotDB.get().query(query);;
+                List<QueryRecord> res1 = BotDB.get().query(query);;
                 System.out.println(res1.size());
                 for (Guild g : e.getJDA().getGuilds()) {
                     System.out.println(g.getName());
@@ -657,7 +657,7 @@ public class Test extends Command{
                 break;
             case "playplaylist":
                 int playlistId = Integer.valueOf(args[1]);
-                QueryResult tracks = BotDB.getPlaylistTracks(playlistId, null, null);
+                List<QueryRecord> tracks = BotDB.getPlaylistTracks(playlistId, null, null);
 
                 List<String> URIs = new ArrayList<String>();
                 for(QueryRecord track : tracks) {
@@ -676,7 +676,7 @@ public class Test extends Command{
             break;
             case "loadtracksfromdb":
                 List<AudioTrack> tracksFinal = new ArrayList<>();
-                QueryResult tracksToLoad = BotDB.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
+                List<QueryRecord> tracksToLoad = BotDB.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
                 for(QueryRecord trackToLoad : tracksToLoad) {
                     tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
                 }
@@ -987,7 +987,7 @@ public class Test extends Command{
     private static DefaultCategoryDataset createDataset() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         String query = "select time, count(name) as count from command_analytic where MONTH(time) = 8 group by DAY(time);";
-        QueryResult res = BotDB.get().query(query);;
+        List<QueryRecord> res = BotDB.get().query(query);;
         
         for(QueryRecord row : res){
             System.out.println(row.get("time") + " " + row.get("count"));

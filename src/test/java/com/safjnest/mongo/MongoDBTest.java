@@ -16,6 +16,7 @@ import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.sql.QueryRecordParser;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -81,7 +82,7 @@ public class MongoDBTest {
         match.leagueShard = LeagueShard.EUW1;
         match.bans = Map.of(TeamType.BLUE, List.of(), TeamType.RED, List.of());
 
-        Match decoded = MongoDB.read(new MongoRecord("match", "EUW1_456", MongoDB.toDocument(match)), Match.class);
+        Match decoded = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(match)), Match.class);
 
         assertEquals(LeagueShard.EUW1, decoded.leagueShard);
         assertEquals("456", decoded.gameId);
@@ -100,7 +101,7 @@ public class MongoDBTest {
         assertFalse(document.containsKey("tracking"));
         assertFalse(document.containsKey("userId"));
 
-        Summoner decoded = MongoDB.read(new MongoRecord("summoner", "puuid-42", document), Summoner.class);
+        Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(document), Summoner.class);
         assertEquals("puuid-42", decoded.puuid());
         assertEquals(0, decoded.summonerId());
     }

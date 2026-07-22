@@ -9,7 +9,6 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -83,7 +82,7 @@ public final class BuildService {
         Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
 
         System.out.println("build compute started");
-        QueryResult result = ChampionBuildProvider.load(filter);
+        List<QueryRecord> result = ChampionBuildProvider.load(filter);
         int rowCount = result.size();
         System.out.println("build rows loaded: " + rowCount);
         int games = 0;

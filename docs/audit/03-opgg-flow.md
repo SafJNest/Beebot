@@ -65,6 +65,6 @@ Durante un `/opgg` bisogna correlare:
 - elemento Redis `TRACKER_PENDING_MATCH_LIST`;
 - documento Mongo `match` dopo il worker;
 - documento Mongo `match`;
-- `QueryResult` di `getSummonerData` e sue chiavi.
+- `List<QueryRecord>` di `getSummonerData` e sue chiavi.
 
 Il test deve essere eseguito sia subito dopo il comando sia dopo il completamento del worker.

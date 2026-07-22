@@ -61,7 +61,7 @@ import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecordParser;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -325,9 +325,9 @@ public final class MongoDB {
                 .append("p95PayloadBytes", payloadBytes.isEmpty() ? 0 : payloadBytes.get(p95Index));
     }
 
-    public static MongoRecord findRecord(String collection, Object id) {
+    public static QueryRecord findRecord(String collection, Object id) {
         Document document = database().getCollection(collection).find(Filters.eq("_id", id)).first();
-        return document == null ? null : new MongoRecord(collection, id, document);
+        return document == null ? null : QueryRecordParser.fromDocument(document);
     }
 
     public static Set<String> findExistingIds(String collection, List<String> ids) {
@@ -367,16 +367,15 @@ public final class MongoDB {
     }
 
     public static Document toDocument(Object value) {
-        return write(value).toDocument();
+        return write(value);
     }
 
-    public static QueryResult getRegisteredLolAccounts(long timeStart) {
-        QueryResult result = new QueryResult();
+    public static List<QueryRecord> getRegisteredLolAccounts(long timeStart) {
+        List<QueryRecord> result = new ArrayList<>();
         for (Document summoner : summoners().find(Filters.eq("tracking", true))) {
             QueryRecord row = latestRegisteredRow(summoner, timeStart);
             if (row != null) result.add(row);
         }
-        result.setSuccess(true);
         return result;
     }
 
@@ -385,11 +384,11 @@ public final class MongoDB {
         return summoner == null ? new QueryRecord() : latestRegisteredRow(summoner, timeStart);
     }
 
-    public static QueryResult getAllGamesForAccount(String puuid, long timeStart, long timeEnd) {
+    public static List<QueryRecord> getAllGamesForAccount(String puuid, long timeStart, long timeEnd) {
         traceRead("match.getAllGamesForAccount", "puuid=" + puuid + " timeStart=" + timeStart + " timeEnd=" + timeEnd);
-        QueryResult result = new QueryResult();
+        List<QueryRecord> result = new ArrayList<>();
         Summoner summoner = findSummoner(puuid, null);
-        if (summoner == null) { result.setSuccess(true); return result; }
+        if (summoner == null) return result;
         for (Document document : matches().find(matchFilter(summoner.puuid(), parseShard(summoner.region()), timeStart, timeEnd, null))
                 .projection(Projections.include("_id", "queue", "participants.puuid", "participants.queue", "participants.win"))
                 .sort(Sorts.descending("timeStart"))) {
@@ -398,7 +397,6 @@ public final class MongoDB {
                 break;
             }
         }
-        result.setSuccess(true);
         return result;
     }
 
@@ -440,37 +438,31 @@ public final class MongoDB {
         return document == null ? 0L : ((Number) document.getOrDefault("timeStart", 0L)).longValue() / 1000L;
     }
 
-    public static QueryResult findMatchBans(String patch) {
-        QueryResult result = new QueryResult();
+    public static List<QueryRecord> findMatchBans(String patch) {
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : matches().find(Filters.regex("patch", "^" + Pattern.quote(patch == null ? "" : patch)))
                 .projection(Projections.include("bans"))) {
-            QueryRecord row = new QueryRecord();
-            row.put("bans", bansJson(document.get("bans")));
-            result.add(row);
+            result.add(QueryRecordParser.fromMap(Map.of("bans", bansJson(document.get("bans")))));
         }
-        result.setSuccess(true);
         return result;
     }
 
-    public static QueryResult findChampionWins(String patch, int champion, no.stelar7.api.r4j.basic.constants.types.lol.LaneType lane) {
-        QueryResult result = new QueryResult();
+    public static List<QueryRecord> findChampionWins(String patch, int champion, no.stelar7.api.r4j.basic.constants.types.lol.LaneType lane) {
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : matches().find(Filters.regex("patch", "^" + Pattern.quote(patch == null ? "" : patch)))
                 .projection(Projections.include("participants.champion", "participants.lane", "participants.win"))) {
             for (Document participant : documents(document.get("participants"))) {
                 if (participant.getInteger("champion", 0) != champion) continue;
                 String laneName = participant.getString("lane");
                 if (lane != null && (laneName == null || !lane.name().equals(laneName))) continue;
-                QueryRecord row = new QueryRecord();
-                row.put("win", String.valueOf(participant.getBoolean("win", false)));
-                result.add(row);
+                result.add(QueryRecordParser.fromMap(Map.of("win", participant.getBoolean("win", false))));
             }
         }
-        result.setSuccess(true);
         return result;
     }
 
-    public static QueryResult getChampionBuildsRaw(Filter filter) {
-        QueryResult result = new QueryResult();
+    public static List<QueryRecord> getChampionBuildsRaw(Filter filter) {
+        List<QueryRecord> result = new ArrayList<>();
         for (Document match : matches().find(championMatchFilter(filter, null)).projection(Projections.include(
                 "_id", "participants.champion", "participants.lane", "participants.win",
                 "participants.starterItems", "participants.boots", "participants.supportItem",
@@ -491,14 +483,12 @@ public final class MongoDB {
                 build.put("skill_order", new JSONArray(readIntegers(participant, "skillOrder")));
                 build.put("augments", new JSONArray(readIntegers(participant, "augments")));
                 build.put("summoner_spells", new JSONArray(List.of(participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
-                QueryRecord row = new QueryRecord();
-                row.put("game_id", publicGameId(match.getString("_id")));
-                row.put("win", String.valueOf(participant.getBoolean("win", false)));
-                row.put("build", build.toString());
-                result.add(row);
+                result.add(QueryRecordParser.fromMap(Map.of(
+                        "game_id", publicGameId(match.getString("_id")),
+                        "win", participant.getBoolean("win", false),
+                        "build", build.toString())));
             }
         }
-        result.setSuccess(true);
         return result;
     }
 
@@ -506,9 +496,9 @@ public final class MongoDB {
         return countChampionMatches(filter);
     }
 
-    public static List<MongoRecord> findChampionRecordsByIds(List<String> fullGameIds) {
+    public static List<QueryRecord> findChampionRecordsByIds(List<String> fullGameIds) {
         if (fullGameIds == null || fullGameIds.isEmpty()) return List.of();
-        List<MongoRecord> result = new ArrayList<>();
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : matches().find(Filters.in("_id", fullGameIds))) result.add(matchRecord(document));
         return result;
     }
@@ -524,21 +514,20 @@ public final class MongoDB {
         Document latest = matches().find(matchFilter(puuid, parseShard(summoner.getString("region")), timeStart, 0, GameQueueType.TEAM_BUILDER_RANKED_SOLO))
                 .projection(Projections.include("_id", "timeStart", "participants.puuid", "participants.rank", "participants.lp"))
                 .sort(Sorts.descending("timeStart")).first();
-        QueryRecord row = new QueryRecord();
-        row.put("puuid", puuid); row.put("region", summoner.getString("region"));
-        if (latest == null) return row;
-        row.put("game_id", publicGameId(latest.getString("_id")));
-        row.put("time_start", String.valueOf(latest.get("timeStart", 0L)));
+        Document row = new Document("puuid", puuid).append("region", summoner.getString("region"));
+        if (latest == null) return QueryRecordParser.fromDocument(row);
+        row.append("game_id", publicGameId(latest.getString("_id")))
+                .append("time_start", latest.get("timeStart", 0L));
         for (Document participant : documents(latest.get("participants"))) if (puuid.equals(participant.getString("puuid"))) {
-            row.put("rank", participant.getString("rank")); row.put("lp", String.valueOf(participant.getInteger("lp", 0))); break;
+            row.append("rank", participant.getString("rank"));
+            row.append("lp", participant.getInteger("lp", 0));
+            break;
         }
-        return row;
+        return QueryRecordParser.fromDocument(row);
     }
 
     private static QueryRecord row(Document document) {
-        QueryRecord result = new QueryRecord();
-        for (Map.Entry<String, Object> entry : document.entrySet()) if (entry.getValue() != null) result.put(entry.getKey(), String.valueOf(entry.getValue()));
-        return result;
+        return QueryRecordParser.fromDocument(document);
     }
 
     private static boolean matchesChampionFilter(Document participant, Filter filter) {
@@ -607,9 +596,9 @@ public final class MongoDB {
         return result;
     }
 
-    public static List<MongoRecord> findAccountsByUserId(String userId) {
+    public static List<QueryRecord> findAccountsByUserId(String userId) {
         traceRead("summoner.findAccountsByUserId", "userId=" + userId);
-        List<MongoRecord> result = new ArrayList<>();
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : summoners().find(Filters.eq("userId", userId)).sort(Sorts.ascending("_id"))) {
             result.add(record(document));
         }
@@ -696,7 +685,7 @@ public final class MongoDB {
         traceRead("match.find", "id=" + fullGameId);
         Document document = matches().find(Filters.eq("_id", fullGameId(fullGameId, null))).first();
         if (document == null) return null;
-        Match match = matchRecord(document).getAs(com.safjnest.lol.model.match.Match.class);
+        Match match = read(matchRecord(document), Match.class);
         attachEvents(List.of(match));
         return match;
     }
@@ -719,7 +708,7 @@ public final class MongoDB {
                 .sort(Sorts.descending("timeStart"))
                 .skip(boundedOffset)
                 .limit(boundedLimit)) {
-            com.safjnest.lol.model.match.Match match = matchRecord(document).getAs(com.safjnest.lol.model.match.Match.class);
+            com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);
             com.safjnest.lol.model.match.MatchResult matchResult = toMatchResult(match, puuid);
             if (matchResult != null) result.add(matchResult);
         }
@@ -735,7 +724,7 @@ public final class MongoDB {
         traceRead("match.findAnalysis", "puuid=" + puuid + " queue=" + queue);
         List<com.safjnest.lol.model.match.Match> result = new ArrayList<>();
         for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue)).sort(Sorts.descending("timeStart"))) {
-            result.add(matchRecord(document).getAs(com.safjnest.lol.model.match.Match.class));
+            result.add(read(matchRecord(document), Match.class));
         }
         attachEvents(result);
         return result;
@@ -767,7 +756,7 @@ public final class MongoDB {
         return result;
     }
 
-        public static MongoRecord findSummaryProjection(
+        public static QueryRecord findSummaryProjection(
             String puuid,
             LeagueShard shard,
             long timeStart,
@@ -782,7 +771,7 @@ public final class MongoDB {
         return document == null ? null : profileRecord(document);
     }
 
-    public static List<MongoRecord> findAdvancedProfileProjections(
+    public static List<QueryRecord> findAdvancedProfileProjections(
             String puuid,
             LeagueShard shard,
             long timeStart,
@@ -801,7 +790,7 @@ public final class MongoDB {
             }
         }
 
-        List<MongoRecord> result = new ArrayList<>();
+        List<QueryRecord> result = new ArrayList<>();
         List<AdvancedChampionAggregate> ordered = new ArrayList<>(aggregates.values());
         ordered.sort((left, right) -> {
             int games = Integer.compare(right.games, left.games);
@@ -817,19 +806,19 @@ public final class MongoDB {
                     .append("avg_assists", aggregate.average(aggregate.assists))
                     .append("total_lp_gain", aggregate.totalLpGain)
                     .append("lanes_played", aggregate.lanesPlayed());
-            result.add(new MongoRecord("match", "advanced:" + puuid + ":" + aggregate.champion, document));
+            result.add(QueryRecordParser.fromDocument(document));
         }
         return result;
     }
 
-    public static List<MongoRecord> findSummonerData(
+    public static List<QueryRecord> findSummonerData(
             String puuid,
             LeagueShard shard,
             long timeStart,
             long timeEnd,
             GameQueueType queue) {
         traceRead("match.findSummonerData", "puuid=" + puuid + " queue=" + queue);
-        List<MongoRecord> result = new ArrayList<>();
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))
                 .projection(Projections.include("_id", "gameId", "timeStart", "timeEnd", "patch",
                         "participants.puuid", "participants.rank", "participants.lp", "participants.gain", "participants.win"))
@@ -845,22 +834,22 @@ public final class MongoDB {
                         .append("time_start", document.get("timeStart", 0L))
                         .append("time_end", document.get("timeEnd", 0L))
                         .append("patch", document.get("patch"));
-                result.add(new MongoRecord("match", document.get("_id") + ":" + puuid, row));
+                result.add(QueryRecordParser.fromDocument(row));
                 break;
             }
         }
         return result;
     }
 
-        public static List<MongoRecord> findTrackedSummoners(long timeStart) {
-        List<MongoRecord> result = new ArrayList<>();
+        public static List<QueryRecord> findTrackedSummoners(long timeStart) {
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : summoners().find(Filters.eq("tracking", true))) {
             result.add(record(document));
         }
         return result;
     }
 
-        public static MongoRecord findTrackedSummoner(String puuid, long timeStart) {
+        public static QueryRecord findTrackedSummoner(String puuid, long timeStart) {
         Document document = summoners().find(Filters.and(
                 Filters.eq("_id", puuid), Filters.eq("tracking", true))).first();
         return document == null ? null : record(document);
@@ -898,7 +887,7 @@ public final class MongoDB {
         return result;
     }
 
-        public static List<MongoRecord> findChampionBuildSource(Filter filter) {
+        public static List<QueryRecord> findChampionBuildSource(Filter filter) {
         return findChampionMatchProjections(findChampionMatchIds(filter, null, 10_000));
     }
 
@@ -957,15 +946,15 @@ public final class MongoDB {
         return result;
     }
 
-        public static List<MongoRecord> findChampionMatchProjections(List<String> fullGameIds) {
+        public static List<QueryRecord> findChampionMatchProjections(List<String> fullGameIds) {
         return matchProjections(fullGameIds, false);
     }
 
-        public static List<MongoRecord> findChampionParticipantProjections(List<String> fullGameIds) {
+        public static List<QueryRecord> findChampionParticipantProjections(List<String> fullGameIds) {
         return matchProjections(fullGameIds, true);
     }
 
-    public static List<MongoRecord> findChampionTrendProjections(List<String> fullGameIds) {
+    public static List<QueryRecord> findChampionTrendProjections(List<String> fullGameIds) {
         return matchProjections(fullGameIds, false);
     }
 
@@ -1151,7 +1140,7 @@ public final class MongoDB {
         List<Document> values = new ArrayList<>();
         if (ranks != null) {
             for (Rank rank : ranks) {
-                Document value = write(rank).toDocument();
+                Document value = write(rank);
                 if (mmrByQueue != null && mmrByQueue.containsKey(rank.queue())) value.put("mmr", mmrByQueue.get(rank.queue()));
                 values.add(value);
             }
@@ -1163,7 +1152,7 @@ public final class MongoDB {
 
     public static boolean upsertMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
         List<Document> values = new ArrayList<>();
-        if (masteries != null) for (Mastery mastery : masteries) values.add(write(mastery).toDocument());
+        if (masteries != null) for (Mastery mastery : masteries) values.add(write(mastery));
         UpdateResult update = summoners().updateOne(summonerFilter(puuid, shard), Updates.set("masteries", values));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo masteries update was not acknowledged");
         return update.getMatchedCount() > 0;
@@ -1201,7 +1190,7 @@ public final class MongoDB {
     public static boolean upsertMatchDocument(String fullGameId, Match match) {
         if (match == null) return false;
         String id = fullGameId(fullGameId, match.leagueShard);
-        Document document = write(match).toDocument();
+        Document document = write(match);
         document.put("_id", id);
         replace(matches(), document);
         return true;
@@ -1363,9 +1352,8 @@ public final class MongoDB {
         return true;
     }
 
-    public static <T> T read(MongoRecord record, Class<T> type) {
+    public static <T> T read(QueryRecord record, Class<T> type) {
         if (record == null) return null;
-        if (type == MongoRecord.class) return type.cast(record);
         try {
             Object value = switch (type.getName()) {
                 case "com.safjnest.lol.model.summoner.Summoner" -> readSummoner(record);
@@ -1374,68 +1362,61 @@ public final class MongoDB {
                 case "com.safjnest.lol.model.match.Participant" -> readParticipant(record);
                 case "com.safjnest.lol.model.match.Match" -> readMatch(record);
                 case "com.safjnest.lol.model.match.MatchResult" -> readMatchResult(record);
-                case "com.safjnest.lol.model.statistics.ProfileStatistics" -> readProfileStatistics(record.toDocument());
-                case "com.safjnest.lol.model.Build" -> readBuild(record.toDocument());
-                case "com.safjnest.lol.model.ChampionStatistics" -> readChampionStatistics(record.toDocument());
-                default -> readStructured(record.toDocument(), type);
+                case "com.safjnest.lol.model.statistics.ProfileStatistics" -> readProfileStatistics(QueryRecordParser.toDocument(record));
+                case "com.safjnest.lol.model.Build" -> readBuild(QueryRecordParser.toDocument(record));
+                case "com.safjnest.lol.model.ChampionStatistics" -> readChampionStatistics(QueryRecordParser.toDocument(record));
+                default -> readStructured(QueryRecordParser.toDocument(record), type);
             };
             return type.cast(value);
-        } catch (MongoRecord.ConversionException exception) {
-            throw exception;
         } catch (RuntimeException exception) {
-            throw record.conversionException(record.documentField(), type.getName(), record.toDocument(), exception);
+            throw new IllegalArgumentException("Unable to read Mongo record id=" + record.getAsString("_id")
+                    + " as " + type.getName(), exception);
         }
     }
 
-    private static MongoRecord write(Object value) {
+    private static Document write(Object value) {
         if (value == null) throw new IllegalArgumentException("Mongo value cannot be null");
         Document document;
-        String collection;
-        Object id = null;
         if (value instanceof Summoner summoner) {
             if (summoner.puuid() == null || summoner.puuid().isBlank()) throw new IllegalArgumentException("Summoner.puuid is required");
             document = new Document("_id", summoner.puuid()).append("level", summoner.level()).append("icon", summoner.icon());
             putIfNotNull(document, "riotId", summoner.riotId()); putIfNotNull(document, "region", summoner.region());
-            collection = "summoner"; id = summoner.puuid();
         } else if (value instanceof Rank rank) {
             document = new Document("queue", rank.queue() == null ? null : rank.queue().name())
                     .append("rank", rank.tier() == null ? null : rank.tier().name()).append("lp", rank.lp())
                     .append("wins", rank.wins()).append("losses", rank.losses());
-            collection = "summoner";
         } else if (value instanceof Mastery mastery) {
             document = new Document("championId", mastery.championId()).append("level", mastery.level()).append("points", mastery.points());
-            collection = "summoner";
         } else if (value instanceof Participant participant) {
-            document = participantDocument(participant); collection = "match";
+            document = participantDocument(participant);
         } else if (value instanceof Match match) {
-            document = matchDocument(match); collection = "match"; id = document.get("_id");
+            document = matchDocument(match);
         } else if (value instanceof MatchResult matchResult) {
-            document = matchResultDocument(matchResult); collection = "match"; id = matchResult.gameId;
+            document = matchResultDocument(matchResult);
         } else {
             document = structured(value);
             if (document == null) throw new IllegalArgumentException("Unable to serialize " + value.getClass().getName());
-            collection = "lol";
         }
-        return new MongoRecord(collection, id, document);
+        return document;
     }
 
-    private static Summoner readSummoner(MongoRecord record) {
+    private static Summoner readSummoner(QueryRecord record) {
         String puuid = record.getAsString("puuid");
-        if (puuid == null && record.getId() instanceof String id) puuid = id;
+        if (puuid == null) puuid = record.getAsString("_id");
         return new Summoner(0, puuid, record.getAsString("riotId"),
                 record.getAsString("region"), record.getAsInt("level"), record.getAsInt("icon"));
     }
 
-    private static Rank readRank(MongoRecord record) {
+    private static Rank readRank(QueryRecord record) {
         return new Rank(record.getAsEnum("queue", GameQueueType.class), record.getAsEnum("rank", TierDivisionType.class),
                 record.getAsInt("lp"), record.getAsInt("wins"), record.getAsInt("losses"));
     }
 
-    private static Mastery readMastery(MongoRecord record) {
+    private static Mastery readMastery(QueryRecord record) {
         return new Mastery(record.getAsInt("championId"), record.getAsInt("level"), record.getAsInt("points"));
     }
 
-    private static Participant readParticipant(MongoRecord record) {
+    private static Participant readParticipant(QueryRecord record) {
         Participant participant = new Participant();
         participant.win = record.getAsBoolean("win");
         participant.kda = record.getAsString("kda"); participant.champion = record.getAsInt("champion");
@@ -1460,10 +1441,10 @@ public final class MongoDB {
         return participant;
     }
 
-    private static Match readMatch(MongoRecord record) {
-        Document source = record.toDocument();
+    private static Match readMatch(QueryRecord record) {
+        Document source = QueryRecordParser.toDocument(record);
         String fullGameId = record.getAsString("fullGameId"); if (fullGameId == null) fullGameId = record.getAsString("_id");
-        if (fullGameId == null || fullGameId.isBlank()) throw record.conversionException("fullGameId", String.class.getName(), fullGameId, null);
+        if (fullGameId == null || fullGameId.isBlank()) throw new IllegalArgumentException("Mongo match fullGameId is required");
         Match match = new Match();
         String publicId = source.containsKey("game_id") ? record.getAsString("game_id") : record.getAsString("gameId");
         match.gameId = publicId != null ? publicId : publicGameId(fullGameId);
@@ -1473,11 +1454,11 @@ public final class MongoDB {
         match.queue = record.getAsEnum("queue", GameQueueType.class); match.rank = record.getAsEnum("rank", TierType.class);
         match.lastUpdate = record.getAsLong("lastUpdate"); match.timeStart = record.getAsLong("timeStart"); match.timeEnd = record.getAsLong("timeEnd"); match.patch = record.getAsString("patch");
         match.bans = readBans(record); match.participants = readParticipants(record);
-        match.eventData = record.toDocument().containsKey("events") ? readEventMap(record.get("events")) : new LinkedHashMap<>(); match.restoreEvents();
+        match.eventData = record.containsKey("events") ? readEventMap(record.getValue("events")) : new LinkedHashMap<>(); match.restoreEvents();
         return match;
     }
 
-    private static MatchResult readMatchResult(MongoRecord record) {
+    private static MatchResult readMatchResult(QueryRecord record) {
         return new MatchResult(record.getAsString("gameId"), record.getAsEnum("queue", GameQueueType.class), record.getAsLong("timeStart"), record.getAsLong("timeEnd"),
                 record.getAsBoolean("win"), record.getAsString("kda"), record.getAsInt("championId"), record.getAsEnum("lane", no.stelar7.api.r4j.basic.constants.types.lol.LaneType.class),
                 record.getAsInt("damage"), record.getAsInt("cs"), record.getAsInt("gold"), record.getAsInt("vision"), record.getAsInt("teamKills"), readIntegerList(record, "items"), readIntegerList(record, "summonerSpells"), readParticipants(record));
@@ -1543,11 +1524,11 @@ public final class MongoDB {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
 
-    private static List<Integer> readIntegerList(MongoRecord record, String field) {
+    private static List<Integer> readIntegerList(QueryRecord record, String field) {
         List<Integer> values = record.getAsList(field, Integer.class);
         List<Integer> result = new ArrayList<>(values.size());
         for (Integer value : values) {
-            if (value == null) throw record.conversionException(field, Integer.class.getName(), null, null);
+            if (value == null) throw new IllegalArgumentException("Mongo field " + field + " contains a null integer");
             result.add(value);
         }
         return result;
@@ -1563,11 +1544,11 @@ public final class MongoDB {
         return document;
     }
 
-    private static Map<String, Integer> readIntegerMap(MongoRecord record, String field) {
-        MongoRecord nested = record.getAsRecord(field);
+    private static Map<String, Integer> readIntegerMap(QueryRecord record, String field) {
+        QueryRecord nested = record.getAsRecord(field);
         if (nested == null) return new LinkedHashMap<>();
         Map<String, Integer> result = new LinkedHashMap<>();
-        for (String key : nested.toDocument().keySet()) result.put(key, nested.getAsInt(key));
+        for (String key : nested.keySet()) result.put(key, nested.getAsInt(key));
         return result;
     }
 
@@ -1594,20 +1575,20 @@ public final class MongoDB {
         return document;
     }
 
-    private static Map<no.stelar7.api.r4j.basic.constants.types.lol.TeamType, List<Integer>> readBans(MongoRecord record) {
-        MongoRecord nested = record.getAsRecord("bans");
+    private static Map<no.stelar7.api.r4j.basic.constants.types.lol.TeamType, List<Integer>> readBans(QueryRecord record) {
+        QueryRecord nested = record.getAsRecord("bans");
         Map<no.stelar7.api.r4j.basic.constants.types.lol.TeamType, List<Integer>> result = new HashMap<>();
         result.put(no.stelar7.api.r4j.basic.constants.types.lol.TeamType.BLUE, List.of());
         result.put(no.stelar7.api.r4j.basic.constants.types.lol.TeamType.RED, List.of());
         if (nested == null) return result;
-        for (String key : nested.toDocument().keySet()) {
+        for (String key : nested.keySet()) {
             no.stelar7.api.r4j.basic.constants.types.lol.TeamType team;
             try {
                 team = no.stelar7.api.r4j.basic.constants.types.lol.TeamType.valueOf(key);
             } catch (IllegalArgumentException exception) {
-                throw record.conversionException("bans." + key, "BLUE or RED", key, exception);
+                throw new IllegalArgumentException("Invalid Mongo bans field bans." + key, exception);
             }
-            if (team != no.stelar7.api.r4j.basic.constants.types.lol.TeamType.BLUE && team != no.stelar7.api.r4j.basic.constants.types.lol.TeamType.RED) throw record.conversionException("bans." + key, "BLUE or RED", key, null);
+            if (team != no.stelar7.api.r4j.basic.constants.types.lol.TeamType.BLUE && team != no.stelar7.api.r4j.basic.constants.types.lol.TeamType.RED) throw new IllegalArgumentException("Invalid Mongo bans team " + key);
             result.put(team, readIntegerList(nested, key));
         }
         return result;
@@ -1623,10 +1604,10 @@ public final class MongoDB {
         return result;
     }
 
-    private static List<Participant> readParticipants(MongoRecord record) {
+    private static List<Participant> readParticipants(QueryRecord record) {
         List<Participant> result = new ArrayList<>();
-        for (MongoRecord nested : record.getAsRecords("participants")) {
-            if (nested == null) throw record.conversionException("participants", Participant.class.getName(), null, null);
+        for (QueryRecord nested : record.getAsRecords("participants")) {
+            if (nested == null) throw new IllegalArgumentException("Mongo participants cannot contain null values");
             result.add(readParticipant(nested));
         }
         return result;
@@ -1830,14 +1811,12 @@ public final class MongoDB {
         return database().getCollection("leaderboard_distribution");
     }
 
-    private static MongoRecord matchRecord(Document document) {
-        Object id = document.get("_id");
-        return new MongoRecord("match", id, document);
+    private static QueryRecord matchRecord(Document document) {
+        return QueryRecordParser.fromDocument(document);
     }
 
-    private static MongoRecord profileRecord(Document document) {
-        Object id = document.get("_id");
-        return new MongoRecord("profile_statistics", id, document);
+    private static QueryRecord profileRecord(Document document) {
+        return QueryRecordParser.fromDocument(document);
     }
 
     private static org.bson.conversions.Bson matchFilter(
@@ -1917,9 +1896,9 @@ public final class MongoDB {
         return filters.isEmpty() ? new Document() : Filters.and(filters);
     }
 
-    private static List<MongoRecord> matchProjections(List<String> fullGameIds, boolean participantsOnly) {
+    private static List<QueryRecord> matchProjections(List<String> fullGameIds, boolean participantsOnly) {
         if (fullGameIds == null || fullGameIds.isEmpty()) return List.of();
-        List<MongoRecord> result = new ArrayList<>();
+        List<QueryRecord> result = new ArrayList<>();
         for (Document document : matches().find(Filters.in("_id", fullGameIds))) {
             if (participantsOnly) {
                 document = new Document("_id", document.get("_id"))
@@ -2084,7 +2063,7 @@ public final class MongoDB {
     }
 
     private static Bson summonerUpdate(Summoner summoner, String userId) {
-        Document fields = write(summoner).toDocument();
+        Document fields = write(summoner);
         fields.remove("_id");
         List<Bson> updates = new ArrayList<>(fields.size() + 2);
         for (Map.Entry<String, Object> field : fields.entrySet()) updates.add(Updates.set(field.getKey(), field.getValue()));
@@ -2149,8 +2128,7 @@ public final class MongoDB {
         return result.toString();
     }
 
-    private static MongoRecord record(Document document) {
-        Object id = document.get("_id");
-        return new MongoRecord("summoner", id, document);
+    private static QueryRecord record(Document document) {
+        return QueryRecordParser.fromDocument(document);
     }
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -52,7 +52,7 @@ public class PlaylistCreate extends SlashCommand{
                 ? (!PermissionHandler.isPremium(userId) ? SettingsLoader.getSettings().getBotSettings().getMaxFreePlaylistSize() : SettingsLoader.getSettings().getBotSettings().getMaxPremiumPlaylistSize())
                 : Integer.valueOf(Integer.MAX_VALUE);
 
-        QueryResult userPlaylists = BotDB.getPlaylists(userId);
+        List<QueryRecord> userPlaylists = BotDB.getPlaylists(userId);
 
         if(userPlaylists.size() >= maxPlaylists && !PermissionHandler.isPremium(userId)) {
             event.getHook().editOriginal("You have already created the maximum amount of free playlists (for more playlists wait for future paid tiers [pagaaaah, sgancia, spilla, sborsa proprio maonna ragazih]).").queue();
@@ -64,7 +64,14 @@ public class PlaylistCreate extends SlashCommand{
             return;
         }
 
-        if(userPlaylists.arrayColumn("name").contains(playlistName)) {
+        boolean playlistExists = false;
+        for (QueryRecord playlist : userPlaylists) {
+            if (playlistName.equals(playlist.get("name"))) {
+                playlistExists = true;
+                break;
+            }
+        }
+        if (playlistExists) {
             event.getHook().editOriginal("You have already created a playlist with that name.").queue();
             return;
         }

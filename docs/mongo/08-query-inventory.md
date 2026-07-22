@@ -1,6 +1,6 @@
 # Inventario query LoL
 
-La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection tipizzate e non idratano wrapper `MongoRecord`.
+La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection tipizzate o `QueryRecord` detached.
 
 | Area | Query Mongo target | Budget applicativo | Consumer |
 |---|---|---:|---|

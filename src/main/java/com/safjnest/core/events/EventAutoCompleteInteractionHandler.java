@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.CommandsLoader;
@@ -25,7 +24,6 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.mongo.MongoDB;
-import com.safjnest.mongo.MongoRecord;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -195,9 +193,13 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryResult sounds = null;
+        List<QueryRecord> sounds = null;
         if (isFocused) sounds = BotDB.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), value);
-        else sounds = BotDB.getUserGuildSounds(e.getUser().getId(), e.getGuild().getId()).shuffle().limit(MAX_CHOICES);
+        else {
+            sounds = new ArrayList<>(BotDB.getUserGuildSounds(e.getUser().getId(), e.getGuild().getId()));
+            Collections.shuffle(sounds);
+            if (sounds.size() > MAX_CHOICES) sounds = new ArrayList<>(sounds.subList(0, MAX_CHOICES));
+        }
 
         for (QueryRecord sound : sounds) {
             String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
@@ -212,10 +214,14 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> userSound(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryResult sounds = null;
+        List<QueryRecord> sounds = null;
         
         if (isFocused) sounds = BotDB.getFocusedUserSound(e.getUser().getId(), value);
-        else sounds = BotDB.getUserSound(e.getUser().getId()).shuffle().limit(MAX_CHOICES);
+        else {
+            sounds = new ArrayList<>(BotDB.getUserSound(e.getUser().getId()));
+            Collections.shuffle(sounds);
+            if (sounds.size() > MAX_CHOICES) sounds = new ArrayList<>(sounds.subList(0, MAX_CHOICES));
+        }
 
         for (QueryRecord sound : sounds) {
             String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
@@ -301,7 +307,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> soundboard(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         
-        QueryResult soundboards = null;
+        List<QueryRecord> soundboards = null;
         if (!isFocused) soundboards = BotDB.getRandomSoundboard(e.getGuild().getId(), e.getUser().getId());
         else soundboards = BotDB.getFocusedSoundboard(e.getGuild().getId(), e.getUser().getId(), value);
 
@@ -323,7 +329,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         String soundboardId = e.getOption("name").getAsString();
 
-        QueryResult sounds = null;
+        List<QueryRecord> sounds = null;
 
         if (isFocused) sounds = BotDB.getFocusedSoundFromSounboard(soundboardId, value);
         else sounds = BotDB.getSoundsFromSoundBoard(soundboardId);
@@ -342,7 +348,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
 
-        QueryResult sounds = null;
+        List<QueryRecord> sounds = null;
         if (isFocused) sounds = BotDB.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue());
         else sounds = BotDB.getlistGuildSounds(e.getGuild().getId(), 25);
 
@@ -497,11 +503,11 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> personalSummoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        List<MongoRecord> accounts = MongoDB.findAccountsByUserId(e.getUser().getId());
+        List<QueryRecord> accounts = MongoDB.findAccountsByUserId(e.getUser().getId());
         if (accounts.isEmpty()) return choices;
 
         ArrayList<Choice> personal = new ArrayList<>();
-        for (MongoRecord account : accounts) {
+        for (QueryRecord account : accounts) {
             String puuid = account.getAsString("puuid");
             if (puuid == null) puuid = account.getAsString("_id");
             String riotId = account.getAsString("riotId");
@@ -587,7 +593,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         private ArrayList<Choice> playlist(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryResult playlists = BotDB.getPlaylistsWithSize(e.getUser().getId());
+        List<QueryRecord> playlists = BotDB.getPlaylistsWithSize(e.getUser().getId());
         
 
         if (isFocused) {
@@ -602,12 +608,13 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             }
         }
         else {
-            playlists.shuffle();
+            Collections.shuffle(playlists);
 
             int i = 0;
             for (QueryRecord playlist : playlists) {
                 String label = playlist.get("name") + " (" + playlist.get("size") + " songs)";
                 if (i < MAX_CHOICES) choices.add(new Choice(label, playlist.get("id")));
+                i++;
             }
         }
           
@@ -623,7 +630,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         int playlistId = e.getOption("playlist-name").getAsInt();
 
-        QueryResult songs = BotDB.getPlaylistTracks(playlistId, null, null);
+        List<QueryRecord> songs = BotDB.getPlaylistTracks(playlistId, null, null);
         List<AudioTrack> queue = new ArrayList<>();
         for (QueryRecord song : songs) {
             AudioTrack track = PlayerManager.get().decodeTrack(song.get("encoded_track"));

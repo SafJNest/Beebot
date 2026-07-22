@@ -8,7 +8,6 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -42,8 +41,10 @@ public class PlaylistView extends SlashCommand{
     }
 
     public static EmbedBuilder getTracksEmbed(QueryRecord playlist, Member member, int page) {
-        QueryResult tracks = BotDB.getPlaylistTracks(playlist.getAsInt("id"), pageSize, page);
-        List<AudioTrack> decodedTracks = PlayerManager.get().decodeTracks(tracks.arrayColumn("encoded_track"));
+        List<QueryRecord> tracks = BotDB.getPlaylistTracks(playlist.getAsInt("id"), pageSize, page);
+        List<String> encodedTracks = new java.util.ArrayList<>();
+        for (QueryRecord track : tracks) encodedTracks.add(track.get("encoded_track"));
+        List<AudioTrack> decodedTracks = PlayerManager.get().decodeTracks(encodedTracks);
 
         EmbedBuilder eb = new EmbedBuilder();
 
