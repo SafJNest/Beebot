@@ -34,7 +34,7 @@ public class TrackerScheduler {
             //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
             ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
-            retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+            retriveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
             ChronoTask refreshChampionData = () -> refreshChampionData();
             refreshChampionData.scheduleAtFixedTime(3, 0, 0);
