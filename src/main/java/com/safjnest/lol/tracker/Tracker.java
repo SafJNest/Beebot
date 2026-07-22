@@ -937,6 +937,7 @@ public class Tracker {
             ChronoTask task = () -> {
                     List<TierDivisionType> tiers = new ArrayList<>(List.of(TierDivisionType.values()));
                     Collections.reverse(tiers);
+                    tiers.remove(0);
                     for (TierDivisionType tier : tiers) {
                         int page = 1;
                         if (tier == TierDivisionType.CHALLENGER_I || tier == TierDivisionType.GRANDMASTER_I
