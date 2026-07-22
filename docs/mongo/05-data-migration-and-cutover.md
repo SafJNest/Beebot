@@ -22,7 +22,7 @@ Le fasi sono eseguite in questo ordine:
 
 Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre match, rank, mastery e participant non conservano identificativi numerici MariaDB. Il run non esegue cleanup o conversione in-place: i dati obsoleti vengono rimossi manualmente dall'operatore.
 
-Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatch()`: prima viene sostituito il documento `match`, poi il payload JSON viene sostituito in `match_events`, la cui compressione è delegata a WiredTiger Zstandard livello 9. Il documento `match` non contiene più `events`.
+Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatchDocument()` e `MongoDB.upsertMatchEvents()`: prima viene sostituito il documento `match`, poi il payload JSON viene sostituito in `match_events`, la cui compressione è delegata a WiredTiger Zstandard livello 9. Il documento `match` non contiene più `events`.
 
 Non vengono migrati:
 
@@ -64,4 +64,4 @@ Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato
 7. ripetere con `resume=true` per verificare idempotenza e high-water mark;
 8. costruire solo dopo build e profile statistics tramite i flussi applicativi.
 
-Gli errori del backfill interrompono il run con fase e id espliciti. Gli errori del mirror runtime restano loggati senza falsificare il risultato MariaDB.
+Gli errori del backfill interrompono il run con fase e id espliciti. Il runtime LoL non esegue mirror MariaDB/Mongo e non usa MariaDB come fallback.

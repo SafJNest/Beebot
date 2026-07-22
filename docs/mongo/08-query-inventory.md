@@ -13,7 +13,7 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | match events | `_id: {$in: [...]}` su `match_events` | 1 | match detail/history |
 | champion | match id con projection; build e statistiche leggono solo participant richiesti; batch raw senza `Match -> Participant` completo | 2 per batch (+ count/trend) | Champion services |
 | leaderboard aggregates | `$group` per distribuzioni, regioni e rebuild | 1 | LeaderboardService |
-| writes | update atomici, pipeline participant, bulk unordered per build/statistiche/summoner | 1 per update/batch | mirror/tracker |
+| writes | update atomici, pipeline participant, bulk unordered per build/statistiche/summoner | 1 per update/batch | MongoDB/tracker |
 
 ## Projection e filtri
 
@@ -25,7 +25,7 @@ Le query paginated sono limitate a 100 match, 50 righe leaderboard, 25 risultati
 
 ## Invarianti
 
-PUUID è l'identità summoner e `_id` del documento; il Riot match ID completo è l'identità match; enum R4J usa `name()`; bans usa BLUE e RED; participant resta flat; upsert/update/delete sono idempotenti; letture applicative Mongo-only; errori di lettura Mongo espliciti; mirror fallito significa log senza falsificare MariaDB.
+PUUID è l'identità summoner e `_id` del documento; il Riot match ID completo è l'identità match; enum R4J usa `name()`; bans usa BLUE e RED; participant resta flat; upsert/update/delete sono idempotenti; letture e scritture applicative Mongo-only; errori di lettura Mongo espliciti.
 
 MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` e `statistics` come BSON strutturato, mai come stringa opaca. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; dati vecchi o corrotti sono invalidi e vanno rimossi manualmente dall'operatore prima della rigenerazione.
 

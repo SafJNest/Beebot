@@ -1,7 +1,6 @@
 package com.safjnest.lol.service;
 
 import com.safjnest.mongo.MongoDB;
-import com.safjnest.sql.database.LeagueDB;
 
 import java.util.List;
 import java.util.Set;
@@ -47,15 +46,9 @@ public final class ProfileBootstrapService {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueService.getSummonerByPuuid(puuid, shard);
             if (summoner == null) return;
 
-            int summonerId = LeagueDB.addLOLAccount(summoner);
-            if (summonerId == 0) return;
-
-            com.safjnest.lol.model.summoner.Summoner profile =
-                    LeagueService.getProfileBaseFromDatabase(puuid, shard);
-            if (profile != null) MongoDB.upsertSummoner(profile, null);
+            if (!LeagueService.upsertSummoner(summoner, null)) return;
 
             List<LeagueEntry> entries = LeagueService.getLeagueEntries(puuid, shard);
-            LeagueDB.updateSummonerEntries(puuid, summonerId, entries, shard);
             List<Rank> ranks = new java.util.ArrayList<>();
             java.util.Map<no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType, Long> mmr = new java.util.HashMap<>();
             for (LeagueEntry entry : entries) {

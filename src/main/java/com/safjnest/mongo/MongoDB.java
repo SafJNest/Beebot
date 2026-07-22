@@ -59,15 +59,14 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
@@ -907,8 +906,8 @@ public final class MongoDB {
         return readFilters(builds(), false);
     }
 
-        public static List<Filter> findChampionBuildRefreshFilters(String patch) {
-        return readFilters(builds(), false);
+    public static List<Filter> findChampionBuildRefreshFilters(String patch) {
+        return findChampionSourceFilters(patch, true);
     }
 
         public static ChampionStatistics findChampionStatistics(Filter filter, int championId) {
@@ -932,8 +931,8 @@ public final class MongoDB {
         return readFilters(championStats(), true);
     }
 
-        public static List<Filter> findChampionStatisticsRefreshFilters(String patch) {
-        return readFilters(championStats(), true);
+    public static List<Filter> findChampionStatisticsRefreshFilters(String patch) {
+        return findChampionSourceFilters(patch, false);
     }
 
         public static long countChampionMatches(Filter filter) {
@@ -974,13 +973,31 @@ public final class MongoDB {
         if (fullGameIds == null || fullGameIds.isEmpty()) return List.of();
         FindIterable<Document> query = matches().find(Filters.in("_id", boundedIds(fullGameIds)))
                 .projection(Projections.include(
-                        "_id", "bans", "events", "timeStart", "timeEnd",
+                        "_id", "bans", "timeStart", "timeEnd",
                         "participants.champion", "participants.lane", "participants.win", "participants.team",
                         "participants.kda", "participants.cs", "participants.goldEarned", "participants.puuid"))
                 .limit(Math.min(MAX_BATCH_IDS, fullGameIds.size()));
         List<Document> result = new ArrayList<>();
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) result.add(cursor.next());
+        }
+        if (!result.isEmpty()) {
+            List<String> ids = new ArrayList<>(result.size());
+            Map<String, Document> byId = new HashMap<>();
+            for (Document document : result) {
+                String id = document.getString("_id");
+                if (id != null) {
+                    ids.add(id);
+                    byId.put(id, document);
+                }
+            }
+            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", ids)).iterator()) {
+                while (cursor.hasNext()) {
+                    Document event = cursor.next();
+                    Document match = byId.get(event.getString("_id"));
+                    if (match != null) match.put("events", decodeMatchEvents(event));
+                }
+            }
         }
         return result;
     }
@@ -1092,6 +1109,12 @@ public final class MongoDB {
 
     public static boolean upsertSummoner(Summoner summoner, String userId) {
         if (summoner == null || summoner.puuid() == null) return false;
+        if (userId != null) {
+            Document current = summoners().find(Filters.eq("_id", summoner.puuid()))
+                    .projection(Projections.include("userId")).first();
+            String owner = current == null ? null : current.getString("userId");
+            if (owner != null && !owner.equals(userId)) return false;
+        }
         traceRead("summoner.upsert", "puuid=" + summoner.puuid() + " userId=" + userId);
         return summoners().updateOne(Filters.eq("_id", summoner.puuid()), summonerUpdate(summoner, userId),
                 new UpdateOptions().upsert(true)).wasAcknowledged();
@@ -1114,12 +1137,12 @@ public final class MongoDB {
         return true;
     }
 
-        public static boolean detachSummonerUser(String puuid, String userId) {
+    public static boolean detachSummonerUser(String puuid, String userId) {
         return summoners().updateOne(Filters.and(Filters.eq("_id", puuid), Filters.eq("userId", userId)),
-                Updates.unset("userId")).getMatchedCount() > 0;
+                Updates.combine(Updates.unset("userId"), Updates.set("tracking", false))).getMatchedCount() > 0;
     }
 
-        public static boolean setSummonerTracking(String puuid, String userId, boolean tracked) {
+    public static boolean setSummonerTracking(String puuid, String userId, boolean tracked) {
         return summoners().updateOne(Filters.and(Filters.eq("_id", puuid), Filters.eq("userId", userId)),
                 Updates.set("tracking", tracked)).getMatchedCount() > 0;
     }
@@ -1775,110 +1798,6 @@ public final class MongoDB {
         try { return Integer.parseInt(kda.split("/", 2)[0]); } catch (RuntimeException ignored) { return 0; }
     }
 
-    public static void mirrorSummoner(String puuid, LeagueShard shard, String riotId, int level, int icon) {
-        mirror("summoner", "summoner", puuid, () -> {
-            if (puuid == null || shard == null) return;
-            upsertSummoner(new Summoner(0, puuid, riotId, shard.name(), level, icon), null);
-        });
-    }
-
-    public static void detachSummoner(String userId, String puuid) {
-        mirror("detachSummoner", "summoner", puuid, () -> {
-            if (!summoners().updateOne(Filters.and(Filters.eq("_id", puuid), Filters.eq("userId", userId)), Updates.unset("userId")).wasAcknowledged()) {
-                throw new IllegalStateException("Mongo detach was not acknowledged");
-            }
-        });
-    }
-
-    public static void mirrorParticipant(String puuid, int mariaMatchId) {
-        mirror("participant", "match", mariaMatchId, () -> {
-            QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + mariaMatchId);
-            if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
-            String fullGameId = row.get("region") + "_" + row.get("game_id");
-            Match match = LeagueDB.getMatch(LeagueShard.valueOf(row.get("region")), row.get("game_id"));
-            if (match == null || match.participants == null) throw new IllegalStateException("MariaDB match participants not found");
-            for (Participant participant : match.participants) if (participant != null && puuid.equals(participant.puuid)) {
-                if (!upsertParticipant(fullGameId, participant)) throw new IllegalStateException("Mongo match participant update matched no match");
-                return;
-            }
-            throw new IllegalStateException("MariaDB participant row not found");
-        });
-    }
-
-    public static void mirrorMatch(int mariaMatchId) {
-        mirror("match", "match", mariaMatchId, () -> {
-            QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + mariaMatchId);
-            if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
-            Match match = LeagueDB.getMatch(LeagueShard.valueOf(row.get("region")), row.get("game_id"));
-            if (match == null) throw new IllegalStateException("MariaDB match payload not found");
-            if (!upsertMatch(row.get("region") + "_" + row.get("game_id"), match)) throw new IllegalStateException("Mongo match upsert failed");
-        });
-    }
-
-    public static void mirrorMatchEvents(int mariaMatchId, Map<String, Object> events) {
-        mirror("match.events", "match", mariaMatchId, () -> {
-            QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + mariaMatchId);
-            if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
-            if (!updateMatchEvents(row.get("region") + "_" + row.get("game_id"), events)) throw new IllegalStateException("Mongo match events update matched no match");
-        });
-    }
-
-    public static void mirrorMatchEvents(int mariaMatchId, String json) {
-        mirror("match.events", "match", mariaMatchId, () -> {
-            Map<String, Object> events = new JSONObject(json == null ? "{}" : json).toMap();
-            QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + mariaMatchId);
-            if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
-            if (!updateMatchEvents(row.get("region") + "_" + row.get("game_id"), events)) throw new IllegalStateException("Mongo match events update matched no match");
-        });
-    }
-
-    public static void mirrorMatchRank(int mariaMatchId, TierType rank) {
-        mirror("match.rank", "match", mariaMatchId, () -> {
-            QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + mariaMatchId);
-            if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
-            if (!updateMatchRank(row.get("region") + "_" + row.get("game_id"), rank)) throw new IllegalStateException("Mongo match rank update matched no match");
-        });
-    }
-
-    public static void mirrorTracking(String userId, String puuid, boolean tracked) {
-        mirror("tracking", "summoner", puuid, () -> setSummonerTracking(puuid, userId, tracked));
-    }
-
-    public static void mirrorMasteries(String puuid, LeagueShard shard, List<com.safjnest.lol.model.summoner.Mastery> masteries) {
-        mirror("masteries", "summoner", puuid, () -> {
-            if (puuid != null && shard != null) upsertMasteries(puuid, shard, masteries);
-        });
-    }
-
-    public static void mirrorRanks(String puuid, LeagueShard shard, List<Rank> ranks) {
-        mirror("ranks", "summoner", puuid, () -> {
-            if (puuid != null && shard != null) {
-                upsertRanks(puuid, shard, ranks, Map.of());
-                if (ranks != null) for (Rank rank : ranks) {
-                    long mmr = TierDivisionUtils.getMmr(rank.tier(), rank.lp());
-                    upsertLeaderboardEntry(puuid, shard, rank, mmr);
-                }
-            }
-        });
-    }
-
-    public static void saveProfileStatistics(String key, String puuid, long timeStart, long timeEnd, ProfileStatistics statistics) {
-        mirror("profile_statistics", "profile_statistics", key, () -> {
-            if (puuid == null || statistics == null) return;
-            statistics.timeStart = timeStart; statistics.timeEnd = timeEnd;
-            upsertProfileStatistics(puuid, timeStart, statistics);
-        });
-    }
-
-    private static void mirror(String operation, String collection, Object id, Runnable action) {
-        try {
-            action.run();
-        } catch (RuntimeException exception) {
-            try { BotLogger.error("Mongo mirror failed operation=" + operation + " collection=" + collection + " id=" + id + " error=" + exception.getMessage()); }
-            catch (RuntimeException ignored) { }
-        }
-    }
-
     private static void traceRead(String operation, String details) {
         if (App.isTesting()) BotLogger.trace("[MONGO] " + operation + " " + details);
     }
@@ -2024,6 +1943,34 @@ public final class MongoDB {
             }
         }
         return new ArrayList<>(result.values());
+    }
+
+    private static List<Filter> findChampionSourceFilters(String patch, boolean includeChampion) {
+        if (patch == null || patch.isBlank()) return List.of();
+        Map<String, Filter> result = new LinkedHashMap<>();
+        for (Document match : matches().find(Filters.eq("patch", patch))
+                .projection(Projections.include("queue", "rank", "leagueShard", "participants.champion", "participants.lane"))) {
+            GameQueueType queue = enumValue(GameQueueType.class, match.getString("queue"));
+            TierType rank = enumValue(TierType.class, match.getString("rank"));
+            LeagueShard region = enumValue(LeagueShard.class, match.getString("leagueShard"));
+            for (Document participant : documents(match.get("participants"))) {
+                Filter filter = new Filter()
+                        .setPatch(patch)
+                        .setQueue(queue)
+                        .setRank(rank)
+                        .setRegion(region);
+                if (includeChampion) filter.setChampion(participant.getInteger("champion", 0));
+                if (GameQueueTypeUtils.hasLane(queue)) filter.setLane(enumValue(LaneType.class, participant.getString("lane")));
+                result.putIfAbsent(includeChampion ? filter.toKey() : filter.genericKey(), filter);
+            }
+        }
+        return new ArrayList<>(result.values());
+    }
+
+    private static <T extends Enum<T>> T enumValue(Class<T> type, String value) {
+        if (value == null || value.isBlank()) return null;
+        try { return Enum.valueOf(type, value); }
+        catch (IllegalArgumentException ignored) { return null; }
     }
 
     private static List<String> divisionNames(TierType tier) {

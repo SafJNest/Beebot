@@ -1,6 +1,6 @@
 # Fase 3 — query MariaDB → MongoDB
 
-Ogni query LoL usata da LeagueDB deve avere una controparte in MongoDB.java, mantenendo nomi e parametri il più possibile equivalenti.
+Ogni query LoL usata dal runtime deve avere una controparte in MongoDB.java. Le query MariaDB rimaste in LeagueDB sono esclusivamente sorgenti del backfill MongoMigration.
 
 ## Ownership
 

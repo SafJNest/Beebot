@@ -7,23 +7,23 @@
 
 ## Context
 
-La persistenza LoL attuale è concentrata in `LeagueDB`, una classe statica che contiene query SQL, mapping, aggregazioni e scritture per summoner, rank, mastery, match, participant, statistiche, leaderboard e champion data.
+La persistenza LoL storica è concentrata in `LeagueDB`, una classe statica che contiene query SQL e mapping per summoner, rank, mastery, match e participant. Il runtime deve essere separato dal backfill MariaDB.
 
 Il repository contiene già modelli canonici LoL, Redis come cache e servizi che usano il flusso `Redis -> database -> Riot`. La migrazione deve introdurre Mongo senza creare un secondo contratto HTTP o perdere dati durante il passaggio.
 
-## Decisione proposta
+## Decisione
 
 La prima migrazione copre solo `league_of_legends`. Gli altri domini MariaDB verranno trattati in ADR separati dopo il cutover LoL.
 
 La strategia operativa è:
 
-1. MariaDB primaria;
-2. mirror immediato verso Mongo dopo il commit;
-3. letture applicative Mongo-only;
-4. migrazione batch con checkpoint e high-water mark;
-5. MariaDB resta writer compatibile finché il cutover non viene approvato.
+1. `MongoMigration` legge MariaDB con checkpoint e high-water mark;
+2. il runtime LoL legge e scrive esclusivamente MongoDB;
+3. Redis resta solo cache;
+4. Riot API resta sorgente esterna per fallback e refresh;
+5. `LeagueDB` resta un adapter SQL usato esclusivamente da `MongoMigration`.
 
-Il mirror fallito viene loggato e non modifica il risultato MariaDB. Non esistono fallback di lettura, outbox o proxy dual-write.
+Non esistono query MariaDB, mirror, fallback SQL, outbox o proxy dual-write nel runtime LoL.
 
 Mongo userà:
 
@@ -38,7 +38,7 @@ Mongo userà:
 
 ## Boundary
 
-`LeagueService` resta il boundary LoL cache-aware. La persistenza Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` resta il writer MariaDB compatibile e chiama `MongoDB` nello stesso metodo dopo il commit.
+`LeagueService` resta il boundary LoL cache-aware. La persistenza runtime Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` è confinato al percorso di lettura della migration.
 
 Spring continua a possedere solo controller, configurazione HTTP ed error model. `MongoRecord` è interno alle projection; gli oggetti complessi usano i modelli LoL già esistenti. Non esiste un `MongoResult` generico.
 
@@ -53,14 +53,7 @@ Spring continua a possedere solo controller, configurazione HTTP ed error model.
 
 ## Write path
 
-Ogni mutazione LoL che oggi scrive MariaDB deve passare da una funzione tipizzata che:
-
-1. aggiorna MariaDB;
-2. aggiorna Mongo con un'operazione idempotente;
-3. cattura e logga l'errore Mongo senza falsificare il risultato MariaDB;
-4. invalida le cache correlate.
-
-Nessun consumer può mantenere una `INSERT`, `UPDATE` o `DELETE` LoL indipendente.
+Ogni mutazione LoL runtime passa direttamente da `MongoDB` con un'operazione idempotente e invalida le cache correlate. Le query SQL sono ammesse solo nel percorso di lettura di `MongoMigration`; nessun consumer runtime può mantenere una `INSERT`, `UPDATE` o `DELETE` LoL.
 
 ## Configurazione
 
@@ -78,7 +71,7 @@ Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i p
 
 Questa migrazione non modifica implicitamente il contratto HTTP. I modelli canonici restano quelli di `lol.model`.
 
-I campi numerici dei modelli pubblici restano compatibili per il writer MariaDB, ma non sono persistiti nei documenti Mongo e non sono chiavi di lookup.
+I campi numerici dei modelli pubblici restano compatibili con il modello storico, ma non sono persistiti nei documenti Mongo e non sono chiavi di lookup.
 
 ## Conseguenze
 
@@ -88,15 +81,15 @@ I campi numerici dei modelli pubblici restano compatibili per il writer MariaDB,
 - participant e dati di profile possono essere letti con access pattern naturali;
 - le projection locali possono usare `MongoRecord`;
 - gli oggetti complessi riusano i modelli canonici, senza DTO Mongo duplicati;
-- il cutover è reversibile;
+- MariaDB resta disponibile per il backfill e per gli altri domini;
 - la stessa infrastruttura Mongo potrà essere riusata dagli altri domini.
 
 ### Negative
 
-- durante la transizione esistono due storage da monitorare;
+- il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
 - alcune projection, come leaderboard, devono essere mantenute;
 - il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
-- non esiste una transazione atomica MariaDB/Mongo; il mirror è quindi best-effort e osservabile.
+- il backfill e il runtime devono essere verificati separatamente.
 
 ## Gate
 

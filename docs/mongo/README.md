@@ -4,10 +4,10 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 
 ## Stato operativo
 
-- MariaDB resta il writer compatibile.
-- Dopo ogni commit MariaDB, LeagueDB chiama direttamente MongoDB.
+- MongoDB è l'unico storage runtime LoL.
+- MariaDB viene letto esclusivamente da MongoMigration per il backfill.
 - Le letture applicative LoL passano da MongoDB; non esiste fallback MariaDB.
-- Un errore del mirror Mongo viene loggato e non annulla il risultato MariaDB.
+- Un errore Mongo è esplicito nel runtime e non attiva fallback MariaDB.
 - App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
 - Custom builds e summoner.metrics sono fuori scope.
 - Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
@@ -22,7 +22,8 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 
 La persistenza Mongo LoL ha tre file:
 
-- MongoDB.java: URI, database, schema, indici, query, mapping e write mirror;
+- MongoDB.java: URI, database, schema, indici, query, mapping e write runtime;
+- LeagueDB.java: adapter SQL ridotto alle query necessarie a MongoMigration;
 - MongoRecord.java: wrapper leggero per projection e risultati locali;
 - MongoMigration.java: backfill batchabile MariaDB → Mongo.
 
@@ -50,7 +51,7 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - Participant: campi flat; nessun campo build mega-nested.
 - Eventi: collection `match_events`, payload JSON con checksum e dimensione originale; la collection viene creata con `block_compressor=zstd`.
 - Build e statistiche: `build` e `statistics` sono BSON strutturato, mai una stringa opaca e mai `legacyPayload`.
-- MariaDB: `champion_builds.data`, `champion_stats.data` e `profile_statistics.data` contengono JSON UTF-8.
+- MariaDB mantiene i dati storici letti dalla migration; il runtime LoL non li interroga.
 - Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
 
 ## Indici e spazio
@@ -67,4 +68,4 @@ rsc/settings.json contiene una URI server-level. La URI non deve contenere il da
 
 ## Gate
 
-Prima del completamento verificare massimo tre file Java sotto com.safjnest.mongo, nessun vecchio store/infrastructure/codec/mapper/outbox/proxy, letture LoL Mongo-only, chiamata Mongo visibile dopo ogni write MariaDB riuscita e test per database test, indici, bans, enum, participant flat, conversioni e migrazione resume/high-water mark.
+Prima del completamento verificare letture e scritture LoL Mongo-only, nessuna importazione runtime di LeagueDB, nessun mirror/outbox/proxy dual-write e test per database test, indici, bans, enum, participant flat, conversioni e migrazione resume/high-water mark.

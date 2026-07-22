@@ -1,70 +1,36 @@
 # Audit 02 — comando `summoner profile`
 
-## Percorso
+## Percorso runtime attuale
 
 ```text
 /summoner profile
-  -> SummonerProfile.execute
-  -> LeagueHandler.getSummonerByArgs
-  -> Riot API
-  -> LeagueDB.addLOLAccount(summoner)
-  -> commit MariaDB + MongoDB.mirrorSummoner
-  -> LeagueMessage.send
-  -> LeagueMessage.getSummonerEmbed
-  -> LeagueService.getAdvancedLOLData
-  -> MongoDB.findAdvancedProfileProjections(puuid, shard, ...)
+  -> risoluzione account/cache
+  -> Riot API solo quando il profilo Mongo è incompleto
+  -> LeagueService.upsertSummoner
   -> MongoDB.findAdvancedProfileProjections
-  -> LeagueService.toQueryResult
-  -> consumer lanes_played / champion aggregates
+  -> LeagueMessage.send
 ```
 
-Il comando inserisce l’account prima di costruire il messaggio: [SummonerProfile.java](../../src/main/java/com/safjnest/commands/lol/summoner/SummonerProfile.java:42) e [LeagueDB.java](../../src/main/java/com/safjnest/sql/database/LeagueDB.java:200).
+L’account e il profilo vengono persistiti direttamente in MongoDB. `LeagueDB` non è più coinvolto nel comando e non esiste un mirror MariaDB→Mongo nel runtime.
 
-## Contratto MariaDB storico
+## Contratto Mongo
 
-`LeagueDB.getAdvancedLOLData` non restituisce match raw. Restituisce una riga aggregata per champion con:
+`LeagueService.getAdvancedLOLData` usa `MongoDB.findAdvancedProfileProjections`, che raggruppa i participant Mongo per champion e restituisce:
 
 - `champion`;
 - `games`, `wins`, `losses`;
 - `avg_kills`, `avg_deaths`, `avg_assists`;
 - `total_lp_gain`;
-- `lanes_played` nel formato `LANE-wins-losses, ...`.
+- `lanes_played` nel formato consumato dal messaggio.
 
-Evidenza: [LeagueDB.java](../../src/main/java/com/safjnest/sql/database/LeagueDB.java:115).
+Il documento match resta la sorgente dei participant; la projection consegna al consumer l’aggregato già compatibile con `LeagueMessage`.
 
-## Contratto Mongo attuale
+## Account e cache
 
-`LeagueService.getAdvancedLOLData` invoca `MongoDB.findAdvancedProfileProjections`, che ora raggruppa i participant Mongo per champion e restituisce le colonne aggregate richieste dal consumer.
+`UserData` legge gli account collegati con `MongoDB.findAccountsByUserId`. L’aggiunta usa `LeagueService.upsertSummoner`; la rimozione usa `MongoDB.detachSummonerUser` con filtro su PUUID e `userId`. Dopo add/unlink vengono invalidati i riferimenti Redis e la cache locale viene aggiornata.
 
-Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:391), [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:565) e [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:575).
+Il PUUID è il valore stabile usato dall’autocomplete e dai lookup Mongo. La Riot API resta una sorgente di refresh, non una persistenza intermedia.
 
-Il documento match resta la sorgente dei participant, ma non viene più consegnato direttamente alla sezione advanced. Il consumer riceve `lanes_played` nel formato SQL compatibile e può continuare a eseguire `arrayColumn("lanes_played")`.
+## Verifica
 
-Evidenza: [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java:431).
-
-## Esito dopo il fix
-
-### Fix applicato — aggregato profile
-
-L’aggregazione ora produce `champion`, `games`, `wins`, `losses`, `avg_kills`, `avg_deaths`, `avg_assists`, `total_lp_gain` e `lanes_played`. Manca solo la prova runtime su dati reali e la pulizia delle eventuali chiavi Redis già calcolate con il vecchio mapping.
-
-## Insert account
-
-Il mirror dell’account è più lineare:
-
-1. `LeagueDB.addLOLAccount` esegue SQL e commit;
-2. passa il PUUID già presente nel modello Riot;
-3. `MongoDB.mirrorSummoner` rilegge solo i campi compatibili della riga MariaDB;
-4. `MongoDB.upsertSummoner` usa `puuid` come `_id` e non scrive identificativi numerici MariaDB.
-
-Il replace Mongo è ora verificato tramite `UpdateResult`; una riga MariaDB non riletta o un errore di conversione vengono registrati dal mirror.
-
-## Cache
-
-Il risultato incompatibile viene memorizzato in `RedisKey.ADVANCED_LOL_DATA` per 24 ore dopo la conversione. Dopo una correzione del mapping, il test deve eliminare questa chiave o usare un `puuid`/intervallo nuovo.
-
-Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:391).
-
-## Verifica residua
-
-Serve un test runtime con cache `ADVANCED_LOL_DATA` invalidata e confronto tra aggregato MariaDB e Mongo sullo stesso `puuid`, intervallo e queue.
+I test devono eseguire il flusso con una chiave Redis nuova o invalidata e confrontare la projection Mongo sullo stesso PUUID, intervallo e queue. La guardia runtime deve continuare a fallire se il codice del profilo reintroduce `LeagueDB`.

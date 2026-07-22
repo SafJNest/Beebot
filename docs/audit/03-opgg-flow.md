@@ -6,7 +6,7 @@
 /opgg
   -> Opgg.execute
   -> LeagueHandler.getSummonerByArgs
-  -> LeagueDB.addLOLAccount
+  -> LeagueService.upsertSummoner
   -> LeagueMessage.build(OPGG)
   -> loadMatchesParallel
   -> LeagueService.getMatchList / Riot API
@@ -31,7 +31,7 @@ Per il blocco LP/rank chiama `LeagueService.getSummonerData`, che storicamente d
 - `win`;
 - `time_start`, `time_end`, `patch`.
 
-Evidenza del contratto SQL: [LeagueDB.java](../../src/main/java/com/safjnest/sql/database/LeagueDB.java:1010).
+Il contratto è Mongo: [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java).
 
 ## Rilievo
 
@@ -51,7 +51,7 @@ Per ogni match visualizzato `getOpggEmbed`:
 
 1. chiama `Tracker.queueMatch`, che salva l’id nella coda Redis;
 2. pianifica `LeagueHandler.updateSummonerDB(match)`, che inserisce/aggiorna solo gli account summoner;
-3. lascia al worker Tracker il successivo `saveMatch`, participant enrichment, rank ed eventi.
+3. lascia al worker Tracker il successivo upsert Mongo del match, enrichment participant, rank ed eventi.
 
 Evidenza: [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java:1310) e [Tracker.java](../../src/main/java/com/safjnest/lol/tracker/Tracker.java:160).
 
@@ -63,7 +63,7 @@ Durante un `/opgg` bisogna correlare:
 
 - id Riot visualizzato;
 - elemento Redis `TRACKER_PENDING_MATCH_LIST`;
-- riga MariaDB `match` dopo il worker;
+- documento Mongo `match` dopo il worker;
 - documento Mongo `match`;
 - `QueryResult` di `getSummonerData` e sue chiavi.
 

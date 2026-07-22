@@ -1,87 +1,46 @@
 # Audit 01 — flusso di scrittura match
 
-## Percorso analizzato
+## Percorso runtime attuale
 
-Il percorso principale è quello usato dal tracker:
+Il tracker usa MongoDB come unica persistenza LoL:
 
 ```text
 Riot LOLMatch
   -> Tracker.analyzeMatchHistory(...)
-  -> LeagueDB.saveMatch(...)
-  -> commit MariaDB
-  -> MongoDB.mirrorMatch(mariaMatchId)
-  -> LeagueDB.getMatch(region, gameId)
-  -> MongoDB.upsertMatch(fullGameId, Match)
-  -> LeagueDB.setSummonerData(...)
-  -> MongoDB.mirrorParticipant(...)
-  -> LeagueDB.setMatchRank(...)
-  -> MongoDB.mirrorMatchRank(...)
-  -> LeagueDB.setMatchEvent(...)
-  -> MongoDB.mirrorMatchEvents(...)
+  -> MongoDB.upsertMatchDocument(full Riot match id, Match)
+  -> MongoDB.upsertParticipant(full Riot match id, Participant)
+  -> MongoDB.updateMatchRank(...)
+  -> MongoDB.upsertMatchEvents(...)
 ```
 
-Evidenza: `Tracker` salva prima il match e poi aggiorna account e participant in [Tracker.java](../../src/main/java/com/safjnest/lol/tracker/Tracker.java:358), mentre `LeagueDB` affianca i mirror in [LeagueDB.java](../../src/main/java/com/safjnest/sql/database/LeagueDB.java:1030) e [LeagueDB.java](../../src/main/java/com/safjnest/sql/database/LeagueDB.java:396).
+Il percorso non passa da `LeagueDB`, non usa un id numerico MariaDB e non esegue mirror. `LeagueDB` resta disponibile esclusivamente per `MongoMigration`.
 
-## Comportamento atteso
+## Contratto Mongo
 
-Dopo il commit MariaDB devono esistere:
+Per ogni match devono esistere:
 
 - `match._id = REGION_gameId`;
-- `region = REGION` e `game_id = gameId` derivati dal full Riot id;
-- nessun identificativo numerico MariaDB nel documento;
+- `region` e `game_id` derivati dal full Riot match id;
 - `bans.BLUE` e `bans.RED` come array BSON;
-- participant flat dentro `participants`, inclusi `rank`, `lp` e `gain`;
-- rank ed eventi aggiornati sullo stesso documento;
-- mirror idempotenti e verificabili dal risultato Mongo.
+- participant flat dentro `participants`, inclusi `rank`, `lp` e `gain` quando disponibili;
+- rank ed eventi aggiornati tramite scritture Mongo separate/idempotenti;
+- eventi nella collection `match_events`, referenziati dal full match id.
 
-## Rilievi
+## Implementazione
 
-### Risolto — mirror con esito esplicito
+`Tracker` converte direttamente `LOLMatch` nel modello canonico `Match` e i partecipanti Riot nel modello canonico `Participant`. Il match viene scritto prima, seguito dagli upsert atomici dei partecipanti; rank ed eventi sono aggiornati sullo stesso identificativo full Riot.
 
-`MongoDB.mirrorMatch` e `mirrorParticipant` ora trasformano match, participant o riga MariaDB mancanti in eccezioni del mirror. Il wrapper registra operation, collection, id e messaggio, senza falsificare il risultato MariaDB.
+Il controllo di esistenza per i match già processati usa `MongoDB.hasMatch`. Le vecchie chiamate `saveMatch`, `setSummonerData`, `setMatchRank`, `setMatchEvent` e `updateSummonerEntries` di `LeagueDB` non fanno più parte del runtime.
 
-Evidenza: [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:1248) e [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:1258).
+## Verifica
 
-### Risolto — participant, rank ed eventi verificano il risultato
+La verifica statica deve trovare query MariaDB soltanto in `MongoMigration` e nell’adapter `LeagueDB` usato dalla migration. Il test `LeagueDbRuntimeGuardTest` impedisce nuove importazioni runtime di `LeagueDB`.
 
-`mirrorParticipant` ora verifica il booleano di `upsertParticipant`; `mirrorMatchRank` e `mirrorMatchEvents` verificano allo stesso modo i relativi update. Un match mancante produce un log di mirror fallito.
-
-Evidenza: [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:801) e [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:821).
-
-### Risolto — `replaceOne` acknowledged
-
-La funzione comune `replace` ora verifica `UpdateResult.wasAcknowledged()` e solleva un errore esplicito quando il server non conferma la write.
-
-Evidenza: [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:1557).
-
-### Risolto — commit MariaDB e `QueryResult.success`
-
-`AbstractDB.query` ora imposta `result.success = true` solo dopo il commit riuscito. `setSummonerData` mantiene inoltre l’inserimento idempotente e aggiorna `rank`, `lp` e `gain` quando la riga participant esiste già.
-
-Evidenza: [AbstractDB.java](../../src/main/java/com/safjnest/sql/AbstractDB.java:29) e [LeagueDB.java](../../src/main/java/com/safjnest/sql/database/LeagueDB.java:1025).
-
-## Verifica runtime necessaria
-
-Per un match noto bisogna acquisire questa sequenza:
-
-```sql
-SELECT id, game_id, region, bans, rank, events
-FROM match
-WHERE game_id = '<GAME_ID>' AND region = '<REGION>';
-
-SELECT match_id, summoner_id, puuid, champion, win, rank, lp, gain
-FROM participant
-WHERE match_id = <MARIA_MATCH_ID>;
-```
-
-E poi verificare in Mongo:
+Per una verifica runtime con un match noto:
 
 ```javascript
 db.match.findOne({ _id: "<REGION>_<GAME_ID>" })
+db.match_events.find({ _id: "<REGION>_<GAME_ID>" })
 ```
 
-Il confronto deve controllare anche il numero dei participant e non solo l’esistenza del documento.
-
-## Decisione
-
-Restano da verificare runtime `saveMatch == 0` nel Tracker, la presenza di tutti i participant dopo il worker e la riconciliazione su un match reale.
+Il confronto deve controllare anche il numero dei participant e la presenza degli eventi separati.

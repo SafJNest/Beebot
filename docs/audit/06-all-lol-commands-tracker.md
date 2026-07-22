@@ -1,20 +1,20 @@
 # Audit 06 — comandi LoL e Tracker
 
-- Data: 2026-07-19
+- Data: 2026-07-22
 - Tipo: audit statico end-to-end
 - Scope: tutti i comandi sotto `commands/lol`, `LeagueMessage`, `LeagueService`, `LeagueDB`, `MongoDB`, `Tracker` e `TrackerScheduler`
-- Fix applicati nello stesso pass: schema match Mongo, query profile/OP.GG, ack delle write Mongo e bans JSON
+- Fix applicati nello stesso pass: runtime LoL Mongo-only, schema match Mongo, query profile/OP.GG, account ownership e bans/eventi JSON
 
 ## Mappa dei comandi
 
 | Comando | Entry point | Percorso dati | Esito statico |
 |---|---|---|---|
-| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | Riot summoner → `LeagueDB.addLOLAccount` → mirror Mongo → profile/advanced query Mongo → Redis | coerente dopo la separazione aggregate/participant |
+| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | account/cache → Riot fallback → `LeagueService.upsertSummoner` → profile/advanced query Mongo → Redis | coerente, senza MariaDB runtime |
 | `/summoner overview` | `SummonerOverview` | Riot identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
 | `/summoner champion` | `SummonerChampion` | Riot identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
-| `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | MariaDB account/user → mirror summoner Mongo | coerente; verifica il risultato SQL prima di confermare il link |
-| `/summoner unlink` | `SummonerUnlink` → `UserData.deleteRiotAccount` | MariaDB detach → `MongoDB.detachSummoner` | coerente; dati match non vengono cancellati, come previsto |
-| `/summoner track` | `SummonerTrack` | MariaDB tracking update → mirror `tracking` Mongo → Tracker | **P1**: il comando non controlla il booleano restituito da `trackSummoner` |
+| `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | `MongoDB.upsertSummoner` con ownership `userId` | coerente; aggiorna cache locale e Redis |
+| `/summoner unlink` | `SummonerUnlink` → `UserData.deleteRiotAccount` | `MongoDB.detachSummonerUser` con ownership `userId` | coerente; dati match non vengono cancellati |
+| `/summoner track` | `SummonerTrack` | `MongoDB.setSummonerTracking` → Tracker | coerente; il comando controlla l’esito Mongo |
 | `/opgg` | `Opgg` → `LeagueMessage.getOpggEmbed` | Riot match list/detail → query participant Mongo per rank/lp/gain → Tracker queue | coerente dopo `findSummonerData`; persistenza match è asincrona |
 | `/livegame` | `Livegame` → spectator flow | Redis spectator → Riot spectator API; account mirror iniziale | coerente, non è un flusso match persistito |
 | `/champion` | `Champion` | `ChampionStatsService` + `BuildService` → Redis/Mongo aggregate → embed | coerente staticamente; non usa MariaDB match direttamente |
@@ -28,7 +28,7 @@
 
 ### Profile e overview
 
-`SummonerProfile` aggiunge l’account in MariaDB. Dopo il commit, `LeagueDB.addLOLAccount` chiama il mirror Mongo. `LeagueMessage.getSummonerEmbed` legge:
+`SummonerProfile` risolve e aggiorna l’account direttamente in Mongo. `LeagueMessage.getSummonerEmbed` legge:
 
 1. identity e rank tramite `LeagueService`/Mongo;
 2. statistiche aggregate tramite `findAdvancedProfileProjections`;
@@ -43,7 +43,7 @@ Il profile aggregate ora raggruppa i participant Mongo per `champion` e produce 
 
 Il comando carica le partite da Riot per mostrare subito l’embed. In parallelo:
 
-1. l’account viene scritto/mirrorato;
+1. l’account viene aggiornato direttamente in Mongo;
 2. `LeagueService.getSummonerData` legge le partite Mongo ordinate cronologicamente;
 3. `findSummonerData` estrae dal participant del summoner `game_id`, `rank`, `lp`, `gain`, `win`, `time_start`, `time_end` e `patch`;
 4. `Tracker.queueMatch` inserisce il full Riot match id nella coda Redis;
@@ -58,12 +58,9 @@ Il percorso principale è:
 ```text
 Riot match
   → Tracker.analyzeMatchHistory
-  → LeagueDB.saveMatch + commit MariaDB
-  → MongoDB.mirrorMatch
-  → LeagueDB.setSummonerData per participant
-  → MongoDB.mirrorParticipant
-  → LeagueDB.setMatchRank / setMatchEvent
-  → MongoDB.updateMatchRank / match_events WiredTiger Zstandard
+  → MongoDB.upsertMatchDocument
+  → MongoDB.upsertParticipant per participant
+  → MongoDB.updateMatchRank / match_events
 ```
 
 Il documento `match` ora contiene:
@@ -88,9 +85,9 @@ Il documento `match` ora contiene:
 
 ## Rischi aperti del Tracker
 
-### P0 — salvare dopo un `saveMatch` fallito
+### P0 — verificare il salvataggio Mongo
 
-`Tracker.analyzeMatchHistory(LOLMatch, Summoner, QueryRecord)` continua il flusso anche se `LeagueDB.saveMatch` restituisce `0`. In quel caso può tentare di inserire participant con `match_id = 0` e aggiornare rank/eventi con un id non valido. Il task deve fermarsi e loggare il match completo quando il commit MariaDB non produce un id.
+Il flusso runtime non usa più un id MariaDB intermedio. Il controllo da mantenere è che `MongoDB.upsertMatchDocument` confermi il match prima degli upsert dei participant e che gli update rank/eventi usino il full Riot match id.
 
 ### P1 — queue richiesta ignorata
 
@@ -118,8 +115,8 @@ Nel ramo OP.GG che legge `QueryResult`, `previousRow` viene individuata corretta
 
 ### P2 — sincronizzazione cache
 
-Il mirror aggiorna Mongo, mentre alcune cache Redis del profile e dell’OP.GG hanno TTL propri. Una riconciliazione deve invalidare `SUMMONER_DATA`, `ADVANCED_LOL_DATA` e profile page dopo un batch Tracker completato.
+Le cache Redis del profile e dell’OP.GG hanno TTL propri. Una riconciliazione deve invalidare `SUMMONER_DATA`, `ADVANCED_LOL_DATA` e la profile page dopo un batch Tracker completato.
 
 ## Verdetto
 
-I comandi statici e Data Dragon non presentano un problema Mongo diretto. I flussi profile, OP.GG e match ora hanno contratti Mongo distinti e coerenti. Il Tracker non è ancora dichiarabile completamente affidabile: il blocco su `saveMatch == 0`, la queue ignorata e la gestione dei participant mancanti restano fix separati e documentati, non modificati in questo pass.
+I comandi statici e Data Dragon non presentano un problema Mongo diretto. I flussi account, profile, OP.GG e match ora hanno contratti Mongo distinti e coerenti. Restano da verificare separatamente i dettagli di queue e la gestione dei participant Riot mancanti; non sono fallback MariaDB.

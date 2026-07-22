@@ -9,7 +9,6 @@ import com.safjnest.mongo.MongoRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.log.LoggerIDpair;
 
@@ -208,16 +207,23 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
-        if (result) riotAccounts.put(s.getPUUID(), s.getPlatform().name());
+        boolean result = com.safjnest.lol.service.LeagueService.upsertSummoner(s, USER_ID);
+        if (result) {
+            riotAccounts.put(s.getPUUID(), s.getPlatform().name());
+            com.safjnest.lol.service.LeagueService.invalidateSummoner(s.getPUUID(), s.getPlatform());
+        }
         
         return result;
     }
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
-        if (result) riotAccounts.remove(puuid);
+        String region = riotAccounts.get(puuid);
+        boolean result = MongoDB.detachSummonerUser(puuid, USER_ID);
+        if (result) {
+            riotAccounts.remove(puuid);
+            if (region != null) com.safjnest.lol.service.LeagueService.invalidateSummoner(puuid, no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.valueOf(region));
+        }
         
         return result;
     }

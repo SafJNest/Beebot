@@ -21,21 +21,21 @@ Il percorso HTTP usa modelli canonici e legge base, rank e mastery con una sola 
 
 ## Rilievi
 
-### P1 — bootstrap con due proprietari della stessa scrittura
+### Fix applicato — bootstrap con un solo owner
 
-`ProfileBootstrapService` chiama `LeagueDB.addLOLAccount`, che già esegue il mirror Mongo, e subito dopo chiama direttamente `MongoDB.upsertSummoner`. Inoltre `LeagueDB.updateSummonerEntries` esegue il mirror rank e il bootstrap richiama ancora direttamente `MongoDB.upsertRanks`.
+`ProfileBootstrapService` usa `LeagueService.upsertSummoner` e poi `MongoDB.upsertRanks`. Non esistono più due proprietari MariaDB/Mongo della stessa scrittura.
 
 Evidenza: [ProfileBootstrapService.java](../../src/main/java/com/safjnest/lol/service/ProfileBootstrapService.java:44).
 
-Il secondo write non è necessariamente errato, ma rende difficile capire quale risultato sia quello valido e può sovrascrivere campi preservati dal mirror precedente. Va deciso un solo owner operativo.
+Il bootstrap ha quindi un solo owner operativo: MongoDB.
 
-### P1 — refresh statistiche bypassa MariaDB
+### Coerente — refresh statistiche Mongo
 
-`ProfileStatisticsService.refresh` legge match da Mongo e salva il risultato con `MongoDB.upsertProfileStatistics`. Non passa da `LeagueDB.saveProfileStatistics`, quindi questo flusso non è dual-write MariaDB → Mongo come previsto dal piano.
+`ProfileStatisticsService.refresh` legge match da Mongo e salva il risultato con `MongoDB.upsertProfileStatistics`. È il comportamento previsto per il runtime Mongo-only.
 
 Evidenza: [ProfileStatisticsService.java](../../src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java:104).
 
-Il comportamento può essere intenzionale per rendere Mongo il writer delle nuove statistiche, ma è una deviazione architetturale da registrare prima del cutover.
+MariaDB resta coinvolto solo nei percorsi espliciti di `MongoMigration`.
 
 ### P1 — cache `ready` dipende da dati aggregati già validi
 
@@ -49,7 +49,7 @@ Per un `puuid` non presente in Mongo:
 
 1. chiamare l’endpoint due volte;
 2. verificare il primo `202 profile_pending`;
-3. osservare bootstrap, riga MariaDB e documento Mongo;
+3. osservare bootstrap e documento Mongo;
 4. verificare rank e mastery nel documento summoner;
 5. verificare la creazione di `profile_statistics` dopo il refresh;
 6. verificare invalidazione di `PROFILE_PAGE` e risposta successiva `200`/`PARTIAL`.

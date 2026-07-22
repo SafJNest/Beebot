@@ -22,11 +22,11 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 | `LeagueDB.getSummonerData(puuid, shard)` → OP.GG | `findSummonerData` | participant rows con `game_id`, `rank`, `lp`, `gain`, `win` | **fix applicato; runtime da verificare** |
 | `LeagueDB.getAllGamesForAccount` → profile | `getAllGamesForAccount` | `game_id`, `queue`, `win` | coerente, da verificare runtime |
 | `LeagueDB.getMatchHistory/count` | `getMatchHistory/countMatchHistory` | participant, champion e lane nello stesso `$elemMatch`; match completi solo dopo paging; count diretto Mongo senza lookup summoner preliminare | **fix applicato; runtime da verificare** |
-| `LeagueDB.getMatch` usato dal mirror | `MongoDB.mirrorMatch` + `upsertMatch` | `_id` full Riot, `region`, `game_id`, match completo | ack e dati mancanti ora producono errore di mirror loggato |
-| `LeagueDB.setSummonerData` | `mirrorParticipant` + `upsertParticipant` | participant flat aggiornato nel match con `rank`, `lp`, `gain` | insert idempotente + update rank/lp/gain; ack e dati mancanti loggati |
+| `LeagueDB.getMatch` usato dalla migration | `MongoMigration` + `MongoDB.upsertMatchDocument` | `_id` full Riot, `region`, `game_id`, match completo | MariaDB letto solo dalla migration; runtime direct-write Mongo |
+| `LeagueDB.setSummonerData` storico | `MongoDB.upsertParticipant` | participant flat aggiornato nel match con `rank`, `lp`, `gain` | il runtime usa conversione Riot e upsert idempotente direct-write Mongo |
 | `LeagueDB.getProfileStatistics` | `findProfileStatistics` | `ProfileStatistics` JSON/BSON strutturato e batch `_id $in` | mapping presente, write owner invariato |
 | `Tracker.analyzeChampionData` | `findMatchBans` | stringa JSON valida | **fix applicato con `Document.toJson()`** |
-| `LeagueDB.saveChampionBuild/Stats` | `upsertChampionBuild/Statistics` | JSON MariaDB, BSON Mongo, bulk unordered per batch | ack del replace/bulk verificato |
+| `LeagueDB.saveChampionBuild/Stats` storico | `upsertChampionBuild/Statistics` | JSON/BSON Mongo, bulk unordered per batch | ack del replace/bulk verificato |
 
 ## Backlog prioritizzato
 
@@ -36,7 +36,7 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 2. aggiungere un test di contratto che verifichi le chiavi consumate da `LeagueMessage`;
 3. eseguire il caso reale con un match noto e verificare i participant dentro il documento Mongo.
 
-### P1 — rendere affidabile il dual-write
+### P1 — rendere affidabili gli aggiornamenti Mongo
 
 1. verificare con il runtime il writer effettivo di `ProfileStatisticsService.refresh`;
 2. correggere `Tracker` su queue, participant Riot null e queue Redis incoerente;
@@ -46,8 +46,8 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 
 1. invalidare le chiavi Redis `ADVANCED_LOL_DATA` e `SUMMONER_DATA` durante i test di riconciliazione;
 2. aggiungere correlation id comune tra comando, task Tracker, MariaDB match id e `_id` Mongo;
-3. registrare tempi e conteggi per ogni fase: SQL commit, mirror summoner, mirror match, participant count, rank/event update.
+3. registrare tempi e conteggi per ogni fase: upsert summoner, upsert match, participant count, rank/event update.
 
 ## Conclusione
 
-I fix coprono il contratto del documento match, l'upsert participant atomico, la rimozione Kryo, le projection calde, il batch profile/leaderboard e le aggregazioni principali. Restano necessarie solo la verifica runtime con Mongo reale, gli `explain` e la riconciliazione delle cache.
+I fix coprono il contratto del documento match, l'upsert participant atomico, le projection calde, il batch profile/leaderboard e le aggregazioni principali. Il runtime LoL è Mongo-only; restano la verifica runtime con Mongo reale, gli `explain` e la riconciliazione delle cache.

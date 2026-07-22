@@ -7,11 +7,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.stream.Collectors;
 
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.PatchUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 
 public class Filter {
 
@@ -158,75 +155,6 @@ public class Filter {
         return this;
     }
 
-    public String sql() {
-        StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (queue != null)
-            sb.append(" AND m.queue = '").append(queue).append("'");
-        if (patch != null)
-            sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (rank != null)
-            sb.append(rankSql());
-        if (region != null)
-            sb.append(" AND m.region = '").append(region).append("'");
-        if (lane != null && GameQueueTypeUtils.hasLane(queue))
-            sb.append(" AND p.lane = '").append(lane).append("'");
-        if (opponent != 0) {
-            sb.append(" AND EXISTS (SELECT 1 FROM participant opp WHERE opp.match_id = p.match_id")
-              .append(" AND opp.champion = ").append(opponent);
-            if (GameQueueTypeUtils.isCherry(queue))
-                sb.append(" AND opp.subteam <> p.subteam");
-            else {
-                sb.append(" AND opp.team <> p.team");
-                if (lane != null && GameQueueTypeUtils.hasLane(queue))
-                    sb.append(" AND opp.lane = p.lane");
-            }
-            sb.append(")");
-        }
-        if (duo != 0) {
-            sb.append(" AND EXISTS (SELECT 1 FROM participant duo WHERE duo.match_id = p.match_id")
-              .append(" AND duo.champion = ").append(duo)
-              .append(" AND duo.id <> p.id");
-            if (GameQueueTypeUtils.isCherry(queue))
-                sb.append(" AND duo.subteam = p.subteam");
-            else
-                sb.append(" AND duo.team = p.team");
-            sb.append(")");
-        }
-        return sb.toString();
-    }
-
-    public String sqlMatchOnly() {
-        StringBuilder sb = new StringBuilder("WHERE 1=1");
-        if (patch != null)
-            sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (queue != null)
-            sb.append(" AND m.queue = '").append(queue).append("'");
-        if (rank != null)
-            sb.append(rankSql());
-        if (region != null)
-            sb.append(" AND m.region = '").append(region).append("'");
-        return sb.toString();
-    }
-
-    /** Tutti i participant dei match filtrati; una lane seleziona i match compatibili. */
-    public String sqlAllParticipants() {
-        StringBuilder sb = new StringBuilder(
-                "FROM participant p JOIN `match` m ON p.match_id = m.id "
-                + "LEFT JOIN summoner s ON s.id = p.summoner_id WHERE 1=1");
-        if (patch != null)
-            sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (queue != null)
-            sb.append(" AND m.queue = '").append(queue).append("'");
-        if (rank != null)
-            sb.append(rankSql());
-        if (region != null)
-            sb.append(" AND m.region = '").append(region).append("'");
-        if (lane != null && GameQueueTypeUtils.hasLane(queue))
-            sb.append(" AND EXISTS (SELECT 1 FROM participant lane_filter WHERE lane_filter.match_id = p.match_id")
-              .append(" AND lane_filter.lane = '").append(lane).append("')");
-        return sb.toString();
-    }
-
     public String toKey() {
         String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
                 + val(patch) + "|" + val(region);
@@ -245,14 +173,6 @@ public class Filter {
         String raw = val(queue) + "|" + val(rank) + "|"
                 + val(patch) + "|" + val(region) + "|" + val(lane);
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String rankSql() {
-        if (rank == TierType.CHALLENGER)
-            return " AND m.rank IN ('CHALLENGER', 'GRANDMASTER')";
-        if (rankBehavior == RankBehavior.EXACT)
-            return " AND m.rank = '" + rank + "'";
-        return " AND m.rank IN ('" + String.join("', '", TierDivisionUtils.getHigherTiers(rank).stream().map(TierType::name).collect(Collectors.toList())) + "')";
     }
 
     private static String val(Object o) {

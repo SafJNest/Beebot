@@ -74,10 +74,41 @@ public class LeagueService {
         );
         if (summoner != null) return summoner;
 
-        try { summoner = riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid); } 
+        Summoner stored = MongoDB.findSummoner(puuid, shard);
+        try { summoner = riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid); }
         catch (Exception e) { return null; }
-        if (summoner != null) RedisClient.set(key, summoner, TTL_SUMMONER);
+        if (summoner != null) {
+            upsertSummoner(summoner, null, stored == null ? null : stored.riotId());
+            RedisClient.set(key, summoner, TTL_SUMMONER);
+        }
         return summoner;
+    }
+
+    public static boolean upsertSummoner(
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            String userId) {
+        return upsertSummoner(summoner, userId, null);
+    }
+
+    private static boolean upsertSummoner(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            String userId,
+            String knownRiotId) {
+        if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null) return false;
+
+        String riotId = knownRiotId != null ? knownRiotId : MongoDB.findSummonerName(summoner.getPUUID(), summoner.getPlatform());
+        if (riotId == null || riotId.isBlank()) {
+            RiotAccount account = getRiotAccountByPuuid(summoner.getPUUID(), summoner.getPlatform());
+            if (account != null) riotId = account.getName() + "#" + account.getTag();
+        }
+
+        return MongoDB.upsertSummoner(new Summoner(
+                0,
+                summoner.getPUUID(),
+                riotId,
+                summoner.getPlatform().name(),
+                summoner.getSummonerLevel(),
+                summoner.getProfileIconId()), userId);
     }
 
     public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
@@ -137,6 +168,7 @@ public class LeagueService {
     public static void invalidateSummoner(String puuid, LeagueShard shard) {
         RedisClient.delete(RedisKey.SUMMONER.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.ACCOUNT.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.USER_ID_BY_PUUID.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));

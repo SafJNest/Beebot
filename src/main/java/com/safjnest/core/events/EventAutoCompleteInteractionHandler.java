@@ -24,14 +24,14 @@ import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.mongo.MongoDB;
+import com.safjnest.mongo.MongoRecord;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
@@ -497,27 +497,17 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> personalSummoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
-
-        if (accounts == null || accounts.isEmpty()) {
-            return choices;
-        }
-        
-        HashMap<String, String> accountNames = new HashMap<>();
-        for (String puuid : accounts.keySet()) {
-            LeagueShard shard = LeagueShard.valueOf(accounts.get(puuid));
-            RiotAccount riotAccount = LeagueService.getRiotAccountByPuuid(puuid, shard);
-            accountNames.put(puuid, riotAccount.getName() + "#" + riotAccount.getTag());
-        }
+        List<MongoRecord> accounts = MongoDB.findAccountsByUserId(e.getUser().getId());
+        if (accounts.isEmpty()) return choices;
 
         ArrayList<Choice> personal = new ArrayList<>();
-        
-        if (isFocused) {
-            accountNames.forEach((k, v) -> {
-                if (v.toLowerCase().contains(value.toLowerCase())) personal.add(new Choice(v, k));
-            });
+        for (MongoRecord account : accounts) {
+            String puuid = account.getAsString("puuid");
+            if (puuid == null) puuid = account.getAsString("_id");
+            String riotId = account.getAsString("riotId");
+            if (puuid == null || riotId == null || riotId.isBlank()) continue;
+            if (!isFocused || riotId.toLowerCase().contains(value.toLowerCase())) personal.add(new Choice(riotId, puuid));
         }
-        else accountNames.forEach((k, v) -> personal.add(new Choice(v, k)));
 
         return personal;
 
@@ -529,25 +519,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         LeagueShard defaultShard = e.isFromGuild() ? GuildCache.getGuildOrPut(e.getGuild().getId()).getLeagueShard(e.getChannelId()) : LeagueShard.EUW1;
         LeagueShard shard = e.getOption("region") != null ? LeagueShard.valueOf(e.getOption("region").getAsString().toUpperCase()) : defaultShard;
         
-        if (!isFocused) {
-            HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
-    
-            if (accounts == null || accounts.isEmpty()) {
-                return choices;
-            }
-            
-            for (String puuid : accounts.keySet()) {    
-                shard = LeagueShard.valueOf(accounts.get(puuid));
-                Summoner summoner = LeagueService.getSummonerByPuuid(puuid, shard);
-                RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(summoner);
-                choices.add(new Choice(
-                    riotAccount.getName() + "#" + riotAccount.getTag(), 
-                    riotAccount.getPUUID()
-                ));
-            }
-        
-            return choices;
-        }
+        if (!isFocused) return personalSummoner(e);
         
         choices = new ArrayList<>(LeagueService.getSummonerAutocomplete(value, shard));
         
@@ -688,4 +660,3 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     }
 }
-
