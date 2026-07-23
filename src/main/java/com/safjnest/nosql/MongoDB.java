@@ -58,7 +58,6 @@ import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
@@ -394,40 +393,38 @@ public final class MongoDB {
         return summoner == null ? new QueryRecord() : latestRegisteredRow(summoner, timeStart);
     }
 
-    public static List<Match> getMatchHistory(String puuid, LeagueMessageParameter parameter) {
-        traceRead("match.getMatchHistory", "puuid=" + puuid);
-        if (puuid == null || puuid.isBlank() || parameter == null) return List.of();
+    public static List<Match> getMatches(String puuid, Filter filter, int limit, int offset) {
+        traceRead("match.getMatches", "puuid=" + puuid);
+        if (puuid == null || puuid.isBlank() || filter == null) return List.of();
         List<Match> result = new ArrayList<>();
-        int offset = Math.max(0, parameter.getOffset());
-        int limit = Math.max(0, parameter.getMessageType().getPageItem());
+        int boundedOffset = Math.max(0, offset);
+        int boundedLimit = Math.max(0, limit);
         List<Match> candidates = new ArrayList<>();
-        Filter filter = parameter.toFilter();
         boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
-        FindIterable<Document> matches = matches().find(historyFilter(puuid, null, parameter))
+        FindIterable<Document> matches = matches().find(buildMatchFilter(puuid, null, filter, 0, 0))
                 .sort(Sorts.descending("timeStart"))
-                .skip(relationalFilter ? 0 : offset);
-        matches = matches.limit(relationalFilter ? 0 : limit > 0 ? Math.min(100, limit) : 100);
+                .skip(relationalFilter ? 0 : boundedOffset);
+        matches = matches.limit(relationalFilter ? 0 : boundedLimit > 0 ? Math.min(100, boundedLimit) : 100);
         int skipped = 0;
         for (Document document : matches) {
             Match match = readMatch(matchRecord(document));
             if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
-            if (relationalFilter && skipped++ < offset) continue;
+            if (relationalFilter && skipped++ < boundedOffset) continue;
             candidates.add(match);
-            if (limit > 0 && candidates.size() >= Math.min(100, limit)) break;
+            if (boundedLimit > 0 && candidates.size() >= Math.min(100, boundedLimit)) break;
         }
         attachEvents(candidates);
         result.addAll(candidates);
         return result;
     }
 
-    public static int countMatchHistory(String puuid, LeagueMessageParameter parameter) {
-        traceRead("match.countMatchHistory", "puuid=" + puuid);
-        if (puuid == null || puuid.isBlank() || parameter == null) return 0;
-        Filter filter = parameter.toFilter();
+    public static int countMatches(String puuid, Filter filter) {
+        traceRead("match.countMatches", "puuid=" + puuid);
+        if (puuid == null || puuid.isBlank() || filter == null) return 0;
         if (filter.opponent() == 0 && filter.duo() == 0)
-            return (int) Math.min(Integer.MAX_VALUE, matches().countDocuments(historyFilter(puuid, null, parameter)));
+            return (int) Math.min(Integer.MAX_VALUE, matches().countDocuments(buildMatchFilter(puuid, null, filter, 0, 0)));
         int count = 0;
-        for (Document document : matches().find(historyFilter(puuid, null, parameter)).projection(profileStatisticsMatchProjection())) {
+        for (Document document : matches().find(buildMatchFilter(puuid, null, filter, 0, 0)).projection(profileStatisticsMatchProjection())) {
             Match match = readMatch(matchRecord(document));
             if (ProfileStatistics.matchesFilter(match, puuid, filter)) count++;
         }
@@ -743,7 +740,7 @@ public final class MongoDB {
         traceRead("match.findProfileStatistics", "puuid=" + puuid + " filter=" + (filter == null ? "null" : filter.toSummonerKey()));
         if (puuid == null || puuid.isBlank() || filter == null) return List.of();
         List<Match> result = new ArrayList<>();
-        for (Document document : matches().find(profileMatchFilter(puuid, shard, filter, afterTime, untilTime))
+        for (Document document : matches().find(buildMatchFilter(puuid, shard, filter, afterTime, untilTime))
                 .projection(profileStatisticsMatchProjection())
                 .sort(Sorts.ascending("timeStart", "game_id"))) {
             Match match = read(matchRecord(document), Match.class);
@@ -760,7 +757,7 @@ public final class MongoDB {
         if (puuid == null || puuid.isBlank() || filter == null || limit <= 0) return List.of();
         List<MatchResult> result = new ArrayList<>();
         boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
-        FindIterable<Document> matches = matches().find(profileMatchFilter(puuid, shard, filter, 0, 0))
+        FindIterable<Document> matches = matches().find(buildMatchFilter(puuid, shard, filter, 0, 0))
                 .projection(matchResultProjection())
                 .sort(Sorts.descending("timeStart"));
         if (!relationalFilter) matches = matches.limit(Math.max(limit, Math.min(100, limit * 4)));
@@ -1877,11 +1874,7 @@ public final class MongoDB {
         return Filters.and(filters);
     }
 
-    private static Bson historyFilter(String puuid, LeagueShard shard, LeagueMessageParameter parameter) {
-        return profileMatchFilter(puuid, shard, parameter.toFilter(), 0, 0);
-    }
-
-    private static Bson profileMatchFilter(String puuid, LeagueShard shard, Filter filter, long afterTime, long untilTime) {
+    private static Bson buildMatchFilter(String puuid, LeagueShard shard, Filter filter, long afterTime, long untilTime) {
         List<Bson> filters = new ArrayList<>();
         LeagueShard selectedShard = filter.region() != null ? filter.region() : shard;
         if (selectedShard != null) filters.add(Filters.eq("leagueShard", selectedShard.name()));

@@ -1280,7 +1280,13 @@ public class LeagueMessage {
                 }
             }
             case OVERVIEW_OPGG -> {
-                matches = MongoDB.getMatchHistory(puuid, parameter);
+                Filter filter = parameter.toFilter();
+                matches = MongoDB.getMatches(
+                    puuid,
+                    filter,
+                    parameter.getMessageType().getPageItem(),
+                    parameter.getOffset()
+                );
                 eb = getChampionOPGG(eb, matches, summoner, puuid, parameter);
             }
             default -> {
@@ -2376,7 +2382,7 @@ public class LeagueMessage {
         for (Match match : matches) 
             eb = getOpggEmbedMatchPreview(eb, match, s, queryResult);
         
-        int totalPages = MongoDB.countMatchHistory(puuid, parameter);
+        int totalPages = MongoDB.countMatches(puuid, parameter.toFilter());
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
