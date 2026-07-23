@@ -2,6 +2,7 @@ package com.safjnest.lol.tracker;
 
 import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -599,7 +600,7 @@ public class Tracker {
 
 
         build.put("starter", matchData.getOrDefault("starter", "").split(","));
-        build.put("build", matchData.getOrDefault("items", "").split(","));
+        build.put("build", matchData.getOrDefault("build", "").split(","));
         build.put("boots", matchData.getOrDefault("boots", "0"));
 
         if (matchData.containsKey("support_item"))
@@ -870,7 +871,7 @@ public class Tracker {
 
                 Item item;
                 String participantId = String.valueOf(event.getParticipantId());
-                String itemType = i == 1 ? "starter" : "items";
+                String itemType = i == 1 ? "starter" : "build";
 
                 try {
                     switch (event.getType()) {
@@ -1198,7 +1199,10 @@ public class Tracker {
         List<CompletableFuture<Void>> shardTasks = new ArrayList<>();
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask task = () -> {
-                    for (TierDivisionType tier : TierDivisionType.values()) {
+                    List<TierDivisionType> tiers = new ArrayList<>(List.of(TierDivisionType.values()));
+                    Collections.reverse(tiers);
+                    tiers.remove(0);
+                    for (TierDivisionType tier : tiers) {
                         int page = 1;
                         if (tier == TierDivisionType.CHALLENGER_I || tier == TierDivisionType.GRANDMASTER_I
                                 || tier == TierDivisionType.UNRANKED || tier == TierDivisionType.MASTER_I)
