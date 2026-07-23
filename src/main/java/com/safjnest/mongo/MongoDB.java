@@ -461,6 +461,7 @@ public final class MongoDB {
         return result;
     }
 
+    // TODO Mongo build aggregation: use buildPath for the timeline build and include rune arrays.
     public static List<QueryRecord> getChampionBuildsRaw(Filter filter) {
         List<QueryRecord> result = new ArrayList<>();
         for (Document match : matches().find(championMatchFilter(filter, null)).projection(Projections.include(

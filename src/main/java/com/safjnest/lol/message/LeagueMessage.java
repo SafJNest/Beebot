@@ -689,7 +689,11 @@ public class LeagueMessage {
         return gameIds;
     }
 
-    private static EmbedBuilder getOpggEmbedMatch(EmbedBuilder eb, Match match, Summoner summoner) {
+    private static EmbedBuilder getOpggEmbedMatch(
+            EmbedBuilder eb,
+            Match match,
+            Summoner summoner,
+            List<QueryRecord> queryResult) {
         Participant me = null;
         for(Participant mp : match.participants){
             if(mp.puuid.equals(summoner.getPUUID())){
@@ -911,7 +915,7 @@ public class LeagueMessage {
 
                 eb.setDescription((me.win ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(getChampionName(me.champion))
                         + " " + getChampionName(me.champion) + " in " + (match.getDuration() / 60000) + " minutes\n"
-                        + getOpggMatchTitle(match, me, summoner));
+                        + getOpggMatchTitle(match, me, queryResult));
                 eb.addField("Blue Side", blueSide, true);
                 eb.addField("Red Side", redSide, true);
 
@@ -946,6 +950,141 @@ public class LeagueMessage {
         return eb;
     }
 
+    private static EmbedBuilder getOpggEmbedMatchPreview(
+            EmbedBuilder eb,
+            Match match,
+            Summoner summoner,
+            List<QueryRecord> queryResult) {
+        Participant me = null;
+        for (Participant participant : match.participants) {
+            if (summoner.getPUUID().equals(participant.puuid)) {
+                me = participant;
+                break;
+            }
+        }
+        if (me == null) return eb;
+
+        List<String> blue = new ArrayList<>();
+        List<String> red = new ArrayList<>();
+        for (Participant participant : match.participants) {
+            String participantString = CustomEmojiHandler.getFormattedEmoji(getChampionName(participant.champion))
+                    + " " + participant.kda;
+            if (participant.team == TeamType.BLUE) blue.add(participantString);
+            else if (participant.team == TeamType.RED) red.add(participantString);
+        }
+
+        String kda = me.kda;
+        String date = "<t:" + ((match.timeStart / 1000) + (match.getDuration() / 1000)) + ":R>";
+        switch (match.queue) {
+            case STRAWBERRY:
+                String swarmContent = CustomEmojiHandler.getFormattedEmoji(getChampionName(me.champion))
+                        + " Level: " + (me.level > 0 ? me.level : 1)
+                        + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
+                        + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
+                        + getSwarmItemsLine(me);
+                eb.addField("Swarm: " + (me.win ? "WIN" : "LOSE"), swarmContent, true);
+
+                StringBuilder swarmTeam = new StringBuilder();
+                for (Participant participant : match.participants) {
+                    swarmTeam.append(CustomEmojiHandler.getFormattedEmoji(getChampionName(participant.champion)))
+                            .append(" Level: ").append(participant.level > 0 ? participant.level : 1)
+                            .append(" | ").append(CustomEmojiHandler.getFormattedEmoji("golds"))
+                            .append(participant.goldEarned).append("\n");
+                }
+                eb.addField("Swarm Team", swarmTeam.toString(), true);
+                eb.addBlankField(true);
+                break;
+            case CHERRY:
+                String arenaContent = CustomEmojiHandler.getFormattedEmoji(getChampionName(me.champion)) + kda + "\n"
+                        + date + " | **" + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_")
+                        + CustomEmojiHandler.getFormattedEmoji("a" + getAugment(me, 0)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji("a" + getAugment(me, 1)) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell2 + "_")
+                        + CustomEmojiHandler.getFormattedEmoji("a" + getAugment(me, 2)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji("a" + getAugment(me, 3)) + "\n"
+                        + getItemsLine(me);
+
+                Map<String, List<String>> teams = new HashMap<>();
+                Map<Integer, String> positions = new HashMap<>();
+                for (Participant participant : match.participants) {
+                    String team = getArenaTeam(participant.subTeam);
+                    if (team.isEmpty()) continue;
+                    teams.computeIfAbsent(team, ignored -> new ArrayList<>())
+                            .add(CustomEmojiHandler.getFormattedEmoji(getChampionName(participant.champion)));
+                    positions.put(participant.subTeamPlacement, team);
+                }
+
+                boolean is3v3 = teams.getOrDefault("teamporos", List.of()).size() == 3;
+                int spacing = is3v3 ? 3 : 2;
+                int teamCount = is3v3 ? 3 : 4;
+                StringBuilder blueTeam = new StringBuilder();
+                StringBuilder redTeam = new StringBuilder();
+                for (int position = 1; position <= 8; position++) {
+                    String team = positions.get(position);
+                    List<String> champions = teams.get(team);
+                    if (champions == null || champions.size() < spacing) continue;
+                    String value = String.join("", champions.subList(0, spacing));
+                    String space = is3v3 ? "\n" : position % 2 == 0 ? "\n\n" : "\n";
+                    if (position <= teamCount) blueTeam.append(CustomEmojiHandler.getFormattedEmoji(team)).append(value).append(space);
+                    else redTeam.append(CustomEmojiHandler.getFormattedEmoji(team)).append(value).append(space);
+                }
+
+                String cherryTitle = is3v3 ? "ARENA 3v3" : "ARENA";
+                eb.addField(cherryTitle + ": " + (me.win ? "WIN" : "LOSE"), arenaContent, true);
+                eb.addField(is3v3 ? "Top 3" : "Top 4", blueTeam.toString(), true);
+                eb.addField("Others", redTeam.toString(), true);
+                break;
+            default:
+                String matchTitle = getOpggMatchTitle(match, me, queryResult);
+                String normalContent = CustomEmojiHandler.getFormattedEmoji(getChampionName(me.champion)) + kda
+                        + " | **Vision: **" + me.visionScore + "\n"
+                        + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_") + getFormattedPrimaryRunes(me) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell2 + "_") + getFormattedSecondaryRunes(me) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.roleQuestId)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item6)) + " | "
+                        + getItemsLine(me);
+                eb.addField(matchTitle, normalContent, true);
+                eb.addField("Blue Side", String.join("\n", blue), true);
+                eb.addField("Red Side", String.join("\n", red), true);
+                break;
+        }
+        return eb;
+    }
+
+    private static String getItemsLine(Participant participant) {
+        return CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item0)) + " "
+                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item1)) + " "
+                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item2)) + " "
+                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item3)) + " "
+                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item4)) + " "
+                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item5));
+    }
+
+    private static String getSwarmItemsLine(Participant participant) {
+        return getItemsLine(participant) + " "
+                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(participant.item6));
+    }
+
+    private static int getAugment(Participant participant, int index) {
+        return participant.augments != null && index < participant.augments.size() ? participant.augments.get(index) : 0;
+    }
+
+    private static String getArenaTeam(int subTeam) {
+        return switch (subTeam) {
+            case 1 -> "teamporos";
+            case 2 -> "teamminions";
+            case 3 -> "teamscuttles";
+            case 4 -> "teamkrugs";
+            case 5 -> "teamraptors";
+            case 6 -> "teamsentinels";
+            case 7 -> "teamwolves";
+            case 8 -> "teamgromps";
+            default -> "";
+        };
+    }
+
     private static String getChampionName(int championId) {
         StaticChampion champion = ChampionUtils.getChampion(championId);
         return champion == null ? String.valueOf(championId) : champion.getName();
@@ -977,7 +1116,7 @@ public class LeagueMessage {
         }
     }
 
-    private static String getOpggMatchTitle(Match match, Participant participant, Summoner summoner) {
+    private static String getOpggMatchTitle(Match match, Participant participant, List<QueryRecord> result) {
         String title = GameQueueTypeUtils.prettyName(match.queue) + ": " + (participant.win ? "WIN" : "LOSE");
         long gameId;
         try {
@@ -986,7 +1125,6 @@ public class LeagueMessage {
             return title;
         }
 
-        List<QueryRecord> result = LeagueService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         for (int index = 0; index < result.size(); index++) {
             QueryRecord row = result.get(index);
             if (row.getAsLong("game_id") != gameId) continue;
@@ -1051,6 +1189,7 @@ public class LeagueMessage {
     private static EmbedBuilder getCanonicalOpggEmbed(Summoner summoner, LeagueMessageParameter parameter, List<Match> matches) {
         LeagueShard shard = summoner.getPlatform();
         RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
+        List<QueryRecord> queryResult = LeagueService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1059,7 +1198,7 @@ public class LeagueMessage {
         for (Match match : matches) {
             try {
                 if (match.participants == null || match.participants.isEmpty()) continue;
-                embed = getOpggEmbedMatch(embed, match, summoner);
+                embed = getOpggEmbedMatchPreview(embed, match, summoner, queryResult);
             } catch (Exception exception) {
                 BotLogger.error("OPGG match rendering failed for " + match.gameId + ": " + exception.getMessage());
             }
@@ -1071,11 +1210,12 @@ public class LeagueMessage {
 
     private static EmbedBuilder getCanonicalOpggEmbedMatch(Summoner summoner, Match match) {
         RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
+        List<QueryRecord> queryResult = LeagueService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
-        embed.setTitle("Showing matches from " + LeagueShardUtils.getRegionFlag(summoner.getPlatform()) + " " + summoner.getPlatform().getRealmValue());
-        return getOpggEmbedMatch(embed, match, summoner);
+        embed.setTitle(GameQueueTypeUtils.prettyName(match.queue));
+        return getOpggEmbedMatch(embed, match, summoner, queryResult);
     }
 
     public static List<MessageTopLevelComponent> getOpggButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
@@ -1932,8 +2072,9 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, String puuid, LeagueMessageParameter parameter) {
+        List<QueryRecord> queryResult = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
         for (Match match : matches) 
-            eb = getOpggEmbedMatch(eb, match, s);
+            eb = getOpggEmbedMatchPreview(eb, match, s, queryResult);
         
         int totalPages = MongoDB.countMatchHistory(puuid, parameter);
         int pages = (int) Math.ceil((double) totalPages / 5);
