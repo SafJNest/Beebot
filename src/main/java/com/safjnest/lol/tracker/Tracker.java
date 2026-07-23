@@ -343,7 +343,7 @@ public class Tracker {
 
 
         build.put("starter", matchData.getOrDefault("starter", "").split(","));
-        build.put("build", matchData.getOrDefault("items", "").split(","));
+        build.put("build", matchData.getOrDefault("build", "").split(","));
         build.put("boots", matchData.getOrDefault("boots", "0"));
 
         if (matchData.containsKey("support_item"))
@@ -614,7 +614,7 @@ public class Tracker {
 
                 Item item;
                 String participantId = String.valueOf(event.getParticipantId());
-                String itemType = i == 1 ? "starter" : "items";
+                String itemType = i == 1 ? "starter" : "build";
 
                 try {
                     switch (event.getType()) {
