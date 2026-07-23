@@ -250,7 +250,7 @@ import com.safjnest.lol.utils.PatchUtils;
     public static String getFormattedSummonerName(Summoner s) {
         String dbName = MongoDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
         if (dbName != null) return dbName;
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getAccountFromSummoner(s);
         if (account == null) return "";
         return account.getName() + "#" + account.getTag();
     }
@@ -267,7 +267,7 @@ import com.safjnest.lol.utils.PatchUtils;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
 
-            return LeagueService.getSummonerByPuuid(firstAccount, shard);
+            return LeagueService.getRiotSummoner(firstAccount, shard);
         } catch (Exception e) {return null;}
     }
 
@@ -304,7 +304,7 @@ import com.safjnest.lol.utils.PatchUtils;
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
         }
-        return LeagueService.getSummonerByName(name, tag, guild.getLeagueShard(event.getChannel().getId()));
+        return LeagueService.getRiotSummoner(name, tag, guild.getLeagueShard(event.getChannel().getId()));
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
@@ -327,7 +327,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
-            s = LeagueService.getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
+            s = LeagueService.getRiotSummoner(event.getOption("summoner").getAsString(), shard);
         }
 
         if (s != null) return s;
@@ -336,12 +336,12 @@ import com.safjnest.lol.utils.PatchUtils;
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShardUtils.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
-        return LeagueService.getSummonerByName(name, tag, shard);
+        return LeagueService.getRiotSummoner(name, tag, shard);
     }
 
     public static boolean updateSummonerMongo(Summoner summoner) {
         if (summoner == null) return false;
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
         String riotId = account == null ? null : account.getName() + "#" + account.getTag();
         return MongoDB.upsertSummoner(summoner.getPUUID(), summoner.getPlatform(), riotId,
                 summoner.getSummonerLevel(), summoner.getProfileIconId(), null);
@@ -379,7 +379,7 @@ import com.safjnest.lol.utils.PatchUtils;
     private static final String QUEUE_COMMON_FLEX = "5v5 Ranked Flex Queue";
 
     public static String getSoloQStats(Summoner s) {
-        Rank rank = MongoDB.findRank(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_SOLO_5X5);
+        Rank rank = LeagueService.getRank(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_SOLO_5X5);
         String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
@@ -387,7 +387,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getFlexStats(Summoner s) {
-        Rank rank = MongoDB.findRank(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_FLEX_SR);
+        Rank rank = LeagueService.getRank(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_FLEX_SR);
         String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
@@ -439,7 +439,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getMastery(Summoner s, int nChamp) {
-        List<Mastery> list = LeagueService.getProfileMasteries(s.getPUUID(), s.getPlatform());
+        List<Mastery> list = LeagueService.getMasteries(s.getPUUID(), s.getPlatform());
         if (nChamp < 1 || nChamp > list.size()) {
             return "";
         }
@@ -460,14 +460,14 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static HashMap<Integer, Mastery> getMastery(Summoner s) {
         HashMap<Integer, Mastery> masteries = new HashMap<>();
-        for (Mastery mastery : LeagueService.getProfileMasteries(s.getPUUID(), s.getPlatform())) {
+        for (Mastery mastery : LeagueService.getMasteries(s.getPUUID(), s.getPlatform())) {
             masteries.put(mastery.championId(), mastery);
         }
         return masteries;
     }
 
     public static String getMasteryByChamp(Summoner s, int champId) {
-        for (Mastery mastery : LeagueService.getProfileMasteries(s.getPUUID(), s.getPlatform())) {
+        for (Mastery mastery : LeagueService.getMasteries(s.getPUUID(), s.getPlatform())) {
             if (mastery.championId() == champId) {
                 try {
                     return formatMasteryLine(mastery);
@@ -480,7 +480,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getMasteryByPuuid(String puuid, LeagueShard shard, int champion) {
-        for (Mastery mastery : LeagueService.getProfileMasteries(puuid, shard)) {
+        for (Mastery mastery : LeagueService.getMasteries(puuid, shard)) {
             if (mastery.championId() == champion) {
                 return formatMasteryLine(mastery);
             }

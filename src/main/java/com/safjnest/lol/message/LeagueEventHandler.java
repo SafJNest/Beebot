@@ -98,7 +98,7 @@ public class LeagueEventHandler extends EventButtonHandler {
     private void dispatch(InteractionHook hook, List<Button> buttons, LeagueContext context) {
         boolean hasLeft = buttons.stream().anyMatch(b -> (LeagueMessage.BUTTON_ID_PREFIX + "-left").equals(b.getCustomId()));
         String user_id = (hasLeft || context.userIdFallback()) ? context.user_id() : "";
-        Summoner s = LeagueService.getSummonerByPuuid(context.puuid(), LeagueShard.valueOf(context.region()));
+        Summoner s = LeagueService.getRiotSummoner(context.puuid(), LeagueShard.valueOf(context.region()));
         LeagueMessage.send(hook, user_id, s, s == null ? null : s.getPUUID(), context.parameter());
     }
 
@@ -174,7 +174,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "leftpage" -> parameter.setOffset(Math.max(0, parameter.getOffset() - parameter.getMessageType().getPageItem()));
             case "rightpage" -> parameter.setOffset(parameter.getOffset() + parameter.getMessageType().getPageItem());
             case "refresh" -> {
-                LeagueHandler.clearSummonerCache(LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region)));
+                LeagueHandler.clearSummonerCache(LeagueService.getRiotSummoner(puuid, LeagueShard.valueOf(region)));
                 try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
         }

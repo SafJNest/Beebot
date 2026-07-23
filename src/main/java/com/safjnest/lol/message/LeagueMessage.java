@@ -384,7 +384,7 @@ public class LeagueMessage {
                 break;
         }
 
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getAccountFromSummoner(s);
         Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
@@ -404,7 +404,7 @@ public class LeagueMessage {
 //                                                                                              ███    ███
 
     public static EmbedBuilder getSummonerEmbed(Summoner s, LeagueMessageParameter parameter) {
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getAccountFromSummoner(s);
 
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
@@ -1325,7 +1325,7 @@ public class LeagueMessage {
 
     private static EmbedBuilder getMongoOpggEmbed(Summoner summoner, LeagueMessageParameter parameter, List<Match> matches) {
         LeagueShard shard = summoner.getPlatform();
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1345,7 +1345,7 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getMongoOpggEmbedMatch(Summoner summoner, Match match) {
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1356,7 +1356,7 @@ public class LeagueMessage {
     public static EmbedBuilder getOpggEmbed(Summoner s, LeagueMessageParameter parameter, List<LOLMatch> matches) {
         LeagueShard shard = s.getPlatform();
 
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getAccountFromSummoner(s);
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
@@ -1496,7 +1496,7 @@ public class LeagueMessage {
 //  ▀
 
     public static EmbedBuilder getLivegameEmbed(Summoner summoner, SpectatorGameInfo game, List<SpectatorParticipant> spectators) {
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
         if (game == null || spectators == null || spectators.isEmpty()) {
             EmbedBuilder empty = new EmbedBuilder();
             empty.setTitle(account.getName() + "'s Game");
@@ -1519,7 +1519,7 @@ public class LeagueMessage {
                     int i = 0;
 
                     for (SpectatorParticipant participant : spectators) {
-                        Summoner s = LeagueService.getSummonerByPuuid(participant.getPuuid(), summoner.getPlatform());
+                        Summoner s = LeagueService.getRiotSummoner(participant.getPuuid(), summoner.getPlatform());
                         String mastery = LeagueHandler.getMasteryByChamp(s, participant.getChampionId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
                         String sum = " **" + participant.getRiotId() + "**";
@@ -1604,7 +1604,7 @@ public class LeagueMessage {
     }
 
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
         List<Match> matches = null;
         matches = MongoDB.getMatchHistory(puuid, parameter);
         
@@ -1645,7 +1645,7 @@ public class LeagueMessage {
         Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
         Button center = Button.primary("lol-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 

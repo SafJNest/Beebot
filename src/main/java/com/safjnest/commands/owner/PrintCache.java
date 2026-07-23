@@ -194,8 +194,8 @@ public class PrintCache extends Command {
             }
             else {
                 for(String account : lolAccounts.keySet()) {
-                    Summoner s = LeagueService.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                    RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(s);
+                    Summoner s = LeagueService.getRiotSummoner(account, LeagueShard.valueOf(lolAccounts.get(account)));
+                    RiotAccount riotAccount = LeagueService.getAccountFromSummoner(s);
                     lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
                 }
                 lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3) + "\n";

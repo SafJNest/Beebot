@@ -556,6 +556,14 @@ public final class MongoDB {
         return database().getCollection("summoner");
     }
 
+    private static MongoCollection<Document> entityCollection(String collectionName) {
+        return switch (collectionName) {
+            case "summoner" -> summoners();
+            case "match" -> matches();
+            default -> throw new IllegalArgumentException("Unsupported Mongo entity collection=" + collectionName);
+        };
+    }
+
     public record SummonerSearchResult(Summoner summoner, Rank soloRank) {}
 
     public record ProfileProjection(Summoner summoner, List<Rank> ranks, List<Mastery> masteries) {}
@@ -630,7 +638,8 @@ public final class MongoDB {
         traceRead("summoner.findRanks", "puuid=" + puuid);
         Document document = summoners().find(summonerFilter(puuid, shard))
                 .projection(Projections.include("ranks")).first();
-        return document == null ? List.of() : ranks(document);
+        if (document == null || !document.containsKey("ranks")) return null;
+        return ranks(document);
     }
 
     public static Map<String, Rank> findSoloRanksByPuuid(List<String> puuids, LeagueShard shard) {
@@ -678,7 +687,8 @@ public final class MongoDB {
         traceRead("summoner.findMasteries", "puuid=" + puuid);
         Document document = summoners().find(summonerFilter(puuid, shard))
                 .projection(Projections.include("masteries")).first();
-        return document == null ? List.of() : masteries(document);
+        if (document == null || !document.containsKey("masteries")) return null;
+        return masteries(document);
     }
 
     public static com.safjnest.lol.model.match.Match findMatch(String fullGameId) {
@@ -1096,6 +1106,35 @@ public final class MongoDB {
         return result;
     }
 
+    public static boolean applyEntityUpdate(
+            String collectionName,
+            String id,
+            List<Map<String, Object>> operations,
+            Map<String, Object> filters,
+            boolean upsert) {
+        if (collectionName == null || collectionName.isBlank()) throw new IllegalArgumentException("Mongo entity collection is required");
+        if (id == null || id.isBlank()) throw new IllegalArgumentException("Mongo entity id is required");
+        if (operations == null || operations.isEmpty()) return true;
+
+        List<Bson> pipeline = new ArrayList<>(operations.size());
+        for (Map<String, Object> operation : operations) pipeline.add(entityUpdateStage(operation));
+
+        List<Bson> rootFilters = new ArrayList<>();
+        rootFilters.add(Filters.eq("_id", id));
+        if (filters != null) {
+            for (Map.Entry<String, Object> filter : filters.entrySet()) {
+                rootFilters.add(Filters.eq(filter.getKey(), mongoValue(filter.getValue())));
+            }
+        }
+
+        UpdateResult result = entityCollection(collectionName).updateOne(
+                rootFilters.size() == 1 ? rootFilters.get(0) : Filters.and(rootFilters),
+                pipeline,
+                new UpdateOptions().upsert(upsert));
+        if (!result.wasAcknowledged()) return false;
+        return upsert || result.getMatchedCount() > 0;
+    }
+
     public static boolean upsertSummoner(Summoner summoner, String userId) {
         if (summoner == null || summoner.puuid() == null) return false;
         if (userId != null) {
@@ -1381,6 +1420,10 @@ public final class MongoDB {
             if (summoner.puuid() == null || summoner.puuid().isBlank()) throw new IllegalArgumentException("Summoner.puuid is required");
             document = new Document("_id", summoner.puuid()).append("level", summoner.level()).append("icon", summoner.icon());
             putIfNotNull(document, "riotId", summoner.riotId()); putIfNotNull(document, "region", summoner.region());
+            putIfNotNull(document, "userId", summoner.userId());
+            if (summoner.tracking()) document.put("tracking", true);
+            if (!summoner.ranks().isEmpty()) document.put("ranks", writeRanks(summoner.ranks()));
+            if (!summoner.masteries().isEmpty()) document.put("masteries", writeMasteries(summoner.masteries()));
         } else if (value instanceof Rank rank) {
             document = new Document("queue", rank.queue() == null ? null : rank.queue().name())
                     .append("rank", rank.tier() == null ? null : rank.tier().name()).append("lp", rank.lp())
@@ -1403,8 +1446,13 @@ public final class MongoDB {
     private static Summoner readSummoner(QueryRecord record) {
         String puuid = record.getAsString("puuid");
         if (puuid == null) puuid = record.getAsString("_id");
-        return new Summoner(0, puuid, record.getAsString("riotId"),
-                record.getAsString("region"), record.getAsInt("level"), record.getAsInt("icon"));
+        List<Rank> ranks = new ArrayList<>();
+        for (QueryRecord rank : record.getAsRecords("ranks")) ranks.add(readRank(rank));
+        List<Mastery> masteries = new ArrayList<>();
+        for (QueryRecord mastery : record.getAsRecords("masteries")) masteries.add(readMastery(mastery));
+        return Summoner.hydrated(0, puuid, record.getAsString("riotId"),
+                record.getAsString("region"), record.getAsInt("level"), record.getAsInt("icon"),
+                record.getAsString("userId"), record.getAsBoolean("tracking"), ranks, masteries);
     }
 
     private static Rank readRank(QueryRecord record) {
@@ -1414,6 +1462,18 @@ public final class MongoDB {
 
     private static Mastery readMastery(QueryRecord record) {
         return new Mastery(record.getAsInt("championId"), record.getAsInt("level"), record.getAsInt("points"));
+    }
+
+    private static List<Document> writeRanks(List<Rank> ranks) {
+        List<Document> result = new ArrayList<>();
+        if (ranks != null) for (Rank rank : ranks) if (rank != null) result.add(write(rank));
+        return result;
+    }
+
+    private static List<Document> writeMasteries(List<Mastery> masteries) {
+        List<Document> result = new ArrayList<>();
+        if (masteries != null) for (Mastery mastery : masteries) if (mastery != null) result.add(write(mastery));
+        return result;
     }
 
     private static Participant readParticipant(QueryRecord record) {
@@ -1445,7 +1505,7 @@ public final class MongoDB {
         Document source = QueryRecordParser.toDocument(record);
         String fullGameId = record.getAsString("fullGameId"); if (fullGameId == null) fullGameId = record.getAsString("_id");
         if (fullGameId == null || fullGameId.isBlank()) throw new IllegalArgumentException("Mongo match fullGameId is required");
-        Match match = new Match();
+        Match match = Match.hydrated();
         String publicId = source.containsKey("game_id") ? record.getAsString("game_id") : record.getAsString("gameId");
         match.gameId = publicId != null ? publicId : publicGameId(fullGameId);
         String region = source.containsKey("region") ? record.getAsString("region") : null;
@@ -1963,8 +2023,9 @@ public final class MongoDB {
 
     private static Summoner summoner(Document document) {
         String puuid = puuid(document);
-        return new Summoner(document.getInteger("summonerId", 0), puuid, document.getString("riotId"),
-                document.getString("region"), document.getInteger("level", 0), document.getInteger("icon", 0));
+        return Summoner.hydrated(document.getInteger("summonerId", 0), puuid, document.getString("riotId"),
+                document.getString("region"), document.getInteger("level", 0), document.getInteger("icon", 0),
+                document.getString("userId"), document.getBoolean("tracking", false), ranks(document), masteries(document));
     }
 
     private static String puuid(Document document) {
@@ -2089,6 +2150,110 @@ public final class MongoDB {
                 .append("filterKey", filterKey)
                 .append("championId", statistics.filter().champion())
                 .append("statistics", JsonCodec.toDocument(statistics));
+    }
+
+    private static Bson entityUpdateStage(Map<String, Object> operation) {
+        String type = String.valueOf(operation.get("type"));
+        String path = String.valueOf(operation.get("path"));
+        return switch (type) {
+            case "set" -> new Document("$set", new Document(path, mongoValue(operation.get("value"))));
+            case "unset" -> new Document("$unset", path);
+            case "push" -> new Document("$set", new Document(path, appendArrayExpression(path, operation.get("value"))));
+            case "pullValue" -> pullValueStage(path, operation.get("value"));
+            case "pull" -> filterArrayStage(path, operation.get("keyField"), operation.get("keyValue"), false, null);
+            case "replaceArrayElement" -> replaceArrayStage(path, operation);
+            case "setArrayElementField" -> setArrayElementFieldStage(path, operation);
+            case "replaceOrAppendArrayElement" -> replaceOrAppendArrayStage(path, operation);
+            default -> throw new IllegalArgumentException("Unsupported entity update operation=" + type);
+        };
+    }
+
+    private static Document appendArrayExpression(String path, Object value) {
+        List<Object> appended = new ArrayList<>(1);
+        appended.add(mongoValue(value));
+        return new Document("$concatArrays", List.of(
+                new Document("$ifNull", List.of("$" + path, List.of())),
+                appended));
+    }
+
+    private static Document filterArrayStage(
+            String path,
+            Object keyField,
+            Object keyValue,
+            boolean append,
+            Object replacement) {
+        String field = String.valueOf(keyField);
+        Document filter = new Document("$filter", new Document("input", new Document("$ifNull", List.of("$" + path, List.of())))
+                .append("as", "item")
+                .append("cond", new Document("$ne", List.of("$$item." + field, literal(keyValue)))));
+        if (!append) return new Document("$set", new Document(path, filter));
+
+        List<Object> values = new ArrayList<>(2);
+        values.add(filter);
+        List<Object> appended = new ArrayList<>(1);
+        appended.add(mongoValue(replacement));
+        values.add(appended);
+        return new Document("$set", new Document(path, new Document("$concatArrays", values)));
+    }
+
+    private static Document pullValueStage(String path, Object value) {
+        Document filter = new Document("$filter", new Document("input", new Document("$ifNull", List.of("$" + path, List.of())))
+                .append("as", "item")
+                .append("cond", new Document("$ne", List.of("$$item", literal(value)))));
+        return new Document("$set", new Document(path, filter));
+    }
+
+    private static Document replaceArrayStage(String path, Map<String, Object> operation) {
+        String keyField = String.valueOf(operation.get("keyField"));
+        Object keyValue = operation.get("keyValue");
+        Document condition = new Document("$eq", List.of("$$item." + keyField, literal(keyValue)));
+        Document replacement = new Document("$map", new Document("input", new Document("$ifNull", List.of("$" + path, List.of())))
+                .append("as", "item")
+                .append("in", new Document("$cond", List.of(condition, mongoValue(operation.get("value")), "$$item"))));
+        return new Document("$set", new Document(path, replacement));
+    }
+
+    private static Document setArrayElementFieldStage(String path, Map<String, Object> operation) {
+        String keyField = String.valueOf(operation.get("keyField"));
+        Object keyValue = operation.get("keyValue");
+        String targetField = String.valueOf(operation.get("targetField"));
+        Document condition = new Document("$eq", List.of("$$item." + keyField, literal(keyValue)));
+        Document merged = new Document("$mergeObjects", List.of(
+                "$$item",
+                new Document(targetField, mongoValue(operation.get("value")))));
+        Document mapped = new Document("$map", new Document("input", new Document("$ifNull", List.of("$" + path, List.of())))
+                .append("as", "item")
+                .append("in", new Document("$cond", List.of(condition, merged, "$$item"))));
+        return new Document("$set", new Document(path, mapped));
+    }
+
+    private static Document replaceOrAppendArrayStage(String path, Map<String, Object> operation) {
+        return filterArrayStage(path, operation.get("keyField"), operation.get("keyValue"), true, operation.get("value"));
+    }
+
+    private static Document literal(Object value) {
+        return new Document("$literal", mongoValue(value));
+    }
+
+    private static Object mongoValue(Object value) {
+        if (value == null || value instanceof String || value instanceof Number || value instanceof Boolean || value instanceof byte[]) {
+            return value;
+        }
+        if (value instanceof Enum<?> enumValue) return enumValue.name();
+        if (value instanceof Map<?, ?> map) {
+            Document document = new Document();
+            for (Map.Entry<?, ?> entry : map.entrySet()) document.put(String.valueOf(entry.getKey()), mongoValue(entry.getValue()));
+            return document;
+        }
+        if (value instanceof List<?> list) {
+            List<Object> result = new ArrayList<>(list.size());
+            for (Object item : list) result.add(mongoValue(item));
+            return result;
+        }
+        if (value instanceof Rank || value instanceof Mastery || value instanceof Participant || value instanceof Match || value instanceof Summoner) {
+            return write(value);
+        }
+        return value;
     }
 
     private static List<Document> documents(Object value) {

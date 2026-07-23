@@ -823,7 +823,7 @@ public class Test extends Command{
             break;
             case "trackoldgames":
                 if (true) {
-                    Summoner sum = LeagueService.getSummonerByPuuid(args[1], LeagueShard.EUW1);
+                    Summoner sum = LeagueService.getRiotSummoner(args[1], LeagueShard.EUW1);
                     //MatchTracker.retrieveOldGames(sum).queue();
                 }
             break;
@@ -858,7 +858,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGames = () -> {
                         System.out.println(args[1]);
                         try {
-                            Tracker.retrieveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
+                            Tracker.retrieveMatchHistory(LeagueService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
                         } catch (Exception eee) { eee.printStackTrace(); }
                     };
                     retrieveAllGames.queue();
@@ -867,7 +867,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            Tracker.retrieveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
+                            Tracker.retrieveMatchHistory(LeagueService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
                         }
                     };
                     retrieveAllGamesFast.queue();

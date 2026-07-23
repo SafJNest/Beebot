@@ -41,7 +41,7 @@ Gli errori HTTP usano sempre questo envelope:
 }
 ```
 
-Il flusso dei dati LoL resta centralizzato nei service: Redis, database e lavoro asincrono tramite `ProfileBootstrapService` o `Tracker`. Le request HTTP non eseguono calcoli pesanti né fetch Riot sincroni per i profili mancanti. La sola coda applicativa mantenuta è quella del flusso match.
+Il flusso dei dati LoL resta centralizzato nei service: `LeagueService` è la fonte di verità per i componenti summoner, account, rank, mastery e match, con lettura Redis → Mongo e Future Riot deduplicate per risorsa. Le request HTTP usano i wrapper async e non attendono Riot; il bot usa i wrapper sync sulle stesse Future. Le request HTTP non eseguono calcoli pesanti né fetch Riot sincroni per i profili mancanti. Il dettaglio match conserva inoltre la coda asincrona `Tracker`.
 
 ## Superficie disponibile
 
@@ -245,9 +245,9 @@ ranks      -> queue, tier, lp, wins, losses
 overview   -> statistics, masteries, champions, form, mostPlayed, recentMatches
 ```
 
-`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se il summoner esiste nel DB ma le statistiche aggregate non sono ancora disponibili, il profilo resta `200` con i dati disponibili e il refresh viene avviato immediatamente in background.
+`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se summoner, rank e masteries sono disponibili ma le statistiche aggregate non lo sono ancora, il profilo resta `200` con i dati disponibili e il refresh viene avviato immediatamente in background.
 
-Risposta `202`: `LolApiError` con codice `profile_pending` quando il summoner non è ancora presente nella tabella `summoner`. Il bootstrap Riot → DB viene avviato in background.
+Risposta `202`: `LolApiError` con codice `profile_pending` quando almeno uno tra summoner, rank o masteries non è ancora disponibile. La fetch Riot viene accodata o riusata in background; il contratto HTTP non cambia.
 
 Risposta `404`: profilo non trovato.
 
@@ -267,7 +267,7 @@ Il servizio risolve prima il Riot ID in PUUID e poi usa lo stesso flusso di `/pr
 
 Risposta `200`: stesso `SummonerView` del profilo per PUUID.
 
-Risposta `202`: stesso `profile_pending` del profilo per PUUID quando il summoner non è ancora presente nella tabella `summoner`.
+Risposta `202`: stesso `profile_pending` del profilo per PUUID quando la risoluzione account o uno dei componenti del profilo è ancora in corso.
 
 Risposta `404`: Riot ID non risolto o profilo non trovato.
 
