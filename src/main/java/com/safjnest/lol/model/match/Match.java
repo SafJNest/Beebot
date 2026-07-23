@@ -9,12 +9,14 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.nosql.AbstractEntity;
+import com.safjnest.lol.tracker.Tracker;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class Match extends AbstractEntity<Match> {
 
@@ -38,6 +40,16 @@ public class Match extends AbstractEntity<Match> {
         Match match = new Match();
         match.markExisting();
         return match;
+    }
+
+    public static Match fromR4J(LOLMatch source) {
+        return source == null ? null : Tracker.fromR4J(source);
+    }
+
+    public static Match fromR4J(
+            LOLMatch source,
+            Map<String, HashMap<String, String>> matchData) {
+        return source == null ? null : Tracker.fromR4J(source, matchData);
     }
 
     public Match setRank(TierType rank) {

@@ -46,7 +46,7 @@ public class LeagueMessageUtils {
     }
 
 
-    public static String getPosition(HashMap<MatchParticipant, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
+    public static String getPosition(Map<?, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
         int personalStatValue = Integer.parseInt(personalStats.get(statKey));
         int position = 1;
 

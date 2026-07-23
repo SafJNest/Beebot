@@ -120,7 +120,7 @@ public class Tracker {
                         continue;
                     }
 
-                    LOLMatch match = LeagueService.getMatch(matchId, shard);
+                    LOLMatch match = LeagueService.getR4JMatch(matchId, shard);
                     if (match.getQueue() != GameQueueType.TEAM_BUILDER_RANKED_SOLO) continue;
                     ChronoTask task = analyzeMatchHistory(match, summoner, account);
                     if (task != null) task.complete();
@@ -160,7 +160,7 @@ public class Tracker {
 
     public static void queueMatch(LOLMatch match) {
         if (match == null) return;
-        RedisClient.sadd(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), LeagueService.putMatch(match));
+        RedisClient.sadd(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), LeagueService.putR4JMatch(match));
     }
 
     public static void enqueueMatchLookup(LeagueShard shard, String gameId) {
@@ -179,7 +179,7 @@ public class Tracker {
 
             try {
                 String riotGameId = request.shard().name() + "_" + request.gameId();
-                LOLMatch match = LeagueService.getMatch(riotGameId, request.shard());
+                LOLMatch match = LeagueService.getR4JMatch(riotGameId, request.shard());
                 if (match == null) {
                     retryMatchLookup(request);
                 } else {
@@ -203,7 +203,7 @@ public class Tracker {
             if (id == null || !id.contains("_")) continue;
             try {
                 String[] parts = id.split("_", 2);
-                LOLMatch match = LeagueService.getMatch(id, LeagueShard.valueOf(parts[0]));
+                LOLMatch match = LeagueService.getR4JMatch(id, LeagueShard.valueOf(parts[0]));
                 if (match != null) matches.add(match);
             } catch (RuntimeException ignored) { }
         }
@@ -362,7 +362,7 @@ public class Tracker {
             return analyzeMatchHistory(queue, LeagueService.getRiotSummoner(summoner.getPUUID(), shard));
         }
 
-        LOLMatch match = LeagueService.getMatch(matchId, shard);
+        LOLMatch match = LeagueService.getR4JMatch(matchId, shard);
         if (match == null || match.getQueue() != queue) return Chronos.NULL;
         return analyzeMatchHistory(match, summoner, row);
     }
@@ -374,7 +374,7 @@ public class Tracker {
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
             String fullGameId = fullGameId(match);
-            MongoDB.upsertMatchDocument(fullGameId, toCanonicalMatch(match, matchData));
+            MongoDB.upsertMatchDocument(fullGameId, Match.fromR4J(match, matchData));
 
             List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant participant : match.getParticipants()) {
@@ -415,7 +415,7 @@ public class Tracker {
             }
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
-            MongoDB.upsertMatchDocument(fullGameId, toCanonicalMatch(match, matchData));
+            MongoDB.upsertMatchDocument(fullGameId, Match.fromR4J(match, matchData));
 
             List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant participant : match.getParticipants()) {
@@ -499,6 +499,21 @@ public class Tracker {
         return match.getPlatform().name() + "_" + match.getGameId();
     }
 
+    public static Match fromR4J(LOLMatch source) {
+        return fromR4J(source, analyzeMatchBuild(source, source.getParticipants()));
+    }
+
+    public static Match fromR4J(
+            LOLMatch source,
+            Map<String, HashMap<String, String>> matchData) {
+        Match match = toCanonicalMatch(source, matchData);
+        if (matchData != null && matchData.get("match") != null) {
+            match.eventData = new JSONObject(createJSONEvents(matchData.get("match"))).toMap();
+            match.restoreEvents();
+        }
+        return match;
+    }
+
     private static Match toCanonicalMatch(LOLMatch source, Map<String, HashMap<String, String>> matchData) {
         Match match = new Match();
         match.gameId = String.valueOf(source.getGameId());
@@ -531,6 +546,7 @@ public class Tracker {
         participant.subTeam = source.getPlayerSubteamId();
         participant.subTeamPlacement = source.getSubteamPlacement();
         participant.damage = source.getTotalDamageDealtToChampions();
+        participant.damageTaken = source.getTotalDamageTaken();
         participant.damageBuilding = source.getDamageDealtToBuildings();
         participant.healing = source.getTotalHeal();
         participant.cs = source.getTotalMinionsKilled() + source.getNeutralMinionsKilled();
@@ -553,6 +569,7 @@ public class Tracker {
         participant.item4 = source.getItem4();
         participant.item5 = source.getItem5();
         participant.item6 = source.getItem6();
+        participant.turretKills = source.getTurretKills();
         participant.summonerSpell1 = source.getSummoner1Id();
         participant.summonerSpell2 = source.getSummoner2Id();
         if (matchData != null && !matchData.isEmpty()) ParticipantBuildCodec.apply(participant, createJSONBuild(matchData));
@@ -1116,7 +1133,7 @@ public class Tracker {
                 for (MatchEntry me : allMatches) {
                     TrackerState.awaitCondition(TrackerState.Priority.LOW);
                     try {
-                        LOLMatch match = LeagueService.getMatch(me.matchId(), me.summoner().getPlatform());
+                        LOLMatch match = LeagueService.getR4JMatch(me.matchId(), me.summoner().getPlatform());
                         if (!match.getGameVersion().startsWith(currentPatch)) continue;
                         i++;
                         BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
@@ -1237,7 +1254,7 @@ public class Tracker {
                         LOLMatch match;
                         do {
                             String matchId = matchIds.get(k); 
-                            match = LeagueService.getMatch(matchId, shard);
+                            match = LeagueService.getR4JMatch(matchId, shard);
                             
                             BotLogger.info("[LPTracker] Pushing match data for region " + shard + " | " + k + "/5 -  " + j + "/" + entries.size());
                             analyzeMatchHistory(match).complete();
@@ -1317,7 +1334,7 @@ public class Tracker {
                     if (!LeagueHandler.isMatchLocallyCached(matchId, summoner.getPlatform())) {
                         Thread.sleep(350);
                     }
-                    LOLMatch match = LeagueService.getMatch(matchId, summoner.getPlatform());
+                    LOLMatch match = LeagueService.getR4JMatch(matchId, summoner.getPlatform());
                     if (match == null) continue;
                     System.out.println("[" + i + "/" + matchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
                     Tracker.queueMatch(match);
@@ -1345,7 +1362,7 @@ public class Tracker {
                 int i = 0;
                 for (String matchId : retrievedMatchIds) {
                     try {
-                        LOLMatch match = LeagueService.getMatch(matchId, summoner.getPlatform());
+                        LOLMatch match = LeagueService.getR4JMatch(matchId, summoner.getPlatform());
                         if (match == null) continue;
                         System.out.println("[" + i + "/" + retrievedMatchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
                         Tracker.queueMatch(match);

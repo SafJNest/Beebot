@@ -14,7 +14,6 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LeagueMessageParameter {
@@ -32,7 +31,6 @@ public class LeagueMessageParameter {
 
   private int offset;
 
-  private LOLMatch match;
   private String selectedMatchId;
 
   private StringSelectMenu livegameMenu;
@@ -83,7 +81,6 @@ public class LeagueMessageParameter {
 
     this.offset = offset;
 
-    this.match = null;
     this.selectedMatchId = null;
     this.filter = new Filter();
   }
@@ -266,14 +263,6 @@ public class LeagueMessageParameter {
 
   public long getTimeEnd() {
     return this.period[1];
-  }
-
-  public void setMatch(LOLMatch match) {
-    this.match = match;
-  }
-
-  public LOLMatch getMatch() {
-    return this.match;
   }
 
   public void setSelectedMatchId(String selectedMatchId) {

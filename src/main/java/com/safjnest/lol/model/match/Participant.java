@@ -22,6 +22,7 @@ public class Participant {
     public int lp;
     public int gain;
     public int damage;
+    public int damageTaken;
     public int damageBuilding;
     public int healing;
     public int cs;
@@ -50,6 +51,7 @@ public class Participant {
     public int item4;
     public int item5;
     public int item6;
+    public int turretKills;
 
     public int q;
     public int w;

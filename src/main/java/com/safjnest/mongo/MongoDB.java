@@ -1483,7 +1483,7 @@ public final class MongoDB {
         participant.lane = record.getAsEnum("lane", no.stelar7.api.r4j.basic.constants.types.lol.LaneType.class);
         participant.team = record.getAsEnum("team", no.stelar7.api.r4j.basic.constants.types.lol.TeamType.class);
         participant.roleQuestId = record.getAsInt("roleQuestId"); participant.rank = record.getAsEnum("rank", TierDivisionType.class);
-        participant.lp = record.getAsInt("lp"); participant.gain = record.getAsInt("gain"); participant.damage = record.getAsInt("damage");
+        participant.lp = record.getAsInt("lp"); participant.gain = record.getAsInt("gain"); participant.damage = record.getAsInt("damage"); participant.damageTaken = record.getAsInt("damageTaken");
         participant.damageBuilding = record.getAsInt("damageBuilding"); participant.healing = record.getAsInt("healing"); participant.cs = record.getAsInt("cs");
         participant.goldEarned = record.getAsInt("goldEarned"); participant.ward = record.getAsInt("ward"); participant.wardKilled = record.getAsInt("wardKilled");
         participant.visionScore = record.getAsInt("visionScore"); participant.pings = new HashMap<>(readIntegerMap(record, "pings"));
@@ -1492,7 +1492,7 @@ public final class MongoDB {
         participant.level = record.getAsInt("level"); participant.doubles = record.getAsInt("doubles"); participant.triples = record.getAsInt("triples");
         participant.quadruples = record.getAsInt("quadruples"); participant.pentas = record.getAsInt("pentas");
         participant.item0 = record.getAsInt("item0"); participant.item1 = record.getAsInt("item1"); participant.item2 = record.getAsInt("item2");
-        participant.item3 = record.getAsInt("item3"); participant.item4 = record.getAsInt("item4"); participant.item5 = record.getAsInt("item5"); participant.item6 = record.getAsInt("item6");
+        participant.item3 = record.getAsInt("item3"); participant.item4 = record.getAsInt("item4"); participant.item5 = record.getAsInt("item5"); participant.item6 = record.getAsInt("item6"); participant.turretKills = record.getAsInt("turretKills");
         participant.q = record.getAsInt("q"); participant.w = record.getAsInt("w"); participant.e = record.getAsInt("e"); participant.r = record.getAsInt("r");
         participant.d = record.getAsInt("d"); participant.f = record.getAsInt("f"); participant.summonerSpell1 = record.getAsInt("summonerSpell1"); participant.summonerSpell2 = record.getAsInt("summonerSpell2");
         participant.primaryRunes = readIntegerList(record, "primaryRunes"); participant.secondaryRunes = readIntegerList(record, "secondaryRunes");
@@ -1527,9 +1527,9 @@ public final class MongoDB {
     private static Document participantDocument(Participant value) {
         if (value == null || value.puuid == null || value.puuid.isBlank()) throw new IllegalArgumentException("Participant.puuid is required for Mongo persistence");
         Document document = new Document("win", value.win).append("champion", value.champion).append("roleQuestId", value.roleQuestId)
-                .append("lp", value.lp).append("gain", value.gain).append("damage", value.damage).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
+                .append("lp", value.lp).append("gain", value.gain).append("damage", value.damage).append("damageTaken", value.damageTaken).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
                 .append("subTeam", value.subTeam).append("subTeamPlacement", value.subTeamPlacement).append("level", value.level).append("doubles", value.doubles).append("triples", value.triples).append("quadruples", value.quadruples).append("pentas", value.pentas)
-                .append("item0", value.item0).append("item1", value.item1).append("item2", value.item2).append("item3", value.item3).append("item4", value.item4).append("item5", value.item5).append("item6", value.item6).append("q", value.q).append("w", value.w).append("e", value.e).append("r", value.r).append("d", value.d).append("f", value.f).append("summonerSpell1", value.summonerSpell1).append("summonerSpell2", value.summonerSpell2)
+                .append("item0", value.item0).append("item1", value.item1).append("item2", value.item2).append("item3", value.item3).append("item4", value.item4).append("item5", value.item5).append("item6", value.item6).append("turretKills", value.turretKills).append("q", value.q).append("w", value.w).append("e", value.e).append("r", value.r).append("d", value.d).append("f", value.f).append("summonerSpell1", value.summonerSpell1).append("summonerSpell2", value.summonerSpell2)
                 .append("primaryRunes", integerList(value.primaryRunes)).append("secondaryRunes", integerList(value.secondaryRunes)).append("statsRunes", integerList(value.statsRunes)).append("skillOrder", integerList(value.skillOrder)).append("augments", integerList(value.augments)).append("starterItems", integerList(value.starterItems)).append("buildPath", integerList(value.buildPath)).append("boots", value.boots).append("supportItem", value.supportItem);
         putIfNotNull(document, "kda", value.kda); putIfNotNull(document, "puuid", value.puuid); putIfNotNull(document, "riotId", value.riotId); putIfNotNull(document, "riotTag", value.riotTag); putEnum(document, "lane", value.lane); putEnum(document, "team", value.team); putEnum(document, "rank", value.rank);
         return document;

@@ -78,7 +78,8 @@ public class LeagueService {
     private static final Map<String, CompletableFuture<List<LeagueEntry>>> LEAGUE_ENTRIES = new ConcurrentHashMap<>();
     private static final Map<String, CompletableFuture<List<Rank>>> RANKS = new ConcurrentHashMap<>();
     private static final Map<String, CompletableFuture<List<Mastery>>> MASTERIES = new ConcurrentHashMap<>();
-    private static final Map<String, CompletableFuture<LOLMatch>> MATCHES = new ConcurrentHashMap<>();
+    private static final Map<String, CompletableFuture<LOLMatch>> R4J_MATCHES = new ConcurrentHashMap<>();
+    private static final Map<String, CompletableFuture<Match>> MATCHES = new ConcurrentHashMap<>();
 
     private static R4J riotApi;
 
@@ -437,32 +438,45 @@ public class LeagueService {
 
     // MATCH
 
-    public static LOLMatch getSavedMatch(String gameId, LeagueShard shard) {
+    public static Match getSavedMatch(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return null;
-        RegionShard region = shard.toRegionShard();
-        return RedisClient.get(RedisKey.MATCH.of(region.name(), gameId), LOLMatch.class);
+
+        String databaseGameId = databaseGameId(gameId);
+        String key = RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId);
+        Match cached = RedisClient.get(key, Match.class);
+        if (cached != null) {
+            cached.restoreEvents();
+            return cached;
+        }
+
+        Match stored = MongoDB.findMatch(fullGameId(gameId, shard));
+        if (stored != null) {
+            stored.restoreEvents();
+            RedisClient.set(key, stored, TTL_MATCH_DETAIL);
+        }
+        return stored;
     }
 
-    public static CompletableFuture<LOLMatch> fetchMatch(String gameId, LeagueShard shard) {
+    public static CompletableFuture<Match> fetchMatch(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
 
-        RegionShard region = shard.toRegionShard();
-        String key = resourceKey(region.name(), gameId);
+        String key = resourceKey(shard, fullGameId(gameId, shard));
         return shared(MATCHES, key, () -> {
-            LOLMatch match = riotApi.getLoLAPI().getMatchAPI().getMatch(region, gameId);
-            if (match != null) {
-                RedisClient.set(RedisKey.MATCH.of(region.name(), gameId), match, TTL_MATCH);
-            }
+            LOLMatch source = getAsyncR4JMatch(gameId, shard).join();
+            if (source == null) return null;
+
+            Match match = Match.fromR4J(source);
+            if (match != null) saveMatch(match);
             return match;
         });
     }
 
-    public static CompletableFuture<LOLMatch> getAsyncMatch(String gameId, LeagueShard shard) {
-        LOLMatch saved = getSavedMatch(gameId, shard);
+    public static CompletableFuture<Match> getAsyncMatch(String gameId, LeagueShard shard) {
+        Match saved = getSavedMatch(gameId, shard);
         return saved != null ? CompletableFuture.completedFuture(saved) : fetchMatch(gameId, shard);
     }
 
-    public static LOLMatch getMatch(String gameId, LeagueShard shard) {
+    public static Match getMatch(String gameId, LeagueShard shard) {
         try {
             return getAsyncMatch(gameId, shard).join();
         } catch (CompletionException exception) {
@@ -470,19 +484,49 @@ public class LeagueService {
         }
     }
 
+    public static LOLMatch getSavedR4JMatch(String gameId, LeagueShard shard) {
+        if (!valid(gameId, shard)) return null;
+
+        RegionShard region = shard.toRegionShard();
+        return RedisClient.get(
+            RedisKey.MATCH.of(region.name(), fullGameId(gameId, shard)),
+            LOLMatch.class
+        );
+    }
+
+    public static CompletableFuture<LOLMatch> fetchR4JMatch(String gameId, LeagueShard shard) {
+        if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
+
+        RegionShard region = shard.toRegionShard();
+        String fullGameId = fullGameId(gameId, shard);
+        String key = resourceKey(region.name(), fullGameId);
+        return shared(R4J_MATCHES, key, () -> {
+            LOLMatch match = riotApi.getLoLAPI().getMatchAPI().getMatch(region, fullGameId);
+            if (match != null) {
+                RedisClient.set(RedisKey.MATCH.of(region.name(), fullGameId), match, TTL_MATCH);
+            }
+            return match;
+        });
+    }
+
+    public static CompletableFuture<LOLMatch> getAsyncR4JMatch(String gameId, LeagueShard shard) {
+        LOLMatch saved = getSavedR4JMatch(gameId, shard);
+        return saved != null ? CompletableFuture.completedFuture(saved) : fetchR4JMatch(gameId, shard);
+    }
+
+    public static LOLMatch getR4JMatch(String gameId, LeagueShard shard) {
+        try {
+            return getAsyncR4JMatch(gameId, shard).join();
+        } catch (CompletionException exception) {
+            return null;
+        }
+    }
+
     public static ApiResult<Match> getMatchDetail(String gameId, LeagueShard shard) {
         String databaseGameId = databaseGameId(gameId);
-        String key = RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId);
-        Match cached = RedisClient.get(key, Match.class);
-        if (cached != null) {
-            cached.restoreEvents();
-            return ApiResult.ready(cached);
-        }
-
-        Match match = MongoDB.findMatch(shard.name() + "_" + databaseGameId);
+        Match match = getSavedMatch(databaseGameId, shard);
         if (match != null) {
             RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), databaseGameId));
-            RedisClient.set(key, match, TTL_MATCH_DETAIL);
             return ApiResult.ready(match);
         }
 
@@ -499,18 +543,20 @@ public class LeagueService {
         RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), databaseGameId));
     }
 
-    public static String putMatch(LOLMatch match) {
-        String gameId = match.getPlatform().name() + "_" + match.getGameId();
+    public static String putR4JMatch(LOLMatch match) {
+        String gameId = fullGameId(String.valueOf(match.getGameId()), match.getPlatform());
         RegionShard region = match.getPlatform().toRegionShard();
         RedisClient.set(RedisKey.MATCH.of(region.name(), gameId), match, TTL_MATCH);
         RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(match.getPlatform().name(), String.valueOf(match.getGameId())));
         return gameId;
     }
 
-    public static List<String> getMatchList(
+    public static List<String> getMatches(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             int index) {
+        if (summoner == null) return new ArrayList<>();
+
         String queueKey = queue != null ? queue.name() : "null";
         String key = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), queueKey, index);
         List<String> cached = RedisClient.get(key, new TypeReference<List<String>>() {});
@@ -840,6 +886,23 @@ public class LeagueService {
     private static String databaseGameId(String gameId) {
         int separator = gameId.indexOf('_');
         return separator >= 0 ? gameId.substring(separator + 1) : gameId;
+    }
+
+    private static String fullGameId(String gameId, LeagueShard shard) {
+        if (gameId == null || gameId.isBlank() || shard == null || gameId.indexOf('_') > 0) return gameId;
+        return shard.name() + "_" + gameId;
+    }
+
+    private static void saveMatch(Match match) {
+        if (match == null || match.gameId == null || match.gameId.isBlank() || match.leagueShard == null) return;
+
+        String fullGameId = fullGameId(match.gameId, match.leagueShard);
+        MongoDB.upsertMatch(fullGameId, match);
+        RedisClient.set(
+            RedisKey.MATCH_DETAIL.of(match.leagueShard.name(), databaseGameId(fullGameId)),
+            match,
+            TTL_MATCH_DETAIL
+        );
     }
 
     private static List<Choice> toChoices(List<SummonerAutocompleteChoice> autocompleteChoices) {
