@@ -1,6 +1,5 @@
 package com.safjnest.lol.message;
 
-import com.safjnest.mongo.MongoDB;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -45,6 +44,7 @@ import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileStatisticsService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.Accumulator;
 import com.safjnest.utils.DateHandler;

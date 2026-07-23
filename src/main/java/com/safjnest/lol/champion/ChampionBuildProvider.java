@@ -1,7 +1,7 @@
 package com.safjnest.lol.champion;
 
 import com.safjnest.lol.model.Filter;
-import com.safjnest.mongo.MongoDB;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 
 import java.util.List;

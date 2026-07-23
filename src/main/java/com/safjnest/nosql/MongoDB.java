@@ -1,4 +1,4 @@
-package com.safjnest.mongo;
+package com.safjnest.nosql;
 
 import java.util.ArrayList;
 import java.util.Collections;

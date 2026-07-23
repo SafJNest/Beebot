@@ -5,6 +5,8 @@ import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
+import com.safjnest.nosql.MongoMigration;
+
 public class MongoMigrationTest {
 
     @Test

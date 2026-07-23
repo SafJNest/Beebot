@@ -21,12 +21,16 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 
 ## Struttura del codice
 
-La persistenza Mongo LoL ha quattro file principali:
+La persistenza Mongo/NoSQL LoL vive nel package `com.safjnest.nosql` e ha questi file principali:
 
-- MongoDB.java: URI, database, schema, indici, query, mapping e write runtime;
-- QueryRecordParser.java: parser detached comune per righe MariaDB e documenti Mongo;
-- LeagueDB.java: adapter SQL ridotto alle query necessarie a MongoMigration;
-- MongoMigration.java: backfill batchabile MariaDB → Mongo.
+- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, schema, indici, query, mapping e write runtime;
+- `src/main/java/com/safjnest/nosql/MongoMigration.java`: backfill batchabile MariaDB → Mongo;
+- `src/main/java/com/safjnest/nosql/AbstractEntity.java` e `NoSqlEntityExecutor.java`: infrastruttura comune per le entity persistite in NoSQL.
+
+Gli adapter SQL usati esclusivamente dal backfill restano separati nel package `com.safjnest.sql`:
+
+- `src/main/java/com/safjnest/sql/QueryRecordParser.java`: parser detached comune per righe MariaDB e documenti Mongo;
+- `src/main/java/com/safjnest/sql/database/LeagueDB.java`: adapter SQL ridotto alle query necessarie a `MongoMigration`.
 
 Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni, outbox, proxy dual-write o classi *Document.
 

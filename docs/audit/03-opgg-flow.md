@@ -31,7 +31,7 @@ Per il blocco LP/rank chiama `LeagueService.getSummonerData`, che storicamente d
 - `win`;
 - `time_start`, `time_end`, `patch`.
 
-Il contratto è Mongo: [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java).
+Il contratto è Mongo: [MongoDB.java](../../src/main/java/com/safjnest/nosql/MongoDB.java).
 
 ## Rilievo
 

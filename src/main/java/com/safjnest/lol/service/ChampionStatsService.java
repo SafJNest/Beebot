@@ -1,6 +1,5 @@
 package com.safjnest.lol.service;
 
-import com.safjnest.mongo.MongoDB;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.champion.ChampionStatsData;
 import com.safjnest.lol.champion.ChampionStatsProvider;
@@ -14,6 +13,7 @@ import com.safjnest.lol.model.ChampionStatistics.PowerCurvePoint;
 import com.safjnest.lol.model.ChampionStatistics.Trend;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;

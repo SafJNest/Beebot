@@ -1,6 +1,5 @@
 package com.safjnest.lol.service;
 
-import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +19,7 @@ import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 

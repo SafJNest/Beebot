@@ -1,6 +1,5 @@
 package com.safjnest.lol;
 
-import com.safjnest.mongo.MongoDB;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -30,6 +29,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.SafJNest;

@@ -25,7 +25,7 @@ import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.mongo.MongoDB;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;

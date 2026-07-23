@@ -1,6 +1,5 @@
 package com.safjnest.lol.tracker;
 
-import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +38,7 @@ import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.TimeConstant;

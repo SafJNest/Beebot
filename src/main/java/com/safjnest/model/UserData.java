@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import com.safjnest.core.Bot;
-import com.safjnest.mongo.MongoDB;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;

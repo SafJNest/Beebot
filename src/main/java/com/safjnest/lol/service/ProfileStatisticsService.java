@@ -11,7 +11,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.utils.SeasonUtils;
-import com.safjnest.mongo.MongoDB;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 

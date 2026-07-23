@@ -1,4 +1,4 @@
-package com.safjnest.mongo;
+package com.safjnest.nosql;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;

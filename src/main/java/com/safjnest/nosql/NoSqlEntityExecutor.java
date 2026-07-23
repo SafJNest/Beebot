@@ -3,8 +3,6 @@ package com.safjnest.nosql;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.mongo.MongoDB;
-
 final class NoSqlEntityExecutor {
 
     @FunctionalInterface

@@ -19,6 +19,7 @@ import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecordParser;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;

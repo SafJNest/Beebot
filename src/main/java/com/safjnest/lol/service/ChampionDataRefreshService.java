@@ -1,6 +1,5 @@
 package com.safjnest.lol.service;
 
-import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,6 +9,7 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;

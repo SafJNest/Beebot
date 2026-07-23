@@ -329,7 +329,7 @@ Prima di modificare questo flusso verificare:
 - `src/main/java/com/safjnest/lol/model/Filter.java`
 - `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
 - `src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java`
-- `src/main/java/com/safjnest/mongo/MongoDB.java`
+- `src/main/java/com/safjnest/nosql/MongoDB.java`
 - `src/main/java/com/safjnest/lol/tracker/Tracker.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessage.java`

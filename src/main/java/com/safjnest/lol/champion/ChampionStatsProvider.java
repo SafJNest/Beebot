@@ -9,7 +9,7 @@ import org.bson.Document;
 import org.json.JSONObject;
 
 import com.safjnest.lol.model.Filter;
-import com.safjnest.mongo.MongoDB;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryRecordParser;
 
