@@ -32,6 +32,12 @@ Riferimenti: [query inventory](docs/mongo/08-query-inventory.md), [space audit](
 - [ ] Controllare il diff non committato prima del commit.
 - [ ] Decidere se mantenere il TODO dell'aggregazione build in `MongoDB.java` oppure implementarlo.
 
+## P1 — Accesso API e rate limit
+
+- [ ] Implementare una session key temporanea per il frontend, con rate limit standard e scadenza per inattività.
+- [ ] Implementare una developer key con quota e rate limit dedicati.
+- [ ] Implementare una god key senza rate limit, riservata al proprietario e mai esposta al frontend.
+
 ## P2 — Build e accettazione
 
 - [ ] Ripetere la build completa quando è disponibile la configurazione Java/JDA compatibile.
