@@ -5,6 +5,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -40,13 +42,16 @@ public class ProfilePageService {
         Summoner profile = completed(profileFuture);
         if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return ApiResult.notFound();
 
-        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        ProfileStatistics databaseStatistics = statisticsService.get(profile.puuid(), season);
+        Filter filter = Filter.summoner();
+        ProfileStatistics databaseStatistics = statisticsService.get(profile.puuid(), filter);
         List<Rank> profileRanks = completed(ranksFuture);
         List<Mastery> profileMasteries = completed(masteriesFuture);
-        if (databaseStatistics == null) Tracker.startProfileStatistics(profile, season);
+        if (databaseStatistics == null) Tracker.startProfileStatistics(profile, filter);
 
-        SummonerView page = SummonerView.from(profile, profileRanks, databaseStatistics, profileMasteries);
+        List<MatchResult> recentMatches = databaseStatistics == null
+            ? List.of()
+            : statisticsService.getRecentMatches(profile.puuid(), shard, filter);
+        SummonerView page = SummonerView.from(profile, profileRanks, databaseStatistics, profileMasteries, recentMatches);
         if (databaseStatistics != null) {
             RedisClient.set(key, page, TTL_PROFILE_PAGE);
             return ApiResult.ready(page);
@@ -63,10 +68,10 @@ public class ProfilePageService {
 
     public boolean refresh(LeagueShard shard, String puuid, boolean rebuild) {
         Summoner profile = LeagueService.getSavedSummoner(puuid, shard);
-        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return false;
 
-        boolean refreshed = statisticsService.refresh(puuid, shard, season, rebuild);
+        Filter filter = Filter.summoner();
+        boolean refreshed = statisticsService.refresh(puuid, shard, filter, rebuild);
         if (refreshed) LeagueService.invalidateProfilePage(puuid, shard);
         return refreshed;
     }

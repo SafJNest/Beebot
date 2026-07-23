@@ -9,7 +9,7 @@
 
 | Comando | Entry point | Percorso dati | Esito statico |
 |---|---|---|---|
-| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | account/cache → Riot fallback → `LeagueService.upsertSummoner` → profile/advanced query Mongo → Redis | coerente, senza MariaDB runtime |
+| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | account/cache → Riot fallback → `LeagueService.upsertSummoner` → `ProfileStatisticsService` per PUUID+Filter → Redis | coerente, senza MariaDB runtime |
 | `/summoner overview` | `SummonerOverview` | Riot identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
 | `/summoner champion` | `SummonerChampion` | Riot identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
 | `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | `MongoDB.upsertSummoner` con ownership `userId` | coerente; aggiorna cache locale e Redis |
@@ -31,11 +31,13 @@
 `SummonerProfile` risolve e aggiorna l’account direttamente in Mongo. `LeagueMessage.getSummonerEmbed` legge:
 
 1. identity e rank tramite `LeagueService`/Mongo;
-2. statistiche aggregate tramite `findAdvancedProfileProjections`;
-3. storico participant tramite `findMatchHistory` quando viene aperta la vista match;
-4. cache Redis dopo una lettura completa.
+2. statistiche aggregate flat tramite `ProfileStatisticsService` usando il `Filter` completo;
+3. l'embed storico del profilo, alimentato dal nuovo aggregato senza modificare la presentazione;
+4. `lastUpdate` del documento, quando l'aggregato è disponibile.
 
-Il profile aggregate ora raggruppa i participant Mongo per `champion` e produce `games`, `wins`, `losses`, medie KDA, `total_lp_gain` e `lanes_played`, cioè le chiavi richieste dall’embed legacy.
+L’aggregato ora raggruppa i participant Mongo per totale, queue, lane, champion, matchup, duo e ping. Overview, profile e `!summoner` leggono lo stesso oggetto, ma mantengono le rispettive viste e il rispettivo formato; i matchup e la lista completa dei champion restano nelle pagine dedicate. `lastUpdate` viene scritto dopo il completamento del calcolo e mostrato nell'overview base e dal comando generico `!summoner`.
+
+Il profilo HTTP carica invece `recentMatches` con una query `MatchResult` separata sullo stesso filtro. I match raw restano riservati a timeline e dettagli.
 
 `SummonerOverview` e `SummonerChampion` propagano direttamente il PUUID al flusso Mongo. Se l’identità Riot è valida ma il documento non esiste ancora, la query Mongo restituisce un risultato vuoto/esplicito senza tentare un mapping MariaDB.
 
@@ -115,7 +117,7 @@ Nel ramo OP.GG che legge `List<QueryRecord>`, `previousRow` viene individuata co
 
 ### P2 — sincronizzazione cache
 
-Le cache Redis del profile e dell’OP.GG hanno TTL propri. Una riconciliazione deve invalidare `SUMMONER_DATA`, `ADVANCED_LOL_DATA` e la profile page dopo un batch Tracker completato.
+Le cache Redis del profile e dell’OP.GG hanno TTL propri. Una riconciliazione deve invalidare `PROFILE_STATISTICS`, `PROFILE_RECENT_MATCHES`, `SUMMONER_DATA` e la profile page dopo un batch Tracker completato.
 
 ## Verdetto
 

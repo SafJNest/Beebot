@@ -12,6 +12,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Custom builds e summoner.metrics sono fuori scope.
 - Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
 - `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
+- Il flusso completo di `profile_statistics`, inclusa la chiave `puuid + filterKey` e l'indice unique, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
 - Il nuovo flusso non esegue cleanup o migrazione automatica di documenti legacy; l'operatore rimuove manualmente i vecchi payload Kryo prima della rigenerazione.
@@ -50,9 +51,11 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - Ban: bans.BLUE e bans.RED, sempre presenti anche se vuoti.
 - Participant: campi flat; nessun campo build mega-nested.
 - Eventi: collection `match_events`, payload JSON con checksum e dimensione originale; la collection viene creata con `block_compressor=zstd`.
-- Build e statistiche: `build` e `statistics` sono BSON strutturato, mai una stringa opaca e mai `legacyPayload`.
+- Build e statistiche: `build` è BSON strutturato; `profile_statistics` è un documento flat con gli aggregati direttamente a root, mai una stringa opaca e mai `legacyPayload`.
 - MariaDB mantiene i dati storici letti dalla migration; il runtime LoL non li interroga.
 - Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
+
+Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. L'indice `profile_statistics_puuid_filter` è unique; `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`.
 
 ## Indici e spazio
 

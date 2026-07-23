@@ -17,295 +17,197 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LeagueMessageParameter {
-  private LeagueMessageType messageType;
+    private LeagueMessageType messageType;
+    private StaticChampion champion;
+    private boolean showChampion;
+    private int offset;
+    private String selectedMatchId;
+    private StringSelectMenu livegameMenu;
+    private StringSelectMenu opggMenu;
+    private Filter filter;
 
-  private long[] period;
-  
-  private GameQueueType queueType;
-  private LaneType laneType;
+    public LeagueMessageParameter(LeagueMessageType messageType) {
+        this.messageType = normalize(messageType);
+        this.filter = defaultFilter(this.messageType);
+    }
 
-  private StaticChampion champion;
-  private boolean showChampion;
-  private int opponent;
-  private int duo;
+    public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
+        this.messageType = normalize(messageType);
+        this.filter = filter != null ? filter : defaultFilter(this.messageType);
+        applyFilterState(this.filter);
+    }
 
-  private int offset;
+    public LeagueMessageParameter(
+        LeagueMessageType messageType,
+        long[] period,
+        GameQueueType queueType,
+        LaneType laneType,
+        StaticChampion champion,
+        boolean showChampion,
+        int offset
+    ) {
+        this.messageType = normalize(messageType);
+        this.filter = defaultFilter(this.messageType).setPeriod(period).setQueue(queueType).setLane(laneType);
+        this.champion = champion;
+        this.showChampion = showChampion;
+        this.offset = offset;
+        toFilter();
+    }
 
-  private String selectedMatchId;
+    public LeagueMessageParameter(List<Button> buttons) {
+        this.messageType = LeagueMessageType.OVERVIEW;
+        this.filter = defaultFilter(this.messageType);
+        String prefix = LeagueMessage.BUTTON_ID_PREFIX;
+        String timeString = "current";
+        int fallbackChampion = 0;
 
-  private StringSelectMenu livegameMenu;
-  private StringSelectMenu opggMenu;
-
-  private Filter filter;
-
-  public LeagueMessageParameter(LeagueMessageType messageType) {
-    this.messageType = messageType;
-
-    this.period = SeasonUtils.getCurrentSplitRange();
-
-    this.queueType = null;
-    this.laneType = null;
-
-    this.champion = null;
-    this.showChampion = false;
-    this.opponent = 0;
-    this.duo = 0;
-
-    this.offset = 0;
-
-    this.selectedMatchId = null;
-    this.filter = new Filter();
-  }
-
-  public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
-    this.messageType = messageType;
-    this.period = SeasonUtils.getCurrentSplitRange();
-    this.champion = null;
-    this.showChampion = false;
-    this.offset = 0;
-    applyFilter(filter);
-  }
-
-  public LeagueMessageParameter(LeagueMessageType messageType, long[] period, GameQueueType queueType, LaneType laneType, StaticChampion champion, boolean showChampion, int offset) {
-    this.messageType = messageType;
-
-    this.period = period;
-    
-    this.queueType = queueType;
-    this.laneType = laneType;
-
-    this.champion = champion;
-    this.showChampion = showChampion;
-    this.opponent = 0;
-    this.duo = 0;
-
-    this.offset = offset;
-
-    this.selectedMatchId = null;
-    this.filter = new Filter();
-  }
-
-  public LeagueMessageParameter(List<Button> buttons) {
-    this.filter = new Filter();
-    String prefix = LeagueMessage.BUTTON_ID_PREFIX;
-    
-    this.period = SeasonUtils.getCurrentSplitRange();
-    String timeString = "current";
-
-    int fallbackChampion = 0;
-
-    for (Button b : buttons) {
-      boolean isActive = b.getStyle() == ButtonStyle.SUCCESS;
-      String buttonValue = b.getCustomId().split("-").length == 2 ? b.getCustomId().split("-")[1] : b.getCustomId().split("-")[2];
-      if (b.getCustomId().startsWith(prefix + "-queue-") && isActive) {
-        try {
-          this.queueType = GameQueueType.valueOf(buttonValue);
-        } catch (Exception e) { }
-      }
-      
-      if (b.getCustomId().startsWith(prefix + "-type-") && isActive)
-          this.messageType = LeagueMessageType.valueOf(buttonValue.toUpperCase());
-
-      if (b.getCustomId().startsWith(prefix + "-lane-") && isActive) {
-          try {
-            this.laneType = LaneType.valueOf(buttonValue);
-          } catch (Exception e) { }
-      }
-          
-
-      if (b.getCustomId().startsWith(prefix + "-champion-")) {
-          this.champion = ChampionUtils.getChampion(Integer.parseInt(buttonValue));
-          this.showChampion = isActive;
-      }
-      
-      if (b.getCustomId().startsWith(prefix + "-season-") && isActive)
-          timeString = buttonValue;
-
-      if (b.getCustomId().startsWith(prefix + "-leftpage")) {
-        String[] parts = b.getCustomId().split("-", 4);
-        this.offset = Integer.parseInt(buttonValue);
-        if (parts.length == 4) {
-          try { applyFilter(Filter.fromStateKey(parts[3])); }
-          catch (Exception e) { }
+        for (Button button : buttons) {
+            boolean active = button.getStyle() == ButtonStyle.SUCCESS;
+            String[] parts = button.getCustomId().split("-");
+            String value = parts.length == 2 ? parts[1] : parts[2];
+            if (button.getCustomId().startsWith(prefix + "-queue-") && active) {
+                try { filter.setQueue(GameQueueType.valueOf(value)); }
+                catch (RuntimeException ignored) { }
+            }
+            if (button.getCustomId().startsWith(prefix + "-type-") && active) {
+                try { setMessageType(LeagueMessageType.valueOf(value.toUpperCase())); }
+                catch (RuntimeException ignored) { }
+            }
+            if (button.getCustomId().startsWith(prefix + "-lane-") && active) {
+                try { filter.setLane(LaneType.valueOf(value)); }
+                catch (RuntimeException ignored) { }
+            }
+            if (button.getCustomId().startsWith(prefix + "-champion-")) {
+                champion = ChampionUtils.getChampion(Integer.parseInt(value));
+                showChampion = active;
+            }
+            if (button.getCustomId().startsWith(prefix + "-season-") && active) timeString = value;
+            if (button.getCustomId().startsWith(prefix + "-leftpage")) {
+                String[] pageParts = button.getCustomId().split("-", 4);
+                offset = Integer.parseInt(value);
+                if (pageParts.length == 4) {
+                    try { applyFilter(Filter.fromStateKey(pageParts[3])); }
+                    catch (RuntimeException ignored) { }
+                }
+            }
+            if (button.getCustomId().startsWith(prefix + "-change")) fallbackChampion = Integer.parseInt(value);
         }
-      }
 
-      if (b.getCustomId().startsWith(prefix + "-change")) 
-        fallbackChampion = Integer.parseInt(buttonValue);
+        if (champion == null && fallbackChampion > 0) champion = ChampionUtils.getChampion(fallbackChampion);
+        filter.setPeriod(switch (timeString) {
+            case "all" -> new long[] {0, 0};
+            case "previous" -> SeasonUtils.getPreviousSplitRange();
+            default -> SeasonUtils.getCurrentSplitRange();
+        });
+        toFilter();
     }
 
-    if (this.champion == null && fallbackChampion > 0) 
-      this.champion = ChampionUtils.getChampion(fallbackChampion);
-    
-    
-    switch (timeString) {
-        case "all":
-            this.period = new long[] {0, 0};
-            break;
-        case "current":
-            this.period = SeasonUtils.getCurrentSplitRange();
-            break;
-        case "previous":
-            this.period = SeasonUtils.getPreviousSplitRange();
-            break;
+    public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
+        for (StringSelectMenu menu : menus) {
+            if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-opggselect")) opggMenu = menu;
+            if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-rankselect")) livegameMenu = menu;
+        }
+        return this;
     }
-  }
 
-  public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
-    for (StringSelectMenu menu : menus) {
-      if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-opggselect")) {
-        this.opggMenu = menu;
-      }
-      if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-rankselect")) {
-        this.livegameMenu = menu;
-      }
+    private static Filter defaultFilter(LeagueMessageType messageType) {
+        if (messageType == LeagueMessageType.PROFILE || messageType == LeagueMessageType.OVERVIEW
+            || messageType == LeagueMessageType.MATCHUP || messageType == LeagueMessageType.OVERVIEW_CHAMPIONS
+            || messageType == LeagueMessageType.OVERVIEW_OPGG) {
+            return Filter.summoner();
+        }
+        return new Filter();
     }
-    return this;
-  }
 
-  private void applyFilter(Filter filter) {
-    this.filter = filter;
-    this.queueType = filter.queue();
-    this.laneType = filter.lane();
-    this.opponent = filter.opponent();
-    this.duo = filter.duo();
-  }
+    private static LeagueMessageType normalize(LeagueMessageType messageType) {
+        return messageType == LeagueMessageType.OVERVIEW_PING || messageType == LeagueMessageType.OVERVIEW_OBJECTIVES
+            ? LeagueMessageType.OVERVIEW : messageType;
+    }
 
-  public LeagueMessageType getMessageType() {
-    return messageType;
-  }
+    private void applyFilter(Filter value) {
+        filter = value != null ? value : defaultFilter(messageType);
+        applyFilterState(filter);
+    }
 
-  public void setMessageType(LeagueMessageType messageType) {
-      this.messageType = messageType;
-  }
+    private void applyFilterState(Filter value) {
+        if (value.champion() != 0) {
+            champion = ChampionUtils.getChampion(value.champion());
+            showChampion = true;
+        }
+    }
 
-  public long[] getPeriod() {
-      return period;
-  }
+    public LeagueMessageType getMessageType() { return messageType; }
 
-  public void setPeriod(long[] period) {
-      this.period = period;
-  }
+    public void setMessageType(LeagueMessageType messageType) { this.messageType = normalize(messageType); }
 
-  public GameQueueType getQueueType() {
-      return queueType;
-  }
+    public long[] getPeriod() { return filter.period(); }
 
-  public void setQueueType(GameQueueType queueType) {
-      this.queueType = queueType;
-  }
+    public void setPeriod(long[] period) { filter.setPeriod(period); }
 
-  public LaneType getLaneType() {
-      return laneType;
-  }
+    public GameQueueType getQueueType() { return filter.queue(); }
 
-  public void setLaneType(LaneType laneType) {
-      this.laneType = laneType;
-  }
+    public void setQueueType(GameQueueType queueType) { filter.setQueue(queueType); }
 
-  public StaticChampion getChampion() {
-      return champion;
-  }
+    public LaneType getLaneType() { return filter.lane(); }
 
-  public void setChampion(StaticChampion champion) {
-      this.champion = champion;
-  }
+    public void setLaneType(LaneType laneType) { filter.setLane(laneType); }
 
-  public boolean isShowChampion() {
-      return showChampion;
-  }
+    public StaticChampion getChampion() { return champion; }
 
-  public void setShowChampion(boolean showChampion) {
-      this.showChampion = showChampion;
-  }
+    public void setChampion(StaticChampion champion) {
+        this.champion = champion;
+        filter.setChampion(champion == null ? 0 : champion.getId());
+    }
 
-  public int getOffset() {
-      return offset;
-  }
+    public boolean isShowChampion() { return showChampion; }
 
-  public void setOffset(int offset) {
-      this.offset = offset;
-  }
+    public void setShowChampion(boolean showChampion) { this.showChampion = showChampion; }
 
-  public int getChampionId() {
-    return champion != null ? champion.getId() : 0;
-  }
+    public int getOffset() { return offset; }
 
-  public int getOpponent() {
-    return opponent;
-  }
+    public void setOffset(int offset) { this.offset = offset; }
 
-  public void setOpponent(int opponent) {
-    this.opponent = opponent;
-    this.filter.setOpponent(opponent);
-  }
+    public int getChampionId() { return champion != null ? champion.getId() : 0; }
 
-  public int getDuo() {
-    return duo;
-  }
+    public int getOpponent() { return filter.opponent(); }
 
-  public void setDuo(int duo) {
-    this.duo = duo;
-    this.filter.setDuo(duo);
-  }
+    public void setOpponent(int opponent) { filter.setOpponent(opponent); }
 
-  public int getShowingChampion() {
-    return this.showChampion ? getChampionId() : 0;
-  }
+    public int getDuo() { return filter.duo(); }
 
-  public boolean isDuo() {
-    return laneType == LaneType.BOT || laneType == LaneType.UTILITY || GameQueueTypeUtils.isCherry(queueType);
-  }
+    public void setDuo(int duo) { filter.setDuo(duo); }
 
-  public long getTimeStart() {
-    return this.period[0];
-  }
+    public int getShowingChampion() { return showChampion ? getChampionId() : 0; }
 
-  public long getTimeEnd() {
-    return this.period[1];
-  }
+    public boolean isDuo() {
+        return filter.lane() == LaneType.BOT || filter.lane() == LaneType.UTILITY || GameQueueTypeUtils.isCherry(filter.queue());
+    }
 
-  public void setSelectedMatchId(String selectedMatchId) {
-    this.selectedMatchId = selectedMatchId;
-  }
+    public long getTimeStart() { return filter.timeStart(); }
 
-  public String getSelectedMatchId() {
-    return this.selectedMatchId;
-  }
+    public long getTimeEnd() { return filter.timeEnd(); }
 
-  public StringSelectMenu getLivegameMenu() {
-    return this.livegameMenu;
-  }
+    public void setSelectedMatchId(String selectedMatchId) { this.selectedMatchId = selectedMatchId; }
 
-  public StringSelectMenu getOpggMenu() {
-    return this.opggMenu;
-  }
+    public String getSelectedMatchId() { return selectedMatchId; }
 
-  public String getPatch() {
-    return this.filter.patch();
-  }
+    public StringSelectMenu getLivegameMenu() { return livegameMenu; }
 
-  public void setPatch(String patch) {
-    this.filter.setPatch(patch);
-  }
+    public StringSelectMenu getOpggMenu() { return opggMenu; }
 
-  public TierType getRank() {
-    return this.filter.rank();
-  }
+    public String getPatch() { return filter.patch(); }
 
-  public void setRank(TierType rank) {
-    this.filter.setRank(rank);
-  }
+    public void setPatch(String patch) { filter.setPatch(patch); }
 
-  public LeagueShard getRegion() {
-    return this.filter.region();
-  }
+    public TierType getRank() { return filter.rank(); }
 
-  public void setRegion(LeagueShard region) {
-    this.filter.setRegion(region);
-  }
+    public void setRank(TierType rank) { filter.setRank(rank); }
 
-  public Filter toFilter() {
-    return this.filter.setLane(laneType).setQueue(queueType).setOpponent(opponent).setDuo(duo);
-  }
+    public LeagueShard getRegion() { return filter.region(); }
+
+    public void setRegion(LeagueShard region) { filter.setRegion(region); }
+
+    public Filter toFilter() {
+        return filter.setChampion(showChampion ? getChampionId() : 0);
+    }
 }

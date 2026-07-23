@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 
 public class Filter {
 
@@ -21,6 +22,27 @@ public class Filter {
         this.patch = PatchUtils.getPatch();
         this.rank = TierType.EMERALD;
         this.rankBehavior = RankBehavior.GREATER_OR_EQUAL;
+        long[] period = SeasonUtils.getCurrentSplitRange();
+        if (period != null) {
+            this.timeStart = period[0];
+            this.timeEnd = period[1];
+        }
+    }
+
+    public static Filter summoner(long timeStart, long timeEnd) {
+        return summoner().setPeriod(timeStart, timeEnd);
+    }
+
+    public static Filter summoner() {
+        return new Filter()
+            .setChampion(0)
+            .setLane(null)
+            .setQueue(null)
+            .setRank(null)
+            .setPatch(null)
+            .setRegion(null)
+            .setOpponent(0)
+            .setDuo(0);
     }
 
     public static Filter fromGenericKey(String key) {
@@ -65,6 +87,11 @@ public class Filter {
         filter.setOpponent(Integer.parseInt(parts[6]));
       if (parts.length > 7 && !parts[7].equals("*"))
         filter.setDuo(Integer.parseInt(parts[7]));
+      if (parts.length > 8) filter.setPeriod(longValue(parts[8]), parts.length > 9 ? longValue(parts[9]) : 0);
+      if (parts.length > 10) {
+        try { filter.setRankBehavior(RankBehavior.valueOf(parts[10])); }
+        catch (RuntimeException ignored) { }
+      }
       return filter;
     }
 
@@ -77,6 +104,8 @@ public class Filter {
     private LeagueShard region;
     private int opponent;
     private int duo;
+    private long timeStart;
+    private long timeEnd;
 
     public Filter setChampion(int champion) {
         this.champion = champion;
@@ -99,7 +128,7 @@ public class Filter {
     }
 
     public Filter setRankBehavior(RankBehavior b) {
-        this.rankBehavior = b;
+        this.rankBehavior = b != null ? b : RankBehavior.GREATER_OR_EQUAL;
         return this;
     }
 
@@ -155,6 +184,32 @@ public class Filter {
         return this;
     }
 
+    public Filter setPeriod(long timeStart, long timeEnd) {
+        this.timeStart = Math.max(0, timeStart);
+        this.timeEnd = Math.max(0, timeEnd);
+        return this;
+    }
+
+    public Filter setPeriod(long[] period) {
+        return period == null || period.length < 2 ? setPeriod(0, 0) : setPeriod(period[0], period[1]);
+    }
+
+    public RankBehavior rankBehavior() {
+        return rankBehavior;
+    }
+
+    public long timeStart() {
+        return timeStart;
+    }
+
+    public long timeEnd() {
+        return timeEnd;
+    }
+
+    public long[] period() {
+        return new long[] {timeStart, timeEnd};
+    }
+
     public String toKey() {
         String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
                 + val(patch) + "|" + val(region);
@@ -165,7 +220,15 @@ public class Filter {
 
     public String toStateKey() {
         String raw = champion + "|" + ordinal(lane) + "|" + ordinal(queue) + "|" + ordinal(rank) + "|"
-                + val(patch) + "|" + val(region) + "|" + val(opponent) + "|" + val(duo);
+                + val(patch) + "|" + val(region) + "|" + val(opponent) + "|" + val(duo)
+                + "|" + timeStart + "|" + timeEnd + "|" + rankBehavior;
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String toSummonerKey() {
+        String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
+                + rankBehavior + "|" + val(patch) + "|" + val(region) + "|" + val(opponent) + "|" + val(duo)
+                + "|" + timeStart + "|" + timeEnd;
         return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -181,6 +244,11 @@ public class Filter {
 
     private static String val(int i) {
         return i != 0 ? String.valueOf(i) : "*";
+    }
+
+    private static long longValue(String value) {
+        try { return Long.parseLong(value); }
+        catch (RuntimeException ignored) { return 0; }
     }
 
     private static String ordinal(Enum<?> e) {

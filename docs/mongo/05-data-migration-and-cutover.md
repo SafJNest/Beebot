@@ -33,6 +33,8 @@ Non vengono migrati:
 
 I dati di build e le statistiche derivate verranno rigenerati dall'applicazione dopo la verifica dei dati raw.
 
+La rigenerazione delle statistiche profile deve usare il flusso applicativo canonico descritto in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md): stesso `Filter`, stesso `filterKey` e upsert sulla coppia `puuid + filterKey`.
+
 ## Paginazione
 
 Le tabelle SQL sono lette con keyset pagination:

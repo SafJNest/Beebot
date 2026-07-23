@@ -1,5 +1,7 @@
 # Audit 02 — comando `summoner profile`
 
+Per il contratto completo e il runbook di recupero contesto vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
+
 ## Percorso runtime attuale
 
 ```text
@@ -7,7 +9,7 @@
   -> risoluzione account/cache
   -> Riot API solo quando il profilo Mongo è incompleto
   -> LeagueService.upsertSummoner
-  -> MongoDB.findAdvancedProfileProjections
+  -> ProfileStatisticsService.get / Tracker.refresh
   -> LeagueMessage.send
 ```
 
@@ -15,15 +17,16 @@ L’account e il profilo vengono persistiti direttamente in MongoDB. `LeagueDB` 
 
 ## Contratto Mongo
 
-`LeagueService.getAdvancedLOLData` usa `MongoDB.findAdvancedProfileProjections`, che raggruppa i participant Mongo per champion e restituisce:
+`ProfileStatisticsService` è il proprietario del calcolo e del refresh. Legge da Mongo i match proiettati usando lo stesso `Filter` completo del comando e persiste un documento flat indicizzato da `puuid + filterKey`, che contiene:
 
-- `champion`;
-- `games`, `wins`, `losses`;
-- `avg_kills`, `avg_deaths`, `avg_assists`;
-- `total_lp_gain`;
-- `lanes_played` nel formato consumato dal messaggio.
+- `total`;
+- `queueStats`, `laneStats`, `championStats`;
+- `matchups`, `duoStats` e `pings`;
+- `lastUpdate` e gli estremi temporali dell'aggregato.
 
-Il documento match resta la sorgente dei participant; la projection consegna al consumer l’aggregato già compatibile con `LeagueMessage`.
+Il documento match resta la sorgente dei participant; `recentMatches` viene caricato separatamente come `MatchResult` leggero dallo stesso filtro e non viene serializzato dentro `ProfileStatistics`.
+
+La chiave Mongo non è la stagione: è l'uguaglianza esatta `{ puuid, filterKey }`, dove `filterKey` è `Filter.toSummonerKey()` e include anche il periodo. L'indice unique `profile_statistics_puuid_filter` impedisce duplicati per lo stesso account e filtro.
 
 ## Account e cache
 
@@ -33,4 +36,4 @@ Il PUUID è il valore stabile usato dall’autocomplete e dai lookup Mongo. La R
 
 ## Verifica
 
-I test devono eseguire il flusso con una chiave Redis nuova o invalidata e confrontare la projection Mongo sullo stesso PUUID, intervallo e queue. La guardia runtime deve continuare a fallire se il codice del profilo reintroduce `LeagueDB`.
+I test devono eseguire il flusso con una chiave Redis nuova o invalidata e confrontare overview, profile e comando generico sullo stesso PUUID, `Filter` e `lastUpdate`. La guardia runtime deve continuare a fallire se il codice del profilo reintroduce `LeagueDB`.

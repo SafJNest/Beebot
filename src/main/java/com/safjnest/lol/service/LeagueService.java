@@ -52,7 +52,6 @@ public class LeagueService {
     private static final int TTL_CHAMPION_MASTERIES = 60 * 60 * 24;
     private static final int TTL_PROFILE_COMPONENT = 60 * 15;
     private static final int TTL_SPECTATOR = 600;
-    private static final int TTL_ADVANCED_LOL_DATA = 60 * 60 * 24;
     private static final int TTL_MATCH_LIST = 60 * 60 * 4;
     private static final int TTL_MATCH = 0;
     private static final int TTL_MATCH_DETAIL = 0;
@@ -653,28 +652,6 @@ public class LeagueService {
             long untilTimeEnd,
             GameQueueType queue) {
         return MongoDB.findMatchResults(puuid, shard, afterTimeEnd, untilTimeEnd, queue, 0, 100);
-    }
-
-    public static List<QueryRecord> getAdvancedLOLData(
-            String puuid,
-            LeagueShard shard,
-            long timeStart,
-            long timeEnd,
-            GameQueueType queue) {
-        String key = RedisKey.ADVANCED_LOL_DATA.of(
-            puuid,
-            timeStart,
-            timeEnd,
-            queue != null ? queue.name() : "null"
-        );
-        List<QueryRecord> cached = RedisClient.get(key, new TypeReference<List<QueryRecord>>() {});
-        if (cached != null) return cached;
-
-        List<QueryRecord> result = puuid == null || shard == null
-            ? new ArrayList<>()
-            : MongoDB.findAdvancedProfileProjections(puuid, shard, timeStart, timeEnd, queue);
-        RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
-        return result;
     }
 
     public static List<QueryRecord> getSummonerData(String puuid, LeagueShard shard) {

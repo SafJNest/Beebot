@@ -7,7 +7,7 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | LeagueService |
 | profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfilePageService |
 | leaderboard | `$facet` per `total` e pagina, batch summoner/masteries, statistics già batch | 3 | LeaderboardService |
-| profile statistics batch | `_id: {$in: [puuid:seasonStart...]}`, projection `statistics` | 1 | ProfileStatisticsService |
+| profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique index `profile_statistics_puuid_filter` | 1 | ProfileStatisticsService |
 | history | participant filter in un unico `$elemMatch`, projection/paging limitati; `countDocuments` diretto | 1 + eventi batch | LeagueMessage |
 | match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
 | match events | `_id: {$in: [...]}` su `match_events` | 1 | match detail/history |
@@ -27,7 +27,9 @@ Le query paginated sono limitate a 100 match, 50 righe leaderboard, 25 risultati
 
 PUUID è l'identità summoner e `_id` del documento; il Riot match ID completo è l'identità match; enum R4J usa `name()`; bans usa BLUE e RED; participant resta flat; upsert/update/delete sono idempotenti; letture e scritture applicative Mongo-only; errori di lettura Mongo espliciti.
 
-MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` e `statistics` come BSON strutturato, mai come stringa opaca. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; dati vecchi o corrotti sono invalidi e vanno rimossi manualmente dall'operatore prima della rigenerazione.
+MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` come BSON strutturato; `profile_statistics` salva direttamente i campi `timeStart`, `timeEnd`, `lastUpdate`, `total`, `queueStats`, `laneStats`, `championStats`, `matchups`, `duoStats`, `pings` e gli aggregati collegati, mai sotto un campo `statistics`. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; i documenti legacy vengono rigenerati con il nuovo `puuid + filterKey`.
+
+Il dettaglio del formato di `filterKey`, del motivo dell'indice composto e della differenza tra aggregato e `recentMatches` è in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 ## Explain richiesti
 

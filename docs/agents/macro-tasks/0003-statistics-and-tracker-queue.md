@@ -26,7 +26,7 @@ Separate statistics persistence from request handling and prevent request-time a
 
 - API-triggered generation starts immediately on a virtual thread;
 - no Profile Statistics application queue or retry queue exists;
-- repeated requests for the same summoner and season are deduplicated while running;
+- repeated requests for the same PUUID and complete summoner filter are deduplicated while running;
 - one failed generation does not stop another generation;
 - failed in-flight markers are removed so a later request can retry;
 - match lookup and match analysis queues remain process-owned and unchanged.
@@ -41,3 +41,16 @@ Separate statistics persistence from request handling and prevent request-time a
 ## Handoff
 
 Report executor ownership, deduplication keys, failure cleanup, scheduler changes and verification results.
+
+## Implemented flow reference
+
+The implemented source-of-truth contract is [`profile-statistics-source-of-truth.md`](../../architecture/profile-statistics-source-of-truth.md). The important recovery invariant is:
+
+```text
+ProfileStatistics identity = puuid + Filter.toSummonerKey()
+Mongo unique index        = { puuid: 1, filterKey: 1 }
+Mongo _id                 = random ObjectId, $setOnInsert only
+recentMatches             = separate MatchResult query with the same Filter
+```
+
+`ProfileStatisticsService` owns read, calculation and persistence. `Tracker` owns async dispatch and in-flight deduplication using `puuid + ":" + filterKey`. Overview, profile and `!summoner` read the same aggregate, while each existing presentation remains unchanged unless a style refactor is explicitly requested. `lastUpdate` is written after the calculation completes.

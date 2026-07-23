@@ -217,10 +217,18 @@ public class Tracker {
         com.safjnest.lol.model.summoner.Summoner summoner,
         SeasonUtils.SeasonRange season
     ) {
-        if (summoner == null || summoner.summonerId() == 0 || season == null) return;
+        if (season == null) return;
+        startProfileStatistics(summoner, Filter.summoner(season.start(), season.end()));
+    }
 
-        ProfileStatisticsRequest request = new ProfileStatisticsRequest(summoner, season);
-        String key = request.summoner().summonerId() + ":" + request.season().start();
+    public static void startProfileStatistics(
+        com.safjnest.lol.model.summoner.Summoner summoner,
+        Filter filter
+    ) {
+        if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null) return;
+
+        ProfileStatisticsRequest request = new ProfileStatisticsRequest(summoner, filter);
+        String key = request.summoner().puuid() + ":" + request.filter().toSummonerKey();
         if (!PROFILE_STATISTICS_RUNNING.add(key)) return;
 
         try {
@@ -228,13 +236,13 @@ public class Tracker {
         } catch (RuntimeException exception) {
             PROFILE_STATISTICS_RUNNING.remove(key);
             BotLogger.error("Profile statistics async start failed for summoner="
-                + request.summoner().summonerId() + " message=" + exception.getMessage());
+                + request.summoner().puuid() + " message=" + exception.getMessage());
         }
     }
 
     private record ProfileStatisticsRequest(
         com.safjnest.lol.model.summoner.Summoner summoner,
-        SeasonUtils.SeasonRange season
+        Filter filter
     ) {}
 
     public static void startChampionData(Filter filter) {
@@ -255,8 +263,8 @@ public class Tracker {
     private static void refreshProfileStatistics(ProfileStatisticsRequest request, String key) {
         try {
             LeagueShard shard = LeagueShard.valueOf(request.summoner().region());
-            if (!PROFILE_STATISTICS_SERVICE.refresh(request.summoner().puuid(), shard, request.season(), false)) {
-                BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().summonerId());
+            if (!PROFILE_STATISTICS_SERVICE.refresh(request.summoner().puuid(), shard, request.filter(), false)) {
+                BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().puuid());
                 return;
             }
 
@@ -265,7 +273,7 @@ public class Tracker {
                 + request.summoner().riotId() + " (" + shard + ", id="
                 + request.summoner().summonerId() + ") | profile statistics persisted, Redis profile page invalidated");
         } catch (Exception exception) {
-            BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().summonerId()
+            BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().puuid()
                 + " message=" + exception.getMessage());
         } finally {
             PROFILE_STATISTICS_RUNNING.remove(key);

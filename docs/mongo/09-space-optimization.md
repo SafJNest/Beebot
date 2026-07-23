@@ -4,7 +4,7 @@
 
 Con circa 6 milioni di documenti `summoner` e circa 1 GB di dati contro quasi 2 GB di indici, il primo intervento riguarda gli indici. La compressione applicativa dei documenti base viene rimandata: BSON/WiredTiger comprime già il documento, mentre un campo compresso perde query e proiezioni naturali.
 
-I payload LoL non usano più Kryo. MariaDB usa JSON UTF-8 come testo (`longtext`) per build, champion statistics e profile statistics; Mongo usa BSON strutturato nei campi `build` e `statistics`, così projection e aggregation restano disponibili. Non vengono convertiti o cancellati automaticamente dati storici: l'operatore rimuove manualmente le righe/documenti Kryo prima della rigenerazione.
+I payload LoL non usano più Kryo. MariaDB usa JSON UTF-8 come testo (`longtext`) per build, champion statistics e profile statistics; Mongo usa BSON strutturato: `build` e champion statistics mantengono i propri campi strutturati, mentre `profile_statistics` espone gli aggregati direttamente a root senza `statistics` annidato. Non vengono convertiti o cancellati automaticamente dati storici: l'operatore rimuove manualmente le righe/documenti Kryo prima della rigenerazione.
 
 Gli eventi sono l'eccezione: non vengono filtrati direttamente e vengono letti come payload completo. Per questo vengono spostati da `match.events` alla collection `match_events`, creata con WiredTiger Zstandard nativo.
 
@@ -42,7 +42,7 @@ Indice target su `summoner`:
 
 Per le letture principali sono inoltre dichiarati gli indici `participants.puuid + leagueShard + queue + timeStart`, i quattro indici leaderboard con `mmr + puuid` come ordinamento deterministico e gli indici champion già filtrati per `filterKey`, queue e champion. Gli indici nuovi vengono aggiunti con nomi distinti; non viene eseguito alcun drop automatico.
 
-`MongoDB.ensureIndexes()` crea gli indici mancanti e non esegue drop automatici. Durante il backfill gli indici secondari sono posticipati; vengono creati dopo il completamento di summoner e match. Gli indici obsoleti, se presenti, vengono verificati e rimossi manualmente dopo l'audit. Dopo la migrazione si eseguono gli `explain("executionStats")` delle query principali:
+`MongoDB.ensureIndexes()` crea gli indici mancanti e rimuove soltanto l'indice legacy nominato `profile_statistics_puuid_season` prima di creare `profile_statistics_puuid_filter`; non elimina documenti. Durante il backfill gli indici secondari sono posticipati; vengono creati dopo il completamento di summoner e match. Gli altri indici obsoleti, se presenti, vengono verificati e rimossi manualmente dopo l'audit. Dopo la migrazione si eseguono gli `explain("executionStats")` delle query principali:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")

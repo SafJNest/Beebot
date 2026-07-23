@@ -35,7 +35,7 @@ Il workflow Mongo aggiunge:
 - un audit read-only di tutte le query e scritture `LeagueDB` prima dell'implementazione;
 - agenti query separati per profile, match, statistiche/champion e leaderboard;
 - un agent per schema/index e uno per mapping verso i modelli esistenti;
-- un agent dedicato a dual-write/outbox;
+- una verifica esplicita dell'assenza di dual-write e outbox nel runtime;
 - un agent dedicato a backfill e uno a riconciliazione/cutover;
 - un guardian indipendente che approva i gate e un verifier finale.
 

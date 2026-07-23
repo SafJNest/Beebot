@@ -19,11 +19,14 @@ Building profile statistics during an HTTP request makes profile and leaderboard
 
 The match lookup and match analysis queues remain separate and unchanged.
 
+The aggregate identity is always `puuid + Filter.toSummonerKey()`. The complete filter, including queue, lane, champion, opponent, duo, rank behavior, patch, region and period, is passed unchanged from the request to Mongo match filtering and persistence. The detailed data contract is documented in [`profile-statistics-source-of-truth.md`](../profile-statistics-source-of-truth.md).
+
 ## Processing rules
 
 - Remove in-flight deduplication state after success or failure.
 - Allow a later request to retry a failed generation.
 - Never build a missing aggregate synchronously from an HTTP request.
+- Store the generated aggregate flat in `profile_statistics` under the unique `{ puuid, filterKey }` identity.
 
 ## Rejected alternatives
 

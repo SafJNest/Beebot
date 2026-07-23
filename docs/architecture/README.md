@@ -45,6 +45,10 @@ lol/model/
 
 Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
 
+## Statistics source of truth
+
+The complete profile-statistics flow, filter encoding, Mongo document shape, compound index, cache ownership and Discord/API composition are documented in [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md). Start there when a future task mentions `ProfileStatistics`, `SummonerOverview`, `filterKey`, `recentMatches` or `lastUpdate`.
+
 ## ADR index
 
 - [ADR-0001: Canonical LoL model boundaries](adr/0001-canonical-lol-model-boundaries.md)

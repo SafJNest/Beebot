@@ -31,14 +31,15 @@ public class ProfilePageServiceTest {
             List.of(new Rank(GameQueueType.RANKED_FLEX_SR, TierDivisionType.BRONZE_II, 15, 76, 131)),
             statistics,
             List.of(),
-            java.util.Map.of(1, new SummonerOverview.Champion("Annie", "image"))
+            java.util.Map.of(1, new SummonerOverview.Champion("Annie", "image")),
+            List.of(match("recent", LaneType.TOP))
         );
 
         assertEquals(1, page.overview().statistics().laneStats.get(0).games);
         assertEquals(LaneType.TOP, page.overview().statistics().laneStats.get(0).reference);
         assertEquals(GameQueueType.RANKED_FLEX_SR, page.ranks().get(0).queue());
         assertEquals(27, page.summoner().icon());
-        assertEquals("BLUE", page.overview().statistics().recentMatches.get(0).participants().get(0).team());
+        assertEquals("BLUE", page.overview().recentMatches().get(0).participants().get(0).team());
     }
 
     private static MatchResult match(String id, LaneType lane) {

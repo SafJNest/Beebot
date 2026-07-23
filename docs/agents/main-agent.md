@@ -32,6 +32,8 @@ Coordinate macro-task agents and guarantee that the implementation follows `AGEN
 - Are Spring success DTOs and duplicate mappers removed?
 - Are API defaults and pagination unchanged where required?
 - Are Redis and DB changes idempotent and scoped?
+- Are affected source-of-truth, API, audit and persistence documents updated, or is the no-change decision explicit?
+- If the task changes only data or data flow, is the existing presentation preserved?
 - Are tests and `git diff --check` reported?
 
 ## Approval states

@@ -3,19 +3,22 @@ package com.safjnest.lol.model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
 import org.junit.Test;
 
 import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.utils.JsonCodec;
 
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class ProfileStatisticsTest {
 
@@ -34,19 +37,7 @@ public class ProfileStatisticsTest {
         assertEquals(GameQueueType.TEAM_BUILDER_RANKED_SOLO, decoded.queueStats.get(0).reference);
         assertEquals(1, decoded.laneStats.size());
         assertEquals(LaneType.TOP, decoded.laneStats.get(0).reference);
-        assertEquals(2, decoded.recentMatches.size());
-        assertEquals(1, decoded.recentMatches.get(0).participants().size());
-    }
-
-    @Test
-    public void keepsOnlyFiveMostRecentMatches() {
-        ProfileStatistics source = new ProfileStatistics(0);
-        for (int i = 0; i < 6; i++) {
-            source.add(match("game" + i, i, "1/0/0", 10), GameQueueType.ARAM, LaneType.NONE);
-        }
-
-        assertEquals(5, source.recentMatches.size());
-        assertTrue(source.recentMatches.get(0).timeStart() > source.recentMatches.get(4).timeStart());
+        assertFalse(json.contains("recentMatches"));
     }
 
     @Test
@@ -58,6 +49,53 @@ public class ProfileStatisticsTest {
         assertEquals(source.gameId(), decoded.gameId());
         assertEquals(source.participants().get(0).puuid(), decoded.participants().get(0).puuid());
         assertNull(JsonCodec.fromJson("not-json", ProfileStatistics.class));
+    }
+
+    @Test
+    public void aggregatesMatchOnlyWhenCompleteFilterMatches() {
+        Match match = new Match();
+        match.leagueShard = LeagueShard.EUW1;
+        match.queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+        match.rank = TierType.GOLD;
+        match.patch = "14.10";
+        match.timeStart = 100;
+        match.timeEnd = 200;
+
+        Participant player = new Participant();
+        player.puuid = "puuid";
+        player.champion = 1;
+        player.lane = LaneType.TOP;
+        player.team = TeamType.BLUE;
+        player.win = true;
+        player.kda = "3/1/4";
+        player.damage = 1000;
+        player.gain = 21;
+        player.pings.put("danger", 2);
+
+        Participant opponent = new Participant();
+        opponent.puuid = "opponent";
+        opponent.champion = 2;
+        opponent.lane = LaneType.TOP;
+        opponent.team = TeamType.RED;
+        opponent.kda = "1/3/1";
+        match.participants = List.of(player, opponent);
+
+        Filter filter = new Filter()
+            .setChampion(1)
+            .setLane(LaneType.TOP)
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+            .setRank(TierType.GOLD)
+            .setPatch("14.10")
+            .setRegion(LeagueShard.EUW1)
+            .setOpponent(2)
+            .setPeriod(100, 200);
+        ProfileStatistics statistics = new ProfileStatistics(filter.timeStart());
+        statistics.add(match, "puuid", filter);
+
+        assertEquals(1, statistics.total.games);
+        assertEquals(21, statistics.total.lpGain);
+        assertEquals(Long.valueOf(2), statistics.pings.get("danger"));
+        assertEquals(1, statistics.matchups.get(2).games);
     }
 
     private static MatchResult match(String id, long time, String kda, int teamKills) {

@@ -35,7 +35,7 @@ Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/Leag
 
 ### Coerente — refresh statistiche Mongo
 
-`ProfileStatisticsService.refresh` legge match da Mongo e salva il risultato con `MongoDB.upsertProfileStatistics`. È il comportamento previsto per il runtime Mongo-only.
+`ProfileStatisticsService.refresh` legge match proiettati da Mongo usando il `Filter` completo e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. È il comportamento previsto per il runtime Mongo-only.
 
 Evidenza: [ProfileStatisticsService.java](../../src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java:104).
 

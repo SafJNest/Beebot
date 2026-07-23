@@ -27,7 +27,8 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Profile component lists are cached only after a confirmed Riot result; database or Riot failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - The existing Redis queue stores only matches already fetched from Riot.
-- The `profile_statistics` database key format remains unchanged.
+- Profile statistics are keyed by the complete `Filter.toSummonerKey()` together with the PUUID; recent matches are loaded separately from the same filter.
+- Mongo persists profile statistics flat and enforces one document per `{ puuid, filterKey }` through the unique `profile_statistics_puuid_filter` index. `_id` is a random ObjectId created only on insert and is not used for lookup.
 
 ## Rejected alternatives
 
@@ -42,3 +43,5 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Champion API does not compute builds.
 - Match misses return `202` and are resolved by the scheduler.
 - No Redis key pattern contains `v1`, `v2` or `v3`.
+
+The complete profile-statistics flow and the index rationale are maintained in [`profile-statistics-source-of-truth.md`](../profile-statistics-source-of-truth.md).

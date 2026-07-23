@@ -22,7 +22,11 @@ List current files and expected canonical destinations. Treat this list as a bou
 
 ## Invariants
 
-List names, owners, API behavior, persistence and cache rules that must remain true.
+List names, owners, API behavior, persistence, cache and presentation rules that must remain true.
+
+Unless explicitly requested, data/model/persistence changes must preserve the existing commands, embeds, views, field names, order, text, formatting, components and layout.
+
+The relevant documentation must be updated in the same task, or the handoff must explicitly state why no documentation change is required.
 
 ## Implementation plan
 
@@ -30,7 +34,7 @@ Use ordered steps. Each step must have one observable result.
 
 ## Acceptance criteria
 
-List conditions that the main agent can verify without interpreting intent.
+List conditions that the main agent can verify without interpreting intent, including documentation synchronization for every affected contract or flow.
 
 ## Verification
 
@@ -44,5 +48,6 @@ Report:
 - changed files;
 - decisions or deviations;
 - verification results;
+- documentation updated or explicit confirmation that no documentation update was required;
 - risks and follow-ups;
 - confirmation that the gate passes or the reason it does not.

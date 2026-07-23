@@ -245,7 +245,11 @@ ranks      -> queue, tier, lp, wins, losses
 overview   -> statistics, masteries, champions, form, mostPlayed, recentMatches
 ```
 
-`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se summoner, rank e masteries sono disponibili ma le statistiche aggregate non lo sono ancora, il profilo resta `200` con i dati disponibili e il refresh viene avviato immediatamente in background.
+`statistics` è l'aggregato flat calcolato dal filtro canonico del profilo e include `total`, `queueStats`, `laneStats`, `championStats`, `matchups`, `duoStats`, `pings` e `lastUpdate`. `lastUpdate` è un timestamp Unix in millisecondi calcolato dopo il completamento del refresh. `recentMatches` contiene i `MatchResult` leggeri caricati separatamente dallo stesso filtro, mentre `Match` completo è riservato al dettaglio match. Se summoner, rank e masteries sono disponibili ma le statistiche aggregate non lo sono ancora, il profilo resta `200` con i dati disponibili e il refresh viene avviato immediatamente in background.
+
+Il filtro canonico del profilo usa il periodo corrente e viene rappresentato dallo stesso oggetto `Filter` usato da overview, profile e comando generico `!summoner`.
+
+Per il flusso interno, la composizione tra `Filter`, `ProfileStatistics`, `recentMatches`, cache Redis e indice Mongo è documentata in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 Risposta `202`: `LolApiError` con codice `profile_pending` quando almeno uno tra summoner, rank o masteries non è ancora disponibile. La fetch Riot viene accodata o riusata in background; il contratto HTTP non cambia.
 

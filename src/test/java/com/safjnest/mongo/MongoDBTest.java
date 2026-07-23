@@ -2,12 +2,15 @@ package com.safjnest.mongo;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 
 import com.safjnest.lol.model.match.Match;
@@ -177,6 +180,22 @@ public class MongoDBTest {
         Document document = MongoDB.toDocument(new ProfileStatistics());
 
         assertFalse(document.containsKey("legacyPayload"));
+        assertFalse(document.containsKey("statistics"));
         assertFalse(document.toJson().contains("legacyPayload"));
+    }
+
+    @Test
+    public void flatProfileStatisticsCanBeReadWithMongoIdentityFields() throws Exception {
+        Document document = MongoDB.toDocument(new ProfileStatistics(100));
+        document.put("_id", new ObjectId());
+        document.put("puuid", "puuid");
+        document.put("filterKey", "filter");
+
+        Method reader = MongoDB.class.getDeclaredMethod("readProfileStatistics", Document.class);
+        reader.setAccessible(true);
+
+        ProfileStatistics decoded = (ProfileStatistics) reader.invoke(null, document);
+        assertNotNull(decoded);
+        assertEquals(100, decoded.timeStart);
     }
 }

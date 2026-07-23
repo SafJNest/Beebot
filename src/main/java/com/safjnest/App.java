@@ -38,7 +38,7 @@ public class App {
             runSpring();
         }
         TrackerScheduler.start();
-        MongoMigration.migrateAll();
+        //MongoMigration.migrateAll();
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

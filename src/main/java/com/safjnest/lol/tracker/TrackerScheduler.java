@@ -26,7 +26,7 @@ public class TrackerScheduler {
         if (started) return;
         started = true;
 
-        //if (App.isTesting()) return;
+        if (App.isTesting()) return;
 
         ChronoTask track = () -> retrieveSummoners();
         track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);

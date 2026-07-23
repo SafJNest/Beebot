@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.bson.conversions.Bson;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -97,7 +98,7 @@ public final class MongoDB {
                 index("matches_start", new Document("timeStart", -1), false, false)));
         schemas.put("match_events", List.of());
         schemas.put("profile_statistics", List.of(
-                index("profile_statistics_puuid_season", new Document("puuid", 1).append("seasonStart", 1), true, false)));
+                index("profile_statistics_puuid_filter", new Document("puuid", 1).append("filterKey", 1), true, false)));
         schemas.put("leaderboard_distribution", List.of(
                 index("distribution_queue_rank_region", new Document("queue", 1).append("rank", 1).append("region", 1), true, false)));
         schemas.put("leaderboard_entries", List.of(
@@ -132,6 +133,7 @@ public final class MongoDB {
     }
 
     private static void ensureIndexes(MongoDatabase database) {
+        dropLegacyProfileStatisticsIndex(database);
         for (Map.Entry<String, List<IndexSpec>> schema : schemas().entrySet()) {
             MongoCollection<Document> collection = database.getCollection(schema.getKey());
             for (IndexSpec index : schema.getValue()) {
@@ -139,6 +141,14 @@ public final class MongoDB {
                 if (index.partialFilterExpression() != null) options.partialFilterExpression(index.partialFilterExpression());
                 collection.createIndex(index.keys(), options);
             }
+        }
+    }
+
+    private static void dropLegacyProfileStatisticsIndex(MongoDatabase database) {
+        try {
+            database.getCollection("profile_statistics").dropIndex("profile_statistics_puuid_season");
+        } catch (MongoCommandException exception) {
+            if (exception.getCode() != 27 && !"IndexNotFound".equals(exception.getErrorCodeName())) throw exception;
         }
     }
 
@@ -384,22 +394,6 @@ public final class MongoDB {
         return summoner == null ? new QueryRecord() : latestRegisteredRow(summoner, timeStart);
     }
 
-    public static List<QueryRecord> getAllGamesForAccount(String puuid, long timeStart, long timeEnd) {
-        traceRead("match.getAllGamesForAccount", "puuid=" + puuid + " timeStart=" + timeStart + " timeEnd=" + timeEnd);
-        List<QueryRecord> result = new ArrayList<>();
-        Summoner summoner = findSummoner(puuid, null);
-        if (summoner == null) return result;
-        for (Document document : matches().find(matchFilter(summoner.puuid(), parseShard(summoner.region()), timeStart, timeEnd, null))
-                .projection(Projections.include("_id", "queue", "participants.puuid", "participants.queue", "participants.win"))
-                .sort(Sorts.descending("timeStart"))) {
-            for (Document participant : documents(document.get("participants"))) if (summoner.puuid().equals(participant.getString("puuid"))) {
-                result.add(row(new Document("game_id", publicGameId(document.getString("_id"))).append("queue", participant.get("queue", document.get("queue"))).append("win", participant.get("win", false))));
-                break;
-            }
-        }
-        return result;
-    }
-
     public static List<Match> getMatchHistory(String puuid, LeagueMessageParameter parameter) {
         traceRead("match.getMatchHistory", "puuid=" + puuid);
         if (puuid == null || puuid.isBlank() || parameter == null) return List.of();
@@ -407,13 +401,19 @@ public final class MongoDB {
         int offset = Math.max(0, parameter.getOffset());
         int limit = Math.max(0, parameter.getMessageType().getPageItem());
         List<Match> candidates = new ArrayList<>();
+        Filter filter = parameter.toFilter();
+        boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
         FindIterable<Document> matches = matches().find(historyFilter(puuid, null, parameter))
                 .sort(Sorts.descending("timeStart"))
-                .skip(offset);
-        matches = limit > 0 ? matches.limit(Math.min(100, limit)) : matches.limit(100);
+                .skip(relationalFilter ? 0 : offset);
+        matches = matches.limit(relationalFilter ? 0 : limit > 0 ? Math.min(100, limit) : 100);
+        int skipped = 0;
         for (Document document : matches) {
             Match match = readMatch(matchRecord(document));
+            if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
+            if (relationalFilter && skipped++ < offset) continue;
             candidates.add(match);
+            if (limit > 0 && candidates.size() >= Math.min(100, limit)) break;
         }
         attachEvents(candidates);
         result.addAll(candidates);
@@ -423,7 +423,15 @@ public final class MongoDB {
     public static int countMatchHistory(String puuid, LeagueMessageParameter parameter) {
         traceRead("match.countMatchHistory", "puuid=" + puuid);
         if (puuid == null || puuid.isBlank() || parameter == null) return 0;
-        return (int) Math.min(Integer.MAX_VALUE, matches().countDocuments(historyFilter(puuid, null, parameter)));
+        Filter filter = parameter.toFilter();
+        if (filter.opponent() == 0 && filter.duo() == 0)
+            return (int) Math.min(Integer.MAX_VALUE, matches().countDocuments(historyFilter(puuid, null, parameter)));
+        int count = 0;
+        for (Document document : matches().find(historyFilter(puuid, null, parameter)).projection(profileStatisticsMatchProjection())) {
+            Match match = readMatch(matchRecord(document));
+            if (ProfileStatistics.matchesFilter(match, puuid, filter)) count++;
+        }
+        return count;
     }
 
     public static boolean hasMatchByGameId(String gameId) {
@@ -701,7 +709,7 @@ public final class MongoDB {
         return match;
     }
 
-        public static List<com.safjnest.lol.model.match.MatchResult> findMatchResults(
+    public static List<com.safjnest.lol.model.match.MatchResult> findMatchResults(
             String puuid,
             LeagueShard shard,
             long timeStart,
@@ -722,6 +730,46 @@ public final class MongoDB {
             com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);
             com.safjnest.lol.model.match.MatchResult matchResult = toMatchResult(match, puuid);
             if (matchResult != null) result.add(matchResult);
+        }
+        return result;
+    }
+
+    public static List<Match> findProfileStatisticsMatches(
+            String puuid,
+            LeagueShard shard,
+            Filter filter,
+            long afterTime,
+            long untilTime) {
+        traceRead("match.findProfileStatistics", "puuid=" + puuid + " filter=" + (filter == null ? "null" : filter.toSummonerKey()));
+        if (puuid == null || puuid.isBlank() || filter == null) return List.of();
+        List<Match> result = new ArrayList<>();
+        for (Document document : matches().find(profileMatchFilter(puuid, shard, filter, afterTime, untilTime))
+                .projection(profileStatisticsMatchProjection())
+                .sort(Sorts.ascending("timeStart", "game_id"))) {
+            Match match = read(matchRecord(document), Match.class);
+            if (ProfileStatistics.matchesFilter(match, puuid, filter)) result.add(match);
+        }
+        return result;
+    }
+
+    public static List<MatchResult> findProfileRecentMatches(
+            String puuid,
+            LeagueShard shard,
+            Filter filter,
+            int limit) {
+        if (puuid == null || puuid.isBlank() || filter == null || limit <= 0) return List.of();
+        List<MatchResult> result = new ArrayList<>();
+        boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
+        FindIterable<Document> matches = matches().find(profileMatchFilter(puuid, shard, filter, 0, 0))
+                .projection(matchResultProjection())
+                .sort(Sorts.descending("timeStart"));
+        if (!relationalFilter) matches = matches.limit(Math.max(limit, Math.min(100, limit * 4)));
+        for (Document document : matches) {
+            Match match = read(matchRecord(document), Match.class);
+            if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
+            MatchResult value = toMatchResult(match, puuid);
+            if (value != null) result.add(value);
+            if (result.size() == limit) break;
         }
         return result;
     }
@@ -782,46 +830,6 @@ public final class MongoDB {
         return document == null ? null : profileRecord(document);
     }
 
-    public static List<QueryRecord> findAdvancedProfileProjections(
-            String puuid,
-            LeagueShard shard,
-            long timeStart,
-            long timeEnd,
-            GameQueueType queue) {
-        traceRead("match.findAdvancedProfile", "puuid=" + puuid + " queue=" + queue);
-        Map<Integer, AdvancedChampionAggregate> aggregates = new HashMap<>();
-        for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))
-                .projection(Projections.include("participants.puuid", "participants.champion", "participants.win",
-                        "participants.kda", "participants.gain", "participants.lane"))) {
-            for (Document participant : documents(document.get("participants"))) {
-                if (!puuid.equals(participant.getString("puuid"))) continue;
-                int champion = participant.getInteger("champion", 0);
-                AdvancedChampionAggregate aggregate = aggregates.computeIfAbsent(champion, AdvancedChampionAggregate::new);
-                aggregate.add(participant);
-            }
-        }
-
-        List<QueryRecord> result = new ArrayList<>();
-        List<AdvancedChampionAggregate> ordered = new ArrayList<>(aggregates.values());
-        ordered.sort((left, right) -> {
-            int games = Integer.compare(right.games, left.games);
-            return games != 0 ? games : Integer.compare(left.champion, right.champion);
-        });
-        for (AdvancedChampionAggregate aggregate : ordered) {
-            Document document = new Document("champion", aggregate.champion)
-                    .append("games", aggregate.games)
-                    .append("wins", aggregate.wins)
-                    .append("losses", aggregate.losses)
-                    .append("avg_kills", aggregate.average(aggregate.kills))
-                    .append("avg_deaths", aggregate.average(aggregate.deaths))
-                    .append("avg_assists", aggregate.average(aggregate.assists))
-                    .append("total_lp_gain", aggregate.totalLpGain)
-                    .append("lanes_played", aggregate.lanesPlayed());
-            result.add(QueryRecordParser.fromDocument(document));
-        }
-        return result;
-    }
-
     public static List<QueryRecord> findSummonerData(
             String puuid,
             LeagueShard shard,
@@ -874,26 +882,36 @@ public final class MongoDB {
         return document == null ? null : record(document);
     }
 
-        public static ProfileStatistics findProfileStatistics(String puuid, long seasonStart) {
-        Document document = profileStatistics().find(Filters.eq("_id", statisticsId(puuid, seasonStart))).first();
+    public static ProfileStatistics findProfileStatistics(String puuid, Filter filter) {
+        if (puuid == null || puuid.isBlank() || filter == null) return null;
+        Document document = profileStatistics().find(Filters.and(
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()))).first();
         return document == null ? null : readProfileStatistics(document);
     }
 
-    public static Map<String, ProfileStatistics> findProfileStatistics(List<String> puuids, long seasonStart) {
+    public static ProfileStatistics findProfileStatistics(String puuid, long seasonStart) {
+        return findProfileStatistics(puuid, Filter.summoner(seasonStart, 0));
+    }
+
+    public static Map<String, ProfileStatistics> findProfileStatistics(List<String> puuids, Filter filter) {
         if (puuids == null || puuids.isEmpty()) return Map.of();
+        if (filter == null) return Map.of();
         Map<String, ProfileStatistics> result = new HashMap<>();
         for (int start = 0; start < puuids.size(); start += MAX_BATCH_IDS) {
             int end = Math.min(puuids.size(), start + MAX_BATCH_IDS);
-            List<String> ids = new ArrayList<>(end - start);
-            for (String puuid : boundedIds(puuids.subList(start, end))) ids.add(statisticsId(puuid, seasonStart));
-            for (Document document : profileStatistics().find(Filters.in("_id", ids))
-                    .projection(Projections.include("_id", "puuid", "statistics", "timeStart", "timeEnd"))
+            List<String> ids = boundedIds(puuids.subList(start, end));
+            for (Document document : profileStatistics().find(Filters.and(
+                    Filters.in("puuid", ids), Filters.eq("filterKey", filter.toSummonerKey())))
                     .limit(ids.size())) {
                 ProfileStatistics statistics = readProfileStatistics(document);
                 if (statistics != null) result.put(document.getString("puuid"), statistics);
             }
         }
         return result;
+    }
+
+    public static Map<String, ProfileStatistics> findProfileStatistics(List<String> puuids, long seasonStart) {
+        return findProfileStatistics(puuids, Filter.summoner(seasonStart, 0));
     }
 
         public static List<Build> findChampionBuilds(Filter filter) {
@@ -1302,20 +1320,35 @@ public final class MongoDB {
         return true;
     }
 
-        public static boolean upsertProfileStatistics(String puuid, long seasonStart, ProfileStatistics statistics) {
-        if (statistics == null) return false;
-        Document document = new Document("_id", statisticsId(puuid, seasonStart))
-                .append("puuid", puuid)
-                .append("seasonStart", seasonStart)
-                .append("timeStart", statistics.timeStart)
-                .append("timeEnd", statistics.timeEnd)
-                .append("statistics", JsonCodec.toDocument(statistics));
-        replace(profileStatistics(), document);
-        return true;
+    public static boolean upsertProfileStatistics(String puuid, Filter filter, ProfileStatistics statistics) {
+        if (puuid == null || puuid.isBlank() || filter == null || statistics == null) return false;
+        String filterKey = filter.toSummonerKey();
+        Document values = JsonCodec.toDocument(statistics);
+        List<Bson> updates = new ArrayList<>(values.size() + 3);
+        updates.add(Updates.set("puuid", puuid));
+        updates.add(Updates.set("filterKey", filterKey));
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            if (!"_id".equals(entry.getKey())) updates.add(Updates.set(entry.getKey(), entry.getValue()));
+        }
+        updates.add(Updates.setOnInsert("_id", new ObjectId()));
+        UpdateResult result = profileStatistics().updateOne(
+                Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey)),
+                Updates.combine(updates), new UpdateOptions().upsert(true));
+        return result.wasAcknowledged();
     }
 
-        public static boolean deleteProfileStatistics(String puuid, long seasonStart) {
-        return profileStatistics().deleteOne(Filters.eq("_id", statisticsId(puuid, seasonStart))).getDeletedCount() > 0;
+    public static boolean upsertProfileStatistics(String puuid, long seasonStart, ProfileStatistics statistics) {
+        return upsertProfileStatistics(puuid, Filter.summoner(seasonStart, 0), statistics);
+    }
+
+    public static boolean deleteProfileStatistics(String puuid, Filter filter) {
+        if (puuid == null || puuid.isBlank() || filter == null) return false;
+        return profileStatistics().deleteOne(Filters.and(
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()))).getDeletedCount() > 0;
+    }
+
+    public static boolean deleteProfileStatistics(String puuid, long seasonStart) {
+        return deleteProfileStatistics(puuid, Filter.summoner(seasonStart, 0));
     }
 
     public static boolean upsertChampionBuild(Build build) {
@@ -1695,67 +1728,6 @@ public final class MongoDB {
         return "{}";
     }
 
-    private static final class AdvancedChampionAggregate {
-        private final int champion;
-        private final Map<String, int[]> lanes = new HashMap<>();
-        private int games;
-        private int wins;
-        private int losses;
-        private long kills;
-        private long deaths;
-        private long assists;
-        private long totalLpGain;
-
-        private AdvancedChampionAggregate(int champion) {
-            this.champion = champion;
-        }
-
-        private void add(Document participant) {
-            games++;
-            if (participant.getBoolean("win", false)) wins++;
-            else losses++;
-            String kda = participant.getString("kda");
-            kills += kdaValue(kda, 0);
-            deaths += kdaValue(kda, 1);
-            assists += kdaValue(kda, 2);
-            totalLpGain += participant.getInteger("gain", 0);
-
-            String lane = participant.getString("lane");
-            if (lane != null && !lane.isBlank()) {
-                int[] laneStats = lanes.computeIfAbsent(lane, ignored -> new int[2]);
-                if (participant.getBoolean("win", false)) laneStats[0]++;
-                else laneStats[1]++;
-            }
-        }
-
-        private double average(long value) {
-            return games == 0 ? 0D : (double) value / games;
-        }
-
-        private String lanesPlayed() {
-            List<String> names = new ArrayList<>(lanes.keySet());
-            Collections.sort(names);
-            StringBuilder result = new StringBuilder();
-            for (String lane : names) {
-                if (result.length() > 0) result.append(", ");
-                int[] values = lanes.get(lane);
-                result.append(lane).append('-').append(values[0]).append('-').append(values[1]);
-            }
-            return result.toString();
-        }
-    }
-
-    private static int kdaValue(String kda, int index) {
-        if (kda == null || kda.isBlank()) return 0;
-        String[] values = kda.split("/", -1);
-        if (index >= values.length) return 0;
-        try {
-            return Integer.parseInt(values[index].trim());
-        } catch (NumberFormatException ignored) {
-            return 0;
-        }
-    }
-
     private static Map<String, Object> readEventMap(Object value) {
         if (value instanceof Document document) return new LinkedHashMap<>(document);
         if (value instanceof String json) {
@@ -1906,22 +1878,37 @@ public final class MongoDB {
     }
 
     private static Bson historyFilter(String puuid, LeagueShard shard, LeagueMessageParameter parameter) {
+        return profileMatchFilter(puuid, shard, parameter.toFilter(), 0, 0);
+    }
+
+    private static Bson profileMatchFilter(String puuid, LeagueShard shard, Filter filter, long afterTime, long untilTime) {
         List<Bson> filters = new ArrayList<>();
-        if (shard != null) filters.add(Filters.eq("leagueShard", shard.name()));
-        if (parameter.getQueueType() != null) filters.add(Filters.eq("queue", parameter.getQueueType().name()));
-        if (parameter.getTimeStart() != 0) filters.add(Filters.gte("timeStart", parameter.getTimeStart()));
-        if (parameter.getTimeEnd() != 0) filters.add(Filters.lte("timeEnd", parameter.getTimeEnd()));
+        LeagueShard selectedShard = filter.region() != null ? filter.region() : shard;
+        if (selectedShard != null) filters.add(Filters.eq("leagueShard", selectedShard.name()));
+        if (filter.queue() != null) filters.add(Filters.eq("queue", filter.queue().name()));
+
+        long start = filter.timeStart() == 0 ? afterTime : Math.max(filter.timeStart(), afterTime);
+        long end = filter.timeEnd() == 0 ? untilTime : untilTime == 0 ? filter.timeEnd() : Math.min(filter.timeEnd(), untilTime);
+        if (start != 0) filters.add(Filters.gte("timeStart", start));
+        if (end != 0) filters.add(Filters.lte("timeEnd", end));
+        if (filter.patch() != null) filters.add(patchMajorFilter(filter.patch()));
+        if (filter.rank() != null) filters.add(rankFilter(filter));
 
         List<Bson> participantFilters = new ArrayList<>();
         participantFilters.add(Filters.eq("puuid", puuid));
-        if (parameter.getShowingChampion() != 0) {
-            participantFilters.add(Filters.eq("champion", parameter.getShowingChampion()));
-        }
-        if (parameter.getLaneType() != null) {
-            participantFilters.add(Filters.eq("lane", parameter.getLaneType().name()));
-        }
+        if (filter.champion() != 0) participantFilters.add(Filters.eq("champion", filter.champion()));
+        if (filter.lane() != null) participantFilters.add(Filters.eq("lane", filter.lane().name()));
         filters.add(Filters.elemMatch("participants", Filters.and(participantFilters)));
-        return Filters.and(filters);
+        if (filter.opponent() != 0) filters.add(Filters.elemMatch("participants", Filters.eq("champion", filter.opponent())));
+        if (filter.duo() != 0) filters.add(Filters.elemMatch("participants", Filters.eq("champion", filter.duo())));
+        return filters.isEmpty() ? new Document() : Filters.and(filters);
+    }
+
+    private static Bson rankFilter(Filter filter) {
+        if (filter.rankBehavior() == Filter.RankBehavior.EXACT) return Filters.eq("rank", filter.rank().name());
+        List<String> ranks = new ArrayList<>();
+        for (TierType tier : TierType.values()) if (tier.ordinal() <= filter.rank().ordinal()) ranks.add(tier.name());
+        return Filters.in("rank", ranks);
     }
 
     private static Bson matchResultProjection() {
@@ -1933,6 +1920,12 @@ public final class MongoDB {
                 "participants.visionScore", "participants.item0", "participants.item1", "participants.item2",
                 "participants.item3", "participants.item4", "participants.item5", "participants.item6",
                 "participants.summonerSpell1", "participants.summonerSpell2");
+    }
+
+    private static Bson profileStatisticsMatchProjection() {
+        return Projections.include(
+                "_id", "fullGameId", "gameId", "game_id", "region", "leagueShard", "queue", "rank", "lastUpdate",
+                "timeStart", "timeEnd", "patch", "participants");
     }
 
     private static Bson championMatchFilter(Filter filter, String puuid) {
@@ -2107,13 +2100,16 @@ public final class MongoDB {
         catch (IllegalArgumentException ignored) { return LeagueShard.UNKNOWN; }
     }
 
-    private static String statisticsId(String puuid, long seasonStart) {
-        if (puuid == null || puuid.isBlank()) throw new IllegalArgumentException("puuid is required");
-        return puuid + ":" + seasonStart;
-    }
-
     private static ProfileStatistics readProfileStatistics(Document document) {
-        return readStructured(document.get("statistics"), ProfileStatistics.class);
+        Object legacyStatistics = document.get("statistics");
+        if (legacyStatistics != null) return readStructured(legacyStatistics, ProfileStatistics.class);
+
+        Document values = new Document(document);
+        values.remove("_id");
+        values.remove("puuid");
+        values.remove("filterKey");
+        values.remove("seasonStart");
+        return readStructured(values, ProfileStatistics.class);
     }
 
     private static Build readBuild(Document document) {

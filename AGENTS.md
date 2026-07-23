@@ -41,6 +41,13 @@ Primary stack:
 - Prefer a loop when it is clearer than a stream.
 - Avoid unnecessary refactors and comments.
 
+## Data changes and presentation stability
+
+- Changes to data, data models, persisted documents, API payloads or data flow must not change the existing presentation or style unless a style refactor is explicitly requested.
+- Keep commands, embeds, views, field names, field order, text, formatting, components and layout exactly as they are when only the data source or data structure changes.
+- New values may be added for persistence, API responses or other consumers without displaying them. If they must be displayed, use the existing presentation patterns and change only the minimum required surface.
+- A request such as “add these values and show them like this” explicitly authorizes the requested presentation change; otherwise do not redesign or restyle existing output.
+
 ## Service layout
 
 In every modified service:
@@ -79,6 +86,14 @@ Use existing utilities before adding new mapping logic, especially `ChampionUtil
 - Every update to LoL models, services, persisted data, parameters or business behavior must include a review of the affected API endpoints.
 - When the change affects an exposed contract, update the controller, canonical response model and API documentation in the same task.
 - No LoL change is complete until the API surface and its documentation are synchronized with the new behavior; if the change is internal-only, explicitly verify that no API update is required.
+
+## Documentation synchronization rule
+
+- Every change to models, data structures, persistence, filters, services, commands, embeds, caches, API behavior or ownership must review the relevant documentation in the same task.
+- Update the canonical source-of-truth document, ADR, macro-task, API documentation, audit or Mongo documentation whenever the changed behavior is covered there.
+- Documentation is part of the implementation gate: a task is incomplete while its affected documentation is stale or the reason for no documentation change is not recorded.
+- When a change is internal-only, explicitly record that the public API, presentation and relevant documentation remain unchanged.
+- When data changes but presentation must remain stable, document the new data source and keep the existing command, embed, view, field order, text, formatting and layout unchanged unless a style change was explicitly requested.
 
 ## Agent workflow
 

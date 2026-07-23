@@ -56,7 +56,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `match` | `match` | `_id = fullGameId` | documento aggregato |
 | `match.events` | `match_events` | `_id = fullGameId` | JSON separato, WiredTiger Zstandard |
 | `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
-| `profile_statistics` | `profile_statistics` | `puuid + seasonStart` | separato, non migrato |
+| `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat, `_id` casuale stabile |
 | `leaderboard_distribution` | `leaderboard_distribution` | `queue + rank + region` | aggregate |
 | `rank` per ordinamento | `leaderboard_entries` | `queue + region + puuid` | projection derivata |
 | `champion` | `champion` | `championId` | catalogo |
@@ -236,7 +236,13 @@ Indici:
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati: `statistics` per profile/champion statistics e `build` per le build. Le metriche champion appartengono a `champion_stats`; non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload`.
+Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
+
+### `profile_statistics`: chiave e indice
+
+La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKey()`. `filterKey` include champion, lane, queue, rank, rank behavior, patch, region, opponent, duo e periodo. Il registry crea l'indice unique, non-sparse, `profile_statistics_puuid_filter` su `{ puuid: 1, filterKey: 1 }`. Il PUUID da solo non identifica il documento, perché uno stesso account può avere più filtri; `_id` è un ObjectId casuale stabile e non è usato per il lookup. Il write path usa `$setOnInsert` per generarlo solo al primo upsert. Documenti legacy senza `filterKey` devono essere migrati prima della costruzione dell'indice; non si risolve il conflitto rendendo l'indice sparse o non-unique.
+
+Il documento è flat e non contiene un root `statistics`. `recentMatches` è una query `MatchResult` separata con lo stesso filtro e non viene salvato dentro `ProfileStatistics`. Per il flusso completo e il runbook di diagnosi vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
@@ -260,7 +266,7 @@ MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserv
 
 ### Collection aggregate
 
-- unique `puuid + seasonStart` per profile statistics;
+- unique `puuid + filterKey` per profile statistics; `_id` casuale stabile;
 - unique `filterKey + championId` per champion stats;
 - `filterKey` per build;
 - unique `queue + rank + region` per distribution.
@@ -280,7 +286,7 @@ Il registry applicativo deve usare nomi stabili. La lista minima è:
 | `match` | `matches_shard_queue_start` | `leagueShard ASC, queue ASC, timeStart DESC` |
 | `match` | `matches_patch_queue` | `patch ASC, queue ASC` |
 | `match` | `matches_start` | `timeStart DESC` |
-| `profile_statistics` | `profile_statistics_puuid_season` | `puuid ASC, seasonStart ASC`, unique |
+| `profile_statistics` | `profile_statistics_puuid_filter` | `puuid ASC, filterKey ASC`, unique |
 | `leaderboard_entries` | `leaderboard_queue_region_rank_mmr` | `queue ASC, region ASC, rank ASC, mmr DESC` |
 | `leaderboard_entries` | `leaderboard_queue_region_mmr` | `queue ASC, region ASC, mmr DESC` |
 | `champion_stats` | `champion_stats_filter_champion` | `filterKey ASC, championId ASC`, unique |
