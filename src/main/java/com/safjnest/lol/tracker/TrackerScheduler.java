@@ -26,7 +26,7 @@ public class TrackerScheduler {
         if (started) return;
         started = true;
 
-        if (App.isTesting()) return;
+        //if (App.isTesting()) return;
 
         ChronoTask track = () -> retrieveSummoners();
         track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
@@ -38,7 +38,7 @@ public class TrackerScheduler {
         //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
         ChronoTask retrieveHighEloEntries = () -> retrieveHighEloEntries();
-        retrieveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
         refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);

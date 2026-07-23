@@ -852,10 +852,18 @@ public final class MongoDB {
         return result;
     }
 
-        public static List<QueryRecord> findTrackedSummoners(long timeStart) {
+    public static List<QueryRecord> findTrackedSummoners(long timeStart) {
         List<QueryRecord> result = new ArrayList<>();
         for (Document document : summoners().find(Filters.eq("tracking", true))) {
             result.add(record(document));
+        }
+        return result;
+    }
+
+    public static List<Summoner> findTrackedSummonerModels() {
+        List<Summoner> result = new ArrayList<>();
+        for (Document document : summoners().find(Filters.eq("tracking", true))) {
+            result.add(summoner(document));
         }
         return result;
     }

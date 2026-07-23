@@ -118,6 +118,51 @@ public class MongoDBTest {
     }
 
     @Test
+    public void participantRoundTripPreservesPingsAndSpellCasts() {
+        Participant participant = new Participant();
+        participant.puuid = "puuid-1";
+        participant.pings.put("push", 4);
+        participant.pings.put("vision_cleared", 2);
+        participant.q = 11;
+        participant.w = 12;
+        participant.e = 13;
+        participant.r = 14;
+        participant.d = 3;
+        participant.f = 4;
+
+        Participant decoded = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(participant)), Participant.class);
+
+        assertEquals(participant.pings, decoded.pings);
+        assertEquals(11, decoded.q);
+        assertEquals(12, decoded.w);
+        assertEquals(13, decoded.e);
+        assertEquals(14, decoded.r);
+        assertEquals(3, decoded.d);
+        assertEquals(4, decoded.f);
+    }
+
+    @Test
+    public void matchRoundTripPreservesParticipantRankLpAndGain() {
+        Match match = new Match();
+        match.gameId = "EUW1_1000";
+        match.leagueShard = LeagueShard.EUW1;
+
+        Participant participant = new Participant();
+        participant.puuid = "puuid-1";
+        participant.rank = TierDivisionType.PLATINUM_I;
+        participant.lp = 63;
+        participant.gain = 23;
+        match.participants = List.of(participant);
+
+        Match decoded = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(match)), Match.class);
+        Participant decodedParticipant = decoded.participants.get(0);
+
+        assertEquals(TierDivisionType.PLATINUM_I, decodedParticipant.rank);
+        assertEquals(63, decodedParticipant.lp);
+        assertEquals(23, decodedParticipant.gain);
+    }
+
+    @Test
     public void matchDoesNotEmbedEvents() {
         Match match = new Match();
         match.gameId = "EUW1_999";
