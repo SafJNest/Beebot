@@ -7,9 +7,8 @@ import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,7 +36,7 @@ public final class BuildService {
 
     public static List<Build> recomputeAll(Filter filter) {
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) LeagueDB.saveChampionBuilds(computed);
+        if (computed != null && !computed.isEmpty()) MongoDB.upsertChampionBuilds(computed);
         return computed;
     }
 
@@ -54,7 +53,7 @@ public final class BuildService {
 
         List<Build> stored;
         try {
-            stored = LeagueDB.getChampionBuild(filter);
+            stored = MongoDB.findChampionBuilds(filter);
         } catch (RuntimeException exception) {
             if (!allowCompute) return List.of();
             throw exception;
@@ -63,7 +62,7 @@ public final class BuildService {
         if (!allowCompute) return List.of();
 
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) computed.forEach(LeagueDB::saveChampionBuild);
+        if (computed != null && !computed.isEmpty()) computed.forEach(MongoDB::upsertChampionBuild);
         return computed == null ? List.of() : computed;
     }
 
@@ -83,7 +82,7 @@ public final class BuildService {
         Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
 
         System.out.println("build compute started");
-        QueryResult result = ChampionBuildProvider.load(filter);
+        List<QueryRecord> result = ChampionBuildProvider.load(filter);
         int rowCount = result.size();
         System.out.println("build rows loaded: " + rowCount);
         int games = 0;

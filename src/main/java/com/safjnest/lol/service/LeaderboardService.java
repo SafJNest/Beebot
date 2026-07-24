@@ -11,6 +11,7 @@ import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.model.leaderboard.LeaderboardRow;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
@@ -18,10 +19,9 @@ import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
-import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.database.LeagueDB;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -72,53 +72,33 @@ public class LeaderboardService {
 
         long total = totalReady ? cachedTotal : 0;
         List<LeaderboardRow> rows = rowsReady ? cachedRows : List.of();
-        if (!totalReady && !rowsReady) {
-            LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardData(
-                rank != null ? rank.name() : null,
-                selectedQueueName,
-                selectedRegion,
-                offset,
-                limit
+        Map<String, List<Mastery>> masteriesBySummoner = new HashMap<>();
+        if (!totalReady || !rowsReady) {
+            MongoDB.LeaderboardPageQuery query = MongoDB.findLeaderboardPage(
+                rank, selectedQueue, selectedRegion, offset, limit
             );
-            total = data.total();
-            rows = data.rows();
-            if (data.success()) cacheLeaderboardComponents(totalKey, rowsKey, total, rows);
-        } else {
-            if (!totalReady) {
-                LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardTotal(
-                    rank != null ? rank.name() : null,
-                    selectedQueueName,
-                    selectedRegion
-                );
-                total = data.total();
-                if (data.success()) RedisClient.set(totalKey, total, TTL_LEADERBOARD_COMPONENTS);
-            }
-            if (!rowsReady && total > offset) {
-                LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardRows(
-                    rank != null ? rank.name() : null,
-                    selectedQueueName,
-                    selectedRegion,
-                    offset,
-                    limit
-                );
-                rows = data.rows();
-                if (data.success()) RedisClient.set(rowsKey, rows, TTL_LEADERBOARD_COMPONENTS);
-            }
-            if (total <= offset) rows = List.of();
+            total = query.total();
+            rows = query.rows();
+            masteriesBySummoner.putAll(query.masteries());
+            cacheLeaderboardComponents(totalKey, rowsKey, total, rows);
         }
+        if (total <= offset) rows = List.of();
 
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        List<Integer> summonerIds = new ArrayList<>(rows.size());
-        for (LeaderboardRow row : rows) summonerIds.add(row.summoner().summonerId());
-        Map<Integer, ProfileStatistics> statisticsBySummoner = profileStatisticsService.get(summonerIds, season);
+        List<String> puuids = new ArrayList<>(rows.size());
+        for (LeaderboardRow row : rows) puuids.add(row.summoner().puuid());
+        if (!puuids.isEmpty() && masteriesBySummoner.isEmpty()) {
+            masteriesBySummoner.putAll(MongoDB.findMasteriesByPuuid(puuids, null));
+        }
+        Map<String, ProfileStatistics> statisticsBySummoner = profileStatisticsService.getByPuuid(puuids, season);
         List<SummonerLeaderboard> summoners = new ArrayList<>(rows.size());
         boolean cacheable = true;
         for (int i = 0; i < rows.size(); i++) {
             LeaderboardRow row = rows.get(i);
             Summoner summoner = row.summoner();
-            ProfileStatistics statistics = statisticsBySummoner.get(summoner.summonerId());
+            ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
             if (statistics == null) {
                 cacheable = false;
                 Tracker.startProfileStatistics(summoner, season);
@@ -130,7 +110,8 @@ public class LeaderboardService {
         for (int i = 0; i < rows.size(); i++) {
             LeaderboardRow row = rows.get(i);
             SummonerView view = SummonerView.from(
-                row.summoner(), List.of(row.rank()), statisticsBySummoner.get(row.summoner().summonerId()), List.of()
+                row.summoner(), List.of(row.rank()), statisticsBySummoner.get(row.summoner().puuid()),
+                masteriesBySummoner.getOrDefault(row.summoner().puuid(), List.of())
             );
             summoners.add(new SummonerLeaderboard(offset + i + 1, view));
         }
@@ -147,15 +128,8 @@ public class LeaderboardService {
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
 
-        Map<String, Long> counts = new HashMap<>();
-        for (QueryRecord row : LeagueDB.getLeaderboardDistribution(selectedQueue.name(), selectedRegion)) {
-            counts.put(row.get("rank"), row.getAsLong("players"));
-        }
-
-        List<LeaderboardDistribution.Entry> entries = new ArrayList<>();
-        for (TierType tier : COMPETITIVE_TIERS) {
-            entries.add(new LeaderboardDistribution.Entry(tier.name(), counts.getOrDefault(tier.name(), 0L)));
-        }
+        List<LeaderboardDistribution.Entry> entries = MongoDB
+                .findRankDistribution(selectedQueue, selectedRegion);
 
         LeaderboardDistribution response = new LeaderboardDistribution(entries);
         RedisClient.set(key, response, TTL_DISTRIBUTION);
@@ -169,10 +143,8 @@ public class LeaderboardService {
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
 
-        List<LeaderboardDistribution.Entry> entries = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.getLeaderboardTopRegions(selectedQueue.name(), rank.name())) {
-            entries.add(new LeaderboardDistribution.Entry(row.get("region"), row.getAsLong("players")));
-        }
+        List<LeaderboardDistribution.Entry> entries = MongoDB
+                .findTopRegions(selectedQueue, rank);
 
         LeaderboardDistribution response = new LeaderboardDistribution(entries);
         RedisClient.set(key, response, TTL_DISTRIBUTION);
@@ -180,7 +152,7 @@ public class LeaderboardService {
     }
 
     public static boolean rebuildDistribution() {
-        boolean rebuilt = LeagueDB.rebuildLeaderboardDistribution();
+        boolean rebuilt = MongoDB.rebuildLeaderboardDistribution();
         if (rebuilt) clearDistributionCache();
         return rebuilt;
     }

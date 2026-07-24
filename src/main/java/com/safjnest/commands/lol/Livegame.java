@@ -11,7 +11,6 @@ import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -66,8 +65,7 @@ public class Livegame extends SlashCommand {
             return;
         }
         
-        int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
     }
 
     @Override
@@ -86,8 +84,7 @@ public class Livegame extends SlashCommand {
             return;
         }
 
-        int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
 	}
 
 }

@@ -29,9 +29,9 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 
@@ -43,9 +43,7 @@ import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -56,6 +54,8 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
+import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -248,9 +248,9 @@ import com.safjnest.lol.utils.PatchUtils;
 
 
     public static String getFormattedSummonerName(Summoner s) {
-        String dbName = LeagueDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
+        String dbName = MongoDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
         if (dbName != null) return dbName;
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getAccountFromSummoner(s);
         if (account == null) return "";
         return account.getName() + "#" + account.getTag();
     }
@@ -267,7 +267,7 @@ import com.safjnest.lol.utils.PatchUtils;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
 
-            return LeagueService.getSummonerByPuuid(firstAccount, shard);
+            return LeagueService.getRiotSummoner(firstAccount, shard);
         } catch (Exception e) {return null;}
     }
 
@@ -304,7 +304,7 @@ import com.safjnest.lol.utils.PatchUtils;
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
         }
-        return LeagueService.getSummonerByName(name, tag, guild.getLeagueShard(event.getChannel().getId()));
+        return LeagueService.getRiotSummoner(name, tag, guild.getLeagueShard(event.getChannel().getId()));
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
@@ -327,7 +327,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
-            s = LeagueService.getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
+            s = LeagueService.getRiotSummoner(event.getOption("summoner").getAsString(), shard);
         }
 
         if (s != null) return s;
@@ -336,19 +336,15 @@ import com.safjnest.lol.utils.PatchUtils;
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShardUtils.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
-        return LeagueService.getSummonerByName(name, tag, shard);
+        return LeagueService.getRiotSummoner(name, tag, shard);
     }
 
-    public static int updateSummonerDB(Summoner summoner) {
-        return LeagueDB.addLOLAccount(summoner);
-    }
-
-    public static void updateSummonerDB(SpectatorGameInfo game) {
-        LeagueDB.addLOLAccount(game);
-    }
-
-    public static void updateSummonerDB(LOLMatch match) {
-        LeagueDB.addLOLAccountFromMatch(match);
+    public static boolean updateSummonerMongo(Summoner summoner) {
+        if (summoner == null) return false;
+        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
+        String riotId = account == null ? null : account.getName() + "#" + account.getTag();
+        return MongoDB.upsertSummoner(summoner.getPUUID(), summoner.getPlatform(), riotId,
+                summoner.getSummonerLevel(), summoner.getProfileIconId(), null);
     }
 
 //     ▄███████▄  ▄█   ▄████████
@@ -383,28 +379,29 @@ import com.safjnest.lol.utils.PatchUtils;
     private static final String QUEUE_COMMON_FLEX = "5v5 Ranked Flex Queue";
 
     public static String getSoloQStats(Summoner s) {
-        LeagueEntry entry = LeagueService.getLeagueEntry(s.getPUUID(), s.getPlatform(), QUEUE_COMMON_SOLO);
-        String stats = entry != null ? formatStatsByEntry(entry) : "";
+        Rank rank = LeagueService.getRank(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_SOLO_5X5);
+        String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
             : stats;
     }
 
     public static String getFlexStats(Summoner s) {
-        LeagueEntry entry = LeagueService.getLeagueEntry(s.getPUUID(), s.getPlatform(), QUEUE_COMMON_FLEX);
-        String stats = entry != null ? formatStatsByEntry(entry) : "";
+        Rank rank = LeagueService.getRank(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_FLEX_SR);
+        String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
             : stats;
     }
 
-    private static String formatStatsByEntry(LeagueEntry entry) {
-        int wins = entry.getWins();
-        int losses = entry.getLosses();
+    private static String formatStatsByRank(Rank rank) {
+        if (rank.tier() == no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType.UNRANKED) return "";
+        int wins = rank.wins();
+        int losses = rank.losses();
         int games = wins + losses;
         long wrPercent = games > 0 ? (long) Math.ceil((wins * 100.0) / games) : 0;
-        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()
-            + " " + entry.getLeaguePoints() + " LP\n"
+        return CustomEmojiHandler.getFormattedEmoji(rank.tier().getTier()) + " "
+            + LeagueMessageUtils.getFormattedRank(rank.tier(), false) + " " + rank.lp() + " LP\n"
             + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 
@@ -442,36 +439,36 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getMastery(Summoner s, int nChamp) {
-        List<ChampionMastery> list = LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform());
+        List<Mastery> list = LeagueService.getMasteries(s.getPUUID(), s.getPlatform());
         if (nChamp < 1 || nChamp > list.size()) {
             return "";
         }
-        ChampionMastery mastery = list.get(nChamp - 1);
+        Mastery mastery = list.get(nChamp - 1);
         DecimalFormat df = new DecimalFormat("#,##0", new DecimalFormatSymbols(Locale.US));
         try {
-            int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+            int level = mastery.level() >= 10 ? 10 : mastery.level();
             return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
-                + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
-                + " **[" + mastery.getChampionLevel() + "]** "
-                + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()
-                + " " + df.format(mastery.getChampionPoints())
+                + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.championId()).getName())
+                + " **[" + mastery.level() + "]** "
+                + riotApi.getDDragonAPI().getChampion(mastery.championId()).getName()
+                + " " + df.format(mastery.points())
                 + " points";
         } catch (Exception e) {
             return "";
         }
     }
 
-    public static HashMap<Integer, ChampionMastery> getMastery(Summoner s) {
-        HashMap<Integer, ChampionMastery> masteries = new HashMap<>();
-        for (ChampionMastery mastery : LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform())) {
-            masteries.put(mastery.getChampionId(), mastery);
+    public static HashMap<Integer, Mastery> getMastery(Summoner s) {
+        HashMap<Integer, Mastery> masteries = new HashMap<>();
+        for (Mastery mastery : LeagueService.getMasteries(s.getPUUID(), s.getPlatform())) {
+            masteries.put(mastery.championId(), mastery);
         }
         return masteries;
     }
 
     public static String getMasteryByChamp(Summoner s, int champId) {
-        for (ChampionMastery mastery : LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform())) {
-            if (mastery.getChampionId() == champId) {
+        for (Mastery mastery : LeagueService.getMasteries(s.getPUUID(), s.getPlatform())) {
+            if (mastery.championId() == champId) {
                 try {
                     return formatMasteryLine(mastery);
                 } catch (Exception e) {
@@ -479,25 +476,23 @@ import com.safjnest.lol.utils.PatchUtils;
                 }
             }
         }
-        ChampionMastery direct = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(s.getPlatform(), s.getPUUID(), champId);
-        return direct != null ? formatMasteryLine(direct) : "";
+        return "";
     }
 
     public static String getMasteryByPuuid(String puuid, LeagueShard shard, int champion) {
-        for (ChampionMastery mastery : LeagueService.getChampionMasteries(puuid, shard)) {
-            if (mastery.getChampionId() == champion) {
+        for (Mastery mastery : LeagueService.getMasteries(puuid, shard)) {
+            if (mastery.championId() == champion) {
                 return formatMasteryLine(mastery);
             }
         }
-        ChampionMastery mastery = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(shard, puuid, champion);
-        return mastery != null ? formatMasteryLine(mastery) : "";
+        return "";
     }
 
-    private static String formatMasteryLine(ChampionMastery mastery) {
-        int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+    private static String formatMasteryLine(Mastery mastery) {
+        int level = mastery.level() >= 10 ? 10 : mastery.level();
         return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
-            + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
-            + " **[" + mastery.getChampionLevel() + "]** ";
+            + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.championId()).getName())
+            + " **[" + mastery.level() + "]** ";
     }
 
     public static String getActivity(Summoner s) {
@@ -722,7 +717,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static boolean isMatchDBCached(String gameId) {
-        return LeagueDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
+        return MongoDB.hasMatchByGameId(gameId);
     }
 
     public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {

@@ -20,7 +20,7 @@ Questa fase descrive solo la forma dei dati. Non modifica Java, SQL, `pom.xml` o
 
 - database Mongo production: `beebot`;
 - database Mongo testing: `beebot_test`;
-- collection LoL: prefisso `lol_`;
+- collection LoL: stesso nome della tabella MariaDB quando esiste, senza prefisso `lol_`;
 - campi JSON: `camelCase`;
 - enum: stringhe R4J esatte;
 - date: epoch milliseconds;
@@ -50,27 +50,27 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 
 | Origine | Target | Chiave | Forma |
 |---|---|---|---|
-| `summoner` | `lol_summoners` | `_id = puuid` | documento aggregato |
-| `rank` | `lol_summoners.ranks[]` | `queue + region` | embedded |
-| `masteries` | `lol_summoners.masteries[]` | `championId` | embedded |
-| `match` | `lol_matches` | `_id = fullGameId` | documento aggregato |
-| `participant` | `lol_matches.participants[]` | `puuid` dentro il match | embedded |
-| `profile_statistics` | `lol_profile_statistics` | `puuid + seasonStart` | separato |
-| `leaderboard_distribution` | `lol_leaderboard_distribution` | `queue + rank + region` | aggregate |
-| `rank` per ordinamento | `lol_leaderboard_entries` | `queue + region + puuid` | projection derivata |
-| `champion` | `lol_champions` | `championId` | catalogo |
-| `champion_builds` | `lol_champion_builds` | `filterKey + buildKey` | aggregate |
-| `champion_stats` | `lol_champion_stats` | `filterKey + championId` | aggregate |
+| `summoner` | `summoner` | `_id = puuid` | documento aggregato |
+| `rank` | `summoner.ranks[]` | `queue + region` | embedded |
+| `masteries` | `summoner.masteries[]` | `championId` | embedded |
+| `match` | `match` | `_id = fullGameId` | documento aggregato |
+| `match.events` | `match_events` | `_id = fullGameId` | JSON separato, WiredTiger Zstandard |
+| `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
+| `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat, `_id` casuale stabile |
+| `leaderboard_distribution` | `leaderboard_distribution` | `queue + rank + region` | aggregate |
+| `rank` per ordinamento | `leaderboard_entries` | `queue + region + puuid` | projection derivata |
+| `champion` | `champion` | `championId` | catalogo |
+| `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
+| `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
+| migration checkpoints | `migration_runs` | `_id = runId` | operational state |
 
-## `lol_summoners`
+## `summoner`
 
 Esempio concettuale:
 
 ```json
 {
   "_id": "puuid-value",
-  "legacySummonerId": 123,
-  "puuid": "puuid-value",
   "riotId": "GameName#TAG",
   "region": "EUW1",
   "level": 500,
@@ -103,22 +103,24 @@ Esempio concettuale:
 
 ### Regole summoner
 
-- `puuid` è `_id` e campo duplicato leggibile;
-- `legacySummonerId` è obbligatorio durante la migrazione e può diventare opzionale dopo il cutover;
+- `puuid` è `_id` e non viene duplicato in un secondo campo;
+- gli identificativi numerici MariaDB non vengono scritti;
+- il nuovo flusso non pulisce automaticamente dati precedenti; l'operatore elimina manualmente i payload obsoleti;
+- `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;
 - il rank identifica la coda tramite `queue`, non tramite un ID numerico;
 - più regioni sono rappresentate da `region` nel rank quando il dataset lo richiede;
 - non duplicare una seconda identità `Summoner` in wrapper o modelli di persistenza.
 
-## `lol_matches`
+## `match`
 
 Esempio concettuale:
 
 ```json
 {
   "_id": "EUW1_134131",
-  "legacyMatchId": 1945327,
-  "gameId": "EUW1_134131",
+  "fullGameId": "EUW1_134131",
+  "gameId": "134131",
   "leagueShard": "EUW1",
   "queue": "TEAM_BUILDER_RANKED_SOLO",
   "rank": "EMERALD",
@@ -130,12 +132,6 @@ Esempio concettuale:
     "BLUE": [266, 157, 238, 517, 777],
     "RED": [64, 119, 238, 141, 875]
   },
-  "events": {
-    "championKills": [],
-    "buildingEvents": [],
-    "monsterEvents": [],
-    "snapshots": []
-  },
   "participants": []
 }
 ```
@@ -146,11 +142,10 @@ Esempio concettuale:
 - il solo numero Riot può essere accettato in input e normalizzato prima del lookup;
 - `leagueShard`, `queue` e `rank` sono stringhe R4J;
 - `bans` usa `BLUE` e `RED`, mai `0` e `1`;
-- `events` è BSON strutturato quando il JSON è valido;
-- eventi non convertibili mantengono `eventsRaw`, `eventsEncoding` e `eventsConversionStatus`;
+- gli eventi non sono embedded: vengono salvati come JSON in `match_events`, collection creata con `block_compressor=zstd` e checksum;
 - participant è embedded perché viene letto insieme al match;
 - il documento deve essere controllato prima dell'upsert contro il limite BSON di 16 MB;
-- se gli eventi rendono il documento troppo grande, vengono spostati in `lol_match_events` con `_id = matchId`.
+- `findMatch` e le history caricano gli eventi separatamente; le history usano un caricamento batch.
 
 ## Participant embedded
 
@@ -158,14 +153,13 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 ```json
 {
-  "legacyParticipantId": 1,
   "puuid": "participant-puuid",
   "riotId": "GameName",
   "riotTag": "TAG",
   "win": true,
   "kda": "8/2/10",
   "champion": 157,
-  "lane": "MIDDLE",
+  "lane": "MID",
   "team": "BLUE",
   "rank": "EMERALD_II",
   "lp": 90,
@@ -216,7 +210,7 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 ## Projection leaderboard
 
-`lol_leaderboard_entries` è derivata da `ranks[]` e serve a evitare `$unwind` costosi sui documenti summoner durante l'ordinamento.
+`leaderboard_entries` è derivata da `ranks[]` e serve a evitare `$unwind` costosi sui documenti summoner durante l'ordinamento.
 
 ```json
 {
@@ -235,32 +229,35 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 Indici:
 
-- `queue + region + rank + mmr DESC`;
-- `queue + region + mmr DESC`;
-- `queue + rank + mmr DESC`;
-- `queue + mmr DESC`.
+- `queue + region + rank + mmr DESC + puuid ASC`;
+- `queue + region + mmr DESC + puuid ASC`;
+- `queue + rank + mmr DESC + puuid ASC`;
+- `queue + mmr DESC + puuid ASC`.
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche, build, distribution e metriche hanno chiavi composte stabili e payload strutturati. Non devono contenere stringhe Kryo come unica forma di verità.
+Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
 
-Per compatibilità, durante la migrazione possono contenere:
+### `profile_statistics`: chiave e indice
 
-- `legacyPayload`;
-- `legacyEncoding`;
-- `conversionStatus`;
-- `convertedAt`.
+La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKey()`. `filterKey` include champion, lane, queue, rank, rank behavior, patch, region, opponent, duo e periodo. Il registry crea l'indice unique, non-sparse, `profile_statistics_puuid_filter` su `{ puuid: 1, filterKey: 1 }`. Il PUUID da solo non identifica il documento, perché uno stesso account può avere più filtri; `_id` è un ObjectId casuale stabile e non è usato per il lookup. Il write path usa `$setOnInsert` per generarlo solo al primo upsert. Documenti legacy senza `filterKey` devono essere migrati prima della costruzione dell'indice; non si risolve il conflitto rendendo l'indice sparse o non-unique.
+
+Il documento è flat e non contiene un root `statistics`. `recentMatches` è una query `MatchResult` separata con lo stesso filtro e non viene salvato dentro `ProfileStatistics`. Per il flusso completo e il runbook di diagnosi vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
+
+MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
 ## Indici minimi
 
-### `lol_summoners`
+### `summoner`
 
 - `_id` su `puuid`;
 - `riotSearch + region`;
 - `userId` sparse;
-- `tracking + region`;
+- `tracking + region` parziale con `tracking=true`;
+- `ranks.rank + ranks.lp DESC`;
+- `masteries.level DESC + masteries.points DESC`;
 
-### `lol_matches`
+### `match`
 
 - `participants.puuid + timeEnd DESC`;
 - `leagueShard + queue + timeStart DESC`;
@@ -269,7 +266,7 @@ Per compatibilità, durante la migrazione possono contenere:
 
 ### Collection aggregate
 
-- unique `puuid + seasonStart` per profile statistics;
+- unique `puuid + filterKey` per profile statistics; `_id` casuale stabile;
 - unique `filterKey + championId` per champion stats;
 - `filterKey` per build;
 - unique `queue + rank + region` per distribution.
@@ -280,19 +277,21 @@ Il registry applicativo deve usare nomi stabili. La lista minima è:
 
 | Collection | Nome indice | Specifica |
 |---|---|---|
-| `lol_summoners` | `summoners_riot_search_region` | `riotSearch ASC, region ASC` |
-| `lol_summoners` | `summoners_user_id` | `userId ASC`, sparse |
-| `lol_summoners` | `summoners_tracking_region` | `tracking ASC, region ASC` |
-| `lol_matches` | `matches_participant_time` | `participants.puuid ASC, timeEnd DESC` |
-| `lol_matches` | `matches_shard_queue_start` | `leagueShard ASC, queue ASC, timeStart DESC` |
-| `lol_matches` | `matches_patch_queue` | `patch ASC, queue ASC` |
-| `lol_matches` | `matches_start` | `timeStart DESC` |
-| `lol_profile_statistics` | `profile_statistics_puuid_season` | `puuid ASC, seasonStart ASC`, unique |
-| `lol_leaderboard_entries` | `leaderboard_queue_region_rank_mmr` | `queue ASC, region ASC, rank ASC, mmr DESC` |
-| `lol_leaderboard_entries` | `leaderboard_queue_region_mmr` | `queue ASC, region ASC, mmr DESC` |
-| `lol_champion_stats` | `champion_stats_filter_champion` | `filterKey ASC, championId ASC`, unique |
-| `lol_champion_builds` | `champion_builds_filter` | `filterKey ASC` |
-| `lol_leaderboard_distribution` | `distribution_queue_rank_region` | `queue ASC, rank ASC, region ASC`, unique |
+| `summoner` | `summoners_region_riot_search` | `region ASC, riotSearch ASC` |
+| `summoner` | `summoners_user_id` | `userId ASC`, sparse |
+| `summoner` | `summoners_tracking_region_active` | `tracking ASC, region ASC`, partial `tracking=true` |
+| `summoner` | `summoners_rank_lp` | `ranks.rank ASC, ranks.lp DESC` |
+| `summoner` | `summoners_mastery_level_points` | `masteries.level DESC, masteries.points DESC` |
+| `match` | `matches_participant_time` | `participants.puuid ASC, timeEnd DESC` |
+| `match` | `matches_shard_queue_start` | `leagueShard ASC, queue ASC, timeStart DESC` |
+| `match` | `matches_patch_queue` | `patch ASC, queue ASC` |
+| `match` | `matches_start` | `timeStart DESC` |
+| `profile_statistics` | `profile_statistics_puuid_filter` | `puuid ASC, filterKey ASC`, unique |
+| `leaderboard_entries` | `leaderboard_queue_region_rank_mmr` | `queue ASC, region ASC, rank ASC, mmr DESC` |
+| `leaderboard_entries` | `leaderboard_queue_region_mmr` | `queue ASC, region ASC, mmr DESC` |
+| `champion_stats` | `champion_stats_filter_champion` | `filterKey ASC, championId ASC`, unique |
+| `champion_builds` | `champion_builds_filter` | `filterKey ASC` |
+| `leaderboard_distribution` | `distribution_queue_rank_region` | `queue ASC, rank ASC, region ASC`, unique |
 
 L'indice `_id` è quello nativo Mongo e non va duplicato con un secondo indice equivalente.
 
@@ -305,11 +304,12 @@ Il bootstrap previsto è:
 ```text
 MongoClient
   -> databaseName = App.isTesting() ? "beebot_test" : "beebot"
-  -> MongoSchemaInitializer.ensure(database)
-  -> LeagueStore/repository
+  -> MongoDB.ensureCollections(database)
+  -> MongoDB.ensureIndexes(database) dopo la migrazione
+  -> MongoDB query/write methods
 ```
 
-`MongoSchemaInitializer` mantiene una definizione versionata per ogni collection con:
+`MongoDB` mantiene una definizione versionata per ogni collection con:
 
 - nome collection;
 - chiave `_id`;
@@ -332,12 +332,12 @@ Il codice è la fonte di verità operativa; questo documento descrive collection
 
 ## Acceptance criteria
 
-- ogni tabella LoL ha una destinazione documentata;
+- ogni tabella LoL in scope ha una destinazione documentata;
 - ogni collection ha `_id` e indici definiti;
 - ogni collection ha un owner nel registry dello schema applicativo;
 - il database testing è separato da quello production tramite `App.isTesting()`;
 - il bootstrap degli indici è idempotente e non distruttivo;
-- rank/mastery/metriche e participant hanno ownership esplicita;
+- rank/mastery, statistiche champion e participant hanno ownership esplicita;
 - nessun participant usa un mega-oggetto `build`;
 - nessun enum o team usa ordinali;
 - ban e match ID seguono il formato canonico;

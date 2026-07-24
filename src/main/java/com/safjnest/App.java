@@ -8,8 +8,9 @@ import java.util.Properties;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.nosql.MongoDB;
+import com.safjnest.nosql.MongoMigration;
 import com.safjnest.spring.SpringServer;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
@@ -37,6 +38,7 @@ public class App {
             runSpring();
         }
         TrackerScheduler.start();
+        MongoMigration.migrateAll();
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }
@@ -71,6 +73,7 @@ public class App {
             }
         }
         bot.distruzione_demoniaca();
+        MongoDB.close();
     }
 
     public static void restart() {
@@ -80,6 +83,9 @@ public class App {
     }
 
     public static boolean isTesting() {
+        if (settings == null) {
+            settings = SettingsLoader.getSettings();
+        }
         return settings.getConfig().isTesting();
     }
 

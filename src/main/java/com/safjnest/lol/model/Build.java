@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
-import com.safjnest.utils.KryoUtils;
+import com.safjnest.utils.JsonCodec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,13 +136,13 @@ public record Build(
         );
     }
 
-    public String encode() {
-        return KryoUtils.encode(this);
+    public String toJson() {
+        return JsonCodec.toJson(this);
     }
 
-    public static Build decode(String b64) {
+    public static Build fromJson(String json) {
         try {
-            Build build = KryoUtils.decode(b64, Build.class);
+            Build build = JsonCodec.fromJson(json, Build.class);
             if (build == null) return null;
             if (build.filter() != null && !(build.filter() instanceof Filter)) return null;
             if (build.coreBuilds() == null || build.coreItems() == null || build.starterOptions() == null

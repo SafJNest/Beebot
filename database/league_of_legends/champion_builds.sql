@@ -3,7 +3,7 @@ CREATE TABLE `champion_builds` (
  `games` int(11) NOT NULL,
  `winrate` double NOT NULL,
  `filter` varchar(512) NOT NULL,
- `data` longtext NOT NULL,
+ `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
  PRIMARY KEY (`id`),
  KEY `filter` (`filter`),

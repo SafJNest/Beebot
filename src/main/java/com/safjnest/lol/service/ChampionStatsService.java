@@ -13,11 +13,10 @@ import com.safjnest.lol.model.ChampionStatistics.PowerCurvePoint;
 import com.safjnest.lol.model.ChampionStatistics.Trend;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -67,7 +66,7 @@ public final class ChampionStatsService {
     public static Map<Integer, ChampionStatistics> getAll(Filter filter) {
         Map<Integer, ChampionStatistics> cached;
         try {
-            cached = LeagueDB.getChampionStats(filter);
+            cached = MongoDB.findChampionStatistics(filter);
         } catch (RuntimeException exception) {
             BotLogger.warning("Invalid persisted champion stats for " + filter.genericKey()
                 + ": " + exception.getMessage());
@@ -84,7 +83,7 @@ public final class ChampionStatsService {
         Map<Integer, ChampionStatistics> computed = compute(filter, false);
         if (computed != null && !computed.isEmpty()) {
             BotLogger.info("Saving champion stats for " + filter.genericKey());
-            LeagueDB.saveChampionStats(computed);
+            MongoDB.upsertChampionStatistics(computed);
             for (ChampionStatistics statistic : computed.values()) RedisClient.set(
                 RedisKey.CHAMPION_STATS.of(statistic.filter().genericKey(), statistic.filter().champion()), statistic, 0);
         }
@@ -107,7 +106,7 @@ public final class ChampionStatsService {
         if (stats != null) return stats;
 
         try {
-            stats = LeagueDB.getChampionStats(filter, filter.champion());
+            stats = MongoDB.findChampionStatistics(filter, filter.champion());
         } catch (RuntimeException exception) {
             BotLogger.warning("Invalid persisted champion stats for " + filter.toKey()
                 + ": " + exception.getMessage());
@@ -136,7 +135,7 @@ public final class ChampionStatsService {
         Map<Integer, double[]> metricAccum = new HashMap<>();
         Map<Integer, Map<String, int[]>> powerCurveAccum = new HashMap<>();
 
-        long lastMatchId = 0;
+        String lastMatchId = null;
         long totalMatches = ChampionStatsProvider.loadMatchCount(filter);
         long totalBatches = ChampionStatsProvider.batchCount(totalMatches);
         int batchNumber = 0;
@@ -175,7 +174,7 @@ public final class ChampionStatsService {
                         + " progress: " + processedGames + "/" + batchSize);
             }
 
-            lastMatchId = Long.parseLong(matchIds.get(matchIds.size() - 1));
+            lastMatchId = matchIds.get(matchIds.size() - 1);
             ChampionStatsProvider.clear(batch);
             batch = null;
             matchIds.clear();
@@ -545,7 +544,7 @@ public final class ChampionStatsService {
         if (previousFilter == null) return Map.of();
 
         Map<Integer, int[]> previous = new HashMap<>();
-        long lastMatchId = 0;
+        String lastMatchId = null;
         long previousTotal = ChampionStatsProvider.loadMatchCount(previousFilter);
         long previousBatches = ChampionStatsProvider.batchCount(previousTotal);
         long previousGames = 0;
@@ -557,10 +556,10 @@ public final class ChampionStatsService {
             int batchSize = matchIds.size();
             System.out.println("stats previous batch " + batchNumber + "/" + previousBatches
                 + " started: " + matchIds.size() + " games");
-            QueryResult result = ChampionStatsProvider.loadTrendParticipants(matchIds);
+            List<QueryRecord> result = ChampionStatsProvider.loadTrendParticipants(matchIds);
             mergePrevious(previous, previousPickWin(result, filter));
             previousGames += batchSize;
-            lastMatchId = Long.parseLong(matchIds.get(matchIds.size() - 1));
+            lastMatchId = matchIds.get(matchIds.size() - 1);
             int resultSize = result.size();
             result.clear();
             matchIds.clear();
@@ -585,7 +584,7 @@ public final class ChampionStatsService {
         }
     }
 
-    private static Map<Integer, int[]> previousPickWin(QueryResult result, Filter filter) {
+    private static Map<Integer, int[]> previousPickWin(List<QueryRecord> result, Filter filter) {
         Map<Integer, int[]> values = new HashMap<>();
         if (result == null) return values;
         for (QueryRecord record : result) {
@@ -626,7 +625,7 @@ public final class ChampionStatsService {
 
     private static void save(Map<Integer, ChampionStatistics> stats) {
         for (ChampionStatistics statistic : stats.values()) {
-            ChronoTask saveTask = () -> LeagueDB.saveChampionStats(statistic);
+            ChronoTask saveTask = () -> MongoDB.upsertChampionStatistics(statistic);
             RedisClient.set(RedisKey.CHAMPION_STATS.of(
                 statistic.filter().genericKey(), statistic.filter().champion()), statistic, 0);
             saveTask.queue();

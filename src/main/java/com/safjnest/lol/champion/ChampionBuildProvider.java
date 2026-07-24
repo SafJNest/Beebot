@@ -1,9 +1,10 @@
 package com.safjnest.lol.champion;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
+
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,8 +13,8 @@ public final class ChampionBuildProvider {
 
     private ChampionBuildProvider() {}
 
-    public static QueryResult load(Filter filter) {
-        return LeagueDB.getChampionBuildsRaw(filter);
+    public static List<QueryRecord> load(Filter filter) {
+        return MongoDB.getChampionBuildsRaw(filter);
     }
 
     public static ChampionBuildData.Game parse(QueryRecord record, Filter filter) {

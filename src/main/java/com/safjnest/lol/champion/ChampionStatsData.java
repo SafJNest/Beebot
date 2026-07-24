@@ -17,7 +17,6 @@ public final class ChampionStatsData {
         String kda,
         Integer cs,
         Integer gold,
-        int summonerId,
         String puuid
     ) {}
 

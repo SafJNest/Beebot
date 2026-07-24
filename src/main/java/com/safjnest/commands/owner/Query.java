@@ -1,10 +1,11 @@
 package com.safjnest.commands.owner;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -46,7 +47,7 @@ public class Query extends Command{
         query = query.replace("#channel", event.getChannel().getId());
         query = query.replace("#bot", event.getSelfMember().getId());
 
-        QueryResult res = BotDB.get().query(query);
+        List<QueryRecord> res = BotDB.get().query(query);
 
         if(res.isEmpty()) {
             event.reply("```No result```");

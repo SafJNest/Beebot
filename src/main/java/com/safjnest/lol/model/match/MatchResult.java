@@ -2,6 +2,9 @@ package com.safjnest.lol.model.match;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -24,23 +27,24 @@ public class MatchResult {
     public final List<Integer> summonerSpells;
     public final List<Participant> participants;
 
+    @JsonCreator
     public MatchResult(
-        String gameId,
-        GameQueueType queue,
-        long timeStart,
-        long timeEnd,
-        boolean win,
-        String kda,
-        int championId,
-        LaneType lane,
-        int damage,
-        int cs,
-        int gold,
-        int vision,
-        int teamKills,
-        List<Integer> items,
-        List<Integer> summonerSpells,
-        List<? extends Participant> participants
+        @JsonProperty("gameId") String gameId,
+        @JsonProperty("queue") GameQueueType queue,
+        @JsonProperty("timeStart") long timeStart,
+        @JsonProperty("timeEnd") long timeEnd,
+        @JsonProperty("win") boolean win,
+        @JsonProperty("kda") String kda,
+        @JsonProperty("championId") int championId,
+        @JsonProperty("lane") LaneType lane,
+        @JsonProperty("damage") int damage,
+        @JsonProperty("cs") int cs,
+        @JsonProperty("gold") int gold,
+        @JsonProperty("vision") int vision,
+        @JsonProperty("teamKills") int teamKills,
+        @JsonProperty("items") List<Integer> items,
+        @JsonProperty("summonerSpells") List<Integer> summonerSpells,
+        @JsonProperty("participants") List<? extends Participant> participants
     ) {
         this.gameId = gameId;
         this.queue = queue;

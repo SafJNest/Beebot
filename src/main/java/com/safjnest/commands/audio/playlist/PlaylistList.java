@@ -1,9 +1,11 @@
 package com.safjnest.commands.audio.playlist;
 
+import java.util.List;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -29,7 +31,7 @@ public class PlaylistList extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         Member member = event.getMember();
 
-        QueryResult playlists = BotDB.getPlaylists(member.getId());
+        List<QueryRecord> playlists = BotDB.getPlaylists(member.getId());
 
         EmbedBuilder eb = new EmbedBuilder();
 
@@ -41,7 +43,8 @@ public class PlaylistList extends SlashCommand{
             eb.setDescription("No playlists found.");
         } else {
             int i = 1;
-            for(String playlistName : playlists.arrayColumn("name")) {
+            for(QueryRecord playlist : playlists) {
+                String playlistName = playlist.get("name");
                 eb.appendDescription(i + " - " + playlistName + "\n");
                 i++;
             }

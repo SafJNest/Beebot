@@ -1,6 +1,13 @@
 package com.safjnest.lol.model;
 
-import com.safjnest.utils.KryoUtils;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.KeyDeserializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.safjnest.utils.JsonCodec;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -12,6 +19,8 @@ public record ChampionStatistics(
     Filter filter,
     Overview overview,
     List<LaneStat> laneStats,
+    @JsonSerialize(keyUsing = MatchupKeySerializer.class)
+    @JsonDeserialize(keyUsing = MatchupKeyDeserializer.class)
     Map<MatchupKey, Matchup> matchups,
     List<LaneSynergy> laneSynergies,
     List<PowerCurvePoint> powerCurve,
@@ -55,6 +64,23 @@ public record ChampionStatistics(
     }
 
     public record MatchupKey(int champion, LaneType lane) {}
+
+    public static final class MatchupKeySerializer extends JsonSerializer<MatchupKey> {
+        @Override
+        public void serialize(MatchupKey value, JsonGenerator generator, SerializerProvider provider) throws java.io.IOException {
+            generator.writeFieldName(value.champion() + "|" + (value.lane() == null ? "" : value.lane().name()));
+        }
+    }
+
+    public static final class MatchupKeyDeserializer extends KeyDeserializer {
+        @Override
+        public Object deserializeKey(String key, DeserializationContext context) {
+            String[] values = key == null ? new String[0] : key.split("\\|", -1);
+            if (values.length != 2) throw new IllegalArgumentException("Invalid matchup key " + key);
+            LaneType lane = values[1].isBlank() ? null : LaneType.valueOf(values[1]);
+            return new MatchupKey(Integer.parseInt(values[0]), lane);
+        }
+    }
 
     public record Matchup(
         int champion,
@@ -121,13 +147,13 @@ public record ChampionStatistics(
         );
     }
 
-    public String encode() {
-        return KryoUtils.encode(this);
+    public String toJson() {
+        return JsonCodec.toJson(this);
     }
 
-    public static ChampionStatistics decode(String b64) {
+    public static ChampionStatistics fromJson(String json) {
         try {
-            ChampionStatistics statistics = KryoUtils.decode(b64, ChampionStatistics.class);
+            ChampionStatistics statistics = JsonCodec.fromJson(json, ChampionStatistics.class);
             if (statistics == null) return null;
             if (statistics.filter() != null && !(statistics.filter() instanceof Filter)) return null;
             if (statistics.overview() == null || statistics.laneStats() == null

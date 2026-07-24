@@ -23,19 +23,27 @@ public record SummonerOverview(
     ) {}
 
     public static SummonerOverview from(ProfileStatistics statistics, List<Mastery> masteries) {
-        Map<Integer, Champion> champions = new HashMap<>();
-        if (statistics != null) {
-            for (Stats<Integer> stat : statistics.championStats) champions.put(stat.reference, champion(stat.reference));
-            for (MatchResult match : statistics.recentMatches) champions.putIfAbsent(match.championId(), champion(match.championId()));
-        }
-        return from(statistics, masteries, champions);
+        return from(statistics, masteries, null, List.of());
     }
 
     public static SummonerOverview from(ProfileStatistics statistics, List<Mastery> masteries, Map<Integer, Champion> champions) {
+        return from(statistics, masteries, champions, List.of());
+    }
+
+    public static SummonerOverview from(
+        ProfileStatistics statistics,
+        List<Mastery> masteries,
+        Map<Integer, Champion> champions,
+        List<MatchResult> recentMatches
+    ) {
         ProfileStatistics aggregate = statistics != null ? statistics : new ProfileStatistics();
-        Map<Integer, Champion> championMap = champions != null ? Map.copyOf(champions) : Map.of();
+        List<MatchResult> matches = recentMatches != null ? List.copyOf(recentMatches) : List.of();
+        Map<Integer, Champion> championMap = new HashMap<>();
+        if (champions != null) championMap.putAll(champions);
+        for (Stats<Integer> stat : aggregate.championStats) championMap.putIfAbsent(stat.reference, champion(stat.reference));
+        for (MatchResult match : matches) championMap.putIfAbsent(match.championId(), champion(match.championId()));
         StringBuilder form = new StringBuilder();
-        for (MatchResult match : aggregate.recentMatches) form.append(match.win() ? 'W' : 'L');
+        for (MatchResult match : matches) form.append(match.win() ? 'W' : 'L');
 
         Champion mostPlayed = null;
         Stats<Integer> best = null;
@@ -47,10 +55,10 @@ public record SummonerOverview(
         return new SummonerOverview(
             aggregate,
             masteries != null ? List.copyOf(masteries) : List.of(),
-            championMap,
+            Map.copyOf(championMap),
             form.toString(),
             mostPlayed,
-            List.copyOf(aggregate.recentMatches)
+            matches
         );
     }
 
