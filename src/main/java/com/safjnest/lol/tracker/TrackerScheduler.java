@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.service.ChampionDataRefreshService;
-import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
@@ -42,9 +41,6 @@ public class TrackerScheduler {
 
         ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
         refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
-
-        ChronoTask refreshLeaderboardDistribution = () -> LeaderboardService.rebuildDistribution();
-        refreshLeaderboardDistribution.scheduleAtFixedRate(0, TimeConstant.DAY, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshChampionData = () -> refreshChampionData();
         refreshChampionData.scheduleAtFixedTime(3, 0, 0);

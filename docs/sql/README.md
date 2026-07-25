@@ -84,9 +84,9 @@ Le colonne che rappresentano un campione o una regione restano valori applicativ
 
 ## Leaderboard
 
-`leaderboard_distribution` è una tabella derivata. La definizione contiene solo schema, chiavi e indice temporale. Il contenuto viene ricostruito da `rank` e `summoner` tramite `LeaderboardService.rebuildDistribution()` e aggiornato dal job giornaliero di `TrackerScheduler`. Il rebuild inserisce anche le combinazioni senza player con conteggio `0` e sostituisce lo snapshot in una transazione.
+`leaderboard_distribution` è una tabella storica derivata del database SQL. Il runtime LoL Mongo non la legge né la aggiorna: la leaderboard e le distribuzioni vengono calcolate direttamente da `summoner.ranks[]` in Mongo. La definizione resta documentata per installazioni SQL e per il contesto storico della migration.
 
-Non è presente una migration dedicata a `leaderboard_distribution` nel repository: per installazioni esistenti si usa la definizione base [`leaderboard_distribution.sql`](../../database/league_of_legends/leaderboard_distribution.sql), mentre le migration successive riguardano gli indici e la normalizzazione di `rank`.
+Non è presente una migration dedicata a `leaderboard_distribution` nel repository: per installazioni SQL esistenti si usa la definizione base [`leaderboard_distribution.sql`](../../database/league_of_legends/leaderboard_distribution.sql), mentre le migration successive riguardano gli indici e la normalizzazione di `rank`.
 
 Le query paginated della leaderboard usano `rank.mmr` per l'ordinamento, senza tie-breaker aggiuntivi. La migration [`0002-rank-leaderboard-filter.sql`](../../database/league_of_legends/migrations/0002-rank-leaderboard-filter.sql) contiene l'indice precedente su rank e LP; [`0003-rank-mmr-filter.sql`](../../database/league_of_legends/migrations/0003-rank-mmr-filter.sql) lo sostituisce con l'indice basato su MMR. La migration [`0001-rank-mmr.sql`](../../database/league_of_legends/migrations/0001-rank-mmr.sql) aggiunge la colonna e gli indici globali/regionali. La migration [`0004-rank-canonical-mmr.sql`](../../database/league_of_legends/migrations/0004-rank-canonical-mmr.sql) normalizza la queue solo a `RANKED_SOLO_5X5`, rimuove i duplicati legacy e crea gli indici minimi per ogni combinazione di filtro.
 

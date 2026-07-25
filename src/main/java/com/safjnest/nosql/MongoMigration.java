@@ -38,14 +38,10 @@ public final class MongoMigration {
     public static MigrationReport migrateAll(Options options) {
         Options effective = options == null ? Options.defaults() : options;
         MigrationReport report = new MigrationReport(effective.dryRun());
-        MongoDB.beginMigration();
-        boolean completed = false;
         try {
             for (String phase : PHASES) migratePhase(phase, effective, report);
-            completed = true;
             return report;
         } finally {
-            MongoDB.finishMigration(!effective.dryRun() && completed);
             requestCollection();
         }
     }

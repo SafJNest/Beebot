@@ -2,7 +2,7 @@
 
 ## Objective
 
-Simplify leaderboard assembly and reuse the complete canonical summoner view without sequential Riot fetches.
+Simplify leaderboard assembly and reuse the complete canonical summoner view without sequential Riot fetches or persisted leaderboard projections.
 
 ## Dependencies
 
@@ -18,15 +18,16 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - wrap one canonical `SummonerView` in each `SummonerLeaderboard`;
 - remove `toSummoner`, `overview`, `mostPlayed`, `championName`, `ratio`, `rounded`, local Riot ID parsing and `distributionVersion`;
 - preserve fixed page size, defaults and distribution endpoints;
-- cache total, offset-based base rows and complete pages with deterministic keys and TTL;
+- query `summoner.ranks[]` directly with one filtered `$facet` for total and page;
+- cache complete pages and aggregate responses with versioned deterministic keys;
 - reuse the existing per-summoner Profile Statistics cache for overview data;
-- use deterministic invalidation without wildcard deletion.
+- invalidate the global leaderboard cache version after rank writes without wildcard deletion.
 
 ## Out of scope
 
 - unrelated Tracker ingestion refactor;
 - new leaderboard UI behavior;
-- new lightweight leaderboard summoner projection.
+- changes to the public `LeaderboardPage` JSON contract.
 
 ## Invariants
 
@@ -35,19 +36,18 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - page size is 50;
 - page response contains `page`, `pageSize`, `total`, `pages` and rows;
 - missing profile statistics start immediately in the background and are never rebuilt synchronously;
-- distribution rows remain keyed by queue, rank and region.
-- leaderboard rows contain canonical `Summoner` and `Rank` data, including PUUID;
-- total and base-row caches may live for 24 hours and are refreshed by the daily distribution rebuild;
-- an incomplete page never caches the assembled full page; total and base rows remain cacheable.
+- distributions are grouped from `summoner.ranks[]` and returned through `LeaderboardDistribution`;
+- `mmr` remains embedded in each persisted rank and is used only for ordering;
+- the page cache includes a global version and an incomplete page is never cached.
 
 ## Acceptance criteria
 
 - `LeaderboardService` has one `LeaderboardPage` construction flow;
-- leaderboard rows use `SummonerLeaderboard` and `SummonerView`;
+- no intermediate leaderboard row model or persisted leaderboard collection remains in the runtime flow;
 - no sequential Riot fetch occurs for each row;
-- cache hits for total and offset-based rows avoid the leaderboard DB query;
+- one Mongo aggregation returns total and the filtered summoner page;
 - overview cache hits are batch-loaded through Profile Statistics;
-- cache is refreshed through known deterministic keys and TTL;
+- page and aggregate caches are invalidated through the version key;
 - pagination works for 0, 1, 50 and 51 results;
 - rank distribution and top-regions remain non-paginated.
 

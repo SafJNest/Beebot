@@ -351,7 +351,6 @@ public class LeagueService {
         for (Rank rank : ranks) {
             long rankMmr = TierDivisionUtils.getMmr(rank.tier(), rank.lp());
             mmr.put(rank.queue(), rankMmr);
-            MongoDB.upsertLeaderboardEntry(puuid, shard, rank, rankMmr);
         }
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
         RedisClient.set(RedisKey.PROFILE_RANKS.of(shard.name(), puuid), ranks, TTL_PROFILE_COMPONENT);
@@ -804,6 +803,7 @@ public class LeagueService {
             }
         }
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
+        LeaderboardService.invalidateCache();
         RedisClient.set(RedisKey.PROFILE_RANKS.of(shard.name(), puuid), ranks, TTL_PROFILE_COMPONENT);
         invalidateProfilePage(puuid, shard);
     }

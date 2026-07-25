@@ -254,6 +254,11 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
 
 ## Owner
 
+Il contratto HTTP e la response `LeaderboardPage` restano invariati. La pagina è
+derivata internamente da `summoner.ranks[]` tramite Mongo aggregation; non viene
+esposto alcun campo `mmr` aggiuntivo e non esistono response DTO leaderboard
+alternativi.
+
 - Controller: [`LeaderboardController`](../../../src/main/java/com/safjnest/spring/controller/LeaderboardController.java)
 - Service: [`LeaderboardService`](../../../src/main/java/com/safjnest/lol/service/LeaderboardService.java)
 - Success model: [`LeaderboardPage`](../../../src/main/java/com/safjnest/lol/model/leaderboard/LeaderboardPage.java)

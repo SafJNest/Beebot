@@ -136,6 +136,18 @@ public class RedisClient {
         }
     }
 
+    public static long increment(String key) {
+        if (!canUseRedis()) return 0;
+        try (Jedis jedis = pool.getResource()) {
+            long value = jedis.incr(key);
+            markAvailable();
+            return value;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return 0;
+        }
+    }
+
     public static boolean exists(String key) {
         try (Jedis jedis = pool.getResource()) {
             return jedis.exists(key);

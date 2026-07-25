@@ -6,13 +6,13 @@
 |---|---|---|---:|
 | search/autocomplete | search + N query rank | projection summoner con rank Solo incorporato, condivisa dai due consumer | 1 |
 | profile | base + ranks + masteries separati | projection `ProfileProjection`; statistiche Redis/Mongo separate per disponibilità | 2 |
-| leaderboard | count + pagina + `findSummoner` per riga | `$facet` total/pagina + batch summoner/masteries + batch statistics | 3 |
+| leaderboard | count + pagina + `findSummoner` per riga | `$match`/`$elemMatch` preliminare + `$unwind`/`$match` esatto su `summoner.ranks[]` + `$facet` total/pagina + batch statistics | 2 |
 | profile statistics | loop di find singole | `{puuid, filterKey}` con documento flat e batch per filtro | 1 |
 | history/count | hydration completa e filtro Java | `$elemMatch` sullo stesso participant, paging Mongo e `countDocuments` | 1 |
 | champion raw | `Document -> Match -> Participant` | projection raw tipizzata per metadata e participant | 1 per batch |
 | distributions | scansione e conteggio Java | `$group` su Mongo, bulk unordered per rebuild | 1 |
 
-Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cambiano come modelli o route; la leaderboard ora valorizza anche `overview.masteries` nello stesso modo del profilo.
+Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cambiano come modelli o route; la leaderboard valorizza `overview.masteries` dalla stessa projection summoner e non usa più un modello intermedio o collection derivate.
 
 ## Matrice aggiornata dopo i fix
 
@@ -32,7 +32,7 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 
 ### P0 — verifica runtime ancora aperta
 
-1. eseguire gli `explain("executionStats")` con dati rappresentativi e verificare assenza di `COLLSCAN`;
+1. eseguire gli `explain("executionStats")` con dati rappresentativi e misurare il costo delle `COLLSCAN` intenzionali;
 2. aggiungere un test di contratto che verifichi le chiavi consumate da `LeagueMessage`;
 3. eseguire il caso reale con un match noto e verificare i participant dentro il documento Mongo.
 
@@ -50,4 +50,4 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 
 ## Conclusione
 
-I fix coprono il contratto del documento match, l'upsert participant atomico, le projection calde, il batch profile/leaderboard e le aggregazioni principali. Il runtime LoL è Mongo-only; restano la verifica runtime con Mongo reale, gli `explain` e la riconciliazione delle cache.
+I fix coprono il contratto del documento match, l'upsert participant atomico, le projection calde, il batch profile e la leaderboard embedded. Il runtime LoL è Mongo-only; restano la verifica runtime con Mongo reale, gli `explain` e la riconciliazione delle cache versionate.

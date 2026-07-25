@@ -57,8 +57,6 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `match.events` | `match_events` | `_id = fullGameId` | JSON separato, WiredTiger Zstandard |
 | `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
 | `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat, `_id` casuale stabile |
-| `leaderboard_distribution` | `leaderboard_distribution` | `queue + rank + region` | aggregate |
-| `rank` per ordinamento | `leaderboard_entries` | `queue + region + puuid` | projection derivata |
 | `champion` | `champion` | `championId` | catalogo |
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
 | `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
@@ -208,96 +206,40 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 }
 ```
 
-## Projection leaderboard
+## Query leaderboard
 
-`leaderboard_entries` è derivata da `ranks[]` e serve a evitare `$unwind` costosi sui documenti summoner durante l'ordinamento.
+La leaderboard usa direttamente `summoner.ranks[]`. Mongo esegue `$unwind`, filtra
+lo stesso elemento per queue, tier e regione, quindi usa `$facet` per totale e
+pagina. L'ordinamento è `ranks.mmr DESC, _id ASC`, dove `_id` è il PUUID.
 
-```json
-{
-  "_id": "RANKED_SOLO_5X5|EUW1|puuid-value",
-  "puuid": "puuid-value",
-  "queue": "RANKED_SOLO_5X5",
-  "region": "EUW1",
-  "rank": "EMERALD_II",
-  "mmr": 1490,
-  "lp": 90,
-  "wins": 100,
-  "losses": 80,
-  "updatedAt": 1710000000000
-}
-```
-
-Indici:
-
-- `queue + region + rank + mmr DESC + puuid ASC`;
-- `queue + region + mmr DESC + puuid ASC`;
-- `queue + rank + mmr DESC + puuid ASC`;
-- `queue + mmr DESC + puuid ASC`.
+La pagina proietta soltanto identità summoner, il rank selezionato e le masteries;
+`LeaderboardService` aggiunge le statistiche già presenti in cache o Mongo e
+costruisce il modello canonico `LeaderboardPage`. Non esistono collection o
+documenti persistiti dedicati alla leaderboard.
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
+Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
 
 ### `profile_statistics`: chiave e indice
 
-La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKey()`. `filterKey` include champion, lane, queue, rank, rank behavior, patch, region, opponent, duo e periodo. Il registry crea l'indice unique, non-sparse, `profile_statistics_puuid_filter` su `{ puuid: 1, filterKey: 1 }`. Il PUUID da solo non identifica il documento, perché uno stesso account può avere più filtri; `_id` è un ObjectId casuale stabile e non è usato per il lookup. Il write path usa `$setOnInsert` per generarlo solo al primo upsert. Documenti legacy senza `filterKey` devono essere migrati prima della costruzione dell'indice; non si risolve il conflitto rendendo l'indice sparse o non-unique.
+La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKey()`. `filterKey` include champion, lane, queue, rank, rank behavior, patch, region, opponent, duo e periodo. Il runtime usa questa coppia per lookup e upsert applicativi, senza creare un indice secondario Mongo. Il PUUID da solo non identifica il documento, perché uno stesso account può avere più filtri; `_id` è un ObjectId casuale stabile e non è usato per il lookup. Il write path usa `$setOnInsert` per generarlo solo al primo upsert.
 
 Il documento è flat e non contiene un root `statistics`. `recentMatches` è una query `MatchResult` separata con lo stesso filtro e non viene salvato dentro `ProfileStatistics`. Per il flusso completo e il runbook di diagnosi vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
-## Indici minimi
+## Indici
 
-### `summoner`
+Il bootstrap applicativo non crea né gestisce indici secondari. Mongo mantiene
+soltanto l'indice nativo `_id`; eventuali indici già presenti non vengono
+modificati o droppati automaticamente.
 
-- `_id` su `puuid`;
-- `riotSearch + region`;
-- `userId` sparse;
-- `tracking + region` parziale con `tracking=true`;
-- `ranks.rank + ranks.lp DESC`;
-- `masteries.level DESC + masteries.points DESC`;
+## Schema come codice
 
-### `match`
-
-- `participants.puuid + timeEnd DESC`;
-- `leagueShard + queue + timeStart DESC`;
-- `patch + queue`;
-- `timeStart DESC`.
-
-### Collection aggregate
-
-- unique `puuid + filterKey` per profile statistics; `_id` casuale stabile;
-- unique `filterKey + championId` per champion stats;
-- `filterKey` per build;
-- unique `queue + rank + region` per distribution.
-
-## Nomi stabili degli indici
-
-Il registry applicativo deve usare nomi stabili. La lista minima è:
-
-| Collection | Nome indice | Specifica |
-|---|---|---|
-| `summoner` | `summoners_region_riot_search` | `region ASC, riotSearch ASC` |
-| `summoner` | `summoners_user_id` | `userId ASC`, sparse |
-| `summoner` | `summoners_tracking_region_active` | `tracking ASC, region ASC`, partial `tracking=true` |
-| `summoner` | `summoners_rank_lp` | `ranks.rank ASC, ranks.lp DESC` |
-| `summoner` | `summoners_mastery_level_points` | `masteries.level DESC, masteries.points DESC` |
-| `match` | `matches_participant_time` | `participants.puuid ASC, timeEnd DESC` |
-| `match` | `matches_shard_queue_start` | `leagueShard ASC, queue ASC, timeStart DESC` |
-| `match` | `matches_patch_queue` | `patch ASC, queue ASC` |
-| `match` | `matches_start` | `timeStart DESC` |
-| `profile_statistics` | `profile_statistics_puuid_filter` | `puuid ASC, filterKey ASC`, unique |
-| `leaderboard_entries` | `leaderboard_queue_region_rank_mmr` | `queue ASC, region ASC, rank ASC, mmr DESC` |
-| `leaderboard_entries` | `leaderboard_queue_region_mmr` | `queue ASC, region ASC, mmr DESC` |
-| `champion_stats` | `champion_stats_filter_champion` | `filterKey ASC, championId ASC`, unique |
-| `champion_builds` | `champion_builds_filter` | `filterKey ASC` |
-| `leaderboard_distribution` | `distribution_queue_rank_region` | `queue ASC, rank ASC, region ASC`, unique |
-
-L'indice `_id` è quello nativo Mongo e non va duplicato con un secondo indice equivalente.
-
-## Schema e indici come codice
-
-La struttura Mongo è posseduta dal codice applicativo. Non sono richiesti script manuali per creare collection o indici.
+La struttura Mongo è posseduta dal codice applicativo per quanto riguarda le
+collection e il formato dei documenti. Non esiste più un registry applicativo
+degli indici.
 
 Il bootstrap previsto è:
 
@@ -305,38 +247,22 @@ Il bootstrap previsto è:
 MongoClient
   -> databaseName = App.isTesting() ? "beebot_test" : "beebot"
   -> MongoDB.ensureCollections(database)
-  -> MongoDB.ensureIndexes(database) dopo la migrazione
   -> MongoDB query/write methods
 ```
 
-`MongoDB` mantiene una definizione versionata per ogni collection con:
-
-- nome collection;
-- chiave `_id`;
-- indici richiesti;
-- nome stabile di ogni indice;
-- unique, sparse, collation e ordine quando applicabili.
-
-Per ogni definizione il bootstrap deve:
-
-1. creare la collection se non esiste;
-2. leggere gli indici presenti;
-3. creare quelli mancanti con `createIndex`;
-4. considerare già valido un indice con stesso nome e stessa specifica;
-5. fallire esplicitamente se uno stesso nome ha una specifica incompatibile;
-6. non fare `drop` automatici in avvio.
-
-La chiamata deve essere idempotente e sicura in caso di avvii concorrenti. Gli indici rimossi o modificati richiedono una migrazione schema esplicita, mai una modifica silenziosa del bootstrap.
+Il bootstrap crea soltanto le collection mancanti, in modo idempotente e
+sicuro rispetto agli avvii concorrenti. La gestione di eventuali indici
+secondari è responsabilità operativa esterna al runtime.
 
 Il codice è la fonte di verità operativa; questo documento descrive collection, chiavi e motivazione degli indici, ma non sostituisce le definizioni versionate nel registry.
 
 ## Acceptance criteria
 
 - ogni tabella LoL in scope ha una destinazione documentata;
-- ogni collection ha `_id` e indici definiti;
+- ogni collection ha `_id` nativo;
 - ogni collection ha un owner nel registry dello schema applicativo;
 - il database testing è separato da quello production tramite `App.isTesting()`;
-- il bootstrap degli indici è idempotente e non distruttivo;
+- il bootstrap non crea né droppa indici secondari;
 - rank/mastery, statistiche champion e participant hanno ownership esplicita;
 - nessun participant usa un mega-oggetto `build`;
 - nessun enum o team usa ordinali;

@@ -12,7 +12,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Custom builds e summoner.metrics sono fuori scope.
 - Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
 - `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
-- Il flusso completo di `profile_statistics`, inclusa la chiave `puuid + filterKey` e l'indice unique, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
+- Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
 - Il nuovo flusso non esegue cleanup o migrazione automatica di documenti legacy; l'operatore rimuove manualmente i vecchi payload Kryo prima della rigenerazione.
@@ -59,13 +59,13 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - MariaDB mantiene i dati storici letti dalla migration; il runtime LoL non li interroga.
 - Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
 
-Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. L'indice `profile_statistics_puuid_filter` è unique; `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`.
+Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`; l'unicità della coppia è responsabilità del flusso applicativo.
 
 ## Indici e spazio
 
-Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 2.000 documenti; al completamento di summoner e match vengono creati gli indici dichiarati nello schema.
+Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 2.000 documenti.
 
-L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch`, `tracking + region` parziale, `ranks.rank + ranks.lp` e `masteries.level + masteries.points`; match e leaderboard hanno gli indici composti per participant, tempo e tie-break PUUID. Gli indici obsoleti vengono verificati e rimossi manualmente dopo l'audit. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
+L'inizializzazione crea soltanto le collection mancanti e non crea, modifica o rimuove indici secondari. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
 La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner, masteries, build e statistiche restano documenti BSON strutturati e vengono compressi dal server.
 

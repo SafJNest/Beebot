@@ -6,7 +6,7 @@
 - Owner del calcolo e della persistenza: `ProfileStatisticsService`
 - Owner del refresh asincrono: `Tracker`
 
-Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `Filter`, `toSummonerKey`, `profile_statistics_puuid_filter`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `Tracker.startProfileStatistics`.
+Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `Filter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `Tracker.startProfileStatistics`.
 
 ## Regola principale
 
@@ -115,17 +115,10 @@ Non deve esistere il campo root `statistics` per i nuovi documenti. `ProfileStat
 
 `lastUpdate` viene assegnato soltanto dopo aver terminato la scansione e il calcolo dei match. È il timestamp che Discord e API mostrano per indicare quando l'aggregato è stato calcolato.
 
-## Indice Mongo: spiegazione operativa
+## Identità Mongo: spiegazione operativa
 
-L'indice principale è:
-
-```text
-nome:   profile_statistics_puuid_filter
-chiavi: { puuid: 1, filterKey: 1 }
-tipo:   unique
-```
-
-L'indice è ascending su entrambi i campi e non è sparse. Ogni nuovo documento deve quindi avere entrambi i valori valorizzati. Questa scelta è intenzionale: non bisogna rendere l'indice sparse per nascondere documenti legacy privi di `filterKey`, perché così si perderebbe la garanzia di unicità del nuovo formato.
+Il runtime non crea né gestisce indici secondari. La chiave logica resta la
+coppia `{ puuid, filterKey }`, mentre `_id` è l'identità fisica del documento.
 
 ### Perché queste due chiavi
 
@@ -140,15 +133,17 @@ db.profile_statistics.findOne({
 
 Il PUUID da solo non basta: lo stesso summoner può avere statistiche per current split, previous split, all time, queue, lane, champion o matchup diversi. `filterKey` da solo non basta: lo stesso filtro viene calcolato per molti account. La coppia è la chiave logica unica del risultato.
 
-### Perché è `unique`
+### Perché la coppia è unica
 
-`unique` impone a livello database l'invariante:
+Il flusso applicativo tratta come invariante:
 
 ```text
 un solo ProfileStatistics per PUUID e filtro completo
 ```
 
-Questo impedisce duplicati anche se due refresh concorrenti arrivano dal Discord command, dal profilo HTTP o da un refresh manuale. L'applicazione non deve scegliere “il documento più recente” tra duplicati: il database deve impedire che esistano.
+un solo `ProfileStatistics` per PUUID e filtro completo. Non viene usato un
+indice secondario Mongo: i consumer devono mantenere il lookup esatto e la
+gestione dei refresh concorrenti a livello applicativo.
 
 ### Perché `_id` non è la chiave di lookup
 
@@ -178,15 +173,16 @@ Conseguenze:
 1. se la coppia non esiste, Mongo crea un documento con `_id` casuale;
 2. se la coppia esiste, Mongo aggiorna lo stesso documento;
 3. `_id` non viene riscritto perché è presente solo in `$setOnInsert`;
-4. l'indice unique protegge anche da inserimenti concorrenti;
+4. la coppia applicativa resta stabile anche durante refresh concorrenti;
 5. non usare `replace` con un `_id` derivato da PUUID o stagione;
 6. non cercare più per `{ puuid, seasonStart }`.
 
-### Bootstrap e indice legacy
+### Bootstrap Mongo
 
-`MongoDB.ensureIndexes()` crea `profile_statistics_puuid_filter` e rimuove soltanto l'indice legacy nominato `profile_statistics_puuid_season`. La rimozione dell'indice non elimina documenti. I documenti legacy devono essere gestiti dalla migrazione/rigenerazione separata; non bisogna riutilizzare un documento con un filtro diverso solo perché appartiene allo stesso PUUID.
-
-Se esistono più documenti legacy senza `filterKey`, la costruzione dell'indice unique può fallire per duplicati sulla chiave nulla. È un segnale di migrazione incompleta, non un motivo per cambiare l'indice in non-unique o sparse.
+Il bootstrap crea solo le collection mancanti e non crea, modifica o rimuove
+indici secondari. I documenti legacy devono essere gestiti dalla
+migrazione/rigenerazione separata; non bisogna riutilizzare un documento con un
+filtro diverso solo perché appartiene allo stesso PUUID.
 
 Per diagnosticare un mismatch in Mongo:
 
@@ -316,7 +312,7 @@ Prima di modificare questo flusso verificare:
 2. il campo è incluso in `toSummonerKey()` se modifica il dataset;
 3. Redis e Mongo usano la stessa chiave;
 4. `MongoDB` legge e scrive `{puuid, filterKey}`;
-5. l'indice `profile_statistics_puuid_filter` resta unique;
+5. la coppia `{ puuid, filterKey }` resta l'identità applicativa;
 6. il calcolo passa da `ProfileStatisticsService`, non da Discord/API/controller;
 7. `recentMatches` resta separato;
 8. `lastUpdate` viene scritto solo dopo il calcolo;

@@ -31,18 +31,10 @@ I consumer ricevono il PUUID già presente nel modello Riot/Summoner. Non esisto
 
 ## Indici
 
-Indice target su `summoner`:
-
-- `_id`, implicito e non eliminabile;
-- `summoners_user_id`, sparse;
-- `summoners_region_riot_search`, `{ region: 1, riotSearch: 1 }`;
-- `summoners_tracking_region_active`, `{ tracking: 1, region: 1 }`, partial filter `{ tracking: true }`;
-- `summoners_rank_lp`, `{ ranks.rank: 1, ranks.lp: -1 }`;
-- `summoners_mastery_level_points`, `{ masteries.level: -1, masteries.points: -1 }`.
-
-Per le letture principali sono inoltre dichiarati gli indici `participants.puuid + leagueShard + queue + timeStart`, i quattro indici leaderboard con `mmr + puuid` come ordinamento deterministico e gli indici champion già filtrati per `filterKey`, queue e champion. Gli indici nuovi vengono aggiunti con nomi distinti; non viene eseguito alcun drop automatico.
-
-`MongoDB.ensureIndexes()` crea gli indici mancanti e rimuove soltanto l'indice legacy nominato `profile_statistics_puuid_season` prima di creare `profile_statistics_puuid_filter`; non elimina documenti. Durante il backfill gli indici secondari sono posticipati; vengono creati dopo il completamento di summoner e match. Gli altri indici obsoleti, se presenti, vengono verificati e rimossi manualmente dopo l'audit. Dopo la migrazione si eseguono gli `explain("executionStats")` delle query principali:
+Il runtime non crea né gestisce indici secondari. Mongo mantiene soltanto
+l'indice nativo `_id`; eventuali indici già presenti non vengono modificati o
+droppati automaticamente. Gli `explain("executionStats")` possono essere
+eseguiti manualmente per misurare il costo delle scansioni senza indici:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")
@@ -50,7 +42,7 @@ db.summoner.find({userId: "discord-id"}).explain("executionStats")
 db.summoner.find({tracking: true}).explain("executionStats")
 ```
 
-L'accettazione richiede `IXSCAN` e assenza di `COLLSCAN` sulle ricerche attive. Confrontare `db.summoner.stats().indexSizes` e `db.runCommand({collStats: "summoner", scale: 1})`; il recupero fisico del file può richiedere manutenzione Mongo separata.
+Le scansioni `COLLSCAN` sono intenzionali in assenza di indici secondari. Confrontare `totalDocsExamined`, `executionTimeMillis` e `db.runCommand({collStats: "summoner", scale: 1})`; il recupero fisico del file può richiedere manutenzione Mongo separata.
 
 ## Eventi compressi
 
@@ -99,4 +91,4 @@ La compressione inline delle masteries si valuta solo dopo un campione reale:
 - sopra il 25% oppure p95 del documento oltre 4 KB aggiuntivi: valutare lo stesso codec Zstandard;
 - nessun indice sui campi embedded `masteries`.
 
-La prima misura da conservare è la baseline del database con gli indici finali; la seconda è la misura dopo la rigenerazione degli aggregati e delle statistiche derivate. I risultati `explain("executionStats")` delle query search, history e leaderboard fanno parte dell'audit insieme a `collStats` e `indexSizes`.
+La prima misura da conservare è la baseline del database con gli indici finali; la seconda è la misura dopo la rigenerazione delle statistiche derivate. I risultati `explain("executionStats")` delle query search, history e leaderboard fanno parte dell'audit insieme a `collStats` e `indexSizes`.

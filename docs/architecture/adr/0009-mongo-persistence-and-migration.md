@@ -5,6 +5,10 @@
 - Date: 2026-07-17
 - Approved: 2026-07-18, main-agent approval after the full implementation request
 
+## Amendment 2026-07-25
+
+La decisione sulla leaderboard è aggiornata: il runtime non mantiene più projection o distribuzioni persistite. `summoner.ranks[]` è l'unica sorgente Mongo; pagina, totale, distribuzione e top-region derivano da aggregation filtrate. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato. Le collection obsolete possono restare presenti fino a una pulizia operativa manuale.
+
 ## Context
 
 La persistenza LoL storica è concentrata in `LeagueDB`, una classe statica che contiene query SQL e mapping per summoner, rank, mastery, match e participant. Il runtime deve essere separato dal backfill MariaDB.
@@ -32,7 +36,7 @@ Mongo userà:
 - rank e mastery incorporate nel summoner;
 - champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
-- collection separate per dati derivati e aggregate;
+- collection separate solo per dati derivati che richiedono un access pattern autonomo; la leaderboard usa direttamente `summoner.ranks[]` e non mantiene collection derivate;
 - nessun identificativo numerico MariaDB viene scritto nei documenti Mongo; le chiavi canoniche sono PUUID, full Riot match ID, queue e championId.
 - gli eventi match sono separati in `match_events` e compressi da WiredTiger con Zstandard; match e masteries restano BSON normale.
 
@@ -65,7 +69,7 @@ La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di c
 
 `App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
 
-Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i propri indici con nomi e specifiche stabili, li crea se mancanti e fallisce su conflitti incompatibili. Il bootstrap è idempotente e non esegue drop automatici. `summoner` usa un indice `region + riotSearch` e un indice parziale `tracking=true`. Il nuovo flusso non richiede né esegue cleanup automatici; l'operatore rimuove manualmente i payload obsoleti prima della rigenerazione.
+Il codice possiede il bootstrap delle collection, ma non crea né gestisce indici secondari. Il bootstrap è idempotente e non esegue drop automatici; eventuali indici già presenti restano responsabilità operativa esterna al runtime. Il nuovo flusso non richiede cleanup automatici; l'operatore rimuove manualmente i payload obsoleti prima della rigenerazione.
 
 ## Compatibilità API
 
@@ -87,7 +91,7 @@ I campi numerici dei modelli pubblici restano compatibili con il modello storico
 ### Negative
 
 - il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
-- alcune projection, come leaderboard, devono essere mantenute;
+- la leaderboard richiede `$unwind` e filtri su `summoner.ranks[]`; il bootstrap non crea indici dedicati, mentre totale, pagina e distribuzioni vengono calcolati da Mongo e cacheati in Redis;
 - il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
 - il backfill e il runtime devono essere verificati separatamente.
 

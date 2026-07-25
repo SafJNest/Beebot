@@ -26,7 +26,7 @@ L’account e il profilo vengono persistiti direttamente in MongoDB. `LeagueDB` 
 
 Il documento match resta la sorgente dei participant; `recentMatches` viene caricato separatamente come `MatchResult` leggero dallo stesso filtro e non viene serializzato dentro `ProfileStatistics`.
 
-La chiave Mongo non è la stagione: è l'uguaglianza esatta `{ puuid, filterKey }`, dove `filterKey` è `Filter.toSummonerKey()` e include anche il periodo. L'indice unique `profile_statistics_puuid_filter` impedisce duplicati per lo stesso account e filtro.
+La chiave Mongo non è la stagione: è l'uguaglianza esatta `{ puuid, filterKey }`, dove `filterKey` è `Filter.toSummonerKey()` e include anche il periodo. L'applicazione usa la coppia come identità logica e non crea indici secondari.
 
 ## Account e cache
 

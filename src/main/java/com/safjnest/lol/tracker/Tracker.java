@@ -450,7 +450,7 @@ public class Tracker {
         return lp - previousParticipant.lp;
     }
 
-    private static void updateLeaderboardEntries(List<LeagueEntry> entries, LeagueShard shard) {
+    private static void updateRanks(List<LeagueEntry> entries, LeagueShard shard) {
         Map<String, List<LeagueEntry>> byPuuid = new LinkedHashMap<>();
         if (entries != null) for (LeagueEntry entry : entries) {
             if (entry != null && entry.getPuuid() != null) byPuuid.computeIfAbsent(entry.getPuuid(), ignored -> new ArrayList<>()).add(entry);
@@ -1220,11 +1220,11 @@ public class Tracker {
                     BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " challengers for region " + shard);
                     for (LeagueEntry entry : entries) LeagueService.upsertSummoner(
                             LeagueService.getRiotSummoner(entry.getPuuid(), shard), null);
-                    updateLeaderboardEntries(entries, shard);
+                    updateRanks(entries, shard);
                 } catch (Exception e) { e.printStackTrace(); }
             }
         }  
-        LeaderboardService.rebuildDistribution();
+        LeaderboardService.invalidateCache();
     }
 
     public static void retrieveHighEloEntries() {
@@ -1244,12 +1244,12 @@ public class Tracker {
                         List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, queue, tier, 0);
                         for (LeagueEntry entry : entries) LeagueService.upsertSummoner(
                                 LeagueService.getRiotSummoner(entry.getPuuid(), shard), null);
-                        updateLeaderboardEntries(entries, shard);
+                        updateRanks(entries, shard);
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             }  
         }
-        LeaderboardService.rebuildDistribution();
+        LeaderboardService.invalidateCache();
     }
 
     public static void retrieveAllEntries() {
@@ -1275,7 +1275,7 @@ public class Tracker {
                                 BotLogger.info("[LPTracker] Start analyzing page " + page + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
                                 for (LeagueEntry entry : entries) LeagueService.upsertSummoner(
                                         LeagueService.getRiotSummoner(entry.getPuuid(), shard), null);
-                                updateLeaderboardEntries(entries, shard);
+                                updateRanks(entries, shard);
                                 page++;
                                 Thread.sleep(500);
                             } while (entries.size() > 0);
@@ -1287,7 +1287,7 @@ public class Tracker {
             shardTasks.add(task.queueFuture());
         }
         if (!shardTasks.isEmpty()) CompletableFuture.allOf(shardTasks.toArray(new CompletableFuture[0]))
-            .thenRun(LeaderboardService::rebuildDistribution);
+            .thenRun(LeaderboardService::invalidateCache);
         
     }
 

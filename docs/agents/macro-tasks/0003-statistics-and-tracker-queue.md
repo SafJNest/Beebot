@@ -48,7 +48,7 @@ The implemented source-of-truth contract is [`profile-statistics-source-of-truth
 
 ```text
 ProfileStatistics identity = puuid + Filter.toSummonerKey()
-Mongo unique index        = { puuid: 1, filterKey: 1 }
+Mongo secondary indexes   = none managed by the runtime
 Mongo _id                 = random ObjectId, $setOnInsert only
 recentMatches             = separate MatchResult query with the same Filter
 ```

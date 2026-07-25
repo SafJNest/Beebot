@@ -14,7 +14,7 @@
 - Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`.
 - `QueryRecord` and `List<QueryRecord>` are the common flat/nested projection contract.
 
-The canonical profile-statistics flow is documented in [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md). It is the starting point for changes involving `Filter`, `ProfileStatistics`, `SummonerOverview`, `recentMatches`, `lastUpdate` or the `profile_statistics_puuid_filter` index.
+The canonical profile-statistics flow is documented in [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md). It is the starting point for changes involving `Filter`, `ProfileStatistics`, `SummonerOverview`, `recentMatches` or `lastUpdate`.
 
 ## Canonical models
 

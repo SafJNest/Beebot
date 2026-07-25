@@ -31,7 +31,6 @@ lol/model/match/
 
 lol/model/leaderboard/
   LeaderboardPage
-  LeaderboardRow
   LeaderboardDistribution
 
 lol/model/statistics/

@@ -1,17 +1,13 @@
 package com.safjnest.lol.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
-import com.safjnest.lol.model.leaderboard.LeaderboardRow;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
@@ -35,13 +31,7 @@ public class LeaderboardService {
     private static final int MAX_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
     private static final int TTL_LEADERBOARD = 60 * 5;
-    private static final int TTL_LEADERBOARD_COMPONENTS = 60 * 60 * 24;
     private static final int TTL_DISTRIBUTION = 60 * 5;
-    private static final TypeReference<List<LeaderboardRow>> LEADERBOARD_ROWS_TYPE = new TypeReference<>() {};
-    private static final List<TierType> COMPETITIVE_TIERS = List.of(
-        TierType.CHALLENGER, TierType.GRANDMASTER, TierType.MASTER, TierType.DIAMOND, TierType.EMERALD,
-        TierType.PLATINUM, TierType.GOLD, TierType.SILVER, TierType.BRONZE, TierType.IRON
-    );
 
     private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
 
@@ -51,72 +41,50 @@ public class LeaderboardService {
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
         if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
 
-        GameQueueType selectedQueue = defaultQueue(queue);
+        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
         String selectedRegion = defaultRegion(region);
         String rankKey = rank == null ? ALL_RANKS : rank.name();
+        long version = cacheVersion();
         String key = RedisKey.LEADERBOARD_PAGE.of(
-            rankKey, GameQueueTypeUtils.canonicalQueue(selectedQueue).name(), selectedRegion, page, limit
+            version, rankKey, selectedQueue.name(), selectedRegion, page, limit
         );
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
         if (cached != null) return ApiResult.ready(cached);
 
         long offset = (long) (page - 1) * limit;
-        String selectedQueueName = GameQueueTypeUtils.canonicalQueue(selectedQueue).name();
-        String totalKey = RedisKey.LEADERBOARD_TOTAL.of(rankKey, selectedQueueName, selectedRegion);
-        String rowsKey = RedisKey.LEADERBOARD_ROWS.of(rankKey, selectedQueueName, selectedRegion, offset, limit);
-
-        Long cachedTotal = RedisClient.get(totalKey, Long.class);
-        List<LeaderboardRow> cachedRows = RedisClient.get(rowsKey, LEADERBOARD_ROWS_TYPE);
-        boolean totalReady = cachedTotal != null;
-        boolean rowsReady = cachedRows != null;
-
-        long total = totalReady ? cachedTotal : 0;
-        List<LeaderboardRow> rows = rowsReady ? cachedRows : List.of();
-        Map<String, List<Mastery>> masteriesBySummoner = new HashMap<>();
-        if (!totalReady || !rowsReady) {
-            MongoDB.LeaderboardPageQuery query = MongoDB.findLeaderboardPage(
-                rank, selectedQueue, selectedRegion, offset, limit
-            );
-            total = query.total();
-            rows = query.rows();
-            masteriesBySummoner.putAll(query.masteries());
-            cacheLeaderboardComponents(totalKey, rowsKey, total, rows);
-        }
-        if (total <= offset) rows = List.of();
-
+        MongoDB.LeaderboardQuery query = MongoDB.findLeaderboardPage(
+            rank, selectedQueue, selectedRegion, offset, limit
+        );
+        long total = query.total();
+        List<Summoner> summoners = query.summoners();
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        List<String> puuids = new ArrayList<>(rows.size());
-        for (LeaderboardRow row : rows) puuids.add(row.summoner().puuid());
-        if (!puuids.isEmpty() && masteriesBySummoner.isEmpty()) {
-            masteriesBySummoner.putAll(MongoDB.findMasteriesByPuuid(puuids, null));
-        }
+        List<String> puuids = new ArrayList<>(summoners.size());
+        for (Summoner summoner : summoners) puuids.add(summoner.puuid());
         Map<String, ProfileStatistics> statisticsBySummoner = profileStatisticsService.getByPuuid(puuids, season);
-        List<SummonerLeaderboard> summoners = new ArrayList<>(rows.size());
-        boolean cacheable = true;
-        for (int i = 0; i < rows.size(); i++) {
-            LeaderboardRow row = rows.get(i);
-            Summoner summoner = row.summoner();
-            ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
-            if (statistics == null) {
-                cacheable = false;
-                Tracker.startProfileStatistics(summoner, season);
-            }
+        boolean pending = false;
+        for (Summoner summoner : summoners) {
+            if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
+            Tracker.startProfileStatistics(summoner, season);
+            pending = true;
         }
+        if (pending) return ApiResult.pending();
 
-        if (!cacheable) return ApiResult.pending();
-
-        for (int i = 0; i < rows.size(); i++) {
-            LeaderboardRow row = rows.get(i);
+        List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
+        for (int index = 0; index < summoners.size(); index++) {
+            Summoner summoner = summoners.get(index);
+            Rank rankValue = summoner.ranks().isEmpty() ? Rank.unranked() : summoner.ranks().get(0);
             SummonerView view = SummonerView.from(
-                row.summoner(), List.of(row.rank()), statisticsBySummoner.get(row.summoner().puuid()),
-                masteriesBySummoner.getOrDefault(row.summoner().puuid(), List.of())
+                summoner,
+                List.of(rankValue),
+                statisticsBySummoner.get(summoner.puuid()),
+                summoner.masteries()
             );
-            summoners.add(new SummonerLeaderboard(offset + i + 1, view));
+            leaderboardSummoners.add(new SummonerLeaderboard(offset + index + 1, view));
         }
 
-        LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, summoners);
+        LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, leaderboardSummoners);
         RedisClient.set(key, response, TTL_LEADERBOARD);
         return ApiResult.ready(response);
     }
@@ -124,13 +92,13 @@ public class LeaderboardService {
     public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
         String selectedRegion = defaultRegion(region);
-        String key = RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(selectedQueue.name(), selectedRegion);
+        String key = RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(
+            cacheVersion(), selectedQueue.name(), selectedRegion
+        );
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
 
-        List<LeaderboardDistribution.Entry> entries = MongoDB
-                .findRankDistribution(selectedQueue, selectedRegion);
-
+        List<LeaderboardDistribution.Entry> entries = MongoDB.findRankDistribution(selectedQueue, selectedRegion);
         LeaderboardDistribution response = new LeaderboardDistribution(entries);
         RedisClient.set(key, response, TTL_DISTRIBUTION);
         return response;
@@ -139,31 +107,27 @@ public class LeaderboardService {
     public LeaderboardDistribution getTopRegions(GameQueueType queue, TierType rank) {
         requireRank(rank);
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
-        String key = RedisKey.LEADERBOARD_TOP_REGIONS.of(selectedQueue.name(), rank.name());
+        String key = RedisKey.LEADERBOARD_TOP_REGIONS.of(
+            cacheVersion(), selectedQueue.name(), rank.name()
+        );
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
 
-        List<LeaderboardDistribution.Entry> entries = MongoDB
-                .findTopRegions(selectedQueue, rank);
-
+        List<LeaderboardDistribution.Entry> entries = MongoDB.findTopRegions(selectedQueue, rank);
         LeaderboardDistribution response = new LeaderboardDistribution(entries);
         RedisClient.set(key, response, TTL_DISTRIBUTION);
         return response;
     }
 
-    public static boolean rebuildDistribution() {
-        boolean rebuilt = MongoDB.rebuildLeaderboardDistribution();
-        if (rebuilt) clearDistributionCache();
-        return rebuilt;
+    public static void invalidateCache() {
+        RedisClient.increment(RedisKey.LEADERBOARD_VERSION.of());
     }
 
     // ============================================================================
 
-    private static void cacheLeaderboardComponents(
-        String totalKey, String rowsKey, long total, List<LeaderboardRow> rows
-    ) {
-        RedisClient.set(totalKey, total, TTL_LEADERBOARD_COMPONENTS);
-        RedisClient.set(rowsKey, rows, TTL_LEADERBOARD_COMPONENTS);
+    private static long cacheVersion() {
+        Long version = RedisClient.get(RedisKey.LEADERBOARD_VERSION.of(), Long.class);
+        return version == null ? 0 : version;
     }
 
     private static void requireRank(TierType rank) {
@@ -176,28 +140,5 @@ public class LeaderboardService {
 
     private static String defaultRegion(LeagueShard region) {
         return region == null ? GLOBAL_REGION : region.name();
-    }
-
-    private static void clearDistributionCache() {
-        List<String> regions = new ArrayList<>();
-        regions.add(GLOBAL_REGION);
-        for (LeagueShard shard : LeagueShard.values()) {
-            if (shard != LeagueShard.UNKNOWN) regions.add(shard.name());
-        }
-
-        for (GameQueueType queue : GameQueueType.values()) {
-            GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(queue);
-            if (selectedQueue != queue) continue;
-            for (String region : regions) {
-                RedisClient.delete(RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(selectedQueue.name(), region));
-                for (TierType rank : COMPETITIVE_TIERS) {
-                    RedisClient.delete(RedisKey.LEADERBOARD_TOTAL.of(rank.name(), selectedQueue.name(), region));
-                }
-                RedisClient.delete(RedisKey.LEADERBOARD_TOTAL.of(ALL_RANKS, selectedQueue.name(), region));
-            }
-            for (TierType rank : COMPETITIVE_TIERS) {
-                RedisClient.delete(RedisKey.LEADERBOARD_TOP_REGIONS.of(selectedQueue.name(), rank.name()));
-            }
-        }
     }
 }

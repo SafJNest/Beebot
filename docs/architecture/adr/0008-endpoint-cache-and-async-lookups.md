@@ -28,7 +28,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - The existing Redis queue stores only matches already fetched from Riot.
 - Profile statistics are keyed by the complete `Filter.toSummonerKey()` together with the PUUID; recent matches are loaded separately from the same filter.
-- Mongo persists profile statistics flat and enforces one document per `{ puuid, filterKey }` through the unique `profile_statistics_puuid_filter` index. `_id` is a random ObjectId created only on insert and is not used for lookup.
+- Mongo persists profile statistics flat. The application uses `{ puuid, filterKey }` as the logical identity; `_id` is a random ObjectId created only on insert and is not used for lookup.
 
 ## Rejected alternatives
 
