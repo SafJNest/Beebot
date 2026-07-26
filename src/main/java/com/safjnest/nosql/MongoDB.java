@@ -93,7 +93,7 @@ public final class MongoDB {
             index("summoner", "summoner_riot_id",
                     new Document("region", 1).append("riotId", 1), false, null),
             index("summoner", "summoner_user_accounts",
-                    new Document("userId", 1).append("_id", 1), false, null),
+                    new Document("userId", 1), false, null),
             index("summoner", "summoner_tracking_true",
                     new Document("tracking", 1), false, new Document("tracking", true)),
             index("summoner", "summoner_leaderboard_region",
