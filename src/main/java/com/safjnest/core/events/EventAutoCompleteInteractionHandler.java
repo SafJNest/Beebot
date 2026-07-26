@@ -32,7 +32,6 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.service.LeagueService;

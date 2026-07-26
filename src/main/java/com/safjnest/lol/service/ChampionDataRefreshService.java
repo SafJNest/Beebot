@@ -11,9 +11,6 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-
 public class ChampionDataRefreshService {
 
     public boolean refresh(Filter filter) {

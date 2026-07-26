@@ -10,7 +10,6 @@ import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.nosql.MongoMigration;
 import com.safjnest.spring.SpringServer;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
