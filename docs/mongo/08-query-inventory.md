@@ -12,7 +12,7 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
 | match events | `_id: {$in: [...]}` su `match_events` | 1 | match detail/history |
 | champion | match id con projection; build e statistiche leggono solo participant richiesti; batch raw senza `Match -> Participant` completo | 2 per batch (+ count/trend) | Champion services |
-| leaderboard aggregates | `$match` preliminare + `$unwind` + `$match` esatto + `$group` su `summoner.ranks[]` per tier e regione | 1 | LeaderboardService |
+| leaderboard aggregates | snapshot Mongo `leaderboard_aggregates` per filtro; rebuild ogni 12 ore e `$match` preliminare + `$unwind` + `$match` esatto + `$group` su `summoner.ranks[]` per nuovo filtro | 1 | LeaderboardService |
 | writes | update atomici, pipeline participant, bulk unordered per build/statistiche/summoner | 1 per update/batch | MongoDB/tracker |
 
 ## Projection e filtri
@@ -21,7 +21,7 @@ La search restituisce direttamente il payload che serve a search e autocomplete:
 
 Profilo e leaderboard usano campi BSON strutturati. I filtri champion e lane vengono applicati allo stesso elemento di `participants` tramite un unico `$elemMatch`; non possono più soddisfare champion e lane su due partecipanti diversi.
 
-Le query paginated sono limitate a 100 match, 50 summoner leaderboard, 25 risultati search e 2.000 ID per batch. I cursori dei batch lunghi devono essere chiusi esplicitamente.
+Le query paginated sono limitate a 100 match, 50 summoner leaderboard, 25 risultati search, 500.000 chiavi summoner per pagina e 50.000 chiavi match per pagina. I dati completi dei summoner vengono letti e scritti in sotto-batch da 20.000; i match e gli eventi restano in sotto-batch da 1.000. I cursori dei batch lunghi devono essere chiusi esplicitamente.
 
 ## Invarianti
 

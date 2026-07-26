@@ -18,7 +18,7 @@
 | `/opgg` | `Opgg` → `LeagueMessage.getOpggEmbed` | Riot match list/detail → query participant Mongo per rank/lp/gain → Tracker queue | coerente dopo `findSummonerData`; persistenza match è asincrona |
 | `/livegame` | `Livegame` → spectator flow | Redis spectator → Riot spectator API; account mirror iniziale | coerente, non è un flusso match persistito |
 | `/champion` | `Champion` | `ChampionStatsService` + `BuildService` → Redis/Mongo aggregate → embed | coerente staticamente; non usa MariaDB match direttamente |
-| `/champions` | `Champions` → `LeagueMessage` | champion aggregate Mongo/Redis → ranking embed | coerente staticamente; dipende da refresh Tracker |
+| `/champions` | `Champions` → `LeagueMessage` | champion aggregate Mongo/Redis → ranking embed | coerente staticamente; dipende da refresh DatabaseTracker |
 | `/augment` | `Augment` | catalogo augment in memoria/Riot | fuori dal persistence match |
 | `/item` | `Item` | Data Dragon/cache R4J | fuori dal persistence match |
 | `/region` | `Region` | `GuildData`/`ChannelData` | fuori da LeagueDB/Mongo |

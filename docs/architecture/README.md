@@ -59,6 +59,7 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
 - [ADR-0008: Component caches and asynchronous match lookups](adr/0008-endpoint-cache-and-async-lookups.md)
 - [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
+- [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md)
 
 ## MongoDB migration
 

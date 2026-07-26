@@ -21,9 +21,9 @@ public final class MongoMigration {
     private static final int DEFAULT_BATCH_SIZE = 500_000;
     private static final int MAX_BATCH_SIZE = 500_000;
     private static final int MAX_MATCH_BATCH_SIZE = 50_000;
-    private static final int EMBEDDED_BATCH_SIZE = 5_000;
-    private static final int MONGO_WRITE_BATCH_SIZE = 2_000;
-    private static final int MATCH_READ_BATCH_SIZE = 25;
+    private static final int EMBEDDED_BATCH_SIZE = 10_000;
+    private static final int SUMMONER_WRITE_BATCH_SIZE = 20_000;
+    private static final int MATCH_READ_BATCH_SIZE = 1_000;
     private static final int GC_INTERVAL_BATCHES = 10;
     private static final int MAX_REPORT_IDENTITIES = 100;
     private static final List<String> PHASES = List.of("summoners", "matches");
@@ -234,8 +234,8 @@ public final class MongoMigration {
 
     private static void migrateMissingSummoners(Options options, List<Long> missingIds, MigrationReport report) {
         int batchesSinceCollection = 0;
-        for (int start = 0; start < missingIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
-            int end = Math.min(missingIds.size(), start + MONGO_WRITE_BATCH_SIZE);
+        for (int start = 0; start < missingIds.size(); start += SUMMONER_WRITE_BATCH_SIZE) {
+            int end = Math.min(missingIds.size(), start + SUMMONER_WRITE_BATCH_SIZE);
             List<Long> batchIds = missingIds.subList(start, end);
             List<QueryRecord> rows = querySummonerRowsByIds(batchIds);
             Map<String, Document> documents = new LinkedHashMap<>();
@@ -246,7 +246,7 @@ public final class MongoMigration {
                 }
                 loadEmbeddedRows("ranks", batchIds, documents);
                 loadEmbeddedRows("masteries", batchIds, documents);
-                if (!options.dryRun()) MongoDB.bulkUpsertDocuments("summoner", documents.values(), MONGO_WRITE_BATCH_SIZE);
+                if (!options.dryRun()) MongoDB.bulkUpsertDocuments("summoner", documents.values(), SUMMONER_WRITE_BATCH_SIZE);
                 for (String puuid : documents.keySet()) report.accept("summoners", puuid);
             } finally {
                 rows.clear();

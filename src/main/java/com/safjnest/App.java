@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.safjnest.core.Bot;
+import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
@@ -38,7 +39,7 @@ public class App {
             runSpring();
         }
         TrackerScheduler.start();
-       // MongoMigration.migrateAll();
+
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }
@@ -73,6 +74,7 @@ public class App {
             }
         }
         bot.distruzione_demoniaca();
+        DatabaseTracker.shutdown();
         MongoDB.close();
     }
 

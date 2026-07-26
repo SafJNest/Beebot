@@ -247,7 +247,7 @@ massimo tre opzioni. `matchups` è una mappa con chiavi serializzate come
 
 | HTTP | `code` | Quando |
 |---:|---|---|
-| `202` | `champion_data_pending` | Statistiche o build non sono persistite; il refresh viene avviato in background. |
+| `202` | `champion_data_pending` | Statistiche o build non sono persistite; il refresh viene accodato in background. |
 | `400` | `invalid_request` | Rank, region, queue o role non validi, oppure role incompatibile con la queue. |
 | `404` | `not_found` | Champion sconosciuto. |
 

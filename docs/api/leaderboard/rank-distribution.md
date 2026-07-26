@@ -25,6 +25,9 @@ curl --get 'http://localhost:8080/api/lol/leaderboard/rank-distribution' \
 `CHALLENGER` a `IRON`; `UNRANKED` non è incluso. Le entry a zero possono essere
 presenti quando la combinazione è stata seminata dal rebuild.
 
+Il payload HTTP non cambia; internamente il risultato può essere letto dallo
+snapshot Mongo `leaderboard_aggregates` oppure rigenerato da `summoner.ranks[]`.
+
 ```json
 {
   "entries": [

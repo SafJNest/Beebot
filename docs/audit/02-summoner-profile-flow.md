@@ -9,7 +9,7 @@ Per il contratto completo e il runbook di recupero contesto vedere [`profile-sta
   -> risoluzione account/cache
   -> Riot API solo quando il profilo Mongo è incompleto
   -> LeagueService.upsertSummoner
-  -> ProfileStatisticsService.get / Tracker.refresh
+  -> ProfileStatisticsService.get / DatabaseTracker refresh
   -> LeagueMessage.send
 ```
 

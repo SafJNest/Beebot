@@ -10,9 +10,9 @@
 | profile statistics | loop di find singole | `{puuid, filterKey}` con documento flat e batch per filtro | 1 |
 | history/count | hydration completa e filtro Java | `$elemMatch` sullo stesso participant, paging Mongo e `countDocuments` | 1 |
 | champion raw | `Document -> Match -> Participant` | projection raw tipizzata per metadata e participant | 1 per batch |
-| distributions | scansione e conteggio Java | `$group` su Mongo, bulk unordered per rebuild | 1 |
+| distributions | scansione e conteggio Java | snapshot `leaderboard_aggregates` per filtro, rebuild periodico e `$group` Mongo su nuovo filtro | 1 |
 
-Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cambiano come modelli o route; la leaderboard valorizza `overview.masteries` dalla stessa projection summoner e non usa più un modello intermedio o collection derivate.
+Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cambiano come modelli o route; la leaderboard valorizza `overview.masteries` dalla stessa projection summoner e non usa un modello intermedio o una collection di righe duplicate. Gli endpoint di distribuzione e top-region possono leggere snapshot derivati da `leaderboard_aggregates`, ricostruiti ogni 12 ore.
 
 ## Matrice aggiornata dopo i fix
 

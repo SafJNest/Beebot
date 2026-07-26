@@ -6,7 +6,7 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
@@ -65,7 +65,7 @@ public class ChampionPageService {
         ChampionStatistics stats = ChampionStatsService.get(filter, false);
         Build build = BuildService.getAggregate(filter, false);
         if (stats == null || build == null) {
-            Tracker.startChampionData(filter);
+            DatabaseTracker.startChampionData(filter);
             return ApiResult.pending();
         }
 

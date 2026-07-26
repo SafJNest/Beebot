@@ -36,7 +36,7 @@ Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/Leag
 
 ### Coerente — refresh statistiche Mongo
 
-`ProfileStatisticsService.refresh` legge match proiettati da Mongo usando il `Filter` completo e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. È il comportamento previsto per il runtime Mongo-only.
+`ProfileStatisticsService.refresh` legge match proiettati da Mongo usando il `Filter` completo e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh su una FIFO condivisa con due worker DB. È il comportamento previsto per il runtime Mongo-only.
 
 Evidenza: [ProfileStatisticsService.java](../../src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java:104).
 
@@ -44,7 +44,7 @@ MariaDB resta coinvolto solo nei percorsi espliciti di `MongoMigration`.
 
 ### P1 — cache `ready` dipende da dati aggregati già validi
 
-La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. La pagina salvata non contiene i `recentMatches`: a ogni request vengono interrogati separatamente gli ultimi cinque match leggeri. Il primo caricamento restituisce `PARTIAL` quando le statistiche non sono ancora disponibili e avvia `Tracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
+La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. La pagina salvata non contiene i `recentMatches`: a ogni request vengono interrogati separatamente gli ultimi cinque match leggeri. Il primo caricamento restituisce `PARTIAL` quando le statistiche non sono ancora disponibili e accoda `DatabaseTracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
 
 Evidenza: [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:45) e [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:96).
 

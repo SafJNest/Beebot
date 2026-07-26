@@ -1,12 +1,12 @@
 # Profile statistics: unica fonte di verità
 
 - Stato: implementato staticamente; verifica runtime Mongo ed explain ancora pendenti
-- Ultimo aggiornamento: 2026-07-23
+- Ultimo aggiornamento: 2026-07-26
 - Scope: `SummonerOverview`, `SummonerProfile`, `!summoner`, profilo HTTP e statistiche Mongo LoL
 - Owner del calcolo e della persistenza: `ProfileStatisticsService`
-- Owner del refresh asincrono: `Tracker`
+- Owner del refresh asincrono: `DatabaseTracker`
 
-Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `Filter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `Tracker.startProfileStatistics`.
+Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `Filter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `DatabaseTracker.startProfileStatistics`.
 
 ## Regola principale
 
@@ -57,7 +57,7 @@ I pulsanti `General`, `Current Split` e `Previous Split` modificano soltanto il 
 ### `toKey()` e `toSummonerKey()` non sono intercambiabili
 
 - `Filter.toKey()` resta la chiave storica degli aggregate champion/build e non contiene il periodo completo del profilo.
-- `Filter.toSummonerKey()` è la chiave dedicata a `profile_statistics`, Redis e Tracker.
+- `Filter.toSummonerKey()` è la chiave dedicata a `profile_statistics`, Redis e DatabaseTracker.
 
 `toSummonerKey()` costruisce questa stringa logica:
 
@@ -210,9 +210,9 @@ Discord/API request
        -> Redis PROFILE_STATISTICS(PUUID, filterKey)
        -> Mongo {puuid, filterKey}
   -> hit: usa ProfileStatistics
-  -> miss: Tracker.startProfileStatistics(Summoner, Filter)
+  -> miss: DatabaseTracker.startProfileStatistics(Summoner, Filter)
        -> risposta parziale/pending, nessun calcolo sincrono
-       -> worker virtual thread
+       -> coda FIFO e uno dei due virtual worker DB
             -> Mongo match projection con lo stesso Filter
             -> ProfileStatistics.add(match, puuid, filter)
             -> set lastUpdate dopo il calcolo
@@ -224,10 +224,10 @@ Discord/API request
 La deduplicazione del lavoro asincrono usa la stessa identità logica:
 
 ```text
-in-flight key = puuid + ":" + filter.toSummonerKey()
+in-flight key = profile-statistics:puuid:filter.toSummonerKey()
 ```
 
-Due richieste per lo stesso PUUID e lo stesso filtro condividono il refresh. Due filtri diversi possono essere calcolati separatamente. Il marker viene rimosso sia dopo successo sia dopo errore, così una richiesta successiva può ritentare.
+Due richieste per lo stesso PUUID e lo stesso filtro condividono il Future mentre il job è in coda o in esecuzione. Due filtri diversi possono essere accodati separatamente, ma al massimo due calcoli DB sono eseguiti contemporaneamente. Il marker viene rimosso sia dopo successo sia dopo errore, così una richiesta successiva può ritentare.
 
 ## Calcolo e filtri
 
@@ -302,7 +302,7 @@ L'API continua a restituire i modelli canonici `SummonerView` e `SummonerOvervie
 - `overview.statistics.lastUpdate` indica il completamento del calcolo;
 - `Match` completo resta riservato a dettagli e timeline.
 
-Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce il profilo disponibile come `PARTIAL`, interroga comunque gli ultimi cinque `MatchResult` senza events e avvia il refresh. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
+Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce il profilo disponibile come `PARTIAL`, interroga comunque gli ultimi cinque `MatchResult` senza events e accoda il refresh. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
 
 ## Checklist per un futuro intervento
 
@@ -326,10 +326,12 @@ Prima di modificare questo flusso verificare:
 - `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
 - `src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java`
+- `src/main/java/com/safjnest/lol/tracker/DatabaseTracker.java`
 - `src/main/java/com/safjnest/lol/tracker/Tracker.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessage.java`
 - `src/main/java/com/safjnest/lol/model/summoner/SummonerOverview.java`
 - `docs/mongo/01-db-structure.md`
 - `docs/architecture/adr/0004-profile-statistics-refresh-queue.md`
+- `docs/architecture/adr/0010-database-refresh-queue.md`
 - `docs/architecture/adr/0008-endpoint-cache-and-async-lookups.md`

@@ -51,7 +51,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 | HTTP | Significato |
 |---:|---|
 | `200` | Risposta pronta. Include anche i payload `PARTIAL` del profilo. |
-| `202` | Il dato manca, il refresh è stato avviato in background e la richiesta va ripetuta. |
+| `202` | Il dato manca, il refresh è stato accodato in background e la richiesta va ripetuta. |
 | `400` | Parametro mancante, tipo non valido, enum sconosciuto o combinazione non supportata. |
 | `404` | Risorsa o endpoint inesistente. |
 | `405` | Metodo HTTP non supportato. |

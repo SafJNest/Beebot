@@ -5,9 +5,9 @@
 - Date: 2026-07-17
 - Approved: 2026-07-18, main-agent approval after the full implementation request
 
-## Amendment 2026-07-25
+## Amendment 2026-07-26
 
-La decisione sulla leaderboard è aggiornata: il runtime non mantiene più projection o distribuzioni persistite. `summoner.ranks[]` è l'unica sorgente Mongo; pagina, totale, distribuzione e top-region derivano da aggregation filtrate. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato. Le collection obsolete possono restare presenti fino a una pulizia operativa manuale.
+La leaderboard mantiene `summoner.ranks[]` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution e top-region: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina e il totale restano derivati dai rank embedded; Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
 
 ## Context
 
@@ -36,7 +36,7 @@ Mongo userà:
 - rank e mastery incorporate nel summoner;
 - champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
-- collection separate solo per dati derivati che richiedono un access pattern autonomo; la leaderboard usa direttamente `summoner.ranks[]` e non mantiene collection derivate;
+- collection separate solo per dati derivati che richiedono un access pattern autonomo; la leaderboard usa direttamente `summoner.ranks[]` per le righe e mantiene soltanto gli snapshot aggregati in `leaderboard_aggregates`;
 - nessun identificativo numerico MariaDB viene scritto nei documenti Mongo; le chiavi canoniche sono PUUID, full Riot match ID, queue e championId.
 - gli eventi match sono separati in `match_events` e compressi da WiredTiger con Zstandard; match e masteries restano BSON normale.
 
@@ -57,7 +57,7 @@ Spring continua a possedere solo controller, configurazione HTTP ed error model.
 
 ## Write path
 
-Ogni mutazione LoL runtime passa direttamente da `MongoDB` con un'operazione idempotente e invalida le cache correlate. Le query SQL sono ammesse solo nel percorso di lettura di `MongoMigration`; nessun consumer runtime può mantenere una `INSERT`, `UPDATE` o `DELETE` LoL.
+Ogni mutazione LoL runtime passa direttamente da `MongoDB` con un'operazione idempotente. Gli aggiornamenti rank non invalidano gli snapshot; il task periodico ricostruisce gli aggregati Mongo e incrementa la versione Redis ogni 12 ore. Le query SQL sono ammesse solo nel percorso di lettura di `MongoMigration`; nessun consumer runtime può mantenere una `INSERT`, `UPDATE` o `DELETE` LoL.
 
 ## Configurazione
 
@@ -75,6 +75,8 @@ Il codice possiede il bootstrap delle collection, ma non crea né gestisce indic
 
 Questa migrazione non modifica implicitamente il contratto HTTP. I modelli canonici restano quelli di `lol.model`.
 
+L'amendment sugli snapshot `leaderboard_aggregates` è interno: non richiede modifiche a controller, modelli canonici o reference API.
+
 I campi numerici dei modelli pubblici restano compatibili con il modello storico, ma non sono persistiti nei documenti Mongo e non sono chiavi di lookup.
 
 ## Conseguenze
@@ -91,7 +93,7 @@ I campi numerici dei modelli pubblici restano compatibili con il modello storico
 ### Negative
 
 - il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
-- la leaderboard richiede `$unwind` e filtri su `summoner.ranks[]`; il bootstrap non crea indici dedicati, mentre totale, pagina e distribuzioni vengono calcolati da Mongo e cacheati in Redis;
+- la leaderboard richiede `$unwind` e filtri su `summoner.ranks[]`; il bootstrap non crea indici dedicati, mentre righe e totale vengono calcolati da Mongo e gli aggregati di distribuzione/top-region vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
 - il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
 - il backfill e il runtime devono essere verificati separatamente.
 

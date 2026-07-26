@@ -24,6 +24,9 @@ curl --get 'http://localhost:8080/api/lol/leaderboard/top-regions' \
 `LeaderboardDistribution`. `entries[].key` è lo shard e le entry sono ordinate
 per numero di player decrescente, poi per nome.
 
+Il payload HTTP non cambia; internamente il risultato può essere letto dallo
+snapshot Mongo `leaderboard_aggregates` oppure rigenerato da `summoner.ranks[]`.
+
 ```json
 {
   "entries": [

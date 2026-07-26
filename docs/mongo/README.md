@@ -11,7 +11,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
 - Custom builds e summoner.metrics sono fuori scope.
 - Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
-- `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
+- `profile_statistics`, build e `leaderboard_aggregates` vengono costruiti successivamente dall'applicazione; gli ultimi contengono solo snapshot ricostruibili di distribuzione e top-region.
 - Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
@@ -63,7 +63,7 @@ Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert
 
 ## Indici e spazio
 
-Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 2.000 documenti.
+Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 20.000 documenti; i match restano in sotto-batch da 1.000.
 
 L'inizializzazione crea soltanto le collection mancanti e non crea, modifica o rimuove indici secondari. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 

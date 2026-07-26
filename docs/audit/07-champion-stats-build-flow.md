@@ -3,7 +3,7 @@
 - Data: 2026-07-20
 - Tipo: audit statico e decisione di flusso
 - Stato: implementato staticamente, validazione Mongo runtime ancora necessaria
-- Scope: `ChampionPageService`, `ChampionDataRefreshService`, `ChampionStatsService`, `BuildService` e `Tracker`
+- Scope: `ChampionPageService`, `ChampionDataRefreshService`, `ChampionStatsService`, `BuildService` e `DatabaseTracker`
 
 ## Decisione
 
@@ -72,13 +72,13 @@ Non sono ammessi due calcoli globali identici.
 
 ## Evidenze nel codice implementato
 
-`ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `Tracker.startChampionData`.
+`ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData`.
 
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
-`Tracker` usa due marker distinti: `CHAMPION_STATS_RUNNING` indicizzato da `filter.genericKey()` e `CHAMPION_BUILD_RUNNING` indicizzato da `filter.toKey()`. Prima di creare il marker globale viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono sottomessi separatamente e possono partire in parallelo.
+`DatabaseTracker` usa due chiavi distinte: `champion-stats:<filter.genericKey()>` e `champion-build:<filter.toKey()>`. Prima di accodare il job globale viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.
 
-Al termine di una scansione globale riuscita, `CHAMPION_STATS_COMPLETED` conserva il filtro globale già elaborato, anche quando il risultato è vuoto o non contiene il champion richiesto. Questo impedisce che il polling di una pagina senza dati rilanci la stessa scansione. In caso di eccezione lo stato `COMPLETED` non viene scritto e il marker `RUNNING` viene rimosso, quindi il filtro resta ritentabile. Il refresh completo dello scheduler resetta lo stato prima di ricalcolare i dati.
+Al termine di una scansione globale riuscita, `CHAMPION_STATS_COMPLETED` conserva il filtro globale già elaborato, anche quando il risultato è vuoto o non contiene il champion richiesto. Questo impedisce che il polling di una pagina senza dati rilanci la stessa scansione. In caso di eccezione lo stato `COMPLETED` non viene scritto e la chiave in-flight viene rimossa, quindi il filtro resta ritentabile. Il refresh completo accodato dallo scheduler usa la chiave `champion-data-refresh:<patch>`, resetta lo stato nel worker e non può sovrapporsi a un altro refresh dello stesso patch.
 
 `ChampionStatsService.compute` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 

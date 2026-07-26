@@ -6,7 +6,7 @@ Sequenza:
 
 1. validare l'input;
 2. chiamare MongoDB con `_id` deterministico;
-3. invalidare le cache correlate;
+3. lasciare gli snapshot leaderboard invariati fino al rebuild periodico ogni 12 ore;
 4. restituire il risultato del modello canonico o dell'operazione Mongo.
 
 MongoDB espone l'errore di connessione, schema o conversione. Non esistono query MariaDB runtime, outbox, retry queue, proxy o doppio write.

@@ -474,7 +474,7 @@ temporali sono Unix epoch in millisecondi.
 
 | HTTP | `code` | Quando |
 |---:|---|---|
-| `202` | `profile_pending` | Summoner, rank o mastery non sono ancora pronti; il refresh parte in background. |
+| `202` | `profile_pending` | Summoner, rank o mastery non sono ancora pronti; il caricamento parte in background e gli eventuali calcoli vengono accodati. |
 | `400` | `invalid_request` | `shard` o `puuid` mancanti/non validi. |
 | `404` | `not_found` | Profilo non trovato. |
 

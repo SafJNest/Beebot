@@ -74,4 +74,14 @@ public class MongoLeaderboardTest {
 
         assertEquals(2790, document.getInteger("mmr").intValue());
     }
+
+    @Test
+    public void aggregateKeysKeepDistributionAndTopRegionsScopesSeparate() {
+        assertEquals(
+                "rank-distribution:RANKED_SOLO_5X5:EUW1",
+                MongoDB.rankDistributionAggregateKey(GameQueueType.RANKED_SOLO_5X5, LeagueShard.EUW1.name()));
+        assertEquals(
+                "top-regions:RANKED_SOLO_5X5:DIAMOND",
+                MongoDB.topRegionsAggregateKey(GameQueueType.RANKED_SOLO_5X5, TierType.DIAMOND));
+    }
 }

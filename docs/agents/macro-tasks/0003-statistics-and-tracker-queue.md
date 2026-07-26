@@ -1,41 +1,43 @@
-# Macro-task 0003: statistics and Tracker asynchronous generation
+# Macro-task 0003: statistics and DatabaseTracker asynchronous generation
 
 ## Objective
 
-Separate statistics persistence from request handling and prevent request-time aggregate construction.
+Separate statistics persistence from request handling and limit database calculation concurrency.
 
 ## Dependencies
 
 - Macro-task 0000 approved;
-- ADR-0004 accepted.
+- ADR-0010 accepted.
 
 ## Scope
 
 - reduce `ProfileStatisticsService` to read and refresh methods;
-- move immediate API-triggered generation and in-flight deduplication into `Tracker`;
+- move API-triggered generation and in-flight deduplication into `DatabaseTracker`;
+- process database calculation jobs through one FIFO queue and two workers;
 - keep the existing match queues separate and unchanged;
-- remove profile-statistics queue processing from `TrackerScheduler`.
+- keep calendar ownership in `TrackerScheduler`, which only submits scheduled database work.
 
 ## Out of scope
 
-- generic Tracker refactor;
 - Redis match queue behavior;
+- Riot fetch Future concurrency in `LeagueService`;
 - leaderboard response redesign outside the missing-statistics status change.
 
 ## Invariants
 
-- API-triggered generation starts immediately on a virtual thread;
-- no Profile Statistics application queue or retry queue exists;
-- repeated requests for the same PUUID and complete summoner filter are deduplicated while running;
+- API-triggered generation is submitted immediately to the database queue;
+- no raw aggregate calculation runs on an HTTP request thread;
+- repeated requests for the same PUUID and complete summoner filter are deduplicated while queued or running;
+- no more than two database calculation jobs execute concurrently;
 - one failed generation does not stop another generation;
 - failed in-flight markers are removed so a later request can retry;
 - match lookup and match analysis queues remain process-owned and unchanged.
 
 ## Acceptance criteria
 
-- profile-statistics queue fields and processor methods are removed;
-- request paths only read ready aggregates and start missing work asynchronously;
-- scheduler no longer processes Profile Statistics;
+- database queue fields and processor methods are owned by `DatabaseTracker`;
+- request paths only read ready aggregates and submit missing work asynchronously;
+- scheduler submits, but does not execute, the periodic champion refresh;
 - match queue processing remains available.
 
 ## Handoff
@@ -53,4 +55,4 @@ Mongo _id                 = random ObjectId, $setOnInsert only
 recentMatches             = separate MatchResult query with the same Filter
 ```
 
-`ProfileStatisticsService` owns read, calculation and persistence. `Tracker` owns async dispatch and in-flight deduplication using `puuid + ":" + filterKey`. Overview, profile and `!summoner` read the same aggregate, while each existing presentation remains unchanged unless a style refactor is explicitly requested. `lastUpdate` is written after the calculation completes.
+`ProfileStatisticsService` owns read, calculation and persistence. `DatabaseTracker` owns async dispatch and in-flight deduplication using `profile-statistics:<puuid>:<filterKey>`. Overview, profile and `!summoner` read the same aggregate, while each existing presentation remains unchanged unless a style refactor is explicitly requested. `lastUpdate` is written after the calculation completes.

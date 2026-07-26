@@ -60,6 +60,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `champion` | `champion` | `championId` | catalogo |
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
 | `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
+| leaderboard aggregates | `leaderboard_aggregates` | `_id = tipo + filtro` | snapshot derivato |
 | migration checkpoints | `migration_runs` | `_id = runId` | operational state |
 
 ## `summoner`
@@ -106,6 +107,7 @@ Esempio concettuale:
 - il nuovo flusso non pulisce automaticamente dati precedenti; l'operatore elimina manualmente i payload obsoleti;
 - `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;
+- la leaderboard non duplica le righe rank: `leaderboard_aggregates` contiene solo snapshot ricostruibili di distribuzione e top-region;
 - il rank identifica la coda tramite `queue`, non tramite un ID numerico;
 - più regioni sono rappresentate da `region` nel rank quando il dataset lo richiede;
 - non duplicare una seconda identità `Summoner` in wrapper o modelli di persistenza.
@@ -214,8 +216,14 @@ pagina. L'ordinamento è `ranks.mmr DESC, _id ASC`, dove `_id` è il PUUID.
 
 La pagina proietta soltanto identità summoner, il rank selezionato e le masteries;
 `LeaderboardService` aggiunge le statistiche già presenti in cache o Mongo e
-costruisce il modello canonico `LeaderboardPage`. Non esistono collection o
-documenti persistiti dedicati alla leaderboard.
+costruisce il modello canonico `LeaderboardPage`. Distribuzione e top-region
+vengono salvati come snapshot in `leaderboard_aggregates` e vengono ricostruiti
+ogni 12 ore. I filtri mai materializzati vengono calcolati lazy al successivo
+accesso. Non vengono persistite righe o pagine leaderboard.
+
+Ogni snapshot usa un `_id` stabile per tipo e filtro, contiene `entries`, il
+filtro canonico e la lista aggregata. La collection è derivata e può essere
+cancellata e ricostruita senza perdita dei rank.
 
 ## Collection derivate e aggregate
 

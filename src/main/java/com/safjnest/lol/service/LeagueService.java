@@ -803,7 +803,6 @@ public class LeagueService {
             }
         }
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
-        LeaderboardService.invalidateCache();
         RedisClient.set(RedisKey.PROFILE_RANKS.of(shard.name(), puuid), ranks, TTL_PROFILE_COMPONENT);
         invalidateProfilePage(puuid, shard);
     }

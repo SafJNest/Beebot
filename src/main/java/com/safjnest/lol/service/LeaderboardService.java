@@ -12,7 +12,7 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
 import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.nosql.MongoDB;
@@ -65,7 +65,7 @@ public class LeaderboardService {
         Map<String, ProfileStatistics> statisticsBySummoner = profileStatisticsService.getByPuuid(puuids, season);
         for (Summoner summoner : summoners) {
             if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
-            Tracker.startProfileStatistics(summoner, season);
+            DatabaseTracker.startProfileStatistics(summoner, season);
         }
 
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
@@ -117,7 +117,8 @@ public class LeaderboardService {
         return response;
     }
 
-    public static void invalidateCache() {
+    public static void rebuild() {
+        MongoDB.rebuildLeaderboardAggregates();
         RedisClient.increment(RedisKey.LEADERBOARD_VERSION.of());
     }
 

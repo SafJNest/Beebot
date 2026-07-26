@@ -13,7 +13,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Redis keys do not contain cache schema version tokens; test data is reset manually with `FLUSHALL`.
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
 - Profile misses use the `LeagueService` component flows. Every saved getter reads Redis, then Mongo, and returns `null` when the component was never loaded; every async getter starts or reuses a deduplicated Riot Future on a miss.
-- `ProfilePageService` starts the summoner, ranks and masteries Futures together. While one is incomplete the endpoint returns `202 profile_pending`; once the three components are ready, missing statistics still return the available profile as `PARTIAL` while `Tracker` refreshes them.
+- `ProfilePageService` starts the summoner, ranks and masteries Futures together. While one is incomplete the endpoint returns `202 profile_pending`; once the three components are ready, missing statistics still return the available profile as `PARTIAL` while `DatabaseTracker` queues the refresh.
 - `PROFILE_PAGE` caches the profile components and aggregate without the volatile `recentMatches` list. The HTTP profile request loads up to five lightweight `MatchResult` rows separately, without events, and composes them into the response.
 - The synchronous bot wrappers wait for the same Futures. A successful component Future persists the canonical value in Redis and Mongo once; a Riot error is retried later and is never persisted as an empty list.
 - Champion build reads the single persisted aggregate before allowing command/refresh computation.
@@ -24,7 +24,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 
 - Canonical models remain the only success payloads.
 - Missing summoner, rank and mastery data start immediately through `LeagueService` virtual-thread Futures.
-- Missing profile statistics start through the `Tracker` virtual-thread executor after the profile components are ready.
+- Missing profile statistics start through the two-worker `DatabaseTracker` queue after the profile components are ready.
 - Profile component lists are cached only after a confirmed Riot result; database or Riot failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - The existing Redis queue stores only matches already fetched from Riot.

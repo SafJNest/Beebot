@@ -20,7 +20,7 @@ Create and adopt the canonical summoner model shared by profile, search and lead
 ## Out of scope
 
 - full match consolidation;
-- Tracker asynchronous refresh ownership;
+- DatabaseTracker asynchronous refresh ownership;
 - final leaderboard cache rewrite.
 
 ## Invariants

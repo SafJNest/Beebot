@@ -42,6 +42,7 @@ import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileStatisticsService;
+import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.nosql.MongoDB;
@@ -1393,7 +1394,7 @@ public class LeagueMessage {
         ProfileStatistics statistics = PROFILE_STATISTICS_SERVICE.get(summoner.getPUUID(), filter);
         if (statistics == null) {
             com.safjnest.lol.model.summoner.Summoner saved = LeagueService.getSavedSummoner(summoner.getPUUID(), summoner.getPlatform());
-            if (saved != null) Tracker.startProfileStatistics(saved, filter);
+            if (saved != null) DatabaseTracker.startProfileStatistics(saved, filter);
         }
         return statistics;
     }

@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.service.ChampionDataRefreshService;
+import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
@@ -18,7 +18,6 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
 
-    private static final ChampionDataRefreshService championDataRefreshService = new ChampionDataRefreshService();
     private static boolean started;
 
     public static synchronized void start() {
@@ -47,6 +46,9 @@ public class TrackerScheduler {
 
         ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
         clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
+
+        ChronoTask rebuildLeaderboard = LeaderboardService::rebuild;
+        rebuildLeaderboard.scheduleAtFixedRate(0, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
     }
 
     public static void retrieveSummoners() {
@@ -91,8 +93,7 @@ public class TrackerScheduler {
     }
 
     public static void refreshChampionData() {
-        Tracker.resetChampionStatsState();
-        championDataRefreshService.refresh();
+        DatabaseTracker.enqueueChampionDataRefresh();
     }
 
     public static void retrieveAllEntries() {

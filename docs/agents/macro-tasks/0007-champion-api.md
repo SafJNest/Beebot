@@ -8,7 +8,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 
 - ADR-0001, ADR-0005 e ADR-0006;
 - `ChampionStatsService`, `BuildService` e `ChampionDataRefreshService` esistenti;
-- coda asincrona `Tracker`.
+- coda asincrona `DatabaseTracker`.
 
 ## Perimetro
 
@@ -19,7 +19,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - un solo `ChampionPageService.get` con `compute` interno per l’API;
 - `ApiResult` e `LolApiResponses` condivisi con match e leaderboard;
 - parsing dei parametri centralizzato in `LolApiParameters`;
-- avvio immediato dei refresh Profile Statistics e Champion Data in `Tracker`;
+- avvio immediato dei refresh Profile Statistics e Champion Data in `DatabaseTracker`;
 - avvio esplicito e idempotente di `TrackerScheduler`;
 - invalidazione cache dopo refresh;
 - build aggregate persistito senza selezione automatica most-used/highest-winrate;
@@ -45,9 +45,10 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - region assente significa tutte le regioni;
 - queue assente significa Solo/Duo ranked;
 - role incompatibile con la queue significa 400;
-- dati mancanti significano 202 e avvio immediato del refresh;
+- dati mancanti significano 202 e accodamento immediato del refresh;
 - nessuna computazione raw durante la request.
-- le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e possono essere calcolate in parallelo;
+- le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e vengono accodate indipendentemente;
+- tutti i refresh DB condividono due worker e una coda FIFO deduplicata;
 - in test lo scheduler non parte automaticamente;
 - la coda Redis dei match resta separata e invariata;
 

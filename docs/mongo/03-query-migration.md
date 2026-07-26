@@ -15,7 +15,7 @@ I service chiamano MongoDB direttamente. Non esiste LeagueStore e non c'è fallb
 - Lista di projection: List<QueryRecord>.
 - Summoner, Rank e Mastery: modello esistente.
 - Match detail e history: Match o MatchResult esistente.
-- Leaderboard: aggregation Mongo su `summoner.ranks[]` mappata in `Summoner`; profile e champion aggregate usano le proprie projection.
+- Leaderboard: pagina aggregation Mongo su `summoner.ranks[]` mappata in `Summoner`; distribuzione e top-region usano snapshot `leaderboard_aggregates` ricostruiti ogni 12 ore e rigenerabili; profile e champion aggregate usano le proprie projection.
 
 Una query a più campi viene rappresentata come QueryRecord detached e solo dopo, se serve, convertita in un modello canonico. Un singolo valore non viene avvolto inutilmente.
 

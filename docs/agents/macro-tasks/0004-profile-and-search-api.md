@@ -28,7 +28,7 @@ Move profile and search endpoints to the canonical summoner models and remove Sp
 ## Invariants
 
 - profile and leaderboard share the same nested summoner representation;
-- missing statistics start immediately through `Tracker`;
+- missing statistics are submitted immediately through `DatabaseTracker`;
 - no Riot request is introduced for view serialization;
 - existing profile data remains available through canonical fields.
 

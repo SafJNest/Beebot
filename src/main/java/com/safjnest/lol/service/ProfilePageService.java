@@ -12,7 +12,7 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -48,7 +48,7 @@ public class ProfilePageService {
         ProfileStatistics databaseStatistics = statisticsService.get(profile.puuid(), filter);
         List<Rank> profileRanks = completed(ranksFuture);
         List<Mastery> profileMasteries = completed(masteriesFuture);
-        if (databaseStatistics == null) Tracker.startProfileStatistics(profile, filter);
+        if (databaseStatistics == null) DatabaseTracker.startProfileStatistics(profile, filter);
 
         List<MatchResult> recentMatches = statisticsService.getRecentMatches(profile.puuid(), shard, filter);
         SummonerView page = SummonerView.from(profile, profileRanks, databaseStatistics, profileMasteries, recentMatches);

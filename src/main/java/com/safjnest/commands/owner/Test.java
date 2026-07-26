@@ -47,6 +47,7 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.nosql.MongoMigration;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -934,6 +935,12 @@ public class Test extends Command{
                     System.out.println("Done");
                 };
                 champ.queue();
+                break;
+            case "migrate":
+                ChronoTask migrate = () -> {
+                    MongoMigration.migrateAll();
+                };
+                migrate.queue();
                 break;
         }
     }  

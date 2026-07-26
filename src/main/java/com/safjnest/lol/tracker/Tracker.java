@@ -9,11 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -22,15 +19,9 @@ import org.json.JSONObject;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.service.ChampionDataRefreshService;
-import com.safjnest.lol.service.ChampionStatsService;
-import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.service.ProfileStatisticsService;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -70,15 +61,6 @@ import java.time.LocalDateTime;
 
 public class Tracker {
 
-    private static final ExecutorService API_REFRESH_EXECUTOR = Executors.newThreadPerTaskExecutor(
-        Thread.ofVirtual().name("lol-api-refresh-", 0).factory()
-    );
-    private static final Set<String> PROFILE_STATISTICS_RUNNING = ConcurrentHashMap.newKeySet();
-    private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
-    private static final Set<String> CHAMPION_STATS_RUNNING = ConcurrentHashMap.newKeySet();
-    private static final Set<String> CHAMPION_STATS_COMPLETED = ConcurrentHashMap.newKeySet();
-    private static final Set<String> CHAMPION_BUILD_RUNNING = ConcurrentHashMap.newKeySet();
-    private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
     private static final int MATCH_LOOKUP_BATCH_SIZE = 5;
     private static final int MATCH_LOOKUP_MAX_RETRIES = 3;
     private static final int MATCH_LOOKUP_NOT_FOUND_TTL = 60 * 5;
@@ -215,127 +197,6 @@ public class Tracker {
     
     public static Set<LOLMatch> copyQueue() {
         return popQueue();
-    }
-
-    public static void startProfileStatistics(
-        com.safjnest.lol.model.summoner.Summoner summoner,
-        SeasonUtils.SeasonRange season
-    ) {
-        if (season == null) return;
-        startProfileStatistics(summoner, Filter.summoner(season.start(), season.end()));
-    }
-
-    public static void startProfileStatistics(
-        com.safjnest.lol.model.summoner.Summoner summoner,
-        Filter filter
-    ) {
-        if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null) return;
-
-        ProfileStatisticsRequest request = new ProfileStatisticsRequest(summoner, filter);
-        String key = request.summoner().puuid() + ":" + request.filter().toSummonerKey();
-        if (!PROFILE_STATISTICS_RUNNING.add(key)) return;
-
-        try {
-            API_REFRESH_EXECUTOR.submit(() -> refreshProfileStatistics(request, key));
-        } catch (RuntimeException exception) {
-            PROFILE_STATISTICS_RUNNING.remove(key);
-            BotLogger.error("Profile statistics async start failed for summoner="
-                + request.summoner().puuid() + " message=" + exception.getMessage());
-        }
-    }
-
-    private record ProfileStatisticsRequest(
-        com.safjnest.lol.model.summoner.Summoner summoner,
-        Filter filter
-    ) {}
-
-    public static void startChampionData(Filter filter) {
-        if (filter == null || filter.champion() == 0) return;
-
-        startChampionStats(filter);
-        startChampionBuild(filter);
-    }
-
-    public static void resetChampionStatsState() {
-        CHAMPION_STATS_COMPLETED.clear();
-    }
-
-    private static void startChampionStats(Filter filter) {
-        String key = filter.genericKey();
-        if (ChampionStatsService.hasStored(filter)) return;
-        if (CHAMPION_STATS_COMPLETED.contains(key)) return;
-        if (!CHAMPION_STATS_RUNNING.add(key)) return;
-
-        try {
-            API_REFRESH_EXECUTOR.submit(() -> refreshChampionStats(filter, key));
-        } catch (RuntimeException exception) {
-            CHAMPION_STATS_RUNNING.remove(key);
-            BotLogger.error("Champion stats async start failed for filter=" + key
-                + " message=" + exception.getMessage());
-        }
-    }
-
-    private static void startChampionBuild(Filter filter) {
-        String key = filter.toKey();
-        if (!CHAMPION_BUILD_RUNNING.add(key)) return;
-
-        try {
-            API_REFRESH_EXECUTOR.submit(() -> refreshChampionBuild(filter, key));
-        } catch (RuntimeException exception) {
-            CHAMPION_BUILD_RUNNING.remove(key);
-            BotLogger.error("Champion build async start failed for filter=" + key
-                + " message=" + exception.getMessage());
-        }
-    }
-
-    private static void refreshProfileStatistics(ProfileStatisticsRequest request, String key) {
-        try {
-            LeagueShard shard = LeagueShard.valueOf(request.summoner().region());
-            if (!PROFILE_STATISTICS_SERVICE.refresh(request.summoner().puuid(), shard, request.filter(), false)) {
-                BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().puuid());
-                return;
-            }
-
-            LeagueService.invalidateProfilePage(request.summoner().puuid(), shard);
-            BotLogger.info("[LPTracker] Updated summoner overview for "
-                + request.summoner().riotId() + " (" + shard + ", id="
-                + request.summoner().summonerId() + ") | profile statistics persisted, Redis profile page invalidated");
-        } catch (Exception exception) {
-            BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().puuid()
-                + " message=" + exception.getMessage());
-        } finally {
-            PROFILE_STATISTICS_RUNNING.remove(key);
-        }
-    }
-
-    private static void refreshChampionStats(Filter filter, String key) {
-        try {
-            Map<Integer, ChampionStatistics> stats = CHAMPION_DATA_REFRESH_SERVICE.refreshStats(filter);
-            if (stats == null) {
-                BotLogger.error("Champion stats refresh failed for filter=" + key);
-                return;
-            }
-            CHAMPION_STATS_COMPLETED.add(key);
-            if (stats.isEmpty()) BotLogger.warning("Champion stats refresh completed with no data for filter=" + key);
-        } catch (Exception exception) {
-            BotLogger.error("Champion stats refresh failed for filter=" + key
-                + " message=" + exception.getMessage());
-        } finally {
-            CHAMPION_STATS_RUNNING.remove(key);
-        }
-    }
-
-    private static void refreshChampionBuild(Filter filter, String key) {
-        try {
-            if (!CHAMPION_DATA_REFRESH_SERVICE.refreshBuild(filter)) {
-                BotLogger.error("Champion build refresh failed for filter=" + key);
-            }
-        } catch (Exception exception) {
-            BotLogger.error("Champion build refresh failed for filter=" + key
-                + " message=" + exception.getMessage());
-        } finally {
-            CHAMPION_BUILD_RUNNING.remove(key);
-        }
     }
 
     private static void retryMatchLookup(MatchLookupRequest request) {
@@ -1269,7 +1130,6 @@ public class Tracker {
                 } catch (Exception e) { e.printStackTrace(); }
             }
         }  
-        LeaderboardService.invalidateCache();
     }
 
     public static void retrieveHighEloEntries() {
@@ -1294,12 +1154,10 @@ public class Tracker {
                 }
             }  
         }
-        LeaderboardService.invalidateCache();
     }
 
     public static void retrieveAllEntries() {
         BotLogger.info("[LPTracker] Pushing all entries");
-        List<CompletableFuture<Void>> shardTasks = new ArrayList<>();
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask task = () -> {
                     List<TierDivisionType> tiers = new ArrayList<>(List.of(TierDivisionType.values()));
@@ -1329,11 +1187,8 @@ public class Tracker {
                         }
                     }
             };
-            shardTasks.add(task.queueFuture());
+            task.queueFuture();
         }
-        if (!shardTasks.isEmpty()) CompletableFuture.allOf(shardTasks.toArray(new CompletableFuture[0]))
-            .thenRun(LeaderboardService::invalidateCache);
-        
     }
 
     public static void retrieveSampleGamesPatch() {
