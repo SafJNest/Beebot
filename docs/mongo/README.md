@@ -23,7 +23,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 
 La persistenza Mongo/NoSQL LoL vive nel package `com.safjnest.nosql` e ha questi file principali:
 
-- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, schema, indici, query, mapping e write runtime;
+- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, schema, registry degli indici, query, mapping e write runtime;
 - `src/main/java/com/safjnest/nosql/MongoMigration.java`: backfill batchabile MariaDB → Mongo;
 - `src/main/java/com/safjnest/nosql/AbstractEntity.java` e `NoSqlEntityExecutor.java`: infrastruttura comune per le entity persistite in NoSQL.
 
@@ -59,20 +59,20 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - MariaDB mantiene i dati storici letti dalla migration; il runtime LoL non li interroga.
 - Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
 
-Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`; l'unicità della coppia è responsabilità del flusso applicativo.
+Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`; l'indice unique `profile_statistics_identity` protegge l'unicità della coppia.
 
 ## Indici e spazio
 
-Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 20.000 documenti; i match restano in sotto-batch da 1.000.
+Durante il backfill le collection vengono create e poi ricevono il registry di indici dichiarato in `MongoDB.java`. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 20.000 documenti; i match restano in sotto-batch da 1.000.
 
-L'inizializzazione crea soltanto le collection mancanti e non crea, modifica o rimuove indici secondari. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
+L'inizializzazione è create-only e idempotente: crea gli indici mancanti, riusa quelli compatibili e interrompe il bootstrap su conflitti di nome, key pattern o opzioni. Non esegue `dropIndex` e il preflight dell'indice unique `profile_statistics_identity` interrompe l'avvio su identità mancanti o duplicate senza modificare i dati. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
 La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner, masteries, build e statistiche restano documenti BSON strutturati e vengono compressi dal server.
 
 ## Configurazione
 
-rsc/settings.json contiene una URI server-level. La URI non deve contenere il database applicativo. MongoDB crea collection e indici mancanti in modo idempotente durante l'inizializzazione lazy. Credenziali e URI reali non devono comparire nei log, test o commit.
+rsc/settings.json contiene una URI server-level. La URI non deve contenere il database applicativo. MongoDB crea collection e indici mancanti in modo idempotente durante l'inizializzazione lazy; gli indici esistenti incompatibili richiedono una migrazione operativa esplicita. Credenziali e URI reali non devono comparire nei log, test o commit.
 
 ## Gate
 
-Prima del completamento verificare letture e scritture LoL Mongo-only, nessuna importazione runtime di LeagueDB, nessun mirror/outbox/proxy dual-write e test per database test, indici, bans, enum, participant flat, conversioni e migrazione resume/high-water mark.
+Prima del completamento verificare letture e scritture LoL Mongo-only, nessuna importazione runtime di LeagueDB, nessun mirror/outbox/proxy dual-write e test per database test, registry/idempotenza/preflight degli indici, bans, enum, participant flat, conversioni e migrazione resume/high-water mark.

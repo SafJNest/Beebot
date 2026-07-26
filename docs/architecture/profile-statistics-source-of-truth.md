@@ -117,8 +117,10 @@ Non deve esistere il campo root `statistics` per i nuovi documenti. `ProfileStat
 
 ## Identità Mongo: spiegazione operativa
 
-Il runtime non crea né gestisce indici secondari. La chiave logica resta la
-coppia `{ puuid, filterKey }`, mentre `_id` è l'identità fisica del documento.
+Il runtime possiede l'indice unique `profile_statistics_identity` su `{ puuid,
+filterKey }`. La chiave logica resta la coppia, mentre `_id` è l'identità
+fisica del documento. Il bootstrap è create-only: prima di creare l'indice
+verifica identità mancanti e duplicati e interrompe l'avvio senza cleanup.
 
 ### Perché queste due chiavi
 
@@ -141,9 +143,9 @@ Il flusso applicativo tratta come invariante:
 un solo ProfileStatistics per PUUID e filtro completo
 ```
 
-un solo `ProfileStatistics` per PUUID e filtro completo. Non viene usato un
-indice secondario Mongo: i consumer devono mantenere il lookup esatto e la
-gestione dei refresh concorrenti a livello applicativo.
+un solo `ProfileStatistics` per PUUID e filtro completo. L'indice unique Mongo
+protegge l'invariante anche quando due refresh concorrenti eseguono l'upsert.
+Il lookup resta comunque esatto sulla coppia completa.
 
 ### Perché `_id` non è la chiave di lookup
 
@@ -179,10 +181,11 @@ Conseguenze:
 
 ### Bootstrap Mongo
 
-Il bootstrap crea solo le collection mancanti e non crea, modifica o rimuove
-indici secondari. I documenti legacy devono essere gestiti dalla
-migrazione/rigenerazione separata; non bisogna riutilizzare un documento con un
-filtro diverso solo perché appartiene allo stesso PUUID.
+Il bootstrap crea solo le collection e gli indici mancanti e non modifica o
+rimuove indici secondari. `profile_statistics_identity` viene preceduto dal
+preflight delle identità mancanti o duplicate; i documenti legacy devono essere
+gestiti dalla migrazione/rigenerazione separata e non bisogna riutilizzare un
+documento con un filtro diverso solo perché appartiene allo stesso PUUID.
 
 Per diagnosticare un mismatch in Mongo:
 

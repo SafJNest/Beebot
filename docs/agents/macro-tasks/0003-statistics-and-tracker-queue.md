@@ -50,9 +50,9 @@ The implemented source-of-truth contract is [`profile-statistics-source-of-truth
 
 ```text
 ProfileStatistics identity = puuid + Filter.toSummonerKey()
-Mongo secondary indexes   = none managed by the runtime
-Mongo _id                 = random ObjectId, $setOnInsert only
-recentMatches             = separate MatchResult query with the same Filter
+Mongo unique index         = profile_statistics_identity on puuid + filterKey
+Mongo _id                  = random ObjectId, $setOnInsert only
+recentMatches              = separate MatchResult query with the same Filter
 ```
 
 `ProfileStatisticsService` owns read, calculation and persistence. `DatabaseTracker` owns async dispatch and in-flight deduplication using `profile-statistics:<puuid>:<filterKey>`. Overview, profile and `!summoner` read the same aggregate, while each existing presentation remains unchanged unless a style refactor is explicitly requested. `lastUpdate` is written after the calculation completes.

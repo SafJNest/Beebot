@@ -231,7 +231,7 @@ Le collection di statistiche e build hanno chiavi composte stabili e payload str
 
 ### `profile_statistics`: chiave e indice
 
-La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKey()`. `filterKey` include champion, lane, queue, rank, rank behavior, patch, region, opponent, duo e periodo. Il runtime usa questa coppia per lookup e upsert applicativi, senza creare un indice secondario Mongo. Il PUUID da solo non identifica il documento, perché uno stesso account può avere più filtri; `_id` è un ObjectId casuale stabile e non è usato per il lookup. Il write path usa `$setOnInsert` per generarlo solo al primo upsert.
+La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKey()`. `filterKey` include champion, lane, queue, rank, rank behavior, patch, region, opponent, duo e periodo. Il runtime usa questa coppia per lookup e upsert applicativi e la protegge con l'indice unique `profile_statistics_identity`. Il PUUID da solo non identifica il documento, perché uno stesso account può avere più filtri; `_id` è un ObjectId casuale stabile e non è usato per il lookup. Il write path usa `$setOnInsert` per generarlo solo al primo upsert.
 
 Il documento è flat e non contiene un root `statistics`. `recentMatches` è una query `MatchResult` separata con lo stesso filtro e non viene salvato dentro `ProfileStatistics`. Per il flusso completo e il runbook di diagnosi vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
@@ -239,28 +239,57 @@ MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserv
 
 ## Indici
 
-Il bootstrap applicativo non crea né gestisce indici secondari. Mongo mantiene
-soltanto l'indice nativo `_id`; eventuali indici già presenti non vengono
-modificati o droppati automaticamente.
+`MongoDB.ensureIndexes()` possiede il registry degli indici secondari. Il
+bootstrap è create-only e idempotente: crea gli indici mancanti, riusa quelli
+compatibili e interrompe l'avvio in caso di conflitto. Non esegue `dropIndex`,
+non modifica indici esistenti e non fonde automaticamente documenti duplicati.
+
+| Collection | Nome | Key pattern | Opzioni |
+|---|---|---|---|
+| `summoner` | `summoner_search_prefix` | `region, riotSearch, riotId` | — |
+| `summoner` | `summoner_riot_id` | `region, riotId` | — |
+| `summoner` | `summoner_user_accounts` | `userId, _id` | — |
+| `summoner` | `summoner_tracking_true` | `tracking` | partial `tracking=true` |
+| `summoner` | `summoner_leaderboard_region` | `region, ranks.queue, ranks.rank` | multikey |
+| `summoner` | `summoner_leaderboard_global` | `ranks.queue, ranks.rank, region` | multikey |
+| `match` | `match_participant_time` | `participants.puuid, timeStart, game_id` | multikey |
+| `match` | `match_shard_time` | `leagueShard, timeStart` | — |
+| `match` | `match_shard_patch_time` | `leagueShard, patch, timeStart` | — |
+| `match` | `match_patch` | `patch` | — |
+| `match` | `match_champion_filter` | `queue, leagueShard, rank, participants.champion, participants.lane, patch` | multikey |
+| `match` | `match_champion_keyset` | `queue, leagueShard, rank, participants.champion, participants.lane, _id` | multikey |
+| `profile_statistics` | `profile_statistics_identity` | `puuid, filterKey` | `unique` |
+| `profile_statistics` | `profile_statistics_period` | `puuid, timeEnd, timeStart` | — |
+| `champion_builds` | `champion_builds_filter` | `filterKey` | — |
+| `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | — |
+
+`match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` e i
+lookup diretti per PUUID/full match ID usano soltanto l'indice nativo `_id`.
+
+Il preflight di `profile_statistics_identity` fallisce se trova identità
+mancanti o duplicati `{puuid, filterKey}`. La correzione dei dati resta
+un'operazione manuale e separata dal bootstrap.
 
 ## Schema come codice
 
 La struttura Mongo è posseduta dal codice applicativo per quanto riguarda le
-collection e il formato dei documenti. Non esiste più un registry applicativo
-degli indici.
+collection, il formato dei documenti e il registry degli indici. La policy
+degli indici è condivisa tra database production e test; il database viene
+selezionato prima del bootstrap tramite `App.isTesting()`.
 
 Il bootstrap previsto è:
 
 ```text
-MongoClient
+  MongoClient
   -> databaseName = App.isTesting() ? "beebot_test" : "beebot"
   -> MongoDB.ensureCollections(database)
+  -> MongoDB.ensureIndexes(database)
   -> MongoDB query/write methods
 ```
 
-Il bootstrap crea soltanto le collection mancanti, in modo idempotente e
-sicuro rispetto agli avvii concorrenti. La gestione di eventuali indici
-secondari è responsabilità operativa esterna al runtime.
+Il bootstrap crea soltanto le collection e gli indici mancanti, in modo
+idempotente e senza modifiche distruttive. Un indice esistente incompatibile
+richiede una migrazione operativa esterna al runtime.
 
 Il codice è la fonte di verità operativa; questo documento descrive collection, chiavi e motivazione degli indici, ma non sostituisce le definizioni versionate nel registry.
 
@@ -270,7 +299,7 @@ Il codice è la fonte di verità operativa; questo documento descrive collection
 - ogni collection ha `_id` nativo;
 - ogni collection ha un owner nel registry dello schema applicativo;
 - il database testing è separato da quello production tramite `App.isTesting()`;
-- il bootstrap non crea né droppa indici secondari;
+- il bootstrap crea soltanto gli indici secondari dichiarati e non esegue drop o modifiche automatiche;
 - rank/mastery, statistiche champion e participant hanno ownership esplicita;
 - nessun participant usa un mega-oggetto `build`;
 - nessun enum o team usa ordinali;

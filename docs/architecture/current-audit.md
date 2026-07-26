@@ -1,6 +1,6 @@
 # Current LoL persistence audit
 
-- Snapshot: 2026-07-19
+- Snapshot: 2026-07-26
 - Owner: main agent
 - Scope: MongoDB migration for the `league_of_legends` domain
 - Source files: `LeagueDB`, LoL services, tracker, message handlers and canonical models
@@ -13,7 +13,7 @@
 - `RedisKey` owns all LoL Redis patterns and TTLs; `RedisClient` applies the declared expiration policy without service-local TTL constants.
 - R4J match payloads remain persistent until tracker consumption and successful Mongo persistence; transient processing failures leave the queue state retryable.
 - `LeagueDB` is reduced to SQL execution and migration reads.
-- Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`.
+- Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`; `MongoDB` owns the declared create-only secondary-index registry.
 - `QueryRecord` and `List<QueryRecord>` are the common flat/nested projection contract.
 
 The canonical profile-statistics flow is documented in [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md). It is the starting point for changes involving `Filter`, `ProfileStatistics`, `SummonerOverview`, `recentMatches` or `lastUpdate`.
@@ -36,8 +36,8 @@ During transition MariaDB remains available as migration source. Mongo writes ar
 
 ## Evidence and remaining gate
 
-1. schema bootstrap, database suffix selection, query inventory and migration checkpoint behavior are covered by targeted tests;
+1. schema bootstrap, database suffix selection, declared index policy, unique profile-statistics preflight, query inventory and migration checkpoint behavior are covered statically and by focused tests;
 2. static flow tracing found broken profile/OP.GG query contracts and mirror no-op paths; see [`docs/audit`](../audit/README.md);
-3. the local Java 25 validation covers the Mongo core and focused tests, but the full build still has the unrelated JDA `setAudioModuleConfig` error;
-4. a real Mongo integration run remains pending because this workspace has no `MONGO_TEST_URI` and no local `mongod`;
+3. a real Mongo integration run and `explain("executionStats")` evidence remain pending until a representative Mongo dataset is available;
+4. static index policy does not prove winning plans, disk sorts or storage overhead; `collStats` and `indexSizes` must be recorded before/after;
 5. final cutover remains blocked until query contracts, write acknowledgements and production-sized reconciliation are verified.

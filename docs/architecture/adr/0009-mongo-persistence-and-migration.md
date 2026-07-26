@@ -9,6 +9,8 @@
 
 La leaderboard mantiene `summoner.ranks[]` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution e top-region: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina e il totale restano derivati dai rank embedded; Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
 
+Il bootstrap Mongo possiede anche la policy degli indici secondari dichiarati in `MongoDB.java`. `ensureIndexes(MongoDatabase)` viene eseguito dopo `ensureCollections(MongoDatabase)`, crea soltanto gli indici mancanti, usa nomi stabili e non esegue mai `dropIndex` o modifiche automatiche. Un indice esistente con stesso key pattern e opzioni compatibili viene riutilizzato; un conflitto di key pattern, nome, `unique` o partial filter interrompe il bootstrap con errore esplicito. Prima di creare `profile_statistics_identity`, il bootstrap verifica duplicati e identità mancanti su `{puuid, filterKey}` e non esegue cleanup automatici.
+
 ## Context
 
 La persistenza LoL storica è concentrata in `LeagueDB`, una classe statica che contiene query SQL e mapping per summoner, rank, mastery, match e participant. Il runtime deve essere separato dal backfill MariaDB.
@@ -69,7 +71,7 @@ La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di c
 
 `App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
 
-Il codice possiede il bootstrap delle collection, ma non crea né gestisce indici secondari. Il bootstrap è idempotente e non esegue drop automatici; eventuali indici già presenti restano responsabilità operativa esterna al runtime. Il nuovo flusso non richiede cleanup automatici; l'operatore rimuove manualmente i payload obsoleti prima della rigenerazione.
+Il codice possiede il bootstrap delle collection e degli indici secondari dichiarati. Il bootstrap è idempotente e non esegue drop automatici; gli indici esistenti compatibili vengono riutilizzati, mentre quelli in conflitto richiedono una migrazione operativa esplicita. Il nuovo flusso non richiede cleanup automatici; l'operatore rimuove manualmente i payload obsoleti o i duplicati prima della rigenerazione.
 
 ## Compatibilità API
 
@@ -93,7 +95,7 @@ I campi numerici dei modelli pubblici restano compatibili con il modello storico
 ### Negative
 
 - il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
-- la leaderboard richiede `$unwind` e filtri su `summoner.ranks[]`; il bootstrap non crea indici dedicati, mentre righe e totale vengono calcolati da Mongo e gli aggregati di distribuzione/top-region vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
+- la leaderboard richiede `$unwind` e filtri su `summoner.ranks[]`; gli indici multikey riducono il `$match` iniziale, ma righe e totale vengono calcolati da Mongo e gli aggregati di distribuzione/top-region vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
 - il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
 - il backfill e il runtime devono essere verificati separatamente.
 

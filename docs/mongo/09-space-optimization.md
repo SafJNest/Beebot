@@ -31,18 +31,29 @@ I consumer ricevono il PUUID già presente nel modello Riot/Summoner. Non esisto
 
 ## Indici
 
-Il runtime non crea né gestisce indici secondari. Mongo mantiene soltanto
-l'indice nativo `_id`; eventuali indici già presenti non vengono modificati o
-droppati automaticamente. Gli `explain("executionStats")` possono essere
-eseguiti manualmente per misurare il costo delle scansioni senza indici:
+`MongoDB.ensureIndexes()` crea soltanto gli indici secondari dichiarati nel
+registry, riusa quelli compatibili e non esegue `dropIndex` o modifiche
+automatiche. I nomi e i key pattern sono documentati in
+[`01-db-structure.md`](01-db-structure.md). L'unico vincolo unique è
+`profile_statistics_identity` su `{puuid, filterKey}`; il bootstrap esegue un
+preflight e si interrompe su identità mancanti o duplicate.
+
+Gli `explain("executionStats")` devono verificare le query calde:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")
 db.summoner.find({userId: "discord-id"}).explain("executionStats")
 db.summoner.find({tracking: true}).explain("executionStats")
+db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, leagueShard: "EUW1"}).sort({timeStart: -1}).limit(100).explain("executionStats")
+db.profile_statistics.find({puuid: "puuid", filterKey: "filter"}).explain("executionStats")
 ```
 
-Le scansioni `COLLSCAN` sono intenzionali in assenza di indici secondari. Confrontare `totalDocsExamined`, `executionTimeMillis` e `db.runCommand({collStats: "summoner", scale: 1})`; il recupero fisico del file può richiedere manutenzione Mongo separata.
+Registrare `executionTimeMillis`, `totalKeysExamined`, `totalDocsExamined`,
+`nReturned`, `winningPlan`, `indexName` ed eventuali `COLLSCAN`, `SORT` e
+`usedDisk`. Confrontare `db.runCommand({collStats: "summoner", scale: 1})`,
+`indexSizes` e le collection coinvolte prima/dopo. Eventuali sort bloccanti
+della leaderboard dopo `$unwind`/`$facet` sono costi applicativi residui, non
+un errore da nascondere nel registry.
 
 ## Eventi compressi
 

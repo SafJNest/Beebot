@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -35,6 +37,8 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexModel;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.Sorts;
@@ -79,9 +83,69 @@ public final class MongoDB {
     private static final String LEADERBOARD_AGGREGATES_COLLECTION = "leaderboard_aggregates";
     private static final String RANK_DISTRIBUTION_AGGREGATE = "rank-distribution";
     private static final String TOP_REGIONS_AGGREGATE = "top-regions";
+    private static final String PROFILE_STATISTICS_IDENTITY_INDEX = "profile_statistics_identity";
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
             "champion_builds", "champion_stats", LEADERBOARD_AGGREGATES_COLLECTION, "migration_runs");
+    private static final List<IndexDefinition> INDEX_DEFINITIONS = List.of(
+            index("summoner", "summoner_search_prefix",
+                    new Document("region", 1).append("riotSearch", 1).append("riotId", 1), false, null),
+            index("summoner", "summoner_riot_id",
+                    new Document("region", 1).append("riotId", 1), false, null),
+            index("summoner", "summoner_user_accounts",
+                    new Document("userId", 1).append("_id", 1), false, null),
+            index("summoner", "summoner_tracking_true",
+                    new Document("tracking", 1), false, new Document("tracking", true)),
+            index("summoner", "summoner_leaderboard_region",
+                    new Document("region", 1).append("ranks.queue", 1).append("ranks.rank", 1), false, null),
+            index("summoner", "summoner_leaderboard_global",
+                    new Document("ranks.queue", 1).append("ranks.rank", 1).append("region", 1), false, null),
+            index("match", "match_participant_time",
+                    new Document("participants.puuid", 1).append("timeStart", 1).append("game_id", 1), false, null),
+            index("match", "match_shard_time",
+                    new Document("leagueShard", 1).append("timeStart", -1), false, null),
+            index("match", "match_shard_patch_time",
+                    new Document("leagueShard", 1).append("patch", 1).append("timeStart", -1), false, null),
+            index("match", "match_patch",
+                    new Document("patch", 1), false, null),
+            index("match", "match_champion_filter",
+                    new Document("queue", 1).append("leagueShard", 1).append("rank", 1)
+                            .append("participants.champion", 1).append("participants.lane", 1).append("patch", 1), false, null),
+            index("match", "match_champion_keyset",
+                    new Document("queue", 1).append("leagueShard", 1).append("rank", 1)
+                            .append("participants.champion", 1).append("participants.lane", 1).append("_id", 1), false, null),
+            index("profile_statistics", PROFILE_STATISTICS_IDENTITY_INDEX,
+                    new Document("puuid", 1).append("filterKey", 1), true, null),
+            index("profile_statistics", "profile_statistics_period",
+                    new Document("puuid", 1).append("timeEnd", -1).append("timeStart", 1), false, null),
+            index("champion_builds", "champion_builds_filter",
+                    new Document("filterKey", 1), false, null),
+            index("champion_stats", "champion_stats_filter_champion",
+                    new Document("filterKey", 1).append("championId", 1), false, null));
+
+    private record IndexDefinition(
+            String collection,
+            String name,
+            Document keys,
+            boolean unique,
+            Document partialFilter) {
+
+        private IndexModel model() {
+            IndexOptions options = new IndexOptions().name(name);
+            if (unique) options.unique(true);
+            if (partialFilter != null) options.partialFilterExpression(partialFilter);
+            return new IndexModel(keys, options);
+        }
+    }
+
+    private static IndexDefinition index(
+            String collection,
+            String name,
+            Document keys,
+            boolean unique,
+            Document partialFilter) {
+        return new IndexDefinition(collection, name, keys, unique, partialFilter);
+    }
 
     private static void ensureCollections(MongoDatabase database) {
         List<String> existing = database.listCollectionNames().into(new ArrayList<>());
@@ -91,6 +155,93 @@ public final class MongoDB {
             } catch (MongoCommandException exception) {
                 if (exception.getCode() != 48 && !"NamespaceExists".equals(exception.getErrorCodeName())) throw exception;
             }
+        }
+    }
+
+    private static void ensureIndexes(MongoDatabase database) {
+        for (IndexDefinition definition : INDEX_DEFINITIONS) {
+            MongoCollection<Document> collection = database.getCollection(definition.collection());
+            List<Document> existing = collection.listIndexes().into(new ArrayList<>());
+            Document named = null;
+            Document sameKeys = null;
+            Document incompatibleSameKeys = null;
+            for (Document index : existing) {
+                if (definition.name().equals(index.getString("name"))) named = index;
+                if (sameIndexKeys(index.get("key"), definition.keys())) {
+                    if (compatibleIndex(index, definition)) sameKeys = index;
+                    else incompatibleSameKeys = index;
+                }
+            }
+
+            if (named != null && (!sameIndexKeys(named.get("key"), definition.keys())
+                    || !compatibleIndex(named, definition))) {
+                throw indexConflict(collection, definition, named);
+            }
+            if (incompatibleSameKeys != null) {
+                throw indexConflict(collection, definition, incompatibleSameKeys);
+            }
+            if (sameKeys != null && compatibleIndex(sameKeys, definition)) continue;
+            if (definition.unique() && PROFILE_STATISTICS_IDENTITY_INDEX.equals(definition.name())) {
+                verifyProfileStatisticsIdentity(collection);
+            }
+            collection.createIndexes(List.of(definition.model()));
+        }
+    }
+
+    private static boolean compatibleIndex(Document existing, IndexDefinition definition) {
+        boolean unique = Boolean.TRUE.equals(existing.getBoolean("unique", false));
+        if (unique != definition.unique()) return false;
+        Object partialFilter = existing.get("partialFilterExpression");
+        return definition.partialFilter() == null
+                ? partialFilter == null
+                : definition.partialFilter().equals(partialFilter);
+    }
+
+    private static boolean sameIndexKeys(Object value, Document expected) {
+        if (!(value instanceof Document actual) || actual.size() != expected.size()) return false;
+        Iterator<Map.Entry<String, Object>> actualIterator = actual.entrySet().iterator();
+        Iterator<Map.Entry<String, Object>> expectedIterator = expected.entrySet().iterator();
+        while (actualIterator.hasNext()) {
+            Map.Entry<String, Object> actualEntry = actualIterator.next();
+            Map.Entry<String, Object> expectedEntry = expectedIterator.next();
+            if (!Objects.equals(actualEntry.getKey(), expectedEntry.getKey())
+                    || !Objects.equals(actualEntry.getValue(), expectedEntry.getValue())) return false;
+        }
+        return true;
+    }
+
+    private static IllegalStateException indexConflict(
+            MongoCollection<Document> collection,
+            IndexDefinition definition,
+            Document existing) {
+        return new IllegalStateException("Mongo index conflict collection="
+                + collection.getNamespace().getCollectionName() + " expected=" + definition.name()
+                + " keys=" + definition.keys() + " unique=" + definition.unique()
+                + " partial=" + definition.partialFilter() + " existing=" + existing.getString("name")
+                + " existingKeys=" + existing.get("key") + " existingUnique="
+                + Boolean.TRUE.equals(existing.getBoolean("unique", false)) + " existingPartial="
+                + existing.get("partialFilterExpression"));
+    }
+
+    private static void verifyProfileStatisticsIdentity(MongoCollection<Document> collection) {
+        long invalid = collection.countDocuments(Filters.or(
+                Filters.eq("puuid", null), Filters.eq("puuid", ""),
+                Filters.eq("filterKey", null), Filters.eq("filterKey", "")));
+        if (invalid > 0) {
+            throw new IllegalStateException("Cannot create " + PROFILE_STATISTICS_IDENTITY_INDEX
+                    + ": profile_statistics contains " + invalid
+                    + " documents without a valid puuid/filterKey identity");
+        }
+
+        List<Document> duplicates = collection.aggregate(List.of(
+                new Document("$group", new Document("_id", new Document("puuid", "$puuid")
+                        .append("filterKey", "$filterKey")).append("count", new Document("$sum", 1))),
+                new Document("$match", new Document("count", new Document("$gt", 1))),
+                new Document("$limit", 10)
+        )).into(new ArrayList<>());
+        if (!duplicates.isEmpty()) {
+            throw new IllegalStateException("Cannot create " + PROFILE_STATISTICS_IDENTITY_INDEX
+                    + ": duplicate profile_statistics puuid/filterKey identities require manual cleanup");
         }
     }
 
@@ -122,6 +273,7 @@ public final class MongoDB {
         }
         if (!collectionsReady) {
             ensureCollections(database);
+            ensureIndexes(database);
             collectionsReady = true;
         }
         return database;

@@ -30,11 +30,25 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 
 ## Backlog prioritizzato
 
+### Indici applicativi e verifica runtime
+
+`MongoDB.ensureIndexes()` ora possiede un registry create-only e idempotente
+per search, history, champion, leaderboard e profile statistics. La policy
+include `profile_statistics_identity` unique su `{puuid, filterKey}` con
+preflight di documenti invalidi e duplicati; `opponent` e `duo` restano filtri
+relazionali applicati in Java. Lookup diretti di match, eventi, checkpoint e
+aggregati restano su `_id`.
+
+La copertura è una conclusione statica della forma delle query. Non equivale a
+un piano Mongo misurato: il sort leaderboard dopo `$unwind`/`$facet` può
+restare bloccante e gli indici multikey non garantiscono un sort covered.
+
 ### P0 — verifica runtime ancora aperta
 
-1. eseguire gli `explain("executionStats")` con dati rappresentativi e misurare il costo delle `COLLSCAN` intenzionali;
-2. aggiungere un test di contratto che verifichi le chiavi consumate da `LeagueMessage`;
-3. eseguire il caso reale con un match noto e verificare i participant dentro il documento Mongo.
+1. eseguire gli `explain("executionStats")` con dati rappresentativi e registrare `executionTimeMillis`, `totalKeysExamined`, `totalDocsExamined`, `nReturned`, `winningPlan`, `indexName`, `COLLSCAN`, `SORT` e `usedDisk`;
+2. confrontare `collStats` e `indexSizes` prima/dopo il bootstrap;
+3. aggiungere un test di contratto che verifichi le chiavi consumate da `LeagueMessage`;
+4. eseguire il caso reale con un match noto e verificare i participant dentro il documento Mongo.
 
 ### P1 — rendere affidabili gli aggiornamenti Mongo
 
