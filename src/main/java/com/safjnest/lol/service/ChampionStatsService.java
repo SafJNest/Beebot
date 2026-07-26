@@ -80,6 +80,10 @@ public final class ChampionStatsService {
         return get(filter, true);
     }
 
+    public static boolean hasStored(Filter filter) {
+        return filter != null && filter.champion() != 0 && get(filter, false) != null;
+    }
+
     public static Map<Integer, ChampionStatistics> recomputeAll(Filter filter) {
         long started = System.nanoTime();
         Map<Integer, ChampionStatistics> computed = compute(filter, false);

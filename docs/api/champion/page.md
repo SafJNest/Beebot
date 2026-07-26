@@ -61,7 +61,7 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
       }
     ],
     "matchups": {
-      "157|UTILITY": {
+      "MatchupKey[champion=157, lane=UTILITY]": {
         "champion": 157,
         "lane": "UTILITY",
         "matches": 312,
@@ -240,7 +240,8 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
 
 Le liste build sono categorie indipendenti e ogni categoria contiene al
 massimo tre opzioni. `matchups` è una mappa con chiavi serializzate come
-`championId|ROLE`; le metriche non disponibili sono `null`.
+`MatchupKey[champion=championId, lane=ROLE]`; le metriche non disponibili sono
+`null`. Il frontend converte questa mappa in un array per la presentation layer.
 
 ## Stati ed errori
 

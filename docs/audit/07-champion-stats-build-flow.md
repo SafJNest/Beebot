@@ -76,7 +76,9 @@ Non sono ammessi due calcoli globali identici.
 
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
-`Tracker` usa due marker distinti: `CHAMPION_STATS_RUNNING` indicizzato da `filter.genericKey()` e `CHAMPION_BUILD_RUNNING` indicizzato da `filter.toKey()`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono sottomessi separatamente e possono partire in parallelo.
+`Tracker` usa due marker distinti: `CHAMPION_STATS_RUNNING` indicizzato da `filter.genericKey()` e `CHAMPION_BUILD_RUNNING` indicizzato da `filter.toKey()`. Prima di creare il marker globale viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono sottomessi separatamente e possono partire in parallelo.
+
+Al termine di una scansione globale riuscita, `CHAMPION_STATS_COMPLETED` conserva il filtro globale già elaborato, anche quando il risultato è vuoto o non contiene il champion richiesto. Questo impedisce che il polling di una pagina senza dati rilanci la stessa scansione. In caso di eccezione lo stato `COMPLETED` non viene scritto e il marker `RUNNING` viene rimosso, quindi il filtro resta ritentabile. Il refresh completo dello scheduler resetta lo stato prima di ricalcolare i dati.
 
 `ChampionStatsService.compute` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 
@@ -147,7 +149,7 @@ Lo stato `READY` del globale deve essere scritto solo dopo il salvataggio comple
 
 1. Cache page pronta: restituire la pagina.
 2. Stats globali pronte e build pronta: costruire la pagina e restituire `READY`.
-3. Stats globali mancanti: avviare il global-stats job se non già in esecuzione.
+3. Stats globali mancanti: verificare prima cache/Mongo per il champion richiesto; avviare il global-stats job solo se il filtro non è già in esecuzione o completato.
 4. Build mancante: avviare il build job del champion se non già in esecuzione.
 5. Se una delle due risorse manca: restituire `PENDING` senza calcolo raw nella request.
 
@@ -169,6 +171,7 @@ La lettura di un champion non deve mai invocare direttamente il recompute global
 - Thresh e Jhin concorrenti: un solo global-stats job complessivo.
 - Nessun calcolo raw durante una request HTTP.
 - Un errore globale libera il marker e consente un nuovo tentativo.
+- Una scansione globale conclusa, anche senza righe per il champion richiesto, non viene rilanciata dai polling successivi.
 - Gli aggregati globali vengono persistiti per tutti i champion prodotti dal job.
 - Le route e i modelli HTTP canonici non cambiano.
 - I log di fase consentono di misurare l’assenza di scansioni globali duplicate; la conferma Mongo runtime e gli `explain("executionStats")` restano una verifica operativa.

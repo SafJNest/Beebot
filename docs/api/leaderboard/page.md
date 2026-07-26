@@ -28,6 +28,9 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
 ## Risposta `200`
 
 `LeaderboardPage`. Ogni riga contiene lo stesso `SummonerView` del profilo.
+Se le statistiche aggregate non sono ancora disponibili, la riga restituisce comunque
+il summoner base e il rank con un'overview vuota; la generazione delle statistiche viene
+accodata e la pagina non viene memorizzata in cache finché i dati non sono pronti.
 
 ```json
 {
@@ -248,7 +251,6 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
 
 | HTTP | `code` | Quando |
 |---:|---|---|
-| `202` | `leaderboard_pending` | Manca una statistica profilo; il refresh viene avviato e la pagina va richiesta di nuovo. |
 | `400` | `invalid_request` | Enum non valido, `page < 1` o `limit` fuori da `1..50`. |
 | `404` | `not_found` | Risorsa non trovata. |
 

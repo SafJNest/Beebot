@@ -30,7 +30,9 @@ public class ProfilePageService {
     public ApiResult<SummonerView> get(LeagueShard shard, String puuid) {
         String key = RedisKey.PROFILE_PAGE.of(shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
-        if (cached != null && isReady(cached)) return ApiResult.ready(cached);
+        if (cached != null && isReady(cached)) {
+            return ApiResult.ready(withRecentMatches(cached, shard, Filter.summoner()));
+        }
 
         CompletableFuture<Summoner> profileFuture = LeagueService.getAsyncSummoner(puuid, shard);
         CompletableFuture<List<Rank>> ranksFuture = LeagueService.getAsyncRanks(puuid, shard);
@@ -48,12 +50,10 @@ public class ProfilePageService {
         List<Mastery> profileMasteries = completed(masteriesFuture);
         if (databaseStatistics == null) Tracker.startProfileStatistics(profile, filter);
 
-        List<MatchResult> recentMatches = databaseStatistics == null
-            ? List.of()
-            : statisticsService.getRecentMatches(profile.puuid(), shard, filter);
+        List<MatchResult> recentMatches = statisticsService.getRecentMatches(profile.puuid(), shard, filter);
         SummonerView page = SummonerView.from(profile, profileRanks, databaseStatistics, profileMasteries, recentMatches);
         if (databaseStatistics != null) {
-            RedisClient.set(key, page, TTL_PROFILE_PAGE);
+            RedisClient.set(key, withoutRecentMatches(page), TTL_PROFILE_PAGE);
             return ApiResult.ready(page);
         }
         return ApiResult.partial(page);
@@ -100,6 +100,30 @@ public class ProfilePageService {
             && page.overview().statistics() != null
             && page.overview().statistics().total != null
             && page.overview().statistics().total.games >= MIN_PROFILE_GAMES;
+    }
+
+    private SummonerView withRecentMatches(SummonerView page, LeagueShard shard, Filter filter) {
+        List<MatchResult> recentMatches = statisticsService.getRecentMatches(
+            page.summoner().puuid(), shard, filter);
+        return SummonerView.from(
+            page.summoner(),
+            page.ranks(),
+            page.overview().statistics(),
+            page.overview().masteries(),
+            page.overview().champions(),
+            recentMatches
+        );
+    }
+
+    private static SummonerView withoutRecentMatches(SummonerView page) {
+        return SummonerView.from(
+            page.summoner(),
+            page.ranks(),
+            page.overview().statistics(),
+            page.overview().masteries(),
+            page.overview().champions(),
+            List.of()
+        );
     }
 
     private static boolean isReadyFuture(CompletableFuture<?> future) {

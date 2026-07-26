@@ -288,7 +288,7 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 |---|---|---|---|
 | statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | `ProfileStatisticsService` | aggiornamento dopo upsert |
 | recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | `ProfileStatisticsService` | dopo refresh statistiche |
-| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo |
+| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
 | match raw | chiavi match esistenti | `LeagueService`/`Tracker` | secondo il flusso match |
 
 Non usare la cache della profile page come fonte di verità per le statistiche. La fonte è sempre `ProfileStatistics` letto con il filtro completo; la pagina è una composizione derivata.
@@ -302,7 +302,7 @@ L'API continua a restituire i modelli canonici `SummonerView` e `SummonerOvervie
 - `overview.statistics.lastUpdate` indica il completamento del calcolo;
 - `Match` completo resta riservato a dettagli e timeline.
 
-Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce il profilo disponibile come `PARTIAL` e avvia il refresh. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
+Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce il profilo disponibile come `PARTIAL`, interroga comunque gli ultimi cinque `MatchResult` senza events e avvia il refresh. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
 
 ## Checklist per un futuro intervento
 

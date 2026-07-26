@@ -2,6 +2,7 @@ package com.safjnest.lol.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Map;
@@ -32,9 +33,13 @@ public class ChampionStatisticsTest {
             )
         );
 
-        ChampionStatistics decoded = ChampionStatistics.fromJson(source.toJson());
+        String json = source.toJson();
+        ChampionStatistics decoded = ChampionStatistics.fromJson(json);
 
+        assertTrue(json.contains("\"MatchupKey[champion=412, lane=UTILITY]\""));
         assertEquals(source, decoded);
+        assertEquals(source, ChampionStatistics.fromJson(json.replace(
+            "MatchupKey[champion=412, lane=UTILITY]", "412|UTILITY")));
         assertNull(ChampionStatistics.fromJson("not-json"));
     }
 }

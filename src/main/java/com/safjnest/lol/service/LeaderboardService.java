@@ -63,29 +63,27 @@ public class LeaderboardService {
         List<String> puuids = new ArrayList<>(summoners.size());
         for (Summoner summoner : summoners) puuids.add(summoner.puuid());
         Map<String, ProfileStatistics> statisticsBySummoner = profileStatisticsService.getByPuuid(puuids, season);
-        boolean pending = false;
         for (Summoner summoner : summoners) {
             if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
             Tracker.startProfileStatistics(summoner, season);
-            pending = true;
         }
-        if (pending) return ApiResult.pending();
 
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
         for (int index = 0; index < summoners.size(); index++) {
             Summoner summoner = summoners.get(index);
             Rank rankValue = summoner.ranks().isEmpty() ? Rank.unranked() : summoner.ranks().get(0);
+            ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
             SummonerView view = SummonerView.from(
                 summoner,
                 List.of(rankValue),
-                statisticsBySummoner.get(summoner.puuid()),
-                summoner.masteries()
+                statistics,
+                statistics == null ? List.of() : summoner.masteries()
             );
             leaderboardSummoners.add(new SummonerLeaderboard(offset + index + 1, view));
         }
 
         LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, leaderboardSummoners);
-        RedisClient.set(key, response, TTL_LEADERBOARD);
+        if (statisticsBySummoner.size() == summoners.size()) RedisClient.set(key, response, TTL_LEADERBOARD);
         return ApiResult.ready(response);
     }
 

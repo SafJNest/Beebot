@@ -27,6 +27,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.service.ChampionDataRefreshService;
+import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileStatisticsService;
@@ -75,6 +76,7 @@ public class Tracker {
     private static final Set<String> PROFILE_STATISTICS_RUNNING = ConcurrentHashMap.newKeySet();
     private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
     private static final Set<String> CHAMPION_STATS_RUNNING = ConcurrentHashMap.newKeySet();
+    private static final Set<String> CHAMPION_STATS_COMPLETED = ConcurrentHashMap.newKeySet();
     private static final Set<String> CHAMPION_BUILD_RUNNING = ConcurrentHashMap.newKeySet();
     private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
     private static final int MATCH_LOOKUP_BATCH_SIZE = 5;
@@ -254,8 +256,14 @@ public class Tracker {
         startChampionBuild(filter);
     }
 
+    public static void resetChampionStatsState() {
+        CHAMPION_STATS_COMPLETED.clear();
+    }
+
     private static void startChampionStats(Filter filter) {
         String key = filter.genericKey();
+        if (ChampionStatsService.hasStored(filter)) return;
+        if (CHAMPION_STATS_COMPLETED.contains(key)) return;
         if (!CHAMPION_STATS_RUNNING.add(key)) return;
 
         try {
@@ -303,9 +311,12 @@ public class Tracker {
     private static void refreshChampionStats(Filter filter, String key) {
         try {
             Map<Integer, ChampionStatistics> stats = CHAMPION_DATA_REFRESH_SERVICE.refreshStats(filter);
-            if (stats == null || stats.isEmpty()) {
+            if (stats == null) {
                 BotLogger.error("Champion stats refresh failed for filter=" + key);
+                return;
             }
+            CHAMPION_STATS_COMPLETED.add(key);
+            if (stats.isEmpty()) BotLogger.warning("Champion stats refresh completed with no data for filter=" + key);
         } catch (Exception exception) {
             BotLogger.error("Champion stats refresh failed for filter=" + key
                 + " message=" + exception.getMessage());

@@ -493,7 +493,16 @@ public final class MongoDB {
     public static String findPuuid(String riotId, LeagueShard shard) {
         traceRead("summoner.findPuuid", "region=" + shard);
         List<Summoner> result = findSummonersByRiotId(normalizedRiotId(riotId), shard, 1);
-        return result.isEmpty() ? null : result.get(0).puuid();
+        if (!result.isEmpty()) return result.get(0).puuid();
+
+        if (riotId == null || riotId.isBlank() || shard == null) return null;
+        Pattern exactRiotId = Pattern.compile("^" + Pattern.quote(riotId.trim()) + "$", Pattern.CASE_INSENSITIVE);
+        Document document = summoners().find(Filters.and(
+                Filters.eq("region", shard.name()),
+                Filters.regex("riotId", exactRiotId)))
+            .projection(Projections.include("_id"))
+            .first();
+        return document == null ? null : document.getString("_id");
     }
 
     public static Summoner findSummoner(String puuid, LeagueShard shard) {

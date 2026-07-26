@@ -14,6 +14,7 @@ GET /api/lol/{shard}/profile/{puuid}
   -> LeagueService.getAsyncMasteries()
      Redis -> Mongo -> Future Riot -> save Redis + Mongo
   -> ProfileStatisticsService Redis/Mongo
+  -> Mongo recent MatchResult projection (max 5, senza events)
   -> SummonerView
 ```
 
@@ -21,7 +22,7 @@ Evidenza: [LolController.java](../../src/main/java/com/safjnest/spring/controlle
 
 ## Parte coerente
 
-Il percorso HTTP usa modelli canonici e avvia i tre flussi async di `LeagueService` senza attendere Riot. Ogni flusso prova Redis, poi Mongo, quindi accoda o riusa una Future deduplicata per `shard:puuid`. Le statistiche passano prima da Redis e poi da Mongo. Lo stato `PENDING` viene restituito finché summoner, rank e mastery non sono pronti; se i tre componenti sono disponibili ma mancano le statistiche, il refresh viene avviato e il profilo viene restituito come `PARTIAL`.
+Il percorso HTTP usa modelli canonici e avvia i tre flussi async di `LeagueService` senza attendere Riot. Ogni flusso prova Redis, poi Mongo, quindi accoda o riusa una Future deduplicata per `shard:puuid`. Le statistiche passano prima da Redis e poi da Mongo. Lo stato `PENDING` viene restituito finché summoner, rank e mastery non sono pronti; se i tre componenti sono disponibili ma mancano le statistiche, il refresh viene avviato, gli ultimi cinque `MatchResult` vengono letti con una projection senza events e il profilo viene restituito come `PARTIAL`.
 
 ## Rilievi
 
@@ -43,7 +44,7 @@ MariaDB resta coinvolto solo nei percorsi espliciti di `MongoMigration`.
 
 ### P1 — cache `ready` dipende da dati aggregati già validi
 
-La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. Il primo caricamento, invece, restituisce `PARTIAL` quando le statistiche non sono ancora disponibili e avvia `Tracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
+La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. La pagina salvata non contiene i `recentMatches`: a ogni request vengono interrogati separatamente gli ultimi cinque match leggeri. Il primo caricamento restituisce `PARTIAL` quando le statistiche non sono ancora disponibili e avvia `Tracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
 
 Evidenza: [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:45) e [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:96).
 
@@ -52,10 +53,10 @@ Evidenza: [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service
 Per un `puuid` non presente in Redis/Mongo:
 
 1. chiamare l'endpoint due volte;
-2. verificare il primo `202 profile_pending` e le tre Future accodate;
+2. verificare il primo `202 profile_pending` solo se una delle tre componenti base non è pronta;
 3. osservare una sola fetch Riot per summoner, rank e mastery;
 4. verificare rank e mastery in Redis e nel documento Mongo;
 5. verificare la creazione di `profile_statistics` dopo il refresh;
-6. verificare invalidazione di `PROFILE_PAGE` e risposta successiva `200`/`PARTIAL`.
+6. verificare invalidazione di `PROFILE_PAGE`, query separata dei recent match e risposta successiva `200`/`PARTIAL`.
 
 Il test deve separare chiaramente cache Redis, fallback Mongo, miss con fetch async, wrapper sync, risultato Riot `[]` ed errore Riot.

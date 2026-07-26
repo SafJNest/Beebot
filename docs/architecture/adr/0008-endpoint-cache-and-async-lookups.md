@@ -14,6 +14,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
 - Profile misses use the `LeagueService` component flows. Every saved getter reads Redis, then Mongo, and returns `null` when the component was never loaded; every async getter starts or reuses a deduplicated Riot Future on a miss.
 - `ProfilePageService` starts the summoner, ranks and masteries Futures together. While one is incomplete the endpoint returns `202 profile_pending`; once the three components are ready, missing statistics still return the available profile as `PARTIAL` while `Tracker` refreshes them.
+- `PROFILE_PAGE` caches the profile components and aggregate without the volatile `recentMatches` list. The HTTP profile request loads up to five lightweight `MatchResult` rows separately, without events, and composes them into the response.
 - The synchronous bot wrappers wait for the same Futures. A successful component Future persists the canonical value in Redis and Mongo once; a Riot error is retried later and is never persisted as an empty list.
 - Champion build reads the single persisted aggregate before allowing command/refresh computation.
 - Match detail follows `Redis -> DB -> Tracker lookup queue -> Riot -> existing match analysis queue`.

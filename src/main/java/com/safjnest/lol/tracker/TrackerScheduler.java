@@ -91,6 +91,7 @@ public class TrackerScheduler {
     }
 
     public static void refreshChampionData() {
+        Tracker.resetChampionStatsState();
         championDataRefreshService.refresh();
     }
 
