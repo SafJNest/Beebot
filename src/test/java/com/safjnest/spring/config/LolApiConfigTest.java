@@ -1,6 +1,7 @@
 package com.safjnest.spring.config;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,9 @@ import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionView;
+import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.model.summoner.SummonerView;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -21,9 +25,7 @@ public class LolApiConfigTest {
 
     @Test
     public void doesNotExposeChampionStatisticsFilter() throws Exception {
-        List<HttpMessageConverter<?>> converters = new ArrayList<>();
-        new LolApiConfig().configureMessageConverters(converters);
-        ObjectMapper mapper = ((MappingJackson2HttpMessageConverter) converters.get(0)).getObjectMapper();
+        ObjectMapper mapper = apiMapper();
 
         ChampionStatistics stats = new ChampionStatistics(
             null, 10, 5, 1, 3, 0.6, 0.5, 0.1,
@@ -50,5 +52,43 @@ public class LolApiConfigTest {
         ));
 
         assertFalse(json.contains("\"filter\""));
+    }
+
+    @Test
+    public void serializesSummonerFieldsWithoutDirtyState() throws Exception {
+        ObjectMapper mapper = apiMapper();
+        Summoner summoner = new Summoner(42, "puuid-42", "Name#TAG", "EUW1", 500, 1234);
+
+        String summonerJson = mapper.writeValueAsString(summoner);
+        String viewJson = mapper.writeValueAsString(SummonerView.from(summoner, List.of(), null, List.of()));
+
+        assertTrue(summonerJson.contains("\"summonerId\":42"));
+        assertTrue(summonerJson.contains("\"puuid\":\"puuid-42\""));
+        assertTrue(summonerJson.contains("\"riotId\":\"Name#TAG\""));
+        assertTrue(summonerJson.contains("\"level\":500"));
+        assertTrue(summonerJson.contains("\"icon\":1234"));
+        assertTrue(viewJson.contains("\"summoner\":{"));
+        assertTrue(viewJson.contains("\"region\":\"EUW1\""));
+        assertFalse(summonerJson.contains("\"dirty\""));
+        assertFalse(viewJson.contains("\"dirty\""));
+    }
+
+    @Test
+    public void serializesMatchWithoutDirtyState() throws Exception {
+        ObjectMapper mapper = apiMapper();
+        Match match = Match.hydrated();
+        match.gameId = "123";
+        match.leagueShard = no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1;
+
+        String json = mapper.writeValueAsString(match);
+
+        assertTrue(json.contains("\"gameId\":\"123\""));
+        assertFalse(json.contains("\"dirty\""));
+    }
+
+    private static ObjectMapper apiMapper() {
+        List<HttpMessageConverter<?>> converters = new ArrayList<>();
+        new LolApiConfig().configureMessageConverters(converters);
+        return ((MappingJackson2HttpMessageConverter) converters.get(0)).getObjectMapper();
     }
 }

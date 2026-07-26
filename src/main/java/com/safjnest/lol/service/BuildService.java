@@ -8,7 +8,6 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.sql.QueryRecord;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,6 +20,7 @@ import java.util.Set;
 
 public final class BuildService {
 
+    private static final long NANOS_PER_MILLI = 1_000_000L;
     private static final int SLOT_COUNT = 4;
     private static final int AUGMENT_SLOT_COUNT = 4;
 
@@ -35,8 +35,15 @@ public final class BuildService {
     }
 
     public static List<Build> recomputeAll(Filter filter) {
+        long started = System.nanoTime();
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) MongoDB.upsertChampionBuilds(computed);
+        if (computed != null && !computed.isEmpty()) {
+            long persistenceStarted = System.nanoTime();
+            MongoDB.upsertChampionBuilds(computed);
+            System.out.println("build persistence completed: builds=" + computed.size()
+                + ", persistenceMs=" + millis(System.nanoTime() - persistenceStarted)
+                + ", totalMs=" + millis(System.nanoTime() - started));
+        }
         return computed;
     }
 
@@ -81,18 +88,17 @@ public final class BuildService {
         Map<Integer, int[]> prismatics = new LinkedHashMap<>();
         Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
 
+        long started = System.nanoTime();
         System.out.println("build compute started");
-        List<QueryRecord> result = ChampionBuildProvider.load(filter);
-        int rowCount = result.size();
-        System.out.println("build rows loaded: " + rowCount);
-        int games = 0;
-        int wins = 0;
-        for (QueryRecord record : result) {
+        int[] totals = new int[3];
+        long sourceStarted = System.nanoTime();
+        ChampionBuildProvider.forEach(filter, record -> {
+            totals[0]++;
             ChampionBuildData.Game game = ChampionBuildProvider.parse(record, filter);
-            if (game == null) continue;
+            if (game == null) return;
 
-            games++;
-            if (game.win()) wins++;
+            totals[1]++;
+            if (game.win()) totals[2]++;
             addCore(game, coreBuilds, coreBuildItems, coreItems);
             addStarter(game, starters);
             addBoots(game, boots);
@@ -103,11 +109,14 @@ public final class BuildService {
             addSkillOrder(game, skillOrders);
             addPrismatics(game, prismatics);
             addAugments(game, augments);
-        }
-        result.clear();
-        result = null;
+        });
+        long sourceNanos = System.nanoTime() - sourceStarted;
+        int games = totals[1];
+        int wins = totals[2];
         if (games == 0) {
-            System.out.println("build compute completed: games=0, wins=0");
+            System.out.println("build compute completed: records=" + totals[0]
+                + ", games=0, wins=0, sourceMs=" + millis(sourceNanos)
+                + ", totalMs=" + millis(System.nanoTime() - started));
             return List.of();
         }
 
@@ -128,8 +137,14 @@ public final class BuildService {
             toOptions(prismatics, games),
             toSlots(augments, AUGMENT_SLOT_COUNT, games)
         );
-        System.out.println("build compute completed: games=" + games + ", wins=" + wins);
+        System.out.println("build compute completed: records=" + totals[0] + ", games=" + games
+            + ", wins=" + wins + ", sourceMs=" + millis(sourceNanos)
+            + ", totalMs=" + millis(System.nanoTime() - started));
         return List.of(aggregate);
+    }
+
+    private static long millis(long nanos) {
+        return nanos / NANOS_PER_MILLI;
     }
 
     private static void addCore(ChampionBuildData.Game game, Map<String, int[]> builds,

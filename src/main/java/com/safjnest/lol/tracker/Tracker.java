@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
@@ -73,7 +74,8 @@ public class Tracker {
     );
     private static final Set<String> PROFILE_STATISTICS_RUNNING = ConcurrentHashMap.newKeySet();
     private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
-    private static final Set<String> CHAMPION_DATA_RUNNING = ConcurrentHashMap.newKeySet();
+    private static final Set<String> CHAMPION_STATS_RUNNING = ConcurrentHashMap.newKeySet();
+    private static final Set<String> CHAMPION_BUILD_RUNNING = ConcurrentHashMap.newKeySet();
     private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
     private static final int MATCH_LOOKUP_BATCH_SIZE = 5;
     private static final int MATCH_LOOKUP_MAX_RETRIES = 3;
@@ -248,14 +250,32 @@ public class Tracker {
     public static void startChampionData(Filter filter) {
         if (filter == null || filter.champion() == 0) return;
 
-        String key = filter.toKey();
-        if (!CHAMPION_DATA_RUNNING.add(key)) return;
+        startChampionStats(filter);
+        startChampionBuild(filter);
+    }
+
+    private static void startChampionStats(Filter filter) {
+        String key = filter.genericKey();
+        if (!CHAMPION_STATS_RUNNING.add(key)) return;
 
         try {
-            API_REFRESH_EXECUTOR.submit(() -> refreshChampionData(filter, key));
+            API_REFRESH_EXECUTOR.submit(() -> refreshChampionStats(filter, key));
         } catch (RuntimeException exception) {
-            CHAMPION_DATA_RUNNING.remove(key);
-            BotLogger.error("Champion data async start failed for filter=" + key
+            CHAMPION_STATS_RUNNING.remove(key);
+            BotLogger.error("Champion stats async start failed for filter=" + key
+                + " message=" + exception.getMessage());
+        }
+    }
+
+    private static void startChampionBuild(Filter filter) {
+        String key = filter.toKey();
+        if (!CHAMPION_BUILD_RUNNING.add(key)) return;
+
+        try {
+            API_REFRESH_EXECUTOR.submit(() -> refreshChampionBuild(filter, key));
+        } catch (RuntimeException exception) {
+            CHAMPION_BUILD_RUNNING.remove(key);
+            BotLogger.error("Champion build async start failed for filter=" + key
                 + " message=" + exception.getMessage());
         }
     }
@@ -280,16 +300,30 @@ public class Tracker {
         }
     }
 
-    private static void refreshChampionData(Filter filter, String key) {
+    private static void refreshChampionStats(Filter filter, String key) {
         try {
-            if (!CHAMPION_DATA_REFRESH_SERVICE.refresh(filter)) {
-                BotLogger.error("Champion data refresh failed for filter=" + key);
+            Map<Integer, ChampionStatistics> stats = CHAMPION_DATA_REFRESH_SERVICE.refreshStats(filter);
+            if (stats == null || stats.isEmpty()) {
+                BotLogger.error("Champion stats refresh failed for filter=" + key);
             }
         } catch (Exception exception) {
-            BotLogger.error("Champion data refresh failed for filter=" + key
+            BotLogger.error("Champion stats refresh failed for filter=" + key
                 + " message=" + exception.getMessage());
         } finally {
-            CHAMPION_DATA_RUNNING.remove(key);
+            CHAMPION_STATS_RUNNING.remove(key);
+        }
+    }
+
+    private static void refreshChampionBuild(Filter filter, String key) {
+        try {
+            if (!CHAMPION_DATA_REFRESH_SERVICE.refreshBuild(filter)) {
+                BotLogger.error("Champion build refresh failed for filter=" + key);
+            }
+        } catch (Exception exception) {
+            BotLogger.error("Champion build refresh failed for filter=" + key
+                + " message=" + exception.getMessage());
+        } finally {
+            CHAMPION_BUILD_RUNNING.remove(key);
         }
     }
 

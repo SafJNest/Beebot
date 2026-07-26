@@ -2,7 +2,7 @@
 
 - Data: 2026-07-20
 - Tipo: audit statico e decisione di flusso
-- Stato: decisione approvata, implementazione successiva
+- Stato: implementato staticamente, validazione Mongo runtime ancora necessaria
 - Scope: `ChampionPageService`, `ChampionDataRefreshService`, `ChampionStatsService`, `BuildService` e `Tracker`
 
 ## Decisione
@@ -70,15 +70,64 @@ Thresh e Jhin richiesti contemporaneamente devono produrre:
 
 Non sono ammessi due calcoli globali identici.
 
-## Evidenze nel codice attuale
+## Evidenze nel codice implementato
 
 `ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `Tracker.startChampionData`.
 
-`ChampionDataRefreshService.refresh(filter)` calcola la build usando il filtro con champion, ma costruisce `statsFilter` senza champion e quindi ricalcola tutte le statistiche del filtro globale a ogni refresh.
+`ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
-Il marker attuale `CHAMPION_DATA_RUNNING` usa `filter.toKey()`, che include anche il champion. Di conseguenza due champion diversi possono avviare due refresh globali duplicati.
+`Tracker` usa due marker distinti: `CHAMPION_STATS_RUNNING` indicizzato da `filter.genericKey()` e `CHAMPION_BUILD_RUNNING` indicizzato da `filter.toKey()`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono sottomessi separatamente e possono partire in parallelo.
 
-`ChampionStatsService.compute` esegue una scansione a batch dei match, aggrega overview, lane, matchup, synergy, metriche e power curve. Quando il filtro è sul patch corrente, esegue inoltre una seconda scansione del patch precedente per il trend.
+`ChampionStatsService.compute` esegue una scansione a batch dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
+
+La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRaw` mantiene il cursor aperto e consegna un record alla volta a `BuildService`. Per le statistiche, eventi e ban restano strutture BSON decodificate fino al parser degli eventi, evitando il passaggio intermedio stringa JSON.
+
+Il flusso registra tempi e contatori per conteggio match, query degli ID, lettura match, lettura eventi, materializzazione raw, parsing, aggregazione, trend, assemblaggio e coda di persistenza. Gli indici Mongo non sono stati modificati: restano da valutare con `explain("executionStats")` su dati rappresentativi.
+
+### Query di benchmark Mongo
+
+Con una connessione al database di test e valori rappresentativi, eseguire almeno:
+
+```javascript
+const base = {
+  queue: "TEAM_BUILDER_RANKED_SOLO",
+  patch: /^15\.14(?:\.|$)/,
+  rank: { $in: ["EMERALD_IV", "EMERALD_III", "EMERALD_II", "EMERALD_I"] },
+  leagueShard: "EUW1"
+};
+
+db.match.countDocuments({
+  ...base,
+  participants: { $elemMatch: { champion: 412, lane: "UTILITY" } }
+});
+
+db.match.find(base)
+  .sort({ _id: 1 })
+  .limit(1000)
+  .project({ _id: 1 })
+  .explain("executionStats");
+
+db.match.find({
+  ...base,
+  participants: { $elemMatch: { champion: 412, lane: "UTILITY" } }
+})
+  .project({
+    _id: 1,
+    "participants.champion": 1,
+    "participants.lane": 1,
+    "participants.win": 1,
+    "participants.item0": 1,
+    "participants.item1": 1,
+    "participants.item2": 1,
+    "participants.item3": 1,
+    "participants.item4": 1,
+    "participants.item5": 1
+  })
+  .limit(1000)
+  .explain("executionStats");
+```
+
+Confrontare `executionTimeMillis`, `totalKeysExamined`, `totalDocsExamined`, `nReturned`, `winningPlan` e il nome dell’indice. La misura va ripetuta prima e dopo su stesso filtro e dataset; senza Mongo configurato in questo workspace non è stata eseguita in locale.
 
 ## Ownership e chiavi di deduplicazione
 
@@ -90,7 +139,7 @@ L’ownership deve essere separata:
 | build champion | `BuildService` | `build:{patch}:{queue}:{rank}:{region}:{lane}:{champion}` |
 | pagina HTTP | `ChampionPageService` | chiave pagina esistente |
 
-Il marker del job globale non deve usare la chiave pagina né la chiave completa del champion. Il marker della build deve invece restare specifico per champion.
+Il marker del job globale usa `Filter.genericKey()` e non deve usare la chiave pagina né la chiave completa del champion. Il marker della build resta specifico per champion con `Filter.toKey()`.
 
 Lo stato `READY` del globale deve essere scritto solo dopo il salvataggio completo degli aggregati. In caso di errore il marker in-flight deve essere rimosso, così una richiesta successiva può ritentare il calcolo.
 
@@ -122,8 +171,8 @@ La lettura di un champion non deve mai invocare direttamente il recompute global
 - Un errore globale libera il marker e consente un nuovo tentativo.
 - Gli aggregati globali vengono persistiti per tutti i champion prodotti dal job.
 - Le route e i modelli HTTP canonici non cambiano.
-- L’instrumentation Mongo conferma l’assenza di scansioni globali duplicate.
+- I log di fase consentono di misurare l’assenza di scansioni globali duplicate; la conferma Mongo runtime e gli `explain("executionStats")` restano una verifica operativa.
 
 ## Fuori scope
 
-Questo audit non modifica ancora il codice, non decide la strategia di prewarming dello scheduler e non sostituisce il successivo audit `explain("executionStats")` sugli indici della collection `match`.
+La strategia di prewarming dello scheduler e l’audit `explain("executionStats")` sugli indici della collection `match` restano fuori scope operativo di questo fix.

@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.bson.Document;
-import org.json.JSONObject;
-
 import com.safjnest.lol.model.Filter;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
@@ -33,10 +31,11 @@ public final class ChampionStatsProvider {
     public static ChampionStatsData.RawBatch loadBatch(List<String> matchIds) {
         Map<String, ChampionStatsData.MatchMeta> metadata = new LinkedHashMap<>();
         Map<String, List<ChampionStatsData.RawParticipant>> byMatch = new LinkedHashMap<>();
-        for (Document document : MongoDB.findChampionRawDocuments(matchIds)) {
+        MongoDB.ChampionRawDocuments raw = MongoDB.findChampionRawDocumentsTimed(matchIds);
+        for (Document document : raw.documents()) {
             String matchId = String.valueOf(document.get("_id"));
             metadata.put(matchId, new ChampionStatsData.MatchMeta(
-                    json(document.get("bans")), json(document.get("events")),
+                    map(document.get("bans")), map(document.get("events")),
                     number(document.get("timeStart")), number(document.get("timeEnd"))
             ));
             List<ChampionStatsData.RawParticipant> participants = byMatch.computeIfAbsent(matchId, ignored -> new ArrayList<>());
@@ -48,7 +47,7 @@ public final class ChampionStatsProvider {
                 ));
             }
         }
-        return new ChampionStatsData.RawBatch(metadata, byMatch);
+        return new ChampionStatsData.RawBatch(metadata, byMatch, raw.matchReadNanos(), raw.eventReadNanos());
     }
 
     public static List<QueryRecord> loadTrendParticipants(List<String> matchIds) {
@@ -85,9 +84,13 @@ public final class ChampionStatsProvider {
         return result;
     }
 
-    private static String json(Object value) {
-        if (!(value instanceof Map<?, ?> map) || map.isEmpty()) return "{}";
-        return new JSONObject(map).toString();
+    private static Map<String, Object> map(Object value) {
+        if (!(value instanceof Map<?, ?> source) || source.isEmpty()) return Map.of();
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            if (entry.getKey() != null) result.put(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        return result;
     }
 
     private static long number(Object value) {

@@ -38,7 +38,7 @@ Champion statistics, builds and profile statistics use the shared Jackson JSON c
 - No second public DTO is created for build or champion statistics.
 - Role is rejected when the selected queue does not support lanes.
 - The page cache is written only when both aggregates are ready.
-- Missing data is deduplicated by the complete `Filter.toKey()` value and starts immediately in the background.
+- Missing global statistics are deduplicated by `Filter.genericKey()`, while missing builds are deduplicated by the complete `Filter.toKey()` value; both jobs start immediately in the background.
 - API page reads do not call the synchronous command fallback methods.
 - Automatic `mostCommonBuild`, `highestWinrate`, `getMostUsed` and `getHighWinrate` selections are not part of the service contract.
 - Every bounded build category contains at most three options; empty source data remains an empty list.

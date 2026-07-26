@@ -30,6 +30,7 @@ public abstract class AbstractEntity<E extends AbstractEntity<E>> {
         return (E) this;
     }
 
+    @JsonIgnore
     public final boolean isDirty() {
         return !pendingChanges.isEmpty();
     }

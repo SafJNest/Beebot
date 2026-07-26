@@ -47,6 +47,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - role incompatibile con la queue significa 400;
 - dati mancanti significano 202 e avvio immediato del refresh;
 - nessuna computazione raw durante la request.
+- le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e possono essere calcolate in parallelo;
 - in test lo scheduler non parte automaticamente;
 - la coda Redis dei match resta separata e invariata;
 
@@ -57,4 +58,4 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - cache hit funzionante;
 - refresh asincrono deduplicato e avvio immediato funzionanti;
 - fallimenti che liberano il marker per un nuovo tentativo;
-- verifica manuale tramite request champion e controllo della response JSON; i test automatici restano fuori piano.
+- verifica manuale tramite request champion e controllo della response JSON; test focalizzati Jackson e chiavi di deduplicazione inclusi.

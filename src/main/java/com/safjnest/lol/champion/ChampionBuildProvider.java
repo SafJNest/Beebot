@@ -5,6 +5,7 @@ import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,6 +16,10 @@ public final class ChampionBuildProvider {
 
     public static List<QueryRecord> load(Filter filter) {
         return MongoDB.getChampionBuildsRaw(filter);
+    }
+
+    public static void forEach(Filter filter, Consumer<QueryRecord> consumer) {
+        MongoDB.forEachChampionBuildRaw(filter, consumer);
     }
 
     public static ChampionBuildData.Game parse(QueryRecord record, Filter filter) {

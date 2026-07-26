@@ -20,11 +20,16 @@ public final class ChampionStatsData {
         String puuid
     ) {}
 
-    public record MatchMeta(String bans, String events, long timeStart, long timeEnd) {}
+    public record MatchMeta(Map<String, Object> bans, Map<String, Object> events, long timeStart, long timeEnd) {}
 
     public record RawMatch(String matchId, MatchMeta metadata, List<RawParticipant> participants) {}
 
-    public record RawBatch(Map<String, MatchMeta> metadata, Map<String, List<RawParticipant>> participants) {}
+    public record RawBatch(Map<String, MatchMeta> metadata, Map<String, List<RawParticipant>> participants,
+                           long matchReadNanos, long eventReadNanos) {
+        public RawBatch(Map<String, MatchMeta> metadata, Map<String, List<RawParticipant>> participants) {
+            this(metadata, participants, 0, 0);
+        }
+    }
 
     public record Player(int champion, LaneType lane, boolean win, TeamType team, String matchId,
                          long timeStart, long timeEnd, String kda, Integer cs, Integer gold, String puuid) {}
@@ -37,7 +42,7 @@ public final class ChampionStatsData {
     public record MatchData(Map<String, EventMetric> eventMetrics, Map<String, Snapshot> snapshots,
                             boolean eventsAvailable) {}
 
-    public record Game(String matchId, String bans, long timeStart, long timeEnd,
+    public record Game(String matchId, Map<String, Object> bans, long timeStart, long timeEnd,
                        List<Player> players, MatchData data) {}
 
     public record MetricValues(Double kda, Double csPerMinute, Double goldPerMinute) {}

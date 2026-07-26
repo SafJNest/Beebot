@@ -19,18 +19,22 @@ public class ChampionDataRefreshService {
     public boolean refresh(Filter filter) {
         if (filter == null || filter.champion() == 0) return false;
 
+        boolean builds = refreshBuild(filter);
+        Map<Integer, ChampionStatistics> stats = refreshStats(filter);
+        return builds && stats.containsKey(filter.champion());
+    }
+
+    public boolean refreshBuild(Filter filter) {
+        if (filter == null || filter.champion() == 0) return false;
         List<Build> builds = BuildService.recomputeAll(filter);
-        Filter statsFilter = new Filter()
-            .setPatch(filter.patch())
-            .setQueue(filter.queue())
-            .setRank(filter.rank())
-            .setRegion(filter.region())
-            .setLane(filter.lane());
-        Map<Integer, ChampionStatistics> stats = ChampionStatsService.recomputeAll(statsFilter);
-        boolean refreshed = builds != null && !builds.isEmpty()
-            && stats != null && stats.containsKey(filter.champion());
+        boolean refreshed = builds != null && !builds.isEmpty();
         if (refreshed) ChampionPageService.invalidate(filter);
         return refreshed;
+    }
+
+    public Map<Integer, ChampionStatistics> refreshStats(Filter filter) {
+        if (filter == null) return Map.of();
+        return ChampionStatsService.recomputeAll(statsFilter(filter));
     }
 
     public void refresh() {
@@ -44,9 +48,8 @@ public class ChampionDataRefreshService {
         int emptyBuilds = 0;
         for (Filter filter : buildFilters) {
             try {
-                List<Build> computed = BuildService.recomputeAll(filter);
-                if (computed == null || computed.isEmpty()) emptyBuilds++;
-                else builds += computed.size();
+                if (!refreshBuild(filter)) emptyBuilds++;
+                else builds++;
             } catch (Exception e) {
                 BotLogger.warning("[LPTracker] Failed refreshing build filter " + filter.toKey());
                 e.printStackTrace();
@@ -57,7 +60,7 @@ public class ChampionDataRefreshService {
         int emptyStats = 0;
         for (Filter filter : statFilters) {
             try {
-                Map<Integer, ChampionStatistics> computed = ChampionStatsService.recomputeAll(filter);
+                Map<Integer, ChampionStatistics> computed = refreshStats(filter);
                 if (computed == null || computed.isEmpty()) emptyStats++;
                 else stats += computed.size();
             } catch (Exception e) {
@@ -101,6 +104,15 @@ public class ChampionDataRefreshService {
     private void addStatFilter(Map<String, Filter> filters, Filter filter, String patch) {
         if (filter == null || !patch.equals(filter.patch())) return;
         filters.put(filter.genericKey(), filter);
+    }
+
+    private static Filter statsFilter(Filter filter) {
+        return new Filter()
+            .setPatch(filter.patch())
+            .setQueue(filter.queue())
+            .setRank(filter.rank())
+            .setRegion(filter.region())
+            .setLane(filter.lane());
     }
 
 }

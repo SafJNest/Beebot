@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -375,33 +376,42 @@ public final class MongoDB {
     // TODO Mongo build aggregation: use buildPath for the timeline build and include rune arrays.
     public static List<QueryRecord> getChampionBuildsRaw(Filter filter) {
         List<QueryRecord> result = new ArrayList<>();
-        for (Document match : matches().find(championMatchFilter(filter, null)).projection(Projections.include(
+        forEachChampionBuildRaw(filter, result::add);
+        return result;
+    }
+
+    public static void forEachChampionBuildRaw(Filter filter, Consumer<QueryRecord> consumer) {
+        if (filter == null || consumer == null) return;
+        FindIterable<Document> query = matches().find(championMatchFilter(filter, null)).projection(Projections.include(
                 "_id", "participants.champion", "participants.lane", "participants.win",
                 "participants.starterItems", "participants.boots", "participants.supportItem",
                 "participants.item0", "participants.item1", "participants.item2", "participants.item3",
                 "participants.item4", "participants.item5", "participants.skillOrder", "participants.augments",
-                "participants.summonerSpell1", "participants.summonerSpell2"))) {
-            for (Document participant : documents(match.get("participants"))) {
-                if (!matchesChampionFilter(participant, filter)) continue;
-                JSONObject build = new JSONObject();
-                JSONObject buildData = new JSONObject();
-                buildData.put("starter", new JSONArray(integerList(readIntegers(participant, "starterItems"))));
-                buildData.put("boots", participant.getInteger("boots", 0));
-                buildData.put("support_item", participant.getInteger("supportItem", 0));
-                buildData.put("build", new JSONArray(List.of(
-                        participant.getInteger("item0", 0), participant.getInteger("item1", 0), participant.getInteger("item2", 0),
-                        participant.getInteger("item3", 0), participant.getInteger("item4", 0), participant.getInteger("item5", 0))));
-                build.put("build", buildData);
-                build.put("skill_order", new JSONArray(readIntegers(participant, "skillOrder")));
-                build.put("augments", new JSONArray(readIntegers(participant, "augments")));
-                build.put("summoner_spells", new JSONArray(List.of(participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
-                result.add(QueryRecordParser.fromMap(Map.of(
-                        "game_id", publicGameId(match.getString("_id")),
-                        "win", participant.getBoolean("win", false),
-                        "build", build.toString())));
+                "participants.summonerSpell1", "participants.summonerSpell2"));
+        try (MongoCursor<Document> cursor = query.iterator()) {
+            while (cursor.hasNext()) {
+                Document match = cursor.next();
+                for (Document participant : documents(match.get("participants"))) {
+                    if (!matchesChampionFilter(participant, filter)) continue;
+                    JSONObject build = new JSONObject();
+                    JSONObject buildData = new JSONObject();
+                    buildData.put("starter", new JSONArray(integerList(readIntegers(participant, "starterItems"))));
+                    buildData.put("boots", participant.getInteger("boots", 0));
+                    buildData.put("support_item", participant.getInteger("supportItem", 0));
+                    buildData.put("build", new JSONArray(List.of(
+                            participant.getInteger("item0", 0), participant.getInteger("item1", 0), participant.getInteger("item2", 0),
+                            participant.getInteger("item3", 0), participant.getInteger("item4", 0), participant.getInteger("item5", 0))));
+                    build.put("build", buildData);
+                    build.put("skill_order", new JSONArray(readIntegers(participant, "skillOrder")));
+                    build.put("augments", new JSONArray(readIntegers(participant, "augments")));
+                    build.put("summoner_spells", new JSONArray(List.of(participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
+                    consumer.accept(QueryRecordParser.fromMap(Map.of(
+                            "game_id", publicGameId(match.getString("_id")),
+                            "win", participant.getBoolean("win", false),
+                            "build", build.toString())));
+                }
             }
         }
-        return result;
     }
 
     public static long countChampionMatchesByFilter(Filter filter) {
@@ -898,8 +908,15 @@ public final class MongoDB {
         return matchProjections(fullGameIds, false);
     }
 
+    public record ChampionRawDocuments(List<Document> documents, long matchReadNanos, long eventReadNanos) {}
+
     public static List<Document> findChampionRawDocuments(List<String> fullGameIds) {
-        if (fullGameIds == null || fullGameIds.isEmpty()) return List.of();
+        return findChampionRawDocumentsTimed(fullGameIds).documents();
+    }
+
+    public static ChampionRawDocuments findChampionRawDocumentsTimed(List<String> fullGameIds) {
+        if (fullGameIds == null || fullGameIds.isEmpty()) return new ChampionRawDocuments(List.of(), 0, 0);
+        long matchReadStarted = System.nanoTime();
         FindIterable<Document> query = matches().find(Filters.in("_id", boundedIds(fullGameIds)))
                 .projection(Projections.include(
                         "_id", "bans", "timeStart", "timeEnd",
@@ -910,6 +927,8 @@ public final class MongoDB {
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) result.add(cursor.next());
         }
+        long matchReadNanos = System.nanoTime() - matchReadStarted;
+        long eventReadNanos = 0;
         if (!result.isEmpty()) {
             List<String> ids = new ArrayList<>(result.size());
             Map<String, Document> byId = new HashMap<>();
@@ -920,6 +939,7 @@ public final class MongoDB {
                     byId.put(id, document);
                 }
             }
+            long eventReadStarted = System.nanoTime();
             try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", ids)).iterator()) {
                 while (cursor.hasNext()) {
                     Document event = cursor.next();
@@ -927,8 +947,9 @@ public final class MongoDB {
                     if (match != null) match.put("events", decodeMatchEvents(event));
                 }
             }
+            eventReadNanos = System.nanoTime() - eventReadStarted;
         }
-        return result;
+        return new ChampionRawDocuments(result, matchReadNanos, eventReadNanos);
     }
 
     public record LeaderboardQuery(long total, List<Summoner> summoners) {}

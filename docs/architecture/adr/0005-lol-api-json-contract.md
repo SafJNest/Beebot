@@ -38,6 +38,10 @@ HTTP controllers unwrap the domain-level `ApiResult<T>` through one shared
 and the shared JSON codec, but the Spring mapper ignores it through a Jackson mixin because it
 is an internal storage key and not part of the HTTP contract.
 
+`AbstractEntity.isDirty()` is internal persistence state and is excluded from HTTP JSON. `Summoner`
+serializes its six public identity fields explicitly so the canonical summoner shape remains complete
+inside `SummonerView`, `SummonerLeaderboard` and `LeaderboardPage`.
+
 ## Compatibility
 
 This is an intentional public JSON change. No compatibility aliases for old DTO class names are introduced. Consumers must migrate to the canonical field structure.

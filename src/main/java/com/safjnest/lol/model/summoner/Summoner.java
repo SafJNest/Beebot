@@ -15,11 +15,17 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class Summoner extends AbstractEntity<Summoner> {
 
+    @JsonProperty("summonerId")
     private final int summonerId;
+    @JsonProperty("puuid")
     private final String puuid;
+    @JsonProperty("riotId")
     private String riotId;
+    @JsonProperty("region")
     private String region;
+    @JsonProperty("level")
     private int level;
+    @JsonProperty("icon")
     private int icon;
 
     @JsonIgnore
