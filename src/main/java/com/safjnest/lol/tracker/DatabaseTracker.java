@@ -17,6 +17,7 @@ import java.util.function.Supplier;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionDataRefreshService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
@@ -80,12 +81,21 @@ public final class DatabaseTracker {
         return submit(key, () -> refreshProfileStatistics(request));
     }
 
-    public static CompletableFuture<Void> startChampionData(Filter filter) {
+    public static CompletableFuture<Void> startChampionData(
+        Filter filter,
+        boolean statsMissing,
+        boolean buildMissing
+    ) {
         if (filter == null || filter.champion() == 0) return CompletableFuture.completedFuture(null);
+        if (!statsMissing && !buildMissing) return CompletableFuture.completedFuture(null);
 
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
-        CompletableFuture<Map<Integer, ChampionStatistics>> statistics = startChampionStats(requestFilter);
-        CompletableFuture<Boolean> build = startChampionBuild(requestFilter);
+        CompletableFuture<Map<Integer, ChampionStatistics>> statistics = statsMissing
+            ? startChampionStats(requestFilter)
+            : CompletableFuture.completedFuture(Map.of());
+        CompletableFuture<Boolean> build = buildMissing
+            ? startChampionBuild(requestFilter)
+            : CompletableFuture.completedFuture(true);
         return CompletableFuture.allOf(statistics, build);
     }
 
@@ -133,6 +143,7 @@ public final class DatabaseTracker {
     }
 
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
+        if (BuildService.hasStored(filter)) return CompletableFuture.completedFuture(true);
         return submit("champion-build:" + filter.toKey(), () -> refreshChampionBuild(filter));
     }
 

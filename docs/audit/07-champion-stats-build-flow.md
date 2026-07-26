@@ -72,7 +72,7 @@ Non sono ammessi due calcoli globali identici.
 
 ## Evidenze nel codice implementato
 
-`ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData`.
+`ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData` indicando quali risorse mancano. Il tracker accoda solo il job stats o build necessario e ricontrolla la build persistita prima di accodarla.
 
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 

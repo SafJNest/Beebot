@@ -239,7 +239,12 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
 ```
 
 Le liste build sono categorie indipendenti e ogni categoria contiene al
-massimo tre opzioni. `matchups` è una mappa con chiavi serializzate come
+massimo tre opzioni. `coreBuilds`, `coreItems` e `slots` includono solo item
+validi di depth 3 presenti nell'inventario finale; i pezzi intermedi vengono
+esclusi.
+starter, boots, support items, consumabili, trinket, prismatics e augment
+mantengono le categorie e le esclusioni esistenti. `matchups` è una mappa con
+chiavi serializzate come
 `MatchupKey[champion=championId, lane=ROLE]`; le metriche non disponibili sono
 `null`. Il frontend converte questa mappa in un array per la presentation layer.
 

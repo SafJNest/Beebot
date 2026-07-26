@@ -34,6 +34,10 @@ public final class BuildService {
         return getAggregate(filter, true);
     }
 
+    public static boolean hasStored(Filter filter) {
+        return filter != null && !loadBuilds(filter, false).isEmpty();
+    }
+
     public static List<Build> recomputeAll(Filter filter) {
         long started = System.nanoTime();
         List<Build> computed = computeAll(filter);

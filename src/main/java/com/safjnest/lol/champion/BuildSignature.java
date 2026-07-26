@@ -29,6 +29,7 @@ public record BuildSignature(
     private static final Set<Integer> SUPPORT_ITEMS = Set.of(3869, 3870, 3871, 3872, 3873, 3876, 3877, 3901, 3902, 3903);
     private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465, 3348);
     private static final Set<Integer> CONSUMABLES = Set.of(2003, 2055, 2138, 2139, 2140, 2010);
+    private static final int COMPLETED_ITEM_DEPTH = 3;
 
     public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, JSONArray augmentsJson, JSONArray summonerSpellsJson, Filter filter) {
         JSONObject buildObj = buildJson.optJSONObject("build");
@@ -236,7 +237,7 @@ public record BuildSignature(
     private static boolean isSkippable(int id) {
         if (id == 0 || TRINKETS.contains(id) || CONSUMABLES.contains(id)) return true;
         Item item = ItemUtils.getItem(id);
-        if (item == null || (item.getDepth() < 3 && item.getMaps().get("30") == null)) return true;
+        if (item == null || item.getDepth() < COMPLETED_ITEM_DEPTH) return true;
         try {
             for (String from : item.getFrom())
                 if (BOOTS.contains(Integer.parseInt(from))) return true;
@@ -245,4 +246,3 @@ public record BuildSignature(
     }
 
 }
-

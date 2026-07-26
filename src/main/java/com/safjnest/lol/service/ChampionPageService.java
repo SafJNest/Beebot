@@ -63,7 +63,7 @@ public class ChampionPageService {
         ChampionStatistics stats = ChampionStatsService.get(filter, false);
         Build build = BuildService.getAggregate(filter, false);
         if (stats == null || build == null) {
-            DatabaseTracker.startChampionData(filter);
+            DatabaseTracker.startChampionData(filter, stats == null, build == null);
             return ApiResult.pending();
         }
 
