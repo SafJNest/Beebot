@@ -32,8 +32,8 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - power curve e trend patch quando i dati sono disponibili;
 - tutti i matchup validi con metriche @15/eventi disponibili;
 - tutte le lane synergy valide;
-- caricamento keyset dei match in batch sequenziali da 1.000, con metadata/events, participant e summoner separati;
-- merge nel solo batch corrente e rilascio delle strutture raw dopo ogni game e dopo ogni batch;
+- scansione globale tramite una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`; metadata, participant ed evento vengono materializzati per un match alla volta e i riferimenti Java vengono rilasciati subito dopo l'aggregazione; il fallback trend precedente resta bounded a batch da 100;
+- aggregazione nel solo match corrente e rilascio delle strutture raw dopo ogni game e dopo ogni cursor item;
 - liste build indipendenti con massimo tre opzioni per categoria;
 - augment aggregati per slot, con ordine conservato;
 - chiavi stats Redis/DB con lane quando il ruolo è specificato;

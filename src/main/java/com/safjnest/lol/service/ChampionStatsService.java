@@ -143,72 +143,41 @@ public final class ChampionStatsService {
         Map<Integer, double[]> metricAccum = new HashMap<>();
         Map<Integer, Map<String, int[]>> powerCurveAccum = new HashMap<>();
 
-        String lastMatchId = null;
-        long countStarted = System.nanoTime();
-        long totalMatches = ChampionStatsProvider.loadMatchCount(filter);
-        long countNanos = System.nanoTime() - countStarted;
-        long totalBatches = ChampionStatsProvider.batchCount(totalMatches);
-        int batchNumber = 0;
-        int parsedGamesTotal = 0;
-        long idQueryNanos = 0;
-        long rawMaterializeNanos = 0;
-        long matchReadNanos = 0;
-        long eventReadNanos = 0;
-        long parseNanos = 0;
-        long aggregateNanos = 0;
-
-        while (true) {
-            long idsStarted = System.nanoTime();
-            List<String> matchIds = ChampionStatsProvider.loadMatchIds(filter, lastMatchId);
-            idQueryNanos += System.nanoTime() - idsStarted;
-            if (matchIds.isEmpty()) break;
-
-            batchNumber++;
-            System.out.println("stats batch " + batchNumber + "/" + totalBatches
-                + " started: " + matchIds.size() + " games");
-            long rawStarted = System.nanoTime();
-            ChampionStatsData.RawBatch batch = ChampionStatsProvider.loadBatch(matchIds);
-            rawMaterializeNanos += System.nanoTime() - rawStarted;
-            matchReadNanos += batch.matchReadNanos();
-            eventReadNanos += batch.eventReadNanos();
-            int batchSize = matchIds.size();
-            int progressStep = Math.max(1, (batchSize + 3) / 4);
-            int parsedGames = 0;
-
-            for (int index = 0; index < matchIds.size(); index++) {
-                String matchId = matchIds.get(index);
-                ChampionStatsData.RawMatch rawMatch = ChampionStatsProvider.take(batch, matchId);
-                long parseStarted = System.nanoTime();
-                ChampionStatsData.Game game = parse(rawMatch);
-                parseNanos += System.nanoTime() - parseStarted;
-                if (game != null) {
-                    parsedGames++;
-                    parsedGamesTotal++;
-                    long aggregateStarted = System.nanoTime();
-                    acceptOverview(filter, game, totalGames, banGames, pickWin, banCount);
-                    acceptLane(filter, game, laneAccum);
-                    acceptMatchup(filter, game, matchupAccum);
-                    acceptSynergy(filter, game, synergyAccum);
-                    acceptMetrics(filter, game, metricAccum);
-                    acceptPowerCurve(filter, game, powerCurveAccum);
-                    aggregateNanos += System.nanoTime() - aggregateStarted;
-                }
-                if (rawMatch != null && rawMatch.participants() != null) rawMatch.participants().clear();
-                game = null;
-                rawMatch = null;
-                int processedGames = index + 1;
-                if (processedGames < batchSize && processedGames % progressStep == 0)
-                    System.out.println("stats batch " + batchNumber + "/" + totalBatches
-                        + " progress: " + processedGames + "/" + batchSize);
+        int[] processedMatches = new int[1];
+        int[] parsedGamesTotal = new int[1];
+        long[] rawMaterializeNanos = new long[1];
+        long[] matchReadNanos = new long[1];
+        long[] eventReadNanos = new long[1];
+        long[] parseNanos = new long[1];
+        long[] aggregateNanos = new long[1];
+        long streamStarted = System.nanoTime();
+        System.out.println("stats stream started: filter=" + filter.genericKey());
+        ChampionStatsProvider.forEachMatch(filter, read -> {
+            processedMatches[0]++;
+            rawMaterializeNanos[0] += read.materializeNanos();
+            matchReadNanos[0] += read.matchReadNanos();
+            eventReadNanos[0] += read.eventReadNanos();
+            ChampionStatsData.RawMatch rawMatch = read.match();
+            long parseStarted = System.nanoTime();
+            ChampionStatsData.Game game = parse(rawMatch);
+            parseNanos[0] += System.nanoTime() - parseStarted;
+            if (game != null) {
+                parsedGamesTotal[0]++;
+                long aggregateStarted = System.nanoTime();
+                acceptOverview(filter, game, totalGames, banGames, pickWin, banCount);
+                acceptLane(filter, game, laneAccum);
+                acceptMatchup(filter, game, matchupAccum);
+                acceptSynergy(filter, game, synergyAccum);
+                acceptMetrics(filter, game, metricAccum);
+                acceptPowerCurve(filter, game, powerCurveAccum);
+                aggregateNanos[0] += System.nanoTime() - aggregateStarted;
             }
-
-            lastMatchId = matchIds.get(matchIds.size() - 1);
-            ChampionStatsProvider.clear(batch);
-            batch = null;
-            matchIds.clear();
-            System.out.println("stats batch " + batchNumber + "/" + totalBatches
-                + " completed: processed=" + batchSize + ", parsed=" + parsedGames + ", raw released");
-        }
+            if (rawMatch != null && rawMatch.participants() != null) rawMatch.participants().clear();
+            game = null;
+            rawMatch = null;
+        });
+        long streamNanos = System.nanoTime() - streamStarted;
+        long totalMatches = processedMatches[0];
 
         long trendStarted = System.nanoTime();
         Map<Integer, Trend> trends = loadTrends(filter, pickWin);
@@ -242,11 +211,11 @@ public final class ChampionStatsService {
             persistenceNanos = System.nanoTime() - persistenceStarted;
         }
         BotLogger.info("Champion stats compute completed: filter=" + filter.genericKey()
-            + ", matches=" + totalMatches + ", parsed=" + parsedGamesTotal + ", batches=" + batchNumber
-            + ", countMs=" + millis(countNanos) + ", idQueryMs=" + millis(idQueryNanos)
-            + ", matchReadMs=" + millis(matchReadNanos) + ", eventReadMs=" + millis(eventReadNanos)
-            + ", rawMaterializeMs=" + millis(rawMaterializeNanos) + ", parseMs=" + millis(parseNanos)
-            + ", aggregateMs=" + millis(aggregateNanos) + ", trendMs=" + millis(trendNanos)
+            + ", matches=" + totalMatches + ", parsed=" + parsedGamesTotal[0]
+            + ", streamMs=" + millis(streamNanos) + ", matchReadMs=" + millis(matchReadNanos[0])
+            + ", eventReadMs=" + millis(eventReadNanos[0])
+            + ", rawMaterializeMs=" + millis(rawMaterializeNanos[0]) + ", parseMs=" + millis(parseNanos[0])
+            + ", aggregateMs=" + millis(aggregateNanos[0]) + ", trendMs=" + millis(trendNanos)
             + ", assemblyMs=" + millis(assemblyNanos) + ", persistenceQueueMs=" + millis(persistenceNanos)
             + ", totalMs=" + millis(System.nanoTime() - started));
         return stats;
@@ -269,8 +238,8 @@ public final class ChampionStatsService {
 
     private static ChampionStatsData.MatchData parseMatchData(
             List<ChampionStatsData.Player> players,
-            Map<String, Object> rawEvents) {
-        JSONObject events = rawEvents == null || rawEvents.isEmpty() ? null : new JSONObject(rawEvents);
+            Object rawEvents) {
+        JSONObject events = eventJson(rawEvents);
         if (events == null) return new ChampionStatsData.MatchData(Map.of(), Map.of(), false);
 
         JSONObject participantRefs = events.optJSONObject("participants");
@@ -344,6 +313,12 @@ public final class ChampionStatsService {
             }
         }
         return new ChampionStatsData.MatchData(metrics, snapshots, available);
+    }
+
+    private static JSONObject eventJson(Object rawEvents) {
+        if (rawEvents instanceof String json && !json.isBlank()) return new JSONObject(json);
+        if (rawEvents instanceof Map<?, ?> map && !map.isEmpty()) return new JSONObject(map);
+        return null;
     }
 
     private static void acceptOverview(Filter filter, ChampionStatsData.Game game, int[] totalGames,

@@ -20,9 +20,11 @@ public final class ChampionStatsData {
         String puuid
     ) {}
 
-    public record MatchMeta(Map<String, Object> bans, Map<String, Object> events, long timeStart, long timeEnd) {}
+    public record MatchMeta(Map<String, Object> bans, Object events, long timeStart, long timeEnd) {}
 
     public record RawMatch(String matchId, MatchMeta metadata, List<RawParticipant> participants) {}
+
+    public record RawMatchRead(RawMatch match, long matchReadNanos, long eventReadNanos, long materializeNanos) {}
 
     public record RawBatch(Map<String, MatchMeta> metadata, Map<String, List<RawParticipant>> participants,
                            long matchReadNanos, long eventReadNanos) {

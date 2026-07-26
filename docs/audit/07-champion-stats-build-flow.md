@@ -78,11 +78,11 @@ Non sono ammessi due calcoli globali identici.
 
 `Tracker` usa due marker distinti: `CHAMPION_STATS_RUNNING` indicizzato da `filter.genericKey()` e `CHAMPION_BUILD_RUNNING` indicizzato da `filter.toKey()`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono sottomessi separatamente e possono partire in parallelo.
 
-`ChampionStatsService.compute` esegue una scansione a batch dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
+`ChampionStatsService.compute` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 
-La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRaw` mantiene il cursor aperto e consegna un record alla volta a `BuildService`. Per le statistiche, eventi e ban restano strutture BSON decodificate fino al parser degli eventi, evitando il passaggio intermedio stringa JSON.
+La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRaw` mantiene il cursor aperto e consegna un record alla volta a `BuildService`. Anche le statistiche globali usano una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`: il provider converte e parsea un solo match per volta, poi svuota i riferimenti Java a match ed eventi. Il fallback trend precedente mantiene batch bounded da 100.
 
-Il flusso registra tempi e contatori per conteggio match, query degli ID, lettura match, lettura eventi, materializzazione raw, parsing, aggregazione, trend, assemblaggio e coda di persistenza. Gli indici Mongo non sono stati modificati: restano da valutare con `explain("executionStats")` su dati rappresentativi.
+Il flusso registra tempi e contatori per lettura streaming dei match, lettura eventi, materializzazione raw, parsing, aggregazione, trend, assemblaggio e coda di persistenza. Gli indici Mongo non sono stati modificati: restano da valutare con `explain("executionStats")` su dati rappresentativi.
 
 ### Query di benchmark Mongo
 

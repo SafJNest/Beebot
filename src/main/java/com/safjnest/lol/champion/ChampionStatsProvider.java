@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.bson.Document;
 import com.safjnest.lol.model.Filter;
@@ -16,7 +17,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 public final class ChampionStatsProvider {
 
-    public static final int GAME_BATCH_SIZE = 1000;
+    public static final int GAME_BATCH_SIZE = 100;
 
     private ChampionStatsProvider() {}
 
@@ -28,6 +29,16 @@ public final class ChampionStatsProvider {
         return MongoDB.findChampionMatchIds(filter, lastFullGameId, GAME_BATCH_SIZE);
     }
 
+    public static void forEachMatch(Filter filter, Consumer<ChampionStatsData.RawMatchRead> consumer) {
+        if (filter == null || consumer == null) return;
+        MongoDB.forEachChampionRawMatch(filter, raw -> {
+            long materializeStarted = System.nanoTime();
+            consumer.accept(new ChampionStatsData.RawMatchRead(
+                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
+                    System.nanoTime() - materializeStarted));
+        });
+    }
+
     public static ChampionStatsData.RawBatch loadBatch(List<String> matchIds) {
         Map<String, ChampionStatsData.MatchMeta> metadata = new LinkedHashMap<>();
         Map<String, List<ChampionStatsData.RawParticipant>> byMatch = new LinkedHashMap<>();
@@ -35,7 +46,7 @@ public final class ChampionStatsProvider {
         for (Document document : raw.documents()) {
             String matchId = String.valueOf(document.get("_id"));
             metadata.put(matchId, new ChampionStatsData.MatchMeta(
-                    map(document.get("bans")), map(document.get("events")),
+                    map(document.get("bans")), document.get("events"),
                     number(document.get("timeStart")), number(document.get("timeEnd"))
             ));
             List<ChampionStatsData.RawParticipant> participants = byMatch.computeIfAbsent(matchId, ignored -> new ArrayList<>());
@@ -75,6 +86,21 @@ public final class ChampionStatsProvider {
     public static void clear(ChampionStatsData.RawBatch batch) {
         batch.metadata().clear();
         batch.participants().clear();
+    }
+
+    private static ChampionStatsData.RawMatch rawMatch(Document document) {
+        String matchId = String.valueOf(document.get("_id"));
+        ChampionStatsData.MatchMeta metadata = new ChampionStatsData.MatchMeta(
+                map(document.get("bans")), document.get("events"),
+                number(document.get("timeStart")), number(document.get("timeEnd")));
+        List<ChampionStatsData.RawParticipant> participants = new ArrayList<>();
+        for (Document participant : participants(document.get("participants"))) {
+            participants.add(new ChampionStatsData.RawParticipant(
+                    participant.getInteger("champion", 0), lane(participant), participant.getBoolean("win", false),
+                    team(participant), matchId, participant.getString("kda"), participant.getInteger("cs", 0),
+                    participant.getInteger("goldEarned", 0), participant.getString("puuid")));
+        }
+        return new ChampionStatsData.RawMatch(matchId, metadata, participants);
     }
 
     private static List<Document> participants(Object value) {

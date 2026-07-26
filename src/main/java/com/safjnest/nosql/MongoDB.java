@@ -910,6 +910,37 @@ public final class MongoDB {
 
     public record ChampionRawDocuments(List<Document> documents, long matchReadNanos, long eventReadNanos) {}
 
+    public record ChampionRawMatch(Document document, long matchReadNanos, long eventReadNanos) {}
+
+    public static void forEachChampionRawMatch(Filter filter, Consumer<ChampionRawMatch> consumer) {
+        if (filter == null || consumer == null) return;
+        List<Bson> pipeline = List.of(
+                new Document("$match", championMatchFilter(filter, null)),
+                new Document("$sort", new Document("_id", 1)),
+                new Document("$lookup", new Document("from", "match_events")
+                        .append("localField", "_id")
+                        .append("foreignField", "_id")
+                        .append("as", "_event")),
+                new Document("$project", championRawProjection())
+        );
+        try (MongoCursor<Document> cursor = matches().aggregate(pipeline).batchSize(1).iterator()) {
+            while (cursor.hasNext()) {
+                long matchReadStarted = System.nanoTime();
+                Document document = cursor.next();
+                long matchReadNanos = System.nanoTime() - matchReadStarted;
+                long eventReadStarted = System.nanoTime();
+                Object eventValue = document.remove("_event");
+                if (eventValue instanceof List<?> events && !events.isEmpty()
+                        && events.get(0) instanceof Document event) {
+                    document.put("events", decodeMatchEventsJson(event));
+                }
+                long eventReadNanos = System.nanoTime() - eventReadStarted;
+                consumer.accept(new ChampionRawMatch(document, matchReadNanos, eventReadNanos));
+                document.clear();
+            }
+        }
+    }
+
     public static List<Document> findChampionRawDocuments(List<String> fullGameIds) {
         return findChampionRawDocumentsTimed(fullGameIds).documents();
     }
@@ -944,7 +975,7 @@ public final class MongoDB {
                 while (cursor.hasNext()) {
                     Document event = cursor.next();
                     Document match = byId.get(event.getString("_id"));
-                    if (match != null) match.put("events", decodeMatchEvents(event));
+                    if (match != null) match.put("events", decodeMatchEventsJson(event));
                 }
             }
             eventReadNanos = System.nanoTime() - eventReadStarted;
@@ -1641,7 +1672,17 @@ public final class MongoDB {
     }
 
     private static Map<String, Object> decodeMatchEvents(Document document) {
-        if (document == null) return new LinkedHashMap<>();
+        String data = decodeMatchEventsJson(document);
+        if (data.isEmpty()) return new LinkedHashMap<>();
+        try {
+            return new JSONObject(data).toMap();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("Invalid compressed match event JSON id=" + document.get("_id"), exception);
+        }
+    }
+
+    private static String decodeMatchEventsJson(Document document) {
+        if (document == null) return "";
         String encoding = document.getString("encoding");
         if (!"json".equals(encoding)) throw new IllegalStateException("Unsupported match event encoding=" + encoding + " id=" + document.get("_id"));
         String data = document.getString("data");
@@ -1650,11 +1691,7 @@ public final class MongoDB {
         byte[] decoded = data.getBytes(StandardCharsets.UTF_8);
         if (decoded.length != size) throw new IllegalStateException("Match event size mismatch id=" + document.get("_id"));
         if (!sha256(decoded).equals(document.getString("checksum"))) throw new IllegalStateException("Match event checksum mismatch id=" + document.get("_id"));
-        try {
-            return new JSONObject(new String(decoded, StandardCharsets.UTF_8)).toMap();
-        } catch (RuntimeException exception) {
-            throw new IllegalStateException("Invalid compressed match event JSON id=" + document.get("_id"), exception);
-        }
+        return new String(decoded, StandardCharsets.UTF_8);
     }
 
     private static byte[] eventJson(Map<String, Object> events) {
@@ -1807,6 +1844,22 @@ public final class MongoDB {
         }
         if (puuid != null) filters.add(Filters.elemMatch("participants", Filters.eq("puuid", puuid)));
         return filters.isEmpty() ? new Document() : Filters.and(filters);
+    }
+
+    private static Document championRawProjection() {
+        return new Document("_id", 1)
+                .append("bans", 1)
+                .append("timeStart", 1)
+                .append("timeEnd", 1)
+                .append("participants.champion", 1)
+                .append("participants.lane", 1)
+                .append("participants.win", 1)
+                .append("participants.team", 1)
+                .append("participants.kda", 1)
+                .append("participants.cs", 1)
+                .append("participants.goldEarned", 1)
+                .append("participants.puuid", 1)
+                .append("_event", 1);
     }
 
     private static Bson patchMajorFilter(String patch) {
