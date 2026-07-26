@@ -46,4 +46,15 @@ public class RedisKeyTest {
             assertTrue(key.ttlSeconds() >= 0);
         }
     }
+
+    @Test
+    public void profileComponentKeysAreScopedByPuuid() {
+        String firstRanks = RedisKey.PROFILE_RANKS.of("EUW1", "puuid-1");
+        String secondRanks = RedisKey.PROFILE_RANKS.of("EUW1", "puuid-2");
+        String firstMasteries = RedisKey.PROFILE_MASTERIES.of("EUW1", "puuid-1");
+        String secondMasteries = RedisKey.PROFILE_MASTERIES.of("EUW1", "puuid-2");
+
+        assertTrue(!firstRanks.equals(secondRanks));
+        assertTrue(!firstMasteries.equals(secondMasteries));
+    }
 }

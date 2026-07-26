@@ -49,7 +49,9 @@ public class ProfilePageService {
         List<Mastery> profileMasteries = completed(masteriesFuture);
         if (databaseStatistics == null) DatabaseTracker.startProfileStatistics(profile, filter);
 
-        List<MatchResult> recentMatches = statisticsService.getRecentMatches(profile.puuid(), shard, filter);
+        List<MatchResult> recentMatches = databaseStatistics == null
+            ? List.of()
+            : statisticsService.getRecentMatches(profile.puuid(), shard, filter);
         SummonerView page = SummonerView.from(profile, profileRanks, databaseStatistics, profileMasteries, recentMatches);
         if (databaseStatistics != null) {
             RedisClient.set(RedisKey.PROFILE_PAGE, withoutRecentMatches(page), shard.name(), puuid);

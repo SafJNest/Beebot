@@ -286,6 +286,9 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 
 | Dato | Chiave | TTL | Owner | Invalidazione |
 |---|---|---:|---|---|
+| profilo base | `PROFILE_BASE(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
+| rank profilo | `PROFILE_RANKS(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
+| mastery profilo | `PROFILE_MASTERIES(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
 | statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | 6h | `ProfileStatisticsService` | aggiornamento dopo upsert |
 | recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | 1h | `ProfileStatisticsService` | dopo refresh statistiche |
 | pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
@@ -304,7 +307,7 @@ L'API continua a restituire i modelli canonici `SummonerView` e `SummonerOvervie
 - `overview.statistics.lastUpdate` indica il completamento del calcolo;
 - `Match` completo resta riservato a dettagli e timeline.
 
-Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce il profilo disponibile come `PARTIAL`, interroga comunque gli ultimi cinque `MatchResult` senza events e accoda il refresh. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
+Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce subito il profilo disponibile come `PARTIAL` con `recentMatches` vuoti e accoda il refresh; la query dei recent match parte soltanto quando l'aggregato è disponibile. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
 
 ## Checklist per un futuro intervento
 
