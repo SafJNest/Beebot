@@ -11,6 +11,9 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 ## Decision
 
 - Redis keys do not contain cache schema version tokens; test data is reset manually with `FLUSHALL`.
+- `RedisKey` is the executable source of truth for every LoL Redis pattern and TTL. `Duration.ZERO` means persistent storage; positive durations are applied by `RedisClient` with `SETEX`.
+- The balanced cache policy is: persistent R4J identity and pending-match payloads; six hours for Mongo-backed profile components and R4J rank/mastery payloads; one hour for projections, searches and pages; twelve hours for rebuildable champion/leaderboard aggregates; ten minutes for spectator state; and five minutes for negative match lookups.
+- The R4J `MATCH` payload remains persistent until the match is persisted or intentionally discarded by the tracker. Queue members are removed only after a terminal successful/intentional outcome; transient Mongo or analysis errors leave the queue member and payload available for retry.
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
 - Profile misses use the `LeagueService` component flows. Every saved getter reads Redis, then Mongo, and returns `null` when the component was never loaded; every async getter starts or reuses a deduplicated Riot Future on a miss.
 - `ProfilePageService` starts the summoner, ranks and masteries Futures together. While one is incomplete the endpoint returns `202 profile_pending`; once the three components are ready, missing statistics still return the available profile as `PARTIAL` while `DatabaseTracker` queues the refresh.
@@ -28,6 +31,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Profile component lists are cached only after a confirmed Riot result; database or Riot failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - The existing Redis queue stores only matches already fetched from Riot.
+- Redis expiration is an optimization and never the correctness mechanism: explicit invalidation and successful Mongo writes remain authoritative.
 - Profile statistics are keyed by the complete `Filter.toSummonerKey()` together with the PUUID; recent matches are loaded separately from the same filter.
 - Mongo persists profile statistics flat. The application uses `{ puuid, filterKey }` as the logical identity; `_id` is a random ObjectId created only on insert and is not used for lookup.
 

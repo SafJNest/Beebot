@@ -45,7 +45,15 @@ public class RedisClient {
         } catch (Exception ignored) {}
     }
 
-    public static void set(String key, String value, int ttlSeconds) {
+    public static void set(RedisKey key, String value, Object... args) {
+        set(key.of(args), value, key.ttlSeconds());
+    }
+
+    public static <T> void set(RedisKey key, T value, Object... args) {
+        set(key.of(args), value, key.ttlSeconds());
+    }
+
+    private static void set(String key, String value, int ttlSeconds) {
         if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             if (ttlSeconds > 0) {
@@ -59,7 +67,7 @@ public class RedisClient {
         }
     }
 
-    public static <T> void set(String key, T value, int ttlSeconds) {
+    private static <T> void set(String key, T value, int ttlSeconds) {
         if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             if (ttlSeconds > 0) {
@@ -165,6 +173,21 @@ public class RedisClient {
             return jedis.sadd(key, element);
         }
         catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    public static Set<String> members(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            Set<String> members = jedis.smembers(key);
+            return members != null && !members.isEmpty() ? Set.copyOf(members) : Set.of();
+        }
+    }
+
+    public static long removeMember(String key, String element) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.srem(key, element);
+        } catch (Exception ignored) {
             return 0;
         }
     }

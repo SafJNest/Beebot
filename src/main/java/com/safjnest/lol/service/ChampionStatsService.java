@@ -92,7 +92,9 @@ public final class ChampionStatsService {
             BotLogger.info("Saving champion stats for " + filter.genericKey());
             MongoDB.upsertChampionStatistics(computed);
             for (ChampionStatistics statistic : computed.values()) RedisClient.set(
-                RedisKey.CHAMPION_STATS.of(statistic.filter().genericKey(), statistic.filter().champion()), statistic, 0);
+                RedisKey.CHAMPION_STATS,
+                statistic,
+                statistic.filter().genericKey(), statistic.filter().champion());
             BotLogger.info("Champion stats persisted: filter=" + filter.genericKey()
                 + ", champions=" + computed.size() + ", persistenceMs="
                 + millis(System.nanoTime() - persistenceStarted) + ", totalMs="
@@ -124,14 +126,14 @@ public final class ChampionStatsService {
             return null;
         }
         if (stats != null) {
-            RedisClient.set(key, stats, 0);
+            RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
             return stats;
         }
         if (!allowCompute) return null;
 
         Map<Integer, ChampionStatistics> computed = compute(filter, true);
         stats = computed == null ? null : computed.get(filter.champion());
-        if (stats != null) RedisClient.set(key, stats, 0);
+        if (stats != null) RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
         return stats;
     }
 
@@ -668,8 +670,10 @@ public final class ChampionStatsService {
     private static void save(Map<Integer, ChampionStatistics> stats) {
         for (ChampionStatistics statistic : stats.values()) {
             ChronoTask saveTask = () -> MongoDB.upsertChampionStatistics(statistic);
-            RedisClient.set(RedisKey.CHAMPION_STATS.of(
-                statistic.filter().genericKey(), statistic.filter().champion()), statistic, 0);
+            RedisClient.set(
+                RedisKey.CHAMPION_STATS,
+                statistic,
+                statistic.filter().genericKey(), statistic.filter().champion());
             saveTask.queue();
         }
     }

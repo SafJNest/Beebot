@@ -18,8 +18,6 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class ChampionPageService {
 
-    private static final int TTL_PAGE = 60 * 5;
-
     public ApiResult<ChampionView> get(
             String championValue,
             TierType rank,
@@ -78,7 +76,7 @@ public class ChampionPageService {
             stats,
             build
         );
-        RedisClient.set(key, page, TTL_PAGE);
+        RedisClient.set(RedisKey.CHAMPION_PAGE, page, filter.toKey());
         return ApiResult.ready(page);
     }
 

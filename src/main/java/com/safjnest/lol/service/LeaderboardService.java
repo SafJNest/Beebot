@@ -30,9 +30,6 @@ public class LeaderboardService {
     public static final int DEFAULT_PAGE_SIZE = 50;
     private static final int MAX_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
-    private static final int TTL_LEADERBOARD = 60 * 5;
-    private static final int TTL_DISTRIBUTION = 60 * 5;
-
     private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
 
     public ApiResult<LeaderboardPage> getLeaderboard(
@@ -83,37 +80,51 @@ public class LeaderboardService {
         }
 
         LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, leaderboardSummoners);
-        if (statisticsBySummoner.size() == summoners.size()) RedisClient.set(key, response, TTL_LEADERBOARD);
+        if (statisticsBySummoner.size() == summoners.size()) RedisClient.set(
+            RedisKey.LEADERBOARD_PAGE,
+            response,
+            version, rankKey, selectedQueue.name(), selectedRegion, page, limit
+        );
         return ApiResult.ready(response);
     }
 
     public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
         String selectedRegion = defaultRegion(region);
+        long version = cacheVersion();
         String key = RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(
-            cacheVersion(), selectedQueue.name(), selectedRegion
+            version, selectedQueue.name(), selectedRegion
         );
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
 
         List<LeaderboardDistribution.Entry> entries = MongoDB.findRankDistribution(selectedQueue, selectedRegion);
         LeaderboardDistribution response = new LeaderboardDistribution(entries);
-        RedisClient.set(key, response, TTL_DISTRIBUTION);
+        RedisClient.set(
+            RedisKey.LEADERBOARD_RANK_DISTRIBUTION,
+            response,
+            version, selectedQueue.name(), selectedRegion
+        );
         return response;
     }
 
     public LeaderboardDistribution getTopRegions(GameQueueType queue, TierType rank) {
         requireRank(rank);
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
+        long version = cacheVersion();
         String key = RedisKey.LEADERBOARD_TOP_REGIONS.of(
-            cacheVersion(), selectedQueue.name(), rank.name()
+            version, selectedQueue.name(), rank.name()
         );
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
 
         List<LeaderboardDistribution.Entry> entries = MongoDB.findTopRegions(selectedQueue, rank);
         LeaderboardDistribution response = new LeaderboardDistribution(entries);
-        RedisClient.set(key, response, TTL_DISTRIBUTION);
+        RedisClient.set(
+            RedisKey.LEADERBOARD_TOP_REGIONS,
+            response,
+            version, selectedQueue.name(), rank.name()
+        );
         return response;
     }
 

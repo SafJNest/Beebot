@@ -63,7 +63,6 @@ public class Tracker {
 
     private static final int MATCH_LOOKUP_BATCH_SIZE = 5;
     private static final int MATCH_LOOKUP_MAX_RETRIES = 3;
-    private static final int MATCH_LOOKUP_NOT_FOUND_TTL = 60 * 5;
     private static final Queue<MatchLookupRequest> MATCH_LOOKUP_QUEUE = new ConcurrentLinkedQueue<>();
     private static final Set<String> MATCH_LOOKUP_PENDING = ConcurrentHashMap.newKeySet();
     private static final Map<String, Integer> MATCH_LOOKUP_RETRIES = new ConcurrentHashMap<>();
@@ -182,7 +181,15 @@ public class Tracker {
     }
     
     public static Set<LOLMatch> popQueue() {
-        Set<String> ids = RedisClient.smembers(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
+        return readQueue();
+    }
+
+    public static Set<LOLMatch> copyQueue() {
+        return readQueue();
+    }
+
+    private static Set<LOLMatch> readQueue() {
+        Set<String> ids = RedisClient.members(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
         Set<LOLMatch> matches = new HashSet<>();
         for (String id : ids) {
             if (id == null || !id.contains("_")) continue;
@@ -194,10 +201,6 @@ public class Tracker {
         }
         return matches;
     }
-    
-    public static Set<LOLMatch> copyQueue() {
-        return popQueue();
-    }
 
     private static void retryMatchLookup(MatchLookupRequest request) {
         int retries = MATCH_LOOKUP_RETRIES.merge(request.key(), 1, Integer::sum);
@@ -207,9 +210,9 @@ public class Tracker {
         }
 
         RedisClient.set(
-            RedisKey.MATCH_NOT_FOUND.of(request.shard().name(), request.gameId()),
+            RedisKey.MATCH_NOT_FOUND,
             "1",
-            MATCH_LOOKUP_NOT_FOUND_TTL
+            request.shard().name(), request.gameId()
         );
         completeMatchLookup(request);
     }
@@ -300,12 +303,19 @@ public class Tracker {
 
     private static void trackMatch(LOLMatch source, Summoner trackedSummoner, List<String> knownMatchIds) {
         if (source == null) return;
-        if (!SeasonUtils.isCurrentSplit(source.getGameStartTimestamp()) && source.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
-        if (isRemake(source)) return;
 
         String currentFullGameId = fullGameId(source);
+        if (!SeasonUtils.isCurrentSplit(source.getGameStartTimestamp()) && source.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) {
+            removeQueuedMatch(source);
+            return;
+        }
+        if (isRemake(source)) {
+            removeQueuedMatch(source);
+            return;
+        }
         if (MongoDB.hasMatch(currentFullGameId)) {
             BotLogger.info("[LPTracker] Match " + source.getGameId() + " already tracked");
+            removeQueuedMatch(source);
             return;
         }
 
@@ -335,12 +345,20 @@ public class Tracker {
         }
 
         match.rank = TierDivisionUtils.getAverageRank(ranks);
-        MongoDB.upsertMatch(currentFullGameId, match);
+        if (!MongoDB.upsertMatch(currentFullGameId, match)) return;
+        removeQueuedMatch(source);
         LeagueService.invalidateMatchDetail(source.getPlatform(), String.valueOf(source.getGameId()));
 
         if (trackedSummoner != null) {
             BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(trackedSummoner) + " (" + trackedSummoner.getAccountId() + ")");
         }
+    }
+
+    private static void removeQueuedMatch(LOLMatch match) {
+        if (match == null) return;
+
+        RedisClient.removeMember(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), fullGameId(match));
+        LeagueService.deleteR4JMatch(fullGameId(match), match.getPlatform());
     }
 
     static int calculateGain(GameQueueType queue, TierDivisionType division, int lp, Participant previousParticipant) {

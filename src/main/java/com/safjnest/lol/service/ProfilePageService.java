@@ -23,7 +23,6 @@ public class ProfilePageService {
 
     private static final AtomicBoolean ALL_PROFILE_STATS_REFRESH_RUNNING = new AtomicBoolean(false);
     private static final int MIN_PROFILE_GAMES = 5;
-    private static final int TTL_PROFILE_PAGE = 60 * 5;
 
     private final ProfileStatisticsService statisticsService = new ProfileStatisticsService();
 
@@ -53,7 +52,7 @@ public class ProfilePageService {
         List<MatchResult> recentMatches = statisticsService.getRecentMatches(profile.puuid(), shard, filter);
         SummonerView page = SummonerView.from(profile, profileRanks, databaseStatistics, profileMasteries, recentMatches);
         if (databaseStatistics != null) {
-            RedisClient.set(key, withoutRecentMatches(page), TTL_PROFILE_PAGE);
+            RedisClient.set(RedisKey.PROFILE_PAGE, withoutRecentMatches(page), shard.name(), puuid);
             return ApiResult.ready(page);
         }
         return ApiResult.partial(page);

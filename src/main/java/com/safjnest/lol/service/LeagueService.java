@@ -46,19 +46,6 @@ public class LeagueService {
 
     private record SummonerAutocompleteChoice(String riotId, String puuid) {}
 
-    private static final int TTL_SUMMONER = 0;
-    private static final int TTL_ACCOUNT = 0;
-    private static final int TTL_LEAGUE_ENTRIES = 60 * 60 * 24;
-    private static final int TTL_CHAMPION_MASTERIES = 60 * 60 * 24;
-    private static final int TTL_PROFILE_COMPONENT = 60 * 15;
-    private static final int TTL_SPECTATOR = 600;
-    private static final int TTL_MATCH_LIST = 60 * 60 * 4;
-    private static final int TTL_MATCH = 0;
-    private static final int TTL_MATCH_DETAIL = 0;
-    private static final int TTL_SUMMONER_AUTOCOMPLETE = 60 * 60 * 24;
-    private static final int TTL_SUMMONER_SEARCH = 60 * 15;
-    private static final int TTL_PROFILE_BASE = 60 * 60;
-
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<List<ChampionMastery>> CHAMPION_MASTERIES_TYPE =
@@ -96,7 +83,7 @@ public class LeagueService {
         if (cached != null) return cached;
 
         Summoner stored = MongoDB.findSummoner(puuid, shard);
-        if (stored != null) RedisClient.set(key, stored, TTL_PROFILE_BASE);
+        if (stored != null) RedisClient.set(RedisKey.PROFILE_BASE, stored, shard.name(), puuid);
         return stored;
     }
 
@@ -160,7 +147,7 @@ public class LeagueService {
         if (userId != null) return userId;
 
         userId = MongoDB.findUserIdByPuuid(puuid, shard);
-        if (userId != null) RedisClient.set(key, userId, TTL_SUMMONER);
+        if (userId != null) RedisClient.set(RedisKey.USER_ID_BY_PUUID, userId, shard.name(), puuid);
         return userId;
     }
 
@@ -183,7 +170,7 @@ public class LeagueService {
         return shared(ACCOUNTS, key, () -> {
             RiotAccount account = riotApi.getAccountAPI().getAccountByPUUID(
                 LeagueShardUtils.getAccountRegion(shard), puuid);
-            if (account != null) RedisClient.set(RedisKey.ACCOUNT.of(shard.name(), puuid), account, TTL_ACCOUNT);
+            if (account != null) RedisClient.set(RedisKey.ACCOUNT, account, shard.name(), puuid);
             return account;
         });
     }
@@ -196,8 +183,8 @@ public class LeagueService {
             RiotAccount account = riotApi.getAccountAPI().getAccountByTag(
                 LeagueShardUtils.getAccountRegion(shard), name, tag);
             if (account != null) {
-                RedisClient.set(RedisKey.ACCOUNT_BY_NAME.of(shard.name(), name, tag), account, TTL_ACCOUNT);
-                RedisClient.set(RedisKey.ACCOUNT.of(shard.name(), account.getPUUID()), account, TTL_ACCOUNT);
+                RedisClient.set(RedisKey.ACCOUNT_BY_NAME, account, shard.name(), name, tag);
+                RedisClient.set(RedisKey.ACCOUNT, account, shard.name(), account.getPUUID());
             }
             return account;
         });
@@ -259,7 +246,7 @@ public class LeagueService {
         if (cached != null) return cached;
 
         List<Rank> stored = MongoDB.findRanks(puuid, shard);
-        if (stored != null) RedisClient.set(key, stored, TTL_PROFILE_COMPONENT);
+        if (stored != null) RedisClient.set(RedisKey.PROFILE_RANKS, stored, shard.name(), puuid);
         return stored;
     }
 
@@ -334,7 +321,7 @@ public class LeagueService {
         }
         if (!updated) entries.add(entry);
 
-        RedisClient.set(key, entries, TTL_LEAGUE_ENTRIES);
+        RedisClient.set(RedisKey.LEAGUE_ENTRIES, entries, shard.name(), entry.getPuuid());
         if (getSummoner(entry.getPuuid(), shard) == null) return;
         saveRankData(entry.getPuuid(), shard, toRanks(entries));
     }
@@ -353,7 +340,7 @@ public class LeagueService {
             mmr.put(rank.queue(), rankMmr);
         }
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
-        RedisClient.set(RedisKey.PROFILE_RANKS.of(shard.name(), puuid), ranks, TTL_PROFILE_COMPONENT);
+        RedisClient.set(RedisKey.PROFILE_RANKS, ranks, shard.name(), puuid);
         invalidateProfilePage(puuid, shard);
     }
 
@@ -367,7 +354,7 @@ public class LeagueService {
         if (cached != null) return cached;
 
         List<Mastery> stored = MongoDB.findMasteries(puuid, shard);
-        if (stored != null) RedisClient.set(key, stored, TTL_PROFILE_COMPONENT);
+        if (stored != null) RedisClient.set(RedisKey.PROFILE_MASTERIES, stored, shard.name(), puuid);
         return stored;
     }
 
@@ -384,9 +371,9 @@ public class LeagueService {
                 riotMasteries = riotApi.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
                 if (riotMasteries == null) throw new IllegalStateException("Riot returned no mastery result");
                 RedisClient.set(
-                    RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid),
+                    RedisKey.CHAMPION_MASTERIES,
                     riotMasteries,
-                    TTL_CHAMPION_MASTERIES
+                    shard.name(), puuid
                 );
             }
 
@@ -427,7 +414,7 @@ public class LeagueService {
 
         try {
             SpectatorGameInfo game = riotApi.getLoLAPI().getSpectatorAPI().getCurrentGame(shard, puuid);
-            if (game != null) RedisClient.set(key, game, TTL_SPECTATOR);
+            if (game != null) RedisClient.set(RedisKey.SPECTATOR_CURRENT, game, shard.name(), puuid);
             return game;
         } catch (Exception exception) {
             return null;
@@ -450,7 +437,7 @@ public class LeagueService {
         Match stored = MongoDB.findMatch(fullGameId(gameId, shard));
         if (stored != null) {
             stored.restoreEvents();
-            RedisClient.set(key, stored, TTL_MATCH_DETAIL);
+            RedisClient.set(RedisKey.MATCH_DETAIL, stored, shard.name(), databaseGameId);
         }
         return stored;
     }
@@ -501,7 +488,7 @@ public class LeagueService {
         return shared(R4J_MATCHES, key, () -> {
             LOLMatch match = riotApi.getLoLAPI().getMatchAPI().getMatch(region, fullGameId);
             if (match != null) {
-                RedisClient.set(RedisKey.MATCH.of(region.name(), fullGameId), match, TTL_MATCH);
+                RedisClient.set(RedisKey.MATCH, match, region.name(), fullGameId);
             }
             return match;
         });
@@ -518,6 +505,13 @@ public class LeagueService {
         } catch (CompletionException exception) {
             return null;
         }
+    }
+
+    public static void deleteR4JMatch(String gameId, LeagueShard shard) {
+        if (!valid(gameId, shard)) return;
+
+        RegionShard region = shard.toRegionShard();
+        RedisClient.delete(RedisKey.MATCH.of(region.name(), fullGameId(gameId, shard)));
     }
 
     public static ApiResult<Match> getMatchDetail(String gameId, LeagueShard shard) {
@@ -544,7 +538,7 @@ public class LeagueService {
     public static String putR4JMatch(LOLMatch match) {
         String gameId = fullGameId(String.valueOf(match.getGameId()), match.getPlatform());
         RegionShard region = match.getPlatform().toRegionShard();
-        RedisClient.set(RedisKey.MATCH.of(region.name(), gameId), match, TTL_MATCH);
+        RedisClient.set(RedisKey.MATCH, match, region.name(), gameId);
         RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(match.getPlatform().name(), String.valueOf(match.getGameId())));
         return gameId;
     }
@@ -561,7 +555,8 @@ public class LeagueService {
         if (cached != null) return cached;
 
         List<String> matchList = summoner.getLeagueGames().withQueue(queue).withBeginIndex(index).get();
-        if (matchList != null) RedisClient.set(key, matchList, TTL_MATCH_LIST);
+        if (matchList != null) RedisClient.set(RedisKey.MATCH_LIST, matchList,
+            summoner.getPlatform().name(), summoner.getPUUID(), queueKey, index);
         return matchList != null ? matchList : new ArrayList<>();
     }
 
@@ -578,7 +573,7 @@ public class LeagueService {
             Rank rank = row.soloRank() != null ? row.soloRank() : Rank.unranked();
             summoners.add(SummonerView.from(row.summoner(), List.of(rank), new ProfileStatistics(), List.of()));
         }
-        RedisClient.set(key, summoners, TTL_SUMMONER_SEARCH);
+        RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, shard.name(), normalizedQuery);
         return summoners;
     }
 
@@ -596,7 +591,7 @@ public class LeagueService {
         for (MongoDB.SummonerSearchResult row : MongoDB.findSummonerSearch(normalizedQuery, shard, 25)) {
             choices.add(new SummonerAutocompleteChoice(row.summoner().riotId(), row.summoner().puuid()));
         }
-        RedisClient.set(key, choices, TTL_SUMMONER_AUTOCOMPLETE);
+        RedisClient.set(RedisKey.SUMMONER_AUTOCOMPLETE, choices, shard.name(), normalizedQuery);
         return toChoices(choices);
     }
 
@@ -665,7 +660,7 @@ public class LeagueService {
             Long.MAX_VALUE,
             GameQueueType.TEAM_BUILDER_RANKED_SOLO
         );
-        RedisClient.set(key, result, TTL_MATCH);
+        RedisClient.set(RedisKey.SUMMONER_DATA, result, puuid, shard.name());
         return result;
     }
 
@@ -703,7 +698,7 @@ public class LeagueService {
             List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
             if (entries == null) throw new IllegalStateException("Riot returned no rank result");
 
-            RedisClient.set(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid), entries, TTL_LEAGUE_ENTRIES);
+            RedisClient.set(RedisKey.LEAGUE_ENTRIES, entries, shard.name(), puuid);
             return entries;
         });
     }
@@ -764,8 +759,8 @@ public class LeagueService {
             source.getProfileIconId()
         );
         MongoDB.upsertSummoner(result, null);
-        RedisClient.set(RedisKey.SUMMONER.of(source.getPlatform().name(), source.getPUUID()), source, TTL_SUMMONER);
-        RedisClient.set(RedisKey.PROFILE_BASE.of(source.getPlatform().name(), source.getPUUID()), result, TTL_PROFILE_BASE);
+        RedisClient.set(RedisKey.SUMMONER, source, source.getPlatform().name(), source.getPUUID());
+        RedisClient.set(RedisKey.PROFILE_BASE, result, source.getPlatform().name(), source.getPUUID());
         return result;
     }
 
@@ -803,7 +798,7 @@ public class LeagueService {
             }
         }
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
-        RedisClient.set(RedisKey.PROFILE_RANKS.of(shard.name(), puuid), ranks, TTL_PROFILE_COMPONENT);
+        RedisClient.set(RedisKey.PROFILE_RANKS, ranks, shard.name(), puuid);
         invalidateProfilePage(puuid, shard);
     }
 
@@ -811,7 +806,7 @@ public class LeagueService {
         if (!valid(puuid, shard) || masteries == null) return;
 
         MongoDB.upsertMasteries(puuid, shard, masteries);
-        RedisClient.set(RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid), masteries, TTL_PROFILE_COMPONENT);
+        RedisClient.set(RedisKey.PROFILE_MASTERIES, masteries, shard.name(), puuid);
         invalidateProfilePage(puuid, shard);
     }
 
@@ -873,12 +868,13 @@ public class LeagueService {
         if (match == null || match.gameId == null || match.gameId.isBlank() || match.leagueShard == null) return;
 
         String fullGameId = fullGameId(match.gameId, match.leagueShard);
-        MongoDB.upsertMatch(fullGameId, match);
+        if (!MongoDB.upsertMatch(fullGameId, match)) return;
         RedisClient.set(
-            RedisKey.MATCH_DETAIL.of(match.leagueShard.name(), databaseGameId(fullGameId)),
+            RedisKey.MATCH_DETAIL,
             match,
-            TTL_MATCH_DETAIL
+            match.leagueShard.name(), databaseGameId(fullGameId)
         );
+        deleteR4JMatch(fullGameId, match.leagueShard);
     }
 
     private static List<Choice> toChoices(List<SummonerAutocompleteChoice> autocompleteChoices) {

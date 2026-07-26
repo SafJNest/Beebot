@@ -284,12 +284,14 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 
 ## Cache e invalidazione
 
-| Dato | Chiave | Owner | Invalidazione |
-|---|---|---|---|
-| statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | `ProfileStatisticsService` | aggiornamento dopo upsert |
-| recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | `ProfileStatisticsService` | dopo refresh statistiche |
-| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
-| match raw | chiavi match esistenti | `LeagueService`/`Tracker` | secondo il flusso match |
+| Dato | Chiave | TTL | Owner | Invalidazione |
+|---|---|---:|---|---|
+| statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | 6h | `ProfileStatisticsService` | aggiornamento dopo upsert |
+| recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | 1h | `ProfileStatisticsService` | dopo refresh statistiche |
+| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
+| match raw | chiavi match esistenti | secondo `RedisKey` | `LeagueService`/`Tracker` | secondo il flusso match |
+
+I TTL sono definiti esclusivamente da `RedisKey`; la scadenza riduce la permanenza delle proiezioni, ma non sostituisce l’invalidazione esplicita dopo un refresh riuscito.
 
 Non usare la cache della profile page come fonte di verità per le statistiche. La fonte è sempre `ProfileStatistics` letto con il filtro completo; la pagina è una composizione derivata.
 

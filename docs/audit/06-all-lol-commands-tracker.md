@@ -117,7 +117,7 @@ Nel ramo OP.GG che legge `List<QueryRecord>`, `previousRow` viene individuata co
 
 ### P2 — sincronizzazione cache
 
-Le cache Redis del profile e dell’OP.GG hanno TTL propri. Una riconciliazione deve invalidare `PROFILE_STATISTICS`, `PROFILE_RECENT_MATCHES`, `SUMMONER_DATA` e la profile page dopo un batch Tracker completato.
+I TTL Redis del profile e dell’OP.GG sono centralizzati in `RedisKey`. Una riconciliazione deve comunque invalidare `PROFILE_STATISTICS`, `PROFILE_RECENT_MATCHES`, `SUMMONER_DATA` e la profile page dopo un batch Tracker completato: il TTL è un limite di permanenza, non una garanzia di coerenza.
 
 ## Verdetto
 

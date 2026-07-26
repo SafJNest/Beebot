@@ -19,8 +19,6 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public class ProfileStatisticsService {
 
-    private static final int TTL_PROFILE_STATISTICS = 60 * 60;
-    private static final int TTL_PROFILE_RECENT_MATCHES = 60 * 5;
     private static final TypeReference<List<MatchResult>> RECENT_MATCHES_TYPE = new TypeReference<>() {};
 
     public ProfileStatistics get(String puuid, Filter filter) {
@@ -72,7 +70,7 @@ public class ProfileStatisticsService {
         List<MatchResult> cached = RedisClient.get(key, RECENT_MATCHES_TYPE);
         if (cached != null) return cached;
         List<MatchResult> result = MongoDB.findProfileRecentMatches(puuid, shard, filter, 5);
-        RedisClient.set(key, result, TTL_PROFILE_RECENT_MATCHES);
+        RedisClient.set(RedisKey.PROFILE_RECENT_MATCHES, result, puuid, filter.toSummonerKey());
         return result;
     }
 
@@ -102,7 +100,7 @@ public class ProfileStatisticsService {
     // ============================================================================
 
     private void cache(String puuid, Filter filter, ProfileStatistics statistics) {
-        RedisClient.set(redisKey(puuid, filter), statistics, TTL_PROFILE_STATISTICS);
+        RedisClient.set(RedisKey.PROFILE_STATISTICS, statistics, puuid, filter.toSummonerKey());
     }
 
     private static long currentEnd(Filter filter) {
