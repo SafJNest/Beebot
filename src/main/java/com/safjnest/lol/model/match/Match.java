@@ -67,6 +67,8 @@ public class Match extends AbstractEntity<Match> {
     public Match setPatch(String patch) {
         this.patch = patch;
         setValue("patch", patch);
+        if (patch == null || patch.isBlank()) unsetValue("patchMajor");
+        else setValue("patchMajor", patchMajor(patch));
         return this;
     }
 
@@ -134,13 +136,7 @@ public class Match extends AbstractEntity<Match> {
     @Override
     protected Map<String, Object> snapshotValues() {
         Map<String, Object> values = new java.util.LinkedHashMap<>();
-        String fullGameId = entityId();
-        String publicGameId = fullGameId.substring(fullGameId.indexOf('_') + 1);
-        values.put("fullGameId", fullGameId);
-        values.put("gameId", publicGameId);
-        values.put("game_id", publicGameId);
         values.put("region", leagueShard);
-        values.put("leagueShard", leagueShard);
         values.put("lastUpdate", lastUpdate);
         values.put("timeStart", timeStart);
         values.put("timeEnd", timeEnd);
@@ -148,8 +144,20 @@ public class Match extends AbstractEntity<Match> {
         values.put("participants", participants == null ? List.of() : participants);
         if (queue != null) values.put("queue", queue);
         if (rank != null) values.put("rank", rank);
-        if (patch != null) values.put("patch", patch);
+        if (patch != null) {
+            values.put("patch", patch);
+            values.put("patchMajor", patchMajor(patch));
+        }
         return values;
+    }
+
+    private static String patchMajor(String patch) {
+        String value = patch == null ? null : patch.trim();
+        if (value == null || value.isBlank()) return null;
+        int firstSeparator = value.indexOf('.');
+        if (firstSeparator < 0) return value;
+        int secondSeparator = value.indexOf('.', firstSeparator + 1);
+        return secondSeparator < 0 ? value : value.substring(0, secondSeparator);
     }
 
     private Participant findParticipant(String puuid) {

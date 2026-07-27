@@ -5,6 +5,10 @@
 - Date: 2026-07-17
 - Approved: 2026-07-18, main-agent approval after the full implementation request
 
+## Amendment 2026-07-27
+
+Il documento `match` usa il full Riot match ID direttamente in `_id` e `region` come unico campo di shard. `fullGameId`, `gameId`, `game_id` e `leagueShard` sono residui di mapping e non vengono persistiti. `patch` conserva la versione completa, mentre `patchMajor` conserva i primi due segmenti, per esempio `14.2`, ed è il campo usato dai filtri Mongo. La migration `raw-v6-match-schema` normalizza anche i match già presenti senza riscrivere participant o eventi. Il contratto HTTP resta invariato: `Match` continua a essere il modello canonico della response.
+
 ## Amendment 2026-07-26
 
 La leaderboard mantiene `summoner.ranks[]` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution e top-region: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina e il totale restano derivati dai rank embedded; Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
@@ -71,7 +75,7 @@ La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di c
 
 `App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
 
-Il codice possiede il bootstrap delle collection e degli indici secondari dichiarati. Il bootstrap è idempotente e non esegue drop automatici; gli indici esistenti compatibili vengono riutilizzati, mentre quelli in conflitto richiedono una migrazione operativa esplicita. Il nuovo flusso non richiede cleanup automatici; l'operatore rimuove manualmente i payload obsoleti o i duplicati prima della rigenerazione.
+Il codice possiede il bootstrap delle collection e degli indici secondari dichiarati. Il bootstrap è idempotente e non esegue drop automatici; gli indici esistenti compatibili vengono riutilizzati, mentre quelli in conflitto richiedono una migrazione operativa esplicita. Il nuovo flusso non richiede cleanup automatici generali; la migration di schema del match normalizza soltanto i residui identificati da questa ADR. L'operatore rimuove manualmente gli altri payload obsoleti o duplicati prima della rigenerazione.
 
 ## Compatibilità API
 

@@ -20,7 +20,7 @@ Le fasi sono eseguite in questo ordine:
 2. `matches` → collection `match`, con `participants[]` flat nel documento;
 3. `match_events` → payload eventi separato, solo quando il documento evento non esiste.
 
-Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre match, rank, mastery e participant non conservano identificativi numerici MariaDB. Il run non esegue cleanup o conversione in-place: i dati obsoleti vengono rimossi manualmente dall'operatore.
+Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre il documento `match` usa `_id` come full Riot match ID e conserva solo `region` tra i dati di shard. Match, rank, mastery e participant non conservano identificativi numerici MariaDB. La migration normalizza i match già presenti rimuovendo i campi legacy duplicati e aggiungendo `patchMajor`; non modifica participant o eventi esistenti.
 
 Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatchDocument()` e `MongoDB.upsertMatchEvents()`: prima viene sostituito il documento `match`, poi il payload JSON viene sostituito in `match_events`, la cui compressione è delegata a WiredTiger Zstandard livello 9. Il documento `match` non contiene più `events`.
 
@@ -51,7 +51,7 @@ Non viene usato `OFFSET`, non viene materializzato il risultato completo e non v
 
 `migration_runs` contiene run, fase, high-water mark, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
 
-Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v5-missing-only`. Prima di ogni query pesante il runner ricontrolla gli `_id` presenti in Mongo, quindi un batch già completato non viene riletto da MariaDB. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
+Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v6-match-schema`. Prima di ogni query pesante il runner ricontrolla gli `_id` presenti in Mongo; i match già presenti vengono inoltre normalizzati senza rilettura da MariaDB, mentre un match mancante viene caricato dal backfill. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
 
 `highWaterMark > 0` permette di fermare intenzionalmente il backfill a un id. In quel caso il checkpoint resta `PAUSED` e può essere ripreso senza perdere la pagina già completata.
 

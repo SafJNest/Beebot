@@ -24,9 +24,10 @@ public class ProfileStatisticsService {
     public ProfileStatistics get(String puuid, Filter filter) {
         if (puuid == null || filter == null) return null;
         ProfileStatistics statistics = RedisClient.get(redisKey(puuid, filter), ProfileStatistics.class);
-        if (statistics != null) return statistics;
+        if (isCurrent(statistics)) return statistics;
         statistics = MongoDB.findProfileStatistics(puuid, filter);
-        if (statistics != null) cache(puuid, filter, statistics);
+        if (!isCurrent(statistics)) return null;
+        cache(puuid, filter, statistics);
         return statistics;
     }
 
@@ -47,12 +48,13 @@ public class ProfileStatisticsService {
         }
         for (Map.Entry<String, ProfileStatistics> entry : RedisClient.get(keys, ProfileStatistics.class).entrySet()) {
             String puuid = keysByRedisKey.get(entry.getKey());
-            if (puuid != null) result.put(puuid, entry.getValue());
+            if (puuid != null && isCurrent(entry.getValue())) result.put(puuid, entry.getValue());
         }
         for (String puuid : puuids) if (!result.containsKey(puuid)) missing.add(puuid);
         if (!missing.isEmpty()) {
             Map<String, ProfileStatistics> stored = MongoDB.findProfileStatistics(missing, filter);
             for (Map.Entry<String, ProfileStatistics> entry : stored.entrySet()) {
+                if (!isCurrent(entry.getValue())) continue;
                 result.put(entry.getKey(), entry.getValue());
                 cache(entry.getKey(), filter, entry.getValue());
             }
@@ -98,6 +100,10 @@ public class ProfileStatisticsService {
     }
 
     // ============================================================================
+
+    private static boolean isCurrent(ProfileStatistics statistics) {
+        return statistics != null && statistics.hasChampionContext();
+    }
 
     private void cache(String puuid, Filter filter, ProfileStatistics statistics) {
         RedisClient.set(RedisKey.PROFILE_STATISTICS, statistics, puuid, filter.toSummonerKey());

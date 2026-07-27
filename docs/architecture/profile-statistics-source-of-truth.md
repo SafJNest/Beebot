@@ -111,6 +111,33 @@ Non deve esistere il campo root `statistics` per i nuovi documenti. `ProfileStat
 - summoner spell;
 - metriche di performance e timestamp di primo/ultimo match.
 
+Ogni elemento di `championStats` mantiene le metriche aggregate del champion e
+può includere `context`, una lista di mappe queue/lane. Le queue usano i nomi
+canonici R4J; `TEAM_BUILDER_RANKED_SOLO` viene esposta come
+`RANKED_SOLO_5X5` nel contesto. Le queue senza lane usano una sola chiave
+`UNKNOWN`:
+
+```json
+"context": [
+  {
+    "RANKED_SOLO_5X5": {
+      "TOP": {},
+      "MID": {}
+    }
+  },
+  {
+    "CHERRY": {
+      "UNKNOWN": {}
+    }
+  }
+]
+```
+
+I valori sotto ogni lane hanno lo stesso set completo di metriche di `Stats`.
+`context` non viene serializzato su `total`, `queueStats` o `laneStats` quando
+è vuoto. I dati senza lane in una queue che normalmente supporta le lane non
+entrano nel contesto, ma continuano a contribuire agli aggregati generici.
+
 `timeStart` e `timeEnd` nel payload descrivono l'intervallo/progresso dei dati aggregati. L'identità completa del filtro, inclusa la fine del periodo richiesto, è `filterKey`.
 
 `lastUpdate` viene assegnato soltanto dopo aver terminato la scansione e il calcolo dei match. È il timestamp che Discord e API mostrano per indicare quando l'aggregato è stato calcolato.
@@ -297,7 +324,11 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 | pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
 | match raw | chiavi match esistenti | secondo `RedisKey` | `LeagueService`/`Tracker` | secondo il flusso match |
 
-I TTL sono definiti esclusivamente da `RedisKey`; la scadenza riduce la permanenza delle proiezioni, ma non sostituisce l’invalidazione esplicita dopo un refresh riuscito.
+Un aggregato Mongo privo di `championStats[*].context` viene trattato come
+obsoleto e rigenerato da `DatabaseTracker`. I TTL delle chiavi Redis restano
+definiti esclusivamente da `RedisKey`; la scadenza riduce la permanenza delle
+proiezioni, ma non sostituisce l’invalidazione esplicita dopo un refresh
+riuscito.
 
 Non usare la cache della profile page come fonte di verità per le statistiche. La fonte è sempre `ProfileStatistics` letto con il filtro completo; la pagina è una composizione derivata.
 
@@ -306,6 +337,7 @@ Non usare la cache della profile page come fonte di verità per le statistiche. 
 L'API continua a restituire i modelli canonici `SummonerView` e `SummonerOverview`. Nel JSON pubblico:
 
 - `overview.statistics` contiene l'aggregato filtrato;
+- `overview.statistics.championStats[*].context` distingue ogni champion per queue canonica e lane;
 - `overview.recentMatches` contiene la lista leggera separata;
 - `overview.statistics.lastUpdate` indica il completamento del calcolo;
 - `Match` completo resta riservato a dettagli e timeline.

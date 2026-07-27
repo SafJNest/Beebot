@@ -13,7 +13,6 @@ import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
-import com.safjnest.lol.service.LeagueService;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;

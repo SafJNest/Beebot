@@ -53,8 +53,12 @@ public class RedisKeyTest {
         String secondRanks = RedisKey.PROFILE_RANKS.of("EUW1", "puuid-2");
         String firstMasteries = RedisKey.PROFILE_MASTERIES.of("EUW1", "puuid-1");
         String secondMasteries = RedisKey.PROFILE_MASTERIES.of("EUW1", "puuid-2");
+        String profilePage = RedisKey.PROFILE_PAGE.of("EUW1", "puuid-1");
+        String profileStatistics = RedisKey.PROFILE_STATISTICS.of("puuid-1", "filter");
 
         assertTrue(!firstRanks.equals(secondRanks));
         assertTrue(!firstMasteries.equals(secondMasteries));
+        assertTrue(profilePage.endsWith("profile:page:EUW1:puuid-1"));
+        assertTrue(profileStatistics.endsWith("profile:statistics:puuid-1:filter"));
     }
 }

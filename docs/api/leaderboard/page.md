@@ -28,6 +28,8 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
 ## Risposta `200`
 
 `LeaderboardPage`. Ogni riga contiene lo stesso `SummonerView` del profilo.
+Quando presenti, le righe espongono anche `championStats[*].context` con le
+statistiche del champion separate per queue canonica e lane.
 Se le statistiche aggregate non sono ancora disponibili, la riga restituisce comunque
 il summoner base e il rank con un'overview vuota; la generazione delle statistiche viene
 accodata e la pagina non viene memorizzata in cache finché i dati non sono pronti.

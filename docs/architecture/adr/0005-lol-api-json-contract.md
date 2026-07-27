@@ -14,6 +14,11 @@ Success payloads use canonical models from `lol.model`. Spring retains only HTTP
 
 Profile exposes the complete `SummonerView` shape. Leaderboard exposes page metadata and rows of `SummonerLeaderboard`, each with the same nested `summoner` view.
 
+Profile champion rows keep their generic aggregate fields and additionally
+expose `context`, an array containing canonical queue keys mapped to lane keys.
+Lane-less queues use exactly one `UNKNOWN` entry. The nested values reuse the
+complete `Stats` metric set.
+
 The leaderboard contract remains:
 
 ```text

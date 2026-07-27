@@ -20,13 +20,16 @@ L’account e il profilo vengono persistiti direttamente in MongoDB. `LeagueDB` 
 `ProfileStatisticsService` è il proprietario del calcolo e del refresh. Legge da Mongo i match proiettati usando lo stesso `Filter` completo del comando e persiste un documento flat indicizzato da `puuid + filterKey`, che contiene:
 
 - `total`;
-- `queueStats`, `laneStats`, `championStats`;
+- `queueStats`, `laneStats`, `championStats` con il contesto queue/lane per ogni champion;
 - `matchups`, `duoStats` e `pings`;
 - `lastUpdate` e gli estremi temporali dell'aggregato.
 
 Il documento match resta la sorgente dei participant; `recentMatches` viene caricato separatamente come `MatchResult` leggero dallo stesso filtro e non viene serializzato dentro `ProfileStatistics`.
 
 La chiave Mongo non è la stagione: è l'uguaglianza esatta `{ puuid, filterKey }`, dove `filterKey` è `Filter.toSummonerKey()` e include anche il periodo. L'applicazione usa la coppia come identità logica e l'indice unique `profile_statistics_identity` protegge la cardinalità uno-a-uno.
+
+Il contesto champion è calcolato nello stesso passaggio degli aggregati
+generici. Non modifica embed, comandi o layout esistenti.
 
 ## Account e cache
 

@@ -33,6 +33,7 @@ public class MongoDBTest {
         Match match = new Match();
         match.gameId = "EUW1_123";
         match.leagueShard = LeagueShard.EUW1;
+        match.patch = "14.2.1";
         match.bans = Map.of(TeamType.BLUE, List.of(157), TeamType.RED, List.of(238));
         Participant participant = new Participant();
         participant.puuid = "p1";
@@ -49,8 +50,12 @@ public class MongoDBTest {
         assertEquals(List.of(157), bans.get("BLUE"));
         assertEquals(List.of(238), bans.get("RED"));
         assertEquals("EUW1", document.getString("region"));
-        assertEquals("123", document.getString("game_id"));
         assertEquals("EUW1_123", document.getString("_id"));
+        assertEquals("14.2", document.getString("patchMajor"));
+        assertFalse(document.containsKey("fullGameId"));
+        assertFalse(document.containsKey("gameId"));
+        assertFalse(document.containsKey("game_id"));
+        assertFalse(document.containsKey("leagueShard"));
         assertFalse(document.containsKey("legacyMatchId"));
         assertEquals(1055, savedParticipant.getInteger("item0").intValue());
         assertEquals("GOLD_II", savedParticipant.getString("rank"));

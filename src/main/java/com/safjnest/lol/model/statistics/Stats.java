@@ -1,10 +1,18 @@
 package com.safjnest.lol.model.statistics;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class Stats<T> {
     public T reference;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<Map<GameQueueType, Map<String, Stats<Void>>>> context = new ArrayList<>();
     public long games;
     public long wins;
     public long kills;

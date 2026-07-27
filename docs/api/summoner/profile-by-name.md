@@ -141,7 +141,10 @@ stesso `SummonerView` di [Profile by PUUID](profile-by-puuid.md).
 ```
 
 Il JSON mostra tutti i campi del contratto; liste e mappe possono essere vuote
-quando il profilo è appena stato risolto.
+quando il profilo è appena stato risolto. Gli elementi di
+`overview.statistics.championStats` possono includere `context`, con una mappa
+per ogni queue canonica e le relative lane; le queue senza ruoli usano una
+sola lane `UNKNOWN`.
 
 ## Stati ed errori
 

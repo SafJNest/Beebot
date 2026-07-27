@@ -57,18 +57,18 @@ public class MongoIndexPolicyTest {
         assertPolicy(definitions, "summoner_leaderboard_global", "summoner",
                 new Document("ranks.queue", 1).append("ranks.rank", 1).append("region", 1), false, null);
         assertPolicy(definitions, "match_participant_time", "match",
-                new Document("participants.puuid", 1).append("timeStart", 1).append("game_id", 1), false, null);
+                new Document("participants.puuid", 1).append("timeStart", 1).append("_id", 1), false, null);
         assertPolicy(definitions, "match_shard_time", "match",
-                new Document("leagueShard", 1).append("timeStart", -1), false, null);
+                new Document("region", 1).append("timeStart", -1), false, null);
         assertPolicy(definitions, "match_shard_patch_time", "match",
-                new Document("leagueShard", 1).append("patch", 1).append("timeStart", -1), false, null);
-        assertPolicy(definitions, "match_patch", "match", new Document("patch", 1), false, null);
+                new Document("region", 1).append("patchMajor", 1).append("timeStart", -1), false, null);
+        assertPolicy(definitions, "match_patch", "match", new Document("patchMajor", 1), false, null);
         assertPolicy(definitions, "match_champion_filter", "match",
-                new Document("queue", 1).append("leagueShard", 1).append("rank", 1)
-                        .append("participants.champion", 1).append("participants.lane", 1).append("patch", 1), false, null);
+                new Document("queue", 1).append("region", 1).append("rank", 1)
+                        .append("participants.champion", 1).append("participants.lane", 1).append("patchMajor", 1), false, null);
         assertPolicy(definitions, "match_champion_keyset", "match",
-                new Document("queue", 1).append("leagueShard", 1).append("rank", 1)
-                        .append("participants.champion", 1).append("participants.lane", 1).append("_id", 1), false, null);
+                new Document("queue", 1).append("region", 1).append("rank", 1)
+                        .append("participants.champion", 1).append("participants.lane", 1), false, null);
         assertPolicy(definitions, "profile_statistics_identity", "profile_statistics",
                 new Document("puuid", 1).append("filterKey", 1), true, null);
         assertPolicy(definitions, "profile_statistics_period", "profile_statistics",

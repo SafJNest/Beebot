@@ -14,6 +14,6 @@ Il mapping verso Summoner, Rank, Mastery, Participant, Match, MatchResult e i mo
 
 ## Forma LoL
 
-Un match usa _id con il Riot match ID completo, leagueShard come enum serializzato con name(), bans con le chiavi BLUE e RED e participants come lista di documenti flat. Un participant non ha un campo build nested. Eventi e liste sono strutturati solo quando rappresentano davvero una sequenza o una mappa.
+Un match usa `_id` con il Riot match ID completo, `region` come enum serializzato con `name()`, `patch` completo e `patchMajor` per i filtri, bans con le chiavi BLUE e RED e participants come lista di documenti flat. Un participant non ha un campo build nested. Eventi e liste sono strutturati solo quando rappresentano davvero una sequenza o una mappa.
 
 QueryRecord e List<QueryRecord> sono il contratto comune: MariaDB li popola in forma piatta, MongoDB può popolare le liste con strutture annidate.

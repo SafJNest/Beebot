@@ -158,6 +158,33 @@ class AbstractEntityTest {
         assertEquals("setArrayElementField", operations.get(1).get("type"));
     }
 
+    @Test
+    void matchUpsertSnapshotUsesCanonicalMongoFields() {
+        List<Map<String, Object>> operations = new ArrayList<>();
+        NoSqlEntityExecutor.installWriterForTests((collection, id, changes, filters, upsert) -> {
+            operations.addAll(changes);
+            return true;
+        });
+
+        Match match = new Match();
+        match.gameId = "EUW1_123";
+        match.leagueShard = LeagueShard.EUW1;
+        match.patch = "14.2.1";
+
+        assertTrue(match.upsert());
+        List<String> paths = new ArrayList<>();
+        Object patchMajor = null;
+        for (Map<String, Object> operation : operations) {
+            paths.add((String) operation.get("path"));
+            if ("patchMajor".equals(operation.get("path"))) patchMajor = operation.get("value");
+        }
+        assertFalse(paths.contains("fullGameId"));
+        assertFalse(paths.contains("gameId"));
+        assertFalse(paths.contains("game_id"));
+        assertFalse(paths.contains("leagueShard"));
+        assertEquals("14.2", patchMajor);
+    }
+
     private static final class TestEntity extends AbstractEntity<TestEntity> {
         private int number;
         private String name;

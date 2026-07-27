@@ -15,7 +15,8 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
-- Il nuovo flusso non esegue cleanup o migrazione automatica di documenti legacy; l'operatore rimuove manualmente i vecchi payload Kryo prima della rigenerazione.
+- Il documento `match` usa `_id` come full Riot match ID e `region` come unico campo di shard; `fullGameId`, `gameId`, `game_id` e `leagueShard` non vengono scritti. `patch` mantiene la versione completa e `patchMajor` i primi due segmenti per i filtri.
+- La migration normalizza i residui del documento `match`; gli altri documenti legacy e i vecchi payload Kryo restano fuori dal cleanup automatico e vengono rimossi manualmente prima della rigenerazione.
 - I reader usano `_id` come fallback solo per compatibilità difensiva con documenti esterni alla migrazione pulita.
 - Gli eventi non sono nel documento `match`: vivono in `match_events` come JSON e la collection usa WiredTiger Zstandard nativo.
 
@@ -51,6 +52,7 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 
 - Summoner: _id = puuid.
 - Match: _id = Riot match ID completo, per esempio EUW1_123.
+- Match: `region` è l'unico campo di shard; `patchMajor` è derivato da `patch` e usato nei filtri.
 - Enum R4J: name().
 - Ban: bans.BLUE e bans.RED, sempre presenti anche se vuoti.
 - Participant: campi flat; nessun campo build mega-nested.

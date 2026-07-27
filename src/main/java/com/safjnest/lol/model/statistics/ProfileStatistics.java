@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
@@ -39,12 +40,24 @@ public class ProfileStatistics {
         this.timeEnd = timeStart;
     }
 
+    @JsonIgnore
+    public boolean hasChampionContext() {
+        if (total == null || total.games == 0) return true;
+        if (championStats == null || championStats.isEmpty()) return false;
+        for (Stats<Integer> champion : championStats)
+            if (champion == null || champion.context == null || champion.context.isEmpty()) return false;
+        return true;
+    }
+
     public void add(MatchResult match, GameQueueType queue, LaneType lane) {
         if (match == null || queue == null) return;
         total.add(match);
         stat(queueStats, queue).add(match);
         if (lane != null && lane != LaneType.NONE) stat(laneStats, lane).add(match);
-        stat(championStats, match.championId()).add(match);
+        Stats<Integer> champion = stat(championStats, match.championId());
+        champion.add(match);
+        Stats<Void> context = contextStat(champion, queue, lane);
+        if (context != null) context.add(match);
         timeEnd = Math.max(timeEnd, match.timeEnd());
         oldestMatchAt = oldestMatchAt == 0 ? match.timeStart() : Math.min(oldestMatchAt, match.timeStart());
         newestMatchAt = Math.max(newestMatchAt, match.timeStart());
@@ -62,7 +75,10 @@ public class ProfileStatistics {
         if (match.queue != null) add(stat(queueStats, match.queue), match, player, teamKills, enemyTeamKills, arena);
         if (player.lane != null && player.lane != LaneType.NONE)
             add(stat(laneStats, player.lane), match, player, teamKills, enemyTeamKills, arena);
-        add(stat(championStats, player.champion), match, player, teamKills, enemyTeamKills, arena);
+        Stats<Integer> champion = stat(championStats, player.champion);
+        add(champion, match, player, teamKills, enemyTeamKills, arena);
+        Stats<Void> context = contextStat(champion, match.queue, player.lane);
+        if (context != null) add(context, match, player, teamKills, enemyTeamKills, arena);
 
         if (player.pings != null) for (Map.Entry<String, Integer> entry : player.pings.entrySet()) {
             if (entry.getKey() != null && entry.getValue() != null) pings.merge(entry.getKey(), entry.getValue().longValue(), Long::sum);
@@ -101,6 +117,29 @@ public class ProfileStatistics {
         Stats<T> value = new Stats<>(reference);
         stats.add(value);
         return value;
+    }
+
+    private static Stats<Void> contextStat(Stats<Integer> champion, GameQueueType queue, LaneType lane) {
+        if (champion == null || queue == null) return null;
+        String laneKey = contextLane(queue, lane);
+        if (laneKey == null) return null;
+        if (champion.context == null) champion.context = new ArrayList<>();
+        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        for (Map<GameQueueType, Map<String, Stats<Void>>> queueContext : champion.context) {
+            Map<String, Stats<Void>> lanes = queueContext.get(canonicalQueue);
+            if (lanes != null) return lanes.computeIfAbsent(laneKey, ignored -> new Stats<>());
+        }
+        Map<String, Stats<Void>> lanes = new LinkedHashMap<>();
+        lanes.put(laneKey, new Stats<>());
+        Map<GameQueueType, Map<String, Stats<Void>>> queueContext = new LinkedHashMap<>();
+        queueContext.put(canonicalQueue, lanes);
+        champion.context.add(queueContext);
+        return lanes.get(laneKey);
+    }
+
+    private static String contextLane(GameQueueType queue, LaneType lane) {
+        if (!GameQueueTypeUtils.hasLane(queue)) return "UNKNOWN";
+        return lane == null || lane == LaneType.NONE ? null : lane.name();
     }
 
     private static Participant participant(Match match, String puuid) {

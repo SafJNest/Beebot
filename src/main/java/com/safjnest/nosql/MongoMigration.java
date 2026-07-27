@@ -17,7 +17,7 @@ import com.safjnest.sql.database.LeagueDB;
 public final class MongoMigration {
 
     private static final String CHECKPOINT_COLLECTION = "migration_runs";
-    private static final String MIGRATION_VERSION = "raw-v5-missing-only";
+    private static final String MIGRATION_VERSION = "raw-v6-match-schema";
     private static final int DEFAULT_BATCH_SIZE = 500_000;
     private static final int MAX_BATCH_SIZE = 500_000;
     private static final int MAX_MATCH_BATCH_SIZE = 50_000;
@@ -100,6 +100,7 @@ public final class MongoMigration {
                     }
                 }
 
+                if (!options.dryRun()) MongoDB.normalizeMatchDocuments(identityValues);
                 migrateMissingMatches(options, missingMatchIds);
                 migrateMissingEvents(options, missingEventIds, missingEventIdentities);
                 existingMatches.clear();

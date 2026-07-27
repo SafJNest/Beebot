@@ -470,6 +470,31 @@ temporali sono Unix epoch in millisecondi.
 }
 ```
 
+Ogni elemento di `overview.statistics.championStats` mantiene le proprie
+metriche generiche e può contenere `context` per distinguere queue e lane:
+
+```json
+{
+  "context": [
+    {
+      "RANKED_SOLO_5X5": {
+        "TOP": { "games": 12, "wins": 7 },
+        "MID": { "games": 4, "wins": 2 }
+      }
+    },
+    {
+      "CHERRY": {
+        "UNKNOWN": { "games": 3, "wins": 1 }
+      }
+    }
+  ]
+}
+```
+
+I valori sotto ogni lane hanno lo stesso set completo di metriche `Stats`.
+Le queue senza ruoli espongono sempre una sola lane `UNKNOWN`; Solo/Duo e Flex
+restano queue canoniche separate.
+
 ## Stati ed errori
 
 | HTTP | `code` | Quando |

@@ -53,8 +53,8 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `summoner` | `summoner` | `_id = puuid` | documento aggregato |
 | `rank` | `summoner.ranks[]` | `queue + region` | embedded |
 | `masteries` | `summoner.masteries[]` | `championId` | embedded |
-| `match` | `match` | `_id = fullGameId` | documento aggregato |
-| `match.events` | `match_events` | `_id = fullGameId` | JSON separato, WiredTiger Zstandard |
+| `match` | `match` | `_id = full Riot match ID` | documento aggregato |
+| `match.events` | `match_events` | `_id = full Riot match ID` | JSON separato, WiredTiger Zstandard |
 | `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
 | `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat, `_id` casuale stabile |
 | `champion` | `champion` | `championId` | catalogo |
@@ -119,15 +119,14 @@ Esempio concettuale:
 ```json
 {
   "_id": "EUW1_134131",
-  "fullGameId": "EUW1_134131",
-  "gameId": "134131",
-  "leagueShard": "EUW1",
+  "region": "EUW1",
   "queue": "TEAM_BUILDER_RANKED_SOLO",
   "rank": "EMERALD",
   "lastUpdate": 1710000000000,
   "timeStart": 1710000000000,
   "timeEnd": 1710002100000,
   "patch": "14.10.1",
+  "patchMajor": "14.10",
   "bans": {
     "BLUE": [266, 157, 238, 517, 777],
     "RED": [64, 119, 238, 141, 875]
@@ -140,7 +139,9 @@ Esempio concettuale:
 
 - `_id` è sempre il Riot match ID completo;
 - il solo numero Riot può essere accettato in input e normalizzato prima del lookup;
-- `leagueShard`, `queue` e `rank` sono stringhe R4J;
+- `region`, `queue` e `rank` sono stringhe R4J;
+- `fullGameId`, `gameId`, `game_id` e `leagueShard` non vengono persistiti come duplicati;
+- `patch` conserva la versione completa, mentre `patchMajor` conserva i primi due segmenti e viene usato per i filtri;
 - `bans` usa `BLUE` e `RED`, mai `0` e `1`;
 - gli eventi non sono embedded: vengono salvati come JSON in `match_events`, collection creata con `block_compressor=zstd` e checksum;
 - participant è embedded perché viene letto insieme al match;
@@ -252,12 +253,12 @@ non modifica indici esistenti e non fonde automaticamente documenti duplicati.
 | `summoner` | `summoner_tracking_true` | `tracking` | partial `tracking=true` |
 | `summoner` | `summoner_leaderboard_region` | `region, ranks.queue, ranks.rank` | multikey |
 | `summoner` | `summoner_leaderboard_global` | `ranks.queue, ranks.rank, region` | multikey |
-| `match` | `match_participant_time` | `participants.puuid, timeStart, game_id` | multikey |
-| `match` | `match_shard_time` | `leagueShard, timeStart` | — |
-| `match` | `match_shard_patch_time` | `leagueShard, patch, timeStart` | — |
-| `match` | `match_patch` | `patch` | — |
-| `match` | `match_champion_filter` | `queue, leagueShard, rank, participants.champion, participants.lane, patch` | multikey |
-| `match` | `match_champion_keyset` | `queue, leagueShard, rank, participants.champion, participants.lane, _id` | multikey |
+| `match` | `match_participant_time` | `participants.puuid, timeStart, _id` | multikey |
+| `match` | `match_shard_time` | `region, timeStart` | — |
+| `match` | `match_shard_patch_time` | `region, patchMajor, timeStart` | — |
+| `match` | `match_patch` | `patchMajor` | — |
+| `match` | `match_champion_filter` | `queue, region, rank, participants.champion, participants.lane, patchMajor` | multikey |
+| `match` | `match_champion_keyset` | `queue, region, rank, participants.champion, participants.lane` | multikey |
 | `profile_statistics` | `profile_statistics_identity` | `puuid, filterKey` | `unique` |
 | `profile_statistics` | `profile_statistics_period` | `puuid, timeEnd, timeStart` | — |
 | `champion_builds` | `champion_builds_filter` | `filterKey` | — |

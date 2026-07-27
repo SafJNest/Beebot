@@ -44,7 +44,7 @@ Gli `explain("executionStats")` devono verificare le query calde:
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")
 db.summoner.find({userId: "discord-id"}).explain("executionStats")
 db.summoner.find({tracking: true}).explain("executionStats")
-db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, leagueShard: "EUW1"}).sort({timeStart: -1}).limit(100).explain("executionStats")
+db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
 db.profile_statistics.find({puuid: "puuid", filterKey: "filter"}).explain("executionStats")
 ```
 

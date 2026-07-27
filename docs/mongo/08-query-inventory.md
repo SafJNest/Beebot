@@ -27,7 +27,7 @@ Le query paginated sono limitate a 100 match, 50 summoner leaderboard, 25 risult
 
 PUUID è l'identità summoner e `_id` del documento; il Riot match ID completo è l'identità match; enum R4J usa `name()`; bans usa BLUE e RED; participant resta flat; upsert/update/delete sono idempotenti; letture e scritture applicative Mongo-only; errori di lettura Mongo espliciti.
 
-MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` come BSON strutturato; `profile_statistics` salva direttamente i campi `timeStart`, `timeEnd`, `lastUpdate`, `total`, `queueStats`, `laneStats`, `championStats`, `matchups`, `duoStats`, `pings` e gli aggregati collegati, mai sotto un campo `statistics`. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; i documenti legacy vengono rigenerati con il nuovo `puuid + filterKey`.
+MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` come BSON strutturato; `profile_statistics` salva direttamente i campi `timeStart`, `timeEnd`, `lastUpdate`, `total`, `queueStats`, `laneStats`, `championStats` con il relativo contesto queue/lane, `matchups`, `duoStats`, `pings` e gli aggregati collegati, mai sotto un campo `statistics`. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; i documenti legacy vengono rigenerati con il nuovo `puuid + filterKey`.
 
 Il dettaglio del formato di `filterKey`, del motivo dell'indice composto e della differenza tra aggregato e `recentMatches` è in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
@@ -46,7 +46,7 @@ indici seguono le query effettive:
 | `summoner` | `summoner_tracking_true` | tracker e account con `tracking=true` |
 | `summoner` | `summoner_leaderboard_region`, `summoner_leaderboard_global` | `$match` iniziale dei rank embedded regionale/globale |
 | `match` | `match_participant_time` | history, profilo, OPGG, match recenti e dati LP |
-| `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | query temporali, patch/shard, bans e champion wins |
+| `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | query temporali, region/patchMajor, bans e champion wins |
 | `match` | `match_champion_filter` | batch champion con filtro equality-first e participant/lane |
 | `match` | `match_champion_keyset` | `findChampionMatchIds` con paging keyset su `_id` |
 | `profile_statistics` | `profile_statistics_identity` | lookup/upsert/delete/batch per `{puuid, filterKey}`, `unique` |
@@ -69,7 +69,7 @@ Prima dell'accettazione eseguire su un database con dati rappresentativi:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}, {riotId: 1, ranks: 1}).sort({riotId: 1}).limit(25).explain("executionStats")
-db.match.find({participants: {$elemMatch: {puuid: "puuid", champion: 1}}, leagueShard: "EUW1", queue: "RANKED_SOLO_5X5"}).sort({timeStart: -1}).limit(100).explain("executionStats")
+db.match.find({participants: {$elemMatch: {puuid: "puuid", champion: 1}}, region: "EUW1", queue: "RANKED_SOLO_5X5", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
 db.summoner.aggregate([
   {$unwind: "$ranks"},
   {$match: {region: "EUW1", "ranks.queue": "RANKED_SOLO_5X5"}},
