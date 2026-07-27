@@ -6,6 +6,7 @@ import java.util.StringJoiner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 
@@ -35,6 +36,19 @@ public final class LolApiParameters {
     public static GameQueueType queue(String value) {
         if (value == null || value.isBlank()) return DEFAULT_QUEUE;
         return parseEnum(value, GameQueueType.class, "queue");
+    }
+
+    public static GameQueueType activityQueue(String value) {
+        if (value == null || value.isBlank() || "ALL".equalsIgnoreCase(value.trim())) return null;
+        return parseEnum(value, GameQueueType.class, "queue");
+    }
+
+    public static Filter activityFilter(long start, long end, GameQueueType queue, int champion) {
+        if (start < 0) throw invalid("start", "must be greater than or equal to 0");
+        if (end < 0) throw invalid("end", "must be greater than or equal to 0");
+        if (start != 0 && end != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
+        if (champion < 0) throw invalid("champion", "must be greater than or equal to 0");
+        return Filter.summoner(start, end).setQueue(queue).setChampion(champion);
     }
 
     public static LeagueShard region(String value) {

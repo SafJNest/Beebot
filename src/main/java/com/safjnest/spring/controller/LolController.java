@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.ProfileActivityService;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfilePageService;
 
@@ -21,9 +24,11 @@ import com.safjnest.lol.service.ProfilePageService;
 public class LolController {
 
     private final ProfilePageService profilePageService;
+    private final ProfileActivityService profileActivityService;
 
     public LolController() {
         this.profilePageService = new ProfilePageService();
+        this.profileActivityService = new ProfileActivityService();
     }
 
     @GetMapping("/search")
@@ -52,6 +57,28 @@ public class LolController {
             LolApiParameters.requiredText(puuid, "puuid")
         );
         return LolApiResponses.from(result, "profile_pending", "Profile initialization is pending", "Profile not found");
+    }
+
+    @GetMapping("/profile/{puuid}/activity")
+    public ProfileActivity activity(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam(name = "start", defaultValue = "0") long start,
+            @RequestParam(name = "end", defaultValue = "0") long end,
+            @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "champion", defaultValue = "0") int champion
+    ) {
+        Filter filter = LolApiParameters.activityFilter(
+            start,
+            end,
+            LolApiParameters.activityQueue(queueValue),
+            champion
+        );
+        return profileActivityService.get(
+            LolApiParameters.requiredShard(shardValue),
+            LolApiParameters.requiredText(puuid, "puuid"),
+            filter
+        );
     }
 
     @GetMapping("/profile-by-name/{gameName}/{tagLine}")

@@ -35,6 +35,7 @@ lol/model/leaderboard/
 
 lol/model/statistics/
   ProfileStatistics
+  ProfileActivity
   Stats
   ProfileStatisticsRow
 

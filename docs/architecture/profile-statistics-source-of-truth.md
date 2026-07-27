@@ -20,6 +20,24 @@ Il PUUID identifica l'account Riot. Il `Filter` identifica esattamente il datase
 
 `recentMatches` non fa parte dell'aggregato. È una proiezione leggera caricata separatamente usando lo stesso PUUID e lo stesso filtro.
 
+## Activity profile
+
+L'endpoint `GET /api/lol/{shard}/profile/{puuid}/activity` usa soltanto i
+parametri `start`, `end`, `queue` e `champion`. Il controller costruisce un
+`Filter.summoner(start, end)`, normalizza `queue=ALL` a queue nulla e usa `0`
+come valore neutro per champion.
+
+Il servizio legge i match con `MongoDB.findProfileStatisticsMatches`, quindi
+riusa lo stesso `buildMatchFilter` e la stessa verifica completa del filtro
+usata dalle statistiche profilo. `ProfileActivity.from(...)` percorre il
+risultato una sola volta e aggiorna nello stesso passaggio totale, celle
+`7x24`, aggregati giornalieri/orari, queue, sessioni e finestre temporali.
+
+La response è una proiezione dedicata e non modifica `SummonerView` o
+`overview.recentMatches`. `recentSessions` contiene tutte le sessioni del
+periodo in una sola response, senza cursor. Le celle della heatmap sono
+ordinate per `day * 24 + hour`, con Monday `0` e Sunday `6`.
+
 ## Il filtro canonico
 
 `Filter` è l'oggetto che deve essere passato senza perdere campi tra UI, servizio, query Mongo, cache e persistenza. I campi che partecipano al filtro sono:
@@ -355,10 +373,11 @@ Prima di modificare questo flusso verificare:
 5. la coppia `{ puuid, filterKey }` resta l'identità applicativa;
 6. il calcolo passa da `ProfileStatisticsService`, non da Discord/API/controller;
 7. `recentMatches` resta separato;
-8. `lastUpdate` viene scritto solo dopo il calcolo;
-9. overview, profile e `!summoner` leggono lo stesso oggetto;
-10. la presentazione esistente resta invariata salvo richiesta esplicita di refactor dello style;
-11. API docs, audit, documentazione Mongo e regole operative restano sincronizzati.
+8. activity usa lo stesso `Filter` e la query match condivisa, senza creare una seconda semantica per queue o periodo;
+9. `lastUpdate` viene scritto solo dopo il calcolo;
+10. overview, profile e `!summoner` leggono lo stesso oggetto;
+11. la presentazione esistente resta invariata salvo richiesta esplicita di refactor dello style;
+12. API docs, audit, documentazione Mongo e regole operative restano sincronizzati.
 
 ### File canonici da aprire per recuperare il contesto
 

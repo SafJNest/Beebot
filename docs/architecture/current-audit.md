@@ -20,7 +20,7 @@ The canonical profile-statistics flow is documented in [`profile-statistics-sour
 
 ## Canonical models
 
-The migration reuses `Summoner`, `Rank`, `Mastery`, `SummonerOverview`, `Match`, `Participant`, `MatchResult`, `ProfileStatistics`, `Build`, `ChampionStatistics` and leaderboard models. No `*Document` duplicate is allowed.
+The migration reuses `Summoner`, `Rank`, `Mastery`, `SummonerOverview`, `Match`, `Participant`, `MatchResult`, `ProfileStatistics`, `ProfileActivity`, `Build`, `ChampionStatistics` and leaderboard models. No `*Document` duplicate is allowed.
 
 ## Deliberate exclusions
 

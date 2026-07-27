@@ -18,6 +18,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 - [Search](summoner/search.md) — `GET /api/lol/{shard}/search`
 - [Profile by PUUID](summoner/profile-by-puuid.md) — `GET /api/lol/{shard}/profile/{puuid}`
 - [Profile by Riot ID](summoner/profile-by-name.md) — `GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}`
+- [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`
 
 ### Match
 
