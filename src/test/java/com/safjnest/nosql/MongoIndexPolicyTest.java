@@ -29,7 +29,7 @@ public class MongoIndexPolicyTest {
         field.setAccessible(true);
         List<?> definitions = (List<?>) field.get(null);
 
-        assertEquals(18, definitions.size());
+        assertEquals(19, definitions.size());
         Set<String> names = new HashSet<>();
         for (Object definition : definitions) {
             Method name = definition.getClass().getDeclaredMethod("name");
@@ -43,7 +43,7 @@ public class MongoIndexPolicyTest {
                 "match_shard_time", "match_shard_patch_time", "match_patch", "match_champion_filter",
                 "match_champion_keyset", "profile_statistics_identity", "profile_statistics_period",
                 "profile_activity_identity", "profile_matchups_identity",
-                "champion_builds_filter", "champion_stats_filter_champion"), names);
+                "champion_builds_filter", "champion_stats_filter_champion", "champions_indexable_patch"), names);
 
         assertPolicy(definitions, "summoner_search_prefix", "summoner",
                 new Document("region", 1).append("riotSearch", 1).append("riotId", 1), false, null);
@@ -82,6 +82,8 @@ public class MongoIndexPolicyTest {
                 new Document("filterKey", 1), false, null);
         assertPolicy(definitions, "champion_stats_filter_champion", "champion_stats",
                 new Document("filterKey", 1).append("championId", 1), false, null);
+        assertPolicy(definitions, "champions_indexable_patch", "champions_indexable",
+                new Document("patchMajor", 1).append("championId", 1).append("role", 1), false, null);
     }
 
     @Test
@@ -95,6 +97,7 @@ public class MongoIndexPolicyTest {
             invoke(database, "ensureIndexes");
 
             List<Document> first = database.getCollection("summoner").listIndexes().into(new java.util.ArrayList<>());
+            assertTrue(database.listCollectionNames().into(new java.util.ArrayList<>()).contains("champions_indexable"));
             invoke(database, "ensureIndexes");
             List<Document> second = database.getCollection("summoner").listIndexes().into(new java.util.ArrayList<>());
 

@@ -50,6 +50,7 @@ import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.UpdateResult;
 import com.safjnest.App;
 import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
@@ -64,6 +65,7 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
@@ -88,10 +90,11 @@ public final class MongoDB {
     private static final String PROFILE_STATISTICS_IDENTITY_INDEX = "profile_statistics_identity";
     private static final String PROFILE_ACTIVITY_IDENTITY_INDEX = "profile_activity_identity";
     private static final String PROFILE_MATCHUPS_IDENTITY_INDEX = "profile_matchups_identity";
+    private static final String CHAMPION_INDEXABLES_COLLECTION = "champions_indexable";
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
             "champion_builds", "champion_stats", "profile_activity", "profile_matchups", LEADERBOARD_AGGREGATES_COLLECTION,
-            "migration_runs");
+            CHAMPION_INDEXABLES_COLLECTION, "migration_runs");
     private static final List<IndexDefinition> INDEX_DEFINITIONS = List.of(
             index("summoner", "summoner_search_prefix",
                     new Document("region", 1).append("riotSearch", 1).append("riotId", 1), false, null),
@@ -130,7 +133,9 @@ public final class MongoDB {
             index("champion_builds", "champion_builds_filter",
                     new Document("filterKey", 1), false, null),
             index("champion_stats", "champion_stats_filter_champion",
-                    new Document("filterKey", 1).append("championId", 1), false, null));
+                    new Document("filterKey", 1).append("championId", 1), false, null),
+            index(CHAMPION_INDEXABLES_COLLECTION, "champions_indexable_patch",
+                    new Document("patchMajor", 1).append("championId", 1).append("role", 1), false, null));
 
     private record IndexDefinition(
             String collection,
@@ -534,6 +539,57 @@ public final class MongoDB {
                 result.add(QueryRecordParser.fromMap(Map.of("win", participant.getBoolean("win", false))));
             }
         }
+        return result;
+    }
+
+    public static Map<Integer, Map<LaneType, Integer>> findChampionRoleGames(String patch) {
+        String majorPatch = patchMajor(patch);
+        if (majorPatch == null || majorPatch.isBlank()) return Map.of();
+
+        List<Bson> pipeline = List.of(
+                new Document("$match", Filters.eq("patchMajor", majorPatch)),
+                new Document("$unwind", "$participants"),
+                new Document("$match", Filters.in("participants.lane", playableRoleNames())),
+                new Document("$group", new Document("_id", new Document("champion", "$participants.champion")
+                        .append("role", "$participants.lane")).append("games", new Document("$sum", 1))),
+                new Document("$sort", new Document("_id.champion", 1))
+        );
+        Map<Integer, Map<LaneType, Integer>> result = new LinkedHashMap<>();
+        for (Document document : matches().aggregate(pipeline)) {
+            Document id = document.get("_id", Document.class);
+            if (id == null) continue;
+            int champion = (int) number(id.get("champion"));
+            LaneType role = enumValue(LaneType.class, id.getString("role"));
+            if (champion == 0 || role == null || !LaneTypeUtils.playables().contains(role)) continue;
+            result.computeIfAbsent(champion, ignored -> new LinkedHashMap<>())
+                    .put(role, (int) number(document.get("games")));
+        }
+        return result;
+    }
+
+    public static List<ChampionIndexable> findChampionIndexables(String patch) {
+        String majorPatch = patchMajor(patch);
+        if (majorPatch == null || majorPatch.isBlank()) return List.of();
+
+        List<ChampionIndexable> result = new ArrayList<>();
+        for (Document document : championIndexables().find(Filters.eq("patchMajor", majorPatch))) {
+            int champion = (int) number(document.get("championId"));
+            LaneType role = enumValue(LaneType.class, document.getString("role"));
+            if (champion == 0 || role == null || !LaneTypeUtils.playables().contains(role)) continue;
+            result.add(new ChampionIndexable(
+                    champion,
+                    role,
+                    (int) number(document.get("games")),
+                    document.getBoolean("indexable", false),
+                    number(document.get("lastUpdate")));
+        }
+        result.sort((left, right) -> {
+            int championOrder = Integer.compare(left.champion(), right.champion());
+            if (championOrder != 0) return championOrder;
+            int gamesOrder = Integer.compare(right.games(), left.games());
+            return gamesOrder != 0 ? gamesOrder
+                    : Integer.compare(LaneTypeUtils.playableOrder(left.role()), LaneTypeUtils.playableOrder(right.role()));
+        });
         return result;
     }
 
@@ -1675,7 +1731,7 @@ public final class MongoDB {
         return true;
     }
 
-        public static boolean upsertChampionStatistics(Map<Integer, ChampionStatistics> statistics) {
+    public static boolean upsertChampionStatistics(Map<Integer, ChampionStatistics> statistics) {
         if (statistics == null || statistics.isEmpty()) return false;
         List<WriteModel<Document>> operations = new ArrayList<>(statistics.size());
         for (ChampionStatistics value : statistics.values()) if (value != null && value.filter() != null) {
@@ -1685,6 +1741,43 @@ public final class MongoDB {
         }
         if (!operations.isEmpty()) bulkWrite(championStats(), operations);
         return true;
+    }
+
+    public static void upsertChampionIndexables(String patch, List<ChampionIndexable> values) {
+        String majorPatch = patchMajor(patch);
+        if (majorPatch == null || majorPatch.isBlank() || values == null) return;
+
+        Map<String, Document> previous = new HashMap<>();
+        for (Document document : championIndexables().find()) {
+            Object id = document.get("_id");
+            if (id != null) previous.put(String.valueOf(id), document);
+        }
+
+        long now = System.currentTimeMillis();
+        Set<String> ids = new HashSet<>();
+        List<WriteModel<Document>> operations = new ArrayList<>();
+        for (ChampionIndexable value : values) {
+            if (value == null || value.champion() == 0 || value.role() == null) continue;
+            String id = value.champion() + "_" + value.role().name();
+            Document old = previous.get(id);
+            boolean changed = old == null || old.getBoolean("indexable", false) != value.indexable();
+            long previousUpdate = old == null ? 0L : number(old.get("lastUpdate"));
+            long lastUpdate = changed
+                    ? previousUpdate == Long.MAX_VALUE ? now : Math.max(now, previousUpdate + 1)
+                    : previousUpdate == 0L ? now : previousUpdate;
+            Document document = new Document("_id", id)
+                    .append("patchMajor", majorPatch)
+                    .append("championId", value.champion())
+                    .append("role", value.role().name())
+                    .append("games", value.games())
+                    .append("indexable", value.indexable())
+                    .append("lastUpdate", lastUpdate);
+            ids.add(id);
+            operations.add(new ReplaceOneModel<>(Filters.eq("_id", id), document,
+                    new ReplaceOptions().upsert(true)));
+        }
+        if (!operations.isEmpty()) bulkWrite(championIndexables(), operations);
+        championIndexables().deleteMany(ids.isEmpty() ? new Document() : Filters.nin("_id", ids));
     }
 
     public static <T> T read(QueryRecord record, Class<T> type) {
@@ -2129,6 +2222,10 @@ public final class MongoDB {
         return database().getCollection("champion_stats");
     }
 
+    private static MongoCollection<Document> championIndexables() {
+        return database().getCollection(CHAMPION_INDEXABLES_COLLECTION);
+    }
+
     private static QueryRecord matchRecord(Document document) {
         return QueryRecordParser.fromDocument(document);
     }
@@ -2236,6 +2333,12 @@ public final class MongoDB {
 
     private static Bson patchMajorFilter(String patch) {
         return Filters.eq("patchMajor", patchMajor(patch));
+    }
+
+    private static List<String> playableRoleNames() {
+        List<String> result = new ArrayList<>(LaneTypeUtils.playables().size());
+        for (LaneType role : LaneTypeUtils.playables()) result.add(role.name());
+        return result;
     }
 
     private static Bson leaderboardFilter(TierType rank, GameQueueType queue, String region) {
@@ -2380,6 +2483,10 @@ public final class MongoDB {
 
     private static long number(Document document, String field) {
         Object value = document.get(field);
+        return value instanceof Number number ? number.longValue() : 0;
+    }
+
+    private static long number(Object value) {
         return value instanceof Number number ? number.longValue() : 0;
     }
 

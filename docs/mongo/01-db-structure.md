@@ -62,6 +62,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `champion` | `champion` | `championId` | catalogo |
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
 | `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
+| champion indexables | `champions_indexable` | `_id = championId + role` | proiezione derivata della major patch corrente |
 | leaderboard aggregates | `leaderboard_aggregates` | `_id = tipo + filtro` | snapshot derivato |
 | migration checkpoints | `migration_runs` | `_id = runId` | operational state |
 
@@ -255,6 +256,19 @@ payload BSON strutturato `matchups`; `minGames` resta fuori dalla chiave perché
 è soltanto una soglia della response. L'indice unique
 `profile_matchups_identity` protegge la cardinalità uno-a-uno.
 
+### `champions_indexable`
+
+La collection contiene una riga per ogni coppia champion/ruolo presente nella
+major patch corrente. Il documento usa `_id = championId_ROLE` e mantiene
+`patchMajor`, `games`, `indexable` e `lastUpdate`. Sono inclusi soltanto i
+ruoli giocabili `TOP`, `JUNGLE`, `MID`, `BOT` e `UTILITY`; i ruoli unknown non
+entrano né nel conteggio né nella proporzione.
+
+`indexable` è true quando il ruolo raggiunge almeno il 10% dei game del
+champion. La rigenerazione aggiorna `lastUpdate` soltanto quando cambia quel
+booleano, non quando cambia il numero dei game. La collection è ricostruibile
+dai documenti `match` filtrando esclusivamente `patchMajor`.
+
 MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
 ## Indici
@@ -284,6 +298,7 @@ non modifica indici esistenti e non fonde automaticamente documenti duplicati.
 | `profile_matchups` | `profile_matchups_identity` | `puuid, filterKey` | `unique` |
 | `champion_builds` | `champion_builds_filter` | `filterKey` | — |
 | `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | — |
+| `champions_indexable` | `champions_indexable_patch` | `patchMajor, championId, role` | — |
 
 `match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` e i
 lookup diretti per PUUID/full match ID usano soltanto l'indice nativo `_id`.

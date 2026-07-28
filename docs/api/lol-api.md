@@ -28,6 +28,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 ### Champion
 
 - [Champion page](champion/page.md) — `GET /api/lol/champion/{champion}`
+- [Champion indexables](champion/indexables.md) — `GET /api/lol/champion/indexables`
 
 ### Leaderboard
 

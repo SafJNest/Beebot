@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.service.ChampionIndexableService;
 import com.safjnest.lol.service.ChampionPageService;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -20,6 +21,11 @@ public class ChampionController {
 
     public ChampionController() {
         this.championPageService = new ChampionPageService();
+    }
+
+    @GetMapping("/champion/indexables")
+    public ResponseEntity<?> indexables() {
+        return ResponseEntity.ok(ChampionIndexableService.get());
     }
 
     @GetMapping("/champion/{champion}")

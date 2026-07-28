@@ -31,6 +31,7 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.BuildService;
+import com.safjnest.lol.service.ChampionIndexableService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.tracker.Tracker;
@@ -142,7 +143,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables");
             break;
             case "timer":
                 Timer timer = new Timer();
@@ -935,6 +936,13 @@ public class Test extends Command{
                     System.out.println("Done");
                 };
                 champ.queue();
+                break;
+            case "championindexables":
+                ChronoTask championIndexables = () -> {
+                    List<?> values = ChampionIndexableService.refresh();
+                    System.out.println("Champion indexables refreshed: " + values.size());
+                };
+                championIndexables.queue();
                 break;
             case "migrate":
                 ChronoTask migrate = () -> {

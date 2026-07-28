@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -44,6 +45,14 @@ public class ChampionControllerTest {
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         }
+    }
+
+    @Test
+    public void shouldExposeIndexablesEndpointWithoutParameters() throws Exception {
+        java.lang.reflect.Method method = ChampionController.class.getDeclaredMethod("indexables");
+        GetMapping mapping = method.getAnnotation(GetMapping.class);
+        assertEquals("/champion/indexables", mapping.value()[0]);
+        assertEquals(0, method.getParameterCount());
     }
 
     private ResponseStatusException invalidRank(String value) {
