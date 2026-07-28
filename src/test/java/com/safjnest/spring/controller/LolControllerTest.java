@@ -39,7 +39,7 @@ public class LolControllerTest {
 
     @Test
     public void shouldParseProfileMatchupsFilterDefaults() {
-        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(null, null, null, 5);
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(0, 0, null, null, null, 5);
 
         assertNull(filter.queue());
         assertNull(filter.patch());
@@ -50,7 +50,7 @@ public class LolControllerTest {
     @Test
     public void shouldParseProfileMatchupsFilterValues() {
         com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
-            "ranked_flex_sr", "14.10", "top", 8);
+            0, 0, "ranked_flex_sr", "14.10", "top", 8);
 
         assertEquals(GameQueueType.RANKED_FLEX_SR, filter.queue());
         assertEquals("14.10", filter.patch());
@@ -59,24 +59,41 @@ public class LolControllerTest {
     }
 
     @Test
+    public void shouldPreferStartAndEndOverPatch() {
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+            1711929600000L, 1714521600000L, null, "14.10", null, 5);
+
+        assertEquals(1711929600000L, filter.timeStart());
+        assertEquals(1714521600000L, filter.timeEnd());
+        assertNull(filter.patch());
+    }
+
+    @Test
     public void shouldRejectInvalidProfileMatchupsParameters() {
         try {
-            LolApiParameters.matchupsFilter(null, "14", null, 5);
+            LolApiParameters.matchupsFilter(0, 0, null, "14", null, 5);
             throw new AssertionError("Expected invalid patch");
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         }
 
         try {
-            LolApiParameters.matchupsFilter("aram", null, "top", 5);
+            LolApiParameters.matchupsFilter(0, 0, "aram", null, "top", 5);
             throw new AssertionError("Expected invalid role");
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         }
 
         try {
-            LolApiParameters.matchupsFilter(null, null, null, 0);
+            LolApiParameters.matchupsFilter(0, 0, null, null, null, 0);
             throw new AssertionError("Expected invalid minimum games");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchupsFilter(1711929600000L, 0, null, null, null, 5);
+            throw new AssertionError("Expected incomplete period");
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         }

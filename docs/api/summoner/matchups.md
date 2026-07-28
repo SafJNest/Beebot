@@ -20,8 +20,10 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ma
 |---|---|---|---:|---|---|
 | `shard` | path | enum `LeagueShard` | sì | — | Shard del profilo. |
 | `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
+| `start` | query | epoch millis | no | `0` | Inizio del periodo; deve essere passato insieme a `end`. Se presenti entrambi, hanno precedenza su `patch`. |
+| `end` | query | epoch millis | no | `0` | Fine del periodo; deve essere passato insieme a `start`. Deve essere maggiore o uguale a `start`. |
 | `queue` | query | enum `GameQueueType` oppure `ALL` | no | `ALL` | Queue da filtrare; omissione e `ALL` aggregano tutte le queue. |
-| `patch` | query | `major.minor` | no | nessun filtro | Patch da filtrare; lo split corrente resta il periodo di default. |
+| `patch` | query | `major.minor` | no | nessun filtro | Fallback quando `start` e `end` sono entrambi assenti; se il periodo è presente viene ignorata. |
 | `role` | query | enum `LaneType` | no | tutti i ruoli | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`. Non è valido con queue senza lane. |
 | `minGames` | query | integer `>= 1` | no | `5` | Soglia applicata solo alle righe matchup; i champion giocati non vengono rimossi. |
 
@@ -90,13 +92,18 @@ mantiene tutti i campi del modello esistente.
 tramite i propri dati statici. La response contiene aggregati e non include
 la lista dei singoli game.
 
+`start` e `end` devono essere entrambi presenti oppure entrambi assenti. Se
+sono assenti, `patch` filtra la patch mantenendo il periodo dello split
+corrente; se sono presenti, il periodo esplicito prevale e `patch` non viene
+applicata.
+
 ## Stati ed errori
 
 | HTTP | `code` | Quando |
 |---:|---|---|
 | `200` | — | Aggregato pronto. |
 | `202` | `profile_matchups_pending` | Aggregato assente; il refresh è stato avviato in background. |
-| `400` | `invalid_request` | Queue, patch, role o `minGames` non validi. |
+| `400` | `invalid_request` | Start/end incompleti o non validi, queue, patch, role o `minGames` non validi. |
 | `404` | — | Profilo non trovato. |
 
 ## Owner

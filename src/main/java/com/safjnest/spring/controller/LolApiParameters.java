@@ -61,19 +61,23 @@ public final class LolApiParameters {
     }
 
     public static ActivityFilter matchupsFilter(
+        long start,
+        long end,
         String queueValue,
         String patchValue,
         String roleValue,
         int minGamesValue
     ) {
+        validateMatchupsPeriod(start, end);
         GameQueueType queue = optionalQueue(queueValue);
         LaneType role = role(roleValue);
         validateRole(queue, role);
         ActivityFilter filter = new ActivityFilter();
         filter.setQueue(queue);
-        filter.setPatch(patch(patchValue));
         filter.setLane(role);
         filter.setMinGames(minGames(minGamesValue));
+        if (start != 0 && end != 0) filter.setPeriod(start, end).setPatch(null);
+        else filter.setPatch(patch(patchValue));
         return filter;
     }
 
@@ -135,6 +139,13 @@ public final class LolApiParameters {
     }
 
     // ============================================================================
+
+    private static void validateMatchupsPeriod(long start, long end) {
+        if (start < 0) throw invalid("start", "must be greater than or equal to 0");
+        if (end < 0) throw invalid("end", "must be greater than or equal to 0");
+        if ((start == 0) != (end == 0)) throw invalid("start/end", "must be provided together");
+        if (start != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
+    }
 
     private static <T extends Enum<T>> T parseEnum(String value, Class<T> type, String parameter) {
         try {

@@ -90,12 +90,14 @@ public class LolController {
     public ResponseEntity<?> matchups(
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid,
+            @RequestParam(name = "start", defaultValue = "0") long start,
+            @RequestParam(name = "end", defaultValue = "0") long end,
             @RequestParam(name = "queue", required = false) String queueValue,
             @RequestParam(name = "patch", required = false) String patchValue,
             @RequestParam(name = "role", required = false) String roleValue,
             @RequestParam(name = "minGames", defaultValue = "5") int minGames
     ) {
-        ActivityFilter filter = LolApiParameters.matchupsFilter(queueValue, patchValue, roleValue, minGames);
+        ActivityFilter filter = LolApiParameters.matchupsFilter(start, end, queueValue, patchValue, roleValue, minGames);
         ApiResult<ProfileMatchups> result = profileMatchupsPageService.get(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid"),
