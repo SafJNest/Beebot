@@ -44,8 +44,15 @@ contiene sempre 168 celle in ordine `day * 24 + hour`: `day=0` è Monday,
   "filter": {
     "timeStart": 1715731200000,
     "timeEnd": 1718323200000,
+    "champion": 0,
+    "lane": null,
     "queue": null,
-    "champion": 0
+    "rank": null,
+    "rankBehavior": "GREATER_OR_EQUAL",
+    "patch": null,
+    "region": null,
+    "opponent": 0,
+    "duo": 0
   },
   "coverage": {
     "games": 142,
@@ -169,3 +176,4 @@ sessione più recente alla più vecchia.
 - Service: [`ProfileActivityService`](../../../src/main/java/com/safjnest/lol/service/ProfileActivityService.java)
 - Success model: [`ProfileActivity`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileActivity.java)
 - Match query: [`MongoDB.findProfileStatisticsMatches`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
+- Persistence: Redis `PROFILE_ACTIVITY(puuid, filterKey)` e collection Mongo `profile_activity` con la stessa identità `{ puuid, filterKey }`.

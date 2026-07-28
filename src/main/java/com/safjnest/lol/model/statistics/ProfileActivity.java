@@ -18,7 +18,7 @@ import com.safjnest.lol.model.match.Participant;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public record ProfileActivity(
-    ActivityFilter filter,
+    Filter filter,
     Coverage coverage,
     Summary summary,
     Heatmap heatmap,
@@ -41,9 +41,6 @@ public record ProfileActivity(
     private static final List<Integer> HOURS = hours();
 
     public static ProfileActivity from(List<Match> matches, String puuid, Filter filter) {
-        ActivityFilter activityFilter = filter == null
-            ? new ActivityFilter(0, 0, null, 0)
-            : new ActivityFilter(filter.timeStart(), filter.timeEnd(), filter.queue(), filter.champion());
         Bucket[][] cells = buckets();
         Bucket[] days = new Bucket[DAYS.size()];
         Bucket[] hours = new Bucket[HOURS.size()];
@@ -110,8 +107,8 @@ public record ProfileActivity(
         DayActivity mostActiveDay = mostActiveDay(dailyActivity);
         QueueActivity favoriteQueue = queueActivity.isEmpty() ? null : queueActivity.get(0);
         TimeWindow bestWinrateSlot = bestTimeWindows.isEmpty() ? null : bestTimeWindows.get(0);
-        long rangeStart = activityFilter.timeStart() != 0 ? activityFilter.timeStart() : oldestMatchAt;
-        long rangeEnd = activityFilter.timeEnd() != 0 ? activityFilter.timeEnd() : newestMatchAt;
+        long rangeStart = filter != null && filter.timeStart() != 0 ? filter.timeStart() : oldestMatchAt;
+        long rangeEnd = filter != null && filter.timeEnd() != 0 ? filter.timeEnd() : newestMatchAt;
         double rangeDays = rangeEnd > rangeStart ? (double) (rangeEnd - rangeStart) / DAY_MILLIS : 1;
         double gamesPerDay = round(totalGames / Math.max(1, rangeDays));
         long averageSessionDuration = averageSessionDuration(recentSessions);
@@ -131,7 +128,7 @@ public record ProfileActivity(
         );
 
         return new ProfileActivity(
-            activityFilter,
+            filter,
             new Coverage(totalGames, oldestMatchAt, newestMatchAt, System.currentTimeMillis()),
             summary,
             new Heatmap(DAYS, HOURS, List.copyOf(heatmapCells)),
@@ -143,13 +140,6 @@ public record ProfileActivity(
             insights(mostActiveDay, bestWinrateSlot, favoriteQueue)
         );
     }
-
-    public record ActivityFilter(
-        long timeStart,
-        long timeEnd,
-        GameQueueType queue,
-        int champion
-    ) {}
 
     public record Coverage(
         long games,

@@ -29,6 +29,8 @@ public enum RedisKey {
     PROFILE_RANKS("profile:ranks:%s:%s", Duration.ofHours(6)),
     PROFILE_MASTERIES("profile:masteries:%s:%s", Duration.ofHours(6)),
     PROFILE_STATISTICS("profile:statistics:%s:%s", Duration.ofHours(6)),
+    PROFILE_ACTIVITY("profile:activity:%s:%s", Duration.ofHours(6)),
+    PROFILE_MATCHUPS("profile:matchups:%s:%s", Duration.ofHours(6)),
     PROFILE_RECENT_MATCHES("profile:recent-matches:%s:%s", Duration.ofHours(1)),
     LEADERBOARD_VERSION("leaderboard:version", Duration.ZERO),
     LEADERBOARD_PAGE("leaderboard:page:%s:%s:%s:%s:%s:%s", Duration.ofHours(1)),

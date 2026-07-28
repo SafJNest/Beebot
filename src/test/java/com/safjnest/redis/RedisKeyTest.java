@@ -32,6 +32,8 @@ public class RedisKeyTest {
         assertEquals(6 * 60 * 60, RedisKey.PROFILE_RANKS.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.PROFILE_MASTERIES.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.PROFILE_STATISTICS.ttlSeconds());
+        assertEquals(6 * 60 * 60, RedisKey.PROFILE_ACTIVITY.ttlSeconds());
+        assertEquals(6 * 60 * 60, RedisKey.PROFILE_MATCHUPS.ttlSeconds());
         assertEquals(60 * 60, RedisKey.PROFILE_RECENT_MATCHES.ttlSeconds());
         assertEquals(0, RedisKey.LEADERBOARD_VERSION.ttlSeconds());
         assertEquals(60 * 60, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
@@ -55,10 +57,14 @@ public class RedisKeyTest {
         String secondMasteries = RedisKey.PROFILE_MASTERIES.of("EUW1", "puuid-2");
         String profilePage = RedisKey.PROFILE_PAGE.of("EUW1", "puuid-1");
         String profileStatistics = RedisKey.PROFILE_STATISTICS.of("puuid-1", "filter");
+        String profileActivity = RedisKey.PROFILE_ACTIVITY.of("puuid-1", "filter");
+        String profileMatchups = RedisKey.PROFILE_MATCHUPS.of("puuid-1", "filter");
 
         assertTrue(!firstRanks.equals(secondRanks));
         assertTrue(!firstMasteries.equals(secondMasteries));
         assertTrue(profilePage.endsWith("profile:page:EUW1:puuid-1"));
         assertTrue(profileStatistics.endsWith("profile:statistics:puuid-1:filter"));
+        assertTrue(profileActivity.endsWith("profile:activity:puuid-1:filter"));
+        assertTrue(profileMatchups.endsWith("profile:matchups:puuid-1:filter"));
     }
 }

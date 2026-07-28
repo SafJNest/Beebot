@@ -4,7 +4,7 @@
 
 Con circa 6 milioni di documenti `summoner` e circa 1 GB di dati contro quasi 2 GB di indici, il primo intervento riguarda gli indici. La compressione applicativa dei documenti base viene rimandata: BSON/WiredTiger comprime già il documento, mentre un campo compresso perde query e proiezioni naturali.
 
-I payload LoL non usano più Kryo. MariaDB usa JSON UTF-8 come testo (`longtext`) per build, champion statistics e profile statistics; Mongo usa BSON strutturato: `build` e champion statistics mantengono i propri campi strutturati, mentre `profile_statistics` espone gli aggregati direttamente a root senza `statistics` annidato. Non vengono convertiti o cancellati automaticamente dati storici: l'operatore rimuove manualmente le righe/documenti Kryo prima della rigenerazione.
+I payload LoL non usano più Kryo. MariaDB usa JSON UTF-8 come testo (`longtext`) per build, champion statistics e profile statistics; Mongo usa BSON strutturato: `build` e champion statistics mantengono i propri campi strutturati, mentre `profile_statistics` espone gli aggregati direttamente a root senza `statistics` annidato e `profile_matchups` salva il payload matchup strutturato. Non vengono convertiti o cancellati automaticamente dati storici: l'operatore rimuove manualmente le righe/documenti Kryo prima della rigenerazione.
 
 Gli eventi sono l'eccezione: non vengono filtrati direttamente e vengono letti come payload completo. Per questo vengono spostati da `match.events` alla collection `match_events`, creata con WiredTiger Zstandard nativo.
 
@@ -34,11 +34,13 @@ I consumer ricevono il PUUID già presente nel modello Riot/Summoner. Non esisto
 `MongoDB.ensureIndexes()` crea soltanto gli indici secondari dichiarati nel
 registry, riusa quelli compatibili e non esegue `dropIndex` o modifiche
 automatiche. I nomi e i key pattern sono documentati in
-[`01-db-structure.md`](01-db-structure.md). L'unico vincolo unique è
-`profile_statistics_identity` su `{puuid, filterKey}`; il bootstrap esegue un
-preflight e si interrompe su identità mancanti o duplicate.
+[`01-db-structure.md`](01-db-structure.md). I vincoli unique sono
+`profile_statistics_identity`, `profile_activity_identity` e
+`profile_matchups_identity`, tutti su `{puuid, filterKey}`; il bootstrap
+esegue il preflight delle statistiche e si interrompe su identità mancanti o
+duplicate.
 
-Gli `explain("executionStats")` devono verificare le query calde:
+Gli `explain("executionStats")` devono verificare le query calde, incluse le letture per `profile_matchups`:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")
@@ -46,6 +48,8 @@ db.summoner.find({userId: "discord-id"}).explain("executionStats")
 db.summoner.find({tracking: true}).explain("executionStats")
 db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
 db.profile_statistics.find({puuid: "puuid", filterKey: "filter"}).explain("executionStats")
+db.profile_activity.find({puuid: "puuid", filterKey: "filter"}).explain("executionStats")
+db.profile_matchups.find({puuid: "puuid", filterKey: "filter"}).explain("executionStats")
 ```
 
 Registrare `executionTimeMillis`, `totalKeysExamined`, `totalDocsExamined`,

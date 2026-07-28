@@ -18,11 +18,11 @@ public class PatchUtils {
 	private static final List<String> patches = fetchPatches();
 
 	public static String getPatch() {
-		return patches.get(0);
+		return patches.isEmpty() ? null : patches.get(0);
 	}
 
 	public static String getPreviousPatch() {
-		return patches.get(1);
+		return patches.size() > 1 ? patches.get(1) : null;
 	}
 
 	public static List<String> getPatches() {

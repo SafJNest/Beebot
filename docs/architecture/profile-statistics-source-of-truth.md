@@ -1,12 +1,13 @@
 # Profile statistics: unica fonte di verità
 
 - Stato: implementato staticamente; verifica runtime Mongo ed explain ancora pendenti
-- Ultimo aggiornamento: 2026-07-26
-- Scope: `SummonerOverview`, `SummonerProfile`, `!summoner`, profilo HTTP e statistiche Mongo LoL
+- Ultimo aggiornamento: 2026-07-28
+- Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, profilo HTTP e statistiche Mongo LoL
 - Owner del calcolo e della persistenza: `ProfileStatisticsService`
+- Owner del calcolo e della persistenza matchup: `ProfileMatchupsService`
 - Owner del refresh asincrono: `DatabaseTracker`
 
-Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `Filter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `DatabaseTracker.startProfileStatistics`.
+Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `DatabaseTracker.startProfileStatistics`, `DatabaseTracker.startProfileMatchups`.
 
 ## Regola principale
 
@@ -37,6 +38,44 @@ La response è una proiezione dedicata e non modifica `SummonerView` o
 `overview.recentMatches`. `recentSessions` contiene tutte le sessioni del
 periodo in una sola response, senza cursor. Le celle della heatmap sono
 ordinate per `day * 24 + hour`, con Monday `0` e Sunday `6`.
+
+La persistenza segue lo stesso read-through delle statistiche, ma su una
+collection derivata dedicata: `Redis PROFILE_ACTIVITY(PUUID, filterKey)`, poi
+Mongo `profile_activity` con `{ puuid, filterKey }`; su miss vengono letti i
+match, calcolati tutti gli aggregati in una scansione e salvati prima in Mongo
+e poi in Redis. Il valore `filter` della response è il `Filter` canonico, non
+un record parallelo.
+
+## Profile matchups
+
+`GET /api/lol/{shard}/profile/{puuid}/matchups` usa `ActivityFilter`, che
+estende `Filter` con `minGames`. `queue` omessa o `ALL` significa tutte le
+queue, `patch` omessa significa nessun filtro patch nello split corrente e
+`role` omesso significa tutti i ruoli. `minGames` ha default 5 e filtra solo
+le righe matchup della response; non partecipa a `Filter.toSummonerKey()`.
+
+La response viene costruita da `ProfileMatchups`: una riga per ogni champion
+giocato, le cui statistiche generiche usano `Stats`, e una lista di matchup
+per champion avversario. I matchup contano soltanto l'avversario sulla stessa
+lane. Quando il role filter è omesso, le partite dello stesso champion in
+ruoli diversi vengono aggregate nella stessa riga.
+
+`ProfileStatistics.matchups` resta l'aggregato storico globale usato dal
+profilo e da Discord; non è la sorgente della relazione champion giocato →
+matchup. Il nuovo aggregato ha un proprio read-through Redis/Mongo:
+
+```text
+Redis PROFILE_MATCHUPS(PUUID, filterKey)
+  -> Mongo profile_matchups { puuid, filterKey }
+  -> DatabaseTracker profile-matchups:<puuid>:<filterKey>
+  -> Mongo.findProfileStatisticsMatches(..., Filter, 0, 0)
+  -> ProfileMatchups.from(...)
+  -> Mongo upsert e Redis cache
+```
+
+Il calcolo non avviene durante la request. Un miss restituisce `202` e il
+refresh viene eseguito dagli stessi due worker database del flusso profilo.
+Il JSON del profilo esistente non cambia.
 
 ## Il filtro canonico
 
@@ -269,6 +308,19 @@ Discord/API request
             -> invalida recent matches e profile page
 ```
 
+Per activity il flusso sincrono è invece:
+
+```text
+API request
+  -> costruisce Filter completo
+  -> Redis PROFILE_ACTIVITY(PUUID, filterKey)
+  -> Mongo profile_activity {puuid, filterKey}
+  -> Mongo findProfileStatisticsMatches(..., Filter, 0, 0)
+  -> ProfileActivity.from(...): una scansione, stats e accumulator condivisi
+  -> Mongo upsertProfileActivity(PUUID, Filter, activity)
+  -> Redis PROFILE_ACTIVITY(PUUID, filterKey)
+```
+
 La deduplicazione del lavoro asincrono usa la stessa identità logica:
 
 ```text
@@ -338,6 +390,8 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 | rank profilo | `PROFILE_RANKS(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
 | mastery profilo | `PROFILE_MASTERIES(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
 | statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | 6h | `ProfileStatisticsService` | aggiornamento dopo upsert |
+| activity aggregate | `PROFILE_ACTIVITY(PUUID, filterKey)` | 6h | `ProfileActivityService` | aggiornamento dopo upsert |
+| profile matchups | `PROFILE_MATCHUPS(PUUID, filterKey)` | 6h | `ProfileMatchupsService` | aggiornamento dopo upsert |
 | recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | 1h | `ProfileStatisticsService` | dopo refresh statistiche |
 | pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
 | match raw | chiavi match esistenti | secondo `RedisKey` | `LeagueService`/`Tracker` | secondo il flusso match |

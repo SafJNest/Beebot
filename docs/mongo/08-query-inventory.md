@@ -51,6 +51,8 @@ indici seguono le query effettive:
 | `match` | `match_champion_keyset` | `findChampionMatchIds` con paging keyset su `_id` |
 | `profile_statistics` | `profile_statistics_identity` | lookup/upsert/delete/batch per `{puuid, filterKey}`, `unique` |
 | `profile_statistics` | `profile_statistics_period` | projection su intervalli `timeStart`/`timeEnd` |
+| `profile_activity` | `profile_activity_identity` | lookup/upsert per `{puuid, filterKey}`, `unique` |
+| `profile_matchups` | `profile_matchups_identity` | lookup/upsert per `{puuid, filterKey}`, `unique` |
 | `champion_builds` | `champion_builds_filter` | build aggregate per `filterKey` |
 | `champion_stats` | `champion_stats_filter_champion` | statistiche per `filterKey` e `championId` |
 

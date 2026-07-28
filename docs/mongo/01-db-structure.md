@@ -57,6 +57,8 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `match.events` | `match_events` | `_id = full Riot match ID` | JSON separato, WiredTiger Zstandard |
 | `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
 | `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat, `_id` casuale stabile |
+| `profile_activity` | `profile_activity` | `puuid + filterKey` | aggregate derivato BSON |
+| `profile_matchups` | `profile_matchups` | `puuid + filterKey` | aggregate derivato BSON |
 | `champion` | `champion` | `championId` | catalogo |
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
 | `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
@@ -236,6 +238,23 @@ La chiave logica è `{ puuid, filterKey }`, con `filterKey = Filter.toSummonerKe
 
 Il documento è flat e non contiene un root `statistics`. `recentMatches` è una query `MatchResult` separata con lo stesso filtro e non viene salvato dentro `ProfileStatistics`. Per il flusso completo e il runbook di diagnosi vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
+### `profile_activity`: chiave e payload
+
+`ProfileActivity` usa una collection derivata separata, con la stessa identità
+logica `{ puuid, filterKey }`. Il documento contiene `puuid`, `filterKey` e il
+payload BSON strutturato `activity`; il filtro usato dal calcolo resta il
+modello canonico `Filter`, mentre `filterKey` è la chiave applicativa per
+lookup, Redis e Mongo. La collection può essere cancellata e ricostruita dai
+match senza modificare `profile_statistics`.
+
+### `profile_matchups`: chiave e payload
+
+`ProfileMatchups` usa una collection derivata separata, con la stessa identità
+logica `{ puuid, filterKey }`. Il documento contiene `puuid`, `filterKey` e il
+payload BSON strutturato `matchups`; `minGames` resta fuori dalla chiave perché
+è soltanto una soglia della response. L'indice unique
+`profile_matchups_identity` protegge la cardinalità uno-a-uno.
+
 MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
 ## Indici
@@ -261,6 +280,8 @@ non modifica indici esistenti e non fonde automaticamente documenti duplicati.
 | `match` | `match_champion_keyset` | `queue, region, rank, participants.champion, participants.lane` | multikey |
 | `profile_statistics` | `profile_statistics_identity` | `puuid, filterKey` | `unique` |
 | `profile_statistics` | `profile_statistics_period` | `puuid, timeEnd, timeStart` | — |
+| `profile_activity` | `profile_activity_identity` | `puuid, filterKey` | `unique` |
+| `profile_matchups` | `profile_matchups_identity` | `puuid, filterKey` | `unique` |
 | `champion_builds` | `champion_builds_filter` | `filterKey` | — |
 | `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | — |
 

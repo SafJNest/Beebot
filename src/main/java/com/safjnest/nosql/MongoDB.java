@@ -57,6 +57,8 @@ import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.ProfileActivity;
+import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
@@ -84,9 +86,12 @@ public final class MongoDB {
     private static final String RANK_DISTRIBUTION_AGGREGATE = "rank-distribution";
     private static final String TOP_REGIONS_AGGREGATE = "top-regions";
     private static final String PROFILE_STATISTICS_IDENTITY_INDEX = "profile_statistics_identity";
+    private static final String PROFILE_ACTIVITY_IDENTITY_INDEX = "profile_activity_identity";
+    private static final String PROFILE_MATCHUPS_IDENTITY_INDEX = "profile_matchups_identity";
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
-            "champion_builds", "champion_stats", LEADERBOARD_AGGREGATES_COLLECTION, "migration_runs");
+            "champion_builds", "champion_stats", "profile_activity", "profile_matchups", LEADERBOARD_AGGREGATES_COLLECTION,
+            "migration_runs");
     private static final List<IndexDefinition> INDEX_DEFINITIONS = List.of(
             index("summoner", "summoner_search_prefix",
                     new Document("region", 1).append("riotSearch", 1).append("riotId", 1), false, null),
@@ -118,6 +123,10 @@ public final class MongoDB {
                     new Document("puuid", 1).append("filterKey", 1), true, null),
             index("profile_statistics", "profile_statistics_period",
                     new Document("puuid", 1).append("timeEnd", -1).append("timeStart", 1), false, null),
+            index("profile_activity", PROFILE_ACTIVITY_IDENTITY_INDEX,
+                    new Document("puuid", 1).append("filterKey", 1), true, null),
+            index("profile_matchups", PROFILE_MATCHUPS_IDENTITY_INDEX,
+                    new Document("puuid", 1).append("filterKey", 1), true, null),
             index("champion_builds", "champion_builds_filter",
                     new Document("filterKey", 1), false, null),
             index("champion_stats", "champion_stats_filter_champion",
@@ -970,6 +979,20 @@ public final class MongoDB {
         return document == null ? null : readProfileStatistics(document);
     }
 
+    public static ProfileActivity findProfileActivity(String puuid, Filter filter) {
+        if (puuid == null || puuid.isBlank() || filter == null) return null;
+        Document document = profileActivity().find(Filters.and(
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()))).first();
+        return document == null ? null : readProfileActivity(document);
+    }
+
+    public static ProfileMatchups findProfileMatchups(String puuid, Filter filter) {
+        if (puuid == null || puuid.isBlank() || filter == null) return null;
+        Document document = profileMatchups().find(Filters.and(
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()))).first();
+        return document == null ? null : readProfileMatchups(document);
+    }
+
     public static ProfileStatistics findProfileStatistics(String puuid, long seasonStart) {
         return findProfileStatistics(puuid, Filter.summoner(seasonStart, 0));
     }
@@ -1584,6 +1607,34 @@ public final class MongoDB {
         return result.wasAcknowledged();
     }
 
+    public static boolean upsertProfileActivity(String puuid, Filter filter, ProfileActivity activity) {
+        if (puuid == null || puuid.isBlank() || filter == null || activity == null) return false;
+        String filterKey = filter.toSummonerKey();
+        UpdateResult result = profileActivity().updateOne(
+                Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey)),
+                Updates.combine(
+                        Updates.set("puuid", puuid),
+                        Updates.set("filterKey", filterKey),
+                        Updates.set("activity", structured(activity)),
+                        Updates.setOnInsert("_id", new ObjectId())),
+                new UpdateOptions().upsert(true));
+        return result.wasAcknowledged();
+    }
+
+    public static boolean upsertProfileMatchups(String puuid, Filter filter, ProfileMatchups matchups) {
+        if (puuid == null || puuid.isBlank() || filter == null || matchups == null) return false;
+        String filterKey = filter.toSummonerKey();
+        UpdateResult result = profileMatchups().updateOne(
+                Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey)),
+                Updates.combine(
+                        Updates.set("puuid", puuid),
+                        Updates.set("filterKey", filterKey),
+                        Updates.set("matchups", structured(matchups)),
+                        Updates.setOnInsert("_id", new ObjectId())),
+                new UpdateOptions().upsert(true));
+        return result.wasAcknowledged();
+    }
+
     public static boolean upsertProfileStatistics(String puuid, long seasonStart, ProfileStatistics statistics) {
         return upsertProfileStatistics(puuid, Filter.summoner(seasonStart, 0), statistics);
     }
@@ -2062,6 +2113,14 @@ public final class MongoDB {
         return database().getCollection("profile_statistics");
     }
 
+    private static MongoCollection<Document> profileActivity() {
+        return database().getCollection("profile_activity");
+    }
+
+    private static MongoCollection<Document> profileMatchups() {
+        return database().getCollection("profile_matchups");
+    }
+
     private static MongoCollection<Document> builds() {
         return database().getCollection("champion_builds");
     }
@@ -2346,6 +2405,14 @@ public final class MongoDB {
         values.remove("filterKey");
         values.remove("seasonStart");
         return readStructured(values, ProfileStatistics.class);
+    }
+
+    private static ProfileActivity readProfileActivity(Document document) {
+        return readStructured(document.get("activity"), ProfileActivity.class);
+    }
+
+    private static ProfileMatchups readProfileMatchups(Document document) {
+        return readStructured(document.get("matchups"), ProfileMatchups.class);
     }
 
     private static Build readBuild(Document document) {

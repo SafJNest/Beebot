@@ -22,6 +22,7 @@ import com.safjnest.lol.service.ChampionDataRefreshService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileStatisticsService;
+import com.safjnest.lol.service.ProfileMatchupsService;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.log.BotLogger;
 
@@ -36,6 +37,7 @@ public final class DatabaseTracker {
     private static final ConcurrentMap<String, CompletableFuture<?>> TASKS = new ConcurrentHashMap<>();
     private static final Set<String> CHAMPION_STATS_COMPLETED = ConcurrentHashMap.newKeySet();
     private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
+    private static final ProfileMatchupsService PROFILE_MATCHUPS_SERVICE = new ProfileMatchupsService();
     private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
     private static ExecutorService workerExecutor;
 
@@ -79,6 +81,20 @@ public final class DatabaseTracker {
         ProfileStatisticsRequest request = ProfileStatisticsRequest.from(summoner, requestFilter);
         String key = "profile-statistics:" + request.puuid() + ":" + requestFilter.toSummonerKey();
         return submit(key, () -> refreshProfileStatistics(request));
+    }
+
+    public static CompletableFuture<Boolean> startProfileMatchups(
+        String puuid,
+        LeagueShard shard,
+        Filter filter
+    ) {
+        if (puuid == null || puuid.isBlank() || shard == null || filter == null)
+            return CompletableFuture.completedFuture(false);
+
+        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        ProfileMatchupsRequest request = new ProfileMatchupsRequest(puuid, shard, requestFilter);
+        String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
+        return submit(key, () -> refreshProfileMatchups(request));
     }
 
     public static CompletableFuture<Void> startChampionData(
@@ -167,6 +183,22 @@ public final class DatabaseTracker {
         }
     }
 
+    private static boolean refreshProfileMatchups(ProfileMatchupsRequest request) {
+        try {
+            if (!PROFILE_MATCHUPS_SERVICE.refresh(request.puuid(), request.shard(), request.filter())) {
+                BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid());
+                return false;
+            }
+            BotLogger.info("[LPTracker] Updated profile matchups for puuid=" + request.puuid()
+                + " (" + request.shard() + ") | aggregate persisted");
+            return true;
+        } catch (Exception exception) {
+            BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid()
+                + " message=" + exception.getMessage());
+            throw new IllegalStateException(exception);
+        }
+    }
+
     private static Map<Integer, ChampionStatistics> refreshChampionStats(Filter filter, String key) {
         try {
             Map<Integer, ChampionStatistics> stats = CHAMPION_DATA_REFRESH_SERVICE.refreshStats(filter);
@@ -239,6 +271,12 @@ public final class DatabaseTracker {
             );
         }
     }
+
+    private record ProfileMatchupsRequest(
+        String puuid,
+        LeagueShard shard,
+        Filter filter
+    ) {}
 
     private record DatabaseTask<T>(String key, Supplier<T> supplier, CompletableFuture<T> future) {
 

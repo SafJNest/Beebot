@@ -11,9 +11,9 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
 - Custom builds e summoner.metrics sono fuori scope.
 - Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
-- `profile_statistics`, build e `leaderboard_aggregates` vengono costruiti successivamente dall'applicazione; gli ultimi contengono solo snapshot ricostruibili di distribuzione e top-region.
+- `profile_statistics`, `profile_activity`, `profile_matchups`, build e `leaderboard_aggregates` vengono costruiti successivamente dall'applicazione; gli ultimi contengono solo snapshot ricostruibili di distribuzione e top-region.
 - Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
-- Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
+- Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
 - Il documento `match` usa `_id` come full Riot match ID e `region` come unico campo di shard; `fullGameId`, `gameId`, `game_id` e `leagueShard` non vengono scritti. `patch` mantiene la versione completa e `patchMajor` i primi due segmenti per i filtri.
 - La migration normalizza i residui del documento `match`; gli altri documenti legacy e i vecchi payload Kryo restano fuori dal cleanup automatico e vengono rimossi manualmente prima della rigenerazione.
@@ -58,10 +58,12 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - Participant: campi flat; nessun campo build mega-nested.
 - Eventi: collection `match_events`, payload JSON con checksum e dimensione originale; la collection viene creata con `block_compressor=zstd`.
 - Build e statistiche: `build` è BSON strutturato; `profile_statistics` è un documento flat con gli aggregati direttamente a root, mai una stringa opaca e mai `legacyPayload`.
+- Activity: `profile_activity` salva il payload `ProfileActivity` strutturato con identità `{ puuid, filterKey }`, separata da `profile_statistics`.
+- Matchups: `profile_matchups` salva il payload `ProfileMatchups` strutturato con identità `{ puuid, filterKey }`, separata da `profile_statistics`.
 - MariaDB mantiene i dati storici letti dalla migration; il runtime LoL non li interroga.
 - Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
 
-Per `profile_statistics`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`; l'indice unique `profile_statistics_identity` protegge l'unicità della coppia.
+Per `profile_statistics`, `profile_activity` e `profile_matchups`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`; i rispettivi indici unique proteggono l'unicità della coppia.
 
 ## Indici e spazio
 

@@ -12,10 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.statistics.ProfileActivity;
+import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileActivityService;
+import com.safjnest.lol.service.ProfileMatchupsPageService;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfilePageService;
 
@@ -25,10 +28,12 @@ public class LolController {
 
     private final ProfilePageService profilePageService;
     private final ProfileActivityService profileActivityService;
+    private final ProfileMatchupsPageService profileMatchupsPageService;
 
     public LolController() {
         this.profilePageService = new ProfilePageService();
         this.profileActivityService = new ProfileActivityService();
+        this.profileMatchupsPageService = new ProfileMatchupsPageService();
     }
 
     @GetMapping("/search")
@@ -78,6 +83,29 @@ public class LolController {
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid"),
             filter
+        );
+    }
+
+    @GetMapping("/profile/{puuid}/matchups")
+    public ResponseEntity<?> matchups(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "patch", required = false) String patchValue,
+            @RequestParam(name = "role", required = false) String roleValue,
+            @RequestParam(name = "minGames", defaultValue = "5") int minGames
+    ) {
+        ActivityFilter filter = LolApiParameters.matchupsFilter(queueValue, patchValue, roleValue, minGames);
+        ApiResult<ProfileMatchups> result = profileMatchupsPageService.get(
+            LolApiParameters.requiredShard(shardValue),
+            LolApiParameters.requiredText(puuid, "puuid"),
+            filter
+        );
+        return LolApiResponses.from(
+            result,
+            "profile_matchups_pending",
+            "Profile matchups are being prepared",
+            "Profile not found"
         );
     }
 

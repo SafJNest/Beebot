@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 
@@ -39,8 +40,41 @@ public final class LolApiParameters {
     }
 
     public static GameQueueType activityQueue(String value) {
+        return optionalQueue(value);
+    }
+
+    public static GameQueueType optionalQueue(String value) {
         if (value == null || value.isBlank() || "ALL".equalsIgnoreCase(value.trim())) return null;
         return parseEnum(value, GameQueueType.class, "queue");
+    }
+
+    public static String patch(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim();
+        if (!normalized.matches("\\d+\\.\\d+")) throw invalid("patch", "must have the form major.minor");
+        return normalized;
+    }
+
+    public static int minGames(int value) {
+        if (value < 1) throw invalid("minGames", "must be greater than 0");
+        return value;
+    }
+
+    public static ActivityFilter matchupsFilter(
+        String queueValue,
+        String patchValue,
+        String roleValue,
+        int minGamesValue
+    ) {
+        GameQueueType queue = optionalQueue(queueValue);
+        LaneType role = role(roleValue);
+        validateRole(queue, role);
+        ActivityFilter filter = new ActivityFilter();
+        filter.setQueue(queue);
+        filter.setPatch(patch(patchValue));
+        filter.setLane(role);
+        filter.setMinGames(minGames(minGamesValue));
+        return filter;
     }
 
     public static Filter activityFilter(long start, long end, GameQueueType queue, int champion) {
