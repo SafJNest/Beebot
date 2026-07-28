@@ -20,7 +20,7 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ma
 |---|---|---|---:|---|---|
 | `shard` | path | enum `LeagueShard` | sì | — | Shard del profilo. |
 | `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
-| `start` | query | epoch millis | no | `0` | Inizio del periodo; se `end` manca, viene usato l'istante corrente come fine. Se presente, prevale su `patch`. |
+| `start` | query | epoch millis | no | `0` | Inizio del periodo; se `end` manca, viene usata la fine della giornata corrente (`23:59:59.999`). Se presente, prevale su `patch`. |
 | `end` | query | epoch millis | no | `0` | Fine del periodo; può essere usato da solo e deve essere maggiore o uguale a `start` quando `start` è presente. |
 | `queue` | query | enum `GameQueueType` oppure `ALL` | no | `ALL` | Queue da filtrare; omissione e `ALL` aggregano tutte le queue. |
 | `patch` | query | `major.minor` | no | nessun filtro | Fallback quando `start` e `end` sono entrambi assenti; se il periodo è presente viene ignorata. |
@@ -92,7 +92,9 @@ mantiene tutti i campi del modello esistente.
 tramite i propri dati statici. La response contiene aggregati e non include
 la lista dei singoli game.
 
-Se viene passato `start` senza `end`, la fine del periodo è l'istante corrente.
+Se viene passato `start` senza `end`, la fine del periodo è la fine della
+giornata corrente (`23:59:59.999`, timezone del server), così il `filterKey`
+resta stabile durante la giornata.
 Se viene passato solo `end`, non viene applicato un limite inferiore. Quando
 almeno uno tra `start` e `end` è presente, il periodo prevale e `patch` non
 viene applicata; se mancano entrambi, `patch` filtra la patch mantenendo il

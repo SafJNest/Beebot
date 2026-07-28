@@ -1,13 +1,15 @@
 package com.safjnest.spring.controller;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Locale;
 import java.util.StringJoiner;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ActivityFilter;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 
@@ -68,7 +70,7 @@ public final class LolApiParameters {
         String roleValue,
         int minGamesValue
     ) {
-        long effectiveEnd = end == 0 && start != 0 ? System.currentTimeMillis() : end;
+        long effectiveEnd = end == 0 && start != 0 ? endOfToday() : end;
         validateMatchupsPeriod(start, effectiveEnd);
         GameQueueType queue = optionalQueue(queueValue);
         LaneType role = role(roleValue);
@@ -145,6 +147,11 @@ public final class LolApiParameters {
         if (start < 0) throw invalid("start", "must be greater than or equal to 0");
         if (end < 0) throw invalid("end", "must be greater than or equal to 0");
         if (start != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
+    }
+
+    private static long endOfToday() {
+        ZoneId zone = ZoneId.systemDefault();
+        return LocalDate.now(zone).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1;
     }
 
     private static <T extends Enum<T>> T parseEnum(String value, Class<T> type, String parameter) {

@@ -4,9 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 import org.junit.Test;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
@@ -69,15 +72,14 @@ public class LolControllerTest {
     }
 
     @Test
-    public void shouldUseCurrentTimeAsEndWhenOnlyStartIsProvided() {
-        long before = System.currentTimeMillis();
+    public void shouldUseEndOfTodayWhenOnlyStartIsProvided() {
+        long expectedEnd = LocalDate.now(ZoneId.systemDefault()).plusDays(1)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1;
         com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
-            before - 1000, 0, null, "14.10", null, 5);
-        long after = System.currentTimeMillis();
+            expectedEnd - 1000, 0, null, "14.10", null, 5);
 
-        assertEquals(before - 1000, filter.timeStart());
-        assertTrue(filter.timeEnd() >= before);
-        assertTrue(filter.timeEnd() <= after);
+        assertEquals(expectedEnd - 1000, filter.timeStart());
+        assertEquals(expectedEnd, filter.timeEnd());
         assertNull(filter.patch());
     }
 

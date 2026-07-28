@@ -51,8 +51,9 @@ un record parallelo.
 `GET /api/lol/{shard}/profile/{puuid}/matchups` usa `ActivityFilter`, che
 estende `Filter` con `minGames`. `queue` omessa o `ALL` significa tutte le
 queue, `role` omesso significa tutti i ruoli. Se `start` è presente senza
-`end`, la fine viene impostata all'istante corrente; se viene passato solo
-`end`, resta il limite inferiore aperto. Quando almeno uno dei due bound è
+`end`, la fine viene impostata alle `23:59:59.999` della giornata corrente nel
+timezone del server, così la chiave resta stabile durante la giornata; se viene
+passato solo `end`, resta il limite inferiore aperto. Quando almeno uno dei due bound è
 presente, definisce il periodo e prevale su `patch`; se mancano entrambi,
 `patch` è il fallback mentre il periodo resta quello dello split corrente.
 `minGames` ha default 5 e filtra solo le righe matchup della response; non
