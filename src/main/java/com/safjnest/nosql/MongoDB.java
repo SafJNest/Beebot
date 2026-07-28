@@ -581,7 +581,7 @@ public final class MongoDB {
                     role,
                     (int) number(document.get("games")),
                     document.getBoolean("indexable", false),
-                    number(document.get("lastUpdate")));
+                    number(document.get("lastUpdate"))));
         }
         result.sort((left, right) -> {
             int championOrder = Integer.compare(left.champion(), right.champion());
