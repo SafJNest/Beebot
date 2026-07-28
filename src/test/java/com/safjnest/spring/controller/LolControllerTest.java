@@ -69,6 +69,19 @@ public class LolControllerTest {
     }
 
     @Test
+    public void shouldUseCurrentTimeAsEndWhenOnlyStartIsProvided() {
+        long before = System.currentTimeMillis();
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+            before - 1000, 0, null, "14.10", null, 5);
+        long after = System.currentTimeMillis();
+
+        assertEquals(before - 1000, filter.timeStart());
+        assertTrue(filter.timeEnd() >= before);
+        assertTrue(filter.timeEnd() <= after);
+        assertNull(filter.patch());
+    }
+
+    @Test
     public void shouldRejectInvalidProfileMatchupsParameters() {
         try {
             LolApiParameters.matchupsFilter(0, 0, null, "14", null, 5);
@@ -92,8 +105,8 @@ public class LolControllerTest {
         }
 
         try {
-            LolApiParameters.matchupsFilter(1711929600000L, 0, null, null, null, 5);
-            throw new AssertionError("Expected incomplete period");
+            LolApiParameters.matchupsFilter(1714521600000L, 1711929600000L, null, null, null, 5);
+            throw new AssertionError("Expected invalid period");
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         }

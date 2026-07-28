@@ -68,7 +68,8 @@ public final class LolApiParameters {
         String roleValue,
         int minGamesValue
     ) {
-        validateMatchupsPeriod(start, end);
+        long effectiveEnd = end == 0 && start != 0 ? System.currentTimeMillis() : end;
+        validateMatchupsPeriod(start, effectiveEnd);
         GameQueueType queue = optionalQueue(queueValue);
         LaneType role = role(roleValue);
         validateRole(queue, role);
@@ -76,7 +77,7 @@ public final class LolApiParameters {
         filter.setQueue(queue);
         filter.setLane(role);
         filter.setMinGames(minGames(minGamesValue));
-        if (start != 0 && end != 0) filter.setPeriod(start, end).setPatch(null);
+        if (start != 0 || end != 0) filter.setPeriod(start, effectiveEnd).setPatch(null);
         else filter.setPatch(patch(patchValue));
         return filter;
     }
@@ -143,7 +144,6 @@ public final class LolApiParameters {
     private static void validateMatchupsPeriod(long start, long end) {
         if (start < 0) throw invalid("start", "must be greater than or equal to 0");
         if (end < 0) throw invalid("end", "must be greater than or equal to 0");
-        if ((start == 0) != (end == 0)) throw invalid("start/end", "must be provided together");
         if (start != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
     }
 
