@@ -63,6 +63,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
 | `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
 | champion indexables | `champions_indexable` | `_id = championId + role` | proiezione derivata della major patch corrente |
+| profile indexables | `profiles_indexable` | `_id = puuid` | proiezione derivata per URL pubblici |
 | leaderboard aggregates | `leaderboard_aggregates` | `_id = tipo + filtro` | snapshot derivato |
 | migration checkpoints | `migration_runs` | `_id = runId` | operational state |
 
@@ -269,6 +270,15 @@ champion. La rigenerazione aggiorna `lastUpdate` soltanto quando cambia quel
 booleano, non quando cambia il numero dei game. La collection è ricostruibile
 dai documenti `match` filtrando esclusivamente `patchMajor`.
 
+### `profiles_indexable`
+
+La collection contiene i profili che devono essere indicizzati: summoner con
+`tracking=true` oppure con rank `MASTER_I`, `GRANDMASTER_I` o `CHALLENGER_I`.
+Il documento usa `_id = puuid`, conserva `riotId`, `region` e `lastUpdate`, ed
+è aggiornato con `$setOnInsert` per non cambiare il timestamp a ogni refresh.
+Quando il profilo non soddisfa più la condizione viene rimosso dalla
+collection; una successiva aggiunta genera un nuovo `lastUpdate`.
+
 MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
 ## Indici
@@ -299,6 +309,7 @@ non modifica indici esistenti e non fonde automaticamente documenti duplicati.
 | `champion_builds` | `champion_builds_filter` | `filterKey` | — |
 | `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | — |
 | `champions_indexable` | `champions_indexable_patch` | `patchMajor, championId, role` | — |
+| `profiles_indexable` | `profiles_indexable_order` | `region, riotId` | — |
 
 `match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` e i
 lookup diretti per PUUID/full match ID usano soltanto l'indice nativo `_id`.

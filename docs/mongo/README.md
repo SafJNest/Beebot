@@ -14,6 +14,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build e `leaderboard_aggregates` vengono costruiti successivamente dall'applicazione; gli ultimi contengono solo snapshot ricostruibili di distribuzione e top-region.
 - Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, ecc.) senza prefisso `lol_`.
+- Le projection derivate `champions_indexable` e `profiles_indexable` vengono ricostruite dai dati Mongo runtime.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
 - Il documento `match` usa `_id` come full Riot match ID e `region` come unico campo di shard; `fullGameId`, `gameId`, `game_id` e `leagueShard` non vengono scritti. `patch` mantiene la versione completa e `patchMajor` i primi due segmenti per i filtri.
 - La migration normalizza i residui del documento `match`; gli altri documenti legacy e i vecchi payload Kryo restano fuori dal cleanup automatico e vengono rimossi manualmente prima della rigenerazione.

@@ -51,6 +51,7 @@ import com.mongodb.client.result.UpdateResult;
 import com.safjnest.App;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionIndexable;
+import com.safjnest.lol.model.ProfileIndexable;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
@@ -91,10 +92,15 @@ public final class MongoDB {
     private static final String PROFILE_ACTIVITY_IDENTITY_INDEX = "profile_activity_identity";
     private static final String PROFILE_MATCHUPS_IDENTITY_INDEX = "profile_matchups_identity";
     private static final String CHAMPION_INDEXABLES_COLLECTION = "champions_indexable";
+    private static final String PROFILE_INDEXABLES_COLLECTION = "profiles_indexable";
+    private static final List<String> INDEXABLE_PROFILE_RANKS = List.of(
+            TierDivisionType.MASTER_I.name(),
+            TierDivisionType.GRANDMASTER_I.name(),
+            TierDivisionType.CHALLENGER_I.name());
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
             "champion_builds", "champion_stats", "profile_activity", "profile_matchups", LEADERBOARD_AGGREGATES_COLLECTION,
-            CHAMPION_INDEXABLES_COLLECTION, "migration_runs");
+            CHAMPION_INDEXABLES_COLLECTION, PROFILE_INDEXABLES_COLLECTION, "migration_runs");
     private static final List<IndexDefinition> INDEX_DEFINITIONS = List.of(
             index("summoner", "summoner_search_prefix",
                     new Document("region", 1).append("riotSearch", 1).append("riotId", 1), false, null),
@@ -135,7 +141,9 @@ public final class MongoDB {
             index("champion_stats", "champion_stats_filter_champion",
                     new Document("filterKey", 1).append("championId", 1), false, null),
             index(CHAMPION_INDEXABLES_COLLECTION, "champions_indexable_patch",
-                    new Document("patchMajor", 1).append("championId", 1).append("role", 1), false, null));
+                    new Document("patchMajor", 1).append("championId", 1).append("role", 1), false, null),
+            index(PROFILE_INDEXABLES_COLLECTION, "profiles_indexable_order",
+                    new Document("region", 1).append("riotId", 1), false, null));
 
     private record IndexDefinition(
             String collection,
@@ -1018,6 +1026,54 @@ public final class MongoDB {
         List<Summoner> result = new ArrayList<>();
         for (Document document : summoners().find(Filters.eq("tracking", true))) {
             result.add(summoner(document));
+        }
+        return result;
+    }
+
+    public static List<ProfileIndexable> refreshProfileIndexables() {
+        List<Document> candidates = new ArrayList<>();
+        for (Document document : summoners().find(profileIndexableFilter())
+                .projection(Projections.include("_id", "puuid", "riotId", "region"))
+                .sort(Sorts.ascending("region", "riotId"))) {
+            String puuid = puuid(document);
+            String riotId = document.getString("riotId");
+            String region = document.getString("region");
+            if (puuid == null || puuid.isBlank() || riotId == null || riotId.isBlank()
+                    || region == null || region.isBlank()) continue;
+            candidates.add(new Document("_id", puuid).append("riotId", riotId).append("region", region));
+        }
+
+        long now = System.currentTimeMillis();
+        Set<String> ids = new HashSet<>();
+        List<WriteModel<Document>> operations = new ArrayList<>(candidates.size());
+        for (Document candidate : candidates) {
+            String puuid = candidate.getString("_id");
+            ids.add(puuid);
+            operations.add(new UpdateOneModel<>(Filters.eq("_id", puuid), Updates.combine(
+                    Updates.set("puuid", puuid),
+                    Updates.set("riotId", candidate.getString("riotId")),
+                    Updates.set("region", candidate.getString("region")),
+                    Updates.setOnInsert("lastUpdate", now)),
+                    new UpdateOptions().upsert(true)));
+        }
+        if (!operations.isEmpty()) bulkWrite(profileIndexables(), operations);
+        if (!profileIndexables().deleteMany(ids.isEmpty() ? new Document() : Filters.nin("_id", ids)).wasAcknowledged()) {
+            throw new IllegalStateException("Mongo profile indexable cleanup was not acknowledged");
+        }
+
+        return findProfileIndexables();
+    }
+
+    public static List<ProfileIndexable> findProfileIndexables() {
+        List<ProfileIndexable> result = new ArrayList<>();
+        for (Document document : profileIndexables().find()
+                .projection(Projections.include("riotId", "region"))
+                .sort(Sorts.ascending("region", "riotId"))) {
+            String riotId = document.getString("riotId");
+            String region = document.getString("region");
+            if (riotId != null && !riotId.isBlank() && region != null && !region.isBlank()) {
+                result.add(new ProfileIndexable(riotId, region));
+            }
         }
         return result;
     }
@@ -2226,6 +2282,10 @@ public final class MongoDB {
         return database().getCollection(CHAMPION_INDEXABLES_COLLECTION);
     }
 
+    private static MongoCollection<Document> profileIndexables() {
+        return database().getCollection(PROFILE_INDEXABLES_COLLECTION);
+    }
+
     private static QueryRecord matchRecord(Document document) {
         return QueryRecordParser.fromDocument(document);
     }
@@ -2333,6 +2393,12 @@ public final class MongoDB {
 
     private static Bson patchMajorFilter(String patch) {
         return Filters.eq("patchMajor", patchMajor(patch));
+    }
+
+    private static Bson profileIndexableFilter() {
+        return Filters.or(
+                Filters.eq("tracking", true),
+                Filters.elemMatch("ranks", Filters.in("rank", INDEXABLE_PROFILE_RANKS)));
     }
 
     private static List<String> playableRoleNames() {
