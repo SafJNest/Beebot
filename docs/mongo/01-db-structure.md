@@ -61,7 +61,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `profile_matchups` | `profile_matchups` | `puuid + filterKey` | aggregate derivato BSON |
 | `champion` | `champion` | `championId` | catalogo |
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
-| `champion_stats` | `champion_stats` | `filterKey + championId` | aggregate, non migrato |
+| `champion_stats` | `champion_stats` | `_id = filterKey` | mega-aggregate per filtro; documenti `filterKey + championId` legacy |
 | champion indexables | `champions_indexable` | `_id = championId + role` | proiezione derivata della major patch corrente |
 | profile indexables | `profiles_indexable` | `_id = puuid` | proiezione derivata per URL pubblici |
 | leaderboard aggregates | `leaderboard_aggregates` | `_id = tipo + filtro` | snapshot derivato |
@@ -232,7 +232,7 @@ cancellata e ricostruita senza perdita dei rank.
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Un refresh completato senza giochi validi può salvare un aggregato vuoto con `games=0` e liste vuote: il documento è comunque valido e impedisce di confondere il caso "nessun dato" con "refresh ancora pendente". Le build usano `filter.toKey()` per `_id` e `filterKey`; le stats usano `filter.genericKey()` per `filterKey` e `championId` per distinguere il champion. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
+Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` salva un solo mega-aggregato per filtro e `build` mantiene la propria struttura. Un refresh completato senza giochi validi salva `ready=true` e `statistics={}`: il documento è comunque valido e impedisce di confondere il caso "nessun dato" con "refresh ancora pendente". Le build usano `filter.toKey()` per `_id` e `filterKey`; le stats usano `filter.genericKey()` per `_id` e `filterKey`, con `statistics.<championId>` per i singoli champion. I vecchi documenti `filterKey + championId` e i marker `ready` separati restano leggibili durante la compatibilità. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
 
 ### `profile_statistics`: chiave e indice
 
@@ -307,7 +307,8 @@ non modifica indici esistenti e non fonde automaticamente documenti duplicati.
 | `profile_activity` | `profile_activity_identity` | `puuid, filterKey` | `unique` |
 | `profile_matchups` | `profile_matchups_identity` | `puuid, filterKey` | `unique` |
 | `champion_builds` | `champion_builds_filter` | `filterKey` | — |
-| `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | — |
+| `champion_stats` | `champion_stats_filter` | `filterKey` | — |
+| `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | legacy, mantenuto durante la compatibilità |
 | `champions_indexable` | `champions_indexable_patch` | `patchMajor, championId, role` | — |
 | `profiles_indexable` | `profiles_indexable_order` | `region, riotId` | — |
 

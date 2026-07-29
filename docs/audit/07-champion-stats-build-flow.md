@@ -16,13 +16,14 @@ patch + queue + rank + region + lane
 ```
 
 La generazione massiva parte esclusivamente da `patch + queue`. Per ogni coppia
-vengono create tutte le combinazioni tra `LeagueShardUtils.getActives()` e le
-soglie rank cumulative (`IRON+`, `BRONZE+`, ecc.). Ogni combinazione mantiene il
-proprio `Filter.genericKey()` e produce un `ChampionStatistics` per ogni champion
-presente. I match vengono letti una sola volta dalla query base `patch + queue` e
-distribuiti nei bucket compatibili; un match di Challenger contribuisce quindi a
-tutte le soglie inferiori. Le combinazioni già pronte vengono saltate e quelle
-senza match ricevono un marker persistente di stato vuoto.
+vengono create tutte le combinazioni tra filtro globale, regioni attive, soglie
+rank cumulative (`IRON+`, `BRONZE+`, ecc.) e lane applicabili alla queue. Ogni
+combinazione mantiene il proprio `Filter.genericKey()` e produce un solo
+mega-documento `champion_stats` con una voce `statistics.<championId>` per ogni
+champion presente. I match vengono letti una sola volta dalla query base
+`patch + queue` e distribuiti nei bucket compatibili; un match di Challenger
+contribuisce quindi a tutte le soglie inferiori. Le combinazioni già pronte
+vengono saltate e quelle senza match ricevono `ready=true` con `statistics={}`.
 
 La build resta specifica per champion:
 
@@ -52,8 +53,8 @@ Il job globale:
 
 1. legge una sola volta tutti i match del filtro globale;
 2. calcola le statistiche di tutti i champion presenti;
-3. persiste un `ChampionStatistics` per champion;
-4. marca il filtro globale come pronto solo dopo il completamento di tutte le scritture.
+3. persiste un solo documento aggregato per filtro, completo di tutti i champion;
+4. scrive `ready=true` nello stesso documento solo dopo il completamento dell'accumulo.
 
 Quando una pagina richiede una stats mancante, `DatabaseTracker` accoda la
 matrice per la stessa patch e queue richiesta, ignorando il ruolo come sorgente
@@ -91,26 +92,26 @@ Non sono ammessi due calcoli globali identici.
 Quando un refresh termina correttamente senza giochi validi, non lascia più la
 risorsa in stato mancante: `BuildService` persiste un aggregate build con
 `games=0` e liste vuote, mentre `ChampionDataRefreshService` persiste per il
-champion richiesto un `ChampionStatistics` vuoto con overview a zero. Il
-successivo read trova entrambi i documenti, restituisce `200` e lascia al
-frontend il rendering delle liste vuote. `202` resta riservato al periodo in
-cui il refresh non è ancora terminato o non esiste ancora alcun aggregate.
+filtro un documento `champion_stats` vuoto con `ready=true`. Se un champion
+valido non è presente in un filtro pronto, il read costruisce
+`ChampionStatistics.empty(filter)` e restituisce `200`; `202` resta riservato
+al periodo in cui il filtro non esiste o non è ancora pronto.
 
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
-`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.
+`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e projection Mongo su `filterKey` e `statistics.<championId>`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.
 
-Al termine della matrice, ogni combinazione riuscita viene marcata `ready`,
-anche quando non contiene match: questo impedisce che il polling di una pagina
-senza dati rilanci la stessa scansione. In caso di eccezione il marker non viene
-scritto e la chiave in-flight viene rimossa, quindi la combinazione resta
-ritentabile. Il refresh completo accodato dallo scheduler usa la chiave
+Al termine della matrice, ogni combinazione riuscita viene salvata con `ready`
+nel documento aggregato, anche quando non contiene match: questo impedisce che
+il polling di una pagina senza dati rilanci la stessa scansione. In caso di
+eccezione il documento pronto non viene scritto e la chiave in-flight viene
+rimossa, quindi la combinazione resta ritentabile. Il refresh completo accodato dallo scheduler usa la chiave
 `champion-data-refresh:<patch>` e non può sovrapporsi a un altro refresh dello
 stesso patch.
 
 `ChampionStatsService.compute` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 
-La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRaw` mantiene il cursor aperto e consegna un record alla volta a `BuildService`. Anche le statistiche globali usano una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`: il provider converte e parsea un solo match per volta, poi svuota i riferimenti Java a match ed eventi. Il fallback trend precedente mantiene batch bounded da 100.
+La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRawBatch` mantiene il cursor aperto con `batchSize(100)` e il provider consegna a `BuildService` blocchi di massimo 100 record. `BuildService` aggrega e svuota ogni blocco prima di leggere il successivo; anche il blocco finale può essere parziale. Le statistiche globali usano una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`: il provider converte e parsea un solo match per volta, poi svuota i riferimenti Java a match ed eventi.
 
 Il flusso registra tempi e contatori per lettura streaming dei match, lettura eventi, materializzazione raw, parsing, aggregazione, trend, assemblaggio e coda di persistenza. Gli indici Mongo non sono stati modificati: restano da valutare con `explain("executionStats")` su dati rappresentativi.
 

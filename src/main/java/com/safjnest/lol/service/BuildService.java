@@ -8,6 +8,7 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.nosql.MongoDB;
+import com.safjnest.sql.QueryRecord;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -100,23 +101,29 @@ public final class BuildService {
         System.out.println("build compute started");
         int[] totals = new int[3];
         long sourceStarted = System.nanoTime();
-        ChampionBuildProvider.forEach(filter, record -> {
-            totals[0]++;
-            ChampionBuildData.Game game = ChampionBuildProvider.parse(record, filter);
-            if (game == null) return;
+        ChampionBuildProvider.forEachBatch(filter, batch -> {
+            try {
+                for (QueryRecord record : batch) {
+                    totals[0]++;
+                    ChampionBuildData.Game game = ChampionBuildProvider.parse(record, filter);
+                    if (game == null) continue;
 
-            totals[1]++;
-            if (game.win()) totals[2]++;
-            addCore(game, coreBuilds, coreBuildItems, coreItems);
-            addStarter(game, starters);
-            addBoots(game, boots);
-            addSupportItem(game, supportItems);
-            addSlots(game, slots);
-            addRunes(game, runes, runeConfigurations);
-            addSummonerSpells(game, summonerSpells);
-            addSkillOrder(game, skillOrders);
-            addPrismatics(game, prismatics);
-            addAugments(game, augments);
+                    totals[1]++;
+                    if (game.win()) totals[2]++;
+                    addCore(game, coreBuilds, coreBuildItems, coreItems);
+                    addStarter(game, starters);
+                    addBoots(game, boots);
+                    addSupportItem(game, supportItems);
+                    addSlots(game, slots);
+                    addRunes(game, runes, runeConfigurations);
+                    addSummonerSpells(game, summonerSpells);
+                    addSkillOrder(game, skillOrders);
+                    addPrismatics(game, prismatics);
+                    addAugments(game, augments);
+                }
+            } finally {
+                batch.clear();
+            }
         });
         long sourceNanos = System.nanoTime() - sourceStarted;
         int games = totals[1];

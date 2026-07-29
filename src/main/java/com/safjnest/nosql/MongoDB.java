@@ -139,6 +139,8 @@ public final class MongoDB {
                     new Document("puuid", 1).append("filterKey", 1), true, null),
             index("champion_builds", "champion_builds_filter",
                     new Document("filterKey", 1), false, null),
+            index("champion_stats", "champion_stats_filter",
+                    new Document("filterKey", 1), false, null),
             index("champion_stats", "champion_stats_filter_champion",
                     new Document("filterKey", 1).append("championId", 1), false, null),
             index(CHAMPION_INDEXABLES_COLLECTION, "champions_indexable_patch",
@@ -611,36 +613,58 @@ public final class MongoDB {
 
     public static void forEachChampionBuildRaw(Filter filter, Consumer<QueryRecord> consumer) {
         if (filter == null || consumer == null) return;
+        forEachChampionBuildRawBatch(filter, 1, batch -> {
+            for (QueryRecord record : batch) consumer.accept(record);
+        });
+    }
+
+    public static void forEachChampionBuildRawBatch(Filter filter, int batchSize,
+                                                     Consumer<List<QueryRecord>> consumer) {
+        if (filter == null || consumer == null || batchSize <= 0) return;
         FindIterable<Document> query = matches().find(championMatchFilter(filter, null)).projection(Projections.include(
                 "_id", "participants.champion", "participants.lane", "participants.win",
                 "participants.starterItems", "participants.boots", "participants.supportItem",
                 "participants.item0", "participants.item1", "participants.item2", "participants.item3",
                 "participants.item4", "participants.item5", "participants.skillOrder", "participants.augments",
-                "participants.summonerSpell1", "participants.summonerSpell2"));
+                "participants.summonerSpell1", "participants.summonerSpell2")).batchSize(batchSize);
+        List<QueryRecord> batch = new ArrayList<>(batchSize);
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) {
                 Document match = cursor.next();
                 for (Document participant : documents(match.get("participants"))) {
                     if (!matchesChampionFilter(participant, filter)) continue;
-                    JSONObject build = new JSONObject();
-                    JSONObject buildData = new JSONObject();
-                    buildData.put("starter", new JSONArray(integerList(readIntegers(participant, "starterItems"))));
-                    buildData.put("boots", participant.getInteger("boots", 0));
-                    buildData.put("support_item", participant.getInteger("supportItem", 0));
-                    buildData.put("build", new JSONArray(List.of(
-                            participant.getInteger("item0", 0), participant.getInteger("item1", 0), participant.getInteger("item2", 0),
-                            participant.getInteger("item3", 0), participant.getInteger("item4", 0), participant.getInteger("item5", 0))));
-                    build.put("build", buildData);
-                    build.put("skill_order", new JSONArray(readIntegers(participant, "skillOrder")));
-                    build.put("augments", new JSONArray(readIntegers(participant, "augments")));
-                    build.put("summoner_spells", new JSONArray(List.of(participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
-                    consumer.accept(QueryRecordParser.fromMap(Map.of(
-                            "game_id", publicGameId(match.getString("_id")),
-                            "win", participant.getBoolean("win", false),
-                            "build", build.toString())));
+                    batch.add(championBuildRecord(match, participant));
+                    if (batch.size() == batchSize) {
+                        consumer.accept(batch);
+                        batch.clear();
+                    }
                 }
             }
         }
+        if (!batch.isEmpty()) {
+            consumer.accept(batch);
+            batch.clear();
+        }
+    }
+
+    private static QueryRecord championBuildRecord(Document match, Document participant) {
+        JSONObject build = new JSONObject();
+        JSONObject buildData = new JSONObject();
+        buildData.put("starter", new JSONArray(integerList(readIntegers(participant, "starterItems"))));
+        buildData.put("boots", participant.getInteger("boots", 0));
+        buildData.put("support_item", participant.getInteger("supportItem", 0));
+        buildData.put("build", new JSONArray(List.of(
+                participant.getInteger("item0", 0), participant.getInteger("item1", 0), participant.getInteger("item2", 0),
+                participant.getInteger("item3", 0), participant.getInteger("item4", 0), participant.getInteger("item5", 0))));
+        build.put("build", buildData);
+        build.put("skill_order", new JSONArray(readIntegers(participant, "skillOrder")));
+        build.put("augments", new JSONArray(readIntegers(participant, "augments")));
+        build.put("summoner_spells", new JSONArray(List.of(
+                participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
+        return QueryRecordParser.fromMap(Map.of(
+                "game_id", publicGameId(match.getString("_id")),
+                "win", participant.getBoolean("win", false),
+                "build", build.toString()));
     }
 
     public static long countChampionMatchesByFilter(Filter filter) {
@@ -1155,14 +1179,42 @@ public final class MongoDB {
 
     public static ChampionStatistics findChampionStatistics(Filter filter, int championId) {
         if (filter == null) return null;
-        Document document = championStats().find(Filters.and(
-                Filters.eq("filterKey", filter.genericKey()), Filters.eq("championId", championId))).first();
-        return document == null ? null : readChampionStatistics(document);
+        String filterKey = filter.genericKey();
+        Document aggregate = championStats().find(Filters.eq("_id", filterKey))
+                .projection(Projections.fields(Projections.include(
+                        "filterKey", "ready", "statistics." + championId))).first();
+        if (aggregate != null) {
+            if (!aggregate.getBoolean("ready", false)) return null;
+            return readAggregatedChampionStatistics(aggregate, championId);
+        }
+
+        Document legacy = championStats().find(Filters.and(
+                Filters.eq("filterKey", filterKey), Filters.eq("championId", championId))).first();
+        return legacy == null ? null : readChampionStatistics(legacy);
     }
 
-        public static Map<Integer, ChampionStatistics> findChampionStatistics(Filter filter) {
+    public static Map<Integer, ChampionStatistics> findChampionStatistics(Filter filter) {
         if (filter == null) return Map.of();
         Map<Integer, ChampionStatistics> result = new HashMap<>();
+        Document aggregate = championStats().find(Filters.eq("_id", filter.genericKey()))
+                .projection(Projections.include("filterKey", "ready", "statistics")).first();
+        if (aggregate != null) {
+            if (!aggregate.getBoolean("ready", false)) return result;
+            Document values = aggregate.get("statistics", Document.class);
+            if (values == null) return result;
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+                int champion;
+                try {
+                    champion = Integer.parseInt(entry.getKey());
+                } catch (RuntimeException ignored) {
+                    continue;
+                }
+                ChampionStatistics statistics = readStructured(entry.getValue(), ChampionStatistics.class);
+                if (champion != 0 && statistics != null) result.put(champion, statistics);
+            }
+            return result;
+        }
+
         for (Document document : championStats().find(Filters.and(
                 Filters.eq("filterKey", filter.genericKey()), Filters.exists("championId")))) {
             ChampionStatistics statistics = readChampionStatistics(document);
@@ -1179,6 +1231,10 @@ public final class MongoDB {
 
     public static boolean hasChampionStatisticsReady(Filter filter) {
         if (filter == null) return false;
+        if (championStats().find(Filters.and(
+                Filters.eq("_id", filter.genericKey()),
+                Filters.eq("ready", true)))
+                .projection(Projections.include("_id")).first() != null) return true;
         return championStats().find(Filters.and(
                 Filters.eq("filterKey", filter.genericKey()),
                 Filters.eq("ready", true)))
@@ -1798,16 +1854,26 @@ public final class MongoDB {
 
     public static boolean upsertChampionStatistics(ChampionStatistics statistics) {
         if (statistics == null || statistics.filter() == null) return false;
-        Document document = championStatisticsDocument(statistics);
+        Document document = championStatisticsDocument(statistics.filter(),
+                Map.of(statistics.filter().champion(), statistics), true);
         replace(championStats(), document);
         return true;
     }
 
     public static boolean upsertChampionStatistics(Map<Integer, ChampionStatistics> statistics) {
         if (statistics == null || statistics.isEmpty()) return false;
-        List<WriteModel<Document>> operations = new ArrayList<>(statistics.size());
-        for (ChampionStatistics value : statistics.values()) if (value != null && value.filter() != null) {
-            Document document = championStatisticsDocument(value);
+        Map<String, Filter> filters = new LinkedHashMap<>();
+        Map<String, Map<Integer, ChampionStatistics>> grouped = new LinkedHashMap<>();
+        for (ChampionStatistics value : statistics.values()) {
+            if (value == null || value.filter() == null || value.filter().champion() == 0) continue;
+            String key = value.filter().genericKey();
+            filters.putIfAbsent(key, value.filter());
+            grouped.computeIfAbsent(key, ignored -> new LinkedHashMap<>())
+                    .put(value.filter().champion(), value);
+        }
+        List<WriteModel<Document>> operations = new ArrayList<>(grouped.size());
+        for (Map.Entry<String, Map<Integer, ChampionStatistics>> entry : grouped.entrySet()) {
+            Document document = championStatisticsDocument(filters.get(entry.getKey()), entry.getValue(), true);
             operations.add(new ReplaceOneModel<>(Filters.eq("_id", document.get("_id")), document,
                     new ReplaceOptions().upsert(true)));
         }
@@ -1815,13 +1881,22 @@ public final class MongoDB {
         return true;
     }
 
+    public static boolean upsertChampionStatistics(Filter filter,
+                                                   Map<Integer, ChampionStatistics> statistics) {
+        if (filter == null) return false;
+        replace(championStats(), championStatisticsDocument(filter, statistics, true));
+        return true;
+    }
+
     public static boolean markChampionStatisticsReady(Filter filter) {
         if (filter == null) return false;
         String filterKey = filter.genericKey();
-        Document document = new Document("_id", filterKey + ":ready")
-                .append("filterKey", filterKey)
-                .append("ready", true);
-        replace(championStats(), document);
+        UpdateResult updated = championStats().updateOne(
+                Filters.eq("_id", filterKey), Updates.set("ready", true));
+        if (updated.getMatchedCount() > 0) return true;
+
+        Map<Integer, ChampionStatistics> statistics = findChampionStatistics(filter);
+        replace(championStats(), championStatisticsDocument(filter, statistics, true));
         return true;
     }
 
@@ -2624,6 +2699,12 @@ public final class MongoDB {
         return readStructured(document.get("statistics"), ChampionStatistics.class);
     }
 
+    private static ChampionStatistics readAggregatedChampionStatistics(Document document, int championId) {
+        Document statistics = document.get("statistics", Document.class);
+        if (statistics == null) return null;
+        return readStructured(statistics.get(String.valueOf(championId)), ChampionStatistics.class);
+    }
+
     private static <T> T readStructured(Object value, Class<T> type) {
         return JsonCodec.fromDocument(value, type);
     }
@@ -2652,13 +2733,21 @@ public final class MongoDB {
                 .append("build", JsonCodec.toDocument(build));
     }
 
-    private static Document championStatisticsDocument(ChampionStatistics statistics) {
-        String filterKey = statistics.filter().genericKey();
-        String id = filterKey + ":" + statistics.filter().champion();
-        return new Document("_id", id)
+    private static Document championStatisticsDocument(Filter filter,
+                                                       Map<Integer, ChampionStatistics> statistics,
+                                                       boolean ready) {
+        Document values = new Document();
+        if (statistics != null) {
+            for (Map.Entry<Integer, ChampionStatistics> entry : statistics.entrySet()) {
+                if (entry.getKey() == null || entry.getKey() == 0 || entry.getValue() == null) continue;
+                values.put(String.valueOf(entry.getKey()), JsonCodec.toDocument(entry.getValue()));
+            }
+        }
+        String filterKey = filter.genericKey();
+        return new Document("_id", filterKey)
                 .append("filterKey", filterKey)
-                .append("championId", statistics.filter().champion())
-                .append("statistics", JsonCodec.toDocument(statistics));
+                .append("ready", ready)
+                .append("statistics", values);
     }
 
     private static Bson entityUpdateStage(Map<String, Object> operation) {

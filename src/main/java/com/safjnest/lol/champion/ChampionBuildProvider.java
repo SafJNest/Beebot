@@ -12,6 +12,8 @@ import org.json.JSONObject;
 
 public final class ChampionBuildProvider {
 
+    public static final int BATCH_SIZE = 100;
+
     private ChampionBuildProvider() {}
 
     public static List<QueryRecord> load(Filter filter) {
@@ -19,7 +21,14 @@ public final class ChampionBuildProvider {
     }
 
     public static void forEach(Filter filter, Consumer<QueryRecord> consumer) {
-        MongoDB.forEachChampionBuildRaw(filter, consumer);
+        if (consumer == null) return;
+        forEachBatch(filter, batch -> {
+            for (QueryRecord record : batch) consumer.accept(record);
+        });
+    }
+
+    public static void forEachBatch(Filter filter, Consumer<List<QueryRecord>> consumer) {
+        MongoDB.forEachChampionBuildRawBatch(filter, BATCH_SIZE, consumer);
     }
 
     public static ChampionBuildData.Game parse(QueryRecord record, Filter filter) {

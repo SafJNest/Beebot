@@ -92,10 +92,6 @@ public final class ChampionStatsService {
             long persistenceStarted = System.nanoTime();
             BotLogger.info("Saving champion stats for " + filter.genericKey());
             MongoDB.upsertChampionStatistics(computed);
-            for (ChampionStatistics statistic : computed.values()) RedisClient.set(
-                RedisKey.CHAMPION_STATS,
-                statistic,
-                statistic.filter().genericKey(), statistic.filter().champion());
             BotLogger.info("Champion stats persisted: filter=" + filter.genericKey()
                 + ", champions=" + computed.size() + ", persistenceMs="
                 + millis(System.nanoTime() - persistenceStarted) + ", totalMs="
@@ -168,7 +164,7 @@ public final class ChampionStatsService {
         Filter first = accumulators.values().iterator().next().filter;
         Filter source = new Filter()
             .setChampion(0)
-            .setLane(first.lane())
+            .setLane(null)
             .setQueue(first.queue())
             .setRank(null)
             .setPatch(first.patch())
@@ -201,14 +197,10 @@ public final class ChampionStatsService {
             Map<Integer, ChampionStatistics> statistics = assemble(accumulator, trends);
             if (statistics.isEmpty()) emptyFilters++;
             else {
-                MongoDB.upsertChampionStatistics(statistics);
-                for (ChampionStatistics statistic : statistics.values()) RedisClient.set(
-                    RedisKey.CHAMPION_STATS,
-                    statistic,
-                    statistic.filter().genericKey(), statistic.filter().champion());
+                MongoDB.upsertChampionStatistics(accumulator.filter, statistics);
                 persistedChampions += statistics.size();
             }
-            MongoDB.markChampionStatisticsReady(accumulator.filter);
+            if (statistics.isEmpty()) MongoDB.upsertChampionStatistics(accumulator.filter, Map.of());
         }
         return new MatrixResult(accumulators.size(), emptyFilters, persistedChampions);
     }
@@ -791,14 +783,8 @@ public final class ChampionStatsService {
     }
 
     private static void save(Map<Integer, ChampionStatistics> stats) {
-        for (ChampionStatistics statistic : stats.values()) {
-            ChronoTask saveTask = () -> MongoDB.upsertChampionStatistics(statistic);
-            RedisClient.set(
-                RedisKey.CHAMPION_STATS,
-                statistic,
-                statistic.filter().genericKey(), statistic.filter().champion());
-            saveTask.queue();
-        }
+        ChronoTask saveTask = () -> MongoDB.upsertChampionStatistics(stats);
+        saveTask.queue();
     }
 
     private static Map<TeamType, List<ChampionStatsData.Player>> byTeam(

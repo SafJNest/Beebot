@@ -54,7 +54,8 @@ indici seguono le query effettive:
 | `profile_activity` | `profile_activity_identity` | lookup/upsert per `{puuid, filterKey}`, `unique` |
 | `profile_matchups` | `profile_matchups_identity` | lookup/upsert per `{puuid, filterKey}`, `unique` |
 | `champion_builds` | `champion_builds_filter` | build aggregate per `filterKey` |
-| `champion_stats` | `champion_stats_filter_champion` | statistiche per `filterKey` e `championId` |
+| `champion_stats` | `champion_stats_filter` | mega-aggregato per `filterKey`; projection `statistics.<championId>` |
+| `champion_stats` | `champion_stats_filter_champion` | lettura compatibile dei vecchi documenti per `filterKey` e `championId` |
 
 `match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` e i
 lookup diretti di match/summoner restano coperti da `_id`. Non vengono creati

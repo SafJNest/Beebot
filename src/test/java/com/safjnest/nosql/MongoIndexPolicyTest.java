@@ -29,7 +29,7 @@ public class MongoIndexPolicyTest {
         field.setAccessible(true);
         List<?> definitions = (List<?>) field.get(null);
 
-        assertEquals(20, definitions.size());
+        assertEquals(21, definitions.size());
         Set<String> names = new HashSet<>();
         for (Object definition : definitions) {
             Method name = definition.getClass().getDeclaredMethod("name");
@@ -43,7 +43,7 @@ public class MongoIndexPolicyTest {
                 "match_shard_time", "match_shard_patch_time", "match_patch", "match_champion_filter",
                 "match_champion_keyset", "profile_statistics_identity", "profile_statistics_period",
                 "profile_activity_identity", "profile_matchups_identity",
-                "champion_builds_filter", "champion_stats_filter_champion", "champions_indexable_patch",
+                "champion_builds_filter", "champion_stats_filter", "champion_stats_filter_champion", "champions_indexable_patch",
                 "profiles_indexable_order"), names);
 
         assertPolicy(definitions, "summoner_search_prefix", "summoner",
@@ -80,6 +80,8 @@ public class MongoIndexPolicyTest {
         assertPolicy(definitions, "profile_matchups_identity", "profile_matchups",
                 new Document("puuid", 1).append("filterKey", 1), true, null);
         assertPolicy(definitions, "champion_builds_filter", "champion_builds",
+                new Document("filterKey", 1), false, null);
+        assertPolicy(definitions, "champion_stats_filter", "champion_stats",
                 new Document("filterKey", 1), false, null);
         assertPolicy(definitions, "champion_stats_filter_champion", "champion_stats",
                 new Document("filterKey", 1).append("championId", 1), false, null);

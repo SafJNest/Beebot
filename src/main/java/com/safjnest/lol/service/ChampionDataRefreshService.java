@@ -12,11 +12,13 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -78,15 +80,27 @@ public class ChampionDataRefreshService {
     static List<Filter> matrixFilters(String patch, GameQueueType queue) {
         if (patch == null || patch.isBlank() || queue == null) return List.of();
         List<Filter> filters = new ArrayList<>();
-        for (LeagueShard region : LeagueShardUtils.getActives()) {
-            for (TierType rank : TierDivisionUtils.getHigherTiers(TierType.IRON)) {
-                filters.add(new Filter()
-                    .setChampion(0)
-                    .setLane(null)
-                    .setQueue(queue)
-                    .setRank(rank)
-                    .setPatch(patch)
-                    .setRegion(region));
+        List<LeagueShard> regions = new ArrayList<>();
+        regions.add(null);
+        regions.addAll(LeagueShardUtils.getActives());
+        List<TierType> ranks = new ArrayList<>();
+        ranks.add(null);
+        ranks.addAll(TierDivisionUtils.getHigherTiers(TierType.IRON));
+        List<LaneType> lanes = new ArrayList<>();
+        lanes.add(null);
+        if (GameQueueTypeUtils.hasLane(queue)) lanes.addAll(LaneTypeUtils.playables());
+
+        for (LeagueShard region : regions) {
+            for (TierType rank : ranks) {
+                for (LaneType lane : lanes) {
+                    filters.add(new Filter()
+                        .setChampion(0)
+                        .setLane(lane)
+                        .setQueue(queue)
+                        .setRank(rank)
+                        .setPatch(patch)
+                        .setRegion(region));
+                }
             }
         }
         return filters;
@@ -180,8 +194,7 @@ public class ChampionDataRefreshService {
     }
 
     private static boolean isReady(Filter filter) {
-        if (MongoDB.hasChampionStatisticsReady(filter)) return true;
-        return MongoDB.hasChampionStatistics(filter);
+        return MongoDB.hasChampionStatisticsReady(filter);
     }
 
 }

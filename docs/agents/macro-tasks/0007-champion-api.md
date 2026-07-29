@@ -32,11 +32,12 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - power curve e trend patch quando i dati sono disponibili;
 - tutti i matchup validi con metriche @15/eventi disponibili;
 - tutte le lane synergy valide;
-- scansione globale tramite una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`; metadata, participant ed evento vengono materializzati per un match alla volta e i riferimenti Java vengono rilasciati subito dopo l'aggregazione; il fallback trend precedente resta bounded a batch da 100;
+- scansione globale tramite una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`; metadata, participant ed evento vengono materializzati per un match alla volta e i riferimenti Java vengono rilasciati subito dopo l’aggregazione;
+- build tramite cursor Mongo `batchSize(100)`, provider a blocchi e `BuildService` che svuota ogni batch prima del successivo;
 - aggregazione nel solo match corrente e rilascio delle strutture raw dopo ogni game e dopo ogni cursor item;
 - liste build indipendenti con massimo tre opzioni per categoria;
 - augment aggregati per slot, con ordine conservato;
-- chiavi stats Redis/DB con lane quando il ruolo è specificato;
+- chiavi stats Redis per champion richiesto e documenti Mongo aggregati per `filterKey`, con projection `statistics.<championId>`;
 - rigenerazione dei payload JSON/BSON mancanti o corrotti.
 - matrice champion stats generata esclusivamente da `patch + queue`, con tutte le
   regioni attive e tutte le soglie rank cumulative;

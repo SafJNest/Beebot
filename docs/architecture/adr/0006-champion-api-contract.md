@@ -16,11 +16,11 @@ The request accepts optional `rank`, `region`, `queue` and `role` parameters. Mi
 
 The success model is `ChampionView`, containing champion identity, `ChampionStatistics` and one `Build` aggregate. `Build` contains independent, bounded option lists for core builds/items, starters, boots, support items, item slots, complete rune configurations, summoner spell configurations, skill orders, prismatics and augment slots. `ChampionStatistics` contains the overview, advanced metrics, all valid matchups and all valid lane synergies. No list position means highest win rate or most used.
 
-The HTTP request is orchestrated by one `ChampionPageService.get` flow. It first reads the complete page from Redis. On a miss, its internal `compute` reads the persisted stats and build components from Redis/DB without calculating match data. If either component is missing, the filter is deduplicated in `DatabaseTracker`, a matrix refresh rooted at the requested `patch + queue` is submitted to the two-worker database queue and the request returns HTTP 202. The matrix contains one aggregate per active region and cumulative rank threshold; when both components are available, the service builds `ChampionView` and caches the complete page.
+The HTTP request is orchestrated by one `ChampionPageService.get` flow. It first reads the complete page from Redis. On a miss, its internal `compute` reads the persisted stats and build components from Redis/DB without calculating match data. If either component is missing, the filter is deduplicated in `DatabaseTracker`, a matrix refresh rooted at the requested `patch + queue` is submitted to the two-worker database queue and the request returns HTTP 202. The matrix contains one aggregate document per generated filter combination; Mongo reads only `statistics.<championId>` for a single champion, while Redis keeps the requested champion only. A ready filter without that champion returns an empty 200 result; when both components are available, the service builds `ChampionView` and caches the complete page.
 
 The scheduler is started explicitly and idempotently by the application. It owns the calendar trigger and submits the scheduled full champion refresh to `DatabaseTracker`; API-triggered work remains request-driven and deduplicated by the same database queue.
 
-Champion statistics, builds and profile statistics use the shared Jackson JSON codec. MariaDB stores UTF-8 JSON text and Mongo stores structured BSON. No compatibility alias, Kryo decoder or `legacyPayload` fallback is maintained; invalid payloads are treated as missing so the existing refresh flow can recreate them. Existing invalid rows/documents are removed manually by the operator.
+Champion statistics, builds and profile statistics use the shared Jackson JSON codec. MariaDB stores UTF-8 JSON text and Mongo stores structured BSON. The new champion-stats writer stores one ready aggregate document per `filterKey`; old `filterKey + championId` documents and separate ready markers remain readable as a temporary fallback and are not deleted automatically. Invalid payloads are treated as missing so the existing refresh flow can recreate them.
 
 ## Ownership
 
@@ -39,7 +39,7 @@ Champion statistics, builds and profile statistics use the shared Jackson JSON c
 - Role is rejected when the selected queue does not support lanes.
 - The page cache is written only when both aggregates are ready.
 - Missing global statistics are deduplicated by `champion-stats-matrix:<patch>:<queue>`, while missing builds are deduplicated by `champion-build:<Filter.toKey()>`; both jobs are submitted immediately to the database queue.
-- A matrix starts only from the requested patch and queue, enumerates `LeagueShardUtils.getActives()` and cumulative rank thresholds, skips ready filter keys and persists a ready marker for empty combinations.
+- A matrix starts only from the requested patch and queue, enumerates global and active-region filters, cumulative rank thresholds and applicable lanes, skips ready filter keys and persists `ready=true` with `statistics={}` for empty combinations.
 - API page reads do not call the synchronous command fallback methods.
 - Automatic `mostCommonBuild`, `highestWinrate`, `getMostUsed` and `getHighWinrate` selections are not part of the service contract.
 - Every bounded build category contains at most three options; empty source data remains an empty list.
