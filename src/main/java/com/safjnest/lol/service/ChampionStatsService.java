@@ -170,6 +170,12 @@ public final class ChampionStatsService {
             .setPatch(first.patch())
             .setRegion(null);
 
+        BotLogger.info("[ChampionStatsMatrix] started: patch=" + first.patch()
+            + ", queue=" + first.queue() + ", combinations=" + accumulators.size());
+        long totalMatches = ChampionStatsProvider.loadMatchCount(source);
+        BotLogger.info("[ChampionStatsMatrix] source matches: patch=" + first.patch()
+            + ", queue=" + first.queue() + ", matches=" + totalMatches);
+
         ChampionStatsProvider.forEachMatch(source, read -> {
             ChampionStatsData.RawMatch rawMatch = read.match();
             List<MatrixAccumulator> targets = new ArrayList<>();
@@ -192,7 +198,13 @@ public final class ChampionStatsService {
 
         int emptyFilters = 0;
         int persistedChampions = 0;
+        int combinationNumber = 0;
         for (MatrixAccumulator accumulator : accumulators.values()) {
+            combinationNumber++;
+            BotLogger.info("[ChampionStatsMatrix] combination " + combinationNumber + "/"
+                + accumulators.size() + " started: rank=" + accumulator.filter.rank()
+                + ", region=" + accumulator.filter.region()
+                + ", lane=" + accumulator.filter.lane());
             Map<Integer, Trend> trends = loadTrends(accumulator.filter, accumulator.pickWin);
             Map<Integer, ChampionStatistics> statistics = assemble(accumulator, trends);
             if (statistics.isEmpty()) emptyFilters++;
@@ -201,7 +213,18 @@ public final class ChampionStatsService {
                 persistedChampions += statistics.size();
             }
             if (statistics.isEmpty()) MongoDB.upsertChampionStatistics(accumulator.filter, Map.of());
+            BotLogger.info("[ChampionStatsMatrix] combination " + combinationNumber + "/"
+                + accumulators.size() + " completed: rank=" + accumulator.filter.rank()
+                + ", region=" + accumulator.filter.region()
+                + ", lane=" + accumulator.filter.lane()
+                + ", games=" + accumulator.totalGames[0]
+                + ", champions=" + statistics.size()
+                + ", status=READY");
         }
+        BotLogger.info("[ChampionStatsMatrix] completed: patch=" + first.patch()
+            + ", queue=" + first.queue() + ", matches=" + totalMatches
+            + ", combinations=" + accumulators.size()
+            + ", empty=" + emptyFilters + ", champions=" + persistedChampions);
         return new MatrixResult(accumulators.size(), emptyFilters, persistedChampions);
     }
 
@@ -272,7 +295,7 @@ public final class ChampionStatsService {
         long[] parseNanos = new long[1];
         long[] aggregateNanos = new long[1];
         long streamStarted = System.nanoTime();
-        System.out.println("stats stream started: filter=" + filter.genericKey());
+        BotLogger.info("[ChampionStats] stream started: filter=" + filter.genericKey());
         ChampionStatsProvider.forEachMatch(filter, read -> {
             processedMatches[0]++;
             rawMaterializeNanos[0] += read.materializeNanos();
@@ -700,7 +723,7 @@ public final class ChampionStatsService {
             if (matchIds.isEmpty()) break;
             batchNumber++;
             int batchSize = matchIds.size();
-            System.out.println("stats previous batch " + batchNumber + "/" + previousBatches
+            BotLogger.info("[ChampionStats] previous batch " + batchNumber + "/" + previousBatches
                 + " started: " + matchIds.size() + " games");
             List<QueryRecord> result = ChampionStatsProvider.loadTrendParticipants(matchIds);
             mergePrevious(previous, previousPickWin(result, filter));
@@ -709,11 +732,12 @@ public final class ChampionStatsService {
             int resultSize = result.size();
             result.clear();
             matchIds.clear();
-            System.out.println("stats previous batch " + batchNumber + "/" + previousBatches
+            BotLogger.info("[ChampionStats] previous batch " + batchNumber + "/" + previousBatches
                 + " completed: processed=" + batchSize
                 + ", rows=" + resultSize + ", raw released");
         }
-        System.out.println("stats previous matches elaborated: games=" + previousGames);
+        BotLogger.info("[ChampionStats] previous matches elaborated: filter="
+            + filter.genericKey() + ", games=" + previousGames);
         return previousGames == 0 ? Map.of() : trendOptions(filter, previousFilter, current, previous);
     }
 
