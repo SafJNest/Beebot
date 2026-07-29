@@ -28,8 +28,8 @@ public class MongoChampionStatisticsDocumentTest {
             .setRank(null)
             .setRegion(null)
             .setLane(null);
-        ChampionStatistics first = empty(filterForChampion(filter, 1));
-        ChampionStatistics second = empty(filterForChampion(filter, 2));
+        ChampionStatistics first = populated(filterForChampion(filter, 1));
+        ChampionStatistics second = populated(filterForChampion(filter, 2));
 
         Method writer = MongoDB.class.getDeclaredMethod(
             "championStatisticsDocument", Filter.class, Map.class, boolean.class);
@@ -59,6 +59,26 @@ public class MongoChampionStatisticsDocumentTest {
         assertEquals(filter.genericKey(), decodedSecond.filter().genericKey());
     }
 
+    @Test
+    public void writerOmitsChampionWithoutDataButKeepsFilterDocument() throws Exception {
+        Filter filter = new Filter()
+            .setChampion(0)
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+            .setPatch("15.14")
+            .setRank(null)
+            .setRegion(null)
+            .setLane(null);
+        Method writer = MongoDB.class.getDeclaredMethod(
+            "championStatisticsDocument", Filter.class, Map.class, boolean.class);
+        writer.setAccessible(true);
+        Document document = (Document) writer.invoke(null, filter,
+            Map.of(1, empty(filterForChampion(filter, 1))), true);
+
+        assertEquals(filter.genericKey(), document.getString("_id"));
+        assertTrue(document.getBoolean("ready"));
+        assertTrue(document.get("statistics", Document.class).isEmpty());
+    }
+
     private static Filter filterForChampion(Filter source, int champion) {
         return new Filter()
             .setChampion(champion)
@@ -71,6 +91,11 @@ public class MongoChampionStatisticsDocumentTest {
 
     private static ChampionStatistics empty(Filter filter) {
         return new ChampionStatistics(filter, 0, 0, 0, 0, 0, 0, 0,
+            List.of(), Map.of());
+    }
+
+    private static ChampionStatistics populated(Filter filter) {
+        return new ChampionStatistics(filter, 10, 2, 0, 1, 0.5, 0.2, 0,
             List.of(), Map.of());
     }
 }

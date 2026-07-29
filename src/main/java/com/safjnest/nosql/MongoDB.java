@@ -1865,7 +1865,7 @@ public final class MongoDB {
         Map<String, Filter> filters = new LinkedHashMap<>();
         Map<String, Map<Integer, ChampionStatistics>> grouped = new LinkedHashMap<>();
         for (ChampionStatistics value : statistics.values()) {
-            if (value == null || value.filter() == null || value.filter().champion() == 0) continue;
+            if (!hasChampionStatisticsData(value) || value.filter() == null || value.filter().champion() == 0) continue;
             String key = value.filter().genericKey();
             filters.putIfAbsent(key, value.filter());
             grouped.computeIfAbsent(key, ignored -> new LinkedHashMap<>())
@@ -2739,7 +2739,7 @@ public final class MongoDB {
         Document values = new Document();
         if (statistics != null) {
             for (Map.Entry<Integer, ChampionStatistics> entry : statistics.entrySet()) {
-                if (entry.getKey() == null || entry.getKey() == 0 || entry.getValue() == null) continue;
+                if (entry.getKey() == null || entry.getKey() == 0 || !hasChampionStatisticsData(entry.getValue())) continue;
                 values.put(String.valueOf(entry.getKey()), JsonCodec.toDocument(entry.getValue()));
             }
         }
@@ -2748,6 +2748,17 @@ public final class MongoDB {
                 .append("filterKey", filterKey)
                 .append("ready", ready)
                 .append("statistics", values);
+    }
+
+    private static boolean hasChampionStatisticsData(ChampionStatistics statistics) {
+        if (statistics == null || statistics.overview() == null) return false;
+        ChampionStatistics.Overview overview = statistics.overview();
+        return overview.games() > 0 || overview.picks() > 0 || overview.bans() > 0 || overview.wins() > 0
+                || (statistics.laneStats() != null && !statistics.laneStats().isEmpty())
+                || (statistics.matchups() != null && !statistics.matchups().isEmpty())
+                || (statistics.laneSynergies() != null && !statistics.laneSynergies().isEmpty())
+                || (statistics.powerCurve() != null && !statistics.powerCurve().isEmpty())
+                || statistics.trend() != null;
     }
 
     private static Bson entityUpdateStage(Map<String, Object> operation) {

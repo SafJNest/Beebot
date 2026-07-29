@@ -24,6 +24,9 @@ champion presente. I match vengono letti una sola volta dalla query base
 `patch + queue` e distribuiti nei bucket compatibili; un match di Challenger
 contribuisce quindi a tutte le soglie inferiori. Le combinazioni già pronte
 vengono saltate e quelle senza match ricevono `ready=true` con `statistics={}`.
+I champion senza dati non generano una voce vuota nel mega-documento: il filtro
+pronto resta sufficiente per restituire `200` vuoto quando il champion richiesto
+non è presente.
 
 La build resta specifica per champion:
 
@@ -99,7 +102,7 @@ al periodo in cui il filtro non esiste o non è ancora pronto.
 
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
-`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e projection Mongo su `filterKey` e `statistics.<championId>`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.
+`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e projection Mongo su `filterKey` e `statistics.<championId>`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. Il job stats usa il worker generale e il job build usa il worker dedicato: possono essere eseguiti in parallelo, mentre le build restano seriali tra loro.
 
 Al termine della matrice, ogni combinazione riuscita viene salvata con `ready`
 nel documento aggregato, anche quando non contiene match: questo impedisce che

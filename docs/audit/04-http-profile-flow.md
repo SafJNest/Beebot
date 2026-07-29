@@ -36,7 +36,7 @@ Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/Leag
 
 ### Coerente — refresh statistiche Mongo
 
-`ProfileStatisticsService.refresh` legge match proiettati da Mongo usando il `Filter` completo e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh su una FIFO condivisa con due worker DB. È il comportamento previsto per il runtime Mongo-only.
+`ProfileStatisticsService.refresh` legge match proiettati da Mongo usando il `Filter` completo e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh sulla FIFO del worker DB generale, separata dalla FIFO dedicata ai build. È il comportamento previsto per il runtime Mongo-only.
 
 Evidenza: [ProfileStatisticsService.java](../../src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java:104).
 

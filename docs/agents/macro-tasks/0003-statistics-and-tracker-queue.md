@@ -13,7 +13,7 @@ Separate statistics persistence from request handling and limit database calcula
 
 - reduce `ProfileStatisticsService` to read and refresh methods;
 - move API-triggered generation and in-flight deduplication into `DatabaseTracker`;
-- process database calculation jobs through one FIFO queue and two workers;
+- process build jobs through one dedicated FIFO queue/worker and all other database jobs through a second FIFO queue/worker;
 - keep the existing match queues separate and unchanged;
 - keep calendar ownership in `TrackerScheduler`, which only submits scheduled database work.
 
@@ -28,7 +28,7 @@ Separate statistics persistence from request handling and limit database calcula
 - API-triggered generation is submitted immediately to the database queue;
 - no raw aggregate calculation runs on an HTTP request thread;
 - repeated requests for the same PUUID and complete summoner filter are deduplicated while queued or running;
-- no more than two database calculation jobs execute concurrently;
+- no more than one build job and one non-build database job execute concurrently;
 - one failed generation does not stop another generation;
 - failed in-flight markers are removed so a later request can retry;
 - match lookup and match analysis queues remain process-owned and unchanged.

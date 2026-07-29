@@ -34,6 +34,7 @@ import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionIndexableService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileIndexableService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
@@ -144,7 +145,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats");
             break;
             case "timer":
                 Timer timer = new Timer();
@@ -883,6 +884,10 @@ public class Test extends Command{
             case "getallrank":
                 ChronoTask retrieveAllEntries = () -> TrackerScheduler.retrieveAllEntries();
                 retrieveAllEntries.queue();
+            break;
+            case "highstats":
+                ChronoTask prewarmHighEloStats = () -> new LeaderboardService().prewarmHighEloProfileStatistics();
+                prewarmHighEloStats.queue();
             break;
             case "sleep":
                 try {

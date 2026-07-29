@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import com.safjnest.lol.model.Filter;
@@ -27,19 +28,35 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class DatabaseTracker {
 
-    private static final int WORKER_COUNT = 2;
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 30;
     private static final Object LIFECYCLE_LOCK = new Object();
     private static final BlockingQueue<DatabaseTask<?>> TASK_QUEUE = new LinkedBlockingQueue<>();
+    private static final BlockingQueue<DatabaseTask<?>> BUILD_TASK_QUEUE = new LinkedBlockingQueue<>();
+    private static final WorkerState BUILD_WORKER = new WorkerState(1, "build", BUILD_TASK_QUEUE);
+    private static final WorkerState GENERAL_WORKER = new WorkerState(2, "general", TASK_QUEUE);
     private static final ConcurrentMap<String, CompletableFuture<?>> TASKS = new ConcurrentHashMap<>();
     private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
     private static final ProfileMatchupsService PROFILE_MATCHUPS_SERVICE = new ProfileMatchupsService();
     private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
-    private static ExecutorService workerExecutor;
+    private static ExecutorService buildWorkerExecutor;
+    private static ExecutorService generalWorkerExecutor;
 
     private DatabaseTracker() {}
 
     public static <T> CompletableFuture<T> submit(String key, Supplier<T> supplier) {
+        return submit(key, key, supplier, false);
+    }
+
+    static <T> CompletableFuture<T> submitBuild(String key, Supplier<T> supplier) {
+        return submit(key, key, supplier, true);
+    }
+
+    private static <T> CompletableFuture<T> submit(
+        String key,
+        String name,
+        Supplier<T> supplier,
+        boolean buildTask
+    ) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(supplier, "supplier");
 
@@ -54,7 +71,8 @@ public final class DatabaseTracker {
 
                 CompletableFuture<T> future = new CompletableFuture<>();
                 if (TASKS.putIfAbsent(key, future) == null) {
-                    TASK_QUEUE.offer(new DatabaseTask<>(key, supplier, future));
+                    DatabaseTask<T> task = new DatabaseTask<>(key, name, supplier, future);
+                    (buildTask ? BUILD_WORKER : GENERAL_WORKER).enqueue(task);
                     return future;
                 }
             }
@@ -76,7 +94,8 @@ public final class DatabaseTracker {
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         ProfileStatisticsRequest request = ProfileStatisticsRequest.from(summoner, requestFilter);
         String key = "profile-statistics:" + request.puuid() + ":" + requestFilter.toSummonerKey();
-        return submit(key, () -> refreshProfileStatistics(request));
+        String name = "profile statistics puuid=" + request.puuid();
+        return submit(key, name, () -> refreshProfileStatistics(request), false);
     }
 
     public static CompletableFuture<Boolean> startProfileMatchups(
@@ -90,7 +109,8 @@ public final class DatabaseTracker {
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         ProfileMatchupsRequest request = new ProfileMatchupsRequest(puuid, shard, requestFilter);
         String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
-        return submit(key, () -> refreshProfileMatchups(request));
+        String name = "profile matchups puuid=" + puuid;
+        return submit(key, name, () -> refreshProfileMatchups(request), false);
     }
 
     public static CompletableFuture<Void> startChampionData(
@@ -114,10 +134,10 @@ public final class DatabaseTracker {
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
         String patch = new Filter().patch();
         String key = "champion-data-refresh:" + patch;
-        return submit(key, () -> {
+        return submit(key, "champion data refresh patch=" + patch, () -> {
             CHAMPION_DATA_REFRESH_SERVICE.refresh();
             return null;
-        });
+        }, false);
     }
 
     public static CompletableFuture<ChampionDataRefreshService.MatrixRefreshResult> enqueueChampionStatsMatrix(
@@ -125,7 +145,8 @@ public final class DatabaseTracker {
         if (patch == null || patch.isBlank() || queue == null)
             return CompletableFuture.completedFuture(new ChampionDataRefreshService.MatrixRefreshResult(0, 0, 0, 0, 0));
         String key = championStatsMatrixKey(patch, queue);
-        return submit(key, () -> CHAMPION_DATA_REFRESH_SERVICE.refreshStatsMatrix(patch, queue));
+        String name = "champion stats matrix patch=" + patch + " queue=" + queue.name();
+        return submit(key, name, () -> CHAMPION_DATA_REFRESH_SERVICE.refreshStatsMatrix(patch, queue), false);
     }
 
     static String championStatsMatrixKey(String patch, GameQueueType queue) {
@@ -133,26 +154,23 @@ public final class DatabaseTracker {
     }
 
     public static void shutdown() {
-        ExecutorService executor;
+        ExecutorService buildExecutor;
+        ExecutorService taskExecutor;
         synchronized (LIFECYCLE_LOCK) {
-            executor = workerExecutor;
-            workerExecutor = null;
-            if (executor == null) return;
+            buildExecutor = buildWorkerExecutor;
+            taskExecutor = generalWorkerExecutor;
+            buildWorkerExecutor = null;
+            generalWorkerExecutor = null;
+            if (buildExecutor == null && taskExecutor == null) return;
 
-            executor.shutdownNow();
-            DatabaseTask<?> task;
-            while ((task = TASK_QUEUE.poll()) != null) {
-                task.cancel();
-                TASKS.remove(task.key(), task.future());
-            }
+            if (buildExecutor != null) buildExecutor.shutdownNow();
+            if (taskExecutor != null) taskExecutor.shutdownNow();
+            cancelPendingTasks(BUILD_WORKER);
+            cancelPendingTasks(GENERAL_WORKER);
         }
 
-        try {
-            if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) executor.shutdownNow();
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            executor.shutdownNow();
-        }
+        awaitTermination(buildExecutor);
+        awaitTermination(taskExecutor);
     }
 
     // ============================================================================
@@ -163,7 +181,14 @@ public final class DatabaseTracker {
 
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
         if (BuildService.hasStored(filter)) return CompletableFuture.completedFuture(true);
-        return submit("champion-build:" + filter.toKey(), () -> refreshChampionBuild(filter));
+        String key = "champion-build:" + filter.toKey();
+        String name = "champion build champion=" + filter.champion()
+            + " patch=" + filter.patch()
+            + " queue=" + filter.queue()
+            + " rank=" + filter.rank()
+            + " region=" + filter.region()
+            + " lane=" + filter.lane();
+        return submit(key, name, () -> refreshChampionBuild(filter), true);
     }
 
     private static boolean refreshProfileStatistics(ProfileStatisticsRequest request) {
@@ -215,26 +240,69 @@ public final class DatabaseTracker {
     }
 
     private static void startWorkers() {
-        if (workerExecutor != null && !workerExecutor.isShutdown()) return;
+        if (buildWorkerExecutor != null && !buildWorkerExecutor.isShutdown()
+            && generalWorkerExecutor != null && !generalWorkerExecutor.isShutdown()) return;
 
-        workerExecutor = Executors.newFixedThreadPool(
-            WORKER_COUNT,
+        buildWorkerExecutor = Executors.newSingleThreadExecutor(
+            Thread.ofVirtual().name("lol-db-build-worker-", 0).factory()
+        );
+        generalWorkerExecutor = Executors.newSingleThreadExecutor(
             Thread.ofVirtual().name("lol-db-worker-", 0).factory()
         );
-        for (int i = 0; i < WORKER_COUNT; i++) workerExecutor.submit(DatabaseTracker::runWorker);
+        buildWorkerExecutor.submit(() -> runWorker(BUILD_WORKER));
+        generalWorkerExecutor.submit(() -> runWorker(GENERAL_WORKER));
     }
 
-    private static void runWorker() {
+    private static void runWorker(WorkerState worker) {
         while (!Thread.currentThread().isInterrupted()) {
             DatabaseTask<?> task;
             try {
-                task = TASK_QUEUE.take();
+                task = worker.queue.take();
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
                 return;
             }
-            task.execute();
+            long started = worker.started.incrementAndGet();
+            long submitted = worker.submitted.get();
+            logInfo("[DatabaseTracker] doing job " + task.name()
+                + " on worker " + worker.id + " (" + worker.type + "), "
+                + started + "/" + submitted + ", queue " + worker.queue.size());
+
+            Throwable failure = task.execute();
+            long finished = worker.finished.incrementAndGet();
+            String state = failure == null ? "SUCCESS" : "FAILED";
+            logInfo("[DatabaseTracker] finished job " + task.name()
+                + " on worker " + worker.id + " (" + worker.type + "), "
+                + finished + "/" + worker.submitted.get()
+                + ", queue " + worker.queue.size() + ", state=" + state);
         }
+    }
+
+    private static void cancelPendingTasks(WorkerState worker) {
+        DatabaseTask<?> task;
+        while ((task = worker.queue.poll()) != null) {
+            task.cancel();
+            TASKS.remove(task.key(), task.future());
+            logInfo("[DatabaseTracker] finished job " + task.name()
+                + " on worker " + worker.id + " (" + worker.type + ")"
+                + ", queue " + worker.queue.size() + ", state=CANCELLED");
+        }
+    }
+
+    private static void awaitTermination(ExecutorService executor) {
+        if (executor == null) return;
+        try {
+            if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) executor.shutdownNow();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            executor.shutdownNow();
+        }
+    }
+
+    private static void logInfo(String message) {
+        try {
+            BotLogger.info(message);
+        } catch (Throwable ignored) { }
     }
 
     @SuppressWarnings("unchecked")
@@ -267,9 +335,33 @@ public final class DatabaseTracker {
         Filter filter
     ) {}
 
-    private record DatabaseTask<T>(String key, Supplier<T> supplier, CompletableFuture<T> future) {
+    private static final class WorkerState {
 
-        private void execute() {
+        private final int id;
+        private final String type;
+        private final BlockingQueue<DatabaseTask<?>> queue;
+        private final AtomicLong submitted = new AtomicLong();
+        private final AtomicLong started = new AtomicLong();
+        private final AtomicLong finished = new AtomicLong();
+
+        private WorkerState(int id, String type, BlockingQueue<DatabaseTask<?>> queue) {
+            this.id = id;
+            this.type = type;
+            this.queue = queue;
+        }
+
+        private void enqueue(DatabaseTask<?> task) {
+            long total = submitted.incrementAndGet();
+            queue.offer(task);
+            logInfo("[DatabaseTracker] add job " + task.name()
+                + " to worker " + id + " (" + type + "), queue " + queue.size()
+                + ", total " + total);
+        }
+    }
+
+    private record DatabaseTask<T>(String key, String name, Supplier<T> supplier, CompletableFuture<T> future) {
+
+        private Throwable execute() {
             T result = null;
             Throwable failure = null;
             try {
@@ -290,6 +382,7 @@ public final class DatabaseTracker {
                     TASKS.remove(key, future);
                 }
             }
+            return failure;
         }
 
         private void cancel() {

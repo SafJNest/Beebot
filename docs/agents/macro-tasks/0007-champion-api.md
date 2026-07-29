@@ -55,7 +55,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
   vuote) e non riaccoda indefinitamente la stessa richiesta;
 - nessuna computazione raw durante la request.
 - le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e vengono accodate indipendentemente;
-- tutti i refresh DB condividono due worker e una coda FIFO deduplicata;
+- i refresh build usano un worker e una coda FIFO dedicati; tutti gli altri refresh DB usano un secondo worker e una seconda coda FIFO; la deduplicazione resta condivisa;
 - in test lo scheduler non parte automaticamente;
 - la coda Redis dei match resta separata e invariata;
 - le combinazioni già pronte vengono saltate e quelle senza match vengono

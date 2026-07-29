@@ -27,7 +27,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 
 - Canonical models remain the only success payloads.
 - Missing summoner, rank and mastery data start immediately through `LeagueService` virtual-thread Futures.
-- Missing profile statistics start through the two-worker `DatabaseTracker` queue after the profile components are ready.
+- Missing profile statistics start through the general `DatabaseTracker` queue after the profile components are ready.
 - Profile component lists are cached only after a confirmed Riot result; database or Riot failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - The existing Redis queue stores only matches already fetched from Riot.

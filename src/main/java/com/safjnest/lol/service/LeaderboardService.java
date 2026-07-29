@@ -3,8 +3,10 @@ package com.safjnest.lol.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -14,10 +16,12 @@ import com.safjnest.lol.model.summoner.SummonerLeaderboard;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -29,6 +33,11 @@ public class LeaderboardService {
     private static final String ALL_RANKS = "ALL";
     public static final int DEFAULT_PAGE_SIZE = 50;
     private static final int MAX_PAGE_SIZE = DEFAULT_PAGE_SIZE;
+    private static final List<TierType> PROFILE_PREWARM_RANKS = List.of(TierType.GRANDMASTER, TierType.CHALLENGER);
+    private static final List<GameQueueType> PROFILE_PREWARM_QUEUES = List.of(
+        GameQueueType.RANKED_SOLO_5X5,
+        GameQueueType.RANKED_FLEX_SR
+    );
 
     private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
 
@@ -108,6 +117,34 @@ public class LeaderboardService {
         return response;
     }
 
+    public void prewarmHighEloProfileStatistics() {
+        Filter filter = Filter.summoner();
+        int discovered = 0;
+        int queued = 0;
+
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
+            for (GameQueueType queue : PROFILE_PREWARM_QUEUES) {
+                for (TierType rank : PROFILE_PREWARM_RANKS) {
+                    long offset = 0;
+                    while (true) {
+                        MongoDB.LeaderboardQuery page = MongoDB.findLeaderboardPage(
+                            rank, queue, shard.name(), offset, DEFAULT_PAGE_SIZE
+                        );
+                        if (page.summoners().isEmpty()) break;
+
+                        discovered += page.summoners().size();
+                        queued += prewarmProfilePage(page.summoners(), filter);
+                        offset += page.summoners().size();
+                        if (offset >= page.total()) break;
+                    }
+                }
+            }
+        }
+
+        BotLogger.info("[LPTracker] High elo profile statistics prewarm completed: "
+            + discovered + " summoners scanned, " + queued + " refreshes submitted");
+    }
+
     public LeaderboardDistribution getTopRegions(GameQueueType queue, TierType rank) {
         requireRank(rank);
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
@@ -142,6 +179,27 @@ public class LeaderboardService {
 
     private static void requireRank(TierType rank) {
         if (rank == null) throw new IllegalArgumentException("rank is required");
+    }
+
+    private int prewarmProfilePage(List<Summoner> summoners, Filter filter) {
+        List<String> puuids = new ArrayList<>(summoners.size());
+        for (Summoner summoner : summoners) puuids.add(summoner.puuid());
+
+        Map<String, ProfileStatistics> ready = profileStatisticsService.getByPuuid(puuids, filter);
+        List<CompletableFuture<Boolean>> refreshes = new ArrayList<>();
+        for (Summoner summoner : summoners) {
+            if (ready.containsKey(summoner.puuid())) continue;
+            refreshes.add(DatabaseTracker.startProfileStatistics(summoner, filter));
+        }
+
+        for (CompletableFuture<Boolean> refresh : refreshes) {
+            try {
+                refresh.join();
+            } catch (RuntimeException exception) {
+                BotLogger.error("High elo profile statistics prewarm failed: " + exception.getMessage());
+            }
+        }
+        return refreshes.size();
     }
 
     private static GameQueueType defaultQueue(GameQueueType queue) {

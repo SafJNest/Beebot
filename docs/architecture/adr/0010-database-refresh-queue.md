@@ -13,12 +13,14 @@ Profile statistics and champion statistics/builds are expensive Mongo calculatio
 
 `DatabaseTracker` owns asynchronous database calculation dispatch. It contains:
 
-- one process-local FIFO `LinkedBlockingQueue` of lazy tasks;
+- one process-local FIFO `LinkedBlockingQueue` for build tasks and one for all other database tasks;
 - one in-flight map keyed by the logical resource key and holding the task `CompletableFuture`;
-- exactly two dedicated virtual-thread workers;
+- exactly one dedicated virtual-thread worker for builds and one for all other database tasks;
 - task removal from the in-flight map only after success or failure.
 
-The queue stores task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. Failed tasks complete exceptionally and become retryable after their key is removed.
+The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. Build tasks can execute only on the build worker; profile statistics, champion stats and scheduled refresh tasks can execute only on the general worker. Failed tasks complete exceptionally and become retryable after their key is removed.
+
+Every task lifecycle is logged with a readable job name, worker id and role, queue size, cumulative progress (`finished/total`) and terminal state. Enqueue logs use `add job`; execution logs use `doing job` and `finished job` with `SUCCESS`, `FAILED` or `CANCELLED`.
 
 The queue owns profile-statistics refreshes, champion stats/build refreshes and the scheduled champion-data refresh. `TrackerScheduler` owns the calendar trigger and submits the scheduled job. The match lookup and match analysis queues remain owned by `Tracker` and are unchanged.
 
@@ -44,6 +46,8 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 ## Acceptance criteria
 
 - no more than two database calculations execute at once;
+- build calculations never execute concurrently with another build calculation;
+- non-build database calculations never execute concurrently with another non-build calculation;
 - duplicate queued or running keys share one future and one calculation;
 - a failed key can be submitted again;
 - scheduled champion refreshes cannot overlap for the same patch;

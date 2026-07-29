@@ -79,7 +79,8 @@ Redis PROFILE_MATCHUPS(PUUID, filterKey)
 ```
 
 Il calcolo non avviene durante la request. Un miss restituisce `202` e il
-refresh viene eseguito dagli stessi due worker database del flusso profilo.
+refresh viene eseguito dal worker database generale, condiviso con gli altri
+refresh non-build; il worker build resta dedicato ai soli calcoli build.
 Il JSON del profilo esistente non cambia.
 
 ## Il filtro canonico
@@ -304,7 +305,7 @@ Discord/API request
   -> hit: usa ProfileStatistics
   -> miss: DatabaseTracker.startProfileStatistics(Summoner, Filter)
        -> risposta parziale/pending, nessun calcolo sincrono
-       -> coda FIFO e uno dei due virtual worker DB
+       -> FIFO del worker generale DB
             -> Mongo match projection con lo stesso Filter
             -> ProfileStatistics.add(match, puuid, filter)
             -> set lastUpdate dopo il calcolo
@@ -312,6 +313,14 @@ Discord/API request
             -> cache ProfileStatistics
             -> invalida recent matches e profile page
 ```
+
+Il case owner `test highstats` esegue un prewarm esplicito delle statistiche
+profilo per Challenger e Grandmaster di tutte le regioni attive e delle due
+queue ranked. Usa lo stesso `Filter.summoner()` del frontend, legge prima le
+statistiche già pronte in batch e accoda soltanto i PUUID mancanti. Processa
+una pagina alla volta e attende il completamento prima della pagina successiva,
+così la mole di lavoro non riempie la FIFO né mantiene in memoria l'intero
+elenco high elo.
 
 Per activity il flusso sincrono è invece:
 
@@ -332,7 +341,7 @@ La deduplicazione del lavoro asincrono usa la stessa identità logica:
 in-flight key = profile-statistics:puuid:filter.toSummonerKey()
 ```
 
-Due richieste per lo stesso PUUID e lo stesso filtro condividono il Future mentre il job è in coda o in esecuzione. Due filtri diversi possono essere accodati separatamente, ma al massimo due calcoli DB sono eseguiti contemporaneamente. Il marker viene rimosso sia dopo successo sia dopo errore, così una richiesta successiva può ritentare.
+Due richieste per lo stesso PUUID e lo stesso filtro condividono il Future mentre il job è in coda o in esecuzione. Due filtri diversi possono essere accodati separatamente; il worker generale esegue un solo refresh non-build alla volta e può lavorare in parallelo con il worker build. Il marker viene rimosso sia dopo successo sia dopo errore, così una richiesta successiva può ritentare.
 
 ## Calcolo e filtri
 

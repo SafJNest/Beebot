@@ -39,16 +39,13 @@ public class DatabaseTrackerTest {
 
     @Test
     public void duplicateKeySharesQueuedFutureAndRunsOnce() throws Exception {
-        CountDownLatch blockersStarted = new CountDownLatch(2);
+        CountDownLatch blockersStarted = new CountDownLatch(1);
         CountDownLatch releaseBlockers = new CountDownLatch(1);
-        List<CompletableFuture<Void>> blockers = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
-            blockers.add(DatabaseTracker.submit("test:queued-blocker:" + i, () -> {
-                blockersStarted.countDown();
-                await(releaseBlockers);
-                return null;
-            }));
-        }
+        CompletableFuture<Void> blocker = DatabaseTracker.submit("test:queued-blocker", () -> {
+            blockersStarted.countDown();
+            await(releaseBlockers);
+            return null;
+        });
 
         assertTrue(blockersStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         AtomicInteger executions = new AtomicInteger();
@@ -62,7 +59,7 @@ public class DatabaseTrackerTest {
         assertEquals(0, executions.get());
         releaseBlockers.countDown();
         assertEquals(Integer.valueOf(7), first.get(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        for (CompletableFuture<Void> blocker : blockers) blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertEquals(1, executions.get());
     }
 
@@ -89,10 +86,10 @@ public class DatabaseTrackerTest {
     }
 
     @Test
-    public void neverRunsMoreThanTwoTasksAtOnce() throws Exception {
+    public void generalWorkerRunsOneTaskAtOnce() throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();
-        CountDownLatch started = new CountDownLatch(2);
+        CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
@@ -109,10 +106,59 @@ public class DatabaseTrackerTest {
         }
 
         assertTrue(started.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        assertEquals(2, maximum.get());
+        assertEquals(1, maximum.get());
         release.countDown();
         for (CompletableFuture<Void> future : futures) future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertEquals(2, maximum.get());
+        assertEquals(1, maximum.get());
+    }
+
+    @Test
+    public void buildWorkerIsDedicatedFromGeneralWorker() throws Exception {
+        CountDownLatch started = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+
+        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:dedicated-build", () -> {
+            started.countDown();
+            await(release);
+            return null;
+        });
+        CompletableFuture<Void> general = DatabaseTracker.submit("test:dedicated-general", () -> {
+            started.countDown();
+            await(release);
+            return null;
+        });
+
+        assertTrue(started.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        release.countDown();
+        build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        general.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void buildWorkerRunsOneBuildAtOnce() throws Exception {
+        AtomicInteger active = new AtomicInteger();
+        AtomicInteger maximum = new AtomicInteger();
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < 3; i++) {
+            int task = i;
+            futures.add(DatabaseTracker.submitBuild("test:serial-build:" + task, () -> {
+                int current = active.incrementAndGet();
+                maximum.accumulateAndGet(current, Math::max);
+                started.countDown();
+                await(release);
+                active.decrementAndGet();
+                return null;
+            }));
+        }
+
+        assertTrue(started.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertEquals(1, maximum.get());
+        release.countDown();
+        for (CompletableFuture<Void> future : futures) future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertEquals(1, maximum.get());
     }
 
     @Test
