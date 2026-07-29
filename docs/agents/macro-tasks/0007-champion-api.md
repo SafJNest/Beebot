@@ -46,6 +46,8 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - queue assente significa Solo/Duo ranked;
 - role incompatibile con la queue significa 400;
 - dati mancanti significano 202 e accodamento immediato del refresh;
+- un refresh completato senza dati persiste aggregate vuoti (`games=0` e liste
+  vuote) e non riaccoda indefinitamente la stessa richiesta;
 - nessuna computazione raw durante la request.
 - le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e vengono accodate indipendentemente;
 - tutti i refresh DB condividono due worker e una coda FIFO deduplicata;

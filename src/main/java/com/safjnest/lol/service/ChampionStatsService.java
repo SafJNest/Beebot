@@ -105,6 +105,18 @@ public final class ChampionStatsService {
 
     // ============================================================================
 
+    static ChampionStatistics empty(Filter filter) {
+        return new ChampionStatistics(
+            filter,
+            new ChampionStatistics.Overview(0, 0, 0, 0, 0, 0, null, null, null, null, null),
+            List.of(),
+            Map.of(),
+            List.of(),
+            List.of(),
+            null
+        );
+    }
+
     static ChampionStatistics get(Filter filter, boolean allowCompute) {
         if (filter == null) return null;
 

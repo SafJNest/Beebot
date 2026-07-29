@@ -74,6 +74,14 @@ Non sono ammessi due calcoli globali identici.
 
 `ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData` indicando quali risorse mancano. Il tracker accoda solo il job stats o build necessario e ricontrolla la build persistita prima di accodarla.
 
+Quando un refresh termina correttamente senza giochi validi, non lascia più la
+risorsa in stato mancante: `BuildService` persiste un aggregate build con
+`games=0` e liste vuote, mentre `ChampionDataRefreshService` persiste per il
+champion richiesto un `ChampionStatistics` vuoto con overview a zero. Il
+successivo read trova entrambi i documenti, restituisce `200` e lascia al
+frontend il rendering delle liste vuote. `202` resta riservato al periodo in
+cui il refresh non è ancora terminato o non esiste ancora alcun aggregate.
+
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
 `DatabaseTracker` usa due chiavi distinte: `champion-stats:<filter.genericKey()>` e `champion-build:<filter.toKey()>`. Prima di accodare il job globale viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.

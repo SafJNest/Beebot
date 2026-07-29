@@ -39,12 +39,15 @@ public final class BuildService {
     }
 
     public static List<Build> recomputeAll(Filter filter) {
+        if (filter == null) return List.of();
         long started = System.nanoTime();
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) {
+        if (computed == null || computed.isEmpty()) computed = emptyResult(filter);
+        if (!computed.isEmpty()) {
             long persistenceStarted = System.nanoTime();
             MongoDB.upsertChampionBuilds(computed);
             System.out.println("build persistence completed: builds=" + computed.size()
+                + ", games=" + computed.get(0).games()
                 + ", persistenceMs=" + millis(System.nanoTime() - persistenceStarted)
                 + ", totalMs=" + millis(System.nanoTime() - started));
         }
@@ -73,8 +76,9 @@ public final class BuildService {
         if (!allowCompute) return List.of();
 
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) computed.forEach(MongoDB::upsertChampionBuild);
-        return computed == null ? List.of() : computed;
+        if (computed == null || computed.isEmpty()) computed = emptyResult(filter);
+        computed.forEach(MongoDB::upsertChampionBuild);
+        return computed;
     }
 
     private static List<Build> computeAll(Filter filter) {
@@ -145,6 +149,26 @@ public final class BuildService {
             + ", wins=" + wins + ", sourceMs=" + millis(sourceNanos)
             + ", totalMs=" + millis(System.nanoTime() - started));
         return List.of(aggregate);
+    }
+
+    private static List<Build> emptyResult(Filter filter) {
+        return List.of(new Build(
+            filter,
+            0,
+            0,
+            0,
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of()
+        ));
     }
 
     private static long millis(long nanos) {

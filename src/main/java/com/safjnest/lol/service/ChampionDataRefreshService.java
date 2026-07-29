@@ -31,7 +31,14 @@ public class ChampionDataRefreshService {
 
     public Map<Integer, ChampionStatistics> refreshStats(Filter filter) {
         if (filter == null) return Map.of();
-        return ChampionStatsService.recomputeAll(statsFilter(filter));
+        Map<Integer, ChampionStatistics> statistics = new LinkedHashMap<>(
+            ChampionStatsService.recomputeAll(statsFilter(filter)));
+        if (filter.champion() != 0 && !statistics.containsKey(filter.champion())) {
+            ChampionStatistics empty = ChampionStatsService.empty(filter);
+            MongoDB.upsertChampionStatistics(empty);
+            statistics.put(filter.champion(), empty);
+        }
+        return statistics;
     }
 
     public void refresh() {

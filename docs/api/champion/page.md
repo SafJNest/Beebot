@@ -30,6 +30,10 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
 
 `ChampionView`. Il campo interno `filter` non fa parte del JSON HTTP.
 
+Se il refresh è terminato ma il filtro non contiene giochi/build validi, la
+stessa risposta `200` contiene overview a zero e liste vuote. Il frontend deve
+renderizzare lo stato senza dati; non viene mantenuto un `202` indefinito.
+
 ```json
 {
   "champion": {
@@ -254,7 +258,7 @@ chiavi serializzate come
 
 | HTTP | `code` | Quando |
 |---:|---|---|
-| `202` | `champion_data_pending` | Statistiche o build non sono persistite; il refresh viene accodato in background. |
+| `202` | `champion_data_pending` | Statistiche o build non sono ancora state generate; il refresh viene accodato in background. Un refresh completato senza dati produce `200` con aggregate vuoti. |
 | `400` | `invalid_request` | Rank, region, queue o role non validi, oppure role incompatibile con la queue. |
 | `404` | `not_found` | Champion sconosciuto. |
 

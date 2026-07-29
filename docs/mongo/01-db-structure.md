@@ -232,7 +232,7 @@ cancellata e ricostruita senza perdita dei rank.
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
+Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` mantiene il proprio aggregato e `build` mantiene la propria struttura. Un refresh completato senza giochi validi può salvare un aggregato vuoto con `games=0` e liste vuote: il documento è comunque valido e impedisce di confondere il caso "nessun dato" con "refresh ancora pendente". Le build usano `filter.toKey()` per `_id` e `filterKey`; le stats usano `filter.genericKey()` per `filterKey` e `championId` per distinguere il champion. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
 
 ### `profile_statistics`: chiave e indice
 
