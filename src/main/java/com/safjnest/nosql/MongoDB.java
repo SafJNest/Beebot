@@ -67,6 +67,7 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
@@ -550,12 +551,12 @@ public final class MongoDB {
         return result;
     }
 
-    public static Map<Integer, Map<LaneType, Integer>> findChampionRoleGames(String patch) {
-        String majorPatch = patchMajor(patch);
-        if (majorPatch == null || majorPatch.isBlank()) return Map.of();
+    public static Map<Integer, Map<LaneType, Integer>> findChampionRoleGames() {
+        String current = patchMajor(PatchUtils.getPatch());
+        String previous = patchMajor(PatchUtils.getPreviousPatch());
 
         List<Bson> pipeline = List.of(
-                new Document("$match", Filters.eq("patchMajor", majorPatch)),
+                new Document("$match", Filters.in("patchMajor", List.of(current, previous))),
                 new Document("$unwind", "$participants"),
                 new Document("$match", Filters.in("participants.lane", playableRoleNames())),
                 new Document("$group", new Document("_id", new Document("champion", "$participants.champion")

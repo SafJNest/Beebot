@@ -24,10 +24,7 @@ public final class ChampionIndexableService {
     }
 
     public static List<ChampionIndexable> refresh() {
-        String patch = PatchUtils.getPatch();
-        if (patch == null || patch.isBlank()) return List.of();
-
-        Map<Integer, Map<LaneType, Integer>> gamesByChampion = MongoDB.findChampionRoleGames(patch);
+        Map<Integer, Map<LaneType, Integer>> gamesByChampion = MongoDB.findChampionRoleGames();
         List<ChampionIndexable> values = new ArrayList<>();
         for (Map.Entry<Integer, Map<LaneType, Integer>> entry : gamesByChampion.entrySet()) {
             int totalGames = 0;
