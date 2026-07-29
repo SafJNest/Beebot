@@ -129,16 +129,12 @@ public class Tracker {
         Set<LOLMatch> toAnalyze = popQueue();
         if (toAnalyze.isEmpty()) return;
 
-        BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
-        int i = 0;
         for (LOLMatch match : toAnalyze) {
             try {
                 analyzeMatchHistory(match).completeWithException();
-                BotLogger.info("[LPTracker] [" + i + " / " + toAnalyze.size() + "] Pushed match data for " + match.getGameId() + " (" + match.getPlatform() + " - " + match.getQueue() + ")");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            i++;
         }
     }
 
@@ -186,6 +182,14 @@ public class Tracker {
 
     public static Set<LOLMatch> copyQueue() {
         return readQueue();
+    }
+
+    public static long pendingGameCount() {
+        return RedisClient.countMembers(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
+    }
+
+    public static int pendingMatchLookupCount() {
+        return MATCH_LOOKUP_QUEUE.size();
     }
 
     private static Set<LOLMatch> readQueue() {

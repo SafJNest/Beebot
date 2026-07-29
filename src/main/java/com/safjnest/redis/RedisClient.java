@@ -184,6 +184,14 @@ public class RedisClient {
         }
     }
 
+    public static long countMembers(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.scard(key);
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
     public static long removeMember(String key, String element) {
         try (Jedis jedis = pool.getResource()) {
             return jedis.srem(key, element);

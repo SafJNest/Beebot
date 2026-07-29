@@ -314,13 +314,17 @@ Discord/API request
             -> invalida recent matches e profile page
 ```
 
-Il case owner `test highstats` esegue un prewarm esplicito delle statistiche
-profilo per Challenger e Grandmaster di tutte le regioni attive e delle due
-queue ranked. Usa lo stesso `Filter.summoner()` del frontend, legge prima le
-statistiche già pronte in batch e accoda soltanto i PUUID mancanti. Processa
-una pagina alla volta e attende il completamento prima della pagina successiva,
-così la mole di lavoro non riempie la FIFO né mantiene in memoria l'intero
-elenco high elo.
+Il case owner `test highstats` esegue un rebuild esplicito delle statistiche
+profilo per Challenger, Grandmaster e `tracking=true`, considerando tutte le
+regioni attive e le due queue ranked per l'alta elo. Usa lo stesso
+`Filter.summoner()` del frontend, forza `rebuild=true` anche quando l'aggregato
+esiste già, deduplica i PUUID e processa una pagina alla volta attendendo il
+completamento prima della pagina successiva. In questo modo la mole di lavoro
+non riempie la FIFO né mantiene in memoria l'intero elenco high elo.
+
+Il comando owner `tracker` legge on demand lo stato degli scheduler, dei game
+in coda e dei due worker `DatabaseTracker`, senza aggiungere logging nel
+percorso caldo dei refresh.
 
 Per activity il flusso sincrono è invece:
 

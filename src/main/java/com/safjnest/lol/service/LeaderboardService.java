@@ -1,8 +1,10 @@
 package com.safjnest.lol.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.safjnest.lol.model.ApiResult;
@@ -33,8 +35,8 @@ public class LeaderboardService {
     private static final String ALL_RANKS = "ALL";
     public static final int DEFAULT_PAGE_SIZE = 50;
     private static final int MAX_PAGE_SIZE = DEFAULT_PAGE_SIZE;
-    private static final List<TierType> PROFILE_PREWARM_RANKS = List.of(TierType.GRANDMASTER, TierType.CHALLENGER);
-    private static final List<GameQueueType> PROFILE_PREWARM_QUEUES = List.of(
+    private static final List<TierType> PROFILE_REBUILD_RANKS = List.of(TierType.GRANDMASTER, TierType.CHALLENGER);
+    private static final List<GameQueueType> PROFILE_REBUILD_QUEUES = List.of(
         GameQueueType.RANKED_SOLO_5X5,
         GameQueueType.RANKED_FLEX_SR
     );
@@ -117,14 +119,15 @@ public class LeaderboardService {
         return response;
     }
 
-    public void prewarmHighEloProfileStatistics() {
+    public void rebuildHighEloAndTrackedProfileStatistics() {
         Filter filter = Filter.summoner();
-        int discovered = 0;
-        int queued = 0;
+        Set<String> processedPuuids = new HashSet<>();
+        int candidates = 0;
+        int submitted = 0;
 
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
-            for (GameQueueType queue : PROFILE_PREWARM_QUEUES) {
-                for (TierType rank : PROFILE_PREWARM_RANKS) {
+            for (GameQueueType queue : PROFILE_REBUILD_QUEUES) {
+                for (TierType rank : PROFILE_REBUILD_RANKS) {
                     long offset = 0;
                     while (true) {
                         MongoDB.LeaderboardQuery page = MongoDB.findLeaderboardPage(
@@ -132,8 +135,8 @@ public class LeaderboardService {
                         );
                         if (page.summoners().isEmpty()) break;
 
-                        discovered += page.summoners().size();
-                        queued += prewarmProfilePage(page.summoners(), filter);
+                        candidates += page.summoners().size();
+                        submitted += rebuildProfilePage(page.summoners(), filter, processedPuuids);
                         offset += page.summoners().size();
                         if (offset >= page.total()) break;
                     }
@@ -141,8 +144,10 @@ public class LeaderboardService {
             }
         }
 
-        BotLogger.info("[LPTracker] High elo profile statistics prewarm completed: "
-            + discovered + " summoners scanned, " + queued + " refreshes submitted");
+        List<Summoner> tracked = MongoDB.findTrackedSummonerModels();
+        candidates += tracked.size();
+        submitted += rebuildProfilePage(tracked, filter, processedPuuids);
+
     }
 
     public LeaderboardDistribution getTopRegions(GameQueueType queue, TierType rank) {
@@ -181,22 +186,25 @@ public class LeaderboardService {
         if (rank == null) throw new IllegalArgumentException("rank is required");
     }
 
-    private int prewarmProfilePage(List<Summoner> summoners, Filter filter) {
-        List<String> puuids = new ArrayList<>(summoners.size());
-        for (Summoner summoner : summoners) puuids.add(summoner.puuid());
-
-        Map<String, ProfileStatistics> ready = profileStatisticsService.getByPuuid(puuids, filter);
-        List<CompletableFuture<Boolean>> refreshes = new ArrayList<>();
+    private int rebuildProfilePage(List<Summoner> summoners, Filter filter, Set<String> processedPuuids) {
+        List<Summoner> selected = new ArrayList<>(summoners.size());
         for (Summoner summoner : summoners) {
-            if (ready.containsKey(summoner.puuid())) continue;
-            refreshes.add(DatabaseTracker.startProfileStatistics(summoner, filter));
+            if (summoner != null && summoner.puuid() != null && processedPuuids.add(summoner.puuid()))
+                selected.add(summoner);
         }
 
-        for (CompletableFuture<Boolean> refresh : refreshes) {
+        List<CompletableFuture<Boolean>> refreshes = new ArrayList<>();
+        for (Summoner summoner : selected) {
+            refreshes.add(DatabaseTracker.startProfileStatistics(summoner, filter, true));
+        }
+
+        for (int index = 0; index < refreshes.size(); index++) {
+            CompletableFuture<Boolean> refresh = refreshes.get(index);
             try {
-                refresh.join();
+                if (!refresh.join()) processedPuuids.remove(selected.get(index).puuid());
             } catch (RuntimeException exception) {
-                BotLogger.error("High elo profile statistics prewarm failed: " + exception.getMessage());
+                processedPuuids.remove(selected.get(index).puuid());
+                BotLogger.error("High elo/tracked profile statistics rebuild failed: " + exception.getMessage());
             }
         }
         return refreshes.size();

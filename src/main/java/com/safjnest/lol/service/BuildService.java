@@ -9,7 +9,6 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.utils.log.BotLogger;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,7 +21,6 @@ import java.util.Set;
 
 public final class BuildService {
 
-    private static final long NANOS_PER_MILLI = 1_000_000L;
     private static final int SLOT_COUNT = 4;
     private static final int AUGMENT_SLOT_COUNT = 4;
 
@@ -42,18 +40,9 @@ public final class BuildService {
 
     public static List<Build> recomputeAll(Filter filter) {
         if (filter == null) return List.of();
-        long started = System.nanoTime();
         List<Build> computed = computeAll(filter);
         if (computed == null || computed.isEmpty()) computed = emptyResult(filter);
-        if (!computed.isEmpty()) {
-            long persistenceStarted = System.nanoTime();
-            MongoDB.upsertChampionBuilds(computed);
-            BotLogger.info("[ChampionBuild] persistence completed: filter=" + filter.toKey()
-                + ", builds=" + computed.size()
-                + ", games=" + computed.get(0).games()
-                + ", persistenceMs=" + millis(System.nanoTime() - persistenceStarted)
-                + ", totalMs=" + millis(System.nanoTime() - started));
-        }
+        if (!computed.isEmpty()) MongoDB.upsertChampionBuilds(computed);
         return computed;
     }
 
@@ -99,10 +88,7 @@ public final class BuildService {
         Map<Integer, int[]> prismatics = new LinkedHashMap<>();
         Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
 
-        long started = System.nanoTime();
-        BotLogger.info("[ChampionBuild] compute started: filter=" + filter.toKey());
         int[] totals = new int[3];
-        long sourceStarted = System.nanoTime();
         ChampionBuildProvider.forEachBatch(filter, batch -> {
             try {
                 for (QueryRecord record : batch) {
@@ -127,16 +113,9 @@ public final class BuildService {
                 batch.clear();
             }
         });
-        long sourceNanos = System.nanoTime() - sourceStarted;
         int games = totals[1];
         int wins = totals[2];
-        if (games == 0) {
-            BotLogger.info("[ChampionBuild] compute completed: filter=" + filter.toKey()
-                + ", records=" + totals[0]
-                + ", games=0, wins=0, sourceMs=" + millis(sourceNanos)
-                + ", totalMs=" + millis(System.nanoTime() - started));
-            return List.of();
-        }
+        if (games == 0) return List.of();
 
         Build aggregate = new Build(
             filter,
@@ -155,10 +134,6 @@ public final class BuildService {
             toOptions(prismatics, games),
             toSlots(augments, AUGMENT_SLOT_COUNT, games)
         );
-        BotLogger.info("[ChampionBuild] compute completed: filter=" + filter.toKey()
-            + ", records=" + totals[0] + ", games=" + games
-            + ", wins=" + wins + ", sourceMs=" + millis(sourceNanos)
-            + ", totalMs=" + millis(System.nanoTime() - started));
         return List.of(aggregate);
     }
 
@@ -180,10 +155,6 @@ public final class BuildService {
             List.of(),
             List.of()
         ));
-    }
-
-    private static long millis(long nanos) {
-        return nanos / NANOS_PER_MILLI;
     }
 
     private static void addCore(ChampionBuildData.Game game, Map<String, int[]> builds,

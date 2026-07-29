@@ -35,7 +35,6 @@ import java.util.Map;
 public final class ChampionStatsService {
 
     private static final long AT_15_MS = 15 * 60 * 1000L;
-    private static final long NANOS_PER_MILLI = 1_000_000L;
     private static final List<String> POWER_BUCKETS = List.of("0-15", "15-25", "25-35", "35-45", "45+");
 
     private static final int MATCHES = 0;
@@ -86,16 +85,9 @@ public final class ChampionStatsService {
     }
 
     public static Map<Integer, ChampionStatistics> recomputeAll(Filter filter) {
-        long started = System.nanoTime();
         Map<Integer, ChampionStatistics> computed = compute(filter, false);
         if (computed != null && !computed.isEmpty()) {
-            long persistenceStarted = System.nanoTime();
-            BotLogger.info("Saving champion stats for " + filter.genericKey());
             MongoDB.upsertChampionStatistics(computed);
-            BotLogger.info("Champion stats persisted: filter=" + filter.genericKey()
-                + ", champions=" + computed.size() + ", persistenceMs="
-                + millis(System.nanoTime() - persistenceStarted) + ", totalMs="
-                + millis(System.nanoTime() - started));
         }
         return computed;
     }
@@ -170,12 +162,6 @@ public final class ChampionStatsService {
             .setPatch(first.patch())
             .setRegion(null);
 
-        BotLogger.info("[ChampionStatsMatrix] started: patch=" + first.patch()
-            + ", queue=" + first.queue() + ", combinations=" + accumulators.size());
-        long totalMatches = ChampionStatsProvider.loadMatchCount(source);
-        BotLogger.info("[ChampionStatsMatrix] source matches: patch=" + first.patch()
-            + ", queue=" + first.queue() + ", matches=" + totalMatches);
-
         ChampionStatsProvider.forEachMatch(source, read -> {
             ChampionStatsData.RawMatch rawMatch = read.match();
             List<MatrixAccumulator> targets = new ArrayList<>();
@@ -198,13 +184,7 @@ public final class ChampionStatsService {
 
         int emptyFilters = 0;
         int persistedChampions = 0;
-        int combinationNumber = 0;
         for (MatrixAccumulator accumulator : accumulators.values()) {
-            combinationNumber++;
-            BotLogger.info("[ChampionStatsMatrix] combination " + combinationNumber + "/"
-                + accumulators.size() + " started: rank=" + accumulator.filter.rank()
-                + ", region=" + accumulator.filter.region()
-                + ", lane=" + accumulator.filter.lane());
             Map<Integer, Trend> trends = loadTrends(accumulator.filter, accumulator.pickWin);
             Map<Integer, ChampionStatistics> statistics = assemble(accumulator, trends);
             if (statistics.isEmpty()) emptyFilters++;
@@ -213,18 +193,7 @@ public final class ChampionStatsService {
                 persistedChampions += statistics.size();
             }
             if (statistics.isEmpty()) MongoDB.upsertChampionStatistics(accumulator.filter, Map.of());
-            BotLogger.info("[ChampionStatsMatrix] combination " + combinationNumber + "/"
-                + accumulators.size() + " completed: rank=" + accumulator.filter.rank()
-                + ", region=" + accumulator.filter.region()
-                + ", lane=" + accumulator.filter.lane()
-                + ", games=" + accumulator.totalGames[0]
-                + ", champions=" + statistics.size()
-                + ", status=READY");
         }
-        BotLogger.info("[ChampionStatsMatrix] completed: patch=" + first.patch()
-            + ", queue=" + first.queue() + ", matches=" + totalMatches
-            + ", combinations=" + accumulators.size()
-            + ", empty=" + emptyFilters + ", champions=" + persistedChampions);
         return new MatrixResult(accumulators.size(), emptyFilters, persistedChampions);
     }
 
@@ -276,7 +245,6 @@ public final class ChampionStatsService {
     }
 
     private static Map<Integer, ChampionStatistics> compute(Filter filter, boolean save) {
-        long started = System.nanoTime();
         int[] totalGames = new int[1];
         int[] banGames = new int[1];
         Map<Integer, int[]> pickWin = new LinkedHashMap<>();
@@ -287,46 +255,22 @@ public final class ChampionStatsService {
         Map<Integer, double[]> metricAccum = new HashMap<>();
         Map<Integer, Map<String, int[]>> powerCurveAccum = new HashMap<>();
 
-        int[] processedMatches = new int[1];
-        int[] parsedGamesTotal = new int[1];
-        long[] rawMaterializeNanos = new long[1];
-        long[] matchReadNanos = new long[1];
-        long[] eventReadNanos = new long[1];
-        long[] parseNanos = new long[1];
-        long[] aggregateNanos = new long[1];
-        long streamStarted = System.nanoTime();
-        BotLogger.info("[ChampionStats] stream started: filter=" + filter.genericKey());
         ChampionStatsProvider.forEachMatch(filter, read -> {
-            processedMatches[0]++;
-            rawMaterializeNanos[0] += read.materializeNanos();
-            matchReadNanos[0] += read.matchReadNanos();
-            eventReadNanos[0] += read.eventReadNanos();
             ChampionStatsData.RawMatch rawMatch = read.match();
-            long parseStarted = System.nanoTime();
             ChampionStatsData.Game game = parse(rawMatch);
-            parseNanos[0] += System.nanoTime() - parseStarted;
             if (game != null) {
-                parsedGamesTotal[0]++;
-                long aggregateStarted = System.nanoTime();
                 acceptOverview(filter, game, totalGames, banGames, pickWin, banCount);
                 acceptLane(filter, game, laneAccum);
                 acceptMatchup(filter, game, matchupAccum);
                 acceptSynergy(filter, game, synergyAccum);
                 acceptMetrics(filter, game, metricAccum);
                 acceptPowerCurve(filter, game, powerCurveAccum);
-                aggregateNanos[0] += System.nanoTime() - aggregateStarted;
             }
             if (rawMatch != null && rawMatch.participants() != null) rawMatch.participants().clear();
             game = null;
             rawMatch = null;
         });
-        long streamNanos = System.nanoTime() - streamStarted;
-        long totalMatches = processedMatches[0];
-
-        long trendStarted = System.nanoTime();
         Map<Integer, Trend> trends = loadTrends(filter, pickWin);
-        long trendNanos = System.nanoTime() - trendStarted;
-        long assemblyStarted = System.nanoTime();
         Map<Integer, List<LaneStat>> laneStats = new LinkedHashMap<>();
         Map<Integer, Map<MatchupKey, Matchup>> matchups = new LinkedHashMap<>();
         Map<Integer, List<LaneSynergy>> synergies = new LinkedHashMap<>();
@@ -347,21 +291,9 @@ public final class ChampionStatsService {
         Map<Integer, ChampionStatistics> stats = assemble(
             filter, totalGames[0], banGames[0], pickWin, banCount, laneStats,
             matchups, synergies, metrics, powerCurve, trends);
-        long assemblyNanos = System.nanoTime() - assemblyStarted;
-        long persistenceNanos = 0;
         if (save && !stats.isEmpty()) {
-            long persistenceStarted = System.nanoTime();
             save(stats);
-            persistenceNanos = System.nanoTime() - persistenceStarted;
         }
-        BotLogger.info("Champion stats compute completed: filter=" + filter.genericKey()
-            + ", matches=" + totalMatches + ", parsed=" + parsedGamesTotal[0]
-            + ", streamMs=" + millis(streamNanos) + ", matchReadMs=" + millis(matchReadNanos[0])
-            + ", eventReadMs=" + millis(eventReadNanos[0])
-            + ", rawMaterializeMs=" + millis(rawMaterializeNanos[0]) + ", parseMs=" + millis(parseNanos[0])
-            + ", aggregateMs=" + millis(aggregateNanos[0]) + ", trendMs=" + millis(trendNanos)
-            + ", assemblyMs=" + millis(assemblyNanos) + ", persistenceQueueMs=" + millis(persistenceNanos)
-            + ", totalMs=" + millis(System.nanoTime() - started));
         return stats;
     }
 
@@ -714,30 +646,18 @@ public final class ChampionStatsService {
 
         Map<Integer, int[]> previous = new HashMap<>();
         String lastMatchId = null;
-        long previousTotal = ChampionStatsProvider.loadMatchCount(previousFilter);
-        long previousBatches = ChampionStatsProvider.batchCount(previousTotal);
         long previousGames = 0;
-        int batchNumber = 0;
         while (true) {
             List<String> matchIds = ChampionStatsProvider.loadMatchIds(previousFilter, lastMatchId);
             if (matchIds.isEmpty()) break;
-            batchNumber++;
             int batchSize = matchIds.size();
-            BotLogger.info("[ChampionStats] previous batch " + batchNumber + "/" + previousBatches
-                + " started: " + matchIds.size() + " games");
             List<QueryRecord> result = ChampionStatsProvider.loadTrendParticipants(matchIds);
             mergePrevious(previous, previousPickWin(result, filter));
             previousGames += batchSize;
             lastMatchId = matchIds.get(matchIds.size() - 1);
-            int resultSize = result.size();
             result.clear();
             matchIds.clear();
-            BotLogger.info("[ChampionStats] previous batch " + batchNumber + "/" + previousBatches
-                + " completed: processed=" + batchSize
-                + ", rows=" + resultSize + ", raw released");
         }
-        BotLogger.info("[ChampionStats] previous matches elaborated: filter="
-            + filter.genericKey() + ", games=" + previousGames);
         return previousGames == 0 ? Map.of() : trendOptions(filter, previousFilter, current, previous);
     }
 
@@ -881,10 +801,6 @@ public final class ChampionStatsService {
 
     private static double rate(int numerator, int denominator) {
         return denominator > 0 ? (double) numerator / denominator : 0;
-    }
-
-    private static long millis(long nanos) {
-        return nanos / NANOS_PER_MILLI;
     }
 
     public record MatrixResult(int filters, int emptyFilters, int persistedChampions) {}

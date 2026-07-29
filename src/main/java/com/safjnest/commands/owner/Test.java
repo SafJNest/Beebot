@@ -886,8 +886,8 @@ public class Test extends Command{
                 retrieveAllEntries.queue();
             break;
             case "highstats":
-                ChronoTask prewarmHighEloStats = () -> new LeaderboardService().prewarmHighEloProfileStatistics();
-                prewarmHighEloStats.queue();
+                ChronoTask rebuildHighEloStats = () -> new LeaderboardService().rebuildHighEloAndTrackedProfileStatistics();
+                rebuildHighEloStats.queue();
             break;
             case "sleep":
                 try {

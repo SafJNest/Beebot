@@ -20,7 +20,7 @@ Profile statistics and champion statistics/builds are expensive Mongo calculatio
 
 The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. Build tasks can execute only on the build worker; profile statistics, champion stats and scheduled refresh tasks can execute only on the general worker. Failed tasks complete exceptionally and become retryable after their key is removed.
 
-Every task lifecycle is logged with a readable job name, worker id and role, queue size, cumulative progress (`finished/total`) and terminal state. Enqueue logs use `add job`; execution logs use `doing job` and `finished job` with `SUCCESS`, `FAILED` or `CANCELLED`.
+Normal task lifecycle events are not written to the application log because high-volume queue/profile logging slows the workers. The owner-only `tracker` command reads the two worker snapshots on demand and reports readable job names, current work, queue positions, cumulative progress and scheduler state in three separate embeds. Task failures remain logged.
 
 The queue owns profile-statistics refreshes, champion stats/build refreshes and the scheduled champion-data refresh. `TrackerScheduler` owns the calendar trigger and submits the scheduled job. The match lookup and match analysis queues remain owned by `Tracker` and are unchanged.
 

@@ -120,8 +120,6 @@ public class ChampionDataRefreshService {
         List<Filter> buildFilters = getBuildFilters(patch);
         List<Filter> statFilters = getStatFilters(patch);
 
-        BotLogger.info("[LPTracker] Refreshing champion data for patch " + patch + " (" + buildFilters.size() + " build filters, " + statFilters.size() + " stat filters)");
-
         int builds = 0;
         int emptyBuilds = 0;
         for (Filter filter : buildFilters) {
@@ -147,7 +145,6 @@ public class ChampionDataRefreshService {
             }
         }
 
-        BotLogger.info("[LPTracker] Refreshed champion data for patch " + patch + ": " + builds + " builds (" + emptyBuilds + " empty filters), " + stats + " champion stats (" + emptyStats + " empty filters)");
     }
 
     // ============================================================================

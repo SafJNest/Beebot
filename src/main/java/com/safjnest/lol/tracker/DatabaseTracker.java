@@ -1,5 +1,7 @@
 package com.safjnest.lol.tracker;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
@@ -88,13 +90,21 @@ public final class DatabaseTracker {
     }
 
     public static CompletableFuture<Boolean> startProfileStatistics(Summoner summoner, Filter filter) {
+        return startProfileStatistics(summoner, filter, false);
+    }
+
+    public static CompletableFuture<Boolean> startProfileStatistics(
+        Summoner summoner,
+        Filter filter,
+        boolean rebuild
+    ) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null)
             return CompletableFuture.completedFuture(false);
 
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
-        ProfileStatisticsRequest request = ProfileStatisticsRequest.from(summoner, requestFilter);
+        ProfileStatisticsRequest request = ProfileStatisticsRequest.from(summoner, requestFilter, rebuild);
         String key = "profile-statistics:" + request.puuid() + ":" + requestFilter.toSummonerKey();
-        String name = "profile statistics puuid=" + request.puuid();
+        String name = "profile statistics " + (rebuild ? "rebuild " : "") + "puuid=" + request.puuid();
         return submit(key, name, () -> refreshProfileStatistics(request), false);
     }
 
@@ -173,6 +183,14 @@ public final class DatabaseTracker {
         awaitTermination(taskExecutor);
     }
 
+    public static List<WorkerStatus> workerStatuses() {
+        synchronized (LIFECYCLE_LOCK) {
+            boolean buildRunning = buildWorkerExecutor != null && !buildWorkerExecutor.isShutdown();
+            boolean generalRunning = generalWorkerExecutor != null && !generalWorkerExecutor.isShutdown();
+            return List.of(BUILD_WORKER.status(buildRunning), GENERAL_WORKER.status(generalRunning));
+        }
+    }
+
     // ============================================================================
 
     private static CompletableFuture<ChampionDataRefreshService.MatrixRefreshResult> startChampionStatsMatrix(Filter filter) {
@@ -194,15 +212,12 @@ public final class DatabaseTracker {
     private static boolean refreshProfileStatistics(ProfileStatisticsRequest request) {
         try {
             LeagueShard shard = LeagueShard.valueOf(request.region());
-            if (!PROFILE_STATISTICS_SERVICE.refresh(request.puuid(), shard, request.filter(), false)) {
+            if (!PROFILE_STATISTICS_SERVICE.refresh(request.puuid(), shard, request.filter(), request.rebuild())) {
                 BotLogger.error("Profile statistics refresh failed for summoner=" + request.puuid());
                 return false;
             }
 
             LeagueService.invalidateProfilePage(request.puuid(), shard);
-            BotLogger.info("[LPTracker] Updated summoner overview for "
-                + request.riotId() + " (" + shard + ", id="
-                + request.summonerId() + ") | profile statistics persisted, Redis profile page invalidated");
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile statistics refresh failed for summoner=" + request.puuid()
@@ -217,8 +232,6 @@ public final class DatabaseTracker {
                 BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid());
                 return false;
             }
-            BotLogger.info("[LPTracker] Updated profile matchups for puuid=" + request.puuid()
-                + " (" + request.shard() + ") | aggregate persisted");
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid()
@@ -262,19 +275,16 @@ public final class DatabaseTracker {
                 Thread.currentThread().interrupt();
                 return;
             }
-            long started = worker.started.incrementAndGet();
-            long submitted = worker.submitted.get();
-            logInfo("[DatabaseTracker] doing job " + task.name()
-                + " on worker " + worker.id + " (" + worker.type + "), "
-                + started + "/" + submitted + ", queue " + worker.queue.size());
-
-            Throwable failure = task.execute();
-            long finished = worker.finished.incrementAndGet();
-            String state = failure == null ? "SUCCESS" : "FAILED";
-            logInfo("[DatabaseTracker] finished job " + task.name()
-                + " on worker " + worker.id + " (" + worker.type + "), "
-                + finished + "/" + worker.submitted.get()
-                + ", queue " + worker.queue.size() + ", state=" + state);
+            worker.currentTask = task;
+            worker.currentStartedAt = System.currentTimeMillis();
+            worker.started.incrementAndGet();
+            try {
+                task.execute();
+            } finally {
+                worker.finished.incrementAndGet();
+                worker.currentTask = null;
+                worker.currentStartedAt = 0;
+            }
         }
     }
 
@@ -283,9 +293,6 @@ public final class DatabaseTracker {
         while ((task = worker.queue.poll()) != null) {
             task.cancel();
             TASKS.remove(task.key(), task.future());
-            logInfo("[DatabaseTracker] finished job " + task.name()
-                + " on worker " + worker.id + " (" + worker.type + ")"
-                + ", queue " + worker.queue.size() + ", state=CANCELLED");
         }
     }
 
@@ -299,12 +306,6 @@ public final class DatabaseTracker {
         }
     }
 
-    private static void logInfo(String message) {
-        try {
-            BotLogger.info(message);
-        } catch (Throwable ignored) { }
-    }
-
     @SuppressWarnings("unchecked")
     private static <T> CompletableFuture<T> cast(CompletableFuture<?> future) {
         return (CompletableFuture<T>) future;
@@ -315,16 +316,18 @@ public final class DatabaseTracker {
         String puuid,
         String riotId,
         String region,
-        Filter filter
+        Filter filter,
+        boolean rebuild
     ) {
 
-        private static ProfileStatisticsRequest from(Summoner summoner, Filter filter) {
+        private static ProfileStatisticsRequest from(Summoner summoner, Filter filter, boolean rebuild) {
             return new ProfileStatisticsRequest(
                 summoner.summonerId(),
                 summoner.puuid(),
                 summoner.riotId(),
                 summoner.region(),
-                filter
+                filter,
+                rebuild
             );
         }
     }
@@ -343,6 +346,8 @@ public final class DatabaseTracker {
         private final AtomicLong submitted = new AtomicLong();
         private final AtomicLong started = new AtomicLong();
         private final AtomicLong finished = new AtomicLong();
+        private volatile DatabaseTask<?> currentTask;
+        private volatile long currentStartedAt;
 
         private WorkerState(int id, String type, BlockingQueue<DatabaseTask<?>> queue) {
             this.id = id;
@@ -351,13 +356,39 @@ public final class DatabaseTracker {
         }
 
         private void enqueue(DatabaseTask<?> task) {
-            long total = submitted.incrementAndGet();
+            submitted.incrementAndGet();
             queue.offer(task);
-            logInfo("[DatabaseTracker] add job " + task.name()
-                + " to worker " + id + " (" + type + "), queue " + queue.size()
-                + ", total " + total);
+        }
+
+        private WorkerStatus status(boolean running) {
+            List<String> queued = new ArrayList<>();
+            for (DatabaseTask<?> task : queue) queued.add(task.name());
+            DatabaseTask<?> task = currentTask;
+            return new WorkerStatus(
+                id,
+                type,
+                running,
+                task == null ? null : task.name(),
+                currentStartedAt,
+                submitted.get(),
+                started.get(),
+                finished.get(),
+                List.copyOf(queued)
+            );
         }
     }
+
+    public record WorkerStatus(
+        int id,
+        String type,
+        boolean running,
+        String currentJob,
+        long currentStartedAt,
+        long submitted,
+        long started,
+        long finished,
+        List<String> queuedJobs
+    ) {}
 
     private record DatabaseTask<T>(String key, String name, Supplier<T> supplier, CompletableFuture<T> future) {
 
