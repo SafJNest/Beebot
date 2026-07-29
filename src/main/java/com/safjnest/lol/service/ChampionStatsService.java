@@ -708,8 +708,9 @@ public final class ChampionStatsService {
     }
 
     private static Double soloKillRate(double[] value) {
-        return value[KILLS] > 0 ? value[SOLO_KILLS] / value[KILLS]
-            : value[METRIC_GAMES] > 0 ? 0d : null;
+        if (value[KILLS] > 0) return value[SOLO_KILLS] / value[KILLS];
+        if (value[METRIC_GAMES] > 0) return 0d;
+        return null;
     }
 
     private static Double killParticipation(double[] value) {
