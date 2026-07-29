@@ -15,6 +15,15 @@ Le statistiche sono condivise da tutti i champion dello stesso filtro globale:
 patch + queue + rank + region + lane
 ```
 
+La generazione massiva parte esclusivamente da `patch + queue`. Per ogni coppia
+vengono create tutte le combinazioni tra `LeagueShardUtils.getActives()` e le
+soglie rank cumulative (`IRON+`, `BRONZE+`, ecc.). Ogni combinazione mantiene il
+proprio `Filter.genericKey()` e produce un `ChampionStatistics` per ogni champion
+presente. I match vengono letti una sola volta dalla query base `patch + queue` e
+distribuiti nei bucket compatibili; un match di Challenger contribuisce quindi a
+tutte le soglie inferiori. Le combinazioni già pronte vengono saltate e quelle
+senza match ricevono un marker persistente di stato vuoto.
+
 La build resta specifica per champion:
 
 ```text
@@ -30,7 +39,7 @@ Il calcolo iniziale può essere lento, ma viene eseguito una sola volta per filt
 ```text
 GET champion/Thresh
   ├─ verifica statistiche globali
-  │    └─ mancanti → avvia un solo global-stats job
+  │    └─ mancanti → avvia un solo champion-stats matrix job
   └─ verifica build Thresh
        └─ mancante → avvia build-Thresh job
 
@@ -45,6 +54,11 @@ Il job globale:
 2. calcola le statistiche di tutti i champion presenti;
 3. persiste un `ChampionStatistics` per champion;
 4. marca il filtro globale come pronto solo dopo il completamento di tutte le scritture.
+
+Quando una pagina richiede una stats mancante, `DatabaseTracker` accoda la
+matrice per la stessa patch e queue richiesta, ignorando il ruolo come sorgente
+della matrice. La build resta un job
+separato e specifico per champion.
 
 ### Richiesta successiva: Jhin
 
@@ -63,7 +77,7 @@ Non deve essere eseguita una seconda scansione globale dei match.
 Thresh e Jhin richiesti contemporaneamente devono produrre:
 
 ```text
-1 global-stats job
+1 champion-stats matrix job
 1 build-Thresh job
 1 build-Jhin job
 ```
@@ -84,9 +98,15 @@ cui il refresh non è ancora terminato o non esiste ancora alcun aggregate.
 
 `ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
 
-`DatabaseTracker` usa due chiavi distinte: `champion-stats:<filter.genericKey()>` e `champion-build:<filter.toKey()>`. Prima di accodare il job globale viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.
+`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e query Mongo su `filterKey + championId`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. I due job vengono accodati separatamente e possono essere eseguiti in parallelo dai due worker.
 
-Al termine di una scansione globale riuscita, `CHAMPION_STATS_COMPLETED` conserva il filtro globale già elaborato, anche quando il risultato è vuoto o non contiene il champion richiesto. Questo impedisce che il polling di una pagina senza dati rilanci la stessa scansione. In caso di eccezione lo stato `COMPLETED` non viene scritto e la chiave in-flight viene rimossa, quindi il filtro resta ritentabile. Il refresh completo accodato dallo scheduler usa la chiave `champion-data-refresh:<patch>`, resetta lo stato nel worker e non può sovrapporsi a un altro refresh dello stesso patch.
+Al termine della matrice, ogni combinazione riuscita viene marcata `ready`,
+anche quando non contiene match: questo impedisce che il polling di una pagina
+senza dati rilanci la stessa scansione. In caso di eccezione il marker non viene
+scritto e la chiave in-flight viene rimossa, quindi la combinazione resta
+ritentabile. Il refresh completo accodato dallo scheduler usa la chiave
+`champion-data-refresh:<patch>` e non può sovrapporsi a un altro refresh dello
+stesso patch.
 
 `ChampionStatsService.compute` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 
@@ -145,7 +165,7 @@ L’ownership deve essere separata:
 
 | Risorsa | Owner | Chiave di deduplicazione |
 |---|---|---|
-| statistiche globali | `ChampionDataRefreshService` / `ChampionStatsService` | `global-stats:{patch}:{queue}:{rank}:{region}:{lane}` |
+| matrice statistiche champion | `ChampionDataRefreshService` / `ChampionStatsService` | `champion-stats-matrix:<patch>:<queue>` |
 | build champion | `BuildService` | `build:{patch}:{queue}:{rank}:{region}:{lane}:{champion}` |
 | pagina HTTP | `ChampionPageService` | chiave pagina esistente |
 
@@ -157,7 +177,7 @@ Lo stato `READY` del globale deve essere scritto solo dopo il salvataggio comple
 
 1. Cache page pronta: restituire la pagina.
 2. Stats globali pronte e build pronta: costruire la pagina e restituire `READY`.
-3. Stats globali mancanti: verificare prima cache/Mongo per il champion richiesto; avviare il global-stats job solo se il filtro non è già in esecuzione o completato.
+3. Stats globali mancanti: verificare prima cache/Mongo per il champion richiesto; avviare il job matrice solo se la combinazione `patch + queue` non è già in esecuzione o completata.
 4. Build mancante: avviare il build job del champion se non già in esecuzione.
 5. Se una delle due risorse manca: restituire `PENDING` senza calcolo raw nella request.
 
@@ -174,13 +194,16 @@ La lettura di un champion non deve mai invocare direttamente il recompute global
 
 ## Acceptance criteria
 
-- Prima richiesta Thresh: un global-stats job e un build-Thresh job.
+- Prima richiesta Thresh: un champion-stats matrix job e un build-Thresh job.
 - Seconda richiesta Jhin con stesso filtro globale: solo build-Jhin job.
-- Thresh e Jhin concorrenti: un solo global-stats job complessivo.
+- Thresh e Jhin concorrenti: un solo champion-stats matrix job complessivo.
 - Nessun calcolo raw durante una request HTTP.
 - Un errore globale libera il marker e consente un nuovo tentativo.
 - Una scansione globale conclusa, anche senza righe per il champion richiesto, non viene rilanciata dai polling successivi.
 - Gli aggregati globali vengono persistiti per tutti i champion prodotti dal job.
+- La matrice genera una combinazione distinta per ogni regione attiva e soglia rank cumulativa a partire da patch e queue.
+- Una singola scansione corrente alimenta tutti i bucket della matrice.
+- I bucket senza match risultano pronti tramite marker persistente e non riavviano il calcolo.
 - Le route e i modelli HTTP canonici non cambiano.
 - I log di fase consentono di misurare l’assenza di scansioni globali duplicate; la conferma Mongo runtime e gli `explain("executionStats")` restano una verifica operativa.
 

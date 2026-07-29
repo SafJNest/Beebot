@@ -1,8 +1,6 @@
 package com.safjnest.lol.tracker;
 
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -14,12 +12,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionDataRefreshService;
-import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileStatisticsService;
 import com.safjnest.lol.service.ProfileMatchupsService;
@@ -27,6 +23,7 @@ import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class DatabaseTracker {
 
@@ -35,7 +32,6 @@ public final class DatabaseTracker {
     private static final Object LIFECYCLE_LOCK = new Object();
     private static final BlockingQueue<DatabaseTask<?>> TASK_QUEUE = new LinkedBlockingQueue<>();
     private static final ConcurrentMap<String, CompletableFuture<?>> TASKS = new ConcurrentHashMap<>();
-    private static final Set<String> CHAMPION_STATS_COMPLETED = ConcurrentHashMap.newKeySet();
     private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
     private static final ProfileMatchupsService PROFILE_MATCHUPS_SERVICE = new ProfileMatchupsService();
     private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
@@ -106,9 +102,9 @@ public final class DatabaseTracker {
         if (!statsMissing && !buildMissing) return CompletableFuture.completedFuture(null);
 
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
-        CompletableFuture<Map<Integer, ChampionStatistics>> statistics = statsMissing
-            ? startChampionStats(requestFilter)
-            : CompletableFuture.completedFuture(Map.of());
+        CompletableFuture<?> statistics = statsMissing
+            ? startChampionStatsMatrix(requestFilter)
+            : CompletableFuture.completedFuture(null);
         CompletableFuture<Boolean> build = buildMissing
             ? startChampionBuild(requestFilter)
             : CompletableFuture.completedFuture(true);
@@ -119,10 +115,21 @@ public final class DatabaseTracker {
         String patch = new Filter().patch();
         String key = "champion-data-refresh:" + patch;
         return submit(key, () -> {
-            CHAMPION_STATS_COMPLETED.clear();
             CHAMPION_DATA_REFRESH_SERVICE.refresh();
             return null;
         });
+    }
+
+    public static CompletableFuture<ChampionDataRefreshService.MatrixRefreshResult> enqueueChampionStatsMatrix(
+            String patch, GameQueueType queue) {
+        if (patch == null || patch.isBlank() || queue == null)
+            return CompletableFuture.completedFuture(new ChampionDataRefreshService.MatrixRefreshResult(0, 0, 0, 0, 0));
+        String key = championStatsMatrixKey(patch, queue);
+        return submit(key, () -> CHAMPION_DATA_REFRESH_SERVICE.refreshStatsMatrix(patch, queue));
+    }
+
+    static String championStatsMatrixKey(String patch, GameQueueType queue) {
+        return "champion-stats-matrix:" + patch + ":" + queue.name();
     }
 
     public static void shutdown() {
@@ -150,12 +157,8 @@ public final class DatabaseTracker {
 
     // ============================================================================
 
-    private static CompletableFuture<Map<Integer, ChampionStatistics>> startChampionStats(Filter filter) {
-        String key = filter.genericKey();
-        if (ChampionStatsService.hasStored(filter) || CHAMPION_STATS_COMPLETED.contains(key))
-            return CompletableFuture.completedFuture(Map.of());
-
-        return submit("champion-stats:" + key, () -> refreshChampionStats(filter, key));
+    private static CompletableFuture<ChampionDataRefreshService.MatrixRefreshResult> startChampionStatsMatrix(Filter filter) {
+        return enqueueChampionStatsMatrix(filter.patch(), filter.queue());
     }
 
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
@@ -194,20 +197,6 @@ public final class DatabaseTracker {
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid()
-                + " message=" + exception.getMessage());
-            throw new IllegalStateException(exception);
-        }
-    }
-
-    private static Map<Integer, ChampionStatistics> refreshChampionStats(Filter filter, String key) {
-        try {
-            Map<Integer, ChampionStatistics> stats = CHAMPION_DATA_REFRESH_SERVICE.refreshStats(filter);
-            if (stats == null) throw new IllegalStateException("refresh returned null");
-            CHAMPION_STATS_COMPLETED.add(key);
-            if (stats.isEmpty()) BotLogger.warning("Champion stats refresh completed with no data for filter=" + key);
-            return stats;
-        } catch (Exception exception) {
-            BotLogger.error("Champion stats refresh failed for filter=" + key
                 + " message=" + exception.getMessage());
             throw new IllegalStateException(exception);
         }

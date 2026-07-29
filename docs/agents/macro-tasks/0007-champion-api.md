@@ -38,6 +38,10 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - augment aggregati per slot, con ordine conservato;
 - chiavi stats Redis/DB con lane quando il ruolo è specificato;
 - rigenerazione dei payload JSON/BSON mancanti o corrotti.
+- matrice champion stats generata esclusivamente da `patch + queue`, con tutte le
+  regioni attive e tutte le soglie rank cumulative;
+- un'unica scansione Mongo per la coppia `patch + queue`, distribuita negli
+  accumulatori regione/rank e persistita per ogni champion;
 
 ## Invarianti
 
@@ -53,6 +57,8 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - tutti i refresh DB condividono due worker e una coda FIFO deduplicata;
 - in test lo scheduler non parte automaticamente;
 - la coda Redis dei match resta separata e invariata;
+- le combinazioni già pronte vengono saltate e quelle senza match vengono
+  marcate pronte con aggregate vuoti;
 
 ## Acceptance criteria
 

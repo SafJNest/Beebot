@@ -1153,7 +1153,7 @@ public final class MongoDB {
         return findChampionSourceFilters(patch, true);
     }
 
-        public static ChampionStatistics findChampionStatistics(Filter filter, int championId) {
+    public static ChampionStatistics findChampionStatistics(Filter filter, int championId) {
         if (filter == null) return null;
         Document document = championStats().find(Filters.and(
                 Filters.eq("filterKey", filter.genericKey()), Filters.eq("championId", championId))).first();
@@ -1163,11 +1163,26 @@ public final class MongoDB {
         public static Map<Integer, ChampionStatistics> findChampionStatistics(Filter filter) {
         if (filter == null) return Map.of();
         Map<Integer, ChampionStatistics> result = new HashMap<>();
-        for (Document document : championStats().find(Filters.eq("filterKey", filter.genericKey()))) {
+        for (Document document : championStats().find(Filters.and(
+                Filters.eq("filterKey", filter.genericKey()), Filters.exists("championId")))) {
             ChampionStatistics statistics = readChampionStatistics(document);
             if (statistics != null) result.put(document.getInteger("championId", 0), statistics);
         }
         return result;
+    }
+
+    public static boolean hasChampionStatistics(Filter filter) {
+        if (filter == null) return false;
+        return championStats().find(Filters.eq("filterKey", filter.genericKey()))
+                .projection(Projections.include("_id")).first() != null;
+    }
+
+    public static boolean hasChampionStatisticsReady(Filter filter) {
+        if (filter == null) return false;
+        return championStats().find(Filters.and(
+                Filters.eq("filterKey", filter.genericKey()),
+                Filters.eq("ready", true)))
+                .projection(Projections.include("_id")).first() != null;
     }
 
         public static List<Filter> findStoredChampionStatisticsFilters() {
@@ -1800,6 +1815,16 @@ public final class MongoDB {
         return true;
     }
 
+    public static boolean markChampionStatisticsReady(Filter filter) {
+        if (filter == null) return false;
+        String filterKey = filter.genericKey();
+        Document document = new Document("_id", filterKey + ":ready")
+                .append("filterKey", filterKey)
+                .append("ready", true);
+        replace(championStats(), document);
+        return true;
+    }
+
     public static void upsertChampionIndexables(String patch, List<ChampionIndexable> values) {
         String majorPatch = patchMajor(patch);
         if (majorPatch == null || majorPatch.isBlank() || values == null) return;
@@ -2370,7 +2395,7 @@ public final class MongoDB {
             if (filter.queue() != null) filters.add(Filters.eq("queue", filter.queue().name()));
             if (filter.patch() != null) filters.add(patchMajorFilter(filter.patch()));
             if (filter.region() != null) filters.add(Filters.eq("region", filter.region().name()));
-            if (filter.rank() != null) filters.add(Filters.in("rank", divisionNames(filter.rank())));
+            if (filter.rank() != null) filters.add(rankFilter(filter));
         }
         if (puuid != null) filters.add(Filters.elemMatch("participants", Filters.eq("puuid", puuid)));
         return filters.isEmpty() ? new Document() : Filters.and(filters);
@@ -2378,6 +2403,8 @@ public final class MongoDB {
 
     private static Document championRawProjection() {
         return new Document("_id", 1)
+                .append("region", 1)
+                .append("rank", 1)
                 .append("bans", 1)
                 .append("timeStart", 1)
                 .append("timeEnd", 1)

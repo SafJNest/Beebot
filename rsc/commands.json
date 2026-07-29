@@ -996,6 +996,13 @@
         "arguments" : "faker"
     },
 
+    "championstats": {
+        "alias" : [],
+        "help"  : "Generate the complete champion stats matrix for a patch and queue.",
+        "category" : "Owner",
+        "arguments" : "<patch> <queue>"
+    },
+
     "omegle":{
         "alias" : ["om", "ommomomavaffanculova"],
         "help"  : "Talk to strangers like omegle.",

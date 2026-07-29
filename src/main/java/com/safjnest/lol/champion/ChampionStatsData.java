@@ -2,6 +2,8 @@ package com.safjnest.lol.champion;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +22,14 @@ public final class ChampionStatsData {
         String puuid
     ) {}
 
-    public record MatchMeta(Map<String, Object> bans, Object events, long timeStart, long timeEnd) {}
+    public record MatchMeta(
+        Map<String, Object> bans,
+        Object events,
+        long timeStart,
+        long timeEnd,
+        LeagueShard region,
+        TierType rank
+    ) {}
 
     public record RawMatch(String matchId, MatchMeta metadata, List<RawParticipant> participants) {}
 

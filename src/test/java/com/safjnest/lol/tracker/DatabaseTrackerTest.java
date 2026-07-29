@@ -1,6 +1,7 @@
 package com.safjnest.lol.tracker;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -15,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+
 public class DatabaseTrackerTest {
 
     private static final long TIMEOUT_SECONDS = 10;
@@ -22,6 +25,16 @@ public class DatabaseTrackerTest {
     @AfterClass
     public static void shutdownWorkers() {
         DatabaseTracker.shutdown();
+    }
+
+    @Test
+    public void championStatsMatrixKeyUsesPatchAndQueue() {
+        String solo = DatabaseTracker.championStatsMatrixKey("15.14", GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+        String aram = DatabaseTracker.championStatsMatrixKey("15.14", GameQueueType.ARAM);
+
+        assertEquals("champion-stats-matrix:15.14:TEAM_BUILDER_RANKED_SOLO", solo);
+        assertEquals("champion-stats-matrix:15.14:ARAM", aram);
+        assertNotEquals(solo, aram);
     }
 
     @Test

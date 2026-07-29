@@ -27,7 +27,8 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 ## Processing rules
 
 - profile key: `profile-statistics:<puuid>:<Filter.toSummonerKey()>`;
-- champion stats key: `champion-stats:<Filter.genericKey()>`;
+- champion stats matrix key: `champion-stats-matrix:<patch>:<queue>`;
+- individual champion stats persistence key: `Filter.genericKey()`;
 - champion build key: `champion-build:<Filter.toKey()>`;
 - scheduled champion refresh key: `champion-data-refresh:<patch>`;
 - the complete filter is snapshotted before it is queued;

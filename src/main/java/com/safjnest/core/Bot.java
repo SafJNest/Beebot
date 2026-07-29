@@ -178,7 +178,7 @@ public class Bot {
             new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
         );
         
-        Collections.addAll(commandsList, new Leaderboard(), new Test(), new ListGuild());
+        Collections.addAll(commandsList, new Leaderboard(), new Test(), new ChampionStats(), new ListGuild());
         
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));

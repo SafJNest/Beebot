@@ -14,6 +14,8 @@ import com.safjnest.sql.QueryRecordParser;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class ChampionStatsProvider {
 
@@ -47,7 +49,8 @@ public final class ChampionStatsProvider {
             String matchId = String.valueOf(document.get("_id"));
             metadata.put(matchId, new ChampionStatsData.MatchMeta(
                     map(document.get("bans")), document.get("events"),
-                    number(document.get("timeStart")), number(document.get("timeEnd"))
+                    number(document.get("timeStart")), number(document.get("timeEnd")),
+                    region(document.getString("region")), rank(document.getString("rank"))
             ));
             List<ChampionStatsData.RawParticipant> participants = byMatch.computeIfAbsent(matchId, ignored -> new ArrayList<>());
             for (Document participant : participants(document.get("participants"))) {
@@ -92,7 +95,8 @@ public final class ChampionStatsProvider {
         String matchId = String.valueOf(document.get("_id"));
         ChampionStatsData.MatchMeta metadata = new ChampionStatsData.MatchMeta(
                 map(document.get("bans")), document.get("events"),
-                number(document.get("timeStart")), number(document.get("timeEnd")));
+                number(document.get("timeStart")), number(document.get("timeEnd")),
+                region(document.getString("region")), rank(document.getString("rank")));
         List<ChampionStatsData.RawParticipant> participants = new ArrayList<>();
         for (Document participant : participants(document.get("participants"))) {
             participants.add(new ChampionStatsData.RawParticipant(
@@ -130,6 +134,16 @@ public final class ChampionStatsProvider {
 
     private static TeamType team(Document participant) {
         try { return TeamType.valueOf(participant.getString("team")); }
+        catch (RuntimeException ignored) { return null; }
+    }
+
+    private static LeagueShard region(String value) {
+        try { return value == null ? null : LeagueShard.valueOf(value); }
+        catch (RuntimeException ignored) { return null; }
+    }
+
+    private static TierType rank(String value) {
+        try { return value == null ? null : TierType.valueOf(value); }
         catch (RuntimeException ignored) { return null; }
     }
 }

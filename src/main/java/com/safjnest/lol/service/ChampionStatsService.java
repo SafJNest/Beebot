@@ -73,7 +73,8 @@ public final class ChampionStatsService {
                 + ": " + exception.getMessage());
             cached = null;
         }
-        return cached != null ? cached : compute(filter, true);
+        return cached != null && (!cached.isEmpty() || MongoDB.hasChampionStatisticsReady(filter))
+            ? cached : compute(filter, true);
     }
 
     public static ChampionStatistics get(Filter filter) {
@@ -141,12 +142,122 @@ public final class ChampionStatsService {
             RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
             return stats;
         }
+        if (MongoDB.hasChampionStatisticsReady(filter)) {
+            stats = empty(filter);
+            RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
+            return stats;
+        }
         if (!allowCompute) return null;
 
         Map<Integer, ChampionStatistics> computed = compute(filter, true);
         stats = computed == null ? null : computed.get(filter.champion());
         if (stats != null) RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
         return stats;
+    }
+
+    static MatrixResult recomputeMatrix(List<Filter> filters) {
+        if (filters == null || filters.isEmpty()) return new MatrixResult(0, 0, 0);
+
+        Map<String, MatrixAccumulator> accumulators = new LinkedHashMap<>();
+        for (Filter filter : filters) {
+            if (filter == null || filter.patch() == null || filter.queue() == null) continue;
+            accumulators.putIfAbsent(filter.genericKey(), new MatrixAccumulator(filter));
+        }
+        if (accumulators.isEmpty()) return new MatrixResult(0, 0, 0);
+
+        Filter first = accumulators.values().iterator().next().filter;
+        Filter source = new Filter()
+            .setChampion(0)
+            .setLane(first.lane())
+            .setQueue(first.queue())
+            .setRank(null)
+            .setPatch(first.patch())
+            .setRegion(null);
+
+        ChampionStatsProvider.forEachMatch(source, read -> {
+            ChampionStatsData.RawMatch rawMatch = read.match();
+            List<MatrixAccumulator> targets = new ArrayList<>();
+            for (MatrixAccumulator accumulator : accumulators.values())
+                if (matchesMatrixFilter(accumulator.filter, rawMatch)) targets.add(accumulator);
+            if (targets.isEmpty()) {
+                if (rawMatch != null && rawMatch.participants() != null) rawMatch.participants().clear();
+                return;
+            }
+
+            ChampionStatsData.Game game = parse(rawMatch);
+            if (game == null) {
+                if (rawMatch != null && rawMatch.participants() != null) rawMatch.participants().clear();
+                return;
+            }
+            for (MatrixAccumulator accumulator : targets) accumulate(accumulator, game);
+
+            if (rawMatch != null && rawMatch.participants() != null) rawMatch.participants().clear();
+        });
+
+        int emptyFilters = 0;
+        int persistedChampions = 0;
+        for (MatrixAccumulator accumulator : accumulators.values()) {
+            Map<Integer, Trend> trends = loadTrends(accumulator.filter, accumulator.pickWin);
+            Map<Integer, ChampionStatistics> statistics = assemble(accumulator, trends);
+            if (statistics.isEmpty()) emptyFilters++;
+            else {
+                MongoDB.upsertChampionStatistics(statistics);
+                for (ChampionStatistics statistic : statistics.values()) RedisClient.set(
+                    RedisKey.CHAMPION_STATS,
+                    statistic,
+                    statistic.filter().genericKey(), statistic.filter().champion());
+                persistedChampions += statistics.size();
+            }
+            MongoDB.markChampionStatisticsReady(accumulator.filter);
+        }
+        return new MatrixResult(accumulators.size(), emptyFilters, persistedChampions);
+    }
+
+    static boolean matchesMatrixFilter(Filter filter, ChampionStatsData.RawMatch rawMatch) {
+        if (filter == null || rawMatch == null || rawMatch.metadata() == null) return false;
+        ChampionStatsData.MatchMeta metadata = rawMatch.metadata();
+        if (filter.region() != null && filter.region() != metadata.region()) return false;
+        if (filter.rank() == null) return true;
+        if (metadata.rank() == null) return false;
+        return filter.rankBehavior() == Filter.RankBehavior.EXACT
+            ? metadata.rank() == filter.rank()
+            : metadata.rank().ordinal() <= filter.rank().ordinal();
+    }
+
+    private static void accumulate(MatrixAccumulator accumulator, ChampionStatsData.Game game) {
+        Filter filter = accumulator.filter;
+        acceptOverview(filter, game, accumulator.totalGames, accumulator.banGames,
+            accumulator.pickWin, accumulator.banCount);
+        acceptLane(filter, game, accumulator.laneAccum);
+        acceptMatchup(filter, game, accumulator.matchupAccum);
+        acceptSynergy(filter, game, accumulator.synergyAccum);
+        acceptMetrics(filter, game, accumulator.metricAccum);
+        acceptPowerCurve(filter, game, accumulator.powerCurveAccum);
+    }
+
+    private static Map<Integer, ChampionStatistics> assemble(
+            MatrixAccumulator accumulator, Map<Integer, Trend> trends) {
+        Map<Integer, List<LaneStat>> laneStats = new LinkedHashMap<>();
+        Map<Integer, Map<MatchupKey, Matchup>> matchups = new LinkedHashMap<>();
+        Map<Integer, List<LaneSynergy>> synergies = new LinkedHashMap<>();
+        Map<Integer, ChampionStatsData.MetricValues> metrics = new LinkedHashMap<>();
+        Map<Integer, List<PowerCurvePoint>> powerCurve = new LinkedHashMap<>();
+
+        for (Map.Entry<Integer, int[]> entry : accumulator.pickWin.entrySet()) {
+            int champion = entry.getKey();
+            int picks = entry.getValue()[0];
+            double winrate = rate(entry.getValue()[1], picks);
+            laneStats.put(champion, laneOptions(accumulator.laneAccum, champion));
+            matchups.put(champion, matchupOptions(accumulator.matchupAccum, champion, winrate,
+                accumulator.banCount, accumulator.banGames[0]));
+            synergies.put(champion, synergyOptions(accumulator.synergyAccum, champion, picks));
+            metrics.put(champion, metricOptions(accumulator.metricAccum, champion));
+            powerCurve.put(champion, powerCurveOptions(accumulator.powerCurveAccum, champion));
+        }
+
+        return assemble(accumulator.filter, accumulator.totalGames[0], accumulator.banGames[0],
+            accumulator.pickWin, accumulator.banCount, laneStats, matchups, synergies,
+            metrics, powerCurve, trends);
     }
 
     private static Map<Integer, ChampionStatistics> compute(Filter filter, boolean save) {
@@ -764,6 +875,25 @@ public final class ChampionStatsService {
 
     private static long millis(long nanos) {
         return nanos / NANOS_PER_MILLI;
+    }
+
+    public record MatrixResult(int filters, int emptyFilters, int persistedChampions) {}
+
+    private static final class MatrixAccumulator {
+        private final Filter filter;
+        private final int[] totalGames = new int[1];
+        private final int[] banGames = new int[1];
+        private final Map<Integer, int[]> pickWin = new LinkedHashMap<>();
+        private final Map<Integer, int[]> banCount = new HashMap<>();
+        private final Map<Integer, Map<LaneType, int[]>> laneAccum = new HashMap<>();
+        private final Map<Integer, Map<MatchupKey, double[]>> matchupAccum = new HashMap<>();
+        private final Map<Integer, Map<ChampionStatsData.SynergyKey, int[]>> synergyAccum = new HashMap<>();
+        private final Map<Integer, double[]> metricAccum = new HashMap<>();
+        private final Map<Integer, Map<String, int[]>> powerCurveAccum = new HashMap<>();
+
+        private MatrixAccumulator(Filter filter) {
+            this.filter = filter;
+        }
     }
 
     private static final class EventCounter {

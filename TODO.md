@@ -31,6 +31,7 @@ Riferimenti: [query inventory](docs/mongo/08-query-inventory.md), [space audit](
 - [ ] Revisionare e validare il nuovo rendering preview OP.GG in `LeagueMessage.java`.
 - [ ] Controllare il diff non committato prima del commit.
 - [ ] Decidere se mantenere il TODO dell'aggregazione build in `MongoDB.java` oppure implementarlo.
+- [ ] Valutare un job interno/scheduler parametrico per pre-generare la matrice champion stats da `patch + queue`.
 
 ## P1 — Accesso API e rate limit
 

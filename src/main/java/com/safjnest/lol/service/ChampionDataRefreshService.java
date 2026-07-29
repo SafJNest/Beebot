@@ -1,17 +1,34 @@
 package com.safjnest.lol.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.log.BotLogger;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+
 public class ChampionDataRefreshService {
+
+    public record MatrixRefreshResult(
+        int combinations,
+        int skipped,
+        int generated,
+        int empty,
+        int persistedChampions
+    ) {}
 
     public boolean refresh(Filter filter) {
         if (filter == null || filter.champion() == 0) return false;
@@ -39,6 +56,49 @@ public class ChampionDataRefreshService {
             statistics.put(filter.champion(), empty);
         }
         return statistics;
+    }
+
+    public MatrixRefreshResult refreshStatsMatrix(String patch, GameQueueType queue) {
+        List<Filter> combinations = matrixFilters(patch, queue);
+        Set<String> readyKeys = new HashSet<>();
+        for (Filter filter : combinations) {
+            if (isReady(filter)) readyKeys.add(filter.genericKey());
+        }
+        List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
+
+        ChampionStatsService.MatrixResult result = ChampionStatsService.recomputeMatrix(missing);
+        return new MatrixRefreshResult(
+            combinations.size(),
+            combinations.size() - missing.size(),
+            result.filters() - result.emptyFilters(),
+            result.emptyFilters(),
+            result.persistedChampions());
+    }
+
+    static List<Filter> matrixFilters(String patch, GameQueueType queue) {
+        if (patch == null || patch.isBlank() || queue == null) return List.of();
+        List<Filter> filters = new ArrayList<>();
+        for (LeagueShard region : LeagueShardUtils.getActives()) {
+            for (TierType rank : TierDivisionUtils.getHigherTiers(TierType.IRON)) {
+                filters.add(new Filter()
+                    .setChampion(0)
+                    .setLane(null)
+                    .setQueue(queue)
+                    .setRank(rank)
+                    .setPatch(patch)
+                    .setRegion(region));
+            }
+        }
+        return filters;
+    }
+
+    static List<Filter> missingMatrixFilters(List<Filter> combinations, Set<String> readyKeys) {
+        if (combinations == null || combinations.isEmpty()) return List.of();
+        List<Filter> missing = new ArrayList<>();
+        for (Filter filter : combinations) {
+            if (filter != null && (readyKeys == null || !readyKeys.contains(filter.genericKey()))) missing.add(filter);
+        }
+        return missing;
     }
 
     public void refresh() {
@@ -117,6 +177,11 @@ public class ChampionDataRefreshService {
             .setRank(filter.rank())
             .setRegion(filter.region())
             .setLane(filter.lane());
+    }
+
+    private static boolean isReady(Filter filter) {
+        if (MongoDB.hasChampionStatisticsReady(filter)) return true;
+        return MongoDB.hasChampionStatistics(filter);
     }
 
 }

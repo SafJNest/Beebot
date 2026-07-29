@@ -40,6 +40,13 @@ Separate statistics persistence from request handling and limit database calcula
 - scheduler submits, but does not execute, the periodic champion refresh;
 - match queue processing remains available.
 
+Per le statistiche champion il job API-triggered è una matrice radicata solo in
+`patch + queue`: enumera regioni attive e soglie rank cumulative, usa una sola
+scansione Mongo dei match della coppia e mantiene una chiave di deduplicazione
+`champion-stats-matrix:<patch>:<queue>`. Le combinazioni vuote vengono
+marcate pronte; un job interno parametrico per pre-generare la matrice resta
+attività futura.
+
 ## Handoff
 
 Report executor ownership, deduplication keys, failure cleanup, scheduler changes and verification results.
