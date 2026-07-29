@@ -8,6 +8,7 @@
 
 ```bash
 curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
+  --data-urlencode 'patch=14.10' \
   --data-urlencode 'rank=EMERALD' \
   --data-urlencode 'region=EUW1' \
   --data-urlencode 'queue=TEAM_BUILDER_RANKED_SOLO' \
@@ -19,6 +20,7 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
 | Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
 |---|---|---|---:|---|---|
 | `champion` | path | string | sì | — | Nome champion, case-insensitive; la ricerca usa la normalizzazione statica del champion. |
+| `patch` | query | string `major.minor` | no | patch corrente | Patch del dataset. Il valore deve mantenere entrambe le componenti, ad esempio `14.10`. |
 | `rank` | query | enum `TierType` | no | nessun filtro | Tier minimo del dataset; `EMERALD` include Emerald e tier superiori secondo il filtro. |
 | `region` | query | enum `LeagueShard` | no | aggregato `GLOBAL` interno | Shard da aggregare. Non inviare `GLOBAL` o `UNKNOWN`. |
 | `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue del dataset. |

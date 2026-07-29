@@ -31,6 +31,7 @@ public class ChampionController {
     @GetMapping("/champion/{champion}")
     public ResponseEntity<?> champion(
             @PathVariable("champion") String championValue,
+            @RequestParam(value = "patch", required = false) String patchValue,
             @RequestParam(value = "rank", required = false) String rankValue,
             @RequestParam(value = "region", required = false) String regionValue,
             @RequestParam(value = "queue", required = false) String queueValue,
@@ -41,6 +42,7 @@ public class ChampionController {
         LolApiParameters.validateRole(queue, role);
         ApiResult<?> result = championPageService.get(
             championValue,
+            LolApiParameters.patch(patchValue),
             LolApiParameters.rank(rankValue),
             LolApiParameters.region(regionValue),
             queue,

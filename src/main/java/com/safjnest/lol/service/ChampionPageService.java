@@ -20,6 +20,7 @@ public class ChampionPageService {
 
     public ApiResult<ChampionView> get(
             String championValue,
+            String patch,
             TierType rank,
             LeagueShard region,
             GameQueueType queue,
@@ -37,6 +38,7 @@ public class ChampionPageService {
             .setRegion(region)
             .setQueue(selectedQueue)
             .setLane(role);
+        if (patch != null) filter.setPatch(patch);
 
         String key = RedisKey.CHAMPION_PAGE.of(filter.toKey());
         ChampionView cached;
