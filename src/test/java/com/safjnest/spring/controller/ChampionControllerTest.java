@@ -40,7 +40,7 @@ public class ChampionControllerTest {
     @Test
     public void shouldRejectRoleForQueueWithoutLanes() {
         try {
-            new ChampionController().champion("thresh", null, null, "CHERRY", "UTILITY");
+            new ChampionController().champion("thresh", null, null, null, null, "utility");
             throw new AssertionError("Expected role validation failure");
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
