@@ -35,12 +35,7 @@ public final class ChampionStatsData {
 
     public record RawMatchRead(RawMatch match, long matchReadNanos, long eventReadNanos, long materializeNanos) {}
 
-    public record RawBatch(Map<String, MatchMeta> metadata, Map<String, List<RawParticipant>> participants,
-                           long matchReadNanos, long eventReadNanos) {
-        public RawBatch(Map<String, MatchMeta> metadata, Map<String, List<RawParticipant>> participants) {
-            this(metadata, participants, 0, 0);
-        }
-    }
+    public record TrendParticipant(int champion, LaneType lane, boolean win) {}
 
     public record Player(int champion, LaneType lane, boolean win, TeamType team, String matchId,
                          long timeStart, long timeEnd, String kda, Integer cs, Integer gold, String puuid) {}

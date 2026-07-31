@@ -3,6 +3,7 @@ package com.safjnest.lol.utils;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -27,6 +28,18 @@ public class PatchUtils {
 
 	public static List<String> getPatches() {
 		return patches;
+	}
+
+	public static List<String> getRecentPatches(int count) {
+		if (count <= 0 || patches.isEmpty()) return List.of();
+		List<String> result = new ArrayList<>();
+		for (String patch : patches) {
+			if (patch == null || patch.isBlank() || result.contains(patch)) continue;
+			result.add(patch);
+			if (result.size() == count) break;
+		}
+		Collections.reverse(result);
+		return result;
 	}
 
 	public static OptionData getAsOptions() {

@@ -1287,31 +1287,81 @@ public final class MongoDB {
 
     public record ChampionRawMatch(Document document, long matchReadNanos, long eventReadNanos) {}
 
-    public static void forEachChampionRawMatch(Filter filter, Consumer<ChampionRawMatch> consumer) {
-        if (filter == null || consumer == null) return;
-        List<Bson> pipeline = List.of(
-                new Document("$match", championMatchFilter(filter, null)),
-                new Document("$sort", new Document("_id", 1)),
-                new Document("$lookup", new Document("from", "match_events")
-                        .append("localField", "_id")
-                        .append("foreignField", "_id")
-                        .append("as", "_event")),
-                new Document("$project", championRawProjection())
-        );
-        try (MongoCursor<Document> cursor = matches().aggregate(pipeline).batchSize(1).iterator()) {
+    public static List<String> forEachChampionRawMatch(Filter filter, Consumer<ChampionRawMatch> consumer) {
+        if (filter == null || consumer == null) return List.of();
+        List<String> matchIds = new ArrayList<>();
+        FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
+                .projection(championRawProjection())
+                .batchSize(100);
+        try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) {
-                long matchReadStarted = System.nanoTime();
+                long started = System.nanoTime();
                 Document document = cursor.next();
-                long matchReadNanos = System.nanoTime() - matchReadStarted;
-                long eventReadStarted = System.nanoTime();
-                Object eventValue = document.remove("_event");
-                if (eventValue instanceof List<?> events && !events.isEmpty()
-                        && events.get(0) instanceof Document event) {
-                    document.put("events", decodeMatchEventsJson(event));
+                String matchId = document.getString("_id");
+                if (matchId != null) matchIds.add(matchId);
+                try {
+                    consumer.accept(new ChampionRawMatch(document, System.nanoTime() - started, 0));
+                } finally {
+                    document.clear();
                 }
-                long eventReadNanos = System.nanoTime() - eventReadStarted;
-                consumer.accept(new ChampionRawMatch(document, matchReadNanos, eventReadNanos));
-                document.clear();
+            }
+        }
+        return matchIds;
+    }
+
+    public static void forEachChampionRawMatchEventBatch(List<String> matchIds, int batchSize,
+                                                           Consumer<ChampionRawMatch> consumer) {
+        if (matchIds == null || matchIds.isEmpty() || batchSize <= 0 || consumer == null) return;
+        for (int start = 0; start < matchIds.size(); start += batchSize) {
+            int end = Math.min(matchIds.size(), start + batchSize);
+            List<String> batch = new ArrayList<>(matchIds.subList(start, end));
+            Map<String, Document> matchesById = new HashMap<>();
+            try (MongoCursor<Document> cursor = matches().find(Filters.in("_id", batch))
+                    .projection(championRawProjection()).batchSize(batchSize).iterator()) {
+                while (cursor.hasNext()) {
+                    Document match = cursor.next();
+                    String matchId = match.getString("_id");
+                    if (matchId != null) matchesById.put(matchId, match);
+                    else match.clear();
+                }
+            }
+            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", batch)).batchSize(batchSize).iterator()) {
+                while (cursor.hasNext()) {
+                    long eventStarted = System.nanoTime();
+                    Document event = cursor.next();
+                    Document match = matchesById.remove(event.getString("_id"));
+                    try {
+                        if (match == null) continue;
+                        match.put("events", decodeMatchEventsJson(event));
+                        consumer.accept(new ChampionRawMatch(match, 0, System.nanoTime() - eventStarted));
+                    } finally {
+                        event.clear();
+                        if (match != null) match.clear();
+                    }
+                }
+            } finally {
+                for (Document match : matchesById.values()) match.clear();
+                matchesById.clear();
+                batch.clear();
+            }
+        }
+    }
+
+    public static void forEachChampionTrendMatch(Filter filter, Consumer<List<Document>> consumer) {
+        if (filter == null || consumer == null) return;
+        FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
+                .projection(Projections.include("participants.champion", "participants.lane", "participants.win"))
+                .batchSize(100);
+        try (MongoCursor<Document> cursor = query.iterator()) {
+            while (cursor.hasNext()) {
+                Document match = cursor.next();
+                List<Document> participants = documents(match.get("participants"));
+                try {
+                    consumer.accept(participants);
+                } finally {
+                    participants.clear();
+                    match.clear();
+                }
             }
         }
     }
@@ -2490,8 +2540,7 @@ public final class MongoDB {
                 .append("participants.kda", 1)
                 .append("participants.cs", 1)
                 .append("participants.goldEarned", 1)
-                .append("participants.puuid", 1)
-                .append("_event", 1);
+                .append("participants.puuid", 1);
     }
 
     private static Bson patchMajorFilter(String patch) {

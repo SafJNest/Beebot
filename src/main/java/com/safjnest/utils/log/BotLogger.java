@@ -57,7 +57,7 @@ public class BotLogger {
      */
     public static void trace (String message, LoggerIDpair... values) {
         logger.trace(formatLog(message, values));
-        sendLog("TRACE", formatLog(message, values));
+       //sendLog("TRACE", formatLog(message, values));
     }
 
     /**

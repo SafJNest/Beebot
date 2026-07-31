@@ -13,12 +13,12 @@ Profile statistics and champion statistics/builds are expensive Mongo calculatio
 
 `DatabaseTracker` owns asynchronous database calculation dispatch. It contains:
 
-- one process-local FIFO `LinkedBlockingQueue` for build tasks and one for all other database tasks;
+- one process-local FIFO `LinkedBlockingQueue` for champion tasks (builds and statistics) and one for profile tasks;
 - one in-flight map keyed by the logical resource key and holding the task `CompletableFuture`;
-- exactly one dedicated virtual-thread worker for builds and one for all other database tasks;
+- exactly two virtual-thread workers: worker 1 consumes profile work, while worker 2 serializes champion work and helps profiles only while its champion queue is empty;
 - task removal from the in-flight map only after success or failure.
 
-The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. Build tasks can execute only on the build worker; profile statistics, champion stats and scheduled refresh tasks can execute only on the general worker. Failed tasks complete exceptionally and become retryable after their key is removed.
+The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. Champion builds, champion stats and scheduled champion refreshes execute only on worker 2 in one FIFO sequence. Profile statistics and profile matchups enter the profile queue: worker 1 consumes it first and worker 2 may consume it when no champion task is waiting. Failed tasks complete exceptionally and become retryable after their key is removed.
 
 Normal task lifecycle events are not written to the application log because high-volume queue/profile logging slows the workers. The owner-only `tracker` command reads the two worker snapshots on demand and reports readable job names, current work, queue positions, cumulative progress and scheduler state in three separate embeds. Task failures remain logged.
 
@@ -30,9 +30,11 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 
 - profile key: `profile-statistics:<puuid>:<Filter.toSummonerKey()>`;
 - champion stats matrix key: `champion-stats-matrix:<patch>:<queue>`;
+- recent champion stats key: `champion-stats-recent:<queue>:<oldestPatch>,<middlePatch>,<newestPatch>`;
 - individual champion stats persistence key: `Filter.genericKey()`;
 - champion build key: `champion-build:<Filter.toKey()>`;
 - scheduled champion refresh key: `champion-data-refresh:<patch>`;
+- the latest three patch matrices for one queue are chained from oldest to newest, so each newer aggregate can read its previous-patch trend from storage;
 - the complete filter is snapshotted before it is queued;
 - worker failures are isolated to their task;
 - `DatabaseTracker.shutdown()` stops workers before Mongo closes.
@@ -46,8 +48,8 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 ## Acceptance criteria
 
 - no more than two database calculations execute at once;
-- build calculations never execute concurrently with another build calculation;
-- non-build database calculations never execute concurrently with another non-build calculation;
+- champion calculations never execute concurrently with another champion calculation;
+- profile calculations may run on either worker, but never exceed two database calculations overall;
 - duplicate queued or running keys share one future and one calculation;
 - a failed key can be submitted again;
 - scheduled champion refreshes cannot overlap for the same patch;

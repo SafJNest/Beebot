@@ -32,7 +32,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - power curve e trend patch quando i dati sono disponibili;
 - tutti i matchup validi con metriche @15/eventi disponibili;
 - tutte le lane synergy valide;
-- scansione globale tramite una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`; metadata, participant ed evento vengono materializzati per un match alla volta e i riferimenti Java vengono rilasciati subito dopo l’aggregazione;
+- scansione globale in due fasi: tutti i match vengono proiettati, aggregati e rilasciati senza eventi; poi gli stessi ID vengono risolti con match context leggero ed eventi a blocchi di 100, calcolando e rilasciando ogni evento prima del successivo;
 - build tramite cursor Mongo `batchSize(100)`, provider a blocchi e `BuildService` che svuota ogni batch prima del successivo;
 - aggregazione nel solo match corrente e rilascio delle strutture raw dopo ogni game e dopo ogni cursor item;
 - liste build indipendenti con massimo tre opzioni per categoria;
@@ -41,8 +41,9 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - rigenerazione dei payload JSON/BSON mancanti o corrotti.
 - matrice champion stats generata esclusivamente da `patch + queue`, con tutte le
   regioni attive e tutte le soglie rank cumulative;
-- un'unica scansione Mongo per la coppia `patch + queue`, distribuita negli
-  accumulatori regione/rank e persistita per ogni champion;
+- la scansione base della coppia `patch + queue` è distribuita negli
+  accumulatori regione/rank e persistita per ogni champion; la fase eventi usa
+  gli stessi ID in batch e aggiorna solo metriche dipendenti dagli eventi;
 
 ## Invarianti
 
@@ -55,7 +56,8 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
   vuote) e non riaccoda indefinitamente la stessa richiesta;
 - nessuna computazione raw durante la request.
 - le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e vengono accodate indipendentemente;
-- i refresh build usano un worker e una coda FIFO dedicati; tutti gli altri refresh DB usano un secondo worker e una seconda coda FIFO; la deduplicazione resta condivisa;
+- build e statistiche champion usano sempre il worker 2 e una sola sequenza FIFO; i refresh profilo usano il worker 1 e possono essere aiutati dal worker 2 soltanto quando la coda champion è vuota; la deduplicazione resta condivisa;
+- per una queue delle ultime tre patch, le matrici stats vengono accodate dalla più vecchia alla più nuova e il fallback trend legge solo la proiezione partecipanti in batch da 100, senza caricare eventi;
 - in test lo scheduler non parte automaticamente;
 - la coda Redis dei match resta separata e invariata;
 - le combinazioni già pronte vengono saltate e quelle senza match vengono

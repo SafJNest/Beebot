@@ -2,6 +2,7 @@ package com.safjnest.lol.service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.log.BotLogger;
@@ -118,7 +120,6 @@ public class ChampionDataRefreshService {
     public void refresh() {
         String patch = new Filter().patch();
         List<Filter> buildFilters = getBuildFilters(patch);
-        List<Filter> statFilters = getStatFilters(patch);
 
         int builds = 0;
         int emptyBuilds = 0;
@@ -132,16 +133,18 @@ public class ChampionDataRefreshService {
             }
         }
 
-        int stats = 0;
-        int emptyStats = 0;
-        for (Filter filter : statFilters) {
-            try {
-                Map<Integer, ChampionStatistics> computed = refreshStats(filter);
-                if (computed == null || computed.isEmpty()) emptyStats++;
-                else stats += computed.size();
-            } catch (Exception e) {
-                BotLogger.warning("[LPTracker] Failed refreshing champion stats filter " + filter.genericKey());
-                e.printStackTrace();
+        Set<GameQueueType> queues = new LinkedHashSet<>();
+        List<String> patches = PatchUtils.getRecentPatches(3);
+        for (String statsPatch : patches) queues.addAll(getStatQueues(statsPatch));
+        for (String statsPatch : patches) {
+            for (GameQueueType queue : queues) {
+                try {
+                    refreshStatsMatrix(statsPatch, queue);
+                } catch (Exception e) {
+                    BotLogger.warning("[LPTracker] Failed refreshing champion stats matrix patch="
+                        + statsPatch + " queue=" + queue);
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -158,15 +161,12 @@ public class ChampionDataRefreshService {
         return new ArrayList<>(filters.values());
     }
 
-    private List<Filter> getStatFilters(String patch) {
-        Map<String, Filter> filters = new LinkedHashMap<>();
-        for (Filter statFilter : MongoDB.findChampionStatisticsRefreshFilters(patch)) {
-            addStatFilter(filters, statFilter, patch);
-            if (GameQueueTypeUtils.hasLane(statFilter.queue())) addStatFilter(filters, statFilter.setLane(null), patch);
+    private Set<GameQueueType> getStatQueues(String patch) {
+        Set<GameQueueType> queues = new LinkedHashSet<>();
+        for (Filter filter : MongoDB.findChampionStatisticsRefreshFilters(patch)) {
+            if (filter.queue() != null) queues.add(filter.queue());
         }
-        for (Filter statFilter : MongoDB.findStoredChampionStatisticsFilters())
-            addStatFilter(filters, statFilter, patch);
-        return new ArrayList<>(filters.values());
+        return queues;
     }
 
     private void addBuildFilter(Map<String, Filter> filters, Filter filter, String patch) {
@@ -174,11 +174,6 @@ public class ChampionDataRefreshService {
         if (!GameQueueTypeUtils.hasLane(filter.queue()))
             filter.setLane(null);
         filters.put(filter.toKey(), filter);
-    }
-
-    private void addStatFilter(Map<String, Filter> filters, Filter filter, String patch) {
-        if (filter == null || !patch.equals(filter.patch())) return;
-        filters.put(filter.genericKey(), filter);
     }
 
     private static Filter statsFilter(Filter filter) {

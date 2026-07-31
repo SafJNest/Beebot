@@ -13,7 +13,7 @@ Separate statistics persistence from request handling and limit database calcula
 
 - reduce `ProfileStatisticsService` to read and refresh methods;
 - move API-triggered generation and in-flight deduplication into `DatabaseTracker`;
-- process build jobs through one dedicated FIFO queue/worker and all other database jobs through a second FIFO queue/worker;
+- serialize champion builds and statistics on worker 2; worker 1 consumes profile work and worker 2 may help profiles only while no champion task is queued;
 - keep the existing match queues separate and unchanged;
 - keep calendar ownership in `TrackerScheduler`, which only submits scheduled database work.
 
@@ -28,7 +28,7 @@ Separate statistics persistence from request handling and limit database calcula
 - API-triggered generation is submitted immediately to the database queue;
 - no raw aggregate calculation runs on an HTTP request thread;
 - repeated requests for the same PUUID and complete summoner filter are deduplicated while queued or running;
-- no more than one build job and one non-build database job execute concurrently;
+- champion builds and statistics always execute on worker 2 in one FIFO sequence; profile jobs can execute on either worker;
 - one failed generation does not stop another generation;
 - failed in-flight markers are removed so a later request can retry;
 - match lookup and match analysis queues remain process-owned and unchanged.
@@ -41,11 +41,13 @@ Separate statistics persistence from request handling and limit database calcula
 - match queue processing remains available.
 
 Per le statistiche champion il job API-triggered è una matrice radicata solo in
-`patch + queue`: enumera regioni attive e soglie rank cumulative, usa una sola
-scansione Mongo dei match della coppia e mantiene una chiave di deduplicazione
+`patch + queue`: enumera regioni attive e soglie rank cumulative, esegue una
+scansione base dei match e poi risolve gli eventi per gli stessi ID a blocchi,
+senza `$lookup` e senza trattenere i payload evento, e mantiene una chiave di deduplicazione
 `champion-stats-matrix:<patch>:<queue>`. Le combinazioni vuote vengono
-marcate pronte; un job interno parametrico per pre-generare la matrice resta
-attività futura.
+marcate pronte. Le ultime tre patch della stessa queue sono accodate dalla più
+vecchia alla più nuova, così la seconda e la terza matrice trovano già pronto
+l’aggregato precedente per il trend.
 
 ## Handoff
 

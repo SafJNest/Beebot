@@ -86,7 +86,7 @@ public class DatabaseTrackerTest {
     }
 
     @Test
-    public void generalWorkerRunsOneTaskAtOnce() throws Exception {
+    public void profileWorkerRunsOneTaskAtOnce() throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();
         CountDownLatch started = new CountDownLatch(1);
@@ -113,7 +113,7 @@ public class DatabaseTrackerTest {
     }
 
     @Test
-    public void buildWorkerIsDedicatedFromGeneralWorker() throws Exception {
+    public void championWorkerCanRunAlongsideProfileWorker() throws Exception {
         CountDownLatch started = new CountDownLatch(2);
         CountDownLatch release = new CountDownLatch(1);
 
@@ -135,7 +135,7 @@ public class DatabaseTrackerTest {
     }
 
     @Test
-    public void buildWorkerRunsOneBuildAtOnce() throws Exception {
+    public void championWorkerRunsOneBuildAtOnce() throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();
         CountDownLatch started = new CountDownLatch(1);
@@ -159,6 +159,45 @@ public class DatabaseTrackerTest {
         release.countDown();
         for (CompletableFuture<Void> future : futures) future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertEquals(1, maximum.get());
+    }
+
+    @Test
+    public void championWorkStaysOnSecondWorkerWhileItCanHelpProfiles() throws Exception {
+        CountDownLatch profileWorkerStarted = new CountDownLatch(1);
+        CountDownLatch championProfileStarted = new CountDownLatch(1);
+        CountDownLatch buildStarted = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+
+        CompletableFuture<Void> firstProfile = DatabaseTracker.submit("test:profile-worker", () -> {
+            profileWorkerStarted.countDown();
+            await(release);
+            return null;
+        });
+        assertTrue(profileWorkerStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+
+        CompletableFuture<Void> secondProfile = DatabaseTracker.submit("test:champion-worker-profile", () -> {
+            championProfileStarted.countDown();
+            await(release);
+            return null;
+        });
+        assertTrue(championProfileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+
+        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:second-worker-build", () -> {
+            buildStarted.countDown();
+            await(release);
+            return null;
+        });
+        release.countDown();
+        firstProfile.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        secondProfile.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        boolean secondWorkerRanBuild = false;
+        for (DatabaseTracker.WorkerStatus status : DatabaseTracker.workerStatuses()) {
+            if (status.id() == 2 && status.started() > 0) secondWorkerRanBuild = true;
+        }
+        assertTrue(secondWorkerRanBuild);
     }
 
     @Test
