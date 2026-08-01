@@ -5,40 +5,40 @@
 ```text
 GET /api/lol/{shard}/profile/{puuid}
   -> LolController
-  -> ProfilePageService.get
+  -> ProfileService.get
   -> Redis PROFILE_PAGE
-  -> LeagueService.getAsyncSummoner()
+  -> SummonerService.getAsync()
      Redis -> Mongo -> Future Riot -> save Redis + Mongo
-  -> LeagueService.getAsyncRanks()
+  -> RankService.getAsync()
      Redis -> Mongo -> Future Riot -> save Redis + Mongo
-  -> LeagueService.getAsyncMasteries()
+  -> MasteryService.getAsync()
      Redis -> Mongo -> Future Riot -> save Redis + Mongo
-  -> ProfileStatisticsService Redis/Mongo
+  -> ProfileService statistics Redis/Mongo
   -> Mongo recent MatchResult projection (max 5, senza events)
   -> SummonerView
 ```
 
-Evidenza: [LolController.java](../../src/main/java/com/safjnest/spring/controller/LolController.java:45), [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:28) e [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:90).
+Evidenza: [LolController.java](../../src/main/java/com/safjnest/spring/controller/LolController.java), [ProfileService.java](../../src/main/java/com/safjnest/lol/service/ProfileService.java), [ProfileAnalyzer.java](../../src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java), [SummonerService.java](../../src/main/java/com/safjnest/lol/service/SummonerService.java), [RankService.java](../../src/main/java/com/safjnest/lol/service/RankService.java) e [MasteryService.java](../../src/main/java/com/safjnest/lol/service/MasteryService.java).
 
 ## Parte coerente
 
-Il percorso HTTP usa modelli canonici e avvia i tre flussi async di `LeagueService` senza attendere Riot. Ogni flusso prova Redis, poi Mongo, quindi accoda o riusa una Future deduplicata per `shard:puuid`. Le statistiche passano prima da Redis e poi da Mongo. Lo stato `PENDING` viene restituito finché summoner, rank e mastery non sono pronti; se i tre componenti sono disponibili ma mancano le statistiche, il refresh viene avviato e il profilo viene restituito subito come `PARTIAL` con `recentMatches` vuoti. I cinque `MatchResult` vengono letti con una projection senza events solo dopo che l'aggregato è disponibile.
+Il percorso HTTP usa modelli canonici e avvia i tre flussi async di `SummonerService`, `RankService` e `MasteryService` senza attendere Riot. Ogni flusso prova Redis, poi Mongo, quindi accoda o riusa una Future deduplicata in `R4JQueue`; la coda esegue una sola richiesta Riot alla volta per shard. Le statistiche passano prima da Redis e poi da Mongo. Lo stato `PENDING` viene restituito finché summoner, rank e mastery non sono pronti; se i tre componenti sono disponibili ma mancano le statistiche, il refresh viene avviato e il profilo viene restituito subito come `PARTIAL` con `recentMatches` vuoti. I cinque `MatchResult` vengono letti con una projection senza events solo dopo che l'aggregato è disponibile.
 
 ## Rilievi
 
 ### Fix applicato — una fonte di verità per componente
 
-`LeagueService` possiede i getter salvati, le fetch Riot, le Future condivise e le scritture dei componenti. Non esiste una logica parallela di bootstrap del profilo. I wrapper sync del bot attendono le stesse Future usate dagli endpoint async.
+I service di dominio possiedono getter salvati, fetch Riot e scritture dei rispettivi componenti. `R4JQueue` possiede le Future condivise per shard. Non esiste una logica parallela di bootstrap del profilo. I wrapper sync del bot attendono le stesse Future usate dagli endpoint async.
 
-Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:251), [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:362) e [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:742).
+Evidenza: [SummonerService.java](../../src/main/java/com/safjnest/lol/service/SummonerService.java), [RankService.java](../../src/main/java/com/safjnest/lol/service/RankService.java), [MasteryService.java](../../src/main/java/com/safjnest/lol/service/MasteryService.java) e [R4JQueue.java](../../src/main/java/com/safjnest/lol/service/R4JQueue.java).
 
 `[]` viene persistito solo quando Riot restituisce esplicitamente una lista vuota; `null` o un errore Riot non diventano dati vuoti persistiti.
 
 ### Coerente — refresh statistiche Mongo
 
-`ProfileStatisticsService.refresh` legge match proiettati da Mongo usando il `Filter` completo e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh sulla FIFO del worker DB generale, separata dalla FIFO dedicata ai build. È il comportamento previsto per il runtime Mongo-only.
+`ProfileService.refreshStatistics` legge match proiettati da Mongo usando il `Filter` completo, delega il calcolo a `ProfileAnalyzer` e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh sulla FIFO del worker DB generale, separata dalla FIFO champion. È il comportamento previsto per il runtime Mongo-only.
 
-Evidenza: [ProfileStatisticsService.java](../../src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java:104).
+Evidenza: [ProfileService.java](../../src/main/java/com/safjnest/lol/service/ProfileService.java).
 
 MariaDB resta coinvolto solo nei percorsi espliciti di `MongoMigration`.
 
@@ -46,7 +46,7 @@ MariaDB resta coinvolto solo nei percorsi espliciti di `MongoMigration`.
 
 La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. La pagina salvata non contiene i `recentMatches`: quando l'aggregato è pronto, a ogni request vengono interrogati separatamente gli ultimi cinque match leggeri. Il primo caricamento restituisce subito `PARTIAL` con `recentMatches` vuoti quando le statistiche non sono ancora disponibili e accoda `DatabaseTracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
 
-Evidenza: [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:45) e [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:96).
+Evidenza: [ProfileService.java](../../src/main/java/com/safjnest/lol/service/ProfileService.java).
 
 ## Verifica runtime
 

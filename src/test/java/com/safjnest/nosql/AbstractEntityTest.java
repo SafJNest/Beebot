@@ -147,7 +147,7 @@ class AbstractEntityTest {
         Participant participant = new Participant();
         participant.puuid = "participant-puuid";
         Match match = Match.hydrated();
-        match.gameId = "123";
+        match.gameId = "EUW1_123";
         match.leagueShard = LeagueShard.EUW1;
         match.setParticipant(participant).setParticipantField(participant.puuid, "champion", 42);
 

@@ -273,5 +273,5 @@ chiavi serializzate come
 ## Owner
 
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
-- Service: [`ChampionPageService`](../../../src/main/java/com/safjnest/lol/service/ChampionPageService.java)
+- Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)

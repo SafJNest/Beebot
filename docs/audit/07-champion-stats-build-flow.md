@@ -3,7 +3,7 @@
 - Data: 2026-07-20
 - Tipo: audit statico e decisione di flusso
 - Stato: implementato staticamente, validazione Mongo runtime ancora necessaria
-- Scope: `ChampionPageService`, `ChampionDataRefreshService`, `ChampionStatsService`, `BuildService` e `DatabaseTracker`
+- Scope: `ChampionService`, `ChampionAnalyzer`, Mongo streaming e `DatabaseTracker`
 
 ## Decisione
 
@@ -90,7 +90,7 @@ Non sono ammessi due calcoli globali identici.
 
 ## Evidenze nel codice implementato
 
-`ChampionPageService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData` indicando quali risorse mancano. Il tracker accoda solo il job stats o build necessario e ricontrolla la build persistita prima di accodarla.
+`ChampionService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData` indicando quali risorse mancano. Per una matrice in attesa, il tracker unisce le build richieste nello stesso job; dopo l'avvio, una build nuova è un job build-only deduplicato.
 
 Quando un refresh termina correttamente senza giochi validi, non lascia più la
 risorsa in stato mancante: `BuildService` persiste un aggregate build con
@@ -112,7 +112,7 @@ rimossa, quindi la combinazione resta ritentabile. Il refresh completo accodato 
 `champion-data-refresh:<patch>` e non può sovrapporsi a un altro refresh dello
 stesso patch.
 
-`ChampionStatsService.compute` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e persiste tutti i champion prodotti dalla stessa scansione. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
+`ChampionAnalyzer` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e, quando richiesta, alimenta nello stesso documento anche la build. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 
 La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRawBatch` mantiene il cursor aperto con `batchSize(100)` e il provider consegna a `BuildService` blocchi di massimo 100 record. `BuildService` aggrega e svuota ogni blocco prima di leggere il successivo; anche il blocco finale può essere parziale. Le statistiche globali usano una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`: il provider converte e parsea un solo match per volta, poi svuota i riferimenti Java a match ed eventi.
 
@@ -169,9 +169,9 @@ L’ownership deve essere separata:
 
 | Risorsa | Owner | Chiave di deduplicazione |
 |---|---|---|
-| matrice statistiche champion | `ChampionDataRefreshService` / `ChampionStatsService` | `champion-stats-matrix:<patch>:<queue>` |
-| build champion | `BuildService` | `build:{patch}:{queue}:{rank}:{region}:{lane}:{champion}` |
-| pagina HTTP | `ChampionPageService` | chiave pagina esistente |
+| matrice statistiche champion | `ChampionService` / `ChampionAnalyzer` | `champion-stats-matrix:<patch>:<queue>` |
+| build champion | `ChampionService` / `ChampionAnalyzer` | `champion-build:<Filter.toKey()>` |
+| pagina HTTP | `ChampionService` | chiave pagina esistente |
 
 Il marker del job globale usa `Filter.genericKey()` e non deve usare la chiave pagina né la chiave completa del champion. Il marker della build resta specifico per champion con `Filter.toKey()`.
 

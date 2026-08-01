@@ -29,9 +29,10 @@ import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.SeasonUtils;
-import com.safjnest.lol.service.ChampionStatsService;
-import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.service.ProfileStatisticsService;
+import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.MatchService;
+import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.nosql.MongoDB;
@@ -69,7 +70,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 public class LeagueMessage {
 
     public static final String BUTTON_ID_PREFIX = "lol";
-    private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
+    private static final ProfileService PROFILE_SERVICE = new ProfileService();
+    private static final ChampionService CHAMPION_SERVICE = new ChampionService();
 
     private static Object[] build(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
@@ -81,7 +83,7 @@ public class LeagueMessage {
                 components = getSummonerButtons(summoner, userId, parameter);
                 break;
             case LIVEGAME:
-                SpectatorGameInfo liveGame = LeagueService.getSpectatorGame(summoner.getPUUID(), summoner.getPlatform());
+                SpectatorGameInfo liveGame = SummonerService.getSpectatorGame(summoner.getPUUID(), summoner.getPlatform());
                 List<SpectatorParticipant> users = liveGame != null ? liveGame.getParticipants() : null;
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
@@ -112,7 +114,7 @@ public class LeagueMessage {
             case CHAMPIONS_BY_WINRATE:
             case CHAMPIONS_BY_PICKRATE:
             case CHAMPIONS_BY_BANRATE:
-                List<ChampionStatistics> champions = ChampionStatsService.getAll(parameter.toFilter()).values().stream().toList();
+                List<ChampionStatistics> champions = CHAMPION_SERVICE.getStatisticsAll(parameter.toFilter()).values().stream().toList();
                 embed = buildEmbedChampions(parameter, champions);
                 components = getChampionsButtons(parameter);
                 break;
@@ -315,7 +317,7 @@ public class LeagueMessage {
         int limit = parameter.getMessageType().getPageItem();
         for (String gameId : getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset())) {
             if (matches.size() >= limit) break;
-            Match match = LeagueService.getMatch(gameId, summoner.getPlatform());
+            Match match = MatchService.get(gameId, summoner.getPlatform());
             if (match != null) matches.add(match);
         }
         return matches;
@@ -323,7 +325,7 @@ public class LeagueMessage {
 
     private static Match getSelectedOpggMatch(Summoner summoner, LeagueMessageParameter parameter) {
         String selectedMatchId = parameter.getSelectedMatchId();
-        return selectedMatchId == null ? null : LeagueService.getMatch(selectedMatchId, summoner.getPlatform());
+        return selectedMatchId == null ? null : MatchService.get(selectedMatchId, summoner.getPlatform());
     }
     
     @SuppressWarnings("unchecked")
@@ -374,7 +376,7 @@ public class LeagueMessage {
                 break;
         }
 
-        RiotAccount account = LeagueService.getAccountFromSummoner(s);
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(s);
         Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
@@ -394,7 +396,7 @@ public class LeagueMessage {
 //                                                                                              ███    ███
 
     public static EmbedBuilder getSummonerEmbed(Summoner s, LeagueMessageParameter parameter) {
-        RiotAccount account = LeagueService.getAccountFromSummoner(s);
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(s);
 
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
@@ -514,7 +516,7 @@ public class LeagueMessage {
                 String championName = champion == null ? String.valueOf(me.champion) : champion.getName();
                 String description = "As " + championName
                         + " (" + me.kda + " " + me.cs + " CS)";
-                String fullGameId = match.leagueShard.name() + "_" + match.gameId;
+                String fullGameId = match.gameId;
                 boolean isDefault = parameter.getSelectedMatchId() != null
                         && parameter.getSelectedMatchId().equals(fullGameId);
                 SelectOption option = SelectOption.of(label, fullGameId + "#" + summoner.getPUUID())
@@ -535,7 +537,7 @@ public class LeagueMessage {
 
     public static List<String> getMatchIds(Summoner s, GameQueueType queue, int index) {
         List<String> gameIds = new ArrayList<>();
-        List<String> allIds = LeagueService.getMatches(s, queue, index);
+        List<String> allIds = MatchService.getRecentIds(s, queue, index);
 
         for (String gameId : allIds) {
             if (gameId.split("_")[0].equalsIgnoreCase(s.getPlatform().toString()))
@@ -979,16 +981,9 @@ public class LeagueMessage {
 
     private static String getOpggMatchTitle(Match match, Participant participant, List<QueryRecord> result) {
         String title = GameQueueTypeUtils.prettyName(match.queue) + ": " + (participant.win ? "WIN" : "LOSE");
-        long gameId;
-        try {
-            gameId = Long.parseLong(match.gameId);
-        } catch (NumberFormatException ignored) {
-            return title;
-        }
-
         for (int index = 0; index < result.size(); index++) {
             QueryRecord row = result.get(index);
-            if (row.getAsLong("game_id") != gameId) continue;
+            if (!match.gameId.equals(row.getAsString("game_id"))) continue;
 
             TierDivisionType rank = row.getAsTier("rank");
             TierDivisionType previousRank = index > 0 ? result.get(index - 1).getAsTier("rank") : null;
@@ -1049,8 +1044,8 @@ public class LeagueMessage {
 
     private static EmbedBuilder getCanonicalOpggEmbed(Summoner summoner, LeagueMessageParameter parameter, List<Match> matches) {
         LeagueShard shard = summoner.getPlatform();
-        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
-        List<QueryRecord> queryResult = LeagueService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
+        List<QueryRecord> queryResult = MatchService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1070,8 +1065,8 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getCanonicalOpggEmbedMatch(Summoner summoner, Match match) {
-        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
-        List<QueryRecord> queryResult = LeagueService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
+        List<QueryRecord> queryResult = MatchService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1136,7 +1131,7 @@ public class LeagueMessage {
     }
 
     public static EmbedBuilder getLivegameEmbed(Summoner summoner, SpectatorGameInfo game, List<SpectatorParticipant> spectators) {
-        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
         if (game == null || spectators == null || spectators.isEmpty()) {
             EmbedBuilder empty = new EmbedBuilder();
             empty.setTitle(account.getName() + "'s Game");
@@ -1159,7 +1154,7 @@ public class LeagueMessage {
                     int i = 0;
 
                     for (SpectatorParticipant participant : spectators) {
-                        Summoner s = LeagueService.getRiotSummoner(participant.getPuuid(), summoner.getPlatform());
+                        Summoner s = SummonerService.getRiotSummoner(participant.getPuuid(), summoner.getPlatform());
                         String mastery = LeagueHandler.getMasteryByChamp(s, participant.getChampionId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
                         String sum = " **" + participant.getRiotId() + "**";
@@ -1244,7 +1239,7 @@ public class LeagueMessage {
     }
 
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
-        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
         List<Match> matches = null;
         EmbedBuilder eb = new EmbedBuilder();
         if (parameter.isShowChampion()) eb.setThumbnail(ChampionUtils.getChampionProfilePic(parameter.getChampion().getId()));
@@ -1288,7 +1283,7 @@ public class LeagueMessage {
         Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        RiotAccount account = LeagueService.getAccountFromSummoner(summoner);
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
         Button center = Button.primary("lol-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
@@ -1377,9 +1372,9 @@ public class LeagueMessage {
 
     private static ProfileStatistics profileStatistics(Summoner summoner, LeagueMessageParameter parameter) {
         Filter filter = parameter.toFilter();
-        ProfileStatistics statistics = PROFILE_STATISTICS_SERVICE.get(summoner.getPUUID(), filter);
+        ProfileStatistics statistics = PROFILE_SERVICE.getStatistics(summoner.getPUUID(), filter);
         if (statistics == null) {
-            com.safjnest.lol.model.summoner.Summoner saved = LeagueService.getSavedSummoner(summoner.getPUUID(), summoner.getPlatform());
+            com.safjnest.lol.model.summoner.Summoner saved = SummonerService.find(summoner.getPUUID(), summoner.getPlatform());
             if (saved != null) DatabaseTracker.startProfileStatistics(saved, filter);
         }
         return statistics;
@@ -1658,7 +1653,7 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, String puuid, LeagueMessageParameter parameter) {
-        List<QueryRecord> queryResult = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
+        List<QueryRecord> queryResult = MatchService.getSummonerData(s.getPUUID(), s.getPlatform());
         for (Match match : matches) 
             eb = getOpggEmbedMatchPreview(eb, match, s, queryResult);
         

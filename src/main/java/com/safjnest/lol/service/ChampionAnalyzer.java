@@ -31,7 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class ChampionStatsService {
+public final class ChampionAnalyzer {
 
     private static final long AT_15_MS = 15 * 60 * 1000L;
     private static final List<String> POWER_BUCKETS = List.of("0-15", "15-25", "25-35", "35-45", "45+");
@@ -60,7 +60,7 @@ public final class ChampionStatsService {
     private static final int GOLD_PER_MINUTE_GAMES = 8;
     private static final int METRIC_VALUE_SIZE = 9;
 
-    private ChampionStatsService() {}
+    private ChampionAnalyzer() {}
 
     public static Map<Integer, ChampionStatistics> getAll(Filter filter) {
         Map<Integer, ChampionStatistics> cached;
@@ -143,6 +143,10 @@ public final class ChampionStatsService {
     }
 
     static MatrixResult recomputeMatrix(List<Filter> filters) {
+        return recomputeMatrix(filters, List.of());
+    }
+
+    static MatrixResult recomputeMatrix(List<Filter> filters, List<Filter> buildFilters) {
         if (filters == null || filters.isEmpty()) return new MatrixResult(0, 0, 0);
 
         Map<String, MatrixAccumulator> accumulators = new LinkedHashMap<>();
@@ -151,6 +155,12 @@ public final class ChampionStatsService {
             accumulators.putIfAbsent(filter.genericKey(), new MatrixAccumulator(filter));
         }
         if (accumulators.isEmpty()) return new MatrixResult(0, 0, 0);
+
+        Map<String, ChampionBuildEngine.BuildAccumulator> builds = new LinkedHashMap<>();
+        if (buildFilters != null) for (Filter filter : buildFilters) {
+            if (filter == null || filter.champion() == 0 || filter.patch() == null || filter.queue() == null) continue;
+            builds.putIfAbsent(filter.toKey(), ChampionBuildEngine.newAccumulator(filter));
+        }
 
         Filter first = accumulators.values().iterator().next().filter;
         Filter source = new Filter()
@@ -161,10 +171,13 @@ public final class ChampionStatsService {
             .setPatch(first.patch())
             .setRegion(null);
 
-        ChampionStatsProvider.forEachMatch(source, read -> {
+        ChampionStatsProvider.forEachMatchWithBuild(source, (read, document) -> {
             ChampionStatsData.RawMatch rawMatch = read.match();
             List<MatrixAccumulator> targets = matchingAccumulators(accumulators, rawMatch);
             try {
+                for (ChampionBuildEngine.BuildAccumulator accumulator : builds.values())
+                    for (var record : MongoDB.championBuildRecords(document, accumulator.filter()))
+                        ChampionBuildEngine.accept(accumulator, record);
                 ChampionStatsData.Game game = parse(rawMatch);
                 if (game == null) return;
                 for (MatrixAccumulator accumulator : targets) accumulateBase(accumulator, game);
@@ -194,6 +207,11 @@ public final class ChampionStatsService {
                 persistedChampions += statistics.size();
             }
             if (statistics.isEmpty()) MongoDB.upsertChampionStatistics(accumulator.filter, Map.of());
+        }
+        for (ChampionBuildEngine.BuildAccumulator accumulator : builds.values()) {
+            List<com.safjnest.lol.model.Build> result = ChampionBuildEngine.finish(accumulator);
+            if (result.isEmpty()) result = ChampionBuildEngine.emptyResult(accumulator.filter());
+            MongoDB.upsertChampionBuilds(result);
         }
         return new MatrixResult(accumulators.size(), emptyFilters, persistedChampions);
     }

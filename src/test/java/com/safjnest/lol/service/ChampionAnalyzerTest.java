@@ -15,7 +15,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
-public class ChampionStatsServiceTest {
+public class ChampionAnalyzerTest {
 
     @Test
     public void greaterOrEqualMatrixBucketIncludesHigherRanks() {
@@ -23,8 +23,8 @@ public class ChampionStatsServiceTest {
         Filter emerald = filter(LeagueShard.EUW1, TierType.EMERALD);
         Filter challenger = filter(LeagueShard.EUW1, TierType.CHALLENGER);
 
-        assertTrue(ChampionStatsService.matchesMatrixFilter(emerald, match));
-        assertTrue(ChampionStatsService.matchesMatrixFilter(challenger, match));
+        assertTrue(ChampionAnalyzer.matchesMatrixFilter(emerald, match));
+        assertTrue(ChampionAnalyzer.matchesMatrixFilter(challenger, match));
     }
 
     @Test
@@ -34,9 +34,9 @@ public class ChampionStatsServiceTest {
         Filter euw = filter(LeagueShard.EUW1, TierType.EMERALD);
         Filter na = filter(LeagueShard.NA1, TierType.EMERALD);
 
-        assertFalse(ChampionStatsService.matchesMatrixFilter(diamond, goldMatch));
-        assertTrue(ChampionStatsService.matchesMatrixFilter(euw, goldMatch));
-        assertFalse(ChampionStatsService.matchesMatrixFilter(na, goldMatch));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(diamond, goldMatch));
+        assertTrue(ChampionAnalyzer.matchesMatrixFilter(euw, goldMatch));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(na, goldMatch));
     }
 
     @Test
@@ -45,7 +45,7 @@ public class ChampionStatsServiceTest {
         Filter exactMaster = filter(LeagueShard.EUW1, TierType.MASTER)
             .setRankBehavior(Filter.RankBehavior.EXACT);
 
-        assertFalse(ChampionStatsService.matchesMatrixFilter(exactMaster, match));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(exactMaster, match));
     }
 
     private static Filter filter(LeagueShard region, TierType rank) {

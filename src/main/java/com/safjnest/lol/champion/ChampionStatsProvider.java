@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.bson.Document;
@@ -38,6 +39,29 @@ public final class ChampionStatsProvider {
                 eventConsumer.accept(new ChampionStatsData.RawMatchRead(
                     rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
                     System.nanoTime() - materializeStarted));
+            });
+        } finally {
+            matchIds.clear();
+        }
+    }
+
+    public static void forEachMatchWithBuild(
+            Filter filter,
+            BiConsumer<ChampionStatsData.RawMatchRead, Document> matchConsumer,
+            Consumer<ChampionStatsData.RawMatchRead> eventConsumer) {
+        if (filter == null || matchConsumer == null || eventConsumer == null) return;
+        List<String> matchIds = MongoDB.forEachChampionRawMatchWithBuild(filter, raw -> {
+            long materializeStarted = System.nanoTime();
+            matchConsumer.accept(new ChampionStatsData.RawMatchRead(
+                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
+                    System.nanoTime() - materializeStarted), raw.document());
+        });
+        try {
+            MongoDB.forEachChampionRawMatchEventBatch(matchIds, EVENT_BATCH_SIZE, raw -> {
+                long materializeStarted = System.nanoTime();
+                eventConsumer.accept(new ChampionStatsData.RawMatchRead(
+                        rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
+                        System.nanoTime() - materializeStarted));
             });
         } finally {
             matchIds.clear();

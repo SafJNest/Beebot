@@ -94,7 +94,7 @@ public class MongoDBTest {
         Match decoded = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(match)), Match.class);
 
         assertEquals(LeagueShard.EUW1, decoded.leagueShard);
-        assertEquals("456", decoded.gameId);
+        assertEquals("EUW1_456", decoded.gameId);
         assertEquals(List.of(), decoded.bans.get(TeamType.BLUE));
         assertEquals(List.of(), decoded.bans.get(TeamType.RED));
     }

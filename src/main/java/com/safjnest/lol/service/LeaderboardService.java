@@ -41,7 +41,7 @@ public class LeaderboardService {
         GameQueueType.RANKED_FLEX_SR
     );
 
-    private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
+    private final ProfileService profileService = new ProfileService();
 
     public ApiResult<LeaderboardPage> getLeaderboard(
         TierType rank, GameQueueType queue, LeagueShard region, int page, int limit
@@ -70,7 +70,7 @@ public class LeaderboardService {
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         List<String> puuids = new ArrayList<>(summoners.size());
         for (Summoner summoner : summoners) puuids.add(summoner.puuid());
-        Map<String, ProfileStatistics> statisticsBySummoner = profileStatisticsService.getByPuuid(puuids, season);
+        Map<String, ProfileStatistics> statisticsBySummoner = profileService.getStatistics(puuids, season);
         for (Summoner summoner : summoners) {
             if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
             DatabaseTracker.startProfileStatistics(summoner, season);

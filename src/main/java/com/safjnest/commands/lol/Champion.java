@@ -15,8 +15,7 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.service.BuildService;
-import com.safjnest.lol.service.ChampionStatsService;
+import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -44,6 +43,8 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
  * @since 1.3
  */
 public class Champion extends SlashCommand {
+
+    private static final ChampionService CHAMPION_SERVICE = new ChampionService();
 
     public Champion() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -91,8 +92,8 @@ public class Champion extends SlashCommand {
         }
 
         Filter filter = readFilter(event, champion);
-        ChampionStatistics stats = ChampionStatsService.get(filter);
-        Build build = BuildService.getAggregate(filter);
+        ChampionStatistics stats = CHAMPION_SERVICE.getStatistics(filter);
+        Build build = CHAMPION_SERVICE.getBuild(filter);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getId()));

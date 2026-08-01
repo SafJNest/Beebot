@@ -6,11 +6,11 @@
 /opgg
   -> Opgg.execute
   -> LeagueHandler.getSummonerByArgs
-  -> LeagueService.upsertSummoner
+  -> SummonerService.upsert
   -> LeagueMessage.build(OPGG)
   -> loadMatchesParallel
-  -> LeagueService.getMatchList / Riot API
-  -> LeagueService.getSummonerData
+  -> MatchService.getRecentIds / Riot API
+  -> MatchService.getSummonerData
   -> MongoDB.findSummonerData
   -> getOpggEmbedMatch
 ```
@@ -19,9 +19,9 @@ Evidenza: [Opgg.java](../../src/main/java/com/safjnest/commands/lol/Opgg.java:58
 
 ## Cosa legge davvero OP.GG
 
-La lista delle partite viene ancora da Riot tramite `LeagueService.getMatchList` e `LeagueService.getMatch`. Il comando non usa `MongoDB.findMatchHistory` per costruire l’elenco visualizzato.
+La lista delle partite viene ancora da Riot tramite `MatchService.getRecentIds` e `MatchService.get`. Il comando non usa `MongoDB.findMatchHistory` per costruire l’elenco visualizzato.
 
-Per il blocco LP/rank chiama `LeagueService.getSummonerData`, che storicamente deve restituire righe participant con:
+Per il blocco LP/rank chiama `MatchService.getSummonerData`, che storicamente deve restituire righe participant con:
 
 - `summoner_id`;
 - `game_id`;
@@ -37,11 +37,11 @@ Il contratto è Mongo: [MongoDB.java](../../src/main/java/com/safjnest/nosql/Mon
 
 ### Fix applicato — il blocco LP riceve participant rows
 
-`LeagueService.getSummonerData` usa ora `findSummonerData`, separata dal profile aggregate. La proiezione produce `game_id`, `rank`, `lp`, `gain`, `win`, `time_start`, `time_end` e `patch`, in ordine cronologico.
+`MatchService.getSummonerData` usa `findSummonerData`, separata dal profile aggregate. La proiezione produce `game_id`, `rank`, `lp`, `gain`, `win`, `time_start`, `time_end` e `patch`, in ordine cronologico.
 
 Il consumer confronta `row.getAsLong("game_id")` con l’id del match e legge `rank`, `lp` e `gain`.
 
-Evidenza: [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:472) e [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java:798).
+Evidenza: [MatchService.java](../../src/main/java/com/safjnest/lol/service/MatchService.java) e [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java).
 
 Il confronto ora può trovare il match tramite `game_id`; resta da verificare il valore visualizzato con una sequenza rank reale e cache `SUMMONER_DATA` pulita.
 

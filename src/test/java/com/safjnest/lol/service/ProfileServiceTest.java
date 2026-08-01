@@ -18,7 +18,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
-public class ProfilePageServiceTest {
+public class ProfileServiceTest {
 
     @Test
     public void exposesCanonicalSummonerViewData() {

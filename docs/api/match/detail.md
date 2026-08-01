@@ -15,7 +15,7 @@ curl 'http://localhost:8080/api/lol/EUW1/match/EUW1_6789012345'
 | Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
 |---|---|---|---:|---|---|
 | `shard` | path | enum `LeagueShard` | sì | — | Shard usato per la lookup. |
-| `gameId` | path | string | sì | — | ID Riot completo, per esempio `EUW1_6789012345`, oppure identificativo numerico. |
+| `gameId` | path | string | sì | — | ID Riot completo, per esempio `EUW1_6789012345`. |
 
 Il prefisso prima di `_` viene rimosso per la lookup SQL; lo shard del path
 resta la regione di riferimento. Una miss segue `Redis → DB → Tracker → Riot`
@@ -193,5 +193,5 @@ risposta reale contiene tutti i partecipanti disponibili del match.
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Service: [`LeagueService`](../../../src/main/java/com/safjnest/lol/service/LeagueService.java) — `getMatchDetail`
+- Service: [`MatchService`](../../../src/main/java/com/safjnest/lol/service/MatchService.java) — `getDetail`
 - Success model: [`Match`](../../../src/main/java/com/safjnest/lol/model/match/Match.java)

@@ -13,7 +13,7 @@ import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -194,8 +194,8 @@ public class PrintCache extends Command {
             }
             else {
                 for(String account : lolAccounts.keySet()) {
-                    Summoner s = LeagueService.getRiotSummoner(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                    RiotAccount riotAccount = LeagueService.getAccountFromSummoner(s);
+                    Summoner s = SummonerService.getRiotSummoner(account, LeagueShard.valueOf(lolAccounts.get(account)));
+                    RiotAccount riotAccount = SummonerService.getRiotAccountFromSummoner(s);
                     lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
                 }
                 lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3) + "\n";

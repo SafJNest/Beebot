@@ -3,8 +3,8 @@
 - Stato: implementato staticamente; verifica runtime Mongo ed explain ancora pendenti
 - Ultimo aggiornamento: 2026-07-28
 - Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, profilo HTTP e statistiche Mongo LoL
-- Owner del calcolo e della persistenza: `ProfileStatisticsService`
-- Owner del calcolo e della persistenza matchup: `ProfileMatchupsService`
+- Owner di cache, persistenza e composizione: `ProfileService`
+- Owner del calcolo puro: `ProfileAnalyzer`
 - Owner del refresh asincrono: `DatabaseTracker`
 
 Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `DatabaseTracker.startProfileStatistics`, `DatabaseTracker.startProfileMatchups`.
@@ -74,7 +74,7 @@ Redis PROFILE_MATCHUPS(PUUID, filterKey)
   -> Mongo profile_matchups { puuid, filterKey }
   -> DatabaseTracker profile-matchups:<puuid>:<filterKey>
   -> Mongo.findProfileStatisticsMatches(..., Filter, 0, 0)
-  -> ProfileMatchups.from(...)
+  -> ProfileAnalyzer.matchups(...)
   -> Mongo upsert e Redis cache
 ```
 
@@ -349,7 +349,7 @@ Due richieste per lo stesso PUUID e lo stesso filtro condividono il Future mentr
 
 ## Calcolo e filtri
 
-`ProfileStatisticsService` è l'unico owner del calcolo. `MongoDB.findProfileStatisticsMatches` usa il filtro completo e una projection dei match/participant necessari. `ProfileStatistics.matchesFilter` viene applicato anche dopo la lettura per garantire che i filtri relazionali non vengano soddisfatti da participant errati.
+`ProfileService` è l'unico owner di cache, query e persistenza; `ProfileAnalyzer` è l'unico owner del calcolo puro. `MongoDB.findProfileStatisticsMatches` usa il filtro completo e una projection dei match/participant necessari. `ProfileStatistics.matchesFilter` viene applicato anche dopo la lettura per garantire che i filtri relazionali non vengano soddisfatti da participant errati.
 
 Devono essere rispettati tutti questi campi:
 
@@ -404,15 +404,15 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 
 | Dato | Chiave | TTL | Owner | Invalidazione |
 |---|---|---:|---|---|
-| profilo base | `PROFILE_BASE(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
-| rank profilo | `PROFILE_RANKS(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
-| mastery profilo | `PROFILE_MASTERIES(shard, PUUID)` | 6h | `LeagueService` | dopo refresh del componente o `invalidateSummoner` |
-| statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | 6h | `ProfileStatisticsService` | aggiornamento dopo upsert |
+| profilo base | `PROFILE_BASE(shard, PUUID)` | 6h | `SummonerService` | dopo refresh del componente o `SummonerService.invalidate` |
+| rank profilo | `PROFILE_RANKS(shard, PUUID)` | 6h | `RankService` | dopo refresh del componente o `SummonerService.invalidate` |
+| mastery profilo | `PROFILE_MASTERIES(shard, PUUID)` | 6h | `MasteryService` | dopo refresh del componente o `SummonerService.invalidate` |
+| statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
 | activity aggregate | `PROFILE_ACTIVITY(PUUID, filterKey)` | 6h | `ProfileActivityService` | aggiornamento dopo upsert |
-| profile matchups | `PROFILE_MATCHUPS(PUUID, filterKey)` | 6h | `ProfileMatchupsService` | aggiornamento dopo upsert |
-| recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | 1h | `ProfileStatisticsService` | dopo refresh statistiche |
-| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `LeagueService`/`ProfilePageService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
-| match raw | chiavi match esistenti | secondo `RedisKey` | `LeagueService`/`Tracker` | secondo il flusso match |
+| profile matchups | `PROFILE_MATCHUPS(PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
+| recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | 1h | `ProfileService` | dopo refresh statistiche |
+| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `ProfileService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
+| match raw | chiavi match esistenti | secondo `RedisKey` | `MatchService`/`Tracker` | secondo il flusso match |
 
 Un aggregato Mongo privo di `championStats[*].context` viene trattato come
 obsoleto e rigenerato da `DatabaseTracker`. I TTL delle chiavi Redis restano
@@ -443,7 +443,7 @@ Prima di modificare questo flusso verificare:
 3. Redis e Mongo usano la stessa chiave;
 4. `MongoDB` legge e scrive `{puuid, filterKey}`;
 5. la coppia `{ puuid, filterKey }` resta l'identità applicativa;
-6. il calcolo passa da `ProfileStatisticsService`, non da Discord/API/controller;
+6. il calcolo passa da `ProfileAnalyzer` tramite `ProfileService`, non da Discord/API/controller;
 7. `recentMatches` resta separato;
 8. activity usa lo stesso `Filter` e la query match condivisa, senza creare una seconda semantica per queue o periodo;
 9. `lastUpdate` viene scritto solo dopo il calcolo;
@@ -455,7 +455,8 @@ Prima di modificare questo flusso verificare:
 
 - `src/main/java/com/safjnest/lol/model/Filter.java`
 - `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
-- `src/main/java/com/safjnest/lol/service/ProfileStatisticsService.java`
+- `src/main/java/com/safjnest/lol/service/ProfileService.java`
+- `src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java`
 - `src/main/java/com/safjnest/lol/tracker/DatabaseTracker.java`
 - `src/main/java/com/safjnest/lol/tracker/Tracker.java`

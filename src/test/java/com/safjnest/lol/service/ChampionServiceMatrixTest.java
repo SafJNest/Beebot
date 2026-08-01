@@ -19,11 +19,11 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
-public class ChampionDataRefreshServiceTest {
+public class ChampionServiceMatrixTest {
 
     @Test
     public void matrixUsesEveryActiveRegionAndRankThreshold() {
-        List<Filter> filters = ChampionDataRefreshService.matrixFilters(
+        List<Filter> filters = ChampionService.matrixFilters(
             "15.14", GameQueueType.TEAM_BUILDER_RANKED_SOLO);
         Set<String> keys = new HashSet<>();
 
@@ -49,22 +49,22 @@ public class ChampionDataRefreshServiceTest {
 
     @Test
     public void matrixDoesNotCreateRoleDimensionForLaneLessQueues() {
-        Filter filter = ChampionDataRefreshService.matrixFilters(
+        Filter filter = ChampionService.matrixFilters(
                 "15.14", GameQueueType.ARAM).get(0);
 
         assertNull(filter.lane());
         assertEquals((LeagueShardUtils.getActives().size() + 1)
                 * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1),
-            ChampionDataRefreshService.matrixFilters("15.14", GameQueueType.ARAM).size());
+            ChampionService.matrixFilters("15.14", GameQueueType.ARAM).size());
     }
 
     @Test
     public void matrixSkipsReadyFilterKeys() {
-        List<Filter> combinations = ChampionDataRefreshService.matrixFilters(
+        List<Filter> combinations = ChampionService.matrixFilters(
             "15.14", GameQueueType.TEAM_BUILDER_RANKED_SOLO).subList(0, 3);
         Set<String> ready = Set.of(combinations.get(1).genericKey());
 
-        List<Filter> missing = ChampionDataRefreshService.missingMatrixFilters(combinations, ready);
+        List<Filter> missing = ChampionService.missingMatrixFilters(combinations, ready);
 
         assertEquals(2, missing.size());
         boolean skipped = false;

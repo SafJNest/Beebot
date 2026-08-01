@@ -61,6 +61,8 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0008: Component caches and asynchronous match lookups](adr/0008-endpoint-cache-and-async-lookups.md)
 - [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
 - [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md)
+- [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md)
+- [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 
 ## MongoDB migration
 

@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class BuildService {
+final class ChampionBuildEngine {
 
     private static final int SLOT_COUNT = 4;
     private static final int AUGMENT_SLOT_COUNT = 4;
 
-    private BuildService() {}
+    private ChampionBuildEngine() {}
 
     public static List<Build> getAll(Filter filter) {
         return loadBuilds(filter, true);
@@ -74,70 +74,57 @@ public final class BuildService {
     }
 
     private static List<Build> computeAll(Filter filter) {
-        Map<String, int[]> coreBuilds = new LinkedHashMap<>();
-        Map<String, List<Integer>> coreBuildItems = new LinkedHashMap<>();
-        Map<Integer, int[]> coreItems = new LinkedHashMap<>();
-        Map<String, int[]> starters = new LinkedHashMap<>();
-        Map<Integer, int[]> boots = new LinkedHashMap<>();
-        Map<Integer, int[]> supportItems = new LinkedHashMap<>();
-        Map<Integer, Map<Integer, int[]>> slots = new LinkedHashMap<>();
-        Map<String, int[]> runes = new LinkedHashMap<>();
-        Map<String, RuneSignature> runeConfigurations = new LinkedHashMap<>();
-        Map<String, int[]> summonerSpells = new LinkedHashMap<>();
-        Map<String, int[]> skillOrders = new LinkedHashMap<>();
-        Map<Integer, int[]> prismatics = new LinkedHashMap<>();
-        Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
-
-        int[] totals = new int[3];
+        BuildAccumulator accumulator = newAccumulator(filter);
         ChampionBuildProvider.forEachBatch(filter, batch -> {
             try {
-                for (QueryRecord record : batch) {
-                    totals[0]++;
-                    ChampionBuildData.Game game = ChampionBuildProvider.parse(record, filter);
-                    if (game == null) continue;
-
-                    totals[1]++;
-                    if (game.win()) totals[2]++;
-                    addCore(game, coreBuilds, coreBuildItems, coreItems);
-                    addStarter(game, starters);
-                    addBoots(game, boots);
-                    addSupportItem(game, supportItems);
-                    addSlots(game, slots);
-                    addRunes(game, runes, runeConfigurations);
-                    addSummonerSpells(game, summonerSpells);
-                    addSkillOrder(game, skillOrders);
-                    addPrismatics(game, prismatics);
-                    addAugments(game, augments);
-                }
+                for (QueryRecord record : batch) accept(accumulator, record);
             } finally {
                 batch.clear();
             }
         });
-        int games = totals[1];
-        int wins = totals[2];
-        if (games == 0) return List.of();
-
-        Build aggregate = new Build(
-            filter,
-            games,
-            wins,
-            rate(wins, games),
-            toCoreBuilds(coreBuilds, coreBuildItems, games),
-            toOptions(coreItems, games),
-            toConfigOptions(starters, games),
-            toOptions(boots, games),
-            toOptions(supportItems, games),
-            toSlots(slots, SLOT_COUNT, games),
-            toRuneOptions(runes, runeConfigurations, games),
-            toConfigOptions(summonerSpells, games),
-            toSkillOrders(skillOrders, games),
-            toOptions(prismatics, games),
-            toSlots(augments, AUGMENT_SLOT_COUNT, games)
-        );
-        return List.of(aggregate);
+        return finish(accumulator);
     }
 
-    private static List<Build> emptyResult(Filter filter) {
+    static BuildAccumulator newAccumulator(Filter filter) {
+        return new BuildAccumulator(filter);
+    }
+
+    static void accept(BuildAccumulator accumulator, QueryRecord record) {
+        if (accumulator == null || record == null) return;
+        accumulator.totalRecords++;
+        ChampionBuildData.Game game = ChampionBuildProvider.parse(record, accumulator.filter);
+        if (game == null) return;
+        accumulator.games++;
+        if (game.win()) accumulator.wins++;
+        addCore(game, accumulator.coreBuilds, accumulator.coreBuildItems, accumulator.coreItems);
+        addStarter(game, accumulator.starters);
+        addBoots(game, accumulator.boots);
+        addSupportItem(game, accumulator.supportItems);
+        addSlots(game, accumulator.slots);
+        addRunes(game, accumulator.runes, accumulator.runeConfigurations);
+        addSummonerSpells(game, accumulator.summonerSpells);
+        addSkillOrder(game, accumulator.skillOrders);
+        addPrismatics(game, accumulator.prismatics);
+        addAugments(game, accumulator.augments);
+    }
+
+    static List<Build> finish(BuildAccumulator accumulator) {
+        if (accumulator == null || accumulator.games == 0) return List.of();
+        int games = accumulator.games;
+        int wins = accumulator.wins;
+        return List.of(new Build(
+            accumulator.filter, games, wins, rate(wins, games),
+            toCoreBuilds(accumulator.coreBuilds, accumulator.coreBuildItems, games),
+            toOptions(accumulator.coreItems, games), toConfigOptions(accumulator.starters, games),
+            toOptions(accumulator.boots, games), toOptions(accumulator.supportItems, games),
+            toSlots(accumulator.slots, SLOT_COUNT, games),
+            toRuneOptions(accumulator.runes, accumulator.runeConfigurations, games),
+            toConfigOptions(accumulator.summonerSpells, games), toSkillOrders(accumulator.skillOrders, games),
+            toOptions(accumulator.prismatics, games), toSlots(accumulator.augments, AUGMENT_SLOT_COUNT, games)
+        ));
+    }
+
+    static List<Build> emptyResult(Filter filter) {
         return List.of(new Build(
             filter,
             0,
@@ -155,6 +142,35 @@ public final class BuildService {
             List.of(),
             List.of()
         ));
+    }
+
+    static final class BuildAccumulator {
+
+        private final Filter filter;
+        private final Map<String, int[]> coreBuilds = new LinkedHashMap<>();
+        private final Map<String, List<Integer>> coreBuildItems = new LinkedHashMap<>();
+        private final Map<Integer, int[]> coreItems = new LinkedHashMap<>();
+        private final Map<String, int[]> starters = new LinkedHashMap<>();
+        private final Map<Integer, int[]> boots = new LinkedHashMap<>();
+        private final Map<Integer, int[]> supportItems = new LinkedHashMap<>();
+        private final Map<Integer, Map<Integer, int[]>> slots = new LinkedHashMap<>();
+        private final Map<String, int[]> runes = new LinkedHashMap<>();
+        private final Map<String, RuneSignature> runeConfigurations = new LinkedHashMap<>();
+        private final Map<String, int[]> summonerSpells = new LinkedHashMap<>();
+        private final Map<String, int[]> skillOrders = new LinkedHashMap<>();
+        private final Map<Integer, int[]> prismatics = new LinkedHashMap<>();
+        private final Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
+        private int totalRecords;
+        private int games;
+        private int wins;
+
+        private BuildAccumulator(Filter filter) {
+            this.filter = filter;
+        }
+
+        private Filter filter() {
+            return filter;
+        }
     }
 
     private static void addCore(ChampionBuildData.Game game, Map<String, int[]> builds,

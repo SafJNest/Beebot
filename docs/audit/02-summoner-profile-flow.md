@@ -8,7 +8,7 @@ Per il contratto completo e il runbook di recupero contesto vedere [`profile-sta
 /summoner profile
   -> risoluzione account/cache
   -> Riot API solo quando il profilo Mongo è incompleto
-  -> LeagueService.upsertSummoner
+  -> SummonerService.upsert
   -> ProfileStatisticsService.get / DatabaseTracker refresh
   -> LeagueMessage.send
 ```
@@ -33,7 +33,7 @@ generici. Non modifica embed, comandi o layout esistenti.
 
 ## Account e cache
 
-`UserData` legge gli account collegati con `MongoDB.findAccountsByUserId`. L’aggiunta usa `LeagueService.upsertSummoner`; la rimozione usa `MongoDB.detachSummonerUser` con filtro su PUUID e `userId`. Dopo add/unlink vengono invalidati i riferimenti Redis e la cache locale viene aggiornata.
+`UserData` legge gli account collegati con `MongoDB.findAccountsByUserId`. L’aggiunta usa `SummonerService.upsert`; la rimozione usa `MongoDB.detachSummonerUser` con filtro su PUUID e `userId`. Dopo add/unlink vengono invalidati i riferimenti Redis e la cache locale viene aggiornata.
 
 Il PUUID è il valore stabile usato dall’autocomplete e dai lookup Mongo. La Riot API resta una sorgente di refresh, non una persistenza intermedia.
 

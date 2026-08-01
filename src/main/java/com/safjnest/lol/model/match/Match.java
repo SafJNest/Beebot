@@ -128,9 +128,7 @@ public class Match extends AbstractEntity<Match> {
     @Override
     protected String entityId() {
         if (gameId == null || gameId.isBlank()) throw new IllegalStateException("Match.gameId is required");
-        if (gameId.indexOf('_') > 0) return gameId;
-        if (leagueShard == null) throw new IllegalStateException("Match.leagueShard is required for gameId=" + gameId);
-        return leagueShard.name() + "_" + gameId;
+        return gameId;
     }
 
     @Override

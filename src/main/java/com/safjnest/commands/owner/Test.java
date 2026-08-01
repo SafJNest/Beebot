@@ -30,12 +30,10 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.service.BuildService;
-import com.safjnest.lol.service.ChampionIndexableService;
-import com.safjnest.lol.service.ChampionStatsService;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.LeaderboardService;
-import com.safjnest.lol.service.ProfileIndexableService;
+import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
@@ -826,7 +824,7 @@ public class Test extends Command{
             break;
             case "trackoldgames":
                 if (true) {
-                    Summoner sum = LeagueService.getRiotSummoner(args[1], LeagueShard.EUW1);
+                    Summoner sum = SummonerService.getRiotSummoner(args[1], LeagueShard.EUW1);
                     //MatchTracker.retrieveOldGames(sum).queue();
                 }
             break;
@@ -861,7 +859,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGames = () -> {
                         System.out.println(args[1]);
                         try {
-                            Tracker.retrieveMatchHistory(LeagueService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
+                            Tracker.retrieveMatchHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
                         } catch (Exception eee) { eee.printStackTrace(); }
                     };
                     retrieveAllGames.queue();
@@ -870,7 +868,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            Tracker.retrieveMatchHistory(LeagueService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
+                            Tracker.retrieveMatchHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
                         }
                     };
                     retrieveAllGamesFast.queue();
@@ -924,13 +922,13 @@ public class Test extends Command{
                                     .setRegion(region)
                                     .setRank(rank)
                                     .setPatch(patch);
-                                    Build build = BuildService.getAggregate(championFilter);
+                                    Build build = new ChampionService().getBuild(championFilter);
                                     System.out.println("Region: " + region + " Rank: " + rank + " Patch: " + patch + " Champion: " + champion.getId());
                             }
 
 
                             
-                            ChampionStatistics stats = ChampionStatsService.get(filter);
+                            ChampionStatistics stats = new ChampionService().getStatistics(filter);
                     
                             //System.out.println(filter.toKey());
                     
@@ -945,14 +943,14 @@ public class Test extends Command{
                 break;
             case "championindexables":
                 ChronoTask championIndexables = () -> {
-                    List<?> values = ChampionIndexableService.refresh();
+                    List<?> values = new ChampionService().refreshIndexables();
                     System.out.println("Champion indexables refreshed: " + values.size());
                 };
                 championIndexables.queue();
                 break;
                 case "profileindexables":
                 ChronoTask profileIndexables = () -> {
-                    List<?> values = ProfileIndexableService.refresh();
+                    List<?> values = new ProfileService().refreshIndexables();
                     System.out.println("Profile indexables refreshed: " + values.size());
                 };
                 profileIndexables.queue();

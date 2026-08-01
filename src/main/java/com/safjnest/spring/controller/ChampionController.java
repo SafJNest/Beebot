@@ -7,8 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.service.ChampionIndexableService;
-import com.safjnest.lol.service.ChampionPageService;
+import com.safjnest.lol.service.ChampionService;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -17,15 +16,15 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 @RequestMapping("/api/lol")
 public class ChampionController {
 
-    private final ChampionPageService championPageService;
+    private final ChampionService championService;
 
     public ChampionController() {
-        this.championPageService = new ChampionPageService();
+        this.championService = new ChampionService();
     }
 
     @GetMapping("/champion/indexables")
     public ResponseEntity<?> indexables() {
-        return ResponseEntity.ok(ChampionIndexableService.get());
+        return ResponseEntity.ok(championService.getIndexables());
     }
 
     @GetMapping("/champion/{champion}")
@@ -40,7 +39,7 @@ public class ChampionController {
         GameQueueType queue = LolApiParameters.queue(queueValue);
         LaneType role = LolApiParameters.role(roleValue);
         LolApiParameters.validateRole(queue, role);
-        ApiResult<?> result = championPageService.get(
+        ApiResult<?> result = championService.get(
             championValue,
             LolApiParameters.patch(patchValue),
             LolApiParameters.rank(rankValue),

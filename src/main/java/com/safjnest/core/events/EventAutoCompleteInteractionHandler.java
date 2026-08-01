@@ -34,7 +34,7 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Augment;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
@@ -526,7 +526,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         if (!isFocused) return personalSummoner(e);
         
-        choices = new ArrayList<>(LeagueService.getSummonerAutocomplete(value, shard));
+        choices = new ArrayList<>(SummonerService.autocomplete(value, shard));
         
         return choices;
 

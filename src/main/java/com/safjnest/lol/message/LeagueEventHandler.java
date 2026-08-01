@@ -7,7 +7,7 @@ import java.util.List;
 import com.safjnest.core.events.EventButtonHandler;
 import com.safjnest.core.events.EventUtils;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
@@ -89,7 +89,7 @@ public class LeagueEventHandler extends EventButtonHandler {
         String puuid = lolCenterData.value2().trim().split("#")[0];
         String region = lolCenterData.value2().trim().split("#")[1];
 
-        String user_id = LeagueService.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = SummonerService.getUserId(puuid, LeagueShard.valueOf(region));
         if (user_id == null || user_id.isEmpty()) user_id = fallbackUserId;
 
         return new LeagueContext(puuid, region, user_id, parameter, lolCenterData.active());
@@ -98,7 +98,7 @@ public class LeagueEventHandler extends EventButtonHandler {
     private void dispatch(InteractionHook hook, List<Button> buttons, LeagueContext context) {
         boolean hasLeft = buttons.stream().anyMatch(b -> (LeagueMessage.BUTTON_ID_PREFIX + "-left").equals(b.getCustomId()));
         String user_id = (hasLeft || context.userIdFallback()) ? context.user_id() : "";
-        Summoner s = LeagueService.getRiotSummoner(context.puuid(), LeagueShard.valueOf(context.region()));
+        Summoner s = SummonerService.getRiotSummoner(context.puuid(), LeagueShard.valueOf(context.region()));
         LeagueMessage.send(hook, user_id, s, s == null ? null : s.getPUUID(), context.parameter());
     }
 
@@ -174,7 +174,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "leftpage" -> parameter.setOffset(Math.max(0, parameter.getOffset() - parameter.getMessageType().getPageItem()));
             case "rightpage" -> parameter.setOffset(parameter.getOffset() + parameter.getMessageType().getPageItem());
             case "refresh" -> {
-                LeagueHandler.clearSummonerCache(LeagueService.getRiotSummoner(puuid, LeagueShard.valueOf(region)));
+                LeagueHandler.clearSummonerCache(SummonerService.getRiotSummoner(puuid, LeagueShard.valueOf(region)));
                 try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
         }

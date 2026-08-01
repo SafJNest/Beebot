@@ -17,11 +17,8 @@ import java.util.function.Supplier;
 
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.service.BuildService;
-import com.safjnest.lol.service.ChampionDataRefreshService;
-import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.service.ProfileStatisticsService;
-import com.safjnest.lol.service.ProfileMatchupsService;
+import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.log.BotLogger;
@@ -38,9 +35,9 @@ public final class DatabaseTracker {
     private static final WorkerState PROFILE_WORKER = new WorkerState(1, "profile", PROFILE_TASK_QUEUE, null);
     private static final WorkerState CHAMPION_WORKER = new WorkerState(2, "champion", CHAMPION_TASK_QUEUE, PROFILE_TASK_QUEUE);
     private static final ConcurrentMap<String, CompletableFuture<?>> TASKS = new ConcurrentHashMap<>();
-    private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
-    private static final ProfileMatchupsService PROFILE_MATCHUPS_SERVICE = new ProfileMatchupsService();
-    private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
+    private static final ConcurrentMap<String, ChampionMatrixRequest> CHAMPION_MATRICES = new ConcurrentHashMap<>();
+    private static final ProfileService PROFILE_SERVICE = new ProfileService();
+    private static final ChampionService CHAMPION_SERVICE = new ChampionService();
     private static ExecutorService profileWorkerExecutor;
     private static ExecutorService championWorkerExecutor;
 
@@ -133,43 +130,70 @@ public final class DatabaseTracker {
         if (!statsMissing && !buildMissing) return CompletableFuture.completedFuture(null);
 
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
-        CompletableFuture<?> statistics = statsMissing
-            ? startRecentChampionStatsMatrices(requestFilter)
+        if (!statsMissing) return buildMissing
+            ? startChampionBuild(requestFilter).thenApply(ignored -> null)
             : CompletableFuture.completedFuture(null);
-        CompletableFuture<Boolean> build = buildMissing
-            ? startChampionBuild(requestFilter)
-            : CompletableFuture.completedFuture(true);
-        return CompletableFuture.allOf(statistics, build);
+        List<String> patches = PatchUtils.getRecentPatches(3);
+        if (!patches.contains(requestFilter.patch())) return enqueueChampionStatsMatrix(
+            requestFilter.patch(), requestFilter.queue(), buildMissing ? requestFilter : null
+        ).thenApply(ignored -> null);
+        List<CompletableFuture<ChampionService.MatrixRefreshResult>> futures = new ArrayList<>();
+        for (String patch : patches) futures.add(enqueueChampionStatsMatrix(
+            patch, requestFilter.queue(), buildMissing && patch.equals(requestFilter.patch()) ? requestFilter : null
+        ));
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
         String patch = new Filter().patch();
         String key = "champion-data-refresh:" + patch;
         return submit(key, "champion data refresh patch=" + patch, () -> {
-            CHAMPION_DATA_REFRESH_SERVICE.refresh();
+            CHAMPION_SERVICE.refresh();
             return null;
         }, CHAMPION_WORKER);
     }
 
-    public static CompletableFuture<ChampionDataRefreshService.MatrixRefreshResult> enqueueChampionStatsMatrix(
+    public static CompletableFuture<ChampionService.MatrixRefreshResult> enqueueChampionStatsMatrix(
             String patch, GameQueueType queue) {
+        return enqueueChampionStatsMatrix(patch, queue, null);
+    }
+
+    private static CompletableFuture<ChampionService.MatrixRefreshResult> enqueueChampionStatsMatrix(
+            String patch, GameQueueType queue, Filter buildFilter) {
         if (patch == null || patch.isBlank() || queue == null)
-            return CompletableFuture.completedFuture(new ChampionDataRefreshService.MatrixRefreshResult(0, 0, 0, 0, 0));
+            return CompletableFuture.completedFuture(new ChampionService.MatrixRefreshResult(0, 0, 0, 0, 0));
         String key = championStatsMatrixKey(patch, queue);
         String name = "champion stats matrix patch=" + patch + " queue=" + queue.name();
-        return submit(key, name, () -> CHAMPION_DATA_REFRESH_SERVICE.refreshStatsMatrix(patch, queue), CHAMPION_WORKER);
+        synchronized (LIFECYCLE_LOCK) {
+            ChampionMatrixRequest existing = CHAMPION_MATRICES.get(key);
+            if (existing != null) {
+                if (!existing.running()) existing.addBuild(buildFilter);
+                else if (buildFilter != null) startChampionBuild(buildFilter);
+                return existing.future();
+            }
+            ChampionMatrixRequest request = new ChampionMatrixRequest();
+            request.addBuild(buildFilter);
+            CHAMPION_MATRICES.put(key, request);
+            CompletableFuture<ChampionService.MatrixRefreshResult> future = submit(key, name, () -> {
+                request.start();
+                try {
+                    return CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, request.buildFilters());
+                } finally {
+                    CHAMPION_MATRICES.remove(key, request);
+                }
+            }, CHAMPION_WORKER);
+            request.setFuture(future);
+            return future;
+        }
     }
 
     public static CompletableFuture<Void> enqueueRecentChampionStatsMatrices(GameQueueType queue) {
         if (queue == null) return CompletableFuture.completedFuture(null);
         List<String> patches = PatchUtils.getRecentPatches(3);
         if (patches.isEmpty()) return CompletableFuture.completedFuture(null);
-        String key = "champion-stats-recent:" + queue.name() + ":" + String.join(",", patches);
-        String name = "recent champion stats queue=" + queue.name() + " patches=" + String.join(",", patches);
-        return submit(key, name, () -> {
-            for (String patch : patches) CHAMPION_DATA_REFRESH_SERVICE.refreshStatsMatrix(patch, queue);
-            return null;
-        }, CHAMPION_WORKER);
+        List<CompletableFuture<ChampionService.MatrixRefreshResult>> futures = new ArrayList<>();
+        for (String patch : patches) futures.add(enqueueChampionStatsMatrix(patch, queue));
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
     static String championStatsMatrixKey(String patch, GameQueueType queue) {
@@ -206,17 +230,8 @@ public final class DatabaseTracker {
 
     // ============================================================================
 
-    private static CompletableFuture<?> startRecentChampionStatsMatrices(Filter filter) {
-        if (filter == null || filter.patch() == null || filter.queue() == null)
-            return CompletableFuture.completedFuture(null);
-        List<String> recentPatches = PatchUtils.getRecentPatches(3);
-        return recentPatches.contains(filter.patch())
-            ? enqueueRecentChampionStatsMatrices(filter.queue())
-            : enqueueChampionStatsMatrix(filter.patch(), filter.queue());
-    }
-
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
-        if (BuildService.hasStored(filter)) return CompletableFuture.completedFuture(true);
+        if (CHAMPION_SERVICE.hasBuild(filter)) return CompletableFuture.completedFuture(true);
         String key = "champion-build:" + filter.toKey();
         String name = "champion build champion=" + filter.champion()
             + " patch=" + filter.patch()
@@ -230,12 +245,12 @@ public final class DatabaseTracker {
     private static boolean refreshProfileStatistics(ProfileStatisticsRequest request) {
         try {
             LeagueShard shard = LeagueShard.valueOf(request.region());
-            if (!PROFILE_STATISTICS_SERVICE.refresh(request.puuid(), shard, request.filter(), request.rebuild())) {
+            if (!PROFILE_SERVICE.refreshStatistics(request.puuid(), shard, request.filter(), request.rebuild())) {
                 BotLogger.error("Profile statistics refresh failed for summoner=" + request.puuid());
                 return false;
             }
 
-            LeagueService.invalidateProfilePage(request.puuid(), shard);
+            ProfileService.invalidate(request.puuid(), shard);
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile statistics refresh failed for summoner=" + request.puuid()
@@ -246,7 +261,7 @@ public final class DatabaseTracker {
 
     private static boolean refreshProfileMatchups(ProfileMatchupsRequest request) {
         try {
-            if (!PROFILE_MATCHUPS_SERVICE.refresh(request.puuid(), request.shard(), request.filter())) {
+            if (!PROFILE_SERVICE.refreshMatchups(request.puuid(), request.shard(), request.filter())) {
                 BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid());
                 return false;
             }
@@ -260,7 +275,7 @@ public final class DatabaseTracker {
 
     private static boolean refreshChampionBuild(Filter filter) {
         try {
-            boolean refreshed = CHAMPION_DATA_REFRESH_SERVICE.refreshBuild(filter);
+            boolean refreshed = CHAMPION_SERVICE.refreshBuild(filter);
             if (!refreshed) BotLogger.error("Champion build refresh failed for filter=" + filter.toKey());
             return refreshed;
         } catch (Exception exception) {
@@ -355,6 +370,37 @@ public final class DatabaseTracker {
         LeagueShard shard,
         Filter filter
     ) {}
+
+    private static final class ChampionMatrixRequest {
+
+        private final ConcurrentMap<String, Filter> buildFilters = new ConcurrentHashMap<>();
+        private CompletableFuture<ChampionService.MatrixRefreshResult> future;
+        private boolean running;
+
+        private synchronized void addBuild(Filter filter) {
+            if (filter != null) buildFilters.putIfAbsent(filter.toKey(), Filter.fromStateKey(filter.toStateKey()));
+        }
+
+        private synchronized void start() {
+            running = true;
+        }
+
+        private synchronized boolean running() {
+            return running;
+        }
+
+        private synchronized void setFuture(CompletableFuture<ChampionService.MatrixRefreshResult> value) {
+            future = value;
+        }
+
+        private synchronized CompletableFuture<ChampionService.MatrixRefreshResult> future() {
+            return future;
+        }
+
+        private List<Filter> buildFilters() {
+            return new ArrayList<>(buildFilters.values());
+        }
+    }
 
     private static final class WorkerState {
 

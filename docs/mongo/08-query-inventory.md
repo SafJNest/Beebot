@@ -4,10 +4,10 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 
 | Area | Query Mongo target | Budget applicativo | Consumer |
 |---|---|---:|---|
-| search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | LeagueService |
-| profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfilePageService |
+| search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | SummonerService |
+| profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfileService |
 | leaderboard | `$match` preliminare con `$elemMatch` + `$unwind` + `$match` esatto + `$facet` per `total` e pagina; projection summoner già filtrata | 2 | LeaderboardService |
-| profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileStatisticsService |
+| profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | history | participant filter in un unico `$elemMatch`, projection/paging limitati; `countDocuments` diretto | 1 + eventi batch | LeagueMessage |
 | match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
 | match events | `_id: {$in: [...]}` su `match_events` | 1 | match detail/history |

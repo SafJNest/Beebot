@@ -16,24 +16,19 @@ import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.service.ProfileActivityService;
-import com.safjnest.lol.service.ProfileMatchupsPageService;
+import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.service.ProfilePageService;
+import com.safjnest.lol.service.ProfileService;
+import com.safjnest.lol.service.SummonerService;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")
 public class LolController {
 
-    private final ProfilePageService profilePageService;
-    private final ProfileActivityService profileActivityService;
-    private final ProfileMatchupsPageService profileMatchupsPageService;
+    private final ProfileService profileService;
 
     public LolController() {
-        this.profilePageService = new ProfilePageService();
-        this.profileActivityService = new ProfileActivityService();
-        this.profileMatchupsPageService = new ProfileMatchupsPageService();
+        this.profileService = new ProfileService();
     }
 
     @GetMapping("/search")
@@ -42,14 +37,14 @@ public class LolController {
             @RequestParam("q") String q
     ) {
         String query = LolApiParameters.requiredText(q, "search query");
-        if (LeagueService.normalizeSearch(query).isEmpty()) {
+        if (SummonerService.normalizeSearch(query).isEmpty()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "Search query must contain at least one character after removing spaces, '-' and '#'"
             );
         }
 
-        return LeagueService.searchSummoners(query, LolApiParameters.requiredShard(shardValue));
+        return SummonerService.search(query, LolApiParameters.requiredShard(shardValue));
     }
 
     @GetMapping("/profile/{puuid}")
@@ -57,7 +52,7 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid
     ) {
-        ApiResult<SummonerView> result = profilePageService.get(
+        ApiResult<SummonerView> result = profileService.get(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid")
         );
@@ -79,7 +74,7 @@ public class LolController {
             LolApiParameters.activityQueue(queueValue),
             champion
         );
-        return profileActivityService.get(
+        return profileService.getActivity(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid"),
             filter
@@ -98,7 +93,7 @@ public class LolController {
             @RequestParam(name = "minGames", defaultValue = "5") int minGames
     ) {
         ActivityFilter filter = LolApiParameters.matchupsFilter(start, end, queueValue, patchValue, roleValue, minGames);
-        ApiResult<ProfileMatchups> result = profileMatchupsPageService.get(
+        ApiResult<ProfileMatchups> result = profileService.getMatchups(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid"),
             filter
@@ -117,7 +112,7 @@ public class LolController {
             @PathVariable("gameName") String gameName,
             @PathVariable("tagLine") String tagLine
     ) {
-        ApiResult<SummonerView> result = profilePageService.get(
+        ApiResult<SummonerView> result = profileService.get(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(gameName, "game name"),
             LolApiParameters.requiredText(tagLine, "tag line")
@@ -130,7 +125,7 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("gameId") String gameId
     ) {
-        ApiResult<?> result = LeagueService.getMatchDetail(
+        ApiResult<?> result = MatchService.getDetail(
             LolApiParameters.requiredText(gameId, "match id"),
             LolApiParameters.requiredShard(shardValue)
         );

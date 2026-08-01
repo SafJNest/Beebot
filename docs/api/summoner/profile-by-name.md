@@ -157,5 +157,5 @@ sola lane `UNKNOWN`.
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Service: [`ProfilePageService`](../../../src/main/java/com/safjnest/lol/service/ProfilePageService.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
 - Success model: [`SummonerView`](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerView.java)

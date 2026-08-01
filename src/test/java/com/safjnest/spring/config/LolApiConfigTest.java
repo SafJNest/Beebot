@@ -77,12 +77,12 @@ public class LolApiConfigTest {
     public void serializesMatchWithoutDirtyState() throws Exception {
         ObjectMapper mapper = apiMapper();
         Match match = Match.hydrated();
-        match.gameId = "123";
+        match.gameId = "EUW1_123";
         match.leagueShard = no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1;
 
         String json = mapper.writeValueAsString(match);
 
-        assertTrue(json.contains("\"gameId\":\"123\""));
+        assertTrue(json.contains("\"gameId\":\"EUW1_123\""));
         assertFalse(json.contains("\"dirty\""));
     }
 

@@ -2,14 +2,14 @@
 
 - Data: 2026-07-22
 - Tipo: audit statico end-to-end
-- Scope: tutti i comandi sotto `commands/lol`, `LeagueMessage`, `LeagueService`, `LeagueDB`, `MongoDB`, `Tracker` e `TrackerScheduler`
+- Scope: tutti i comandi sotto `commands/lol`, `LeagueMessage`, i service LoL, `LeagueDB`, `MongoDB`, `Tracker` e `TrackerScheduler`
 - Fix applicati nello stesso pass: runtime LoL Mongo-only, schema match Mongo, query profile/OP.GG, account ownership e bans/eventi JSON
 
 ## Mappa dei comandi
 
 | Comando | Entry point | Percorso dati | Esito statico |
 |---|---|---|---|
-| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | account/cache → Riot fallback → `LeagueService.upsertSummoner` → `ProfileStatisticsService` per PUUID+Filter → Redis | coerente, senza MariaDB runtime |
+| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | account/cache → Riot fallback → `SummonerService.upsert` → `ProfileStatisticsService` per PUUID+Filter → Redis | coerente, senza MariaDB runtime |
 | `/summoner overview` | `SummonerOverview` | Riot identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
 | `/summoner champion` | `SummonerChampion` | Riot identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
 | `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | `MongoDB.upsertSummoner` con ownership `userId` | coerente; aggiorna cache locale e Redis |
@@ -30,7 +30,7 @@
 
 `SummonerProfile` risolve e aggiorna l’account direttamente in Mongo. `LeagueMessage.getSummonerEmbed` legge:
 
-1. identity e rank tramite `LeagueService`/Mongo;
+1. identity e rank tramite `SummonerService` e `RankService`/Mongo;
 2. statistiche aggregate flat tramite `ProfileStatisticsService` usando il `Filter` completo;
 3. l'embed storico del profilo, alimentato dal nuovo aggregato senza modificare la presentazione;
 4. `lastUpdate` del documento, quando l'aggregato è disponibile.
@@ -46,7 +46,7 @@ Il profilo HTTP carica invece `recentMatches` con una query `MatchResult` separa
 Il comando carica le partite da Riot per mostrare subito l’embed. In parallelo:
 
 1. l’account viene aggiornato direttamente in Mongo;
-2. `LeagueService.getSummonerData` legge le partite Mongo ordinate cronologicamente;
+2. `MatchService.getSummonerData` legge le partite Mongo ordinate cronologicamente;
 3. `findSummonerData` estrae dal participant del summoner `game_id`, `rank`, `lp`, `gain`, `win`, `time_start`, `time_end` e `patch`;
 4. `Tracker.queueMatch` inserisce il full Riot match id nella coda Redis;
 5. il worker Tracker persiste match, participant, rank medio ed eventi.
@@ -105,7 +105,7 @@ Il flusso runtime non usa più un id MariaDB intermedio. Il controllo da mantene
 
 ### P1 — match Riot assente nella coda
 
-`popQueue` trasforma ogni id Redis in `LeagueService.getMatch` senza filtrare i `null`. Un match scaduto o non più disponibile può arrivare a `analyzeMatchHistory` e causare errore non contestualizzato.
+`popQueue` trasforma ogni id Redis in `MatchService.get` senza filtrare i `null`. Un match scaduto o non più disponibile può arrivare a `analyzeMatchHistory` e causare errore non contestualizzato.
 
 ### P2 — eventi corrotti normalizzati a vuoto
 
