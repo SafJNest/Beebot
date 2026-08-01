@@ -31,6 +31,7 @@ import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
 
+import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.KillType;
@@ -809,6 +810,12 @@ public class Tracker {
 
         });
         JSONObject matchJson = new JSONObject(matchParticipants);
+
+        Map<String, Object> data = new LinkedHashMap();
+        data.put("platform", match.getPlatform().toRegionShard());
+        data.put("matchId", match.getPlatform() + "_" + match.getGameId());
+        BotLogger.info("[LPTracker] Clearing timeline cache for match " + match.getPlatform() + "_" + match.getGameId());
+        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, data);
 
         matchData.get("match").put("participants", matchJson.toString());
         return matchData;
