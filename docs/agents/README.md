@@ -40,3 +40,9 @@ Il workflow Mongo aggiunge:
 - un guardian indipendente che approva i gate e un verifier finale.
 
 Gli agenti Mongo seguono lo stesso handoff del [`macro-task-template.md`](macro-task-template.md). Nessun implementatore può approvare il proprio lavoro o modificare l'ADR per sbloccare il proprio task.
+
+## Champion statistics
+
+La guida operativa per analizzare e ridurre l'uso di memoria della pipeline
+Champion Statistics, senza cambiare contratti o risultati, e in
+[`rusted-java.md`](rusted-java.md).
