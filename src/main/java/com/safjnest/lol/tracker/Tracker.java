@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -147,6 +148,18 @@ public class Tracker {
 
         String key = shard.name() + ":" + gameId;
         if (MATCH_LOOKUP_PENDING.add(key)) MATCH_LOOKUP_QUEUE.offer(new MatchLookupRequest(key, shard, gameId));
+    }
+
+    public static void enqueueRecentMatches(Summoner summoner, int limit) {
+        if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null || limit < 1) return;
+
+        CompletableFuture.runAsync(() -> {
+            List<String> matchIds = MatchService.getIds(summoner, null, 0, limit, 0, null);
+            for (String matchId : matchIds) {
+                if (MongoDB.hasMatch(matchId)) continue;
+                enqueueMatchLookup(matchShard(matchId, summoner.getPlatform()), matchId);
+            }
+        });
     }
 
     public static synchronized int processMatchLookups() {

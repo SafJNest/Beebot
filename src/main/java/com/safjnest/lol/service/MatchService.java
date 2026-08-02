@@ -10,6 +10,9 @@ import java.util.concurrent.CompletionException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.MatchOrder;
+import com.safjnest.lol.model.match.MatchPage;
+import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -116,6 +119,34 @@ public final class MatchService {
 
         Tracker.enqueueMatchLookup(shard, gameId);
         return ApiResult.pending();
+    }
+
+    public static MatchPage getPage(
+            String puuid,
+            LeagueShard shard,
+            long timeStart,
+            long timeEnd,
+            GameQueueType queue,
+            int offset,
+            int limit,
+            MatchOrder order) {
+        if (!valid(puuid, shard) || offset < 0 || limit < 1 || order == null) {
+            return new MatchPage(List.of(), limit, offset, false);
+        }
+
+        List<MatchResult> items = MongoDB.findMatchResults(
+            puuid,
+            shard,
+            timeStart,
+            timeEnd,
+            queue,
+            offset,
+            limit + 1,
+            order.ascending()
+        );
+        boolean hasMore = items.size() > limit;
+        if (hasMore) items = new ArrayList<>(items.subList(0, limit));
+        return new MatchPage(items, limit, offset, hasMore);
     }
 
     public static void invalidate(String gameId, LeagueShard shard) {

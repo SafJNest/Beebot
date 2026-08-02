@@ -24,6 +24,7 @@ public enum RedisKey {
     SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s", Duration.ofHours(1)),
     SUMMONER_SEARCH("summoner:search:%s:%s", Duration.ofHours(1)),
     PROFILE_BASE("profile:base:%s:%s", Duration.ofHours(6)),
+    SUMMONER_REFRESH_COOLDOWN("summoner:refresh:cooldown:%s:%s", Duration.ofMinutes(2)),
     PROFILE_PAGE("profile:page:%s:%s", Duration.ofHours(1)),
     PROFILE_RANK("profile:rank:%s", Duration.ofHours(6)),
     PROFILE_RANKS("profile:ranks:%s:%s", Duration.ofHours(6)),

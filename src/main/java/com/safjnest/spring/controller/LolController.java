@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,12 +15,16 @@ import org.springframework.web.server.ResponseStatusException;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.MatchPage;
+import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.SummonerService;
+
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")
@@ -57,6 +62,55 @@ public class LolController {
             LolApiParameters.requiredText(puuid, "puuid")
         );
         return LolApiResponses.from(result, "profile_pending", "Profile initialization is pending", "Profile not found");
+    }
+
+    @PostMapping("/profile/{puuid}/refresh")
+    public ResponseEntity<Void> refreshProfile(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid
+    ) {
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
+        if (SummonerService.find(profilePuuid, shard) == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
+        }
+
+        SummonerService.refresh(profilePuuid, shard);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/profile/{puuid}/matches")
+    public MatchPage matches(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "limit", defaultValue = "20") int limit,
+            @RequestParam(name = "offset", defaultValue = "0") int offset,
+            @RequestParam(name = "timeStart", defaultValue = "0") long timeStart,
+            @RequestParam(name = "timeEnd", defaultValue = "0") long timeEnd,
+            @RequestParam(name = "sort", required = false) String sortValue
+    ) {
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
+        int pageLimit = LolApiParameters.matchLimit(limit);
+        int pageOffset = LolApiParameters.matchOffset(offset);
+        MatchOrder order = LolApiParameters.matchOrder(sortValue);
+        Filter filter = LolApiParameters.activityFilter(
+            timeStart,
+            timeEnd,
+            LolApiParameters.optionalQueue(queueValue),
+            0
+        );
+        return MatchService.getPage(
+            profilePuuid,
+            shard,
+            filter.timeStart(),
+            filter.timeEnd(),
+            filter.queue(),
+            pageOffset,
+            pageLimit,
+            order
+        );
     }
 
     @GetMapping("/profile/{puuid}/activity")

@@ -918,15 +918,16 @@ public final class MongoDB {
             long timeEnd,
             GameQueueType queue,
             int offset,
-            int limit) {
+            int limit,
+            boolean ascending) {
         traceRead("match.findResults", "puuid=" + puuid + " queue=" + queue + " offset=" + offset + " limit=" + limit);
         List<com.safjnest.lol.model.match.MatchResult> result = new ArrayList<>();
         int boundedOffset = Math.max(0, offset);
-        int boundedLimit = Math.max(0, Math.min(100, limit));
+        int boundedLimit = Math.max(0, Math.min(101, limit));
         if (boundedLimit == 0) return result;
         for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))
                 .projection(matchResultProjection())
-                .sort(Sorts.descending("timeStart"))
+                .sort(ascending ? Sorts.ascending("timeStart", "_id") : Sorts.descending("timeStart", "_id"))
                 .skip(boundedOffset)
                 .limit(boundedLimit)) {
             com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);

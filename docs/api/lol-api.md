@@ -17,7 +17,9 @@ Gli esempi usano `http://localhost:8080` come base URL.
 
 - [Search](summoner/search.md) — `GET /api/lol/{shard}/search`
 - [Profile by PUUID](summoner/profile-by-puuid.md) — `GET /api/lol/{shard}/profile/{puuid}`
+- [Profile refresh](summoner/profile-refresh.md) — `POST /api/lol/{shard}/profile/{puuid}/refresh`
 - [Profile by Riot ID](summoner/profile-by-name.md) — `GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}`
+- [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`
 - [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`
 - [Matchups](summoner/matchups.md) — `GET /api/lol/{shard}/profile/{puuid}/matchups`
 - [Profile indexables](summoner/indexables.md) — `GET /api/lol/profile/indexables`
@@ -39,7 +41,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 
 ## Contratto comune
 
-- Tutti gli endpoint sono `GET`.
+- Gli endpoint sono `GET`, salvo il refresh esplicito del profilo che usa `POST`.
 - Enum e valori testuali sono case-insensitive e vengono sottoposti a `trim()`.
 - I success payload usano i modelli canonici in `com.safjnest.lol.model`.
 - Gli errori usano sempre questo envelope:
@@ -58,6 +60,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 | `202` | Il dato manca, il refresh è stato accodato in background e la richiesta va ripetuta. |
 | `400` | Parametro mancante, tipo non valido, enum sconosciuto o combinazione non supportata. |
 | `404` | Risorsa o endpoint inesistente. |
+| `204` | Refresh completato, oppure ignorato dal cooldown. |
 | `405` | Metodo HTTP non supportato. |
 | `500` | Errore inatteso del server. |
 
@@ -81,7 +84,7 @@ scope. Per esempio:
 | `queue` | enum `GameQueueType` | Usa il nome della costante R4J; il default pubblico è `TEAM_BUILDER_RANKED_SOLO`, normalizzato internamente a `RANKED_SOLO_5X5` dove richiesto. |
 | `role` | enum `LaneType` | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`. |
 | `page` | integer | 1-based, `>= 1`. Default `1`. |
-| `limit` | integer | Da `1` a `50`. Default `50`. |
+| `limit` | integer | Default e massimo dipendono dallo scope: leaderboard `1`-`50` (default `50`), match list `1`-`100` (default `20`). |
 | `q`, `puuid`, `gameId`, `gameName`, `tagLine`, `champion` | string | Non vuota; i segmenti path devono essere URL-encoded quando contengono caratteri riservati. |
 
 `region` omesso significa aggregato globale interno; il valore pubblico non è

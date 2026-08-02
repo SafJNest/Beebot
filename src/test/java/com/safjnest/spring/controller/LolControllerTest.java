@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -129,6 +130,39 @@ public class LolControllerTest {
             throw new AssertionError("Expected not found");
         } catch (ResponseStatusException exception) {
             assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        }
+    }
+
+    @Test
+    public void shouldParseMatchPageParameters() {
+        assertEquals(MatchOrder.ASC, LolApiParameters.matchOrder("timeStart:asc"));
+        assertEquals(MatchOrder.DESC, LolApiParameters.matchOrder("timeStart:desc"));
+        assertEquals(MatchOrder.DESC, LolApiParameters.matchOrder(null));
+        assertEquals(100, LolApiParameters.matchLimit(100));
+        assertEquals(0, LolApiParameters.matchOffset(0));
+    }
+
+    @Test
+    public void shouldRejectInvalidMatchPageParameters() {
+        try {
+            LolApiParameters.matchOrder("timeEnd:desc");
+            throw new AssertionError("Expected invalid sort");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchLimit(101);
+            throw new AssertionError("Expected invalid limit");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchOffset(-1);
+            throw new AssertionError("Expected invalid offset");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         }
     }
 

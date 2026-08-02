@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.safjnest.core.events.EventButtonHandler;
 import com.safjnest.core.events.EventUtils;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -173,10 +172,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             }
             case "leftpage" -> parameter.setOffset(Math.max(0, parameter.getOffset() - parameter.getMessageType().getPageItem()));
             case "rightpage" -> parameter.setOffset(parameter.getOffset() + parameter.getMessageType().getPageItem());
-            case "refresh" -> {
-                LeagueHandler.clearSummonerCache(SummonerService.getRiotSummoner(puuid, LeagueShard.valueOf(region)));
-                try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-            }
+            case "refresh" -> SummonerService.refresh(puuid, LeagueShard.valueOf(region));
         }
 
         return context.with(puuid, region);

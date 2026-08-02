@@ -51,6 +51,16 @@ public final class MasteryService {
         }
     }
 
+    public static CompletableFuture<List<Mastery>> refreshAsync(String puuid, LeagueShard shard) {
+        if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
+
+        return refreshRiotMasteriesFromRiotAsync(puuid, shard).thenApplyAsync(entries -> {
+            List<Mastery> masteries = toMasteries(entries);
+            save(puuid, shard, masteries, false);
+            return masteries;
+        });
+    }
+
     public static Mastery getByChampion(String puuid, LeagueShard shard, int championId) {
         for (Mastery mastery : get(puuid, shard)) {
             if (mastery.championId() == championId) return mastery;
@@ -68,7 +78,7 @@ public final class MasteryService {
                 new IllegalStateException("Summoner is not available for mastery persistence"));
             return getRiotMasteriesAsync(puuid, shard).thenApplyAsync(entries -> {
                 List<Mastery> masteries = toMasteries(entries);
-                save(puuid, shard, masteries);
+                save(puuid, shard, masteries, true);
                 return masteries;
             });
         });
@@ -78,7 +88,23 @@ public final class MasteryService {
         List<ChampionMastery> cached = cacheRiotMasteries(puuid, shard);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
-        return R4JQueue.<List<ChampionMastery>>submit(shard, "masteries", puuid, () -> {
+        return getRiotMasteriesFromRiotAsync(puuid, shard);
+    }
+
+    private static CompletableFuture<List<ChampionMastery>> getRiotMasteriesFromRiotAsync(String puuid, LeagueShard shard) {
+        return fetchRiotMasteriesAsync(puuid, shard, "masteries");
+    }
+
+    private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(String puuid, LeagueShard shard) {
+        return fetchRiotMasteriesAsync(puuid, shard, "masteries-refresh");
+    }
+
+    private static CompletableFuture<List<ChampionMastery>> fetchRiotMasteriesAsync(
+        String puuid,
+        LeagueShard shard,
+        String operation
+    ) {
+        return R4JQueue.<List<ChampionMastery>>submit(shard, operation, puuid, () -> {
             List<ChampionMastery> masteries = RIOT_API.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
             if (masteries == null) throw new IllegalStateException("Riot returned no mastery result");
             RedisClient.set(RedisKey.CHAMPION_MASTERIES, masteries, shard.name(), puuid);
@@ -99,10 +125,14 @@ public final class MasteryService {
     }
 
     private static void save(String puuid, LeagueShard shard, List<Mastery> masteries) {
+        save(puuid, shard, masteries, true);
+    }
+
+    private static void save(String puuid, LeagueShard shard, List<Mastery> masteries, boolean invalidateProfile) {
         if (!valid(puuid, shard) || masteries == null) return;
         MongoDB.upsertMasteries(puuid, shard, masteries);
         RedisClient.set(RedisKey.PROFILE_MASTERIES, masteries, shard.name(), puuid);
-        ProfileService.invalidate(puuid, shard);
+        if (invalidateProfile) ProfileService.invalidate(puuid, shard);
     }
 
     private static List<Mastery> toMasteries(List<ChampionMastery> entries) {

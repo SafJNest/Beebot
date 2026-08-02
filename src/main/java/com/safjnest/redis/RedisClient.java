@@ -15,6 +15,7 @@ import java.util.Set;
 
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.params.SetParams;
 
 public class RedisClient {
 
@@ -51,6 +52,18 @@ public class RedisClient {
 
     public static <T> void set(RedisKey key, T value, Object... args) {
         set(key.of(args), value, key.ttlSeconds());
+    }
+
+    public static boolean claim(RedisKey key, String value, Object... args) {
+        if (key == null || key.ttlSeconds() <= 0 || !canUseRedis()) return false;
+        try (Jedis jedis = pool.getResource()) {
+            String result = jedis.set(key.of(args), value, SetParams.setParams().nx().ex(key.ttlSeconds()));
+            markAvailable();
+            return "OK".equals(result);
+        } catch (Exception ignored) {
+            markUnavailable();
+            return false;
+        }
     }
 
     private static void set(String key, String value, int ttlSeconds) {

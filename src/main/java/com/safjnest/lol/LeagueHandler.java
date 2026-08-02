@@ -710,6 +710,46 @@ import com.safjnest.lol.utils.PatchUtils;
         SummonerService.invalidate(summoner.getPUUID(), summoner.getPlatform());
     }
 
+    public static void clearRiotSummonerCache(LeagueShard shard, String puuid) {
+        if (shard == null || puuid == null || puuid.isBlank()) return;
+
+        Map<String, Object> summoner = new LinkedHashMap<>();
+        summoner.put("platform", shard);
+        summoner.put("puuid", puuid);
+        clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
+
+        Map<String, Object> account = new LinkedHashMap<>();
+        account.put("platform", LeagueShardUtils.getAccountRegion(shard));
+        account.put("puuid", puuid);
+        clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, account);
+
+        Map<String, Object> ranks = new LinkedHashMap<>();
+        ranks.put("platform", shard);
+        ranks.put("id", puuid);
+        clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, ranks);
+
+        Map<String, Object> masteries = new LinkedHashMap<>();
+        masteries.put("platform", shard);
+        masteries.put("puuid", puuid);
+        clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, masteries);
+
+        Map<String, Object> spectator = new LinkedHashMap<>();
+        spectator.put("platform", shard);
+        spectator.put("summoner", puuid);
+        clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, spectator);
+
+        Map<String, Object> matchList = new LinkedHashMap<>();
+        matchList.put("platform", shard.toRegionShard());
+        matchList.put("puuid", puuid);
+        matchList.put("queue", "null");
+        matchList.put("type", "null");
+        matchList.put("start", "null");
+        matchList.put("count", "null");
+        matchList.put("startTime", "null");
+        matchList.put("endTime", "null");
+        clearCache(URLEndpoint.V5_MATCHLIST, matchList);
+    }
+
     public static boolean isMatchLocallyCached(String gameId, LeagueShard shard) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("platform", shard.toRegionShard());

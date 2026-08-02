@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 
@@ -23,6 +24,8 @@ public final class LolApiParameters {
     private static final GameQueueType DEFAULT_QUEUE = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
     private static final int MIN_LEADERBOARD_LIMIT = 1;
     private static final int MAX_LEADERBOARD_LIMIT = 50;
+    private static final int MIN_MATCH_LIMIT = 1;
+    private static final int MAX_MATCH_LIMIT = 100;
 
     private LolApiParameters() {}
 
@@ -130,6 +133,26 @@ public final class LolApiParameters {
             throw invalid("limit", "must be between 1 and 50");
         }
         return limit;
+    }
+
+    public static int matchLimit(int value) {
+        if (value < MIN_MATCH_LIMIT || value > MAX_MATCH_LIMIT) {
+            throw invalid("limit", "must be between 1 and 100");
+        }
+        return value;
+    }
+
+    public static int matchOffset(int value) {
+        if (value < 0) throw invalid("offset", "must be greater than or equal to 0");
+        return value;
+    }
+
+    public static MatchOrder matchOrder(String value) {
+        if (value == null || value.isBlank() || "timeStart:desc".equalsIgnoreCase(value.trim())) {
+            return MatchOrder.DESC;
+        }
+        if ("timeStart:asc".equalsIgnoreCase(value.trim())) return MatchOrder.ASC;
+        throw invalid("sort", "must be timeStart:asc or timeStart:desc");
     }
 
     public static String requiredText(String value, String fieldName) {

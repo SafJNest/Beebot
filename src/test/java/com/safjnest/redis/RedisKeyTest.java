@@ -27,6 +27,7 @@ public class RedisKeyTest {
         assertEquals(60 * 60, RedisKey.SUMMONER_AUTOCOMPLETE.ttlSeconds());
         assertEquals(60 * 60, RedisKey.SUMMONER_SEARCH.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.PROFILE_BASE.ttlSeconds());
+        assertEquals(2 * 60, RedisKey.SUMMONER_REFRESH_COOLDOWN.ttlSeconds());
         assertEquals(60 * 60, RedisKey.PROFILE_PAGE.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.PROFILE_RANK.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.PROFILE_RANKS.ttlSeconds());
