@@ -992,8 +992,8 @@ public class LeagueMessage {
             String gain = gainValue > 0 ? "+" + gainValue + " LP" : gainValue + " LP";
 
             if (previousRank != null) {
-                title = LeagueMessageUtils.getFormattedRank(previousRank, true) + " " + result.get(index - 1).getAsInt("lp")
-                        + "LP to " + displayRank + " " + row.getAsInt("lp") + "LP (" + gain + ")";
+                String sign = participant.win ? "+" : "-";
+                title = GameQueueTypeUtils.prettyName(match.queue) + ": " + (participant.win ? "WIN" : "LOSE") + " " + sign + result.get(index).getAsInt("gain");
             }
             if (rank == TierDivisionType.UNRANKED) {
                 title = "Placement: " + (participant.win ? "WIN" : "LOSE");

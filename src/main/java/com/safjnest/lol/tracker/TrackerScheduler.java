@@ -52,9 +52,6 @@ public class TrackerScheduler {
         ChronoTask refreshChampionData = () -> refreshChampionData();
         refreshChampionData.scheduleAtFixedTime(3, 0, 0);
 
-        ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
-        clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
-
         ChronoTask rebuildLeaderboard = LeaderboardService::rebuild;
         rebuildLeaderboard.scheduleAtFixedRate(0, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
     }

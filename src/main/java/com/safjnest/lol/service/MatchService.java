@@ -195,10 +195,10 @@ public final class MatchService {
         try {
             return R4JQueue.<List<String>>submit(summoner.getPlatform(), "match-list", id, () -> {
                 MatchListBuilder builder = summoner.getLeagueGames().withBeginIndex(index);
-                if (count > 0) builder.withCount(count);
-                if (startTime > 0) builder.withStartTime(startTime);
-                if (type != null) builder.withType(type);
-                else builder.withQueue(queue);
+                if (count > 0) builder = builder.withCount(count);
+                if (startTime > 0) builder = builder.withStartTime(startTime);
+                if (type != null) builder = builder.withType(type);
+                else builder = builder.withQueue(queue);
                 List<String> values = builder.get();
                 return values == null ? List.of() : values;
             }).join();

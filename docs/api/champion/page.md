@@ -248,6 +248,12 @@ Le liste build sono categorie indipendenti e ogni categoria contiene al
 massimo tre opzioni. `coreBuilds`, `coreItems` e `slots` includono solo item
 validi di depth 3 presenti nell'inventario finale; i pezzi intermedi vengono
 esclusi.
+
+Le opzioni in `skillOrders` sono sequenze al livello massimo osservato: 18
+quando disponibile, altrimenti la massima lunghezza disponibile. `matches` e
+`wins` includono ogni game il cui ordine osservato è un prefisso della
+sequenza, quindi anche i game conclusi prima di quel livello contribuiscono
+alla combinazione compatibile.
 starter, boots, support items, consumabili, trinket, prismatics e augment
 mantengono le categorie e le esclusioni esistenti. `matchups` è una mappa con
 chiavi serializzate come
