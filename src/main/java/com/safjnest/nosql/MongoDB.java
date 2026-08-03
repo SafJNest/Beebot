@@ -2157,7 +2157,8 @@ public final class MongoDB {
     private static MatchResult readMatchResult(QueryRecord record) {
         return new MatchResult(record.getAsString("gameId"), record.getAsEnum("queue", GameQueueType.class), record.getAsLong("timeStart"), record.getAsLong("timeEnd"),
                 record.getAsBoolean("win"), record.getAsString("kda"), record.getAsInt("championId"), record.getAsEnum("lane", no.stelar7.api.r4j.basic.constants.types.lol.LaneType.class),
-                record.getAsInt("damage"), record.getAsInt("cs"), record.getAsInt("gold"), record.getAsInt("vision"), record.getAsInt("teamKills"), readIntegerList(record, "items"), readIntegerList(record, "summonerSpells"), readParticipants(record));
+                record.getAsInt("damage"), record.getAsInt("cs"), record.getAsInt("gold"), record.getAsInt("vision"), record.getAsInt("teamKills"), readIntegerList(record, "items"), readIntegerList(record, "summonerSpells"),
+                readIntegerList(record, "primaryRunes"), readIntegerList(record, "secondaryRunes"), readIntegerList(record, "statsRunes"), readParticipants(record));
     }
 
     private static Document participantDocument(Participant value) {
@@ -2182,7 +2183,7 @@ public final class MongoDB {
     }
 
     private static Document matchResultDocument(MatchResult value) {
-        Document document = new Document("gameId", value.gameId).append("timeStart", value.timeStart).append("timeEnd", value.timeEnd).append("win", value.win).append("championId", value.championId).append("damage", value.damage).append("cs", value.cs).append("gold", value.gold).append("vision", value.vision).append("teamKills", value.teamKills).append("items", integerList(value.items)).append("summonerSpells", integerList(value.summonerSpells)).append("participants", writeParticipants(value.participants));
+        Document document = new Document("gameId", value.gameId).append("timeStart", value.timeStart).append("timeEnd", value.timeEnd).append("win", value.win).append("championId", value.championId).append("damage", value.damage).append("cs", value.cs).append("gold", value.gold).append("vision", value.vision).append("teamKills", value.teamKills).append("items", integerList(value.items)).append("summonerSpells", integerList(value.summonerSpells)).append("primaryRunes", integerList(value.primaryRunes)).append("secondaryRunes", integerList(value.secondaryRunes)).append("statsRunes", integerList(value.statsRunes)).append("participants", writeParticipants(value.participants));
         putEnum(document, "queue", value.queue); putEnum(document, "lane", value.lane); putIfNotNull(document, "kda", value.kda); return document;
     }
 
@@ -2413,7 +2414,8 @@ public final class MongoDB {
         int teamKills = 0;
         for (Participant participant : participants) if (participant != null && participant.team == player.team) teamKills += kills(participant.kda);
         return new MatchResult(match.gameId, match.queue, match.timeStart, match.timeEnd, player.win, player.kda, player.champion, player.lane, player.damage, player.cs, player.goldEarned, player.visionScore, teamKills,
-                List.of(player.item0, player.item1, player.item2, player.item3, player.item4, player.item5, player.item6), List.of(player.summonerSpell1, player.summonerSpell2), participants);
+                List.of(player.item0, player.item1, player.item2, player.item3, player.item4, player.item5, player.item6), List.of(player.summonerSpell1, player.summonerSpell2),
+                player.primaryRunes, player.secondaryRunes, player.statsRunes, participants);
     }
 
     private static int kills(String kda) {
@@ -2524,7 +2526,8 @@ public final class MongoDB {
                 "participants.team", "participants.damage", "participants.cs", "participants.goldEarned",
                 "participants.visionScore", "participants.item0", "participants.item1", "participants.item2",
                 "participants.item3", "participants.item4", "participants.item5", "participants.item6",
-                "participants.summonerSpell1", "participants.summonerSpell2");
+                "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",
+                "participants.secondaryRunes", "participants.statsRunes");
     }
 
     private static Bson profileStatisticsMatchProjection() {

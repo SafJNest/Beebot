@@ -38,7 +38,10 @@ chiamate Riot, lookup o rigenerazioni statistiche.
       "timeEnd": 1714516500000,
       "win": true,
       "kda": "8/2/11",
-      "championId": 103
+      "championId": 103,
+      "primaryRunes": [8112, 8143, 8138, 8105],
+      "secondaryRunes": [8347, 8304],
+      "statsRunes": [5008, 5008, 5011]
     }
   ],
   "limit": 20,
@@ -49,6 +52,11 @@ chiamate Riot, lookup o rigenerazioni statistiche.
 
 L'ordinamento usa sempre `timeStart` e `_id` come tie-breaker tecnico, così
 offset e pagine restano stabili.
+
+Ogni risultato espone le rune del summoner richiesto: la prima voce di
+`primaryRunes` e `secondaryRunes` è l'albero, le altre sono le rune scelte;
+`statsRunes` contiene i tre shard statistici. I partecipanti restano una
+projection leggera e non includono queste configurazioni.
 
 ## Errori
 

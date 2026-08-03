@@ -25,6 +25,9 @@ public class MatchResult {
     public final int teamKills;
     public final List<Integer> items;
     public final List<Integer> summonerSpells;
+    public final List<Integer> primaryRunes;
+    public final List<Integer> secondaryRunes;
+    public final List<Integer> statsRunes;
     public final List<Participant> participants;
 
     @JsonCreator
@@ -44,6 +47,9 @@ public class MatchResult {
         @JsonProperty("teamKills") int teamKills,
         @JsonProperty("items") List<Integer> items,
         @JsonProperty("summonerSpells") List<Integer> summonerSpells,
+        @JsonProperty("primaryRunes") List<Integer> primaryRunes,
+        @JsonProperty("secondaryRunes") List<Integer> secondaryRunes,
+        @JsonProperty("statsRunes") List<Integer> statsRunes,
         @JsonProperty("participants") List<? extends Participant> participants
     ) {
         this.gameId = gameId;
@@ -61,7 +67,32 @@ public class MatchResult {
         this.teamKills = teamKills;
         this.items = items != null ? List.copyOf(items) : List.of();
         this.summonerSpells = summonerSpells != null ? List.copyOf(summonerSpells) : List.of();
+        this.primaryRunes = primaryRunes != null ? List.copyOf(primaryRunes) : List.of();
+        this.secondaryRunes = secondaryRunes != null ? List.copyOf(secondaryRunes) : List.of();
+        this.statsRunes = statsRunes != null ? List.copyOf(statsRunes) : List.of();
         this.participants = participants != null ? List.copyOf(participants) : List.of();
+    }
+
+    public MatchResult(
+        String gameId,
+        GameQueueType queue,
+        long timeStart,
+        long timeEnd,
+        boolean win,
+        String kda,
+        int championId,
+        LaneType lane,
+        int damage,
+        int cs,
+        int gold,
+        int vision,
+        int teamKills,
+        List<Integer> items,
+        List<Integer> summonerSpells,
+        List<? extends Participant> participants
+    ) {
+        this(gameId, queue, timeStart, timeEnd, win, kda, championId, lane, damage, cs, gold, vision, teamKills,
+            items, summonerSpells, List.of(), List.of(), List.of(), participants);
     }
 
     public static MatchResult of(
@@ -101,5 +132,8 @@ public class MatchResult {
     public int teamKills() { return teamKills; }
     public List<Integer> items() { return items; }
     public List<Integer> summonerSpells() { return summonerSpells; }
+    public List<Integer> primaryRunes() { return primaryRunes; }
+    public List<Integer> secondaryRunes() { return secondaryRunes; }
+    public List<Integer> statsRunes() { return statsRunes; }
     public List<Participant> participants() { return participants; }
 }
