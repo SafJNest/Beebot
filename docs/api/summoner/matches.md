@@ -46,12 +46,17 @@ chiamate Riot, lookup o rigenerazioni statistiche.
   ],
   "limit": 20,
   "offset": 0,
+  "total": 5131,
   "hasMore": true
 }
 ```
 
 L'ordinamento usa sempre `timeStart` e `_id` come tie-breaker tecnico, così
 offset e pagine restano stabili.
+
+`total` è il numero di match persistiti che soddisfano gli stessi filtri di
+`items` (`shard`, `queue`, `timeStart` e `timeEnd`), prima di applicare
+`limit` e `offset`.
 
 Ogni risultato espone le rune del summoner richiesto: la prima voce di
 `primaryRunes` e `secondaryRunes` è l'albero, le altre sono le rune scelte;

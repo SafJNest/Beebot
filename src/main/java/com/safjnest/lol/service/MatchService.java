@@ -131,9 +131,10 @@ public final class MatchService {
             int limit,
             MatchOrder order) {
         if (!valid(puuid, shard) || offset < 0 || limit < 1 || order == null) {
-            return new MatchPage(List.of(), limit, offset, false);
+            return new MatchPage(List.of(), limit, offset, 0, false);
         }
 
+        long total = MongoDB.countMatches(puuid, shard, timeStart, timeEnd, queue);
         List<MatchResult> items = MongoDB.findMatchResults(
             puuid,
             shard,
@@ -146,7 +147,7 @@ public final class MatchService {
         );
         boolean hasMore = items.size() > limit;
         if (hasMore) items = new ArrayList<>(items.subList(0, limit));
-        return new MatchPage(items, limit, offset, hasMore);
+        return new MatchPage(items, limit, offset, total, hasMore);
     }
 
     public static void invalidate(String gameId, LeagueShard shard) {
