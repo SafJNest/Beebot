@@ -98,7 +98,6 @@ public class Tracker {
                     if (matchIds == null || matchIds.isEmpty()) continue;
             
                     String matchId = matchIds.get(0);
-                    BotLogger.info("[LPTracker] Match ID: " + matchId);
                     LeagueShard shard = matchShard(matchId, summoner.getPlatform());
                     if (MongoDB.hasMatch(matchId)) continue;
                     if (shard != summoner.getPlatform()) summoner = SummonerService.getRiotSummoner(summoner.getPUUID(), shard);

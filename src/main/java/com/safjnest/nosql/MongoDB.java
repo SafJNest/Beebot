@@ -2424,7 +2424,7 @@ public final class MongoDB {
     }
 
     private static void traceRead(String operation, String details) {
-        if (App.isTesting()) BotLogger.trace("[MONGO] " + operation + " " + details);
+        //if (App.isTesting()) BotLogger.trace("[MONGO] " + operation + " " + details);
     }
 
     private static MongoCollection<Document> matches() {

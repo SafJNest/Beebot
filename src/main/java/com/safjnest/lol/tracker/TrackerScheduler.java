@@ -1,7 +1,6 @@
 package com.safjnest.lol.tracker;
 
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -11,16 +10,11 @@ import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.utils.TimeConstant;
 
-import no.stelar7.api.r4j.basic.calling.DataCall;
-import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
 
-    private static final long TRACKING_PERIOD_MS = TimeConstant.MINUTE * 10;
-    private static final long HIGH_ELO_INITIAL_DELAY_MS = TimeConstant.HOUR;
-    private static final long HIGH_ELO_PERIOD_MS = TimeConstant.HOUR;
     private static volatile boolean started;
     private static volatile long startedAt;
     private static volatile boolean trackingRunning;
@@ -32,10 +26,10 @@ public class TrackerScheduler {
         started = true;
         startedAt = System.currentTimeMillis();
 
-        if (App.isTesting()) return;
+        //if (App.isTesting()) return;
 
         ChronoTask track = () -> retrieveSummoners();
-        track.scheduleAtFixedRate(0, TRACKING_PERIOD_MS, TimeUnit.MILLISECONDS);
+        track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
 
         ChronoTask trackQueuedGames = () -> popSet();
         trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
@@ -44,7 +38,7 @@ public class TrackerScheduler {
         //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
         ChronoTask retrieveHighEloEntries = () -> retrieveHighEloEntries();
-        retrieveHighEloEntries.scheduleAtFixedRate(HIGH_ELO_INITIAL_DELAY_MS, HIGH_ELO_PERIOD_MS, TimeUnit.MILLISECONDS);
+        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
         refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
@@ -125,8 +119,8 @@ public class TrackerScheduler {
             trackingRunning,
             highEloRunning,
             gameQueueRunning,
-            scheduled ? nextPeriodicRun(0, TRACKING_PERIOD_MS, now) : 0,
-            scheduled ? nextPeriodicRun(HIGH_ELO_INITIAL_DELAY_MS, HIGH_ELO_PERIOD_MS, now) : 0,
+            scheduled ? nextPeriodicRun(0, TimeConstant.MINUTE * 10, now) : 0,
+            scheduled ? nextPeriodicRun(TimeConstant.HOUR, TimeConstant.HOUR, now) : 0,
             scheduled ? nextMidnight(now) : 0
         );
     }

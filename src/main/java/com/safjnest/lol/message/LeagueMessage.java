@@ -813,11 +813,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getOpggEmbedMatchPreview(
-            EmbedBuilder eb,
-            Match match,
-            Summoner summoner,
-            List<QueryRecord> queryResult) {
+    private static EmbedBuilder getOpggEmbedMatchPreview(EmbedBuilder eb,  Match match, Summoner summoner, List<QueryRecord> queryResult) {
         Participant me = null;
         for (Participant participant : match.participants) {
             if (summoner.getPUUID().equals(participant.puuid)) {
@@ -1506,7 +1502,7 @@ public class LeagueMessage {
             String championStats = champions.stream()
                 .limit(6)
                 .map(stat -> formatLegacyChampionStat(stat, masteries.get(stat.reference)))
-                .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining(""));
             eb.addField("Champions", championStats, false);
         }
 
