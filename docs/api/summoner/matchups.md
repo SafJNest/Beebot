@@ -105,15 +105,18 @@ periodo dello split corrente.
 | HTTP | `code` | Quando |
 |---:|---|---|
 | `200` | — | Aggregato pronto. |
-| `202` | `profile_matchups_pending` | Aggregato assente; il refresh è stato avviato in background. |
+| `202` | `profile_matchups_pending` | Aggregato assente o stale da una settimana; il refresh è stato avviato in background. |
 | `400` | `invalid_request` | Periodo start/end, queue, patch, role o `minGames` non validi. |
 | `404` | — | Profilo non trovato. |
+
+`metadata` è root sia nel `200` sia nell'errore `202`: include il filtro di
+aggregazione richiesto, `lastUpdate` e `refresh`.
 
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
 - Parametri: [`LolApiParameters`](../../../src/main/java/com/safjnest/spring/controller/LolApiParameters.java)
-- Service: [`ProfileMatchupsPageService`](../../../src/main/java/com/safjnest/lol/service/ProfileMatchupsPageService.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
 - Modello: [`ProfileMatchups`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileMatchups.java)
 - Redis: `PROFILE_MATCHUPS(puuid, filterKey)`, TTL 6 ore
 - Mongo: collection `profile_matchups`, identità `{ puuid, filterKey }`

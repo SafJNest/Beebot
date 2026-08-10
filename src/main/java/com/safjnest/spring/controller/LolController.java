@@ -15,6 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.statistics.ProfileActivity;
@@ -61,7 +63,7 @@ public class LolController {
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid")
         );
-        return LolApiResponses.from(result, "profile_pending", "Profile initialization is pending", "Profile not found");
+        return profileResponse(result);
     }
 
     @PostMapping("/profile/{puuid}/refresh")
@@ -101,7 +103,7 @@ public class LolController {
             LolApiParameters.optionalQueue(queueValue),
             0
         );
-        return MatchService.getPage(
+        MatchPage page = MatchService.getPage(
             profilePuuid,
             shard,
             filter.timeStart(),
@@ -111,10 +113,15 @@ public class LolController {
             pageLimit,
             order
         );
+        ResponseMetadata metadata = new ResponseMetadata(
+            new ResponseMetadata.Pagination(null, null, page.limit(), page.offset(), page.total(), null, page.hasMore()),
+            null, false, filter
+        );
+        return page.withMetadata(metadata);
     }
 
     @GetMapping("/profile/{puuid}/activity")
-    public ProfileActivity activity(
+    public ResponseEntity<?> activity(
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid,
             @RequestParam(name = "start", defaultValue = "0") long start,
@@ -128,10 +135,16 @@ public class LolController {
             LolApiParameters.activityQueue(queueValue),
             champion
         );
-        return profileService.getActivity(
+        ApiResult<ProfileActivity> result = profileService.getActivity(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid"),
             filter
+        );
+        return LolApiResponses.from(
+            result,
+            "profile_activity_pending",
+            "Profile activity is being prepared",
+            "Profile not found"
         );
     }
 
@@ -171,7 +184,7 @@ public class LolController {
             LolApiParameters.requiredText(gameName, "game name"),
             LolApiParameters.requiredText(tagLine, "tag line")
         );
-        return LolApiResponses.from(result, "profile_pending", "Profile initialization is pending", "Profile not found");
+        return profileResponse(result);
     }
 
     @GetMapping("/match/{gameId}")
@@ -179,15 +192,30 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("gameId") String gameId
     ) {
-        ApiResult<?> result = MatchService.getDetail(
+        ApiResult<Match> result = MatchService.getDetail(
             LolApiParameters.requiredText(gameId, "match id"),
             LolApiParameters.requiredShard(shardValue)
         );
+        if (result.status() == ApiResult.Status.READY && result.payload() != null) {
+            Match match = result.payload().withMetadata(ResponseMetadata.ready(result.payload().lastUpdate, null));
+            result = ApiResult.ready(match, match.metadata);
+        } else if (result.status() == ApiResult.Status.PENDING) {
+            result = ApiResult.pending(new ResponseMetadata(null, null, true, null));
+        }
         return LolApiResponses.from(
             result,
             "match_pending",
             "Match analysis is pending",
             "Match not found"
         );
+    }
+
+    private static ResponseEntity<?> profileResponse(ApiResult<SummonerView> result) {
+        ResponseEntity<?> response = LolApiResponses.from(
+            result, "profile_pending", "Profile initialization is pending", "Profile not found");
+        return result.metadata() != null && Boolean.TRUE.equals(result.metadata().refresh())
+            ? ResponseEntity.status(response.getStatusCode()).headers(response.getHeaders())
+                .header("X-Profile-Refresh", "true").body(response.getBody())
+            : response;
     }
 }

@@ -256,9 +256,13 @@ accodata e la pagina non viene memorizzata in cache finché i dati non sono pron
 | `400` | `invalid_request` | Enum non valido, `page < 1` o `limit` fuori da `1..50`. |
 | `404` | `not_found` | Risorsa non trovata. |
 
+La response root aggiunge `metadata.pagination` con `page`, `pageSize`,
+`total` e `pages`; `lastUpdate` e `filter` sono `null`, `refresh=false`.
+
 ## Owner
 
-Il contratto HTTP e la response `LeaderboardPage` restano invariati. La pagina è
+Il payload esistente di `LeaderboardPage` resta invariato, con l'aggiunta del
+solo `metadata` root. La pagina è
 derivata internamente da `summoner.ranks[]` tramite Mongo aggregation; non viene
 esposto alcun campo `mmr` aggiuntivo e non esistono response DTO leaderboard
 alternativi.

@@ -1,6 +1,8 @@
 package com.safjnest.lol.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -13,6 +15,7 @@ import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerOverview;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.utils.TimeConstant;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -40,6 +43,15 @@ public class ProfileServiceTest {
         assertEquals(GameQueueType.RANKED_FLEX_SR, page.ranks().get(0).queue());
         assertEquals(27, page.summoner().icon());
         assertEquals("BLUE", page.overview().recentMatches().get(0).participants().get(0).team());
+    }
+
+    @Test
+    public void treatsMissingAndWeekOldAggregatesAsStale() {
+        long now = 1_800_000_000_000L;
+
+        assertTrue(ProfileService.isStale(0, now));
+        assertFalse(ProfileService.isStale(now - TimeConstant.WEEK + 1, now));
+        assertTrue(ProfileService.isStale(now - TimeConstant.WEEK, now));
     }
 
     private static MatchResult match(String id, LaneType lane) {

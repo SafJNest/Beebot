@@ -268,6 +268,12 @@ chiavi serializzate come
 | `400` | `invalid_request` | Rank, region, queue o role non validi, oppure role incompatibile con la queue. |
 | `404` | `not_found` | Champion sconosciuto. |
 
+La variante richiesta è stale quando il timestamp Mongo top-level di statistics
+o build manca/è più vecchio di una settimana. In tal caso mantiene il `202
+champion_data_pending` e accoda solo la componente stale. `metadata` espone il
+filtro completo richiesto, `refresh` e il più vecchio tra i timestamp di build
+e statistics; tutte le varianti globali restano disponibili.
+
 ```json
 {
   "status": 202,

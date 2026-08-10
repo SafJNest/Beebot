@@ -154,6 +154,11 @@ sola lane `UNKNOWN`.
 | `400` | `invalid_request` | `shard`, `gameName` o `tagLine` mancanti/non validi. |
 | `404` | `not_found` | Riot ID o profilo non trovati. |
 
+La response root include `metadata` con filtro overview canonico e
+`lastUpdate`. Se le statistics mancano o sono stale da una settimana, la
+response disponibile resta `200` con `metadata.refresh=true` e header
+`X-Profile-Refresh: true`.
+
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)

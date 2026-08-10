@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.service.LeaderboardService;
 
@@ -26,14 +29,24 @@ public class LeaderboardController {
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "50") int limit
     ) {
-        return LolApiResponses.from(
-            leaderboardService.getLeaderboard(
+        ApiResult<LeaderboardPage> result = leaderboardService.getLeaderboard(
                 LolApiParameters.rank(rankValue),
                 LolApiParameters.queue(queueValue),
                 LolApiParameters.region(regionValue),
                 LolApiParameters.page(page),
                 LolApiParameters.limit(limit)
-            ),
+            );
+        if (result.payload() != null) {
+            LeaderboardPage pageValue = result.payload();
+            ResponseMetadata metadata = new ResponseMetadata(
+                new ResponseMetadata.Pagination(pageValue.page(), pageValue.pageSize(), null, null,
+                    pageValue.total(), pageValue.pages(), null),
+                null, false, null
+            );
+            result = ApiResult.ready(pageValue.withMetadata(metadata), metadata);
+        }
+        return LolApiResponses.from(
+            result,
             "leaderboard_pending",
             "Leaderboard data is being prepared",
             "Leaderboard not found"

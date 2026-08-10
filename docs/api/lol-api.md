@@ -44,6 +44,10 @@ Gli esempi usano `http://localhost:8080` come base URL.
 - Gli endpoint sono `GET`, salvo il refresh esplicito del profilo che usa `POST`.
 - Enum e valori testuali sono case-insensitive e vengono sottoposti a `trim()`.
 - I success payload usano i modelli canonici in `com.safjnest.lol.model`.
+- Le response root oggetto o paginate espongono `metadata` sullo stesso root,
+  senza envelope `data`. Le quattro chiavi sono sempre presenti: `pagination`,
+  `lastUpdate`, `refresh` e `filter`; i valori non applicabili sono `null`.
+  Le liste pure, search e indexables restano array invariati.
 - Gli errori usano sempre questo envelope:
 
 ```json
@@ -71,9 +75,20 @@ scope. Per esempio:
 {
   "status": 202,
   "code": "champion_data_pending",
-  "message": "Champion data is being prepared"
+  "message": "Champion data is being prepared",
+  "metadata": {
+    "pagination": null,
+    "lastUpdate": null,
+    "refresh": true,
+    "filter": {}
+  }
 }
 ```
+
+`refresh=true` significa che il job deduplicato è stato accodato. Una response
+pronta usa `refresh=false`. `lastUpdate` è epoch millis, `pagination` contiene
+solo i campi applicabili (`page`, `pageSize`, `limit`, `offset`, `total`,
+`pages`, `hasMore`).
 
 ## Tipi condivisi dei parametri
 

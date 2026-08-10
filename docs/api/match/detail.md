@@ -190,6 +190,9 @@ risposta reale contiene tutti i partecipanti disponibili del match.
 }
 ```
 
+La response `200` aggiunge `metadata` root con `lastUpdate` del match e
+`refresh=false`; pagination e filter sono `null`.
+
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)

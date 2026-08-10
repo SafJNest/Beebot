@@ -14,6 +14,7 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -24,6 +25,7 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -51,6 +53,12 @@ public class ChampionService {
             .setQueue(selectedQueue).setLane(role);
         if (patch != null) filter.setPatch(patch);
         String key = RedisKey.CHAMPION_PAGE.of(filter.toKey());
+        long statsLastUpdate = MongoDB.findChampionStatisticsLastUpdate(filter);
+        long buildLastUpdate = MongoDB.findChampionBuildLastUpdate(filter);
+        if (isStale(statsLastUpdate) || isStale(buildLastUpdate)) {
+            RedisClient.delete(key);
+            RedisClient.delete(RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion()));
+        }
         ChampionView cached;
         try {
             cached = RedisClient.get(key, ChampionView.class);
@@ -58,8 +66,11 @@ public class ChampionService {
             RedisClient.delete(key);
             cached = null;
         }
-        if (cached != null) return ApiResult.ready(cached);
-        return compose(champion, filter);
+        if (cached != null) {
+            ChampionView page = cached.withMetadata(metadata(statsLastUpdate, buildLastUpdate, false, filter));
+            return ApiResult.ready(page, page.metadata());
+        }
+        return compose(champion, filter, statsLastUpdate, buildLastUpdate);
     }
 
     public ChampionStatistics getStatistics(Filter filter) {
@@ -125,7 +136,11 @@ public class ChampionService {
     public MatrixRefreshResult refreshStatisticsMatrix(String patch, GameQueueType queue, List<Filter> buildFilters) {
         List<Filter> combinations = matrixFilters(patch, queue);
         Set<String> readyKeys = new HashSet<>();
-        for (Filter filter : combinations) if (MongoDB.hasChampionStatisticsReady(filter)) readyKeys.add(filter.genericKey());
+        for (Filter filter : combinations)
+            if (MongoDB.hasChampionStatisticsReady(filter)
+                    && !isStale(MongoDB.findChampionStatisticsLastUpdate(filter))) {
+                readyKeys.add(filter.genericKey());
+            }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
         ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrix(missing, buildFilters);
         if (missing.isEmpty()) for (Filter filter : buildFilters) refreshBuild(filter);
@@ -203,17 +218,25 @@ public class ChampionService {
 
     // ============================================================================
 
-    private ApiResult<ChampionView> compose(StaticChampion champion, Filter filter) {
+    private ApiResult<ChampionView> compose(
+        StaticChampion champion,
+        Filter filter,
+        long statsLastUpdate,
+        long buildLastUpdate
+    ) {
         ChampionStatistics stats = getStatistics(filter, false);
         Build build = getBuild(filter, false);
-        if (stats == null || build == null) {
-            DatabaseTracker.startChampionData(filter, stats == null, build == null);
-            return ApiResult.pending();
+        boolean statisticsPending = stats == null || isStale(statsLastUpdate);
+        boolean buildPending = build == null || isStale(buildLastUpdate);
+        if (statisticsPending || buildPending) {
+            DatabaseTracker.startChampionData(filter, statisticsPending, buildPending);
+            return ApiResult.pending(metadata(statsLastUpdate, buildLastUpdate, true, filter));
         }
         ChampionView page = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
-            ChampionUtils.getChampionProfilePic(champion.getId())), stats, build);
-        RedisClient.set(RedisKey.CHAMPION_PAGE, page, filter.toKey());
-        return ApiResult.ready(page);
+            ChampionUtils.getChampionProfilePic(champion.getId())), stats, build)
+            .withMetadata(metadata(statsLastUpdate, buildLastUpdate, false, filter));
+        RedisClient.set(RedisKey.CHAMPION_PAGE, page.withMetadata(null), filter.toKey());
+        return ApiResult.ready(page, page.metadata());
     }
 
     private List<Filter> getBuildFilters(String patch) {
@@ -239,6 +262,21 @@ public class ChampionService {
     private static Filter statisticsFilter(Filter filter) {
         return new Filter().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
             .setRegion(filter.region()).setLane(filter.lane());
+    }
+
+    private static boolean isStale(long lastUpdate) {
+        return lastUpdate <= 0 || System.currentTimeMillis() - lastUpdate >= TimeConstant.WEEK;
+    }
+
+    private static ResponseMetadata metadata(long statsLastUpdate, long buildLastUpdate, boolean refresh, Filter filter) {
+        long lastUpdate = oldest(statsLastUpdate, buildLastUpdate);
+        return new ResponseMetadata(null, lastUpdate > 0 ? lastUpdate : null, refresh, filter);
+    }
+
+    private static long oldest(long first, long second) {
+        if (first <= 0) return second;
+        if (second <= 0) return first;
+        return Math.min(first, second);
     }
 
     static boolean isIndexable(int games, int totalGames) {

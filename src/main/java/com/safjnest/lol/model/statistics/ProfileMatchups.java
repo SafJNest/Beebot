@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 
@@ -17,8 +18,13 @@ public record ProfileMatchups(
     long timeStart,
     long timeEnd,
     long lastUpdate,
-    List<Champion> champions
+    List<Champion> champions,
+    ResponseMetadata metadata
 ) {
+
+    public ProfileMatchups(Filter filter, long timeStart, long timeEnd, long lastUpdate, List<Champion> champions) {
+        this(filter, timeStart, timeEnd, lastUpdate, champions, null);
+    }
 
     public static ProfileMatchups from(List<Match> matches, String puuid, Filter filter) {
         ProfileStatistics statistics = new ProfileStatistics(filter != null ? filter.timeStart() : 0);
@@ -68,7 +74,7 @@ public record ProfileMatchups(
     }
 
     public ProfileMatchups withLastUpdate(long value) {
-        return new ProfileMatchups(filter, timeStart, timeEnd, value, champions);
+        return new ProfileMatchups(filter, timeStart, timeEnd, value, champions, metadata);
     }
 
     public ProfileMatchups withMinGames(int minGames) {
@@ -79,7 +85,11 @@ public record ProfileMatchups(
                 if (matchup.stats.games >= minGames) matchups.add(matchup);
             filtered.add(new Champion(champion.champion, champion.stats, List.copyOf(matchups)));
         }
-        return new ProfileMatchups(filter, timeStart, timeEnd, lastUpdate, List.copyOf(filtered));
+        return new ProfileMatchups(filter, timeStart, timeEnd, lastUpdate, List.copyOf(filtered), metadata);
+    }
+
+    public ProfileMatchups withMetadata(ResponseMetadata value) {
+        return new ProfileMatchups(filter, timeStart, timeEnd, lastUpdate, champions, value);
     }
 
     public record Champion(

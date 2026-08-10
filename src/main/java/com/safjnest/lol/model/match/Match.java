@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.nosql.AbstractEntity;
 import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.model.ResponseMetadata;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -26,6 +27,7 @@ public class Match extends AbstractEntity<Match> {
     public GameQueueType queue;
     public TierType rank;
     public long lastUpdate;
+    public ResponseMetadata metadata;
     public Map<TeamType, List<Integer>> bans = new HashMap<>();
     @JsonIgnore
     public JSONObject events;
@@ -118,6 +120,11 @@ public class Match extends AbstractEntity<Match> {
 
     public void restoreEvents() {
         if (events == null) events = new JSONObject(eventData != null ? eventData : Map.of());
+    }
+
+    public Match withMetadata(ResponseMetadata value) {
+        metadata = value;
+        return this;
     }
 
     @Override

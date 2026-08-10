@@ -27,9 +27,11 @@ rimangono disponibili.
 
 Solo dopo l'ultima persistenza il profilo invalida centralmente `PROFILE_PAGE`
 e gli aggregati Redis derivati. `DatabaseTracker` riceve un unico job
-deduplicato `profile-refresh:<puuid>` che rigenera da zero, in background, le
-statistiche, activity, matchups e contesto champion del filtro base e di tutti
-i filtri già persistiti per il PUUID.
+deduplicato `profile-refresh:<puuid>` che elimina in Mongo e Redis tutti gli
+aggregati profilo non canonici e rigenera da zero soltanto statistics, activity,
+matchups e contesto champion del profilo canonico. I filtri canonici sono:
+overview/matchups sullo split corrente senza patch, queue o lane; activity
+senza intervallo, queue o champion.
 
 Una chiave Redis atomica `SUMMONER_REFRESH_COOLDOWN` applica un cooldown di due
 minuti per coppia `{shard, puuid}`. Una richiesta durante il cooldown non avvia

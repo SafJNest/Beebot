@@ -39,6 +39,12 @@ HTTP controllers unwrap the domain-level `ApiResult<T>` through one shared
 `LolApiResponses` mapper. `READY` and `PARTIAL` are successful JSON payloads;
 `PENDING` is returned as the standard `LolApiError` envelope with HTTP 202.
 
+Le response root oggetto e paginate aggiungono `metadata` allo stesso livello
+del payload, senza envelope `data`. `ResponseMetadata` contiene sempre
+`pagination`, `lastUpdate`, `refresh` e `filter`, con `null` per i campi non
+applicabili. I `202` riportano lo stesso oggetto dentro `LolApiError`; search,
+indexables e le altre liste pure restano array invariati.
+
 `ChampionStatistics.filter` remains part of the canonical object used by Redis
 and the shared JSON codec, but the Spring mapper ignores it through a Jackson mixin because it
 is an internal storage key and not part of the HTTP contract.

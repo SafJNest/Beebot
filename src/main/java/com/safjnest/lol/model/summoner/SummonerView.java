@@ -4,13 +4,20 @@ import java.util.List;
 import java.util.Map;
 
 import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 public record SummonerView(
     Summoner summoner,
     List<Rank> ranks,
-    SummonerOverview overview
+    SummonerOverview overview,
+    @JsonInclude(JsonInclude.Include.NON_NULL) ResponseMetadata metadata
 ) {
+
+    public SummonerView(Summoner summoner, List<Rank> ranks, SummonerOverview overview) {
+        this(summoner, ranks, overview, null);
+    }
     public static SummonerView from(
         Summoner summoner,
         List<Rank> ranks,
@@ -54,5 +61,9 @@ public record SummonerView(
     public static SummonerView from(Summoner summoner, List<Rank> ranks, SummonerOverview overview) {
         return new SummonerView(summoner, ranks != null ? List.copyOf(ranks) : List.of(),
             overview != null ? overview : SummonerOverview.from(null, List.of()));
+    }
+
+    public SummonerView withMetadata(ResponseMetadata value) {
+        return new SummonerView(summoner, ranks, overview, value);
     }
 }

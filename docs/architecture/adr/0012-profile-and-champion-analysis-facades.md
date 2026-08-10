@@ -34,8 +34,8 @@ its full `Filter.toKey()` and is processed as build-only work.
 
 ## Invariants
 
-- HTTP payloads, DTOs, Redis keys, TTLs and `200`/`202`/`206`/`404` semantics
-  are unchanged.
+- I payload esistenti restano invariati salvo l'aggiunta del `metadata` root;
+  `200`/`202`/`206`/`404` mantengono i contratti indicati dagli endpoint.
 - Mongo remains the persistence owner and Redis remains the cache owner.
 - Ready-empty statistics and builds are persisted so a completed empty result
   is not enqueued indefinitely.

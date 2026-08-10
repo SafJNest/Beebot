@@ -168,12 +168,17 @@ sessione più recente alla più vecchia.
 | HTTP | `code` | Quando |
 |---:|---|---|
 | `200` | — | Response activity calcolata; può contenere liste vuote se non esistono match. |
+| `202` | `profile_activity_pending` | Activity assente o `coverage.calculatedAt` assente/più vecchio di una settimana; il job è accodato. |
 | `400` | `invalid_request` | Parametro temporale, queue o champion non valido. |
+
+Ogni `200` include `metadata` root con il filtro richiesto, `lastUpdate` preso
+da `coverage.calculatedAt` e `refresh=false`. Il `202` usa lo stesso oggetto
+nel `LolApiError`, con `refresh=true`.
 
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Service: [`ProfileActivityService`](../../../src/main/java/com/safjnest/lol/service/ProfileActivityService.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
 - Success model: [`ProfileActivity`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileActivity.java)
 - Match query: [`MongoDB.findProfileStatisticsMatches`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
 - Persistence: Redis `PROFILE_ACTIVITY(puuid, filterKey)` e collection Mongo `profile_activity` con la stessa identità `{ puuid, filterKey }`.
