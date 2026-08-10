@@ -121,6 +121,32 @@ public final class DatabaseTracker {
         return submit(key, name, () -> refreshProfileMatchups(request), PROFILE_WORKER);
     }
 
+    public static CompletableFuture<Boolean> startProfileActivity(
+        String puuid,
+        LeagueShard shard,
+        Filter filter
+    ) {
+        if (puuid == null || puuid.isBlank() || shard == null || filter == null)
+            return CompletableFuture.completedFuture(false);
+        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        String key = "profile-activity:" + puuid + ":" + requestFilter.toSummonerKey();
+        String name = "profile activity puuid=" + puuid;
+        return submit(key, name, () -> refreshProfileActivity(new ProfileActivityRequest(puuid, shard, requestFilter)), PROFILE_WORKER);
+    }
+
+    public static CompletableFuture<Boolean> startProfileRefresh(
+        Summoner summoner,
+        LeagueShard shard
+    ) {
+        if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || shard == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+        ProfileRefreshRequest request = new ProfileRefreshRequest(summoner.puuid(), shard);
+        String key = profileRefreshKey(request.puuid());
+        String name = "profile refresh puuid=" + request.puuid();
+        return submit(key, name, () -> refreshProfileAggregates(request), PROFILE_WORKER);
+    }
+
     public static CompletableFuture<Void> startChampionData(
         Filter filter,
         boolean statsMissing,
@@ -200,6 +226,10 @@ public final class DatabaseTracker {
         return "champion-stats-matrix:" + patch + ":" + queue.name();
     }
 
+    static String profileRefreshKey(String puuid) {
+        return "profile-refresh:" + puuid;
+    }
+
     public static void shutdown() {
         ExecutorService buildExecutor;
         ExecutorService taskExecutor;
@@ -231,7 +261,6 @@ public final class DatabaseTracker {
     // ============================================================================
 
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
-        if (CHAMPION_SERVICE.hasBuild(filter)) return CompletableFuture.completedFuture(true);
         String key = "champion-build:" + filter.toKey();
         String name = "champion build champion=" + filter.champion()
             + " patch=" + filter.patch()
@@ -268,6 +297,35 @@ public final class DatabaseTracker {
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid()
+                + " message=" + exception.getMessage());
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static boolean refreshProfileActivity(ProfileActivityRequest request) {
+        try {
+            if (!PROFILE_SERVICE.refreshActivity(request.shard(), request.puuid(), request.filter())) {
+                BotLogger.error("Profile activity refresh failed for puuid=" + request.puuid());
+                return false;
+            }
+            return true;
+        } catch (Exception exception) {
+            BotLogger.error("Profile activity refresh failed for puuid=" + request.puuid()
+                + " message=" + exception.getMessage());
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static boolean refreshProfileAggregates(ProfileRefreshRequest request) {
+        try {
+            if (!PROFILE_SERVICE.refreshCanonicalAggregates(request.shard(), request.puuid())) {
+                BotLogger.error("Profile aggregate refresh failed for puuid=" + request.puuid());
+                return false;
+            }
+            ProfileService.invalidate(request.puuid(), request.shard());
+            return true;
+        } catch (Exception exception) {
+            BotLogger.error("Profile aggregate refresh failed for puuid=" + request.puuid()
                 + " message=" + exception.getMessage());
             throw new IllegalStateException(exception);
         }
@@ -369,6 +427,17 @@ public final class DatabaseTracker {
         String puuid,
         LeagueShard shard,
         Filter filter
+    ) {}
+
+    private record ProfileActivityRequest(
+        String puuid,
+        LeagueShard shard,
+        Filter filter
+    ) {}
+
+    private record ProfileRefreshRequest(
+        String puuid,
+        LeagueShard shard
     ) {}
 
     private static final class ChampionMatrixRequest {

@@ -15,6 +15,7 @@ import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionView;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
@@ -84,6 +85,21 @@ public class LolApiConfigTest {
 
         assertTrue(json.contains("\"gameId\":\"EUW1_123\""));
         assertFalse(json.contains("\"dirty\""));
+    }
+
+    @Test
+    public void serializesRootMetadataWithoutDataEnvelope() throws Exception {
+        ObjectMapper mapper = apiMapper();
+        ChampionView view = new ChampionView(null, null, null,
+            new ResponseMetadata(null, null, null, null));
+
+        String json = mapper.writeValueAsString(view);
+
+        assertTrue(json.contains("\"metadata\":{\"pagination\":null"));
+        assertTrue(json.contains("\"lastUpdate\":null"));
+        assertTrue(json.contains("\"refresh\":null"));
+        assertTrue(json.contains("\"filter\":null"));
+        assertFalse(json.contains("\"data\":"));
     }
 
     private static ObjectMapper apiMapper() {

@@ -1154,6 +1154,32 @@ public final class MongoDB {
         return document == null ? null : readProfileMatchups(document);
     }
 
+    public static List<Filter> findProfileRefreshFilters(String puuid) {
+        if (puuid == null || puuid.isBlank()) return List.of();
+
+        Map<String, Filter> filters = new LinkedHashMap<>();
+        readProfileRefreshFilters(profileStatistics(), puuid, filters);
+        readProfileRefreshFilters(profileActivity(), puuid, filters);
+        readProfileRefreshFilters(profileMatchups(), puuid, filters);
+        return new ArrayList<>(filters.values());
+    }
+
+    public static void pruneProfileNonCanonical(
+        String puuid,
+        Filter statisticsFilter,
+        Filter activityFilter,
+        Filter matchupsFilter
+    ) {
+        if (puuid == null || puuid.isBlank() || statisticsFilter == null
+                || activityFilter == null || matchupsFilter == null) return;
+        profileStatistics().deleteMany(Filters.and(Filters.eq("puuid", puuid),
+            Filters.ne("filterKey", statisticsFilter.toSummonerKey())));
+        profileActivity().deleteMany(Filters.and(Filters.eq("puuid", puuid),
+            Filters.ne("filterKey", activityFilter.toSummonerKey())));
+        profileMatchups().deleteMany(Filters.and(Filters.eq("puuid", puuid),
+            Filters.ne("filterKey", matchupsFilter.toSummonerKey())));
+    }
+
     public static ProfileStatistics findProfileStatistics(String puuid, long seasonStart) {
         return findProfileStatistics(puuid, Filter.summoner(seasonStart, 0));
     }
@@ -1263,6 +1289,23 @@ public final class MongoDB {
                 Filters.eq("filterKey", filter.genericKey()),
                 Filters.eq("ready", true)))
                 .projection(Projections.include("_id")).first() != null;
+    }
+
+    public static long findChampionBuildLastUpdate(Filter filter) {
+        if (filter == null) return 0;
+        Document document = builds().find(Filters.eq("filterKey", filter.toKey()))
+            .projection(Projections.include("lastUpdate")).first();
+        return document == null ? 0 : number(document, "lastUpdate");
+    }
+
+    public static long findChampionStatisticsLastUpdate(Filter filter) {
+        if (filter == null) return 0;
+        Document aggregate = championStats().find(Filters.eq("_id", filter.genericKey()))
+            .projection(Projections.include("lastUpdate")).first();
+        if (aggregate != null) return number(aggregate, "lastUpdate");
+        Document legacy = championStats().find(Filters.eq("filterKey", filter.genericKey()))
+            .projection(Projections.include("lastUpdate")).first();
+        return legacy == null ? 0 : number(legacy, "lastUpdate");
     }
 
         public static List<Filter> findStoredChampionStatisticsFilters() {
@@ -1889,7 +1932,7 @@ public final class MongoDB {
                 Updates.combine(
                         Updates.set("puuid", puuid),
                         Updates.set("filterKey", filterKey),
-                        Updates.set("activity", structured(activity)),
+                        Updates.set("activity", structuredWithoutMetadata(activity)),
                         Updates.setOnInsert("_id", new ObjectId())),
                 new UpdateOptions().upsert(true));
         return result.wasAcknowledged();
@@ -1903,7 +1946,7 @@ public final class MongoDB {
                 Updates.combine(
                         Updates.set("puuid", puuid),
                         Updates.set("filterKey", filterKey),
-                        Updates.set("matchups", structured(matchups)),
+                        Updates.set("matchups", structuredWithoutMetadata(matchups)),
                         Updates.setOnInsert("_id", new ObjectId())),
                 new UpdateOptions().upsert(true));
         return result.wasAcknowledged();
@@ -2651,6 +2694,22 @@ public final class MongoDB {
         return new ArrayList<>(result.values());
     }
 
+    private static void readProfileRefreshFilters(
+            MongoCollection<Document> collection,
+            String puuid,
+            Map<String, Filter> filters) {
+        for (Document document : collection.find(Filters.eq("puuid", puuid))
+                .projection(Projections.include("filterKey"))) {
+            String key = document.getString("filterKey");
+            if (key == null || filters.containsKey(key)) continue;
+            try {
+                filters.put(key, Filter.fromSummonerKey(key));
+            } catch (RuntimeException ignored) {
+                // Invalid historical filters are ignored; they are reported by migration verification.
+            }
+        }
+    }
+
     private static List<Filter> findChampionSourceFilters(String patch, boolean includeChampion) {
         if (patch == null || patch.isBlank()) return List.of();
         Map<String, Filter> result = new LinkedHashMap<>();
@@ -2806,6 +2865,12 @@ public final class MongoDB {
         return JsonCodec.toDocument(value);
     }
 
+    private static Document structuredWithoutMetadata(Object value) {
+        Document document = structured(value);
+        document.remove("metadata");
+        return document;
+    }
+
     private static Bson summonerUpdate(Summoner summoner, String userId) {
         Document fields = write(summoner);
         fields.remove("_id");
@@ -2823,6 +2888,7 @@ public final class MongoDB {
                 .append("filterKey", id)
                 .append("games", build.games())
                 .append("winrate", build.winrate())
+                .append("lastUpdate", System.currentTimeMillis())
                 .append("build", JsonCodec.toDocument(build));
     }
 
@@ -2840,6 +2906,7 @@ public final class MongoDB {
         return new Document("_id", filterKey)
                 .append("filterKey", filterKey)
                 .append("ready", ready)
+                .append("lastUpdate", System.currentTimeMillis())
                 .append("statistics", values);
     }
 

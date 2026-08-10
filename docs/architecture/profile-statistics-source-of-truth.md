@@ -21,6 +21,22 @@ Il PUUID identifica l'account Riot. Il `Filter` identifica esattamente il datase
 
 `recentMatches` non fa parte dell'aggregato. È una proiezione leggera caricata separatamente usando lo stesso PUUID e lo stesso filtro.
 
+## Refresh esplicito del profilo
+
+`POST /api/lol/{shard}/profile/{puuid}/refresh` aggiorna prima Account,
+summoner, rank e mastery con `R4JQueue` e persiste ogni componente. Dopo questa
+fase `ProfileService` legge centralmente l'unione dei `filterKey` persistiti
+nella tre collection per invalidare le relative chiavi Redis, elimina da Mongo
+tutti i documenti non canonici e accoda un unico `profile-refresh:<puuid>` su
+`DatabaseTracker`.
+
+Il batch rigenera da zero soltanto le tre varianti canoniche: statistics e
+matchups sullo split corrente senza patch/queue/lane, activity senza periodo,
+queue o champion. I filtri derivati restano on-demand ma vengono rimossi al
+successivo refresh canonico. Il breakdown champion del profilo è incluso in
+`ProfileStatistics`; il refresh non avvia statistiche globali champion e non
+richiede né modifica la matchlist.
+
 ## Activity profile
 
 L'endpoint `GET /api/lol/{shard}/profile/{puuid}/activity` usa soltanto i
@@ -41,10 +57,11 @@ ordinate per `day * 24 + hour`, con Monday `0` e Sunday `6`.
 
 La persistenza segue lo stesso read-through delle statistiche, ma su una
 collection derivata dedicata: `Redis PROFILE_ACTIVITY(PUUID, filterKey)`, poi
-Mongo `profile_activity` con `{ puuid, filterKey }`; su miss vengono letti i
-match, calcolati tutti gli aggregati in una scansione e salvati prima in Mongo
-e poi in Redis. Il valore `filter` della response è il `Filter` canonico, non
-un record parallelo.
+Mongo `profile_activity` con `{ puuid, filterKey }`. Un valore assente, senza
+`coverage.calculatedAt` o più vecchio di una settimana restituisce `202
+profile_activity_pending` e viene accodato; non viene calcolato nella request.
+Il valore `filter` della response è il `Filter` canonico, non un record
+parallelo.
 
 ## Profile matchups
 
@@ -78,7 +95,8 @@ Redis PROFILE_MATCHUPS(PUUID, filterKey)
   -> Mongo upsert e Redis cache
 ```
 
-Il calcolo non avviene durante la request. Un miss restituisce `202` e il
+Il calcolo non avviene durante la request. Un miss o `lastUpdate` più vecchio
+di una settimana restituisce `202` e il
 refresh viene eseguito dal worker database generale, condiviso con gli altri
 refresh non-build; il worker build resta dedicato ai soli calcoli build.
 Il JSON del profilo esistente non cambia.

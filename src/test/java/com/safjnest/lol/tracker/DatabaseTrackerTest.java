@@ -38,6 +38,11 @@ public class DatabaseTrackerTest {
     }
 
     @Test
+    public void profileRefreshKeyUsesOnlyTheSummonerIdentity() {
+        assertEquals("profile-refresh:puuid-1", DatabaseTracker.profileRefreshKey("puuid-1"));
+    }
+
+    @Test
     public void duplicateKeySharesQueuedFutureAndRunsOnce() throws Exception {
         CountDownLatch blockersStarted = new CountDownLatch(1);
         CountDownLatch releaseBlockers = new CountDownLatch(1);

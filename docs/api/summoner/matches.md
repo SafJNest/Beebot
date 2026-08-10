@@ -63,6 +63,10 @@ Ogni risultato espone le rune del summoner richiesto: la prima voce di
 `statsRunes` contiene i tre shard statistici. I partecipanti restano una
 projection leggera e non includono queste configurazioni.
 
+La pagina mantiene i campi esistenti e aggiunge `metadata` root con
+`pagination` (`limit`, `offset`, `total`, `hasMore`), il filtro richiesto e
+`refresh=false`; `lastUpdate` è `null`.
+
 ## Errori
 
 | HTTP | Descrizione |

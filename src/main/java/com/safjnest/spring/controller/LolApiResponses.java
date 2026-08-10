@@ -20,7 +20,7 @@ public final class LolApiResponses {
         return switch (result.status()) {
             case READY, PARTIAL -> ResponseEntity.ok(result.payload());
             case PENDING -> ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new LolApiError(HttpStatus.ACCEPTED.value(), pendingCode, pendingMessage));
+                .body(new LolApiError(HttpStatus.ACCEPTED.value(), pendingCode, pendingMessage, result.metadata()));
             case NOT_FOUND -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, notFoundMessage);
         };
     }

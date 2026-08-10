@@ -43,7 +43,7 @@ public class LolApiConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/lol/**")
             .allowedOrigins("*")
-            .allowedMethods("GET", "OPTIONS")
+            .allowedMethods("GET", "POST", "OPTIONS")
             .allowedHeaders("*");
     }
 }

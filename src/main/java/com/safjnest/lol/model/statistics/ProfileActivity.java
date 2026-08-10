@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 
@@ -27,8 +28,25 @@ public record ProfileActivity(
     List<HourActivity> hourlyTrend,
     List<QueueActivity> queueActivity,
     List<Session> recentSessions,
-    List<Insight> insights
+    List<Insight> insights,
+    ResponseMetadata metadata
 ) {
+
+    public ProfileActivity(
+        Filter filter,
+        Coverage coverage,
+        Summary summary,
+        Heatmap heatmap,
+        List<TimeWindow> bestTimeWindows,
+        List<DayActivity> dailyActivity,
+        List<HourActivity> hourlyTrend,
+        List<QueueActivity> queueActivity,
+        List<Session> recentSessions,
+        List<Insight> insights
+    ) {
+        this(filter, coverage, summary, heatmap, bestTimeWindows, dailyActivity, hourlyTrend,
+            queueActivity, recentSessions, insights, null);
+    }
 
     private static final long DAY_MILLIS = 86_400_000L;
     private static final long SESSION_GAP_MILLIS = 90 * 60 * 1000L;
@@ -137,8 +155,14 @@ public record ProfileActivity(
             List.copyOf(hourlyTrend),
             List.copyOf(queueActivity),
             List.copyOf(recentSessions),
-            insights(mostActiveDay, bestWinrateSlot, favoriteQueue)
+            insights(mostActiveDay, bestWinrateSlot, favoriteQueue),
+            null
         );
+    }
+
+    public ProfileActivity withMetadata(ResponseMetadata value) {
+        return new ProfileActivity(filter, coverage, summary, heatmap, bestTimeWindows, dailyActivity,
+            hourlyTrend, queueActivity, recentSessions, insights, value);
     }
 
     public record Coverage(

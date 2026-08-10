@@ -95,6 +95,23 @@ public class Filter {
       return filter;
     }
 
+    public static Filter fromSummonerKey(String key) {
+      String raw = new String(Base64.getUrlDecoder().decode(key), StandardCharsets.UTF_8);
+      String[] parts = raw.split("\\|");
+      if (parts.length != 11) throw new IllegalArgumentException("Invalid summoner filter key");
+      return new Filter()
+        .setChampion(intValue(parts[0]))
+        .setLane(parts[1].equals("*") ? null : LaneType.valueOf(parts[1]))
+        .setQueue(parts[2].equals("*") ? null : GameQueueType.valueOf(parts[2]))
+        .setRank(parts[3].equals("*") ? null : TierType.valueOf(parts[3]))
+        .setRankBehavior(RankBehavior.valueOf(parts[4]))
+        .setPatch(parts[5].equals("*") ? null : parts[5])
+        .setRegion(parts[6].equals("*") ? null : LeagueShard.valueOf(parts[6]))
+        .setOpponent(intValue(parts[7]))
+        .setDuo(intValue(parts[8]))
+        .setPeriod(longValue(parts[9]), longValue(parts[10]));
+    }
+
     private int champion;
     private LaneType lane;
     private GameQueueType queue;
@@ -249,6 +266,10 @@ public class Filter {
     private static long longValue(String value) {
         try { return Long.parseLong(value); }
         catch (RuntimeException ignored) { return 0; }
+    }
+
+    private static int intValue(String value) {
+        return value.equals("*") ? 0 : Integer.parseInt(value);
     }
 
     private static String ordinal(Enum<?> e) {

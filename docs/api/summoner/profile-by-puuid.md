@@ -505,6 +505,10 @@ restano queue canoniche separate.
 
 Un profilo con statistiche aggregate ancora in generazione può comunque essere
 restituito `200` come payload `PARTIAL` quando i componenti base sono pronti.
+La response root include `metadata` con il filtro overview canonico e il
+`lastUpdate` delle statistiche. Se statistics manca o è più vecchia di una
+settimana, il profilo disponibile resta `200`, `metadata.refresh=true` e
+l'header `X-Profile-Refresh: true` segnala il job canonico accodato.
 
 ## Owner
 
