@@ -857,18 +857,19 @@ public final class ChampionAnalyzer {
             Map<Integer, List<LaneSynergy>> synergies = new LinkedHashMap<>();
             Map<Integer, ChampionStatsData.MetricValues> metrics = new LinkedHashMap<>();
             Map<Integer, List<PowerCurvePoint>> powerCurve = new LinkedHashMap<>();
+            Map<Integer, int[]> banCount = toJavaMap(rollup.banCount);
             for (Map.Entry<Integer, int[]> entry : pickWin.entrySet()) {
                 int champion = entry.getKey();
                 int picks = entry.getValue()[0];
                 double winrate = rate(entry.getValue()[1], picks);
                 laneStats.put(champion, laneOptions(laneAccum, champion));
-                matchups.put(champion, matchupOptions(matchupAccum, champion, winrate, rollup.banCount, rollup.banGames));
+                matchups.put(champion, matchupOptions(matchupAccum, champion, winrate, banCount, rollup.banGames));
                 synergies.put(champion, synergyOptions(synergyAccum, champion, picks));
                 metrics.put(champion, metricOptions(metricAccum, champion));
                 powerCurve.put(champion, powerCurveOptions(powerCurveAccum, champion));
             }
             return new RawProjection(filter, rollup.totalGames, rollup.banGames, pickWin,
-                toJavaMap(rollup.banCount), laneStats, matchups, synergies, metrics, powerCurve);
+                banCount, laneStats, matchups, synergies, metrics, powerCurve);
         }
 
         private void addMatchups(RawBucket bucket, List<ChampionStatsData.Player> team,
@@ -1125,8 +1126,8 @@ public final class ChampionAnalyzer {
         private int banGames;
         private final Int2IntOpenHashMap banCount = new Int2IntOpenHashMap();
         private final Long2ObjectOpenHashMap<int[]> pickWin = new Long2ObjectOpenHashMap<>();
-        private final Long2IntOpenHashMap playerOrder = new Long2IntOpenHashMap<>();
-        private final Long2IntOpenHashMap matchupOrder = new Long2IntOpenHashMap<>();
+        private final Long2IntOpenHashMap playerOrder = new Long2IntOpenHashMap();
+        private final Long2IntOpenHashMap matchupOrder = new Long2IntOpenHashMap();
         private final Long2ObjectOpenHashMap<double[]> metrics = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<int[]> powerCurve = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<double[]> matchups = new Long2ObjectOpenHashMap<>();
