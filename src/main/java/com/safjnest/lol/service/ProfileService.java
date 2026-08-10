@@ -2,6 +2,7 @@ package com.safjnest.lol.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -205,13 +206,26 @@ public class ProfileService {
         return saved;
     }
 
-    public ProfileActivity refreshActivity(LeagueShard shard, String puuid, Filter filter) {
+    public boolean refreshActivity(LeagueShard shard, String puuid, Filter filter) {
         if (shard == null || puuid == null || puuid.isBlank() || filter == null)
-            return ProfileAnalyzer.activity(List.of(), puuid, filter);
+            return false;
         ProfileActivity activity = ProfileAnalyzer.activity(
             MongoDB.findProfileStatisticsMatches(puuid, shard, filter, 0, 0), puuid, filter);
-        if (MongoDB.upsertProfileActivity(puuid, filter, activity)) cacheActivity(puuid, filter, activity);
-        return activity;
+        boolean saved = MongoDB.upsertProfileActivity(puuid, filter, activity);
+        if (saved) cacheActivity(puuid, filter, activity);
+        return saved;
+    }
+
+    public boolean refreshSavedAggregates(LeagueShard shard, String puuid, List<Filter> filters) {
+        if (shard == null || puuid == null || puuid.isBlank() || filters == null || filters.isEmpty()) return false;
+        for (Filter filter : filters) {
+            if (!refreshStatistics(puuid, shard, filter, true)
+                    || !refreshActivity(shard, puuid, filter)
+                    || !refreshMatchups(puuid, shard, filter)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public List<ProfileIndexable> refreshIndexables() {
@@ -234,6 +248,14 @@ public class ProfileService {
     public static void invalidate(String puuid, LeagueShard shard) {
         if (shard == null || puuid == null || puuid.isBlank()) return;
         RedisClient.delete(RedisKey.PROFILE_PAGE.of(shard.name(), puuid));
+    }
+
+    public static void startRefresh(Summoner summoner, LeagueShard shard) {
+        if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || shard == null) return;
+
+        List<Filter> filters = refreshFilters(summoner.puuid());
+        invalidateRefreshCaches(summoner.puuid(), shard, filters);
+        DatabaseTracker.startProfileRefresh(summoner, shard, filters);
     }
 
     // ============================================================================
@@ -272,6 +294,28 @@ public class ProfileService {
 
     private static String matchupsKey(String puuid, Filter filter) {
         return RedisKey.PROFILE_MATCHUPS.of(puuid, filter.toSummonerKey());
+    }
+
+    private static List<Filter> refreshFilters(String puuid) {
+        Map<String, Filter> filters = new LinkedHashMap<>();
+        Filter defaultFilter = Filter.summoner();
+        filters.put(defaultFilter.toSummonerKey(), defaultFilter);
+        for (Filter filter : MongoDB.findProfileRefreshFilters(puuid)) {
+            if (filter != null) filters.putIfAbsent(filter.toSummonerKey(), filter);
+        }
+        return new ArrayList<>(filters.values());
+    }
+
+    private static void invalidateRefreshCaches(String puuid, LeagueShard shard, List<Filter> filters) {
+        List<String> keys = new ArrayList<>();
+        keys.add(RedisKey.PROFILE_PAGE.of(shard.name(), puuid));
+        for (Filter filter : filters) {
+            keys.add(statisticsKey(puuid, filter));
+            keys.add(recentMatchesKey(puuid, filter));
+            keys.add(activityKey(puuid, filter));
+            keys.add(matchupsKey(puuid, filter));
+        }
+        RedisClient.delete(keys);
     }
 
     private static boolean isReady(SummonerView page) {

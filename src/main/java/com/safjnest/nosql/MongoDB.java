@@ -1154,6 +1154,16 @@ public final class MongoDB {
         return document == null ? null : readProfileMatchups(document);
     }
 
+    public static List<Filter> findProfileRefreshFilters(String puuid) {
+        if (puuid == null || puuid.isBlank()) return List.of();
+
+        Map<String, Filter> filters = new LinkedHashMap<>();
+        readProfileRefreshFilters(profileStatistics(), puuid, filters);
+        readProfileRefreshFilters(profileActivity(), puuid, filters);
+        readProfileRefreshFilters(profileMatchups(), puuid, filters);
+        return new ArrayList<>(filters.values());
+    }
+
     public static ProfileStatistics findProfileStatistics(String puuid, long seasonStart) {
         return findProfileStatistics(puuid, Filter.summoner(seasonStart, 0));
     }
@@ -2649,6 +2659,22 @@ public final class MongoDB {
             }
         }
         return new ArrayList<>(result.values());
+    }
+
+    private static void readProfileRefreshFilters(
+            MongoCollection<Document> collection,
+            String puuid,
+            Map<String, Filter> filters) {
+        for (Document document : collection.find(Filters.eq("puuid", puuid))
+                .projection(Projections.include("filterKey"))) {
+            String key = document.getString("filterKey");
+            if (key == null || filters.containsKey(key)) continue;
+            try {
+                filters.put(key, Filter.fromSummonerKey(key));
+            } catch (RuntimeException ignored) {
+                // Invalid historical filters are ignored; they are reported by migration verification.
+            }
+        }
     }
 
     private static List<Filter> findChampionSourceFilters(String patch, boolean includeChampion) {

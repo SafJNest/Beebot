@@ -21,6 +21,19 @@ Il PUUID identifica l'account Riot. Il `Filter` identifica esattamente il datase
 
 `recentMatches` non fa parte dell'aggregato. È una proiezione leggera caricata separatamente usando lo stesso PUUID e lo stesso filtro.
 
+## Refresh esplicito del profilo
+
+`POST /api/lol/{shard}/profile/{puuid}/refresh` aggiorna prima Account,
+summoner, rank e mastery con `R4JQueue` e persiste ogni componente. Dopo questa
+fase `ProfileService` raccoglie il filtro base e l'unione dei `filterKey`
+persistiti nelle collection `profile_statistics`, `profile_activity` e
+`profile_matchups`, invalida le sole cache Redis derivate e accoda un unico
+`profile-refresh:<puuid>` su `DatabaseTracker`.
+
+Il batch rigenera da zero statistiche, activity e matchups per ogni filtro. Il
+breakdown champion del profilo è incluso in `ProfileStatistics`; il refresh non
+avvia statistiche globali champion e non richiede né modifica la matchlist.
+
 ## Activity profile
 
 L'endpoint `GET /api/lol/{shard}/profile/{puuid}/activity` usa soltanto i

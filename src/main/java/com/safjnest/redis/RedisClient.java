@@ -157,6 +157,16 @@ public class RedisClient {
         }
     }
 
+    public static void delete(List<String> keys) {
+        if (keys == null || keys.isEmpty() || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.del(keys.toArray(new String[0]));
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
     public static long increment(String key) {
         if (!canUseRedis()) return 0;
         try (Jedis jedis = pool.getResource()) {

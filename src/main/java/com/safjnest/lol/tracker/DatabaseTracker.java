@@ -121,6 +121,28 @@ public final class DatabaseTracker {
         return submit(key, name, () -> refreshProfileMatchups(request), PROFILE_WORKER);
     }
 
+    public static CompletableFuture<Boolean> startProfileRefresh(
+        Summoner summoner,
+        LeagueShard shard,
+        List<Filter> filters
+    ) {
+        if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank()
+                || shard == null || filters == null || filters.isEmpty()) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        List<Filter> requestFilters = new ArrayList<>();
+        for (Filter filter : filters) {
+            if (filter != null) requestFilters.add(Filter.fromStateKey(filter.toStateKey()));
+        }
+        if (requestFilters.isEmpty()) return CompletableFuture.completedFuture(false);
+
+        ProfileRefreshRequest request = new ProfileRefreshRequest(summoner.puuid(), shard, List.copyOf(requestFilters));
+        String key = profileRefreshKey(request.puuid());
+        String name = "profile refresh puuid=" + request.puuid();
+        return submit(key, name, () -> refreshProfileAggregates(request), PROFILE_WORKER);
+    }
+
     public static CompletableFuture<Void> startChampionData(
         Filter filter,
         boolean statsMissing,
@@ -200,6 +222,10 @@ public final class DatabaseTracker {
         return "champion-stats-matrix:" + patch + ":" + queue.name();
     }
 
+    static String profileRefreshKey(String puuid) {
+        return "profile-refresh:" + puuid;
+    }
+
     public static void shutdown() {
         ExecutorService buildExecutor;
         ExecutorService taskExecutor;
@@ -268,6 +294,21 @@ public final class DatabaseTracker {
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile matchups refresh failed for puuid=" + request.puuid()
+                + " message=" + exception.getMessage());
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static boolean refreshProfileAggregates(ProfileRefreshRequest request) {
+        try {
+            if (!PROFILE_SERVICE.refreshSavedAggregates(request.shard(), request.puuid(), request.filters())) {
+                BotLogger.error("Profile aggregate refresh failed for puuid=" + request.puuid());
+                return false;
+            }
+            ProfileService.invalidate(request.puuid(), request.shard());
+            return true;
+        } catch (Exception exception) {
+            BotLogger.error("Profile aggregate refresh failed for puuid=" + request.puuid()
                 + " message=" + exception.getMessage());
             throw new IllegalStateException(exception);
         }
@@ -369,6 +410,12 @@ public final class DatabaseTracker {
         String puuid,
         LeagueShard shard,
         Filter filter
+    ) {}
+
+    private record ProfileRefreshRequest(
+        String puuid,
+        LeagueShard shard,
+        List<Filter> filters
     ) {}
 
     private static final class ChampionMatrixRequest {

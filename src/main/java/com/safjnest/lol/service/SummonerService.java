@@ -13,7 +13,6 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -37,7 +36,6 @@ public final class SummonerService {
         }
     }
 
-    private static final int REFRESH_MATCH_LIMIT = 5;
     private static final TypeReference<List<SummonerView>> SUMMONER_SEARCH_TYPE =
         new TypeReference<List<SummonerView>>() {};
     private static final TypeReference<List<SummonerAutocompleteChoice>> SUMMONER_AUTOCOMPLETE_TYPE =
@@ -88,7 +86,8 @@ public final class SummonerService {
             return CompletableFuture.completedFuture(RefreshResult.ignored());
         }
 
-        LeagueHandler.clearRiotSummonerCache(shard, puuid);
+        LeagueHandler.clearRiotProfileRefreshCache(shard, puuid);
+        invalidateRefreshSourceCaches(puuid, shard);
         return refreshRiotAccountAsync(puuid, shard).thenCompose(account -> refreshRiotSummonerAsync(puuid, shard)
             .thenComposeAsync(source -> refreshProfile(source, account)))
             .exceptionally(ignored -> RefreshResult.ignored());
@@ -306,17 +305,24 @@ public final class SummonerService {
     // ============================================================================
 
     private static CompletableFuture<RiotAccount> refreshRiotAccountAsync(String puuid, LeagueShard shard) {
-        return R4JQueue.submit(shard, "account-refresh", puuid, () -> RIOT_API.getAccountAPI().getAccountByPUUID(
-            com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid
-        ));
+        return R4JQueue.submit(shard, "account-refresh", puuid, () -> {
+            RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
+                com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
+            if (account != null) RedisClient.set(RedisKey.ACCOUNT, account, shard.name(), puuid);
+            return account;
+        });
     }
 
     private static CompletableFuture<no.stelar7.api.r4j.pojo.lol.summoner.Summoner> refreshRiotSummonerAsync(
         String puuid,
         LeagueShard shard
     ) {
-        return R4JQueue.submit(shard, "summoner-refresh", puuid, () ->
-            RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid));
+        return R4JQueue.submit(shard, "summoner-refresh", puuid, () -> {
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
+                RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
+            if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, shard.name(), puuid);
+            return summoner;
+        });
     }
 
     private static CompletableFuture<RefreshResult> refreshProfile(
@@ -328,16 +334,29 @@ public final class SummonerService {
         }
 
         String riotId = account == null ? null : account.getName() + "#" + account.getTag();
-        if (persist(source, riotId, null) == null) return CompletableFuture.completedFuture(RefreshResult.ignored());
+        Summoner profile = store(persist(source, riotId, null), source.getPlatform());
+        if (profile == null) return CompletableFuture.completedFuture(RefreshResult.ignored());
 
         LeagueShard sourceShard = source.getPlatform();
         return RankService.refreshAsync(source.getPUUID(), sourceShard)
             .thenCompose(ignored -> MasteryService.refreshAsync(source.getPUUID(), sourceShard))
             .thenApply(ignored -> {
-                invalidate(source.getPUUID(), sourceShard);
-                Tracker.enqueueRecentMatches(source, REFRESH_MATCH_LIMIT);
+                ProfileService.startRefresh(profile, sourceShard);
                 return new RefreshResult(source, true);
             });
+    }
+
+    private static void invalidateRefreshSourceCaches(String puuid, LeagueShard shard) {
+        RedisClient.delete(List.of(
+            RedisKey.SUMMONER.of(shard.name(), puuid),
+            RedisKey.ACCOUNT.of(shard.name(), puuid),
+            RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid),
+            RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid),
+            RedisKey.PROFILE_BASE.of(shard.name(), puuid),
+            RedisKey.PROFILE_RANK.of(shard.name() + ":" + puuid),
+            RedisKey.PROFILE_RANKS.of(shard.name(), puuid),
+            RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid)
+        ));
     }
 
     private static Summoner cache(String puuid, LeagueShard shard) {
