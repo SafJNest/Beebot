@@ -37,14 +37,17 @@ registra il conflitto e lo passa al main agent.
 - HTTP, DTO, JSON Spring, codici `200`/`202`/`206`/`404`, filtri disponibili,
   ready state, TTL e invalidazioni restano invariati.
 - Queue, patch, region, rank, comportamento del rank e lane mantengono la
-  semantica attuale. La matrice costruisce soglie rank cumulative: non la si
-  segmenta per rank.
+  semantica attuale. Le viste finali della matrice costruiscono soglie rank
+  cumulative: il rank esatto puo esistere solo come foglia raw effimera del
+  job, non viene serializzato, esposto o usato in una chiave pubblica.
 - Formula, ordine di operazioni delle metriche e precisione numerica restano
   invariati. In particolare non trasformare una media di rapporti in un
   rapporto di somme.
 - Mongo continua a essere il proprietario della persistenza e Redis della
   cache. Nessun analyzer chiama Riot, esegue lavoro nella request HTTP o
   introduce dual-write.
+- Il rollup raw e solo RAM del job: API, BSON/JSON, `champion_stats`, chiavi
+  Mongo/Redis, invalidazioni e ready state non cambiano.
 - Un risultato vuoto completato viene persistito con `ready=true`; un errore
   non puo pubblicare un risultato parziale come pronto.
 
@@ -65,10 +68,11 @@ DatabaseTracker.enqueueChampionStatsMatrix
   -> ChampionAnalyzer.recomputeMatrix
   -> ChampionStatsProvider.forEachMatchWithBuild
   -> MongoDB.forEachChampionRawMatchWithBuild
-  -> parse match e fan-out sugli accumulatori
+  -> parse match e un solo bucket raw region x rank esatto
   -> MongoDB.forEachChampionRawMatchEventBatch
-  -> parse eventi e metriche dipendenti dagli eventi
-  -> assemble + trend
+  -> parse eventi e aggiornamento dello stesso bucket raw
+  -> rollup rank cumulativo, poi regioni per la vista globale e lane player-only
+  -> assemble + trend centralizzato
   -> MongoDB.upsertChampionStatistics / upsertChampionBuilds
   -> Redis invalidation del chiamante
   -> rilascio delle strutture locali
@@ -79,7 +83,7 @@ Punti da verificare con CodeGraph:
 - entry point, caller e deduplicazione nel worker `CHAMPION_WORKER`;
 - identita di storage e cache dei filtri;
 - `championMatchFilter`, proiezioni Mongo e batch size;
-- fan-out di region/rank/lane e match tra filtro e raw match;
+- bucket raw, rollup region/rank/lane e assenza di fan-out per filtro;
 - tutte le metriche base/eventi, matchup, synergy, power curve e trend;
 - writer Mongo, acknowledgement e consumer asincroni;
 - test che coprono filtro, documento, matrice, tracker e JSON.
@@ -138,37 +142,30 @@ Misurare e riportare separatamente:
 - trend fallback;
 - assemble e serializzazione;
 - write Mongo acknowledged;
-- heap/high-water mark e cardinalita degli accumulatori.
+- heap/high-water mark, cardinalita raw e peak del bucket.
 
 Un `IXSCAN` da solo non prova che il job sia veloce: lookup, payload evento,
 parse, pairing dei partecipanti e aggregazione possono essere il costo reale.
 
-### Step 3 - Segmentare senza cambiare il risultato
+### Step 3 - Bucket raw e rollup senza cambiare il risultato
 
 L'ordine ammesso e:
 
 ```text
-filtri globali
-  -> base
-  -> eventi
-  -> trend
-  -> assemble
-  -> persistenza acknowledged
-  -> release
-
-prima regione attiva
-  -> stesso ciclo completo
-
-seconda regione attiva
-  -> stesso ciclo completo
+scan base/eventi
+  -> una foglia raw per region x rank esatto
+  -> rollup rank esatti nella soglia cumulativa di ogni regione
+  -> somma delle regioni nella stessa soglia globale
+  -> somma lane solo per player, matchup, synergy, metriche e power curve
+  -> assemble, persistenza acknowledged e release: globale poi regioni
 ```
 
 Regole:
 
-- il segmento globale usa `region = null`; ogni altro segmento usa una sola
-  regione attiva;
-- ogni segmento conserva tutti i rank cumulativi e tutte le lane valide;
-- l'ordine dei segmenti deve coincidere con quello gia prodotto da
+- `region = null` e il globale derivato, ogni altra vista usa una sola regione
+  attiva;
+- ogni vista finale conserva tutti i rank cumulativi e tutte le lane valide;
+- l'ordine di scrittura deve coincidere con quello gia prodotto da
   `matrixFilters` (globale, poi regioni);
 - build regionali entrano nel segmento della propria regione; build globali nel
   segmento globale;
@@ -202,8 +199,9 @@ Dopo `upsert`/`replaceOne` acknowledged, in questo ordine:
 
 1. scartare il `Document` e qualunque rappresentazione JSON/BSON temporanea;
 2. svuotare il risultato assemblato quando non e piu necessario;
-3. svuotare mappe, liste e array degli accumulatori raw;
-4. rimuovere l'accumulatore dal contenitore del segmento;
+3. svuotare mappe, liste e array del risultato assemblato e del bucket raw non
+   piu necessario;
+4. rimuovere il risultato dal contenitore della matrice;
 5. svuotare trend e accumulatori build associati;
 6. assicurare lo stesso cleanup in `finally` per eccezioni di query, parse,
    evento, trend, serializer o write.
@@ -229,6 +227,10 @@ Applicare solo dopo aver completato e misurato gli step precedenti.
    serializzato e mai usato come identita di dominio.
 6. Ricostruire `MatchupKey`, `LaneSynergy` e champion ID reali soltanto in
    assemble. Preservare eventuali ordinamenti finali esistenti.
+
+Le mappe primitive non definiscono mai l'ordine BSON/JSON: la prima occorrenza
+di champion e di chiave osservabile deve essere registrata separatamente e
+l'ordine finale deve essere ricostruito prima del writer.
 
 Non convertire milioni di `double[]` in milioni di normali oggetti Java solo
 per rendere i campi piu descrittivi. Un accumulatore tipizzato o a colonne e
@@ -265,7 +267,7 @@ ogni documento deve essere rilasciato nel suo ciclo.
 
 - cambiare chiavi `Filter`, Redis, Mongo `_id` o `filterKey`;
 - cambiare schema, API, DTO, ready state, filtri, TTL o invalidazioni;
-- segmentare per rank o cambiare rank cumulativo in rank esatto;
+- esporre, persistere o trasformare una vista finale cumulativa in rank esatto;
 - usare ordinali enum nelle chiavi persistite o compatte;
 - introdurre `$in` enorme, collection temporanee, cache parallele, service
   facades, DTO duplicati o librerie non necessarie;

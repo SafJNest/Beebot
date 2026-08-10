@@ -27,22 +27,18 @@ public final class ChampionStatsProvider {
             Consumer<ChampionStatsData.RawMatchRead> matchConsumer,
             Consumer<ChampionStatsData.RawMatchRead> eventConsumer) {
         if (filter == null || matchConsumer == null || eventConsumer == null) return;
-        List<String> matchIds = MongoDB.forEachChampionRawMatch(filter, raw -> {
+        MongoDB.forEachChampionRawMatch(filter, raw -> {
             long materializeStarted = System.nanoTime();
             matchConsumer.accept(new ChampionStatsData.RawMatchRead(
                     rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
                     System.nanoTime() - materializeStarted));
         });
-        try {
-            MongoDB.forEachChampionRawMatchEventBatch(matchIds, EVENT_BATCH_SIZE, raw -> {
-                long materializeStarted = System.nanoTime();
-                eventConsumer.accept(new ChampionStatsData.RawMatchRead(
-                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
-                    System.nanoTime() - materializeStarted));
-            });
-        } finally {
-            matchIds.clear();
-        }
+        MongoDB.forEachChampionRawMatchEventBatch(filter, EVENT_BATCH_SIZE, raw -> {
+            long materializeStarted = System.nanoTime();
+            eventConsumer.accept(new ChampionStatsData.RawMatchRead(
+                rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
+                System.nanoTime() - materializeStarted));
+        });
     }
 
     public static void forEachMatchWithBuild(
@@ -50,37 +46,27 @@ public final class ChampionStatsProvider {
             BiConsumer<ChampionStatsData.RawMatchRead, Document> matchConsumer,
             Consumer<ChampionStatsData.RawMatchRead> eventConsumer) {
         if (filter == null || matchConsumer == null || eventConsumer == null) return;
-        List<String> matchIds = MongoDB.forEachChampionRawMatchWithBuild(filter, raw -> {
+        MongoDB.forEachChampionRawMatchWithBuild(filter, raw -> {
             long materializeStarted = System.nanoTime();
             matchConsumer.accept(new ChampionStatsData.RawMatchRead(
                     rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
                     System.nanoTime() - materializeStarted), raw.document());
         });
-        try {
-            MongoDB.forEachChampionRawMatchEventBatch(matchIds, EVENT_BATCH_SIZE, raw -> {
-                long materializeStarted = System.nanoTime();
-                eventConsumer.accept(new ChampionStatsData.RawMatchRead(
-                        rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
-                        System.nanoTime() - materializeStarted));
-            });
-        } finally {
-            matchIds.clear();
-        }
+        MongoDB.forEachChampionRawMatchEventBatch(filter, EVENT_BATCH_SIZE, raw -> {
+            long materializeStarted = System.nanoTime();
+            eventConsumer.accept(new ChampionStatsData.RawMatchRead(
+                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
+                    System.nanoTime() - materializeStarted));
+        });
     }
 
-    public static void forEachTrendMatch(Filter filter, Consumer<List<ChampionStatsData.TrendParticipant>> consumer) {
+    public static void forEachBaseMatch(Filter filter, Consumer<ChampionStatsData.RawMatchRead> consumer) {
         if (filter == null || consumer == null) return;
-        MongoDB.forEachChampionTrendMatch(filter, participants -> {
-            List<ChampionStatsData.TrendParticipant> result = new ArrayList<>(participants.size());
-            for (Document participant : participants) {
-                result.add(new ChampionStatsData.TrendParticipant(
-                    participant.getInteger("champion", 0), lane(participant), participant.getBoolean("win", false)));
-            }
-            try {
-                consumer.accept(result);
-            } finally {
-                result.clear();
-            }
+        MongoDB.forEachChampionRawMatch(filter, raw -> {
+            long materializeStarted = System.nanoTime();
+            consumer.accept(new ChampionStatsData.RawMatchRead(
+                rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
+                System.nanoTime() - materializeStarted));
         });
     }
 
