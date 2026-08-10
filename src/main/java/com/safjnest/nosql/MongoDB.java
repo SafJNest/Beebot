@@ -626,7 +626,8 @@ public final class MongoDB {
                 "participants.starterItems", "participants.boots", "participants.supportItem",
                 "participants.item0", "participants.item1", "participants.item2", "participants.item3",
                 "participants.item4", "participants.item5", "participants.skillOrder", "participants.augments",
-                "participants.summonerSpell1", "participants.summonerSpell2")).batchSize(batchSize);
+                "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",
+                "participants.secondaryRunes", "participants.statsRunes")).batchSize(batchSize);
         List<QueryRecord> batch = new ArrayList<>(batchSize);
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) {
@@ -669,6 +670,10 @@ public final class MongoDB {
         build.put("augments", new JSONArray(readIntegers(participant, "augments")));
         build.put("summoner_spells", new JSONArray(List.of(
                 participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
+        build.put("runes", new JSONObject()
+            .put("primary", new JSONArray(readIntegers(participant, "primaryRunes")))
+            .put("secondary", new JSONArray(readIntegers(participant, "secondaryRunes")))
+            .put("stats", new JSONArray(readIntegers(participant, "statsRunes"))));
         return QueryRecordParser.fromMap(Map.of(
                 "game_id", match.getString("_id"),
                 "win", participant.getBoolean("win", false),
@@ -2657,7 +2662,10 @@ public final class MongoDB {
             .append("participants.skillOrder", 1)
             .append("participants.augments", 1)
             .append("participants.summonerSpell1", 1)
-            .append("participants.summonerSpell2", 1);
+            .append("participants.summonerSpell2", 1)
+            .append("participants.primaryRunes", 1)
+            .append("participants.secondaryRunes", 1)
+            .append("participants.statsRunes", 1);
     }
 
     private static Bson patchMajorFilter(String patch) {
