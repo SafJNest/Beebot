@@ -42,8 +42,12 @@ public record RuneSignature(
 
     public String toKey() {
         String raw = primaryTree + "|" + keystone + "|" + BuildUtils.joinInts(primaryRunes) + "|"
-                + secondaryTree + "|" + BuildUtils.joinInts(secondaryRunes) + "|" + BuildUtils.joinInts(statShards);
+                + secondaryTree + "|" + BuildUtils.joinInts(secondaryRunes);
         return BuildUtils.toBase64(raw);
+    }
+
+    public String statShardsKey() {
+        return BuildUtils.joinInts(statShards);
     }
 
     public static RuneSignature decode(String key) {
@@ -63,4 +67,3 @@ public record RuneSignature(
     }
 
 }
-

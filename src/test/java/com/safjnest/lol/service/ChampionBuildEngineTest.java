@@ -2,6 +2,7 @@ package com.safjnest.lol.service;
 
 import static org.junit.Assert.assertEquals;
 
+import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.model.Build;
 
 import java.util.ArrayList;
@@ -10,6 +11,28 @@ import java.util.List;
 import org.junit.Test;
 
 public class ChampionBuildEngineTest {
+
+    @Test
+    public void aggregatesRuneSetupsAndKeepsTheBestCompleteShardCombination() {
+        ChampionBuildEngine.RuneOptionAccumulator runes = new ChampionBuildEngine.RuneOptionAccumulator();
+        RuneSignature first = runeSignature(List.of(5008, 5008, 5011));
+        RuneSignature second = runeSignature(List.of(5008, 5010, 5011));
+
+        runes.add(first, false);
+        runes.add(first, false);
+        runes.add(second, true);
+        runes.add(second, true);
+        runes.add(runeSignature(List.of(5008, 5010)), true);
+
+        List<Build.RuneOption> result = runes.toOptions(5);
+
+        assertEquals(1, result.size());
+        assertEquals(first.toKey(), result.get(0).id());
+        assertEquals(5, result.get(0).matches());
+        assertEquals(3, result.get(0).wins());
+        assertEquals(0.6, result.get(0).winrate(), 0.0001);
+        assertEquals(second.statShards(), result.get(0).configuration().statShards());
+    }
 
     @Test
     public void shorterPrefixSupportsTheCompatibleCompleteOrder() {
@@ -98,5 +121,9 @@ public class ChampionBuildEngineTest {
         List<Integer> result = new ArrayList<>();
         for (int index = 0; index < length; index++) result.add(pattern[index % pattern.length]);
         return result;
+    }
+
+    private static RuneSignature runeSignature(List<Integer> statShards) {
+        return new RuneSignature(8000, 8005, List.of(9104, 8014, 8299), 8400, List.of(8444, 8451), statShards);
     }
 }

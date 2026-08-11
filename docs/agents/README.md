@@ -46,3 +46,6 @@ Gli agenti Mongo seguono lo stesso handoff del [`macro-task-template.md`](macro-
 La guida operativa per analizzare e ridurre l'uso di memoria della pipeline
 Champion Statistics, senza cambiare contratti o risultati, e in
 [`rusted-java.md`](rusted-java.md).
+
+La proposta per le metriche di lane e timing oggetti dei matchup e in
+[`champion-matchup-event-payload.md`](champion-matchup-event-payload.md).
