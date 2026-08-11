@@ -626,7 +626,8 @@ public final class MongoDB {
                 "participants.starterItems", "participants.boots", "participants.supportItem",
                 "participants.item0", "participants.item1", "participants.item2", "participants.item3",
                 "participants.item4", "participants.item5", "participants.skillOrder", "participants.augments",
-                "participants.summonerSpell1", "participants.summonerSpell2")).batchSize(batchSize);
+                "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",
+                "participants.secondaryRunes", "participants.statsRunes")).batchSize(batchSize);
         List<QueryRecord> batch = new ArrayList<>(batchSize);
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) {
@@ -669,6 +670,10 @@ public final class MongoDB {
         build.put("augments", new JSONArray(readIntegers(participant, "augments")));
         build.put("summoner_spells", new JSONArray(List.of(
                 participant.getInteger("summonerSpell1", 0), participant.getInteger("summonerSpell2", 0))));
+        build.put("runes", new JSONObject()
+            .put("primary", new JSONArray(readIntegers(participant, "primaryRunes")))
+            .put("secondary", new JSONArray(readIntegers(participant, "secondaryRunes")))
+            .put("stats", new JSONArray(readIntegers(participant, "statsRunes"))));
         return QueryRecordParser.fromMap(Map.of(
                 "game_id", match.getString("_id"),
                 "win", participant.getBoolean("win", false),
@@ -1273,6 +1278,40 @@ public final class MongoDB {
         return result;
     }
 
+    public static Map<String, Map<Integer, ChampionStatistics>> findChampionStatistics(List<Filter> filters) {
+        if (filters == null || filters.isEmpty()) return Map.of();
+        Set<String> keys = new HashSet<>();
+        for (Filter filter : filters) if (filter != null) keys.add(filter.genericKey());
+        if (keys.isEmpty()) return Map.of();
+
+        Map<String, Map<Integer, ChampionStatistics>> result = new HashMap<>();
+        try (MongoCursor<Document> cursor = championStats().find(Filters.in("_id", keys))
+                .projection(Projections.include("filterKey", "ready", "statistics")).iterator()) {
+            while (cursor.hasNext()) {
+                Document aggregate = cursor.next();
+                try {
+                    if (!aggregate.getBoolean("ready", false)) continue;
+                    String key = aggregate.getString("filterKey");
+                    if (key == null || !keys.contains(key)) continue;
+                    Document values = aggregate.get("statistics", Document.class);
+                    if (values == null) continue;
+                    Map<Integer, ChampionStatistics> statistics = new HashMap<>();
+                    for (Map.Entry<String, Object> entry : values.entrySet()) {
+                        try {
+                            int champion = Integer.parseInt(entry.getKey());
+                            ChampionStatistics value = readStructured(entry.getValue(), ChampionStatistics.class);
+                            if (champion != 0 && value != null) statistics.put(champion, value);
+                        } catch (RuntimeException ignored) {}
+                    }
+                    result.put(key, statistics);
+                } finally {
+                    aggregate.clear();
+                }
+            }
+        }
+        return result;
+    }
+
     public static boolean hasChampionStatistics(Filter filter) {
         if (filter == null) return false;
         return championStats().find(Filters.eq("filterKey", filter.genericKey()))
@@ -1354,9 +1393,8 @@ public final class MongoDB {
 
     public record ChampionRawMatch(Document document, long matchReadNanos, long eventReadNanos) {}
 
-    public static List<String> forEachChampionRawMatch(Filter filter, Consumer<ChampionRawMatch> consumer) {
-        if (filter == null || consumer == null) return List.of();
-        List<String> matchIds = new ArrayList<>();
+    public static void forEachChampionRawMatch(Filter filter, Consumer<ChampionRawMatch> consumer) {
+        if (filter == null || consumer == null) return;
         FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
                 .projection(championRawProjection())
                 .batchSize(100);
@@ -1364,8 +1402,6 @@ public final class MongoDB {
             while (cursor.hasNext()) {
                 long started = System.nanoTime();
                 Document document = cursor.next();
-                String matchId = document.getString("_id");
-                if (matchId != null) matchIds.add(matchId);
                 try {
                     consumer.accept(new ChampionRawMatch(document, System.nanoTime() - started, 0));
                 } finally {
@@ -1373,20 +1409,16 @@ public final class MongoDB {
                 }
             }
         }
-        return matchIds;
     }
 
-    public static List<String> forEachChampionRawMatchWithBuild(Filter filter, Consumer<ChampionRawMatch> consumer) {
-        if (filter == null || consumer == null) return List.of();
-        List<String> matchIds = new ArrayList<>();
+    public static void forEachChampionRawMatchWithBuild(Filter filter, Consumer<ChampionRawMatch> consumer) {
+        if (filter == null || consumer == null) return;
         FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
             .projection(championRawWithBuildProjection()).batchSize(100);
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) {
                 long started = System.nanoTime();
                 Document document = cursor.next();
-                String matchId = document.getString("_id");
-                if (matchId != null) matchIds.add(matchId);
                 try {
                     consumer.accept(new ChampionRawMatch(document, System.nanoTime() - started, 0));
                 } finally {
@@ -1394,16 +1426,38 @@ public final class MongoDB {
                 }
             }
         }
-        return matchIds;
     }
 
-    public static void forEachChampionRawMatchEventBatch(List<String> matchIds, int batchSize,
+    public static void forEachChampionRawMatchEventBatch(Filter filter, int batchSize,
                                                            Consumer<ChampionRawMatch> consumer) {
-        if (matchIds == null || matchIds.isEmpty() || batchSize <= 0 || consumer == null) return;
-        for (int start = 0; start < matchIds.size(); start += batchSize) {
-            int end = Math.min(matchIds.size(), start + batchSize);
-            List<String> batch = new ArrayList<>(matchIds.subList(start, end));
-            Map<String, Document> matchesById = new HashMap<>();
+        if (filter == null || batchSize <= 0 || consumer == null) return;
+        List<String> batch = new ArrayList<>(batchSize);
+        FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
+                .projection(Projections.include("_id")).batchSize(batchSize);
+        try {
+            try (MongoCursor<Document> cursor = query.iterator()) {
+                while (cursor.hasNext()) {
+                    Document document = cursor.next();
+                    try {
+                        String matchId = document.getString("_id");
+                        if (matchId != null) batch.add(matchId);
+                        if (batch.size() == batchSize) processChampionRawMatchEventBatch(batch, batchSize, consumer);
+                    } finally {
+                        document.clear();
+                    }
+                }
+                if (!batch.isEmpty()) processChampionRawMatchEventBatch(batch, batchSize, consumer);
+            }
+        } finally {
+            batch.clear();
+        }
+    }
+
+    private static void processChampionRawMatchEventBatch(List<String> batch, int batchSize,
+                                                            Consumer<ChampionRawMatch> consumer) {
+        if (batch.isEmpty()) return;
+        Map<String, Document> matchesById = new HashMap<>();
+        try {
             try (MongoCursor<Document> cursor = matches().find(Filters.in("_id", batch))
                     .projection(championRawProjection()).batchSize(batchSize).iterator()) {
                 while (cursor.hasNext()) {
@@ -1427,30 +1481,11 @@ public final class MongoDB {
                         if (match != null) match.clear();
                     }
                 }
-            } finally {
-                for (Document match : matchesById.values()) match.clear();
-                matchesById.clear();
-                batch.clear();
             }
-        }
-    }
-
-    public static void forEachChampionTrendMatch(Filter filter, Consumer<List<Document>> consumer) {
-        if (filter == null || consumer == null) return;
-        FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
-                .projection(Projections.include("participants.champion", "participants.lane", "participants.win"))
-                .batchSize(100);
-        try (MongoCursor<Document> cursor = query.iterator()) {
-            while (cursor.hasNext()) {
-                Document match = cursor.next();
-                List<Document> participants = documents(match.get("participants"));
-                try {
-                    consumer.accept(participants);
-                } finally {
-                    participants.clear();
-                    match.clear();
-                }
-            }
+        } finally {
+            for (Document match : matchesById.values()) match.clear();
+            matchesById.clear();
+            batch.clear();
         }
     }
 
@@ -2627,7 +2662,10 @@ public final class MongoDB {
             .append("participants.skillOrder", 1)
             .append("participants.augments", 1)
             .append("participants.summonerSpell1", 1)
-            .append("participants.summonerSpell2", 1);
+            .append("participants.summonerSpell2", 1)
+            .append("participants.primaryRunes", 1)
+            .append("participants.secondaryRunes", 1)
+            .append("participants.statsRunes", 1);
     }
 
     private static Bson patchMajorFilter(String patch) {

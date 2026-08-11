@@ -102,7 +102,7 @@ final class ChampionBuildEngine {
         addBoots(game, accumulator.boots);
         addSupportItem(game, accumulator.supportItems);
         addSlots(game, accumulator.slots);
-        addRunes(game, accumulator.runes, accumulator.runeConfigurations);
+        addRunes(game, accumulator.runes);
         addSummonerSpells(game, accumulator.summonerSpells);
         addSkillOrder(game, accumulator.skillOrders);
         addPrismatics(game, accumulator.prismatics);
@@ -119,7 +119,7 @@ final class ChampionBuildEngine {
             toOptions(accumulator.coreItems, games), toConfigOptions(accumulator.starters, games),
             toOptions(accumulator.boots, games), toOptions(accumulator.supportItems, games),
             toSlots(accumulator.slots, SLOT_COUNT, games),
-            toRuneOptions(accumulator.runes, accumulator.runeConfigurations, games),
+            accumulator.runes.toOptions(games),
             toConfigOptions(accumulator.summonerSpells, games), accumulator.skillOrders.toOptions(games),
             toOptions(accumulator.prismatics, games), toSlots(accumulator.augments, AUGMENT_SLOT_COUNT, games)
         ));
@@ -155,8 +155,7 @@ final class ChampionBuildEngine {
         private final Map<Integer, int[]> boots = new LinkedHashMap<>();
         private final Map<Integer, int[]> supportItems = new LinkedHashMap<>();
         private final Map<Integer, Map<Integer, int[]>> slots = new LinkedHashMap<>();
-        private final Map<String, int[]> runes = new LinkedHashMap<>();
-        private final Map<String, RuneSignature> runeConfigurations = new LinkedHashMap<>();
+        private final RuneOptionAccumulator runes = new RuneOptionAccumulator();
         private final Map<String, int[]> summonerSpells = new LinkedHashMap<>();
         private final SkillOrderTrie skillOrders = new SkillOrderTrie();
         private final Map<Integer, int[]> prismatics = new LinkedHashMap<>();
@@ -171,6 +170,59 @@ final class ChampionBuildEngine {
 
         Filter filter() {
             return filter;
+        }
+    }
+
+    static final class RuneOptionAccumulator {
+
+        private final Map<String, int[]> values = new LinkedHashMap<>();
+        private final Map<String, RuneSignature> configurations = new LinkedHashMap<>();
+        private final Map<String, Map<RuneSignature, int[]>> completeShardVariants = new LinkedHashMap<>();
+
+        void add(RuneSignature signature, boolean win) {
+            String key = signature.toKey();
+            ChampionBuildEngine.add(values, key, win);
+            configurations.putIfAbsent(key, signature);
+            if (signature.statShards().size() == 3)
+                ChampionBuildEngine.add(completeShardVariants.computeIfAbsent(key, ignored -> new LinkedHashMap<>()),
+                    signature, win);
+        }
+
+        List<Build.RuneOption> toOptions(int totalGames) {
+            List<Map.Entry<String, int[]>> entries = sortedByGames(values, String::compareTo);
+
+            List<Build.RuneOption> result = new ArrayList<>();
+            for (Map.Entry<String, int[]> entry : entries) {
+                int matches = entry.getValue()[0];
+                int wins = entry.getValue()[1];
+                result.add(new Build.RuneOption(entry.getKey(), bestSignature(entry.getKey()), matches, wins,
+                    rate(wins, matches), rate(matches, totalGames)));
+            }
+            return result;
+        }
+
+        private RuneSignature bestSignature(String key) {
+            RuneSignature best = configurations.get(key);
+            int[] bestStats = null;
+            Map<RuneSignature, int[]> variants = completeShardVariants.get(key);
+            if (variants == null) return best;
+            for (Map.Entry<RuneSignature, int[]> entry : variants.entrySet()) {
+                if (bestStats == null || isBetter(entry, best, bestStats)) {
+                    best = entry.getKey();
+                    bestStats = entry.getValue();
+                }
+            }
+            return best;
+        }
+
+        private static boolean isBetter(Map.Entry<RuneSignature, int[]> candidate, RuneSignature current,
+                                        int[] currentStats) {
+            int[] candidateStats = candidate.getValue();
+            int winrate = Double.compare(rate(candidateStats[1], candidateStats[0]),
+                rate(currentStats[1], currentStats[0]));
+            if (winrate != 0) return winrate > 0;
+            if (candidateStats[0] != currentStats[0]) return candidateStats[0] > currentStats[0];
+            return candidate.getKey().statShardsKey().compareTo(current.statShardsKey()) < 0;
         }
     }
 
@@ -205,13 +257,10 @@ final class ChampionBuildEngine {
             add(values, slot, extra.get(slot), game.win());
     }
 
-    private static void addRunes(ChampionBuildData.Game game, Map<String, int[]> values,
-                                 Map<String, RuneSignature> configurations) {
+    private static void addRunes(ChampionBuildData.Game game, RuneOptionAccumulator values) {
         RuneSignature configuration = game.runes();
         if (configuration == null) return;
-        String key = configuration.toKey();
-        add(values, key, game.win());
-        configurations.putIfAbsent(key, configuration);
+        values.add(configuration, game.win());
     }
 
     private static void addSummonerSpells(ChampionBuildData.Game game, Map<String, int[]> values) {
@@ -272,22 +321,6 @@ final class ChampionBuildEngine {
         return result;
     }
 
-    private static List<Build.RuneOption> toRuneOptions(Map<String, int[]> values,
-                                                         Map<String, RuneSignature> configurations,
-                                                         int totalGames) {
-        List<Build.RuneOption> result = new ArrayList<>();
-        List<Map.Entry<String, int[]>> entries = sortedByGames(values, String::compareTo);
-        for (Map.Entry<String, int[]> entry : entries) {
-            RuneSignature signature = configurations.get(entry.getKey());
-            if (signature == null) continue;
-            int matches = entry.getValue()[0];
-            int wins = entry.getValue()[1];
-            result.add(new Build.RuneOption(entry.getKey(), signature, matches, wins,
-                rate(wins, matches), rate(matches, totalGames)));
-        }
-        return result;
-    }
-
     private static Build.Option option(String id, int[] stats, int totalGames) {
         int matches = stats[0];
         int wins = stats[1];
@@ -313,14 +346,8 @@ final class ChampionBuildEngine {
         return result;
     }
 
-    private static void add(Map<Integer, int[]> values, int key, boolean win) {
-        int[] stats = values.computeIfAbsent(key, ignored -> new int[2]);
-        stats[0]++;
-        if (win) stats[1]++;
-    }
-
-    private static void add(Map<String, int[]> values, String key, boolean win) {
-        if (key == null || key.isBlank()) return;
+    private static <K> void add(Map<K, int[]> values, K key, boolean win) {
+        if (key == null || key instanceof String string && string.isBlank()) return;
         int[] stats = values.computeIfAbsent(key, ignored -> new int[2]);
         stats[0]++;
         if (win) stats[1]++;
