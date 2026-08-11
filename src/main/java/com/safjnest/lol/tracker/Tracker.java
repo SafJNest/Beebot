@@ -31,6 +31,7 @@ import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
 
+import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.KillType;
@@ -810,6 +811,12 @@ public class Tracker {
         });
         JSONObject matchJson = new JSONObject(matchParticipants);
 
+        Map<String, Object> data = new LinkedHashMap();
+        data.put("platform", match.getPlatform().toRegionShard());
+        data.put("matchId", match.getPlatform() + "_" + match.getGameId());
+        BotLogger.info("[LPTracker] Clearing timeline cache for match " + match.getPlatform() + "_" + match.getGameId());
+        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, data);
+
         matchData.get("match").put("participants", matchJson.toString());
         return matchData;
     }
@@ -855,11 +862,6 @@ public class Tracker {
                                 .withCount(100)
                                 .withStartTime(threshold)
                                 .withBeginIndex(start);
-                            if (queue == GameQueueType.CHERRY) {
-                                builder.withType(MatchlistMatchType.NORMAL);
-                            } else {
-                                builder.withQueue(queue);
-                            }
                             matchIds.addAll(builder.get());
                             try { Thread.sleep(500); } catch (InterruptedException e) {}
                         }
@@ -878,11 +880,11 @@ public class Tracker {
                     TrackerState.awaitCondition(TrackerState.Priority.LOW);
                     try {
                         LOLMatch match = LeagueService.getMatch(me.matchId(), me.summoner().getPlatform());
-                        if (!match.getGameVersion().startsWith(currentPatch)) continue;
+                        if (!match.getGameVersion().startsWith(currentPatch) && !match.getGameVersion().startsWith(previousPatch)) continue;
                         i++;
                         BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
                         analyzeMatchHistory(match).complete();
-                        Thread.sleep(350);
+                        Thread.sleep(400);
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             };
