@@ -1,37 +1,29 @@
 package com.safjnest.redis;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.safjnest.utils.JsonCodec;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.params.SetParams;
 
 public class RedisClient {
 
+    private static final int CONNECTION_TIMEOUT_MS = 500;
+    private static final int TEMPORARY_TTL_SECONDS = 60;
+    private static final long RETRY_AFTER_FAILURE_MS = 30_000;
     private static final JedisPool pool;
-
-    private static final ObjectMapper mapper = JsonMapper.builder()
-        .addModule(new JavaTimeModule())
-        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-        .configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true)
-        .visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-        .visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
-        .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-        .build();
+    private static volatile long disabledUntil;
 
     static {
         JedisPoolConfig config = new JedisPoolConfig();
@@ -46,7 +38,7 @@ public class RedisClient {
         config.setNumTestsPerEvictionRun(-1);
         config.setBlockWhenExhausted(true);
 
-        pool = new JedisPool(config, "localhost", 6379, 2000);
+        pool = new JedisPool(config, "localhost", 6379, CONNECTION_TIMEOUT_MS);
 
         try {
             List<Jedis> warmup = new ArrayList<>();
@@ -55,53 +47,129 @@ public class RedisClient {
         } catch (Exception ignored) {}
     }
 
-    public static void set(String key, String value, int ttlSeconds) {
+    public static void set(RedisKey key, String value, Object... args) {
+        set(key.of(args), value);
+    }
+
+    public static <T> void set(RedisKey key, T value, Object... args) {
+        set(key.of(args), value);
+    }
+
+    public static boolean claim(RedisKey key, String value, Object... args) {
+        if (key == null || !canUseRedis()) return false;
         try (Jedis jedis = pool.getResource()) {
-            if (ttlSeconds > 0) {
-                jedis.setex(key, ttlSeconds, value);
-            } else {
-                jedis.set(key, value);
-            }
+            String result = jedis.set(key.of(args), value, SetParams.setParams().nx().ex(TEMPORARY_TTL_SECONDS));
+            markAvailable();
+            return "OK".equals(result);
+        } catch (Exception ignored) {
+            markUnavailable();
+            return false;
         }
     }
 
-    public static <T> void set(String key, T value, int ttlSeconds) {
+    private static void set(String key, String value) {
+        if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
-            if (ttlSeconds > 0) {
-                jedis.setex(key, ttlSeconds, mapper.writeValueAsString(value));
-            } else {
-                jedis.set(key, mapper.writeValueAsString(value));
-            }
-        } catch (Exception ignored) {}
+            jedis.setex(key, TEMPORARY_TTL_SECONDS, value);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    private static <T> void set(String key, T value) {
+        if (!canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.setex(key, TEMPORARY_TTL_SECONDS, JsonCodec.toJson(value));
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
     }
 
     public static String get(String key) {
+        if (!canUseRedis()) return null;
         try (Jedis jedis = pool.getResource()) {
-            return jedis.get(key);
+            String value = jedis.get(key);
+            markAvailable();
+            return value;
+        } catch (Exception e) {
+            markUnavailable();
+            return null;
         }
     }
 
     public static <T> T get(String key, Class<T> type) {
+        if (!canUseRedis()) return null;
         try (Jedis jedis = pool.getResource()) {
             String value = jedis.get(key);
-            return value != null ? mapper.readValue(value, type) : null;
+            markAvailable();
+            return value != null ? JsonCodec.fromJson(value, type) : null;
         } catch (Exception e) {
+            markUnavailable();
             return null;
         }
     }
 
     public static <T> T get(String key, TypeReference<T> type) {
+        if (!canUseRedis()) return null;
         try (Jedis jedis = pool.getResource()) {
             String value = jedis.get(key);
-            return value != null ? mapper.readValue(value, type) : null;
+            markAvailable();
+            return value != null ? JsonCodec.fromJson(value, type) : null;
         } catch (Exception e) {
+            markUnavailable();
             return null;
         }
     }
 
+    public static <T> Map<String, T> get(List<String> keys, Class<T> type) {
+        Map<String, T> result = new HashMap<>();
+        if (keys == null || keys.isEmpty() || !canUseRedis()) return result;
+
+        try (Jedis jedis = pool.getResource()) {
+            List<String> values = jedis.mget(keys.toArray(new String[0]));
+            for (int i = 0; i < keys.size(); i++) {
+                String value = values.get(i);
+                if (value != null) result.put(keys.get(i), JsonCodec.fromJson(value, type));
+            }
+            markAvailable();
+        } catch (Exception exception) {
+            markUnavailable();
+        }
+        return result;
+    }
+
     public static void delete(String key) {
+        if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             jedis.del(key);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void delete(List<String> keys) {
+        if (keys == null || keys.isEmpty() || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.del(keys.toArray(new String[0]));
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static long increment(String key) {
+        if (!canUseRedis()) return 0;
+        try (Jedis jedis = pool.getResource()) {
+            long value = jedis.incr(key);
+            jedis.expire(key, TEMPORARY_TTL_SECONDS);
+            markAvailable();
+            return value;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return 0;
         }
     }
 
@@ -113,13 +181,43 @@ public class RedisClient {
 
     public static long rpush(String key, String element) {
         try (Jedis jedis = pool.getResource()) {
-            return jedis.rpush(key, element);
+            long result = jedis.rpush(key, element);
+            jedis.expire(key, TEMPORARY_TTL_SECONDS);
+            return result;
         }
     }
 
     public static long sadd(String key, String element) {
         try (Jedis jedis = pool.getResource()) {
-            return jedis.sadd(key, element);
+            long result = jedis.sadd(key, element);
+            jedis.expire(key, TEMPORARY_TTL_SECONDS);
+            return result;
+        }
+        catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    public static Set<String> members(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            Set<String> members = jedis.smembers(key);
+            return members != null && !members.isEmpty() ? Set.copyOf(members) : Set.of();
+        }
+    }
+
+    public static long countMembers(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.scard(key);
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    public static long removeMember(String key, String element) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.srem(key, element);
+        } catch (Exception ignored) {
+            return 0;
         }
     }
 
@@ -154,5 +252,17 @@ public class RedisClient {
 
     public static void close() {
         pool.close();
+    }
+
+    private static boolean canUseRedis() {
+        return System.currentTimeMillis() >= disabledUntil;
+    }
+
+    private static void markUnavailable() {
+        disabledUntil = System.currentTimeMillis() + RETRY_AFTER_FAILURE_MS;
+    }
+
+    private static void markAvailable() {
+        disabledUntil = 0;
     }
 }

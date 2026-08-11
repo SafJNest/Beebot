@@ -2,12 +2,12 @@ package com.safjnest.model;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.log.LoggerIDpair;
 
@@ -66,7 +66,7 @@ public class UserData {
     private void retriveAlies() {
         this.aliases = new HashMap<>();
         
-        QueryResult result = BotDB.getAliases(USER_ID);
+        List<QueryRecord> result = BotDB.getAliases(USER_ID);
         if (result == null) { return; }
 
         for(QueryRecord row: result){
@@ -185,12 +185,12 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
-        if (result == null) { return; }
-
         this.riotAccounts = new LinkedHashMap<>();
-        for(QueryRecord row: result){
-            riotAccounts.put(row.get("puuid"), row.get("region"));
+        for (QueryRecord row : MongoDB.findAccountsByUserId(USER_ID)) {
+            String puuid = row.getAsString("puuid");
+            if (puuid == null) puuid = row.getAsString("_id");
+            String region = row.getAsString("region");
+            if (puuid != null && region != null) riotAccounts.put(puuid, region);
         }
     }
 
@@ -206,16 +206,23 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
-        if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
+        boolean result = com.safjnest.lol.service.SummonerService.upsert(s, USER_ID);
+        if (result) {
+            riotAccounts.put(s.getPUUID(), s.getPlatform().name());
+            com.safjnest.lol.service.SummonerService.invalidate(s.getPUUID(), s.getPlatform());
+        }
         
         return result;
     }
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
-        if (result) riotAccounts.remove(puuid);
+        String region = riotAccounts.get(puuid);
+        boolean result = MongoDB.detachSummonerUser(puuid, USER_ID);
+        if (result) {
+            riotAccounts.remove(puuid);
+            if (region != null) com.safjnest.lol.service.SummonerService.invalidate(puuid, no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.valueOf(region));
+        }
         
         return result;
     }

@@ -15,8 +15,9 @@ CREATE TABLE `rank` (
  KEY `lp_idx` (`lp`),
  KEY `update_idx` (`last_update`),
  KEY `game_type` (`queue`) USING BTREE,
- KEY `rank_region_filter` (`region`,`queue`,`rank`,`summoner_id`),
- KEY `rank_mmr_global` (`queue`,`mmr`,`wins`,`losses`,`summoner_id`),
- KEY `rank_mmr_region` (`queue`,`region`,`mmr`,`wins`,`losses`,`summoner_id`),
+ KEY `rank_mmr_global` (`queue`,`mmr`),
+ KEY `rank_mmr_region` (`queue`,`region`,`mmr`),
+ KEY `rank_mmr_filter` (`queue`,`rank`,`mmr`),
+ KEY `rank_mmr_region_filter` (`queue`,`region`,`rank`,`mmr`),
  CONSTRAINT `rank_summoner_id_fkey` FOREIGN KEY (`summoner_id`) REFERENCES `summoner` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

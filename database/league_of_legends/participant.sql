@@ -38,6 +38,11 @@ CREATE TABLE `participant` (
  UNIQUE KEY `unique_game_analyzed_2` (`summoner_id`,`match_id`),
  KEY `participant_match_id_fkey` (`match_id`),
  KEY `champion` (`champion`),
+ KEY `summoner_id` (`summoner_id`),
+ KEY `idx_participant_covering` (`summoner_id`,`match_id`,`rank`,`lp`),
+ KEY `idx_champion_lane_match` (`champion`,`lane`,`match_id`),
+ KEY `idx_p_champion_lane_match` (`champion`,`lane`,`match_id`),
+ KEY `idx_p_champion_match` (`champion`,`match_id`),
  CONSTRAINT `participant_match_id_fkey` FOREIGN KEY (`match_id`) REFERENCES `match` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
  CONSTRAINT `participant_summoner_id_fkey` FOREIGN KEY (`summoner_id`) REFERENCES `summoner` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7699814 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=17183853 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

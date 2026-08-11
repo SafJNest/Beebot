@@ -1,10 +1,10 @@
 package com.safjnest.commands.audio.sound;
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -43,7 +43,7 @@ public class SoundDelete extends SlashCommand{
 	protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("user_sound").getAsString();
 
-        QueryResult sounds = fileName.matches("[0123456789]*") 
+        List<QueryRecord> sounds = fileName.matches("[0123456789]*")
                            ? BotDB.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
                            : BotDB.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 

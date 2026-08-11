@@ -5,21 +5,23 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
 import com.safjnest.core.Bot;
+import com.safjnest.lol.service.R4JQueue;
+import com.safjnest.lol.tracker.DatabaseTracker;
+import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.nosql.MongoDB;
+import com.safjnest.spring.SpringServer;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.twitch.TwitchClient;
 
-@SpringBootApplication
 public class App {
 
     private static Settings settings;
     private static Bot bot;
+    private static SpringServer springServer;
 
     public static void main(String args[]) {
         SafJNest.bee();
@@ -30,20 +32,19 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            //runSpring();
+            runSpring();
         }
         else {
             TwitchClient.init();
-            //runSpring();
+            runSpring();
         }
+        TrackerScheduler.start();
 
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
-        SpringApplication springApplication = new SpringApplication(App.class);
-            
         Properties springProperties = new Properties();
         try {
             springProperties.load(new FileReader("spring.properties"));
@@ -53,13 +54,29 @@ public class App {
             e.printStackTrace();
         }
 
-        springApplication.setDefaultProperties(springProperties);
-        springApplication.run();
+        int port = Integer.parseInt(springProperties.getProperty("server.port", "8080"));
+
+        try {
+            springServer = SpringServer.start(port);
+            BotLogger.info("Spring API started on port " + port);
+        } catch (Exception e) {
+            BotLogger.error("Failed to start Spring API: " + e.getMessage());
+        }
     }
 
     public static void shutdown() {
         BotLogger.trace("Shutting down the bot");
+        if (springServer != null) {
+            try {
+                springServer.stop();
+            } catch (Exception e) {
+                BotLogger.error("Failed to stop Spring API: " + e.getMessage());
+            }
+        }
         bot.distruzione_demoniaca();
+        DatabaseTracker.shutdown();
+        R4JQueue.shutdown();
+        MongoDB.close();
     }
 
     public static void restart() {
@@ -69,6 +86,9 @@ public class App {
     }
 
     public static boolean isTesting() {
+        if (settings == null) {
+            settings = SettingsLoader.getSettings();
+        }
         return settings.getConfig().isTesting();
     }
 

@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.utils.BotCommand;
@@ -63,7 +63,7 @@ public class SummonerLink extends SlashCommand {
             return;
         }
 
-        if (LeagueService.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform()) != null) {
+        if (SummonerService.getUserId(s.getPUUID(), s.getPlatform()) != null) {
             event.getHook().editOriginal("This account is already connected to another profile.\nIf you think someone has linked your account please write to our discord server support or use /bug").queue();
             return;
         }

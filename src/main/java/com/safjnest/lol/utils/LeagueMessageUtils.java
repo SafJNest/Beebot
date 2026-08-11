@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.model.PlayerChampionStats;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
 
@@ -21,7 +22,6 @@ import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
@@ -30,23 +30,23 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 public class LeagueMessageUtils {
 
 
-    public static String formatAdvancedData(PlayerChampionStats championStats, ChampionMastery mastery) {
+    public static String formatAdvancedData(PlayerChampionStats championStats, Mastery mastery) {
       StaticChampion champion = ChampionUtils.getChampion(championStats.getChampion());
       if (champion == null) return championStats.getChampion() + "\n";
-      int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLosses()) + " games (" + championStats.getWins() + "W/" + championStats.getLosses() + "L) | " + championStats.getLp() + "LP\n"
+      int level = (mastery != null ? (mastery.level() >= 10 ? 10 : mastery.level()) : 0);
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.level() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLosses()) + " games (" + championStats.getWins() + "W/" + championStats.getLosses() + "L) | " + championStats.getLp() + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", championStats.avgKills()) + "/" + String.format("%.2f", championStats.avgDeaths()) + "/" + String.format("%.2f", championStats.avgAssists()) + "`";
     }
 
-    public static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
+    public static String formatAdvancedData(QueryRecord data, Mastery mastery) {
       StaticChampion champion = ChampionUtils.getChampion(data.getAsInt("champion"));
-      int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
+      int level = (mastery != null ? (mastery.level() >= 10 ? 10 : mastery.level()) : 0);
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.level() : 0) + "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
 
-    public static String getPosition(HashMap<MatchParticipant, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
+    public static String getPosition(Map<?, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
         int personalStatValue = Integer.parseInt(personalStats.get(statKey));
         int position = 1;
 
@@ -73,7 +73,7 @@ public class LeagueMessageUtils {
         return String.valueOf(number);
     }
 
-    public static String getFormatedRank(TierDivisionType rank, boolean withEmoji) {
+    public static String getFormattedRank(TierDivisionType rank, boolean withEmoji) {
         if (rank == null) return "";
         String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
 
@@ -222,9 +222,9 @@ public class LeagueMessageUtils {
         Button flex = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
         Button draft = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
         Button aram = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
-        Button curretModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
+        Button currentModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
 
-        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, currentModeButton);
 
         switch (queue) {
             case TEAM_BUILDER_RANKED_SOLO:
@@ -242,13 +242,13 @@ public class LeagueMessageUtils {
             case CHERRY:
             case ULTBOOK:
             case SWIFTPLAY:
-                curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                currentModeButton = currentModeButton.withStyle(ButtonStyle.SUCCESS);
                 break;
             default:
                 break;
         }
 
-        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        return ActionRow.of(soloQ, flex, draft, aram, currentModeButton);
     }
 
     public static String capitalizeFirstLetter(String text) {
