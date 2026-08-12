@@ -168,12 +168,13 @@ sessione più recente alla più vecchia.
 | HTTP | `code` | Quando |
 |---:|---|---|
 | `200` | — | Response activity calcolata; può contenere liste vuote se non esistono match. |
-| `202` | `profile_activity_pending` | Activity assente o `coverage.calculatedAt` assente/più vecchio di una settimana; il job è accodato. |
+| `202` | `profile_activity_pending` | Activity assente; il job on-demand è accodato. |
 | `400` | `invalid_request` | Parametro temporale, queue o champion non valido. |
 
-Ogni `200` include `metadata` root con il filtro richiesto, `lastUpdate` preso
-da `coverage.calculatedAt` e `refresh=false`. Il `202` usa lo stesso oggetto
-nel `LolApiError`, con `refresh=true`.
+Ogni `200` include `metadata` root con il filtro richiesto e `lastUpdate` preso
+da `coverage.calculatedAt`. Se il valore è stale, la risposta resta `200` con
+`refresh=true` e viene accodato solo il refresh activity in bassa priorità. Il
+`202` usa lo stesso oggetto nel `LolApiError`, con `refresh=true`.
 
 ## Owner
 

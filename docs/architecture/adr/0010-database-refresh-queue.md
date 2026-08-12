@@ -13,12 +13,12 @@ Profile statistics and champion statistics/builds are expensive Mongo calculatio
 
 `DatabaseTracker` owns asynchronous database calculation dispatch. It contains:
 
-- one process-local FIFO `LinkedBlockingQueue` for champion tasks (builds and statistics) and one for profile tasks;
+- one process-local FIFO `LinkedBlockingQueue` for champion tasks (builds and statistics) and three FIFO profile queues: `MANUAL`, `ON_DEMAND` and `STALE`;
 - one in-flight map keyed by the logical resource key and holding the task `CompletableFuture`;
 - exactly two virtual-thread workers: worker 1 consumes profile work, while worker 2 serializes champion work and helps profiles only while its champion queue is empty;
 - task removal from the in-flight map only after success or failure.
 
-The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. Champion builds, champion stats and scheduled champion refreshes execute only on worker 2 in one FIFO sequence. Profile statistics and profile matchups enter the profile queue: worker 1 consumes it first and worker 2 may consume it when no champion task is waiting. Failed tasks complete exceptionally and become retryable after their key is removed.
+The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. A queued profile task is promoted when the same key is submitted at a higher priority; a running task is never interrupted. Champion builds, champion stats and scheduled champion refreshes execute only on worker 2 in one FIFO sequence. Profile workers always consume `MANUAL`, then `ON_DEMAND`, then `STALE`, preserving FIFO inside each priority. Worker 1 consumes profile work first and worker 2 may consume it when no champion task is waiting. Failed tasks complete exceptionally and become retryable after their key is removed.
 
 Normal task lifecycle events are not written to the application log because high-volume queue/profile logging slows the workers. The owner-only `tracker` command reads the two worker snapshots on demand and reports readable job names, current work, queue positions, cumulative progress and scheduler state in three separate embeds. Task failures remain logged.
 
@@ -34,6 +34,7 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 - individual champion stats persistence key: `Filter.genericKey()`;
 - champion build key: `champion-build:<Filter.toKey()>`;
 - scheduled champion refresh key: `champion-data-refresh:<patch>`;
+- `POST /profile/{puuid}/refresh` submits one `MANUAL` `profile-refresh:<puuid>`; missing filtered aggregates submit `ON_DEMAND`; a stale persisted aggregate submits only its own `STALE` key;
 - the latest three patch matrices for one queue are chained from oldest to newest, so each newer aggregate can read its previous-patch trend from storage;
 - the complete filter is snapshotted before it is queued;
 - worker failures are isolated to their task;

@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -30,11 +31,11 @@ public final class DatabaseTracker {
 
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 30;
     private static final Object LIFECYCLE_LOCK = new Object();
-    private static final BlockingQueue<DatabaseTask<?>> PROFILE_TASK_QUEUE = new LinkedBlockingQueue<>();
+    private static final ProfileTaskQueues PROFILE_TASK_QUEUES = new ProfileTaskQueues();
     private static final BlockingQueue<DatabaseTask<?>> CHAMPION_TASK_QUEUE = new LinkedBlockingQueue<>();
-    private static final WorkerState PROFILE_WORKER = new WorkerState(1, "profile", PROFILE_TASK_QUEUE, null);
-    private static final WorkerState CHAMPION_WORKER = new WorkerState(2, "champion", CHAMPION_TASK_QUEUE, PROFILE_TASK_QUEUE);
-    private static final ConcurrentMap<String, CompletableFuture<?>> TASKS = new ConcurrentHashMap<>();
+    private static final WorkerState PROFILE_WORKER = new WorkerState(1, "profile", null, PROFILE_TASK_QUEUES);
+    private static final WorkerState CHAMPION_WORKER = new WorkerState(2, "champion", CHAMPION_TASK_QUEUE, PROFILE_TASK_QUEUES);
+    private static final ConcurrentMap<String, DatabaseTask<?>> TASKS = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, ChampionMatrixRequest> CHAMPION_MATRICES = new ConcurrentHashMap<>();
     private static final ProfileService PROFILE_SERVICE = new ProfileService();
     private static final ChampionService CHAMPION_SERVICE = new ChampionService();
@@ -44,18 +45,27 @@ public final class DatabaseTracker {
     private DatabaseTracker() {}
 
     public static <T> CompletableFuture<T> submit(String key, Supplier<T> supplier) {
-        return submit(key, key, supplier, PROFILE_WORKER);
+        return submit(key, key, supplier, PROFILE_WORKER, TaskPriority.ON_DEMAND);
     }
 
     static <T> CompletableFuture<T> submitBuild(String key, Supplier<T> supplier) {
-        return submit(key, key, supplier, CHAMPION_WORKER);
+        return submit(key, key, supplier, CHAMPION_WORKER, TaskPriority.ON_DEMAND);
+    }
+
+    static <T> CompletableFuture<T> submitManual(String key, Supplier<T> supplier) {
+        return submit(key, key, supplier, PROFILE_WORKER, TaskPriority.MANUAL);
+    }
+
+    static <T> CompletableFuture<T> submitStale(String key, Supplier<T> supplier) {
+        return submit(key, key, supplier, PROFILE_WORKER, TaskPriority.STALE);
     }
 
     private static <T> CompletableFuture<T> submit(
         String key,
         String name,
         Supplier<T> supplier,
-        WorkerState worker
+        WorkerState worker,
+        TaskPriority priority
     ) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(supplier, "supplier");
@@ -63,15 +73,20 @@ public final class DatabaseTracker {
         synchronized (LIFECYCLE_LOCK) {
             startWorkers();
             while (true) {
-                CompletableFuture<?> existing = TASKS.get(key);
+                DatabaseTask<?> existing = TASKS.get(key);
                 if (existing != null) {
-                    if (!existing.isDone()) return cast(existing);
+                    if (!existing.future().isDone()) {
+                        if (worker == PROFILE_WORKER && existing.promote(priority)) {
+                            PROFILE_TASK_QUEUES.promote(existing);
+                        }
+                        return cast(existing.future());
+                    }
                     if (!TASKS.remove(key, existing)) continue;
                 }
 
                 CompletableFuture<T> future = new CompletableFuture<>();
-                if (TASKS.putIfAbsent(key, future) == null) {
-                    DatabaseTask<T> task = new DatabaseTask<>(key, name, supplier, future);
+                DatabaseTask<T> task = new DatabaseTask<>(key, name, supplier, future, priority);
+                if (TASKS.putIfAbsent(key, task) == null) {
                     worker.enqueue(task);
                     return future;
                 }
@@ -96,6 +111,15 @@ public final class DatabaseTracker {
         Filter filter,
         boolean rebuild
     ) {
+        return startProfileStatistics(summoner, filter, rebuild, TaskPriority.ON_DEMAND);
+    }
+
+    private static CompletableFuture<Boolean> startProfileStatistics(
+        Summoner summoner,
+        Filter filter,
+        boolean rebuild,
+        TaskPriority priority
+    ) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null)
             return CompletableFuture.completedFuture(false);
 
@@ -103,13 +127,26 @@ public final class DatabaseTracker {
         ProfileStatisticsRequest request = ProfileStatisticsRequest.from(summoner, requestFilter, rebuild);
         String key = "profile-statistics:" + request.puuid() + ":" + requestFilter.toSummonerKey();
         String name = "profile statistics " + (rebuild ? "rebuild " : "") + "puuid=" + request.puuid();
-        return submit(key, name, () -> refreshProfileStatistics(request), PROFILE_WORKER);
+        return submit(key, name, () -> refreshProfileStatistics(request), PROFILE_WORKER, priority);
+    }
+
+    public static CompletableFuture<Boolean> startStaleProfileStatistics(Summoner summoner, Filter filter) {
+        return startProfileStatistics(summoner, filter, false, TaskPriority.STALE);
     }
 
     public static CompletableFuture<Boolean> startProfileMatchups(
         String puuid,
         LeagueShard shard,
         Filter filter
+    ) {
+        return startProfileMatchups(puuid, shard, filter, TaskPriority.ON_DEMAND);
+    }
+
+    private static CompletableFuture<Boolean> startProfileMatchups(
+        String puuid,
+        LeagueShard shard,
+        Filter filter,
+        TaskPriority priority
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return CompletableFuture.completedFuture(false);
@@ -118,7 +155,11 @@ public final class DatabaseTracker {
         ProfileMatchupsRequest request = new ProfileMatchupsRequest(puuid, shard, requestFilter);
         String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile matchups puuid=" + puuid;
-        return submit(key, name, () -> refreshProfileMatchups(request), PROFILE_WORKER);
+        return submit(key, name, () -> refreshProfileMatchups(request), PROFILE_WORKER, priority);
+    }
+
+    public static CompletableFuture<Boolean> startStaleProfileMatchups(String puuid, LeagueShard shard, Filter filter) {
+        return startProfileMatchups(puuid, shard, filter, TaskPriority.STALE);
     }
 
     public static CompletableFuture<Boolean> startProfileActivity(
@@ -126,12 +167,25 @@ public final class DatabaseTracker {
         LeagueShard shard,
         Filter filter
     ) {
+        return startProfileActivity(puuid, shard, filter, TaskPriority.ON_DEMAND);
+    }
+
+    private static CompletableFuture<Boolean> startProfileActivity(
+        String puuid,
+        LeagueShard shard,
+        Filter filter,
+        TaskPriority priority
+    ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return CompletableFuture.completedFuture(false);
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         String key = "profile-activity:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile activity puuid=" + puuid;
-        return submit(key, name, () -> refreshProfileActivity(new ProfileActivityRequest(puuid, shard, requestFilter)), PROFILE_WORKER);
+        return submit(key, name, () -> refreshProfileActivity(new ProfileActivityRequest(puuid, shard, requestFilter)), PROFILE_WORKER, priority);
+    }
+
+    public static CompletableFuture<Boolean> startStaleProfileActivity(String puuid, LeagueShard shard, Filter filter) {
+        return startProfileActivity(puuid, shard, filter, TaskPriority.STALE);
     }
 
     public static CompletableFuture<Boolean> startProfileRefresh(
@@ -144,7 +198,7 @@ public final class DatabaseTracker {
         ProfileRefreshRequest request = new ProfileRefreshRequest(summoner.puuid(), shard);
         String key = profileRefreshKey(request.puuid());
         String name = "profile refresh puuid=" + request.puuid();
-        return submit(key, name, () -> refreshProfileAggregates(request), PROFILE_WORKER);
+        return submit(key, name, () -> refreshProfileAggregates(request), PROFILE_WORKER, TaskPriority.MANUAL);
     }
 
     public static CompletableFuture<Void> startChampionData(
@@ -176,7 +230,7 @@ public final class DatabaseTracker {
         return submit(key, "champion data refresh patch=" + patch, () -> {
             CHAMPION_SERVICE.refresh();
             return null;
-        }, CHAMPION_WORKER);
+        }, CHAMPION_WORKER, TaskPriority.ON_DEMAND);
     }
 
     public static CompletableFuture<ChampionService.MatrixRefreshResult> enqueueChampionStatsMatrix(
@@ -207,7 +261,7 @@ public final class DatabaseTracker {
                 } finally {
                     CHAMPION_MATRICES.remove(key, request);
                 }
-            }, CHAMPION_WORKER);
+            }, CHAMPION_WORKER, TaskPriority.ON_DEMAND);
             request.setFuture(future);
             return future;
         }
@@ -268,7 +322,7 @@ public final class DatabaseTracker {
             + " rank=" + filter.rank()
             + " region=" + filter.region()
             + " lane=" + filter.lane();
-        return submit(key, name, () -> refreshChampionBuild(filter), CHAMPION_WORKER);
+        return submit(key, name, () -> refreshChampionBuild(filter), CHAMPION_WORKER, TaskPriority.ON_DEMAND);
     }
 
     private static boolean refreshProfileStatistics(ProfileStatisticsRequest request) {
@@ -381,9 +435,9 @@ public final class DatabaseTracker {
 
     private static void cancelPendingTasks(WorkerState worker) {
         DatabaseTask<?> task;
-        while ((task = worker.queue.poll()) != null) {
+        while ((task = worker.poll()) != null) {
             task.cancel();
-            TASKS.remove(task.key(), task.future());
+            TASKS.remove(task.key(), task);
         }
     }
 
@@ -471,12 +525,67 @@ public final class DatabaseTracker {
         }
     }
 
+    private static final class ProfileTaskQueues {
+
+        private final BlockingQueue<DatabaseTask<?>> manual = new LinkedBlockingQueue<>();
+        private final BlockingQueue<DatabaseTask<?>> onDemand = new LinkedBlockingQueue<>();
+        private final BlockingQueue<DatabaseTask<?>> stale = new LinkedBlockingQueue<>();
+        private final Semaphore available = new Semaphore(0);
+
+        private void offer(DatabaseTask<?> task) {
+            queue(task.priority()).offer(task);
+            available.release();
+        }
+
+        private void promote(DatabaseTask<?> task) {
+            if (manual.remove(task) || onDemand.remove(task) || stale.remove(task)) {
+                queue(task.priority()).offer(task);
+            }
+        }
+
+        private DatabaseTask<?> take() throws InterruptedException {
+            available.acquire();
+            return next();
+        }
+
+        private DatabaseTask<?> poll(long timeout, TimeUnit unit) throws InterruptedException {
+            return available.tryAcquire(timeout, unit) ? next() : null;
+        }
+
+        private DatabaseTask<?> poll() {
+            return available.tryAcquire() ? next() : null;
+        }
+
+        private List<DatabaseTask<?>> snapshot() {
+            List<DatabaseTask<?>> result = new ArrayList<>();
+            result.addAll(manual);
+            result.addAll(onDemand);
+            result.addAll(stale);
+            return result;
+        }
+
+        private DatabaseTask<?> next() {
+            DatabaseTask<?> task = manual.poll();
+            if (task != null) return task;
+            task = onDemand.poll();
+            return task != null ? task : stale.poll();
+        }
+
+        private BlockingQueue<DatabaseTask<?>> queue(TaskPriority priority) {
+            return switch (priority) {
+                case MANUAL -> manual;
+                case ON_DEMAND -> onDemand;
+                case STALE -> stale;
+            };
+        }
+    }
+
     private static final class WorkerState {
 
         private final int id;
         private final String type;
         private final BlockingQueue<DatabaseTask<?>> queue;
-        private final BlockingQueue<DatabaseTask<?>> profileQueue;
+        private final ProfileTaskQueues profileQueues;
         private final AtomicLong submitted = new AtomicLong();
         private final AtomicLong started = new AtomicLong();
         private final AtomicLong finished = new AtomicLong();
@@ -484,31 +593,37 @@ public final class DatabaseTracker {
         private volatile long currentStartedAt;
 
         private WorkerState(int id, String type, BlockingQueue<DatabaseTask<?>> queue,
-                            BlockingQueue<DatabaseTask<?>> profileQueue) {
+                            ProfileTaskQueues profileQueues) {
             this.id = id;
             this.type = type;
             this.queue = queue;
-            this.profileQueue = profileQueue;
+            this.profileQueues = profileQueues;
         }
 
         private void enqueue(DatabaseTask<?> task) {
             submitted.incrementAndGet();
-            queue.offer(task);
+            if (queue == null) profileQueues.offer(task);
+            else queue.offer(task);
         }
 
         private DatabaseTask<?> take() throws InterruptedException {
-            if (profileQueue == null) return queue.take();
+            if (queue == null) return profileQueues.take();
             while (true) {
                 DatabaseTask<?> task = queue.poll();
                 if (task != null) return task;
-                task = profileQueue.poll(250, TimeUnit.MILLISECONDS);
+                task = profileQueues.poll(250, TimeUnit.MILLISECONDS);
                 if (task != null) return task;
             }
         }
 
+        private DatabaseTask<?> poll() {
+            return queue == null ? profileQueues.poll() : queue.poll();
+        }
+
         private WorkerStatus status(boolean running) {
             List<String> queued = new ArrayList<>();
-            for (DatabaseTask<?> task : queue) queued.add(task.name());
+            if (queue == null) for (DatabaseTask<?> task : profileQueues.snapshot()) queued.add(task.name());
+            else for (DatabaseTask<?> task : queue) queued.add(task.name());
             DatabaseTask<?> task = currentTask;
             return new WorkerStatus(
                 id,
@@ -536,7 +651,54 @@ public final class DatabaseTracker {
         List<String> queuedJobs
     ) {}
 
-    private record DatabaseTask<T>(String key, String name, Supplier<T> supplier, CompletableFuture<T> future) {
+    private enum TaskPriority {
+        MANUAL,
+        ON_DEMAND,
+        STALE
+    }
+
+    private static final class DatabaseTask<T> {
+        private final String key;
+        private final String name;
+        private final Supplier<T> supplier;
+        private final CompletableFuture<T> future;
+        private volatile TaskPriority priority;
+
+        private DatabaseTask(
+            String key,
+            String name,
+            Supplier<T> supplier,
+            CompletableFuture<T> future,
+            TaskPriority priority
+        ) {
+            this.key = key;
+            this.name = name;
+            this.supplier = supplier;
+            this.future = future;
+            this.priority = priority;
+        }
+
+        private String key() {
+            return key;
+        }
+
+        private String name() {
+            return name;
+        }
+
+        private CompletableFuture<T> future() {
+            return future;
+        }
+
+        private TaskPriority priority() {
+            return priority;
+        }
+
+        private boolean promote(TaskPriority value) {
+            if (value.ordinal() >= priority.ordinal()) return false;
+            priority = value;
+            return true;
+        }
 
         private Throwable execute() {
             T result = null;
@@ -556,7 +718,7 @@ public final class DatabaseTracker {
                         } catch (Throwable ignored) { }
                     }
                 } finally {
-                    TASKS.remove(key, future);
+                    TASKS.remove(key, this);
                 }
             }
             return failure;

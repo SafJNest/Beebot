@@ -37,7 +37,8 @@ public enum RedisKey {
     LEADERBOARD_PAGE("leaderboard:page:%s:%s:%s:%s:%s:%s", Duration.ofHours(1)),
     LEADERBOARD_RANK_DISTRIBUTION("leaderboard:rank-distribution:%s:%s:%s", Duration.ofHours(12)),
     LEADERBOARD_TOP_REGIONS("leaderboard:top-regions:%s:%s:%s", Duration.ofHours(12)),
-    CHAMPION_PAGE("champion:page:%s", Duration.ofHours(1));
+    CHAMPION_PAGE("champion:page:%s", Duration.ofHours(1)),
+    CHAMPION_TIER_LIST("champion:tier-list:v5:%s", Duration.ofHours(1));
 
     private final String pattern;
     private final Duration ttl;

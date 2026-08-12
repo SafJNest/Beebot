@@ -88,13 +88,22 @@ public class Stats<T> {
     }
 
     public void add(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
+        add(participant, timeStart, timeEnd, teamKills, enemyTeamKills, arena, true);
+    }
+
+    void addRaw(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
+        add(participant, timeStart, timeEnd, teamKills, enemyTeamKills, arena, false);
+    }
+
+    private void add(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills,
+                     boolean arena, boolean calculate) {
         if (participant == null) return;
         addValues(participant.win, kda(participant.kda), participant.damage, participant.damageBuilding,
             participant.damageTaken, participant.healing, participant.visionScore, participant.ward,
             participant.wardKilled, participant.cs, participant.goldEarned, participant.gain,
             participant.level, participant.doubles, participant.triples, participant.quadruples,
             participant.pentas, participant.q, participant.w, participant.e, participant.r, participant.d,
-            participant.f, participant.subTeamPlacement, timeStart, timeEnd, teamKills, enemyTeamKills, arena);
+            participant.f, participant.subTeamPlacement, timeStart, timeEnd, teamKills, enemyTeamKills, arena, calculate);
     }
 
     public void merge(Stats<?> other) {
@@ -210,7 +219,8 @@ public class Stats<T> {
         long timeEnd,
         int teamKills,
         int enemyTeamKills,
-        boolean arena
+        boolean arena,
+        boolean calculate
     ) {
         games++;
         if (win) wins++;
@@ -254,7 +264,7 @@ public class Stats<T> {
             deathShareSum += ((double) kdaValues[1] / enemyTeamKills) * 100;
             deathShareGames++;
         }
-        recalculate();
+        if (calculate) recalculate();
     }
 
     private static int integer(String value) {

@@ -28,49 +28,74 @@ public record ProfileMatchups(
 
     public static ProfileMatchups from(List<Match> matches, String puuid, Filter filter) {
         ProfileStatistics statistics = new ProfileStatistics(filter != null ? filter.timeStart() : 0);
-        Map<Integer, Map<Integer, Stats<Integer>>> matchupStats = new LinkedHashMap<>();
-
+        Accumulator accumulator = accumulator(filter);
         if (matches != null) for (Match match : matches) {
             if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
-            statistics.add(match, puuid, filter);
+            statistics.addRaw(match, puuid, filter);
+            accumulator.accept(match, puuid);
+        }
+        statistics.finish();
+        return accumulator.finish(statistics);
+    }
 
+    public static Accumulator accumulator(Filter filter) {
+        return new Accumulator(filter);
+    }
+
+    public static final class Accumulator {
+        private final Filter filter;
+        private final Map<Integer, Map<Integer, Stats<Integer>>> matchupStats = new LinkedHashMap<>();
+
+        private Accumulator(Filter filter) {
+            this.filter = filter;
+        }
+
+        public void accept(Match match, String puuid) {
             Participant player = participant(match, puuid);
-            if (player == null || player.lane == null || player.lane == LaneType.NONE) continue;
-
+            if (player == null) return;
             boolean arena = com.safjnest.lol.utils.GameQueueTypeUtils.isCherry(match.queue);
-            int teamKills = kills(match, player, arena, false);
-            int enemyTeamKills = arena ? 0 : kills(match, player, false, true);
+            accept(match, player, kills(match, player, arena, false), arena ? 0 : kills(match, player, false, true), arena);
+        }
+
+        public void accept(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
+            if (player == null || player.lane == null || player.lane == LaneType.NONE) return;
+
             Map<Integer, Stats<Integer>> opponents = matchupStats.computeIfAbsent(player.champion, ignored -> new LinkedHashMap<>());
             for (Participant opponent : match.participants) {
                 if (opponent == null || opponent == player || opponent.champion == 0) continue;
                 if (opponent.team != player.team && opponent.lane == player.lane) {
                     Stats<Integer> stats = opponents.computeIfAbsent(opponent.champion, Stats::new);
-                    stats.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                    stats.addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
                 }
             }
         }
 
-        List<Stats<Integer>> championStats = new ArrayList<>(statistics.championStats);
-        championStats.sort(Comparator.comparingLong((Stats<Integer> value) -> value.games).reversed()
-            .thenComparingInt(value -> value.reference));
-        List<Champion> champions = new ArrayList<>(championStats.size());
-        for (Stats<Integer> champion : championStats) {
-            List<Matchup> matchups = new ArrayList<>();
-            Map<Integer, Stats<Integer>> opponents = matchupStats.get(champion.reference);
-            if (opponents != null) for (Stats<Integer> opponent : opponents.values())
-                matchups.add(new Matchup(opponent.reference, opponent));
-            matchups.sort(Comparator.comparingLong((Matchup value) -> value.stats.games).reversed()
-                .thenComparingInt(Matchup::champion));
-            champions.add(new Champion(champion.reference, champion, List.copyOf(matchups)));
-        }
+        public ProfileMatchups finish(ProfileStatistics statistics) {
+            for (Map<Integer, Stats<Integer>> opponents : matchupStats.values())
+                for (Stats<Integer> opponent : opponents.values()) opponent.recalculate();
 
-        return new ProfileMatchups(
-            filter,
-            filter != null ? filter.timeStart() : 0,
-            statistics.timeEnd,
-            0,
-            List.copyOf(champions)
-        );
+            List<Stats<Integer>> championStats = new ArrayList<>(statistics.championStats);
+            championStats.sort(Comparator.comparingLong((Stats<Integer> value) -> value.games).reversed()
+                .thenComparingInt(value -> value.reference));
+            List<Champion> champions = new ArrayList<>(championStats.size());
+            for (Stats<Integer> champion : championStats) {
+                List<Matchup> matchups = new ArrayList<>();
+                Map<Integer, Stats<Integer>> opponents = matchupStats.get(champion.reference);
+                if (opponents != null) for (Stats<Integer> opponent : opponents.values())
+                    matchups.add(new Matchup(opponent.reference, opponent));
+                matchups.sort(Comparator.comparingLong((Matchup value) -> value.stats.games).reversed()
+                    .thenComparingInt(Matchup::champion));
+                champions.add(new Champion(champion.reference, champion, List.copyOf(matchups)));
+            }
+
+            return new ProfileMatchups(
+                filter,
+                filter != null ? filter.timeStart() : 0,
+                statistics.timeEnd,
+                0,
+                List.copyOf(champions)
+            );
+        }
     }
 
     public ProfileMatchups withLastUpdate(long value) {

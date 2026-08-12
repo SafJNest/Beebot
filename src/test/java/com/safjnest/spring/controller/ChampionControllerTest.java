@@ -55,6 +55,15 @@ public class ChampionControllerTest {
         assertEquals(0, method.getParameterCount());
     }
 
+    @Test
+    public void shouldExposeTierListEndpointWithSharedChampionFilters() throws Exception {
+        java.lang.reflect.Method method = ChampionController.class.getDeclaredMethod("tierList",
+            String.class, String.class, String.class, String.class);
+        GetMapping mapping = method.getAnnotation(GetMapping.class);
+        assertEquals("/champions/tier-list", mapping.value()[0]);
+        assertEquals(4, method.getParameterCount());
+    }
+
     private ResponseStatusException invalidRank(String value) {
         try {
             LolApiParameters.rank(value);

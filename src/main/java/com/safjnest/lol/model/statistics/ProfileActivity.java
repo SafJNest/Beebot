@@ -59,19 +59,39 @@ public record ProfileActivity(
     private static final List<Integer> HOURS = hours();
 
     public static ProfileActivity from(List<Match> matches, String puuid, Filter filter) {
-        Bucket[][] cells = buckets();
-        Bucket[] days = new Bucket[DAYS.size()];
-        Bucket[] hours = new Bucket[HOURS.size()];
-        Map<GameQueueType, Bucket> queues = new HashMap<>();
-        List<SessionAccumulator> sessions = new ArrayList<>();
-        long oldestMatchAt = 0;
-        long newestMatchAt = 0;
-        long previousMatchEnd = 0;
-        SessionAccumulator currentSession = null;
+        Accumulator accumulator = accumulator(puuid, filter);
+        if (matches != null) for (Match match : matches) accumulator.accept(match);
+        return accumulator.finish();
+    }
 
-        if (matches != null) for (Match match : matches) {
-            Participant player = participant(match, puuid);
-            if (player == null) continue;
+    public static Accumulator accumulator(String puuid, Filter filter) {
+        return new Accumulator(puuid, filter);
+    }
+
+    public static final class Accumulator {
+        private final String puuid;
+        private final Filter filter;
+        private final Bucket[][] cells = buckets();
+        private final Bucket[] days = new Bucket[DAYS.size()];
+        private final Bucket[] hours = new Bucket[HOURS.size()];
+        private final Map<GameQueueType, Bucket> queues = new HashMap<>();
+        private final List<SessionAccumulator> sessions = new ArrayList<>();
+        private long oldestMatchAt;
+        private long newestMatchAt;
+        private long previousMatchEnd;
+        private SessionAccumulator currentSession;
+
+        private Accumulator(String puuid, Filter filter) {
+            this.puuid = puuid;
+            this.filter = filter;
+        }
+
+        public void accept(Match match) {
+            accept(match, participant(match, puuid));
+        }
+
+        public void accept(Match match, Participant player) {
+            if (player == null) return;
 
             long timeStart = match.timeStart;
             long timeEnd = Math.max(timeStart, match.timeEnd);
@@ -95,16 +115,17 @@ public record ProfileActivity(
             newestMatchAt = Math.max(newestMatchAt, timeStart);
         }
 
-        List<HeatmapCell> heatmapCells = new ArrayList<>(DAYS.size() * HOURS.size());
-        List<DayActivity> dailyActivity = new ArrayList<>(DAYS.size());
-        List<HourActivity> hourlyTrend = new ArrayList<>(HOURS.size());
-        long totalGames = 0;
-        long totalWins = 0;
-        for (Bucket[] row : cells) for (Bucket cell : row) {
-            totalGames += cell.games;
-            totalWins += cell.wins;
-        }
-        for (int day = 0; day < DAYS.size(); day++) {
+        public ProfileActivity finish() {
+            List<HeatmapCell> heatmapCells = new ArrayList<>(DAYS.size() * HOURS.size());
+            List<DayActivity> dailyActivity = new ArrayList<>(DAYS.size());
+            List<HourActivity> hourlyTrend = new ArrayList<>(HOURS.size());
+            long totalGames = 0;
+            long totalWins = 0;
+            for (Bucket[] row : cells) for (Bucket cell : row) {
+                totalGames += cell.games;
+                totalWins += cell.wins;
+            }
+            for (int day = 0; day < DAYS.size(); day++) {
             Bucket dayBucket = value(days[day]);
             dailyActivity.add(new DayActivity(day, dayBucket.games, dayBucket.wins, dayBucket.losses(),
                 share(dayBucket.games, totalGames), dayBucket.winrate()));
@@ -145,7 +166,7 @@ public record ProfileActivity(
             sessionDurationStdDev
         );
 
-        return new ProfileActivity(
+            return new ProfileActivity(
             filter,
             new Coverage(totalGames, oldestMatchAt, newestMatchAt, System.currentTimeMillis()),
             summary,
@@ -157,7 +178,8 @@ public record ProfileActivity(
             List.copyOf(recentSessions),
             insights(mostActiveDay, bestWinrateSlot, favoriteQueue),
             null
-        );
+            );
+        }
     }
 
     public ProfileActivity withMetadata(ResponseMetadata value) {

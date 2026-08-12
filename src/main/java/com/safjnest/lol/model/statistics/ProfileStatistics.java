@@ -64,6 +64,27 @@ public class ProfileStatistics {
     }
 
     public void add(Match match, String puuid, Filter filter) {
+        add(match, puuid, filter, true);
+    }
+
+    public void addRaw(Match match, String puuid, Filter filter) {
+        add(match, puuid, filter, false);
+    }
+
+    public void addRaw(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
+        add(match, player, teamKills, enemyTeamKills, arena, false);
+    }
+
+    public void finish() {
+        finish(total);
+        for (Stats<GameQueueType> stats : queueStats) finish(stats);
+        for (Stats<LaneType> stats : laneStats) finish(stats);
+        for (Stats<Integer> stats : championStats) finish(stats);
+        for (Stats<Integer> stats : matchups.values()) finish(stats);
+        for (Stats<Integer> stats : duoStats.values()) finish(stats);
+    }
+
+    private void add(Match match, String puuid, Filter filter, boolean calculate) {
         if (match == null || puuid == null || puuid.isBlank() || match.participants == null) return;
         Participant player = participant(match, puuid);
         if (player == null || !matchesFilter(match, player, filter)) return;
@@ -71,14 +92,18 @@ public class ProfileStatistics {
         boolean arena = GameQueueTypeUtils.isCherry(match.queue);
         int teamKills = kills(match, player, arena, false);
         int enemyTeamKills = arena ? 0 : kills(match, player, false, true);
-        add(total, match, player, teamKills, enemyTeamKills, arena);
-        if (match.queue != null) add(stat(queueStats, match.queue), match, player, teamKills, enemyTeamKills, arena);
+        add(match, player, teamKills, enemyTeamKills, arena, calculate);
+    }
+
+    private void add(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena, boolean calculate) {
+        add(total, match, player, teamKills, enemyTeamKills, arena, calculate);
+        if (match.queue != null) add(stat(queueStats, match.queue), match, player, teamKills, enemyTeamKills, arena, calculate);
         if (player.lane != null && player.lane != LaneType.NONE)
-            add(stat(laneStats, player.lane), match, player, teamKills, enemyTeamKills, arena);
+            add(stat(laneStats, player.lane), match, player, teamKills, enemyTeamKills, arena, calculate);
         Stats<Integer> champion = stat(championStats, player.champion);
-        add(champion, match, player, teamKills, enemyTeamKills, arena);
+        add(champion, match, player, teamKills, enemyTeamKills, arena, calculate);
         Stats<Void> context = contextStat(champion, match.queue, player.lane);
-        if (context != null) add(context, match, player, teamKills, enemyTeamKills, arena);
+        if (context != null) add(context, match, player, teamKills, enemyTeamKills, arena, calculate);
 
         if (player.pings != null) for (Map.Entry<String, Integer> entry : player.pings.entrySet()) {
             if (entry.getKey() != null && entry.getValue() != null) pings.merge(entry.getKey(), entry.getValue().longValue(), Long::sum);
@@ -90,7 +115,7 @@ public class ProfileStatistics {
             for (Participant opponent : match.participants) {
                 if (opponent == null || opponent == player || opponent.champion == 0) continue;
                 if (opponent.team != player.team && opponent.lane == player.lane)
-                    add(matchups.computeIfAbsent(opponent.champion, Stats::new), match, player, teamKills, enemyTeamKills, arena);
+                    add(matchups.computeIfAbsent(opponent.champion, Stats::new), match, player, teamKills, enemyTeamKills, arena, calculate);
             }
         }
 
@@ -100,7 +125,7 @@ public class ProfileStatistics {
                 ? duo.subTeam == player.subTeam
                 : (duo.lane == LaneType.BOT || duo.lane == LaneType.UTILITY)
                     && (player.lane == LaneType.BOT || player.lane == LaneType.UTILITY);
-            if (sameDuo) add(duoStats.computeIfAbsent(duo.champion, Stats::new), match, player, teamKills, enemyTeamKills, arena);
+            if (sameDuo) add(duoStats.computeIfAbsent(duo.champion, Stats::new), match, player, teamKills, enemyTeamKills, arena, calculate);
         }
 
         timeEnd = Math.max(timeEnd, match.timeEnd);
@@ -108,8 +133,17 @@ public class ProfileStatistics {
         newestMatchAt = Math.max(newestMatchAt, match.timeStart);
     }
 
-    private static void add(Stats<?> stats, Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
-        stats.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+    private static void add(Stats<?> stats, Match match, Participant player, int teamKills, int enemyTeamKills,
+                            boolean arena, boolean calculate) {
+        if (calculate) stats.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+        else stats.addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+    }
+
+    private static void finish(Stats<?> stats) {
+        if (stats == null) return;
+        stats.recalculate();
+        if (stats.context != null) for (Map<GameQueueType, Map<String, Stats<Void>>> queueContext : stats.context)
+            for (Map<String, Stats<Void>> lanes : queueContext.values()) for (Stats<Void> context : lanes.values()) finish(context);
     }
 
     private static <T> Stats<T> stat(List<Stats<T>> stats, T reference) {
@@ -163,10 +197,11 @@ public class ProfileStatistics {
     public static boolean matchesFilter(Match match, String puuid, Filter filter) {
         if (match == null || puuid == null || puuid.isBlank()) return false;
         Participant player = participant(match, puuid);
-        return player != null && matchesFilter(match, player, filter);
+        return matchesFilter(match, player, filter);
     }
 
-    private static boolean matchesFilter(Match match, Participant player, Filter filter) {
+    public static boolean matchesFilter(Match match, Participant player, Filter filter) {
+        if (match == null || player == null) return false;
         if (filter == null) return true;
         if (filter.queue() != null && filter.queue() != match.queue) return false;
         if (filter.region() != null && filter.region() != match.leagueShard) return false;

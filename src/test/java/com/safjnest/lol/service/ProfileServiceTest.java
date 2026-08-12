@@ -46,12 +46,14 @@ public class ProfileServiceTest {
     }
 
     @Test
-    public void treatsMissingAndWeekOldAggregatesAsStale() {
+    public void treatsOnlyRecentlySeenMonthOldAggregatesAsStale() {
         long now = 1_800_000_000_000L;
 
-        assertTrue(ProfileService.isStale(0, now));
-        assertFalse(ProfileService.isStale(now - TimeConstant.WEEK + 1, now));
-        assertTrue(ProfileService.isStale(now - TimeConstant.WEEK, now));
+        assertTrue(ProfileService.isStale("puuid", 0, now, now));
+        assertFalse(ProfileService.isStale("puuid", now - TimeConstant.DAY * 29, now, now));
+        assertTrue(ProfileService.isStale("puuid", now - TimeConstant.DAY * 45, now, now));
+        assertFalse(ProfileService.isStale("puuid", now - TimeConstant.DAY * 45,
+            now - TimeConstant.DAY * 61, now));
     }
 
     private static MatchResult match(String id, LaneType lane) {

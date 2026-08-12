@@ -11,6 +11,8 @@ import java.util.Set;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.ChampionTierList;
+import com.safjnest.lol.model.ChampionTierSource;
 import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
@@ -126,7 +128,51 @@ public class ChampionService {
             MongoDB.upsertChampionStatistics(empty);
             statistics.put(filter.champion(), empty);
         }
+        invalidateTierList(filter);
         return statistics;
+    }
+
+    public ApiResult<ChampionTierList> getTierList(
+        String patch,
+        TierType rank,
+        LeagueShard region,
+        GameQueueType queue
+    ) {
+        GameQueueType selectedQueue = queue != null ? queue : GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+        Filter base = new Filter().setChampion(0).setLane(null).setRank(rank).setRegion(region).setQueue(selectedQueue);
+        if (patch != null) base.setPatch(patch);
+        String key = tierListKey(base);
+        ChampionTierList cached;
+        try {
+            cached = RedisClient.get(key, ChampionTierList.class);
+        } catch (RuntimeException exception) {
+            RedisClient.delete(key);
+            cached = null;
+        }
+        if (cached != null) return ApiResult.ready(cached, cached.metadata());
+
+        List<Filter> filters = tierFilters(base);
+        Map<String, ChampionTierSource> sources = MongoDB.findChampionTierSources(filters);
+        List<Filter> ready = new ArrayList<>();
+        long lastUpdate = 0;
+        boolean refresh = false;
+        for (Filter filter : filters) {
+            ChampionTierSource source = sources.get(filter.genericKey());
+            if (source == null || !source.ready() || isStale(source.lastUpdate())) {
+                refresh = true;
+                continue;
+            }
+            ready.add(filter);
+            lastUpdate = oldest(lastUpdate, source.lastUpdate());
+        }
+        ResponseMetadata metadata = new ResponseMetadata(null, lastUpdate > 0 ? lastUpdate : null, refresh, base);
+        ChampionTierList result = new ChampionTierList(ChampionTierAnalyzer.analyze(ready, sources), metadata);
+        if (refresh) {
+            DatabaseTracker.enqueueChampionStatsMatrix(base.patch(), base.queue());
+            return ApiResult.partial(result, metadata);
+        }
+        RedisClient.set(RedisKey.CHAMPION_TIER_LIST, result, base.genericKey());
+        return ApiResult.ready(result, metadata);
     }
 
     public MatrixRefreshResult refreshStatisticsMatrix(String patch, GameQueueType queue) {
@@ -143,6 +189,7 @@ public class ChampionService {
             }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
         ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrix(missing, buildFilters);
+        invalidateTierLists(missing);
         if (missing.isEmpty()) for (Filter filter : buildFilters) refreshBuild(filter);
         for (Filter filter : buildFilters) invalidate(filter);
         return new MatrixRefreshResult(combinations.size(), combinations.size() - missing.size(),
@@ -216,6 +263,10 @@ public class ChampionService {
         if (filter != null) RedisClient.delete(RedisKey.CHAMPION_PAGE.of(filter.toKey()));
     }
 
+    public static void invalidateTierList(Filter filter) {
+        if (filter != null) RedisClient.delete(tierListKey(filter));
+    }
+
     // ============================================================================
 
     private ApiResult<ChampionView> compose(
@@ -262,6 +313,33 @@ public class ChampionService {
     private static Filter statisticsFilter(Filter filter) {
         return new Filter().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
             .setRegion(filter.region()).setLane(filter.lane());
+    }
+
+    private static List<Filter> tierFilters(Filter base) {
+        if (base == null || base.queue() == null) return List.of();
+        List<Filter> result = new ArrayList<>();
+        if (!GameQueueTypeUtils.hasLane(base.queue())) {
+            result.add(tierFilter(base, null));
+            return result;
+        }
+        for (LaneType lane : LaneTypeUtils.playables()) result.add(tierFilter(base, lane));
+        return result;
+    }
+
+    private static Filter tierFilter(Filter source, LaneType lane) {
+        return new Filter().setChampion(0).setPatch(source.patch()).setQueue(source.queue()).setRank(source.rank())
+            .setRegion(source.region()).setLane(lane);
+    }
+
+    private static String tierListKey(Filter filter) {
+        return RedisKey.CHAMPION_TIER_LIST.of(tierFilter(filter, null).genericKey());
+    }
+
+    private static void invalidateTierLists(List<Filter> filters) {
+        if (filters == null || filters.isEmpty()) return;
+        Set<String> keys = new HashSet<>();
+        for (Filter filter : filters) if (filter != null) keys.add(tierListKey(filter));
+        for (String key : keys) RedisClient.delete(key);
     }
 
     private static boolean isStale(long lastUpdate) {

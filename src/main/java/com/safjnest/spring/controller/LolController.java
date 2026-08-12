@@ -78,6 +78,7 @@ public class LolController {
         }
 
         SummonerService.refresh(profilePuuid, shard);
+        ProfileService.markManuallySeen(profilePuuid);
         return ResponseEntity.noContent().build();
     }
 

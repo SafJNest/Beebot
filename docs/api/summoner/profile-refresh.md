@@ -25,13 +25,14 @@ aggiorna in ordine Riot Account, summoner, rank e mastery tramite `R4JQueue`.
 Ogni componente viene persistito in Mongo e le cache Redis appena ricostruite
 rimangono disponibili.
 
-Solo dopo l'ultima persistenza il profilo invalida centralmente `PROFILE_PAGE`
-e gli aggregati Redis derivati. `DatabaseTracker` riceve un unico job
-deduplicato `profile-refresh:<puuid>` che elimina in Mongo e Redis tutti gli
-aggregati profilo non canonici e rigenera da zero soltanto statistics, activity,
-matchups e contesto champion del profilo canonico. I filtri canonici sono:
+Dopo la verifica del profilo, la POST aggiorna internamente
+`summoner.lastSeenAt`. `DatabaseTracker` riceve un unico job manuale ad alta
+priorità, deduplicato `profile-refresh:<puuid>`, che rigenera da zero
+statistics, activity, matchups e contesto champion del profilo canonico. I filtri canonici sono:
 overview/matchups sullo split corrente senza patch, queue o lane; activity
-senza intervallo, queue o champion.
+senza intervallo, queue o champion. Il job legge i match una volta tramite
+cursor Mongo e salva i tre documenti solo dopo il completamento dei tre
+accumulatori.
 
 Una chiave Redis atomica `SUMMONER_REFRESH_COOLDOWN` applica un cooldown di due
 minuti per coppia `{shard, puuid}`. Una richiesta durante il cooldown non avvia

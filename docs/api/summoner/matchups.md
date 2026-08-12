@@ -105,12 +105,14 @@ periodo dello split corrente.
 | HTTP | `code` | Quando |
 |---:|---|---|
 | `200` | — | Aggregato pronto. |
-| `202` | `profile_matchups_pending` | Aggregato assente o stale da una settimana; il refresh è stato avviato in background. |
+| `202` | `profile_matchups_pending` | Aggregato assente; il refresh on-demand è stato avviato in background. |
 | `400` | `invalid_request` | Periodo start/end, queue, patch, role o `minGames` non validi. |
 | `404` | — | Profilo non trovato. |
 
 `metadata` è root sia nel `200` sia nell'errore `202`: include il filtro di
-aggregazione richiesto, `lastUpdate` e `refresh`.
+aggregazione richiesto, `lastUpdate` e `refresh`. Uno stale resta `200` con il
+payload persistito e `refresh=true`, poi accoda soltanto il job matchup in
+bassa priorità.
 
 ## Owner
 

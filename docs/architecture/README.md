@@ -63,6 +63,7 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md)
 - [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md)
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
+- [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
 
 ## MongoDB migration
 

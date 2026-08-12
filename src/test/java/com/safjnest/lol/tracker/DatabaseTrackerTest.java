@@ -91,6 +91,94 @@ public class DatabaseTrackerTest {
     }
 
     @Test
+    public void manualProfileTasksRunBeforeOnDemandAndStaleTasks() throws Exception {
+        CountDownLatch workersStarted = new CountDownLatch(2);
+        CountDownLatch releaseProfile = new CountDownLatch(1);
+        CountDownLatch releaseBuild = new CountDownLatch(1);
+        List<String> order = new ArrayList<>();
+
+        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:priority-build", () -> {
+            workersStarted.countDown();
+            await(releaseBuild);
+            return null;
+        });
+        CompletableFuture<Void> blocker = DatabaseTracker.submit("test:priority-blocker", () -> {
+            workersStarted.countDown();
+            await(releaseProfile);
+            return null;
+        });
+        assertTrue(workersStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+
+        CompletableFuture<Void> stale = DatabaseTracker.submitStale("test:priority-stale", () -> {
+            order.add("stale");
+            return null;
+        });
+        CompletableFuture<Void> onDemand = DatabaseTracker.submit("test:priority-on-demand", () -> {
+            order.add("on-demand");
+            return null;
+        });
+        CompletableFuture<Void> firstManual = DatabaseTracker.submitManual("test:priority-manual-1", () -> {
+            order.add("manual-1");
+            return null;
+        });
+        CompletableFuture<Void> secondManual = DatabaseTracker.submitManual("test:priority-manual-2", () -> {
+            order.add("manual-2");
+            return null;
+        });
+
+        releaseProfile.countDown();
+        firstManual.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        secondManual.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        onDemand.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        stale.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertEquals(List.of("manual-1", "manual-2", "on-demand", "stale"), order);
+
+        releaseBuild.countDown();
+        blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void manualSubmissionPromotesTheQueuedStaleTaskWithTheSameKey() throws Exception {
+        CountDownLatch workersStarted = new CountDownLatch(2);
+        CountDownLatch releaseProfile = new CountDownLatch(1);
+        CountDownLatch releaseBuild = new CountDownLatch(1);
+        List<String> order = new ArrayList<>();
+
+        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:promotion-build", () -> {
+            workersStarted.countDown();
+            await(releaseBuild);
+            return null;
+        });
+        CompletableFuture<Void> blocker = DatabaseTracker.submit("test:promotion-blocker", () -> {
+            workersStarted.countDown();
+            await(releaseProfile);
+            return null;
+        });
+        assertTrue(workersStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+
+        CompletableFuture<Integer> stale = DatabaseTracker.submitStale("test:promotion", () -> {
+            order.add("promoted");
+            return 7;
+        });
+        CompletableFuture<Void> onDemand = DatabaseTracker.submit("test:promotion-on-demand", () -> {
+            order.add("on-demand");
+            return null;
+        });
+        CompletableFuture<Integer> manual = DatabaseTracker.submitManual("test:promotion", () -> 99);
+
+        assertSame(stale, manual);
+        releaseProfile.countDown();
+        assertEquals(Integer.valueOf(7), manual.get(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        onDemand.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertEquals(List.of("promoted", "on-demand"), order);
+
+        releaseBuild.countDown();
+        blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void profileWorkerRunsOneTaskAtOnce() throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();

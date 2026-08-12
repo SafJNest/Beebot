@@ -31,6 +31,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 ### Champion
 
 - [Champion page](champion/page.md) — `GET /api/lol/champion/{champion}`
+- [Champion tier list](champion/tier-list.md) — `GET /api/lol/champions/tier-list`
 - [Champion indexables](champion/indexables.md) — `GET /api/lol/champion/indexables`
 
 ### Leaderboard
@@ -60,7 +61,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 
 | HTTP | Significato |
 |---:|---|
-| `200` | Risposta pronta. Include anche i payload `PARTIAL` del profilo. |
+| `200` | Risposta pronta. Include anche i payload `PARTIAL` del profilo e della tier list champion. |
 | `202` | Il dato manca, il refresh è stato accodato in background e la richiesta va ripetuta. |
 | `400` | Parametro mancante, tipo non valido, enum sconosciuto o combinazione non supportata. |
 | `404` | Risorsa o endpoint inesistente. |
@@ -112,5 +113,6 @@ non supporta una lane.
 - [LoL architecture](../architecture/README.md) — ownership e ADR;
 - [ADR-0005](../architecture/adr/0005-lol-api-json-contract.md) — JSON canonico;
 - [ADR-0006](../architecture/adr/0006-champion-api-contract.md) — champion page;
+- [ADR-0013](../architecture/adr/0013-champion-tier-list.md) — champion tier list;
 - [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parametri e status;
 - [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache e flussi asincroni.
