@@ -17,7 +17,11 @@ public class ChampionUtils {
   private static Map<Integer, StaticChampion> champions = new HashMap<>();
 
   static {
-    champions = LeagueHandler.getRiotApi().getDDragonAPI().getChampions();
+    champions = LeagueHandler.getRiotApi().getDDragonAPI().getChampions()
+        .entrySet()
+        .stream()
+        .filter(entry -> !entry.getValue().getKey().startsWith("Jade_"))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public static Map<Integer, StaticChampion> getChampions() {
