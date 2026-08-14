@@ -1870,6 +1870,28 @@ public final class MongoDB {
         return true;
     }
 
+    public static boolean upsertSpectatorSummoners(List<Summoner> summoners) {
+        if (summoners == null) return false;
+        List<WriteModel<Document>> operations = new ArrayList<>(summoners.size());
+        for (Summoner summoner : summoners) {
+            if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank()) continue;
+
+            List<Bson> updates = new ArrayList<>();
+            updates.add(Updates.set("region", summoner.region()));
+            updates.add(Updates.set("icon", summoner.icon()));
+            updates.add(Updates.setOnInsert("summonerId", summoner.summonerId()));
+            updates.add(Updates.setOnInsert("level", summoner.level()));
+            if (summoner.riotId() != null && !summoner.riotId().isBlank()) {
+                updates.add(Updates.set("riotId", summoner.riotId()));
+                updates.add(Updates.set("riotSearch", normalizedRiotId(summoner.riotId())));
+            }
+            operations.add(new UpdateOneModel<>(Filters.eq("_id", summoner.puuid()), Updates.combine(updates),
+                new UpdateOptions().upsert(true)));
+        }
+        if (!operations.isEmpty()) bulkWrite(summoners(), operations);
+        return true;
+    }
+
     public static boolean detachSummonerUser(String puuid, String userId) {
         return summoners().updateOne(Filters.and(Filters.eq("_id", puuid), Filters.eq("userId", userId)),
                 Updates.combine(Updates.unset("userId"), Updates.set("tracking", false))).getMatchedCount() > 0;

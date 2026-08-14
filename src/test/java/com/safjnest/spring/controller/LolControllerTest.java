@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
@@ -41,6 +42,17 @@ public class LolControllerTest {
     @Test
     public void shouldRejectUnknownShard() {
         assertEquals(HttpStatus.BAD_REQUEST, invalidShard("unknown").getStatusCode());
+    }
+
+    @Test
+    public void shouldExposeLiveGameByPuuidAndRiotId() throws NoSuchMethodException {
+        GetMapping byPuuid = LolController.class.getMethod("liveGame", String.class, String.class)
+            .getAnnotation(GetMapping.class);
+        GetMapping byName = LolController.class.getMethod("liveGameByName", String.class, String.class, String.class)
+            .getAnnotation(GetMapping.class);
+
+        assertEquals("/livegame/{puuid}", byPuuid.value()[0]);
+        assertEquals("/livegame-by-name/{gameName}/{tagLine}", byName.value()[0]);
     }
 
     @Test

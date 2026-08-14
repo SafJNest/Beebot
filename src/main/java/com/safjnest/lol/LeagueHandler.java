@@ -732,6 +732,11 @@ import com.safjnest.lol.utils.PatchUtils;
         masteries.put("platform", shard);
         masteries.put("puuid", puuid);
         clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, masteries);
+
+        Map<String, Object> spectator = new LinkedHashMap<>();
+        spectator.put("platform", shard);
+        spectator.put("summoner", puuid);
+        clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, spectator);
     }
 
     public static boolean isMatchLocallyCached(String gameId, LeagueShard shard) {

@@ -20,7 +20,7 @@ curl -X POST 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/
 ## Comportamento
 
 Il refresh pulisce prima e in modo centralizzato le cache R4J e Redis di Riot
-Account, summoner, rank e mastery, senza toccare spectator o matchlist. Quindi
+Account, summoner, rank, mastery e spectator, senza toccare la matchlist. Quindi
 aggiorna in ordine Riot Account, summoner, rank e mastery tramite `R4JQueue`.
 Ogni componente viene persistito in Mongo e le cache Redis appena ricostruite
 rimangono disponibili.
@@ -38,8 +38,9 @@ Una chiave Redis atomica `SUMMONER_REFRESH_COOLDOWN` applica un cooldown di due
 minuti per coppia `{shard, puuid}`. Una richiesta durante il cooldown non avvia
 altre chiamate Riot e viene trattata come completata.
 
-Il refresh non richiede, accoda o invalida la matchlist. Il recupero delle
-partite recenti resta responsabilità di un endpoint dedicato.
+Il refresh non richiede, accoda o invalida la matchlist. Invalida spectator ma
+non lo rifetchia nella POST: la successiva GET livegame lo recupera da Riot. Il
+recupero delle partite recenti resta responsabilità di un endpoint dedicato.
 
 ## Risposta `204`
 

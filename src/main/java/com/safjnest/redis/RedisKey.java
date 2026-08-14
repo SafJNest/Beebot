@@ -13,7 +13,8 @@ public enum RedisKey {
     USER_ID_BY_PUUID("account:user-id-by-puuid:%s:%s", Duration.ofHours(6)),
     LEAGUE_ENTRIES("league:entries:%s:%s", Duration.ofHours(6)),
     CHAMPION_MASTERIES("league:champion-masteries:%s:%s", Duration.ofHours(6)),
-    SPECTATOR_CURRENT("match:current:%s:%s", Duration.ofMinutes(10)),
+    // Temporary 60-second TTL: restore the intended five-minute spectator cache later.
+    SPECTATOR_CURRENT("match:current:%s:%s", Duration.ofSeconds(60)),
     MATCH_LIST("match:list:%s:%s:%s:%s", Duration.ofHours(1)),
     MATCH("match:by-id:%s:%s", Duration.ZERO),
     MATCH_DETAIL("match:detail:%s:%s", Duration.ofHours(6)),

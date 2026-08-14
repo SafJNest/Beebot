@@ -18,6 +18,7 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
+import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -60,9 +61,6 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.shared.BannedChampion;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -76,15 +74,17 @@ public class LeagueMessage {
     private static Object[] build(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
         List<MessageTopLevelComponent> components = new ArrayList<>();
-        if (summoner != null) LeagueHandler.updateSummonerMongo(summoner);
+        if (summoner != null && parameter.getMessageType() != LeagueMessageType.LIVEGAME)
+            LeagueHandler.updateSummonerMongo(summoner);
         switch (parameter.getMessageType()) {
             case PROFILE:
                 embed = getSummonerEmbed(summoner, parameter).build();
                 components = getSummonerButtons(summoner, userId, parameter);
                 break;
             case LIVEGAME:
-                SpectatorGameInfo liveGame = SummonerService.getSpectatorGame(summoner.getPUUID(), summoner.getPlatform());
-                List<SpectatorParticipant> users = liveGame != null ? liveGame.getParticipants() : null;
+                LiveGame liveGame = SummonerService.getLiveGame(summoner.getPUUID(), summoner.getPlatform());
+                if (liveGame == null) liveGame = LiveGame.empty();
+                List<LiveGame.Participant> users = liveGame.participants();
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
                 embed = LeagueMessage.getLivegameEmbed(summoner, liveGame, users).build();
@@ -1126,9 +1126,9 @@ public class LeagueMessage {
                 .build();
     }
 
-    public static EmbedBuilder getLivegameEmbed(Summoner summoner, SpectatorGameInfo game, List<SpectatorParticipant> spectators) {
+    public static EmbedBuilder getLivegameEmbed(Summoner summoner, LiveGame game, List<LiveGame.Participant> spectators) {
         RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
-        if (game == null || spectators == null || spectators.isEmpty()) {
+        if (game == null || game.notInGame() || spectators == null || spectators.isEmpty()) {
             EmbedBuilder empty = new EmbedBuilder();
             empty.setTitle(account.getName() + "'s Game");
             empty.setColor(Bot.getColor());
@@ -1139,21 +1139,21 @@ public class LeagueMessage {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
-            builder.setDescription("Currently playing a **" + GameQueueTypeUtils.prettyName(game.getGameQueueConfig()) + "** started <t:" + ((game.getGameStart() / 1000)) + ":R>");
+            builder.setDescription("Currently playing a **" + GameQueueTypeUtils.prettyName(game.queue()) + "** started <t:" + ((game.startedAt() / 1000)) + ":R>");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
-            switch (game.getGameQueueConfig()) {
+            switch (game.queue()) {
                 case CHERRY:
                     String field1 = "";
                     String field2 = "";
                     int i = 0;
 
-                    for (SpectatorParticipant participant : spectators) {
-                        Summoner s = SummonerService.getRiotSummoner(participant.getPuuid(), summoner.getPlatform());
-                        String mastery = LeagueHandler.getMasteryByChamp(s, participant.getChampionId());
+                    for (LiveGame.Participant participant : spectators) {
+                        Summoner s = SummonerService.getRiotSummoner(participant.puuid(), summoner.getPlatform());
+                        String mastery = LeagueHandler.getMasteryByChamp(s, participant.championId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
-                        String sum = " **" + participant.getRiotId() + "**";
+                        String sum = " **" + participant.riotId() + "**";
 
                         if (i < 8) field1 += mastery + " " + sum + " " + stats + "\n";
                         else if (i < 16) field2 += mastery + " " + sum + " " + stats + "\n";
@@ -1168,20 +1168,16 @@ public class LeagueMessage {
                     String blueBans = "", redBans = "";
                     String entryName = "";
 
-                    if (game.getBannedChampions() != null) {
-                        for (BannedChampion bc : game.getBannedChampions()) {
-                            String bcIcon = ChampionUtils.getFormattedEmojiByChampion(bc.getChampionId());
+                    for (int championId : game.bans().getOrDefault(TeamType.BLUE, List.of()))
+                        blueBans += ChampionUtils.getFormattedEmojiByChampion(championId) + " ";
+                    for (int championId : game.bans().getOrDefault(TeamType.RED, List.of()))
+                        redBans += ChampionUtils.getFormattedEmojiByChampion(championId) + " ";
 
-                            if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += bcIcon + " ";
-                            else redBans += bcIcon + " ";
-                        }
-                    }
-
-                    for (SpectatorParticipant participant : spectators) {
-                        String championIcon = ChampionUtils.getFormattedEmojiByChampion(participant.getChampionId());
+                    for (LiveGame.Participant participant : spectators) {
+                        String championIcon = ChampionUtils.getFormattedEmojiByChampion(participant.championId());
 
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
-                        LeagueEntry entry = LeagueHandler.getEntry(game.getGameQueueConfig(), participant.getPuuid(), summoner.getPlatform());
+                        LeagueEntry entry = LeagueHandler.getEntry(game.queue(), participant.puuid(), summoner.getPlatform());
                         if (entry != null) {
                             int wins = entry.getWins();
                             int losses = entry.getLosses();
@@ -1190,9 +1186,9 @@ public class LeagueMessage {
                             entryName = GameQueueTypeUtils.prettyName(entry.getQueueType());
                         }
 
-                        String field = championIcon + "**" + participant.getRiotId() + "**" + stats + "\n";
+                        String field = championIcon + "**" + participant.riotId() + "**" + stats + "\n";
 
-                        if (participant.getTeam() == TeamType.BLUE) blueSide += field;
+                        if (participant.team() == TeamType.BLUE) blueSide += field;
                         else redSide += field;
 
                     }
@@ -1217,14 +1213,14 @@ public class LeagueMessage {
         }
     }
 
-    public static StringSelectMenu getLivegameMenu(Summoner summoner, List<SpectatorParticipant> spectators) {
+    public static StringSelectMenu getLivegameMenu(Summoner summoner, List<LiveGame.Participant> spectators) {
         if (spectators == null || spectators.size() == 0) return null;
 
         ArrayList<SelectOption> options = new ArrayList<>();
-        for(SpectatorParticipant p : spectators){
-            if (p.getPuuid() == null) continue;
-            Emoji icon = ChampionUtils.getEmojiByChampion(p.getChampionId());
-            options.add(SelectOption.of(p.getRiotId(), p.getPuuid() + "#" + summoner.getPlatform().name()).withEmoji(icon));
+        for (LiveGame.Participant participant : spectators) {
+            if (participant.puuid() == null) continue;
+            Emoji icon = ChampionUtils.getEmojiByChampion(participant.championId());
+            options.add(SelectOption.of(participant.riotId(), participant.puuid() + "#" + summoner.getPlatform().name()).withEmoji(icon));
         }
 
         return StringSelectMenu.create("rank-select")

@@ -19,6 +19,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 - [Profile by PUUID](summoner/profile-by-puuid.md) — `GET /api/lol/{shard}/profile/{puuid}`
 - [Profile refresh](summoner/profile-refresh.md) — `POST /api/lol/{shard}/profile/{puuid}/refresh`
 - [Profile by Riot ID](summoner/profile-by-name.md) — `GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}`
+- [Live game](summoner/livegame.md) — `GET /api/lol/{shard}/livegame/{puuid}` e `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
 - [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`
 - [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`
 - [Matchups](summoner/matchups.md) — `GET /api/lol/{shard}/profile/{puuid}/matchups`
@@ -48,7 +49,8 @@ Gli esempi usano `http://localhost:8080` come base URL.
 - Le response root oggetto o paginate espongono `metadata` sullo stesso root,
   senza envelope `data`. Le quattro chiavi sono sempre presenti: `pagination`,
   `lastUpdate`, `refresh` e `filter`; i valori non applicabili sono `null`.
-  Le liste pure, search e indexables restano array invariati.
+  `LiveGame` fa eccezione: usa il root booleano `notInGame` e non espone
+  metadata. Le liste pure, search e indexables restano array invariati.
 - Gli errori usano sempre questo envelope:
 
 ```json

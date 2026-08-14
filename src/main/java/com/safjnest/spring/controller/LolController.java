@@ -16,6 +16,7 @@ import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchOrder;
@@ -186,6 +187,34 @@ public class LolController {
             LolApiParameters.requiredText(tagLine, "tag line")
         );
         return profileResponse(result);
+    }
+
+    @GetMapping("/livegame/{puuid}")
+    public LiveGame liveGame(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid
+    ) {
+        LiveGame game = SummonerService.getLiveGame(
+            LolApiParameters.requiredText(puuid, "puuid"),
+            LolApiParameters.requiredShard(shardValue)
+        );
+        if (game == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Summoner not found");
+        return game;
+    }
+
+    @GetMapping("/livegame-by-name/{gameName}/{tagLine}")
+    public LiveGame liveGameByName(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("gameName") String gameName,
+            @PathVariable("tagLine") String tagLine
+    ) {
+        LiveGame game = SummonerService.getLiveGame(
+            LolApiParameters.requiredText(gameName, "game name"),
+            LolApiParameters.requiredText(tagLine, "tag line"),
+            LolApiParameters.requiredShard(shardValue)
+        );
+        if (game == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Summoner not found");
+        return game;
     }
 
     @GetMapping("/match/{gameId}")

@@ -43,10 +43,11 @@ public class ProfileService {
         String key = RedisKey.PROFILE_PAGE.of(shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
         if (cached != null && isReady(cached)) {
-            ProfileStatistics statistics = cached.overview().statistics();
+            ProfileStatistics statistics = getStatistics(cached.summoner(), shard);
             boolean refresh = isStale(puuid, statistics == null ? 0 : statistics.lastUpdate);
-            if (refresh) enqueueStaleStatistics(cached.summoner(), shard, Filter.summoner());
-            SummonerView page = withRecentMatches(cached, shard, Filter.summoner()).withMetadata(
+            SummonerView page = SummonerView.from(cached.summoner(), cached.ranks(), statistics,
+                cached.overview().masteries(), cached.overview().champions(),
+                getRecentMatches(puuid, shard, Filter.summoner())).withMetadata(
                 metadata(statistics == null ? 0 : statistics.lastUpdate, refresh, Filter.summoner()));
             return refresh ? ApiResult.partial(page, page.metadata()) : ApiResult.ready(page, page.metadata());
         }
@@ -61,12 +62,10 @@ public class ProfileService {
         if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return ApiResult.notFound();
 
         Filter filter = Filter.summoner();
-        ProfileStatistics statistics = getStatistics(profile.puuid(), filter);
+        ProfileStatistics statistics = getStatistics(profile, shard);
         List<Rank> ranks = completed(ranksFuture);
         List<Mastery> masteries = completed(masteriesFuture);
         boolean refresh = statistics == null || isStale(profile.puuid(), statistics.lastUpdate);
-        if (statistics == null) DatabaseTracker.startProfileStatistics(profile, filter);
-        else if (refresh) enqueueStaleStatistics(profile, shard, filter);
 
         List<MatchResult> recentMatches = statistics == null ? List.of() : getRecentMatches(profile.puuid(), shard, filter);
         SummonerView page = SummonerView.from(profile, ranks, statistics, masteries, recentMatches)
@@ -92,6 +91,19 @@ public class ProfileService {
         statistics = MongoDB.findProfileStatistics(puuid, filter);
         if (!isCurrent(statistics)) return null;
         cacheStatistics(puuid, filter, statistics);
+        return statistics;
+    }
+
+    public ProfileStatistics getStatistics(Summoner summoner, LeagueShard shard) {
+        if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || shard == null) return null;
+
+        Filter filter = Filter.summoner();
+        SummonerView page = RedisClient.get(RedisKey.PROFILE_PAGE.of(shard.name(), summoner.puuid()), SummonerView.class);
+        ProfileStatistics statistics = page != null && isReady(page)
+            ? page.overview().statistics()
+            : getStatistics(summoner.puuid(), filter);
+        if (statistics == null) DatabaseTracker.startProfileStatistics(summoner, filter);
+        else if (isStale(summoner.puuid(), statistics.lastUpdate)) enqueueStaleStatistics(summoner, shard, filter);
         return statistics;
     }
 

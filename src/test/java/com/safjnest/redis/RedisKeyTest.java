@@ -16,7 +16,7 @@ public class RedisKeyTest {
         assertEquals(6 * 60 * 60, RedisKey.USER_ID_BY_PUUID.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.LEAGUE_ENTRIES.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.CHAMPION_MASTERIES.ttlSeconds());
-        assertEquals(10 * 60, RedisKey.SPECTATOR_CURRENT.ttlSeconds());
+        assertEquals(60, RedisKey.SPECTATOR_CURRENT.ttlSeconds());
         assertEquals(60 * 60, RedisKey.MATCH_LIST.ttlSeconds());
         assertEquals(0, RedisKey.MATCH.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.MATCH_DETAIL.ttlSeconds());

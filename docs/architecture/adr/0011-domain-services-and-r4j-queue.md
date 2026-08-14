@@ -50,5 +50,16 @@ invariants remain in force.
 - Match API consumers must provide a full Riot match ID; HTTP statuses, Redis
   key formats and TTLs remain unchanged.
 - Every extracted Riot fetch passes through `R4JQueue`.
+- A spectator roster is seed-persisted from its PUUID, Riot ID, shard and icon
+  before its per-participant R4J Summoner hydration; that hydration reuses the
+  spectator Riot ID and never calls Account API.
+- HTTP and Discord live-game consumers call `SummonerService.getLiveGame`; the
+  Discord adapter renders its canonical model and does not access spectator
+  state directly.
+- Live-game profile overviews use the same `ProfileService` statistics entry
+  point as profile pages; stale persisted aggregates are returned and their
+  deduplicated Mongo refresh is queued without participant Riot reads. They
+  also expose persisted masteries and at most three champion statistics: the
+  played champion followed by the most-played distinct champions.
 - Synchronous command calls wait for the same futures used by asynchronous
   profile requests.

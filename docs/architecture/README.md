@@ -28,6 +28,7 @@ lol/model/match/
   Match
   Participant
   MatchResult
+  LiveGame
 
 lol/model/leaderboard/
   LeaderboardPage

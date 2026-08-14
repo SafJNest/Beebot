@@ -45,6 +45,10 @@ del payload, senza envelope `data`. `ResponseMetadata` contiene sempre
 applicabili. I `202` riportano lo stesso oggetto dentro `LolApiError`; search,
 indexables e le altre liste pure restano array invariati.
 
+`LiveGame` è l'eccezione object-root: il suo stato assente usa `notInGame` sul
+payload canonico e non `ResponseMetadata`, così una partita non attiva resta un
+successo HTTP `200` con campi game null e participants vuoti.
+
 `ChampionStatistics.filter` remains part of the canonical object used by Redis
 and the shared JSON codec, but the Spring mapper ignores it through a Jackson mixin because it
 is an internal storage key and not part of the HTTP contract.

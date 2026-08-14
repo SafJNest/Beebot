@@ -3,14 +3,22 @@ package com.safjnest.lol.service;
 import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.nosql.MongoDB;
@@ -221,6 +229,19 @@ public final class SummonerService {
         return summoner == null ? null : getRiotAccount(summoner.getPUUID(), summoner.getPlatform());
     }
 
+    public static LiveGame getLiveGame(String puuid, LeagueShard shard) {
+        SpectatorGameInfo game = getSpectatorGame(puuid, shard);
+        if (game == null && get(puuid, shard) == null) return null;
+        Map<String, LiveGame.ProfileOverview> profiles = profileOverviews(game, shard);
+        queueSpectatorSummoners(game, shard);
+        return LiveGame.fromR4J(game, profiles);
+    }
+
+    public static LiveGame getLiveGame(String name, String tag, LeagueShard shard) {
+        String puuid = getPuuidByRiotId(name, tag, shard);
+        return puuid == null ? null : getLiveGame(puuid, shard);
+    }
+
     public static SpectatorGameInfo getSpectatorGame(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return null;
 
@@ -355,8 +376,95 @@ public final class SummonerService {
             RedisKey.PROFILE_BASE.of(shard.name(), puuid),
             RedisKey.PROFILE_RANK.of(shard.name() + ":" + puuid),
             RedisKey.PROFILE_RANKS.of(shard.name(), puuid),
-            RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid)
+            RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid),
+            RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid)
         ));
+    }
+
+    private static Map<String, LiveGame.ProfileOverview> profileOverviews(
+        SpectatorGameInfo game,
+        LeagueShard shard
+    ) {
+        if (game == null || game.getParticipants() == null || game.getParticipants().isEmpty()) return Map.of();
+
+        Map<String, Integer> championIds = new LinkedHashMap<>();
+        for (var participant : game.getParticipants()) {
+            if (participant != null && participant.getPuuid() != null && !participant.getPuuid().isBlank())
+                championIds.put(participant.getPuuid(), participant.getChampionId());
+        }
+        if (championIds.isEmpty()) return Map.of();
+
+        ProfileService profileService = new ProfileService();
+        Map<String, LiveGame.ProfileOverview> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : championIds.entrySet()) {
+            String puuid = entry.getKey();
+            Summoner summoner = find(puuid, shard);
+            if (summoner == null) continue;
+
+            List<com.safjnest.lol.model.summoner.Rank> ranks = RankService.find(puuid, shard);
+            List<Mastery> masteries = MasteryService.find(puuid, shard);
+            List<Stats<Integer>> championStats = championStats(profileService.getStatistics(summoner, shard), entry.getValue());
+            result.put(puuid, new LiveGame.ProfileOverview(summoner, ranks, masteries, championStats));
+        }
+        return result;
+    }
+
+    private static List<Stats<Integer>> championStats(ProfileStatistics statistics, Integer championId) {
+        if (statistics == null || statistics.championStats == null) return List.of();
+
+        List<Stats<Integer>> result = new ArrayList<>(3);
+        Set<Integer> champions = new HashSet<>();
+        for (Stats<Integer> stat : statistics.championStats) {
+            if (stat != null && championId != null && championId.equals(stat.reference)) {
+                result.add(stat);
+                champions.add(stat.reference);
+                break;
+            }
+        }
+        List<Stats<Integer>> mostPlayed = new ArrayList<>();
+        for (Stats<Integer> stat : statistics.championStats) {
+            if (stat != null && stat.reference != null && !champions.contains(stat.reference)) mostPlayed.add(stat);
+        }
+        mostPlayed.sort(Comparator.comparingLong((Stats<Integer> stat) -> stat.games).reversed()
+            .thenComparing(stat -> stat.reference));
+        for (Stats<Integer> stat : mostPlayed) {
+            if (result.size() == 3) break;
+            if (champions.add(stat.reference)) result.add(stat);
+        }
+        return List.copyOf(result);
+    }
+
+    private static void queueSpectatorSummoners(SpectatorGameInfo game, LeagueShard shard) {
+        if (game == null || shard == null || game.getParticipants() == null || game.getParticipants().isEmpty()) return;
+
+        Map<String, Summoner> summoners = new LinkedHashMap<>();
+        for (var participant : game.getParticipants()) {
+            if (participant == null || participant.getPuuid() == null || participant.getPuuid().isBlank()) continue;
+            summoners.putIfAbsent(participant.getPuuid(), new Summoner(
+                0,
+                participant.getPuuid(),
+                participant.getRiotId(),
+                shard.name(),
+                0,
+                Math.toIntExact(participant.getProfileIconId())
+            ));
+        }
+        if (summoners.isEmpty()) return;
+
+        List<Summoner> spectatorSummoners = new ArrayList<>(summoners.values());
+        Thread.startVirtualThread(() -> MongoDB.upsertSpectatorSummoners(spectatorSummoners));
+        for (Summoner summoner : summoners.values()) queueSpectatorSummoner(summoner, shard);
+    }
+
+    private static void queueSpectatorSummoner(Summoner spectatorSummoner, LeagueShard shard) {
+        R4JQueue.submit(shard, "summoner", spectatorSummoner.puuid(), () -> {
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
+                RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, spectatorSummoner.puuid());
+            if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, shard.name(), summoner.getPUUID());
+            return summoner;
+        }).thenAcceptAsync(summoner -> {
+            if (summoner != null) store(persist(summoner, spectatorSummoner.riotId(), null), shard);
+        }).exceptionally(ignored -> null);
     }
 
     private static Summoner cache(String puuid, LeagueShard shard) {
