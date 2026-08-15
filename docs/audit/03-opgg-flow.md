@@ -21,11 +21,12 @@ Evidenza: [Opgg.java](../../src/main/java/com/safjnest/commands/lol/Opgg.java:58
 
 ## Cosa legge davvero OP.GG
 
-La lista delle partite viene da `MatchService.getRecentIds`, cacheata in Redis
-per un’ora con una chiave costruita dagli stessi parametri del builder R4J
-(`queue`, `index`, `count`, `startTime`, `type`). I dettagli restano
-read-through Redis/Mongo/Riot; un dettaglio Riot viene subito passato al
-Tracker per la persistenza.
+La lista delle partite viene da `MatchService.getRecentIds` a blocchi di 100,
+cacheati in Redis per un’ora con una chiave costruita dagli stessi parametri del
+builder R4J (`queue`, `batch index`, `count`, `startTime`, `type`). Le pagine da
+cinque posizioni 1-20 riusano il blocco `start=0`; la pagina 21 apre il blocco
+`start=100`, e così via. I dettagli restano read-through Redis/Mongo/Riot; un
+dettaglio Riot viene subito passato al Tracker per la persistenza.
 
 Per il blocco LP/rank chiama `MatchService.getSummonerData`, che restituisce
 righe participant Mongo con:

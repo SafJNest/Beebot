@@ -12,6 +12,10 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 
 - Redis keys do not contain cache schema version tokens; test data is reset manually with `FLUSHALL`.
 - `RedisKey` is the executable source of truth for every LoL Redis pattern and TTL. `Duration.ZERO` means persistent storage; positive durations are applied by `RedisClient` with `SETEX`.
+- Every raw R4J cache key starts with `r4j:` after the Redis database namespace;
+  Mongo projections and application queues use their own prefixes.
+- During the current local-debug window every `RedisKey` uses a 60-second TTL;
+  the production TTL to restore is recorded beside each enum entry.
 - The balanced cache policy is: persistent R4J identity and pending-match payloads; six hours for Mongo-backed profile components and R4J rank/mastery payloads; one hour for projections, searches and pages; twelve hours for rebuildable champion/leaderboard aggregates; a temporary sixty seconds for spectator state (restore five minutes later); and five minutes for negative match lookups.
 - The R4J `MATCH` payload remains persistent until the match and its participant summoner seeds are persisted or intentionally discarded by the tracker. Queue members are removed only after that terminal outcome; transient Mongo errors leave the queue member and payload available for retry. The subsequent rank and mastery refreshes are low-priority R4J work and do not block match persistence.
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.

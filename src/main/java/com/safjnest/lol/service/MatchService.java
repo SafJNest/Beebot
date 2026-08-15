@@ -28,6 +28,8 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public final class MatchService {
 
+    private static final int MATCH_LIST_BATCH_SIZE = 100;
+
     private static final TypeReference<List<String>> MATCH_IDS_TYPE = new TypeReference<List<String>>() {};
 
     private static final no.stelar7.api.r4j.impl.R4J RIOT_API = com.safjnest.lol.LeagueHandler.getRiotApi();
@@ -158,7 +160,12 @@ public final class MatchService {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             int index) {
-        return getIds(summoner, queue, index, 0, 0, null);
+        if (summoner == null || index < 0) return List.of();
+
+        int batchIndex = index / MATCH_LIST_BATCH_SIZE * MATCH_LIST_BATCH_SIZE;
+        List<String> values = getIds(summoner, queue, batchIndex, MATCH_LIST_BATCH_SIZE, 0, null);
+        int batchOffset = index - batchIndex;
+        return batchOffset >= values.size() ? List.of() : values.subList(batchOffset, values.size());
     }
 
     public static List<String> getIds(
@@ -170,7 +177,8 @@ public final class MatchService {
             MatchlistMatchType type) {
         if (summoner == null || index < 0 || count < 0 || startTime < 0) return List.of();
 
-        String requestKey = matchListRequestKey(queue, count, startTime, type);
+        int requestedCount = count == 0 ? MATCH_LIST_BATCH_SIZE : count;
+        String requestKey = matchListRequestKey(queue, requestedCount, startTime, type);
         String cacheKey = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
         List<String> cached = RedisClient.get(cacheKey, MATCH_IDS_TYPE);
         if (cached != null) return cached;
@@ -178,7 +186,7 @@ public final class MatchService {
         try {
             String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
             return R4JQueue.<List<String>>submit(summoner.getPlatform(), "match-list", id, () -> {
-                MatchListBuilder builder = matchListBuilder(summoner, queue, index, count, startTime, type);
+                MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();
                 RedisClient.set(RedisKey.MATCH_LIST, values,
