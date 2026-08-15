@@ -52,9 +52,20 @@ public final class MasteryService {
     }
 
     public static CompletableFuture<List<Mastery>> refreshAsync(String puuid, LeagueShard shard) {
+        return refreshAsync(puuid, shard, R4JQueue.Priority.HIGH);
+    }
+
+    public static CompletableFuture<List<Mastery>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
+        return refreshAsync(puuid, shard, R4JQueue.Priority.LOW);
+    }
+
+    private static CompletableFuture<List<Mastery>> refreshAsync(
+            String puuid,
+            LeagueShard shard,
+            R4JQueue.Priority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return refreshRiotMasteriesFromRiotAsync(puuid, shard).thenApplyAsync(entries -> {
+        return refreshRiotMasteriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
             List<Mastery> masteries = toMasteries(entries);
             save(puuid, shard, masteries, false);
             return masteries;
@@ -96,7 +107,14 @@ public final class MasteryService {
     }
 
     private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(String puuid, LeagueShard shard) {
-        return fetchRiotMasteriesAsync(puuid, shard, "masteries-refresh");
+        return refreshRiotMasteriesFromRiotAsync(puuid, shard, R4JQueue.Priority.HIGH);
+    }
+
+    private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(
+            String puuid,
+            LeagueShard shard,
+            R4JQueue.Priority priority) {
+        return fetchRiotMasteriesAsync(puuid, shard, "masteries-refresh", priority);
     }
 
     private static CompletableFuture<List<ChampionMastery>> fetchRiotMasteriesAsync(
@@ -104,7 +122,16 @@ public final class MasteryService {
         LeagueShard shard,
         String operation
     ) {
-        return R4JQueue.<List<ChampionMastery>>submit(shard, operation, puuid, () -> {
+        return fetchRiotMasteriesAsync(puuid, shard, operation, R4JQueue.Priority.HIGH);
+    }
+
+    private static CompletableFuture<List<ChampionMastery>> fetchRiotMasteriesAsync(
+        String puuid,
+        LeagueShard shard,
+        String operation,
+        R4JQueue.Priority priority
+    ) {
+        return R4JQueue.<List<ChampionMastery>>submit(shard, operation, puuid, priority, () -> {
             List<ChampionMastery> masteries = RIOT_API.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
             if (masteries == null) throw new IllegalStateException("Riot returned no mastery result");
             RedisClient.set(RedisKey.CHAMPION_MASTERIES, masteries, shard.name(), puuid);

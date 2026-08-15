@@ -81,6 +81,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 public final class MongoDB {
 
@@ -1856,6 +1858,26 @@ public final class MongoDB {
     public static boolean upsertSummoner(String puuid, LeagueShard shard, String riotId, int level, int icon, String userId) {
         if (puuid == null || puuid.isBlank() || shard == null) return false;
         return upsertSummoner(new Summoner(0, puuid, riotId, shard.name(), level, icon), userId);
+    }
+
+    public static boolean upsertSummoner(MatchParticipant participant, LeagueShard shard) {
+        if (participant == null || participant.getPuuid() == null || participant.getPuuid().isBlank() || shard == null) return false;
+        String riotId = participant.getRiotIdName();
+        String riotTag = participant.getRiotIdTagline();
+        if (riotId != null && !riotId.isBlank() && riotTag != null && !riotTag.isBlank()) riotId += "#" + riotTag;
+        return upsertSummoner(participant.getPuuid(), shard, riotId, participant.getSummonerLevel(), participant.getProfileIcon(), null);
+    }
+
+    public static boolean upsertSummoner(SpectatorParticipant participant, LeagueShard shard) {
+        if (participant == null || participant.getPuuid() == null || participant.getPuuid().isBlank() || shard == null) return false;
+        return upsertSpectatorSummoners(List.of(new Summoner(
+            0,
+            participant.getPuuid(),
+            participant.getRiotId(),
+            shard.name(),
+            0,
+            Math.toIntExact(participant.getProfileIconId())
+        )));
     }
 
     public static boolean upsertSummoners(List<Summoner> summoners) {

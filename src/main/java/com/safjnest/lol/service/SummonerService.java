@@ -21,6 +21,7 @@ import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
+import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -437,34 +438,11 @@ public final class SummonerService {
     private static void queueSpectatorSummoners(SpectatorGameInfo game, LeagueShard shard) {
         if (game == null || shard == null || game.getParticipants() == null || game.getParticipants().isEmpty()) return;
 
-        Map<String, Summoner> summoners = new LinkedHashMap<>();
         for (var participant : game.getParticipants()) {
             if (participant == null || participant.getPuuid() == null || participant.getPuuid().isBlank()) continue;
-            summoners.putIfAbsent(participant.getPuuid(), new Summoner(
-                0,
-                participant.getPuuid(),
-                participant.getRiotId(),
-                shard.name(),
-                0,
-                Math.toIntExact(participant.getProfileIconId())
-            ));
+            if (!MongoDB.upsertSummoner(participant, shard)) continue;
+            Tracker.enqueueParticipantRefresh(participant.getPuuid(), shard);
         }
-        if (summoners.isEmpty()) return;
-
-        List<Summoner> spectatorSummoners = new ArrayList<>(summoners.values());
-        Thread.startVirtualThread(() -> MongoDB.upsertSpectatorSummoners(spectatorSummoners));
-        for (Summoner summoner : summoners.values()) queueSpectatorSummoner(summoner, shard);
-    }
-
-    private static void queueSpectatorSummoner(Summoner spectatorSummoner, LeagueShard shard) {
-        R4JQueue.submit(shard, "summoner", spectatorSummoner.puuid(), () -> {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
-                RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, spectatorSummoner.puuid());
-            if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, shard.name(), summoner.getPUUID());
-            return summoner;
-        }).thenAcceptAsync(summoner -> {
-            if (summoner != null) store(persist(summoner, spectatorSummoner.riotId(), null), shard);
-        }).exceptionally(ignored -> null);
     }
 
     private static Summoner cache(String puuid, LeagueShard shard) {

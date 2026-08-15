@@ -34,6 +34,7 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileService;
+import com.safjnest.lol.service.R4JQueue;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
@@ -143,7 +144,10 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | log");
+            break;
+            case "log":
+                e.reply("R4J queue logging " + (R4JQueue.toggleLogging() ? "enabled" : "disabled") + ".");
             break;
             case "timer":
                 Timer timer = new Timer();

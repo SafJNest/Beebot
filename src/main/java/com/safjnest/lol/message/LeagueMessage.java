@@ -74,7 +74,9 @@ public class LeagueMessage {
     private static Object[] build(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
         List<MessageTopLevelComponent> components = new ArrayList<>();
-        if (summoner != null && parameter.getMessageType() != LeagueMessageType.LIVEGAME)
+        if (summoner != null
+                && parameter.getMessageType() != LeagueMessageType.LIVEGAME
+                && parameter.getMessageType() != LeagueMessageType.OPGG)
             LeagueHandler.updateSummonerMongo(summoner);
         switch (parameter.getMessageType()) {
             case PROFILE:
@@ -376,8 +378,10 @@ public class LeagueMessage {
                 break;
         }
 
-        RiotAccount account = SummonerService.getRiotAccountFromSummoner(s);
-        Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
+        String centerName = parameter.getMessageType() == LeagueMessageType.OPGG
+            ? getStoredRiotId(s)
+            : SummonerService.getRiotAccountFromSummoner(s).getName();
+        Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), centerName);
         center = center.asDisabled();
 
         if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
@@ -1040,10 +1044,9 @@ public class LeagueMessage {
 
     private static EmbedBuilder getCanonicalOpggEmbed(Summoner summoner, LeagueMessageParameter parameter, List<Match> matches) {
         LeagueShard shard = summoner.getPlatform();
-        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
         List<QueryRecord> queryResult = MatchService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
+        embed.setAuthor(getOpggRiotId(summoner, matches), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
         embed.setTitle("Showing matches from " + LeagueShardUtils.getRegionFlag(shard) + " " + shard.getRealmValue());
 
@@ -1061,13 +1064,30 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getCanonicalOpggEmbedMatch(Summoner summoner, Match match) {
-        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
         List<QueryRecord> queryResult = MatchService.getSummonerData(summoner.getPUUID(), summoner.getPlatform());
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
+        embed.setAuthor(getOpggRiotId(summoner, List.of(match)), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
         embed.setTitle(GameQueueTypeUtils.prettyName(match.queue));
         return getOpggEmbedMatch(embed, match, summoner, queryResult);
+    }
+
+    private static String getOpggRiotId(Summoner summoner, List<Match> matches) {
+        if (matches != null) for (Match match : matches) {
+            if (match == null || match.participants == null) continue;
+            for (Participant participant : match.participants) {
+                if (participant == null || !summoner.getPUUID().equals(participant.puuid) || participant.riotId == null || participant.riotId.isBlank()) continue;
+                return participant.riotTag == null || participant.riotTag.isBlank()
+                    ? participant.riotId
+                    : participant.riotId + "#" + participant.riotTag;
+            }
+        }
+        return getStoredRiotId(summoner);
+    }
+
+    private static String getStoredRiotId(Summoner summoner) {
+        String riotId = MongoDB.findSummonerName(summoner.getPUUID(), summoner.getPlatform());
+        return riotId == null || riotId.isBlank() ? summoner.getPUUID() : riotId;
     }
 
     public static List<MessageTopLevelComponent> getOpggButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {

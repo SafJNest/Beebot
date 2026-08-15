@@ -58,9 +58,20 @@ public final class RankService {
     }
 
     public static CompletableFuture<List<Rank>> refreshAsync(String puuid, LeagueShard shard) {
+        return refreshAsync(puuid, shard, R4JQueue.Priority.HIGH);
+    }
+
+    public static CompletableFuture<List<Rank>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
+        return refreshAsync(puuid, shard, R4JQueue.Priority.LOW);
+    }
+
+    private static CompletableFuture<List<Rank>> refreshAsync(
+            String puuid,
+            LeagueShard shard,
+            R4JQueue.Priority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return refreshEntriesFromRiotAsync(puuid, shard).thenApplyAsync(entries -> {
+        return refreshEntriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
             List<Rank> ranks = toRanks(entries);
             saveRanks(puuid, shard, ranks, false);
             return ranks;
@@ -164,7 +175,14 @@ public final class RankService {
     }
 
     private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(String puuid, LeagueShard shard) {
-        return fetchEntriesFromRiotAsync(puuid, shard, "league-entries-refresh");
+        return refreshEntriesFromRiotAsync(puuid, shard, R4JQueue.Priority.HIGH);
+    }
+
+    private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(
+            String puuid,
+            LeagueShard shard,
+            R4JQueue.Priority priority) {
+        return fetchEntriesFromRiotAsync(puuid, shard, "league-entries-refresh", priority);
     }
 
     private static CompletableFuture<List<LeagueEntry>> fetchEntriesFromRiotAsync(
@@ -172,7 +190,16 @@ public final class RankService {
         LeagueShard shard,
         String operation
     ) {
-        return R4JQueue.<List<LeagueEntry>>submit(shard, operation, puuid, () -> {
+        return fetchEntriesFromRiotAsync(puuid, shard, operation, R4JQueue.Priority.HIGH);
+    }
+
+    private static CompletableFuture<List<LeagueEntry>> fetchEntriesFromRiotAsync(
+        String puuid,
+        LeagueShard shard,
+        String operation,
+        R4JQueue.Priority priority
+    ) {
+        return R4JQueue.<List<LeagueEntry>>submit(shard, operation, puuid, priority, () -> {
             List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
             if (entries == null) throw new IllegalStateException("Riot returned no rank result");
             RedisClient.set(RedisKey.LEAGUE_ENTRIES, entries, shard.name(), puuid);

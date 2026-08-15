@@ -23,6 +23,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.service.MatchService;
+import com.safjnest.lol.service.MasteryService;
 import com.safjnest.lol.service.RankService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.redis.RedisClient;
@@ -68,6 +69,7 @@ public class Tracker {
     private static final Queue<MatchLookupRequest> MATCH_LOOKUP_QUEUE = new ConcurrentLinkedQueue<>();
     private static final Set<String> MATCH_LOOKUP_PENDING = ConcurrentHashMap.newKeySet();
     private static final Map<String, Integer> MATCH_LOOKUP_RETRIES = new ConcurrentHashMap<>();
+    private static final Map<String, CompletableFuture<Void>> PARTICIPANT_REFRESHES = new ConcurrentHashMap<>();
 
     private static long period = TimeConstant.MINUTE * 10;
     private static final long timelineSnapshotInterval = TimeConstant.MINUTE * 5;
@@ -129,17 +131,39 @@ public class Tracker {
 
         for (LOLMatch match : toAnalyze) {
             try {
-                analyzeMatchHistory(match).completeWithException();
+                queueMatch(match);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public static void queueMatch(LOLMatch match) {
-        if (match == null) return;
+    public static Match queueMatch(LOLMatch match) {
+        if (match == null || match.getPlatform() == null) return null;
         MatchService.cacheRiotMatch(match);
         RedisClient.sadd(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), fullGameId(match));
+        return persistMatch(match);
+    }
+
+    public static void enqueueParticipantRefresh(String puuid, LeagueShard shard) {
+        if (puuid == null || puuid.isBlank() || shard == null) return;
+
+        String key = shard.name() + ":participant-refresh:" + puuid;
+        PARTICIPANT_REFRESHES.computeIfAbsent(key, ignored -> {
+            CompletableFuture<Void> future = RankService.refreshBackgroundAsync(puuid, shard)
+                .handle((ranks, error) -> {
+                    if (error != null) BotLogger.error("Rank refresh failed for " + puuid + ": " + error.getMessage());
+                    return (Void) null;
+                })
+                .thenCompose(ignoredRank -> MasteryService.refreshBackgroundAsync(puuid, shard)
+                    .handle((masteries, error) -> {
+                        if (error != null) BotLogger.error("Mastery refresh failed for " + puuid + ": " + error.getMessage());
+                        return (Void) null;
+                    }))
+                .thenRun(() -> {});
+            future.whenComplete((ignoredResult, ignoredError) -> PARTICIPANT_REFRESHES.remove(key, future));
+            return future;
+        });
     }
 
     public static void enqueueMatchLookup(LeagueShard shard, String gameId) {
@@ -312,56 +336,36 @@ public class Tracker {
     }
 
     private static void trackMatch(LOLMatch source, Summoner trackedSummoner, List<String> knownMatchIds) {
-        if (source == null) return;
+        queueMatch(source);
+    }
 
+    private static Match persistMatch(LOLMatch source) {
         String currentFullGameId = fullGameId(source);
         if (!SeasonUtils.isCurrentSplit(source.getGameStartTimestamp()) && source.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) {
             removeQueuedMatch(source);
-            return;
+            return null;
         }
         if (isRemake(source)) {
             removeQueuedMatch(source);
-            return;
-        }
-        if (MongoDB.hasMatch(currentFullGameId)) {
-            BotLogger.info("[LPTracker] Match " + source.getGameId() + " already tracked");
-            removeQueuedMatch(source);
-            return;
+            return null;
         }
 
-        for (MatchParticipant participant : source.getParticipants()) clearLeagueEntryCache(participant.getPuuid(), source.getPlatform());
-        Match match = loadMatch(source);
-        List<TierDivisionType> ranks = new ArrayList<>();
-        for (MatchParticipant sourceParticipant : source.getParticipants()) {
-            Participant participant = findParticipant(match, sourceParticipant.getPuuid());
-            if (participant == null) continue;
-
-            Summoner summoner = trackedSummoner != null && sourceParticipant.getPuuid().equals(trackedSummoner.getPUUID())
-                    ? trackedSummoner
-                    : SummonerService.getRiotSummoner(sourceParticipant.getPuuid(), source.getPlatform());
-            if (summoner != null) {
-                summoner = checkSummoner(sourceParticipant, summoner);
-                if (summoner != null) SummonerService.upsert(summoner, null);
-            }
-
-            LeagueEntry league = RankService.getEntry(sourceParticipant.getPuuid(), source.getPlatform(), "5v5 Ranked Solo");
-            if (league != null && league.getTierDivisionType() != null) participant.rank = league.getTierDivisionType();
-            if (participant.rank == null) participant.rank = TierDivisionType.UNRANKED;
-            participant.lp = league == null ? 0 : league.getLeaguePoints();
-            String previousMatchId = previousMatchId(sourceParticipant.getPuuid(), source.getQueue(), source.getPlatform(), summoner, trackedSummoner, knownMatchIds);
-            Participant previousParticipant = findPreviousParticipant(previousMatchId, sourceParticipant.getPuuid());
-            participant.gain = calculateGain(source.getQueue(), participant.rank, participant.lp, previousParticipant);
-            ranks.add(participant.rank);
+        Match match = MongoDB.findMatch(currentFullGameId);
+        if (match == null) {
+            match = Match.fromR4J(source);
+            if (match == null || !MongoDB.upsertMatch(currentFullGameId, match)) return null;
         }
 
-        match.rank = TierDivisionUtils.getAverageRank(ranks);
-        if (!MongoDB.upsertMatch(currentFullGameId, match)) return;
+        if (source.getParticipants() == null) return null;
+        for (MatchParticipant participant : source.getParticipants()) {
+            if (!MongoDB.upsertSummoner(participant, source.getPlatform())) return null;
+        }
+        for (MatchParticipant participant : source.getParticipants()) {
+            enqueueParticipantRefresh(participant.getPuuid(), source.getPlatform());
+        }
+
         removeQueuedMatch(source);
-        MatchService.invalidate(String.valueOf(source.getGameId()), source.getPlatform());
-
-        if (trackedSummoner != null) {
-            BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(trackedSummoner) + " (" + trackedSummoner.getAccountId() + ")");
-        }
+        return match;
     }
 
     private static void removeQueuedMatch(LOLMatch match) {

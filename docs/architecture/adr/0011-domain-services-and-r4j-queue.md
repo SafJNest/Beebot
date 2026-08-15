@@ -22,11 +22,12 @@ or concurrent Riot requests for the same shard.
   Mongo reads;
 - `ProfileService` owns profile-page composition and its `PROFILE_PAGE` cache.
 
-`R4JQueue` owns outbound Riot scheduling. It keeps one FIFO virtual-thread
-executor per `LeagueShard` and deduplicates an in-flight request by shard,
-operation and canonical resource id. A successful, null or failed request is
-removed after completion; Redis and Mongo remain the only cache and
-persistence owners.
+`R4JQueue` owns outbound Riot scheduling. It keeps one virtual-thread
+executor per `LeagueShard`, with high and low priority queues, and deduplicates
+an in-flight request by shard, operation and canonical resource id. A high
+request runs before queued low work but never interrupts a request already in
+flight. A successful, null or failed request is removed after completion;
+Redis and Mongo remain the only cache and persistence owners.
 
 The canonical match identifier is always the full Riot ID, for example
 `EUW1_6789012345`. Numeric IDs are neither accepted nor exposed by the match
@@ -50,9 +51,16 @@ invariants remain in force.
 - Match API consumers must provide a full Riot match ID; HTTP statuses, Redis
   key formats and TTLs remain unchanged.
 - Every extracted Riot fetch passes through `R4JQueue`.
+- Queue diagnostics are disabled by default; the owner-only `ptest log` toggle
+  enables `BotLogger` entries for request reuse, enqueue, start and terminal
+  completion or failure.
+- A fetched match is persisted before its participant summoners are seed-upserted
+  from the R4J payload. The seed contains PUUID, Riot ID, shard, icon and level
+  and requires neither Account nor Summoner API.
 - A spectator roster is seed-persisted from its PUUID, Riot ID, shard and icon
-  before its per-participant R4J Summoner hydration; that hydration reuses the
-  spectator Riot ID and never calls Account API.
+  before its background enrichment. Both match and spectator seeds enqueue only
+  low-priority rank followed by mastery refreshes; they never hydrate each
+  participant through Account or Summoner API.
 - HTTP and Discord live-game consumers call `SummonerService.getLiveGame`; the
   Discord adapter renders its canonical model and does not access spectator
   state directly.

@@ -6,6 +6,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,6 +74,41 @@ public class R4JQueueTest {
     }
 
     @Test
+    public void shouldRunQueuedHighPriorityWorkBeforeLowPriorityWork() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        CopyOnWriteArrayList<String> order = new CopyOnWriteArrayList<>();
+        CompletableFuture<Void> first = R4JQueue.submit(LeagueShard.EUW1, "test-priority", "first", () -> {
+            started.countDown();
+            await(release);
+            order.add("first");
+            return null;
+        });
+        assertTrue(started.await(2, TimeUnit.SECONDS));
+
+        CompletableFuture<Void> low = R4JQueue.submit(
+            LeagueShard.EUW1,
+            "test-priority",
+            "low",
+            R4JQueue.Priority.LOW,
+            () -> {
+                order.add("low");
+                return null;
+            }
+        );
+        CompletableFuture<Void> high = R4JQueue.submit(LeagueShard.EUW1, "test-priority", "high", () -> {
+            order.add("high");
+            return null;
+        });
+
+        release.countDown();
+        first.join();
+        high.join();
+        low.join();
+        assertEquals(java.util.List.of("first", "high", "low"), order);
+    }
+
+    @Test
     public void shouldRemoveFailedRequestsForRetry() {
         AtomicInteger calls = new AtomicInteger();
         CompletableFuture<Integer> failed = R4JQueue.submit(LeagueShard.EUW1, "test-retry", "same", () -> {
@@ -87,6 +123,13 @@ public class R4JQueueTest {
         CompletableFuture<Integer> retry = R4JQueue.submit(LeagueShard.EUW1, "test-retry", "same", calls::incrementAndGet);
         assertEquals(2, retry.join().intValue());
         assertEquals(2, calls.get());
+    }
+
+    @Test
+    public void shouldToggleQueueLogging() {
+        boolean initiallyEnabled = R4JQueue.isLoggingEnabled();
+        assertEquals(!initiallyEnabled, R4JQueue.toggleLogging());
+        assertEquals(initiallyEnabled, R4JQueue.toggleLogging());
     }
 
     private static void await(CountDownLatch latch) {

@@ -6,12 +6,14 @@
 /opgg
   -> Opgg.execute
   -> LeagueHandler.getSummonerByArgs
-  -> SummonerService.upsert
   -> LeagueMessage.build(OPGG)
-  -> loadMatchesParallel
   -> MatchService.getRecentIds / Riot API
-  -> MatchService.getSummonerData
-  -> MongoDB.findSummonerData
+  -> MatchService.get / Riot match API
+  -> Tracker.queueMatch
+  -> Mongo match write
+  -> Mongo summoner seed from each participant
+  -> low-priority rank -> mastery refresh
+  -> MatchService.getSummonerData / MongoDB.findSummonerData
   -> getOpggEmbedMatch
 ```
 
@@ -19,9 +21,14 @@ Evidenza: [Opgg.java](../../src/main/java/com/safjnest/commands/lol/Opgg.java:58
 
 ## Cosa legge davvero OP.GG
 
-La lista delle partite viene ancora da Riot tramite `MatchService.getRecentIds` e `MatchService.get`. Il comando non usa `MongoDB.findMatchHistory` per costruire l’elenco visualizzato.
+La lista delle partite viene da `MatchService.getRecentIds`, cacheata in Redis
+per un’ora con una chiave costruita dagli stessi parametri del builder R4J
+(`queue`, `index`, `count`, `startTime`, `type`). I dettagli restano
+read-through Redis/Mongo/Riot; un dettaglio Riot viene subito passato al
+Tracker per la persistenza.
 
-Per il blocco LP/rank chiama `MatchService.getSummonerData`, che storicamente deve restituire righe participant con:
+Per il blocco LP/rank chiama `MatchService.getSummonerData`, che restituisce
+righe participant Mongo con:
 
 - `summoner_id`;
 - `game_id`;
@@ -45,17 +52,21 @@ Evidenza: [MatchService.java](../../src/main/java/com/safjnest/lol/service/Match
 
 Il confronto ora può trovare il match tramite `game_id`; resta da verificare il valore visualizzato con una sequenza rank reale e cache `SUMMONER_DATA` pulita.
 
-## Persistenza asincrona durante il comando
+## Persistenza e refresh durante il comando
 
-Per ogni match visualizzato `getOpggEmbed`:
+Per ogni match Riot visualizzato il Tracker:
 
-1. chiama `Tracker.queueMatch`, che salva l’id nella coda Redis;
-2. pianifica `LeagueHandler.updateSummonerDB(match)`, che inserisce/aggiorna solo gli account summoner;
-3. lascia al worker Tracker il successivo upsert Mongo del match, enrichment participant, rank ed eventi.
+1. salva il match Mongo;
+2. fa l’upsert di ogni summoner direttamente dal `MatchParticipant` Riot con
+   PUUID, `riotId#riotTag`, shard, icona e livello;
+3. accoda soltanto rank e mastery, in quest’ordine, nella priorità bassa R4J.
 
-Evidenza: [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java:1310) e [Tracker.java](../../src/main/java/com/safjnest/lol/tracker/Tracker.java:160).
+Questa fase non esegue chiamate Account API o Summoner API per i participant.
+L’Account API può ancora servire alla risoluzione iniziale di un Riot ID che non
+è noto localmente.
 
-Quindi è normale che subito dopo `/opgg` il documento match Mongo non esista ancora. Il problema è che non c’è un indicatore nel comando che distingua “dati Riot visualizzati, persistenza pending” da “match già persistito”.
+Il match e il seed summoner sono disponibili prima dell’enrichment basso; rank e
+mastery possono quindi essere temporaneamente quelli già persistiti.
 
 ## Verifica runtime
 

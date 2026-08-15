@@ -58,9 +58,7 @@ public final class MatchService {
             ? CompletableFuture.completedFuture(saved)
             : getRiotMatchAsync(gameId, shard).thenApplyAsync(source -> {
                 if (source == null) return null;
-                Match match = Match.fromR4J(source);
-                if (match != null) save(match);
-                return match;
+                return Tracker.queueMatch(source);
             });
     }
 
@@ -160,25 +158,7 @@ public final class MatchService {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             int index) {
-        if (summoner == null) return new ArrayList<>();
-
-        String queueKey = queue != null ? queue.name() : "null";
-        String key = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), queueKey, index);
-        List<String> cached = RedisClient.get(key, MATCH_IDS_TYPE);
-        if (cached != null) return cached;
-
-        try {
-            String id = summoner.getPUUID() + ":" + queueKey + ":" + index + ":0:0:null";
-            return R4JQueue.<List<String>>submit(summoner.getPlatform(), "match-list", id, () -> {
-                List<String> matchList = summoner.getLeagueGames().withQueue(queue).withBeginIndex(index).get();
-                List<String> result = matchList == null ? new ArrayList<>() : matchList;
-                if (matchList != null) RedisClient.set(RedisKey.MATCH_LIST, result,
-                    summoner.getPlatform().name(), summoner.getPUUID(), queueKey, index);
-                return result;
-            }).join();
-        } catch (CompletionException exception) {
-            return new ArrayList<>();
-        }
+        return getIds(summoner, queue, index, 0, 0, null);
     }
 
     public static List<String> getIds(
@@ -190,18 +170,20 @@ public final class MatchService {
             MatchlistMatchType type) {
         if (summoner == null || index < 0 || count < 0 || startTime < 0) return List.of();
 
-        String queueKey = queue == null ? "null" : queue.name();
-        String typeKey = type == null ? "null" : type.name();
-        String id = summoner.getPUUID() + ":" + queueKey + ":" + index + ":" + count + ":" + startTime + ":" + typeKey;
+        String requestKey = matchListRequestKey(queue, count, startTime, type);
+        String cacheKey = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
+        List<String> cached = RedisClient.get(cacheKey, MATCH_IDS_TYPE);
+        if (cached != null) return cached;
+
         try {
+            String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
             return R4JQueue.<List<String>>submit(summoner.getPlatform(), "match-list", id, () -> {
-                MatchListBuilder builder = summoner.getLeagueGames().withBeginIndex(index);
-                if (count > 0) builder = builder.withCount(count);
-                if (startTime > 0) builder = builder.withStartTime(startTime);
-                if (type != null) builder = builder.withType(type);
-                else builder = builder.withQueue(queue);
+                MatchListBuilder builder = matchListBuilder(summoner, queue, index, count, startTime, type);
                 List<String> values = builder.get();
-                return values == null ? List.of() : values;
+                if (values == null) return List.of();
+                RedisClient.set(RedisKey.MATCH_LIST, values,
+                    summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
+                return values;
             }).join();
         } catch (CompletionException exception) {
             return List.of();
@@ -229,6 +211,30 @@ public final class MatchService {
     }
 
     // ============================================================================
+
+    private static MatchListBuilder matchListBuilder(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue,
+            int index,
+            int count,
+            long startTime,
+            MatchlistMatchType type) {
+        MatchListBuilder builder = summoner.getLeagueGames().withBeginIndex(index);
+        if (count > 0) builder = builder.withCount(count);
+        if (startTime > 0) builder = builder.withStartTime(startTime);
+        return type != null ? builder.withType(type) : builder.withQueue(queue);
+    }
+
+    private static String matchListRequestKey(
+            GameQueueType queue,
+            int count,
+            long startTime,
+            MatchlistMatchType type) {
+        return "queue=" + (queue == null ? "null" : queue.name())
+            + ":count=" + count
+            + ":startTime=" + startTime
+            + ":type=" + (type == null ? "null" : type.name());
+    }
 
     private static LOLMatch cacheRiotMatch(String gameId, LeagueShard shard) {
         return RedisClient.get(
