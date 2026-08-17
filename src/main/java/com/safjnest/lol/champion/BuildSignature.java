@@ -25,7 +25,6 @@ public record BuildSignature(
         List<Integer> summonerSpells
 ) {
 
-    private static final Set<Integer> BOOTS = Set.of(3006, 3009, 3020, 3047, 3111, 3117, 3158);
     private static final Set<Integer> SUPPORT_ITEMS = Set.of(3869, 3870, 3871, 3872, 3873, 3876, 3877, 3901, 3902, 3903);
     private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465, 3348);
     private static final Set<Integer> CONSUMABLES = Set.of(2003, 2055, 2138, 2139, 2140, 2010);
@@ -35,7 +34,7 @@ public record BuildSignature(
         JSONObject buildObj = buildJson.optJSONObject("build");
         if (buildObj == null || buildObj.optJSONArray("build") == null) return null;
 
-        int boots = BuildUtils.readInt(buildObj, "boots");
+        int boots = BuildUtils.readInt(buildObj, "boots") == ItemUtils.BASE_BOOTS ? 0 : BuildUtils.readInt(buildObj, "boots");
         int suppItem = BuildUtils.readInt(buildObj, "support_item");
 
         List<Integer> starterList = extractStarter(filter, buildObj);
@@ -169,7 +168,7 @@ public record BuildSignature(
                 continue;
             }
 
-            if (BOOTS.contains(id)) {
+            if (ItemUtils.getBoots().contains(id)) {
                 boots = id;
                 continue;
             }
@@ -240,7 +239,7 @@ public record BuildSignature(
         if (item == null || item.getDepth() < COMPLETED_ITEM_DEPTH) return true;
         try {
             for (String from : item.getFrom())
-                if (BOOTS.contains(Integer.parseInt(from))) return true;
+                if (ItemUtils.getBoots().contains(Integer.parseInt(from))) return true;
         } catch (Exception ignored) {}
         return false;
     }

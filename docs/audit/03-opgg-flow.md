@@ -12,7 +12,7 @@
   -> Tracker.queueMatch
   -> Mongo match write
   -> Mongo summoner seed from each participant
-  -> low-priority rank -> mastery refresh
+  -> low-priority forced rank refresh
   -> MatchService.getSummonerData / MongoDB.findSummonerData
   -> getOpggEmbedMatch
 ```

@@ -9,6 +9,7 @@ import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -34,7 +35,7 @@ public final class MasteryService {
         if (cached != null) return cached;
 
         List<Mastery> stored = query(puuid, shard);
-        if (stored != null) RedisClient.set(RedisKey.PROFILE_MASTERIES, stored, shard.name(), puuid);
+        if (stored != null) RedisClient.set(RedisKey.SUMMONER_MASTERIES, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         return stored;
     }
 
@@ -134,13 +135,13 @@ public final class MasteryService {
         return R4JQueue.<List<ChampionMastery>>submit(shard, operation, puuid, priority, () -> {
             List<ChampionMastery> masteries = RIOT_API.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
             if (masteries == null) throw new IllegalStateException("Riot returned no mastery result");
-            RedisClient.set(RedisKey.CHAMPION_MASTERIES, masteries, shard.name(), puuid);
+            RedisClient.set(RedisKey.R4J_CHAMPION_MASTERIES, masteries, shard.name(), puuid);
             return masteries;
         });
     }
 
     private static List<Mastery> cache(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid), MASTERIES_TYPE);
+        return RedisClient.get(RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), MASTERIES_TYPE);
     }
 
     private static List<Mastery> query(String puuid, LeagueShard shard) {
@@ -148,7 +149,7 @@ public final class MasteryService {
     }
 
     private static List<ChampionMastery> cacheRiotMasteries(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid), RIOT_MASTERIES_TYPE);
+        return RedisClient.get(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid), RIOT_MASTERIES_TYPE);
     }
 
     private static void save(String puuid, LeagueShard shard, List<Mastery> masteries) {
@@ -158,7 +159,7 @@ public final class MasteryService {
     private static void save(String puuid, LeagueShard shard, List<Mastery> masteries, boolean invalidateProfile) {
         if (!valid(puuid, shard) || masteries == null) return;
         MongoDB.upsertMasteries(puuid, shard, masteries);
-        RedisClient.set(RedisKey.PROFILE_MASTERIES, masteries, shard.name(), puuid);
+        RedisClient.set(RedisKey.SUMMONER_MASTERIES, masteries, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
     }
 

@@ -235,6 +235,14 @@ public class Filter {
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
+    public String pageKey() {
+        String raw = val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
+                + val(patch) + "|" + val(region);
+        if (opponent != 0 || duo != 0)
+            raw += "|" + val(opponent) + "|" + val(duo);
+        return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
     public String toStateKey() {
         String raw = champion + "|" + ordinal(lane) + "|" + ordinal(queue) + "|" + ordinal(rank) + "|"
                 + val(patch) + "|" + val(region) + "|" + val(opponent) + "|" + val(duo)

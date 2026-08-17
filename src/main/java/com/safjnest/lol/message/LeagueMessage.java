@@ -1384,7 +1384,7 @@ public class LeagueMessage {
 
     private static ProfileStatistics profileStatistics(Summoner summoner, LeagueMessageParameter parameter) {
         Filter filter = parameter.toFilter();
-        ProfileStatistics statistics = PROFILE_SERVICE.getStatistics(summoner.getPUUID(), filter);
+        ProfileStatistics statistics = PROFILE_SERVICE.getStatistics(summoner.getPUUID(), summoner.getPlatform(), filter);
         if (statistics == null) {
             com.safjnest.lol.model.summoner.Summoner saved = SummonerService.find(summoner.getPUUID(), summoner.getPlatform());
             if (saved != null) DatabaseTracker.startProfileStatistics(saved, filter);

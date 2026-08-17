@@ -1,6 +1,7 @@
 package com.safjnest.lol.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,14 @@ public class LeaderboardService {
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         List<String> puuids = new ArrayList<>(summoners.size());
         for (Summoner summoner : summoners) puuids.add(summoner.puuid());
-        Map<String, ProfileStatistics> statisticsBySummoner = profileService.getStatistics(puuids, season);
+        Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
+        Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
+        for (Summoner summoner : summoners) {
+            LeagueShard shard = LeagueShard.valueOf(summoner.region());
+            puuidsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(summoner.puuid());
+        }
+        for (Map.Entry<LeagueShard, List<String>> entry : puuidsByShard.entrySet())
+            statisticsBySummoner.putAll(profileService.getStatistics(entry.getValue(), entry.getKey(), season));
         for (Summoner summoner : summoners) {
             if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
             DatabaseTracker.startProfileStatistics(summoner, season);

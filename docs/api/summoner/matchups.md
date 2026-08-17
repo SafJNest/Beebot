@@ -120,5 +120,5 @@ bassa priorità.
 - Parametri: [`LolApiParameters`](../../../src/main/java/com/safjnest/spring/controller/LolApiParameters.java)
 - Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
 - Modello: [`ProfileMatchups`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileMatchups.java)
-- Redis: `PROFILE_MATCHUPS(puuid, filterKey)`, TTL 6 ore
+- Redis: `SUMMONER_MATCHUPS(puuid, filterKey)`, TTL 6 ore
 - Mongo: collection `profile_matchups`, identità `{ puuid, filterKey }`

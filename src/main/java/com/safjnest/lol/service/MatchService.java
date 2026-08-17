@@ -13,6 +13,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -40,7 +41,7 @@ public final class MatchService {
     public static Match find(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return null;
 
-        Match cached = RedisClient.get(RedisKey.MATCH_DETAIL.of(shard.name(), gameId), Match.class);
+        Match cached = RedisClient.get(RedisKey.MATCH_DETAIL.of(LeagueShardUtils.cacheRegion(shard), shard.name(), gameId), Match.class);
         if (cached != null) {
             cached.restoreEvents();
             return cached;
@@ -49,7 +50,7 @@ public final class MatchService {
         Match stored = MongoDB.findMatch(gameId);
         if (stored != null) {
             stored.restoreEvents();
-            RedisClient.set(RedisKey.MATCH_DETAIL, stored, shard.name(), gameId);
+            RedisClient.set(RedisKey.MATCH_DETAIL, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), gameId);
         }
         return stored;
     }
@@ -89,7 +90,7 @@ public final class MatchService {
         RegionShard region = shard.toRegionShard();
         return R4JQueue.submit(shard, "match", gameId, () -> {
             LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
-            if (match != null) RedisClient.set(RedisKey.MATCH, match, region.name(), gameId);
+            if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
             return match;
         });
     }
@@ -98,23 +99,23 @@ public final class MatchService {
         if (match == null || match.getPlatform() == null) return;
 
         String gameId = match.getPlatform().name() + "_" + match.getGameId();
-        RedisClient.set(RedisKey.MATCH, match, match.getPlatform().toRegionShard().name(), gameId);
-        RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(match.getPlatform().name(), gameId));
+        RedisClient.set(RedisKey.R4J_MATCH, match, match.getPlatform().toRegionShard().name(), gameId);
+        RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(match.getPlatform().name(), gameId));
     }
 
     public static void deleteRiotMatch(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
-        RedisClient.delete(RedisKey.MATCH.of(shard.toRegionShard().name(), gameId));
+        RedisClient.delete(RedisKey.R4J_MATCH.of(shard.toRegionShard().name(), gameId));
     }
 
     public static ApiResult<Match> getDetail(String gameId, LeagueShard shard) {
         Match match = find(gameId, shard);
         if (match != null) {
-            RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), gameId));
+            RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
             return ApiResult.ready(match);
         }
 
-        String notFound = RedisClient.get(RedisKey.MATCH_NOT_FOUND.of(shard.name(), gameId));
+        String notFound = RedisClient.get(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
         if ("1".equals(notFound)) return ApiResult.notFound();
 
         Tracker.enqueueMatchLookup(shard, gameId);
@@ -152,8 +153,8 @@ public final class MatchService {
 
     public static void invalidate(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
-        RedisClient.delete(RedisKey.MATCH_DETAIL.of(shard.name(), gameId));
-        RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), gameId));
+        RedisClient.delete(RedisKey.MATCH_DETAIL.of(LeagueShardUtils.cacheRegion(shard), shard.name(), gameId));
+        RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
     }
 
     public static List<String> getRecentIds(
@@ -179,7 +180,7 @@ public final class MatchService {
 
         int requestedCount = count == 0 ? MATCH_LIST_BATCH_SIZE : count;
         String requestKey = matchListRequestKey(queue, requestedCount, startTime, type);
-        String cacheKey = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
+        String cacheKey = RedisKey.R4J_MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
         List<String> cached = RedisClient.get(cacheKey, MATCH_IDS_TYPE);
         if (cached != null) return cached;
 
@@ -189,7 +190,7 @@ public final class MatchService {
                 MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();
-                RedisClient.set(RedisKey.MATCH_LIST, values,
+                RedisClient.set(RedisKey.R4J_MATCH_LIST, values,
                     summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
                 return values;
             }).join();
@@ -203,7 +204,7 @@ public final class MatchService {
     }
 
     public static List<QueryRecord> getSummonerData(String puuid, LeagueShard shard) {
-        String key = RedisKey.SUMMONER_DATA.of(puuid, shard.name());
+        String key = RedisKey.SUMMONER_DATA.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         List<QueryRecord> cached = RedisClient.get(key, new TypeReference<List<QueryRecord>>() {});
         if (cached != null) return cached;
 
@@ -214,7 +215,7 @@ public final class MatchService {
             Long.MAX_VALUE,
             GameQueueType.TEAM_BUILDER_RANKED_SOLO
         );
-        RedisClient.set(RedisKey.SUMMONER_DATA, result, puuid, shard.name());
+        RedisClient.set(RedisKey.SUMMONER_DATA, result, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         return result;
     }
 
@@ -246,7 +247,7 @@ public final class MatchService {
 
     private static LOLMatch cacheRiotMatch(String gameId, LeagueShard shard) {
         return RedisClient.get(
-            RedisKey.MATCH.of(shard.toRegionShard().name(), gameId),
+            RedisKey.R4J_MATCH.of(shard.toRegionShard().name(), gameId),
             LOLMatch.class
         );
     }
@@ -255,7 +256,13 @@ public final class MatchService {
         if (!valid(match, match.gameId, match.leagueShard)) return;
 
         if (!MongoDB.upsertMatch(match.gameId, match)) return;
-        RedisClient.set(RedisKey.MATCH_DETAIL, match, match.leagueShard.name(), match.gameId);
+        RedisClient.set(
+            RedisKey.MATCH_DETAIL,
+            match,
+            LeagueShardUtils.cacheRegion(match.leagueShard),
+            match.leagueShard.name(),
+            match.gameId
+        );
         deleteRiotMatch(match.gameId, match.leagueShard);
     }
 }

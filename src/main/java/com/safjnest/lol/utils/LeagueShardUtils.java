@@ -49,6 +49,10 @@ public class LeagueShardUtils {
         };
     }
 
+    public static String cacheRegion(LeagueShard shard) {
+        return shard.toRegionShard().name();
+    }
+
     public static List<LeagueShard> getActives() {
         return List.of(
             LeagueShard.EUW1,

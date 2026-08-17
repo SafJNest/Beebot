@@ -54,12 +54,12 @@ public class ChampionService {
         Filter filter = new Filter().setChampion(champion.getId()).setRank(rank).setRegion(region)
             .setQueue(selectedQueue).setLane(role);
         if (patch != null) filter.setPatch(patch);
-        String key = RedisKey.CHAMPION_PAGE.of(filter.toKey());
+        String key = RedisKey.CHAMPION_PAGE.of(filter.champion(), filter.pageKey());
         long statsLastUpdate = MongoDB.findChampionStatisticsLastUpdate(filter);
         long buildLastUpdate = MongoDB.findChampionBuildLastUpdate(filter);
         if (isStale(statsLastUpdate) || isStale(buildLastUpdate)) {
             RedisClient.delete(key);
-            RedisClient.delete(RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion()));
+            RedisClient.delete(RedisKey.CHAMPION_STATS.of(filter.champion(), filter.genericKey()));
         }
         ChampionView cached;
         try {
@@ -260,7 +260,7 @@ public class ChampionService {
     }
 
     public static void invalidate(Filter filter) {
-        if (filter != null) RedisClient.delete(RedisKey.CHAMPION_PAGE.of(filter.toKey()));
+        if (filter != null) RedisClient.delete(RedisKey.CHAMPION_PAGE.of(filter.champion(), filter.pageKey()));
     }
 
     public static void invalidateTierList(Filter filter) {
@@ -286,7 +286,7 @@ public class ChampionService {
         ChampionView page = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
             ChampionUtils.getChampionProfilePic(champion.getId())), stats, build)
             .withMetadata(metadata(statsLastUpdate, buildLastUpdate, false, filter));
-        RedisClient.set(RedisKey.CHAMPION_PAGE, page.withMetadata(null), filter.toKey());
+        RedisClient.set(RedisKey.CHAMPION_PAGE, page.withMetadata(null), filter.champion(), filter.pageKey());
         return ApiResult.ready(page, page.metadata());
     }
 

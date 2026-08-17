@@ -55,7 +55,7 @@ periodo in una sola response, senza cursor. Le celle della heatmap sono
 ordinate per `day * 24 + hour`, con Monday `0` e Sunday `6`.
 
 La persistenza segue lo stesso read-through delle statistiche, ma su una
-collection derivata dedicata: `Redis PROFILE_ACTIVITY(PUUID, filterKey)`, poi
+collection derivata dedicata: `Redis SUMMONER_ACTIVITY(PUUID, filterKey)`, poi
 Mongo `profile_activity` con `{ puuid, filterKey }`. Un valore assente restituisce `202
 profile_activity_pending` e viene accodato `ON_DEMAND`. Un valore stale resta
 un `200` con il payload persistito e `metadata.refresh=true`, poi accoda solo
@@ -87,7 +87,7 @@ profilo e da Discord; non è la sorgente della relazione champion giocato →
 matchup. Il nuovo aggregato ha un proprio read-through Redis/Mongo:
 
 ```text
-Redis PROFILE_MATCHUPS(PUUID, filterKey)
+Redis SUMMONER_MATCHUPS(PUUID, filterKey)
   -> Mongo profile_matchups { puuid, filterKey }
   -> DatabaseTracker profile-matchups:<puuid>:<filterKey>
   -> Mongo.findProfileStatisticsMatches(..., Filter, 0, 0)
@@ -327,7 +327,7 @@ Discord/API request
   -> risolve Summoner e PUUID
   -> costruisce un Filter completo
   -> ProfileStatisticsService.get(PUUID, Filter)
-       -> Redis PROFILE_STATISTICS(PUUID, filterKey)
+       -> Redis SUMMONER_STATISTICS(PUUID, filterKey)
        -> Mongo {puuid, filterKey}
   -> hit: usa ProfileStatistics
   -> miss: DatabaseTracker.startProfileStatistics(Summoner, Filter)
@@ -358,12 +358,12 @@ Per activity il flusso sincrono è invece:
 ```text
 API request
   -> costruisce Filter completo
-  -> Redis PROFILE_ACTIVITY(PUUID, filterKey)
+  -> Redis SUMMONER_ACTIVITY(PUUID, filterKey)
   -> Mongo profile_activity {puuid, filterKey}
   -> Mongo findProfileStatisticsMatches(..., Filter, 0, 0)
   -> ProfileActivity.from(...): una scansione, stats e accumulator condivisi
   -> Mongo upsertProfileActivity(PUUID, Filter, activity)
-  -> Redis PROFILE_ACTIVITY(PUUID, filterKey)
+  -> Redis SUMMONER_ACTIVITY(PUUID, filterKey)
 ```
 
 La deduplicazione del lavoro asincrono usa la stessa identità logica:
@@ -396,7 +396,7 @@ Durante l'aggregazione vengono prodotti nello stesso passaggio totale, queue, la
 
 `recentMatches` è una responsabilità separata:
 
-- cache Redis: `PROFILE_RECENT_MATCHES` con PUUID e `filterKey`;
+- cache Redis: `SUMMONER_RECENT_MATCHES` con PUUID e `filterKey`;
 - query Mongo separata con projection `MatchResult`;
 - invalidazione dopo un refresh riuscito delle statistiche;
 - nessun campo `recentMatches` dentro `ProfileStatistics` o nel documento `profile_statistics`.
@@ -429,16 +429,23 @@ L'overview base mantiene il proprio formato storico e include i ping nel blocco 
 
 ## Cache e invalidazione
 
+Le chiavi Redis sono separate per namespace: `beebot:lol:r4j:*` identifica i
+payload Riot4J, mentre `beebot:lol:ls:*` identifica le proiezioni e le code
+League OS. Le chiavi applicative legate a un account mettono i valori reali
+prima della risorsa: `beebot:lol:ls:<region>:<shard>:<puuid>:summoner` oppure
+`beebot:lol:ls:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>`, così la scansione per
+PUUID ritrova le proiezioni del summoner senza un token letterale `puuid`.
+
 | Dato | Chiave | TTL | Owner | Invalidazione |
 |---|---|---:|---|---|
-| profilo base | `PROFILE_BASE(shard, PUUID)` | 6h | `SummonerService` | dopo refresh del componente o `SummonerService.invalidate` |
-| rank profilo | `PROFILE_RANKS(shard, PUUID)` | 6h | `RankService` | dopo refresh del componente o `SummonerService.invalidate` |
-| mastery profilo | `PROFILE_MASTERIES(shard, PUUID)` | 6h | `MasteryService` | dopo refresh del componente o `SummonerService.invalidate` |
-| statistiche aggregate | `PROFILE_STATISTICS(PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
-| activity aggregate | `PROFILE_ACTIVITY(PUUID, filterKey)` | 6h | `ProfileActivityService` | aggiornamento dopo upsert |
-| profile matchups | `PROFILE_MATCHUPS(PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
-| recent matches | `PROFILE_RECENT_MATCHES(PUUID, filterKey)` | 1h | `ProfileService` | dopo refresh statistiche |
-| pagina profilo | `PROFILE_PAGE(shard, PUUID)` | 1h | `ProfileService` | dopo refresh statistiche o componenti profilo; non contiene `recentMatches` |
+| summoner base | `SUMMONER(region, shard, PUUID)` | 6h | `SummonerService` | dopo refresh del componente o `SummonerService.invalidate` |
+| rank summoner | `SUMMONER_RANKS(region, shard, PUUID)` | 6h | `RankService` | dopo refresh del componente o `SummonerService.invalidate` |
+| mastery summoner | `SUMMONER_MASTERIES(region, shard, PUUID)` | 6h | `MasteryService` | dopo refresh del componente o `SummonerService.invalidate` |
+| statistiche aggregate | `SUMMONER_STATISTICS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
+| activity aggregate | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileActivityService` | aggiornamento dopo upsert |
+| summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
+| recent matches | `SUMMONER_RECENT_MATCHES(region, shard, PUUID, filterKey)` | 1h | `ProfileService` | dopo refresh statistiche |
+| overview summoner | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | dopo refresh statistiche o componenti summoner; non contiene `recentMatches` |
 | match raw | chiavi match esistenti | secondo `RedisKey` | `MatchService`/`Tracker` | secondo il flusso match |
 
 Un aggregato Mongo privo di `championStats[*].context` viene trattato come

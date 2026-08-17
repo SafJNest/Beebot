@@ -22,6 +22,7 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -62,7 +63,7 @@ public final class SummonerService {
         if (cached != null) return cached;
 
         Summoner stored = query(puuid, shard);
-        if (stored != null) RedisClient.set(RedisKey.PROFILE_BASE, stored, shard.name(), puuid);
+        if (stored != null) RedisClient.set(RedisKey.SUMMONER, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         return stored;
     }
 
@@ -91,7 +92,7 @@ public final class SummonerService {
 
     public static CompletableFuture<RefreshResult> refreshAsync(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)
-                || !RedisClient.claim(RedisKey.SUMMONER_REFRESH_COOLDOWN, "1", shard.name(), puuid)) {
+                || !RedisClient.claim(RedisKey.R4J_SUMMONER_REFRESH_COOLDOWN, "1", shard.name(), puuid)) {
             return CompletableFuture.completedFuture(RefreshResult.ignored());
         }
 
@@ -134,7 +135,7 @@ public final class SummonerService {
         return R4JQueue.submit(shard, "summoner", puuid, () -> {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                 RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
-            if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, shard.name(), puuid);
+            if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
             return summoner;
         }).thenComposeAsync(summoner -> summoner == null
             ? CompletableFuture.completedFuture(null)
@@ -155,11 +156,11 @@ public final class SummonerService {
     public static String getUserId(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return null;
 
-        String userId = RedisClient.get(RedisKey.USER_ID_BY_PUUID.of(shard.name(), puuid), String.class);
+        String userId = RedisClient.get(RedisKey.R4J_USER_ID_BY_PUUID.of(shard.name(), puuid), String.class);
         if (userId != null) return userId;
 
         userId = MongoDB.findUserIdByPuuid(puuid, shard);
-        if (userId != null) RedisClient.set(RedisKey.USER_ID_BY_PUUID, userId, shard.name(), puuid);
+        if (userId != null) RedisClient.set(RedisKey.R4J_USER_ID_BY_PUUID, userId, shard.name(), puuid);
         return userId;
     }
 
@@ -182,13 +183,13 @@ public final class SummonerService {
     public static CompletableFuture<RiotAccount> getRiotAccountAsync(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(null);
 
-        RiotAccount cached = RedisClient.get(RedisKey.ACCOUNT.of(shard.name(), puuid), RiotAccount.class);
+        RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT.of(shard.name(), puuid), RiotAccount.class);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         return R4JQueue.submit(shard, "account", puuid, () -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
-            if (account != null) RedisClient.set(RedisKey.ACCOUNT, account, shard.name(), puuid);
+            if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
             return account;
         });
     }
@@ -196,7 +197,7 @@ public final class SummonerService {
     public static CompletableFuture<RiotAccount> getRiotAccountAsync(String name, String tag, LeagueShard shard) {
         if (!valid(name, tag, shard)) return CompletableFuture.completedFuture(null);
 
-        RiotAccount cached = RedisClient.get(RedisKey.ACCOUNT_BY_NAME.of(shard.name(), name, tag), RiotAccount.class);
+        RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT_BY_NAME.of(shard.name(), name, tag), RiotAccount.class);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         String riotId = name + "#" + tag;
@@ -204,8 +205,8 @@ public final class SummonerService {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByTag(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), name, tag);
             if (account != null) {
-                RedisClient.set(RedisKey.ACCOUNT_BY_NAME, account, shard.name(), name, tag);
-                RedisClient.set(RedisKey.ACCOUNT, account, shard.name(), account.getPUUID());
+                RedisClient.set(RedisKey.R4J_ACCOUNT_BY_NAME, account, shard.name(), name, tag);
+                RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), account.getPUUID());
             }
             return account;
         });
@@ -246,13 +247,13 @@ public final class SummonerService {
     public static SpectatorGameInfo getSpectatorGame(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return null;
 
-        SpectatorGameInfo cached = RedisClient.get(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid), SpectatorGameInfo.class);
+        SpectatorGameInfo cached = RedisClient.get(RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid), SpectatorGameInfo.class);
         if (cached != null) return cached;
 
         try {
             return R4JQueue.submit(shard, "spectator", puuid, () -> {
                 SpectatorGameInfo game = RIOT_API.getLoLAPI().getSpectatorAPI().getCurrentGame(shard, puuid);
-                if (game != null) RedisClient.set(RedisKey.SPECTATOR_CURRENT, game, shard.name(), puuid);
+                if (game != null) RedisClient.set(RedisKey.R4J_SPECTATOR_CURRENT, game, shard.name(), puuid);
                 return game;
             }).join();
         } catch (CompletionException exception) {
@@ -262,7 +263,7 @@ public final class SummonerService {
 
     public static List<SummonerView> search(String query, LeagueShard shard) {
         String normalizedQuery = normalizeSearch(query);
-        String key = RedisKey.SUMMONER_SEARCH.of(shard.name(), normalizedQuery);
+        String key = RedisKey.SUMMONER_SEARCH.of(LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
         List<SummonerView> cached = RedisClient.get(key, SUMMONER_SEARCH_TYPE);
         if (cached != null) return cached;
 
@@ -273,7 +274,7 @@ public final class SummonerService {
                 : com.safjnest.lol.model.summoner.Rank.unranked();
             summoners.add(SummonerView.from(row.summoner(), List.of(rank), new ProfileStatistics(), List.of()));
         }
-        RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, shard.name(), normalizedQuery);
+        RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
         return summoners;
     }
 
@@ -283,7 +284,7 @@ public final class SummonerService {
         String normalizedQuery = normalizeSearch(query);
         if (normalizedQuery.isEmpty()) return new ArrayList<>();
 
-        String key = RedisKey.SUMMONER_AUTOCOMPLETE.of(shard.name(), normalizedQuery);
+        String key = RedisKey.SUMMONER_AUTOCOMPLETE.of(LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
         List<SummonerAutocompleteChoice> cached = RedisClient.get(key, SUMMONER_AUTOCOMPLETE_TYPE);
         if (cached != null) return toChoices(cached);
 
@@ -291,7 +292,7 @@ public final class SummonerService {
         for (MongoDB.SummonerSearchResult row : querySearch(normalizedQuery, shard)) {
             choices.add(new SummonerAutocompleteChoice(row.summoner().riotId(), row.summoner().puuid()));
         }
-        RedisClient.set(RedisKey.SUMMONER_AUTOCOMPLETE, choices, shard.name(), normalizedQuery);
+        RedisClient.set(RedisKey.SUMMONER_AUTOCOMPLETE, choices, LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
         return toChoices(choices);
     }
 
@@ -310,17 +311,17 @@ public final class SummonerService {
     public static void invalidate(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return;
 
-        RedisClient.delete(RedisKey.SUMMONER.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.ACCOUNT.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.USER_ID_BY_PUUID.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.PROFILE_RANK.of(shard.name() + ":" + puuid));
-        RedisClient.delete(RedisKey.PROFILE_RANKS.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.MATCH_LIST.of(shard.name(), puuid, "null", 0));
-        RedisClient.delete(RedisKey.PROFILE_BASE.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_SUMMONER.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_ACCOUNT.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_USER_ID_BY_PUUID.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
+        RedisClient.delete(RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
+        RedisClient.delete(RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_MATCH_LIST.of(shard.name(), puuid, "null", 0));
+        RedisClient.delete(RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
         ProfileService.invalidate(puuid, shard);
     }
 
@@ -330,7 +331,7 @@ public final class SummonerService {
         return R4JQueue.submit(shard, "account-refresh", puuid, () -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
-            if (account != null) RedisClient.set(RedisKey.ACCOUNT, account, shard.name(), puuid);
+            if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
             return account;
         });
     }
@@ -342,7 +343,7 @@ public final class SummonerService {
         return R4JQueue.submit(shard, "summoner-refresh", puuid, () -> {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                 RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
-            if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, shard.name(), puuid);
+            if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
             return summoner;
         });
     }
@@ -370,15 +371,15 @@ public final class SummonerService {
 
     private static void invalidateRefreshSourceCaches(String puuid, LeagueShard shard) {
         RedisClient.delete(List.of(
-            RedisKey.SUMMONER.of(shard.name(), puuid),
-            RedisKey.ACCOUNT.of(shard.name(), puuid),
-            RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid),
-            RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid),
-            RedisKey.PROFILE_BASE.of(shard.name(), puuid),
-            RedisKey.PROFILE_RANK.of(shard.name() + ":" + puuid),
-            RedisKey.PROFILE_RANKS.of(shard.name(), puuid),
-            RedisKey.PROFILE_MASTERIES.of(shard.name(), puuid),
-            RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid)
+            RedisKey.R4J_SUMMONER.of(shard.name(), puuid),
+            RedisKey.R4J_ACCOUNT.of(shard.name(), puuid),
+            RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid),
+            RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid),
+            RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid)
         ));
     }
 
@@ -446,7 +447,7 @@ public final class SummonerService {
     }
 
     private static Summoner cache(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.PROFILE_BASE.of(shard.name(), puuid), Summoner.class);
+        return RedisClient.get(RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), Summoner.class);
     }
 
     private static Summoner query(String puuid, LeagueShard shard) {
@@ -454,7 +455,7 @@ public final class SummonerService {
     }
 
     private static no.stelar7.api.r4j.pojo.lol.summoner.Summoner cacheRiotSummoner(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.SUMMONER.of(shard.name(), puuid), no.stelar7.api.r4j.pojo.lol.summoner.Summoner.class);
+        return RedisClient.get(RedisKey.R4J_SUMMONER.of(shard.name(), puuid), no.stelar7.api.r4j.pojo.lol.summoner.Summoner.class);
     }
 
     private static CompletableFuture<Summoner> saveAsync(no.stelar7.api.r4j.pojo.lol.summoner.Summoner source) {
@@ -484,7 +485,7 @@ public final class SummonerService {
     }
 
     private static Summoner store(Summoner summoner, LeagueShard shard) {
-        if (summoner != null) RedisClient.set(RedisKey.PROFILE_BASE, summoner, shard.name(), summoner.puuid());
+        if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, LeagueShardUtils.cacheRegion(shard), shard.name(), summoner.puuid());
         return summoner;
     }
 

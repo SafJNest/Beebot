@@ -23,7 +23,6 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.service.MatchService;
-import com.safjnest.lol.service.MasteryService;
 import com.safjnest.lol.service.RankService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.redis.RedisClient;
@@ -154,13 +153,7 @@ public class Tracker {
                 .handle((ranks, error) -> {
                     if (error != null) BotLogger.error("Rank refresh failed for " + puuid + ": " + error.getMessage());
                     return (Void) null;
-                })
-                .thenCompose(ignoredRank -> MasteryService.refreshBackgroundAsync(puuid, shard)
-                    .handle((masteries, error) -> {
-                        if (error != null) BotLogger.error("Mastery refresh failed for " + puuid + ": " + error.getMessage());
-                        return (Void) null;
-                    }))
-                .thenRun(() -> {});
+                });
             future.whenComplete((ignoredResult, ignoredError) -> PARTICIPANT_REFRESHES.remove(key, future));
             return future;
         });
@@ -248,7 +241,7 @@ public class Tracker {
         }
 
         RedisClient.set(
-            RedisKey.MATCH_NOT_FOUND,
+            RedisKey.R4J_MATCH_NOT_FOUND,
             "1",
             request.shard().name(), request.gameId()
         );
@@ -463,7 +456,7 @@ public class Tracker {
         data.put("platform", shard);
         data.put("id", puuid);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, data);
-        RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid));
     }
 
     public static Match fromR4J(LOLMatch source) {

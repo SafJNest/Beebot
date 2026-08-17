@@ -21,6 +21,8 @@ curl 'http://localhost:8080/api/lol/EUW1/profile-by-name/Player/EUW'
 I segmenti path devono essere URL-encoded quando contengono caratteri
 riservati. Dopo la risoluzione del Riot ID, la risposta usa esattamente lo
 stesso `SummonerView` di [Profile by PUUID](profile-by-puuid.md).
+Rank e mastery restano letture Redis/Mongo: se assenti sono liste vuote e non
+avviano chiamate Riot dalla GET.
 
 ## Risposta `200`
 
@@ -150,7 +152,7 @@ sola lane `UNKNOWN`.
 
 | HTTP | `code` | Quando |
 |---:|---|---|
-| `202` | `profile_pending` | La risoluzione del Riot ID o un componente del profilo è in corso. |
+| `202` | `profile_pending` | La risoluzione del Riot ID o del summoner base è in corso. |
 | `400` | `invalid_request` | `shard`, `gameName` o `tagLine` mancanti/non validi. |
 | `404` | `not_found` | Riot ID o profilo non trovati. |
 

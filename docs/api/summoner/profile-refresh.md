@@ -25,6 +25,9 @@ aggiorna in ordine Riot Account, summoner, rank e mastery tramite `R4JQueue`.
 Ogni componente viene persistito in Mongo e le cache Redis appena ricostruite
 rimangono disponibili.
 
+Le GET profile non avviano il fetch Riot di rank o mastery quando i componenti
+sono assenti; questo POST è l'unico flusso profilo che li aggiorna.
+
 Dopo la verifica del profilo, la POST aggiorna internamente
 `summoner.lastSeenAt`. `DatabaseTracker` riceve un unico job manuale ad alta
 priorità, deduplicato `profile-refresh:<puuid>`, che rigenera da zero

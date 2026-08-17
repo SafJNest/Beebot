@@ -114,7 +114,7 @@ public final class ChampionAnalyzer {
     static ChampionStatistics get(Filter filter, boolean allowCompute) {
         if (filter == null) return null;
 
-        String key = RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion());
+        String key = RedisKey.CHAMPION_STATS.of(filter.champion(), filter.genericKey());
         ChampionStatistics stats;
         try {
             stats = RedisClient.get(key, ChampionStatistics.class);
@@ -132,19 +132,19 @@ public final class ChampionAnalyzer {
             return null;
         }
         if (stats != null) {
-            RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
+            RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
             return stats;
         }
         if (MongoDB.hasChampionStatisticsReady(filter)) {
             stats = empty(filter);
-            RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
+            RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
             return stats;
         }
         if (!allowCompute) return null;
 
         Map<Integer, ChampionStatistics> computed = compute(filter, true);
         stats = computed == null ? null : computed.get(filter.champion());
-        if (stats != null) RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.genericKey(), filter.champion());
+        if (stats != null) RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
         return stats;
     }
 

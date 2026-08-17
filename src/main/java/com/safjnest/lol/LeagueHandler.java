@@ -687,7 +687,7 @@ import com.safjnest.lol.utils.PatchUtils;
             case V4_LEAGUE_ENTRY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
                 data.put("id", summoner.getPUUID());
-                RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(summoner.getPlatform().name(), summoner.getPUUID()));
+                RedisClient.delete(RedisKey.R4J_LEAGUE_ENTRIES.of(summoner.getPlatform().name(), summoner.getPUUID()));
                 break;
             case V4_MASTERY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());

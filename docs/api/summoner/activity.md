@@ -182,4 +182,4 @@ da `coverage.calculatedAt`. Se il valore è stale, la risposta resta `200` con
 - Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
 - Success model: [`ProfileActivity`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileActivity.java)
 - Match query: [`MongoDB.findProfileStatisticsMatches`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
-- Persistence: Redis `PROFILE_ACTIVITY(puuid, filterKey)` e collection Mongo `profile_activity` con la stessa identità `{ puuid, filterKey }`.
+- Persistence: Redis `SUMMONER_ACTIVITY(puuid, filterKey)` e collection Mongo `profile_activity` con la stessa identità `{ puuid, filterKey }`.

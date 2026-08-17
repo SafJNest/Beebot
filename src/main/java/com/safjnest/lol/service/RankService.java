@@ -12,6 +12,7 @@ import java.util.concurrent.CompletionException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -40,7 +41,7 @@ public final class RankService {
         if (cached != null) return cached;
 
         List<Rank> stored = query(puuid, shard);
-        if (stored != null) RedisClient.set(RedisKey.PROFILE_RANKS, stored, shard.name(), puuid);
+        if (stored != null) RedisClient.set(RedisKey.SUMMONER_RANKS, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         return stored;
     }
 
@@ -136,7 +137,7 @@ public final class RankService {
         }
         if (!updated) entries.add(entry);
 
-        RedisClient.set(RedisKey.LEAGUE_ENTRIES, entries, shard.name(), entry.getPuuid());
+        RedisClient.set(RedisKey.R4J_LEAGUE_ENTRIES, entries, shard.name(), entry.getPuuid());
         if (SummonerService.get(entry.getPuuid(), shard) != null) save(entry.getPuuid(), shard, entries);
     }
 
@@ -202,13 +203,13 @@ public final class RankService {
         return R4JQueue.<List<LeagueEntry>>submit(shard, operation, puuid, priority, () -> {
             List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
             if (entries == null) throw new IllegalStateException("Riot returned no rank result");
-            RedisClient.set(RedisKey.LEAGUE_ENTRIES, entries, shard.name(), puuid);
+            RedisClient.set(RedisKey.R4J_LEAGUE_ENTRIES, entries, shard.name(), puuid);
             return entries;
         });
     }
 
     private static List<Rank> cache(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.PROFILE_RANKS.of(shard.name(), puuid), RANKS_TYPE);
+        return RedisClient.get(RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), RANKS_TYPE);
     }
 
     private static List<Rank> query(String puuid, LeagueShard shard) {
@@ -216,7 +217,7 @@ public final class RankService {
     }
 
     private static List<LeagueEntry> cacheEntries(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid), LEAGUE_ENTRIES_TYPE);
+        return RedisClient.get(RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid), LEAGUE_ENTRIES_TYPE);
     }
 
     private static void saveRanks(String puuid, LeagueShard shard, List<Rank> ranks) {
@@ -233,7 +234,7 @@ public final class RankService {
             }
         }
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
-        RedisClient.set(RedisKey.PROFILE_RANKS, ranks, shard.name(), puuid);
+        RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
     }
 

@@ -214,3 +214,95 @@ La lettura di un champion non deve mai invocare direttamente il recompute global
 ## Fuori scope
 
 La strategia di prewarming dello scheduler e l’audit `explain("executionStats")` sugli indici della collection `match` restano fuori scope operativo di questo fix.
+
+## TODO futuro — build da timeline e ottimizzazione Rusted Java
+
+Questo lavoro è separato dal refresh delle statistiche e non deve trasformare il
+job stats in un calcolo congiunto stats+build. La build deve essere calcolata in
+un momento distinto, con il proprio job, accumulatore, lifecycle e misura delle
+risorse. Il calcolo deve usare gli `events` della partita come unica sorgente
+dell’ordine d’acquisto; i campi derivati di `participants` (`starterItems`,
+`buildPath`, `boots`, `supportItem`) non devono essere una seconda copia della
+stessa informazione.
+
+### Obiettivo funzionale
+
+- Selezionare solo i game compatibili con il `Filter` della build e con il
+  champion richiesto.
+- Caricare gli `events` del game in streaming, senza materializzare la lista
+  completa degli eventi in memoria.
+- Eseguire il testing iniziale e la validazione del parser sulla collection
+  Mongo `lol_testing`; il dataset production non è una prova valida per il
+  primo ciclo di equivalenza.
+- Filtrare gli eventi del participant champion interessato.
+- Ordinare o rispettare l’ordine temporale degli acquisti e classificare ogni
+  item secondo il suo ruolo nella build.
+- Usare `skill_events` per ricostruire l’ordine delle spell e il timing di ogni
+  level-up dello slot; lo slot resta la rappresentazione canonica e il mapping
+  Q/W/E/R viene applicato solo in proiezione.
+- Usare `item_events` per ricostruire la progressione reale degli item del
+  participant, interpretando `ITEM_PURCHASED`, `ITEM_DESTROYED`, `ITEM_SOLD` e
+  `ITEM_UNDO` insieme. I componenti consumati per una trasformazione non devono
+  diventare item finali della build.
+- Registrare per ogni item finale il timestamp di acquisizione e persistere la
+  sua media di acquisto in minuti; il timestamp in millisecondi va convertito
+  solo al confine dell’aggregazione/proiezione.
+- Conservare il comportamento aggregato attuale dove è ancora valido:
+  starter, boots, support item, core, slot, rune, spell order, prismatic e
+  augment.
+- Gestire correttamente il boots base nello starter e il boots completo finale:
+  `1001` può appartenere allo starter, ma non deve essere salvato come boots
+  finale; in ARAM/Arena un boots completo può appartenere anche allo starter.
+- Mantenere invariati i risultati osservabili non esplicitamente rimossi e
+  aggiornare nello stesso lavoro il contratto persistito/API se vengono tolti
+  campi pubblici.
+
+### Persistenza minima
+
+- Per le opzioni di presenza persistere il solo totale `matches`: non salvare
+  `wins`, `winrate` o `pickrate` quando sono valori ricostruibili o non richiesti
+  dal nuovo contratto.
+- Rimuovere i campi che possono essere ricostruiti direttamente dal totale o da
+  altri valori già persistiti, inclusi i ranking/percentuali duplicate.
+- Conservare invece medie e metriche non ricostruibili dal solo totale, come gli
+  `avg` già previsti dal contratto, inclusi il minuto medio di acquisto degli
+  item e il timing medio dei level-up delle spell. Il contratto dovrà esporre
+  l’`avgPurchaseMinute` per le opzioni item e una sequenza di timing medi
+  allineata all’ordine spell per le opzioni skill.
+- Verificare esplicitamente l’impatto su `Build.Option`, `Build.CoreBuildOption`,
+  JSON/BSON, Redis, API, test e documentazione prima di eliminare un campo.
+
+### Piano Rusted Java
+
+1. Misurare separatamente query Mongo, lettura/decode `match_events`, parsing
+   JSON, classificazione item, aggregazione, serializzazione e write.
+2. Usare cursor e batch piccoli; processare un game/evento alla volta e
+   rilasciare subito JSON, mappe temporanee e riferimenti al game.
+3. Evitare `QueryRecord` o liste globali di eventi; passare al parser solo il
+   contesto minimo del participant richiesto.
+4. Usare FastUtil per mappe e chiavi ad alta cardinalità degli accumulatori,
+   con chiavi compatte reversibili e collision-free; non usare ordinali enum e
+   non cambiare le chiavi pubbliche `Filter`.
+5. Conservare `LinkedHashMap` o una struttura d’ordine separata quando l’ordine
+   entra nel JSON/BSON o in una selezione osservabile.
+6. Ridurre box, copie di stringhe e oggetti temporanei solo dopo aver
+   identificato il punto caldo con una misura.
+7. Svuotare gli accumulatori dopo la persistenza acknowledged e garantire lo
+   stesso cleanup in `finally` per parse, query e write falliti.
+
+### Sequenza di implementazione
+
+1. Definire il parser timeline e testare la classificazione temporale degli
+   item e delle spell senza cambiare ancora il contratto persistito.
+2. Aggiungere il nuovo build job separato e confrontare il risultato con il
+   calcolo attuale su un campione identico.
+3. Misurare heap high-water mark, tempo di lettura eventi, parse e cardinalità
+   delle mappe prima di applicare FastUtil e chiavi compatte.
+4. Rimuovere i campi build derivati da `Tracker` e `participants` solo dopo la
+   parità dimostrata e la verifica di tutti i consumer.
+5. Ridurre il payload persistito ai totali e alle sole medie/metriche non
+   ricostruibili, sincronizzando API, Mongo, Redis e documentazione.
+
+Questo TODO modifica intenzionalmente la direzione descritta dall’ADR-0012
+(build alimentata dalla scansione condivisa): prima dell’implementazione serve
+un aggiornamento esplicito dell’ADR e del macro-task proprietario.

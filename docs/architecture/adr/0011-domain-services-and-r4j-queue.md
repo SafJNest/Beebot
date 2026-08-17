@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-08-01
+- Amended: 2026-08-15
 
 ## Context
 
@@ -20,7 +21,7 @@ or concurrent Riot requests for the same shard.
 - `MasteryService` owns mastery reads and persistence;
 - `MatchService` owns match, raw Riot match, match-list and match-derived
   Mongo reads;
-- `ProfileService` owns profile-page composition and its `PROFILE_PAGE` cache.
+- `ProfileService` owns profile-page composition and its `SUMMONER_OVERVIEW` cache.
 
 `R4JQueue` owns outbound Riot scheduling. It keeps one virtual-thread
 executor per `LeagueShard`, with high and low priority queues, and deduplicates
@@ -33,9 +34,10 @@ The canonical match identifier is always the full Riot ID, for example
 `EUW1_6789012345`. Numeric IDs are neither accepted nor exposed by the match
 service, model, Mongo projection or Redis cache keys.
 
-Profile composition still starts summoner, rank and mastery futures together.
-The queue serializes only their external R4J work for the selected shard, so
-the existing `202 profile_pending` behavior remains unchanged.
+Profile composition starts a summoner Future only when its base identity is
+absent. It reads rank and mastery from Redis/Mongo without starting Riot work;
+their forced Riot refresh is exclusive to `POST /profile/{puuid}/refresh`.
+The queue serializes that external R4J work for the selected shard.
 
 ADR-0012 supersedes the profile facade ownership above while preserving this
 profile-future and R4J scheduling invariant.
@@ -59,8 +61,9 @@ invariants remain in force.
   and requires neither Account nor Summoner API.
 - A spectator roster is seed-persisted from its PUUID, Riot ID, shard and icon
   before its background enrichment. Both match and spectator seeds enqueue only
-  low-priority rank followed by mastery refreshes; they never hydrate each
-  participant through Account or Summoner API.
+  a low-priority forced rank refresh; masteries are fetched only by their
+  cache/Mongo-miss flow, and participants are never hydrated through Account or
+  Summoner API.
 - HTTP and Discord live-game consumers call `SummonerService.getLiveGame`; the
   Discord adapter renders its canonical model and does not access spectator
   state directly.

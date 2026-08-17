@@ -9,6 +9,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.lol.service.R4JQueue;
 import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
+import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.spring.SpringServer;
@@ -39,7 +40,7 @@ public class App {
             runSpring();
         }
         TrackerScheduler.start();
-
+        System.out.println(ItemUtils.getBoots());
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

@@ -23,6 +23,11 @@ curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid'
 e `overview.recentMatches` fanno parte della risposta completa; i valori
 temporali sono Unix epoch in millisecondi.
 
+La GET legge rank e mastery solo da Redis/Mongo. Se uno dei due componenti non
+è ancora persistito, risponde con la relativa lista vuota e `metadata.refresh=true`;
+non avvia chiamate Riot. Solo `POST /profile/{puuid}/refresh` li richiede e li
+persiste.
+
 ```json
 {
   "summoner": {
@@ -499,7 +504,7 @@ restano queue canoniche separate.
 
 | HTTP | `code` | Quando |
 |---:|---|---|
-| `202` | `profile_pending` | Summoner, rank o mastery non sono ancora pronti; il caricamento parte in background e gli eventuali calcoli vengono accodati. |
+| `202` | `profile_pending` | Il summoner base è in corso di risoluzione. |
 | `400` | `invalid_request` | `shard` o `puuid` mancanti/non validi. |
 | `404` | `not_found` | Profilo non trovato. |
 

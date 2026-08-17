@@ -6,7 +6,7 @@
 GET /api/lol/{shard}/profile/{puuid}
   -> LolController
   -> ProfileService.get
-  -> Redis PROFILE_PAGE
+  -> Redis SUMMONER_OVERVIEW
   -> SummonerService.getAsync()
      Redis -> Mongo -> Future Riot -> save Redis + Mongo
   -> RankService.getAsync()
@@ -44,7 +44,7 @@ MariaDB resta coinvolto solo nei percorsi espliciti di `MongoMigration`.
 
 ### P1 — cache `ready` dipende da dati aggregati già validi
 
-La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. La pagina salvata non contiene i `recentMatches`: quando l'aggregato è pronto, a ogni request vengono interrogati separatamente gli ultimi cinque match leggeri. Il primo caricamento restituisce subito `PARTIAL` con `recentMatches` vuoti quando le statistiche non sono ancora disponibili e accoda `DatabaseTracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
+La cache `SUMMONER_OVERVIEW` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. La pagina salvata non contiene i `recentMatches`: quando l'aggregato è pronto, a ogni request vengono interrogati separatamente gli ultimi cinque match leggeri. Il primo caricamento restituisce subito `PARTIAL` con `recentMatches` vuoti quando le statistiche non sono ancora disponibili e accoda `DatabaseTracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
 
 Evidenza: [ProfileService.java](../../src/main/java/com/safjnest/lol/service/ProfileService.java).
 
@@ -57,6 +57,6 @@ Per un `puuid` non presente in Redis/Mongo:
 3. osservare una sola fetch Riot per summoner, rank e mastery;
 4. verificare rank e mastery in Redis e nel documento Mongo;
 5. verificare la creazione di `profile_statistics` dopo il refresh;
-6. verificare invalidazione di `PROFILE_PAGE`, assenza della query recent match nel primo `PARTIAL`, query separata dei recent match dopo il refresh e risposta successiva `200`/`PARTIAL`.
+6. verificare invalidazione di `SUMMONER_OVERVIEW`, assenza della query recent match nel primo `PARTIAL`, query separata dei recent match dopo il refresh e risposta successiva `200`/`PARTIAL`.
 
 Il test deve separare chiaramente cache Redis, fallback Mongo, miss con fetch async, wrapper sync, risultato Riot `[]` ed errore Riot.
