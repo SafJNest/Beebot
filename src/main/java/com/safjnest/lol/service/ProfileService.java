@@ -417,12 +417,6 @@ public class ProfileService {
             && page.overview().statistics().total.games >= MIN_PROFILE_GAMES;
     }
 
-    private SummonerView withRecentMatches(SummonerView page, LeagueShard shard, Filter filter) {
-        List<MatchResult> recentMatches = getRecentMatches(page.summoner().puuid(), shard, filter);
-        return SummonerView.from(page.summoner(), page.ranks(), page.overview().statistics(),
-            page.overview().masteries(), page.overview().champions(), recentMatches);
-    }
-
     private static SummonerView withoutRecentMatches(SummonerView page) {
         return SummonerView.from(page.summoner(), page.ranks(), page.overview().statistics(),
             page.overview().masteries(), page.overview().champions(), List.of());

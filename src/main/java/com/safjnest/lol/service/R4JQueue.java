@@ -27,7 +27,6 @@ public final class R4JQueue {
     private R4JQueue() {
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> CompletableFuture<T> submit(
             LeagueShard shard,
             String operation,

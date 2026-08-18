@@ -107,10 +107,6 @@ public final class MasteryService {
         return fetchRiotMasteriesAsync(puuid, shard, "masteries");
     }
 
-    private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(String puuid, LeagueShard shard) {
-        return refreshRiotMasteriesFromRiotAsync(puuid, shard, R4JQueue.Priority.HIGH);
-    }
-
     private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(
             String puuid,
             LeagueShard shard,
@@ -150,10 +146,6 @@ public final class MasteryService {
 
     private static List<ChampionMastery> cacheRiotMasteries(String puuid, LeagueShard shard) {
         return RedisClient.get(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid), RIOT_MASTERIES_TYPE);
-    }
-
-    private static void save(String puuid, LeagueShard shard, List<Mastery> masteries) {
-        save(puuid, shard, masteries, true);
     }
 
     private static void save(String puuid, LeagueShard shard, List<Mastery> masteries, boolean invalidateProfile) {

@@ -9,7 +9,6 @@ import com.safjnest.core.Bot;
 import com.safjnest.lol.service.R4JQueue;
 import com.safjnest.lol.tracker.DatabaseTracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
-import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.spring.SpringServer;
@@ -31,16 +30,10 @@ public class App {
 
         settings = SettingsLoader.getSettings();
 
-        if (isTesting()) {
-            BotLogger.info("Beebot is in testing mode");
-            runSpring();
-        }
-        else {
-            TwitchClient.init();
-            runSpring();
-        }
+        runSpring();
+        TwitchClient.init();
         TrackerScheduler.start();
-        System.out.println(ItemUtils.getBoots());
+
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

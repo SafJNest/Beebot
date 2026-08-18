@@ -17,6 +17,7 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
+import com.safjnest.App;
 import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
@@ -55,6 +56,7 @@ public class TwitchClient {
     }
 
     public static void init() {
+        if (App.isTesting()) return;
         BotLogger.trace("[TWITCH] Creating twitch client...");
         client = TwitchClientBuilder.builder()
             .withEnableHelix(true)

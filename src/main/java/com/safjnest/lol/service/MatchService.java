@@ -251,18 +251,4 @@ public final class MatchService {
             LOLMatch.class
         );
     }
-
-    private static void save(Match match) {
-        if (!valid(match, match.gameId, match.leagueShard)) return;
-
-        if (!MongoDB.upsertMatch(match.gameId, match)) return;
-        RedisClient.set(
-            RedisKey.MATCH_DETAIL,
-            match,
-            LeagueShardUtils.cacheRegion(match.leagueShard),
-            match.leagueShard.name(),
-            match.gameId
-        );
-        deleteRiotMatch(match.gameId, match.leagueShard);
-    }
 }

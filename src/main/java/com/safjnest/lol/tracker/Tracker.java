@@ -33,7 +33,6 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.lol.utils.SeasonUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.SafJNest;
@@ -418,29 +417,7 @@ public class Tracker {
         }
         return null;
     }
-
-    private static String previousMatchId(
-            String puuid,
-            GameQueueType queue,
-            LeagueShard shard,
-            Summoner participantSummoner,
-            Summoner trackedSummoner,
-            List<String> knownMatchIds) {
-        if (trackedSummoner != null && puuid.equals(trackedSummoner.getPUUID()) && knownMatchIds != null) {
-            return knownMatchIds.size() < 2 ? null : knownMatchIds.get(1);
-        }
-        if (participantSummoner == null || queue == null) return null;
-
-        List<String> matchIds = MatchService.getIds(participantSummoner, queue, 1, 1, 0, null);
-        return matchIds == null || matchIds.isEmpty() ? null : matchIds.get(0);
-    }
-
-    private static Participant findPreviousParticipant(String previousMatchId, String puuid) {
-        if (previousMatchId == null || puuid == null) return null;
-        Match previousMatch = MongoDB.findMatch(previousMatchId);
-        return findParticipant(previousMatch, puuid);
-    }
-
+    
     private static LeagueShard matchShard(String matchId, LeagueShard fallback) {
         if (matchId == null || matchId.isBlank()) return fallback;
         try {
@@ -448,15 +425,6 @@ public class Tracker {
         } catch (Exception ignored) {
             return fallback;
         }
-    }
-
-    private static void clearLeagueEntryCache(String puuid, LeagueShard shard) {
-        if (puuid == null || shard == null) return;
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("platform", shard);
-        data.put("id", puuid);
-        LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, data);
-        RedisClient.delete(RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid));
     }
 
     public static Match fromR4J(LOLMatch source) {
