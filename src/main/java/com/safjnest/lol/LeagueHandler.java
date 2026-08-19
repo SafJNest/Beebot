@@ -26,6 +26,22 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.model.Augment;
+import com.safjnest.lol.model.rune.PageRunes;
+import com.safjnest.lol.model.rune.Rune;
+import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.service.MasteryService;
+import com.safjnest.lol.service.RankService;
+import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueMessageUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -46,24 +62,7 @@ import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
-
-import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.model.Augment;
-import com.safjnest.lol.model.rune.PageRunes;
-import com.safjnest.lol.model.rune.Rune;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.service.MasteryService;
-import com.safjnest.lol.service.RankService;
-import com.safjnest.lol.service.SummonerService;
-import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.LeagueMessageUtils;
-import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.PatchUtils;
 
 
 /**
@@ -250,6 +249,15 @@ import com.safjnest.lol.utils.PatchUtils;
 
 
     public static String getFormattedSummonerName(Summoner s) {
+        if (s.riotId() != null && !s.riotId().isBlank()) return s.riotId();
+        String dbName = MongoDB.getSummonerNameById(s.puuid(), s.region());
+        if (dbName != null) return dbName;
+        RiotAccount account = SummonerService.getRiotAccount(s.puuid(), s.region());
+        if (account == null) return "";
+        return account.getName() + "#" + account.getTag();
+    }
+
+    public static String getFormattedSummonerName(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s) {
         String dbName = MongoDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
         if (dbName != null) return dbName;
         RiotAccount account = SummonerService.getRiotAccountFromSummoner(s);
@@ -263,13 +271,10 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static Summoner getSummonerByUserData(UserData user){
         try {
-            HashMap<String, String> accounts = user.getRiotAccounts();
-            if (accounts == null || accounts.size() == 0) return null;
+            Map<String, Summoner> accounts = user.getRiotAccounts();
+            if (accounts == null || accounts.isEmpty()) return null;
 
-            String firstAccount = accounts.keySet().stream().findFirst().get();
-            LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
-
-            return SummonerService.getRiotSummoner(firstAccount, shard);
+            return accounts.values().iterator().next();
         } catch (Exception e) {return null;}
     }
 
@@ -306,7 +311,9 @@ import com.safjnest.lol.utils.PatchUtils;
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
         }
-        return SummonerService.getRiotSummoner(name, tag, guild.getLeagueShard(event.getChannel().getId()));
+        LeagueShard shard = guild.getLeagueShard(event.getChannel().getId());
+        String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
+        return puuid == null ? null : SummonerService.get(puuid, shard);
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
@@ -329,7 +336,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
-            s = SummonerService.getRiotSummoner(event.getOption("summoner").getAsString(), shard);
+            s = SummonerService.get(event.getOption("summoner").getAsString(), shard);
         }
 
         if (s != null) return s;
@@ -338,15 +345,13 @@ import com.safjnest.lol.utils.PatchUtils;
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShardUtils.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
-        return SummonerService.getRiotSummoner(name, tag, shard);
+        String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
+        return puuid == null ? null : SummonerService.get(puuid, shard);
     }
 
     public static boolean updateSummonerMongo(Summoner summoner) {
         if (summoner == null) return false;
-        RiotAccount account = SummonerService.getRiotAccountFromSummoner(summoner);
-        String riotId = account == null ? null : account.getName() + "#" + account.getTag();
-        return MongoDB.upsertSummoner(summoner.getPUUID(), summoner.getPlatform(), riotId,
-                summoner.getSummonerLevel(), summoner.getProfileIconId(), null);
+        return MongoDB.upsertSummoner(summoner, null);
     }
 
 //     ▄███████▄  ▄█   ▄████████
@@ -360,7 +365,7 @@ import com.safjnest.lol.utils.PatchUtils;
 //
 
     public static String getSummonerProfilePic(Summoner s){
-        return "https://ddragon.leagueoflegends.com/cdn/"+patch+"/img/profileicon/"+s.getProfileIconId()+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+patch+"/img/profileicon/"+s.icon()+".png";
     }
 
     public static String getSummonerProfilePic(int id){
@@ -381,7 +386,7 @@ import com.safjnest.lol.utils.PatchUtils;
     private static final String QUEUE_COMMON_FLEX = "5v5 Ranked Flex Queue";
 
     public static String getSoloQStats(Summoner s) {
-        Rank rank = RankService.getByQueue(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_SOLO_5X5);
+        Rank rank = RankService.getByQueue(s.puuid(), s.region(), GameQueueType.RANKED_SOLO_5X5);
         String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
@@ -389,7 +394,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getFlexStats(Summoner s) {
-        Rank rank = RankService.getByQueue(s.getPUUID(), s.getPlatform(), GameQueueType.RANKED_FLEX_SR);
+        Rank rank = RankService.getByQueue(s.puuid(), s.region(), GameQueueType.RANKED_FLEX_SR);
         String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
@@ -412,7 +417,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static LeagueEntry getRankEntry(Summoner s) {
-        return getRankEntry(s.getPUUID(), s.getPlatform());
+        return getRankEntry(s.puuid(), s.region());
     }
 
     public static LeagueEntry getFlexEntry(String puuid, LeagueShard shard) {
@@ -441,7 +446,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getMastery(Summoner s, int nChamp) {
-        List<Mastery> list = MasteryService.get(s.getPUUID(), s.getPlatform());
+        List<Mastery> list = MasteryService.get(s.puuid(), s.region());
         if (nChamp < 1 || nChamp > list.size()) {
             return "";
         }
@@ -462,14 +467,15 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static HashMap<Integer, Mastery> getMastery(Summoner s) {
         HashMap<Integer, Mastery> masteries = new HashMap<>();
-        for (Mastery mastery : MasteryService.get(s.getPUUID(), s.getPlatform())) {
+        for (Mastery mastery : MasteryService.get(s.puuid(), s.region())) {
             masteries.put(mastery.championId(), mastery);
         }
         return masteries;
     }
 
     public static String getMasteryByChamp(Summoner s, int champId) {
-        for (Mastery mastery : MasteryService.get(s.getPUUID(), s.getPlatform())) {
+        if (s == null) return "";
+        for (Mastery mastery : MasteryService.get(s.puuid(), s.region())) {
             if (mastery.championId() == champId) {
                 try {
                     return formatMasteryLine(mastery);
@@ -499,12 +505,12 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static String getActivity(Summoner s) {
         try {
-            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.getPUUID(), s.getPlatform());
+            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.puuid(), s.region());
             if (game == null) {
                 return "Not in a game";
             }
             for (SpectatorParticipant participant : game.getParticipants()) {
-                if (participant.getPuuid().equals(s.getPUUID())) {
+                if (participant.getPuuid().equals(s.puuid())) {
                     String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
                     return "Playing a " + gameName + " as "
                         + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName()) + " "
@@ -519,12 +525,12 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static EmbedBuilder getActivity(EmbedBuilder eb, Summoner s) {
         try {
-            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.getPUUID(), s.getPlatform());
+            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.puuid(), s.region());
             if (game == null) {
                 return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
             }
             for (SpectatorParticipant participant : game.getParticipants()) {
-                if (participant.getPuuid().equals(s.getPUUID())) {
+                if (participant.getPuuid().equals(s.puuid())) {
                     String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
                     return eb.setFooter("Playing a " + gameName,
                         CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName()).getImageUrl());
@@ -658,7 +664,7 @@ import com.safjnest.lol.utils.PatchUtils;
         DataCall.getCacheProvider().clear(endpoint, data);
     }
 
-    public static void clearCache(URLEndpoint endpoint, Summoner summoner, GameQueueType queueType) {
+    public static void clearCache(URLEndpoint endpoint, no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, GameQueueType queueType) {
         Map<String, Object> data = new LinkedHashMap<>();
 
         switch (endpoint) {
@@ -701,7 +707,7 @@ import com.safjnest.lol.utils.PatchUtils;
         DataCall.getCacheProvider().clear(endpoint, data);
     }
 
-    public static void clearSummonerCache(Summoner summoner) {
+    public static void clearSummonerCache(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner) {
         clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);

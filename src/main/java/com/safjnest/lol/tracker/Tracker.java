@@ -82,7 +82,7 @@ public class Tracker {
             for (com.safjnest.lol.model.summoner.Summoner account : result) {
                 Summoner summoner = null;
                 try {
-                    LeagueShard accountShard = LeagueShard.valueOf(account.region());
+                    LeagueShard accountShard = account.region();
                     summoner = SummonerService.getRiotSummoner(account.puuid(), accountShard);
                     if (summoner == null) 
                         throw new Exception("account null ??????");

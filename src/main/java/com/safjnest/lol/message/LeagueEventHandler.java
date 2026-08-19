@@ -3,6 +3,7 @@ package com.safjnest.lol.message;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.safjnest.core.events.EventButtonHandler;
 import com.safjnest.core.events.EventUtils;
@@ -29,7 +30,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import com.safjnest.lol.model.summoner.Summoner;
 
 public class LeagueEventHandler extends EventButtonHandler {
 
@@ -97,8 +98,8 @@ public class LeagueEventHandler extends EventButtonHandler {
     private void dispatch(InteractionHook hook, List<Button> buttons, LeagueContext context) {
         boolean hasLeft = buttons.stream().anyMatch(b -> (LeagueMessage.BUTTON_ID_PREFIX + "-left").equals(b.getCustomId()));
         String user_id = (hasLeft || context.userIdFallback()) ? context.user_id() : "";
-        Summoner s = SummonerService.getRiotSummoner(context.puuid(), LeagueShard.valueOf(context.region()));
-        LeagueMessage.send(hook, user_id, s, s == null ? null : s.getPUUID(), context.parameter());
+        Summoner s = SummonerService.get(context.puuid(), LeagueShard.valueOf(context.region()));
+        LeagueMessage.send(hook, user_id, s, s == null ? null : s.puuid(), context.parameter());
     }
 
     // ---- handlers ----
@@ -112,7 +113,7 @@ public class LeagueEventHandler extends EventButtonHandler {
         String region = context.region();
         LeagueMessageParameter parameter = context.parameter();
 
-        HashMap<String, String> accounts = UserCache.getUser(context.user_id()).getRiotAccounts();
+        Map<String, Summoner> accounts = UserCache.getUser(context.user_id()).getRiotAccounts();
         int index = 0;
         for (String k : accounts.keySet()) {
             if (k.equals(puuid)) break;
@@ -123,12 +124,12 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "center", "right" -> {
                 index = (index + 1) == accounts.size() ? 0 : index + 1;
                 puuid = (String) accounts.keySet().toArray()[index];
-                region = accounts.get(puuid);
+                region = accounts.get(puuid).region().name();
             }
             case "left" -> {
                 index = index == 0 ? accounts.size() - 1 : index - 1;
                 puuid = (String) accounts.keySet().toArray()[index];
-                region = accounts.get(puuid);
+                region = accounts.get(puuid).region().name();
             }
             case "queue" -> {
                 parameter.setQueueType(!active ? GameQueueType.valueOf(content) : null);

@@ -45,7 +45,6 @@ accodata e la pagina non viene memorizzata in cache finché i dati non sono pron
       "position": 1,
       "summoner": {
         "summoner": {
-          "summonerId": 12345678,
           "puuid": "Qx7m2vW8-example-puuid",
           "riotId": "Player#EUW",
           "region": "EUW1",
@@ -147,7 +146,6 @@ accodata e la pagina non viene memorizzata in cache finché i dati non sono pron
         "position": 2,
         "summoner": {
           "summoner": {
-            "summonerId": 87654321,
             "puuid": "second-example-puuid",
             "riotId": "Second#EUW",
             "region": "EUW1",

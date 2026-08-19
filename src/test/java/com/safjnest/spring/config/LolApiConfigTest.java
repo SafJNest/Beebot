@@ -58,12 +58,12 @@ public class LolApiConfigTest {
     @Test
     public void serializesSummonerFieldsWithoutDirtyState() throws Exception {
         ObjectMapper mapper = apiMapper();
-        Summoner summoner = new Summoner(42, "puuid-42", "Name#TAG", "EUW1", 500, 1234);
+        Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
 
         String summonerJson = mapper.writeValueAsString(summoner);
         String viewJson = mapper.writeValueAsString(SummonerView.from(summoner, List.of(), null, List.of()));
 
-        assertTrue(summonerJson.contains("\"summonerId\":42"));
+        assertFalse(summonerJson.contains("\"summonerId\""));
         assertTrue(summonerJson.contains("\"puuid\":\"puuid-42\""));
         assertTrue(summonerJson.contains("\"riotId\":\"Name#TAG\""));
         assertTrue(summonerJson.contains("\"level\":500"));

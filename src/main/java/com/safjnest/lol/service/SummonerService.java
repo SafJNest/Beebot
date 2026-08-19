@@ -142,6 +142,11 @@ public final class SummonerService {
             : saveAsync(summoner).thenApply(ignored -> summoner));
     }
 
+    public static boolean upsert(Summoner summoner, String userId) {
+        if (summoner == null || summoner.puuid() == null || summoner.region() == null) return false;
+        return MongoDB.upsertSummoner(summoner, userId);
+    }
+
     public static boolean upsert(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, String userId) {
         if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null) return false;
 
@@ -474,10 +479,9 @@ public final class SummonerService {
             String riotId,
             String userId) {
         Summoner result = new Summoner(
-            0,
             source.getPUUID(),
             riotId,
-            source.getPlatform().name(),
+            source.getPlatform(),
             source.getSummonerLevel(),
             source.getProfileIconId()
         );

@@ -816,7 +816,7 @@ public final class MongoDB {
         List<SummonerSearchResult> result = new ArrayList<>();
         for (Document document : summoners()
                 .find(Filters.and(Filters.eq("region", shard.name()), Filters.regex("riotSearch", prefix)))
-                .projection(Projections.include("_id", "puuid", "riotId", "region", "level", "icon", "summonerId", "ranks"))
+                .projection(Projections.include("_id", "puuid", "riotId", "region", "level", "icon", "ranks"))
                 .sort(Sorts.ascending("riotId"))
                 .limit(boundedLimit)) {
             result.add(new SummonerSearchResult(summoner(document), soloRank(document)));
@@ -882,7 +882,7 @@ public final class MongoDB {
             ? Filters.eq("_id", puuid)
             : Filters.and(Filters.eq("_id", puuid), Filters.eq("region", shard.name()));
         Document document = summoners().find(filter)
-                .projection(Projections.include("_id", "puuid", "riotId", "region", "level", "icon", "summonerId", "ranks", "masteries"))
+                .projection(Projections.include("_id", "puuid", "riotId", "region", "level", "icon", "ranks", "masteries"))
                 .first();
         if (document == null) return null;
         return new ProfileProjection(summoner(document), ranks(document), masteries(document));
@@ -1646,7 +1646,7 @@ public final class MongoDB {
                                 new Document("$skip", offset),
                                 new Document("$limit", limit),
                                 new Document("$project", new Document("_id", 1)
-                                        .append("summonerId", 1).append("riotId", 1).append("region", 1)
+                                        .append("riotId", 1).append("region", 1)
                                         .append("level", 1).append("icon", 1)
                                         .append("ranks", List.of("$ranks"))
                                         .append("masteries", 1))
@@ -1857,7 +1857,7 @@ public final class MongoDB {
 
     public static boolean upsertSummoner(String puuid, LeagueShard shard, String riotId, int level, int icon, String userId) {
         if (puuid == null || puuid.isBlank() || shard == null) return false;
-        return upsertSummoner(new Summoner(0, puuid, riotId, shard.name(), level, icon), userId);
+        return upsertSummoner(new Summoner(puuid, riotId, shard, level, icon), userId);
     }
 
     public static boolean upsertSummoner(MatchParticipant participant, LeagueShard shard) {
@@ -1871,10 +1871,9 @@ public final class MongoDB {
     public static boolean upsertSummoner(SpectatorParticipant participant, LeagueShard shard) {
         if (participant == null || participant.getPuuid() == null || participant.getPuuid().isBlank() || shard == null) return false;
         return upsertSpectatorSummoners(List.of(new Summoner(
-            0,
             participant.getPuuid(),
             participant.getRiotId(),
-            shard.name(),
+            shard,
             0,
             Math.toIntExact(participant.getProfileIconId())
         )));
@@ -1899,9 +1898,8 @@ public final class MongoDB {
             if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank()) continue;
 
             List<Bson> updates = new ArrayList<>();
-            updates.add(Updates.set("region", summoner.region()));
+            updates.add(Updates.set("region", summoner.region() == null ? null : summoner.region().name()));
             updates.add(Updates.set("icon", summoner.icon()));
-            updates.add(Updates.setOnInsert("summonerId", summoner.summonerId()));
             updates.add(Updates.setOnInsert("level", summoner.level()));
             if (summoner.riotId() != null && !summoner.riotId().isBlank()) {
                 updates.add(Updates.set("riotId", summoner.riotId()));
@@ -2262,7 +2260,8 @@ public final class MongoDB {
         if (value instanceof Summoner summoner) {
             if (summoner.puuid() == null || summoner.puuid().isBlank()) throw new IllegalArgumentException("Summoner.puuid is required");
             document = new Document("_id", summoner.puuid()).append("level", summoner.level()).append("icon", summoner.icon());
-            putIfNotNull(document, "riotId", summoner.riotId()); putIfNotNull(document, "region", summoner.region());
+            putIfNotNull(document, "riotId", summoner.riotId());
+            putIfNotNull(document, "region", summoner.region() == null ? null : summoner.region().name());
             putIfNotNull(document, "userId", summoner.userId());
             if (summoner.tracking()) document.put("tracking", true);
             if (!summoner.ranks().isEmpty()) document.put("ranks", writeRanks(summoner.ranks()));
@@ -2294,8 +2293,8 @@ public final class MongoDB {
         for (QueryRecord rank : record.getAsRecords("ranks")) ranks.add(readRank(rank));
         List<Mastery> masteries = new ArrayList<>();
         for (QueryRecord mastery : record.getAsRecords("masteries")) masteries.add(readMastery(mastery));
-        return Summoner.hydrated(0, puuid, record.getAsString("riotId"),
-                record.getAsString("region"), record.getAsInt("level"), record.getAsInt("icon"),
+        return Summoner.hydrated(puuid, record.getAsString("riotId"),
+                parseShard(record.getAsString("region")), record.getAsInt("level"), record.getAsInt("icon"),
                 record.getAsString("userId"), record.getAsBoolean("tracking"), ranks, masteries);
     }
 
@@ -2916,8 +2915,8 @@ public final class MongoDB {
 
     private static Summoner summoner(Document document) {
         String puuid = puuid(document);
-        return Summoner.hydrated(document.getInteger("summonerId", 0), puuid, document.getString("riotId"),
-                document.getString("region"), document.getInteger("level", 0), document.getInteger("icon", 0),
+        return Summoner.hydrated(puuid, document.getString("riotId"),
+                parseShard(document.getString("region")), document.getInteger("level", 0), document.getInteger("icon", 0),
                 document.getString("userId"), document.getBoolean("tracking", false), ranks(document), masteries(document));
     }
 

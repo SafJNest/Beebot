@@ -74,7 +74,7 @@ public class LeaderboardService {
         Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
         Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
         for (Summoner summoner : summoners) {
-            LeagueShard shard = LeagueShard.valueOf(summoner.region());
+            LeagueShard shard = summoner.region();
             puuidsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(summoner.puuid());
         }
         for (Map.Entry<LeagueShard, List<String>> entry : puuidsByShard.entrySet())

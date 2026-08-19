@@ -54,8 +54,8 @@ and the shared JSON codec, but the Spring mapper ignores it through a Jackson mi
 is an internal storage key and not part of the HTTP contract.
 
 `AbstractEntity.isDirty()` is internal persistence state and is excluded from HTTP JSON. `Summoner`
-serializes its six public identity fields explicitly so the canonical summoner shape remains complete
-inside `SummonerView`, `SummonerLeaderboard` and `LeaderboardPage`.
+serializes its five public identity fields (`puuid`, `riotId`, `region`, `level`, `icon`) explicitly so the canonical summoner shape remains complete
+inside `SummonerView`, `SummonerLeaderboard` and `LeaderboardPage`. The former `summonerId` field is removed; PUUID is the only identity key. `region` is a `LeagueShard` enum that serializes as its `name()` string (for example `"EUW1"`).
 
 ## Compatibility
 

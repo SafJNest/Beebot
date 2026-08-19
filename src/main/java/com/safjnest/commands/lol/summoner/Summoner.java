@@ -53,7 +53,7 @@ public class Summoner extends SlashCommand {
     @Override
     protected void execute(CommandEvent event) {
         String args = event.getArgs();
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        com.safjnest.lol.model.summoner.Summoner s = null;
         User theGuy = null;
 
         if (args.equals("")) theGuy = event.getAuthor();
@@ -65,7 +65,7 @@ public class Summoner extends SlashCommand {
             return;
         }
 
-        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.PROFILE));
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.puuid(), new LeagueMessageParameter(LeagueMessageType.PROFILE));
     }
 
 }

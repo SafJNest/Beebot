@@ -101,7 +101,7 @@ public class MongoDBTest {
 
     @Test
     public void summonerUsesPuuidAsIdentityAndOmitsLegacyFields() {
-        Summoner summoner = new Summoner(42, "puuid-42", "Name#TAG", "EUW1", 500, 1234);
+        Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
 
         Document document = MongoDB.toDocument(summoner);
 
@@ -112,7 +112,7 @@ public class MongoDBTest {
 
         Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(document), Summoner.class);
         assertEquals("puuid-42", decoded.puuid());
-        assertEquals(0, decoded.summonerId());
+        assertEquals(LeagueShard.EUW1, decoded.region());
     }
 
     @Test

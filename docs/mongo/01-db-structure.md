@@ -107,7 +107,8 @@ Esempio concettuale:
 ### Regole summoner
 
 - `puuid` è `_id` e non viene duplicato in un secondo campo;
-- gli identificativi numerici MariaDB non vengono scritti;
+- gli identificativi numerici MariaDB e il campo applicativo `summonerId` non vengono scritti;
+- in Java `Summoner.region` è `LeagueShard` e in BSON resta la stringa `name()` (es. `"EUW1"`);
 - il nuovo flusso non pulisce automaticamente dati precedenti; l'operatore elimina manualmente i payload obsoleti;
 - `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;

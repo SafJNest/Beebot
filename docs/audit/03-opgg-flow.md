@@ -5,9 +5,9 @@
 ```text
 /opgg
   -> Opgg.execute
-  -> LeagueHandler.getSummonerByArgs
+  -> LeagueHandler.getSummonerByArgs (canonical Summoner, Mongo-first)
   -> LeagueMessage.build(OPGG)
-  -> MatchService.getRecentIds / Riot API
+  -> MatchService.getRecentIds / Riot API (via r4j match-list bridge)
   -> MatchService.get / Riot match API
   -> Tracker.queueMatch
   -> Mongo match write

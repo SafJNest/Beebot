@@ -39,7 +39,7 @@ Riferimenti: [champion stats/build flow](docs/audit/07-champion-stats-build-flow
 
 - [ ] Chiudere il rendering OP.GG per tutti i tipi di queue e le varianti di participant.
 - [ ] Gestire in modo coerente queue non standard e participant Riot non risolti.
-- [ ] Uniformare account, tracking e ownership `userId` sul nuovo modello Mongo.
+- [x] Uniformare account, tracking e ownership `userId` sul nuovo modello Mongo.
 - [ ] Mantenere le cache profile, advanced overview e OP.GG coerenti dopo gli aggiornamenti Tracker.
 - [ ] Conservare il comportamento asincrono per profile, champion, leaderboard e match detail.
 

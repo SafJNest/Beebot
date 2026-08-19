@@ -125,7 +125,7 @@ class AbstractEntityTest {
             return true;
         });
 
-        Summoner summoner = new Summoner(0, "puuid", "name#tag", "EUW1", 10, 1);
+        Summoner summoner = new Summoner("puuid", "name#tag", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 1);
         summoner.setRank(GameQueueType.RANKED_FLEX_SR,
                 new Rank(GameQueueType.RANKED_FLEX_SR, TierDivisionType.DIAMOND_IV, 50, 10, 5));
 

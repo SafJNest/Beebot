@@ -71,7 +71,7 @@ participant sono `null`.
       "statShards": [5008, 5008, 5010]
     },
     "profileOverview": {
-      "summoner": {"summonerId": 12345678, "puuid": "Qx7m2vW8-example-puuid", "riotId": "Player#EUW", "region": "EUW1", "level": 527, "icon": 29},
+      "summoner": {"puuid": "Qx7m2vW8-example-puuid", "riotId": "Player#EUW", "region": "EUW1", "level": 527, "icon": 29},
       "ranks": [],
       "masteries": [{"championId": 157, "level": 7, "points": 200000}],
       "championStats": [

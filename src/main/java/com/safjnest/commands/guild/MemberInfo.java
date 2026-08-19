@@ -2,15 +2,14 @@ package com.safjnest.commands.guild;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.service.SummonerService;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -25,9 +24,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+import com.safjnest.lol.model.summoner.Summoner;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -62,16 +59,14 @@ public class MemberInfo extends SlashCommand {
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(mentionedMember).toString();
 
-        HashMap<String, String> lolAccounts = UserCache.getUser(mentionedMember.getId()).getRiotAccounts();
+        Map<String, Summoner> lolAccounts = UserCache.getUser(mentionedMember.getId()).getRiotAccounts();
         String lolAccountsString = "";
         if(lolAccounts == null || lolAccounts.isEmpty()) {
             lolAccountsString = mentionedMember.getEffectiveName() + " has not connected a riot account.";
         }
         else {
-            for(String account : lolAccounts.keySet()) {
-                Summoner s = SummonerService.getRiotSummoner(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                RiotAccount riotAccount = SummonerService.getRiotAccountFromSummoner(s);
-                lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
+            for(Summoner s : lolAccounts.values()) {
+                lolAccountsString += (s.riotId() == null || s.riotId().isBlank() ? s.puuid() : s.riotId()) + " - ";
             }
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);
         }

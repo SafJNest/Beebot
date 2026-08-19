@@ -3,8 +3,8 @@ package com.safjnest.commands.owner;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -13,7 +13,6 @@ import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -24,9 +23,7 @@ import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+import com.safjnest.lol.model.summoner.Summoner;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -187,16 +184,14 @@ public class PrintCache extends Command {
         for(UserData ud : UserCache.getInstance().values()) {
             long time = UserCache.getInstance().expiresAfter(ud.getId());
 
-            HashMap<String, String> lolAccounts = ud.getRiotAccounts();
+            Map<String, Summoner> lolAccounts = ud.getRiotAccounts();
             String lolAccountsString = "";
             if(lolAccounts == null || lolAccounts.isEmpty()) {
                 lolAccountsString = "Zero accounts\n";
             }
             else {
-                for(String account : lolAccounts.keySet()) {
-                    Summoner s = SummonerService.getRiotSummoner(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                    RiotAccount riotAccount = SummonerService.getRiotAccountFromSummoner(s);
-                    lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
+                for(Summoner s : lolAccounts.values()) {
+                    lolAccountsString += (s.riotId() == null || s.riotId().isBlank() ? s.puuid() : s.riotId()) + " - ";
                 }
                 lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3) + "\n";
             }

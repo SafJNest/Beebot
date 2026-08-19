@@ -2,6 +2,12 @@
 
 Ricostruzione delle milestone LoL a partire dalla storia Git dei branch `lol-api` e `lol-api-mongo`. Le voci raggruppano i progressi funzionali e architetturali, non i singoli fix minori.
 
+## 2026-08-19 — Discord summoner Mongo-first cutover
+
+- Discord LoL commands risolvono l’identità sul modello canonico `Summoner` (Mongo/`SummonerService.get`), non più r4j per l’entry point.
+- `UserData` tiene `Map<String, Summoner>` collegati; `Summoner.region` è `LeagueShard`; rimosso `summonerId` dal modello e dal JSON pubblico.
+- Presentazione embed/button invariata; Tracker può ancora usare `getRiotSummoner` per il poll.
+
 ## 2026-07-23 — `lol-api-mongo`
 
 - Aggiornato il rendering OP.GG con preview per match, queue speciali, team, KDA, item, rune, augment e informazioni temporali.

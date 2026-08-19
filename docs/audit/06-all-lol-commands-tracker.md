@@ -9,10 +9,10 @@
 
 | Comando | Entry point | Percorso dati | Esito statico |
 |---|---|---|---|
-| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | account/cache → Riot fallback → `SummonerService.upsert` → `ProfileStatisticsService` per PUUID+Filter → Redis | coerente, senza MariaDB runtime |
-| `/summoner overview` | `SummonerOverview` | Riot identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
-| `/summoner champion` | `SummonerChampion` | Riot identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
-| `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | `MongoDB.upsertSummoner` con ownership `userId` | coerente; aggiorna cache locale e Redis |
+| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | `UserData`/Mongo canonical → Riot solo su miss → `ProfileStatisticsService` per PUUID+Filter → Redis | coerente; presentazione invariata |
+| `/summoner overview` | `SummonerOverview` | canonical identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
+| `/summoner champion` | `SummonerChampion` | canonical identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
+| `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | `SummonerService.upsert` + cache `Map<puuid, Summoner>` | coerente; aggiorna cache locale e Redis |
 | `/summoner unlink` | `SummonerUnlink` → `UserData.deleteRiotAccount` | `MongoDB.detachSummonerUser` con ownership `userId` | coerente; dati match non vengono cancellati |
 | `/summoner track` | `SummonerTrack` | `MongoDB.setSummonerTracking` → Tracker | coerente; il comando controlla l’esito Mongo |
 | `/opgg` | `Opgg` → `LeagueMessage.getOpggEmbed` | Riot match list/detail → query participant Mongo per rank/lp/gain → Tracker queue | coerente dopo `findSummonerData`; persistenza match è asincrona |

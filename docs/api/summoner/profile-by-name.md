@@ -29,7 +29,6 @@ avviano chiamate Riot dalla GET.
 ```json
 {
   "summoner": {
-    "summonerId": 12345678,
     "puuid": "Qx7m2vW8-example-puuid",
     "riotId": "Player#EUW",
     "region": "EUW1",

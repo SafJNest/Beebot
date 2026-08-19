@@ -11,18 +11,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.nosql.AbstractEntity;
 
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class Summoner extends AbstractEntity<Summoner> {
 
-    @JsonProperty("summonerId")
-    private final int summonerId;
     @JsonProperty("puuid")
     private final String puuid;
     @JsonProperty("riotId")
     private String riotId;
     @JsonProperty("region")
-    private String region;
+    private LeagueShard region;
     @JsonProperty("level")
     private int level;
     @JsonProperty("icon")
@@ -39,13 +38,11 @@ public class Summoner extends AbstractEntity<Summoner> {
 
     @JsonCreator
     public Summoner(
-            @JsonProperty("summonerId") int summonerId,
             @JsonProperty("puuid") String puuid,
             @JsonProperty("riotId") String riotId,
-            @JsonProperty("region") String region,
+            @JsonProperty("region") LeagueShard region,
             @JsonProperty("level") int level,
             @JsonProperty("icon") int icon) {
-        this.summonerId = summonerId;
         this.puuid = puuid;
         this.riotId = riotId;
         this.region = region;
@@ -54,27 +51,22 @@ public class Summoner extends AbstractEntity<Summoner> {
     }
 
     public static Summoner hydrated(
-            int summonerId,
             String puuid,
             String riotId,
-            String region,
+            LeagueShard region,
             int level,
             int icon,
             String userId,
             boolean tracking,
             List<Rank> ranks,
             List<Mastery> masteries) {
-        Summoner summoner = new Summoner(summonerId, puuid, riotId, region, level, icon);
+        Summoner summoner = new Summoner(puuid, riotId, region, level, icon);
         summoner.userId = userId;
         summoner.tracking = tracking;
         summoner.ranks = ranks == null ? new ArrayList<>() : new ArrayList<>(ranks);
         summoner.masteries = masteries == null ? new ArrayList<>() : new ArrayList<>(masteries);
         summoner.markExisting();
         return summoner;
-    }
-
-    public int summonerId() {
-        return summonerId;
     }
 
     public String puuid() {
@@ -85,7 +77,7 @@ public class Summoner extends AbstractEntity<Summoner> {
         return riotId;
     }
 
-    public String region() {
+    public LeagueShard region() {
         return region;
     }
 
@@ -119,7 +111,7 @@ public class Summoner extends AbstractEntity<Summoner> {
         return this;
     }
 
-    public Summoner setRegion(String region) {
+    public Summoner setRegion(LeagueShard region) {
         this.region = region;
         setValue("region", region);
         return this;
@@ -208,7 +200,7 @@ public class Summoner extends AbstractEntity<Summoner> {
         values.put("level", level);
         values.put("icon", icon);
         if (riotId != null) values.put("riotId", riotId);
-        if (region != null) values.put("region", region);
+        if (region != null) values.put("region", region.name());
         if (userId != null) values.put("userId", userId);
         if (tracking) values.put("tracking", true);
         if (!ranks.isEmpty()) values.put("ranks", ranks);
@@ -220,22 +212,21 @@ public class Summoner extends AbstractEntity<Summoner> {
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof Summoner summoner)) return false;
-        return summonerId == summoner.summonerId
-                && level == summoner.level
+        return level == summoner.level
                 && icon == summoner.icon
                 && Objects.equals(puuid, summoner.puuid)
                 && Objects.equals(riotId, summoner.riotId)
-                && Objects.equals(region, summoner.region);
+                && region == summoner.region;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(summonerId, puuid, riotId, region, level, icon);
+        return Objects.hash(puuid, riotId, region, level, icon);
     }
 
     @Override
     public String toString() {
-        return "Summoner[summonerId=" + summonerId + ", puuid=" + puuid + ", riotId=" + riotId
+        return "Summoner[puuid=" + puuid + ", riotId=" + riotId
                 + ", region=" + region + ", level=" + level + ", icon=" + icon + "]";
     }
 

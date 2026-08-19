@@ -33,7 +33,9 @@ generici. Non modifica embed, comandi o layout esistenti.
 
 ## Account e cache
 
-`UserData` legge gli account collegati con `MongoDB.findAccountsByUserId`. L’aggiunta usa `SummonerService.upsert`; la rimozione usa `MongoDB.detachSummonerUser` con filtro su PUUID e `userId`. Dopo add/unlink vengono invalidati i riferimenti Redis e la cache locale viene aggiornata.
+`UserData` legge gli account collegati con `MongoDB.findAccountsByUserId` e li tiene in cache come `Map<String, Summoner>` (modello canonico). L’aggiunta usa `SummonerService.upsert` con ownership `userId`; la rimozione usa `MongoDB.detachSummonerUser` con filtro su PUUID e `userId`. Dopo add/unlink vengono invalidati i riferimenti Redis e la cache locale viene aggiornata.
+
+I comandi Discord risolvono l’identità via `LeagueHandler.getSummonerByArgs` → `SummonerService.get` / cache `UserData` (Mongo-first); Riot resta solo per miss e per le match list Riot. L’embed e i button restano invariati.
 
 Il PUUID è il valore stabile usato dall’autocomplete e dai lookup Mongo. La Riot API resta una sorgente di refresh, non una persistenza intermedia.
 

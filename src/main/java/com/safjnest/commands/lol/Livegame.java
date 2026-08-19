@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
@@ -53,7 +54,7 @@ public class Livegame extends SlashCommand {
      */
     @Override
     protected void execute(CommandEvent event) {
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        Summoner s = null;
         User theGuy = null;
 
         if(event.getArgs().equals("")) theGuy = event.getAuthor();    
@@ -65,14 +66,14 @@ public class Livegame extends SlashCommand {
             return;
         }
         
-        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.puuid(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
     }
 
     @Override
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        Summoner s = null;
 
         User theGuy = null;
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
@@ -84,7 +85,7 @@ public class Livegame extends SlashCommand {
             return;
         }
 
-        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.puuid(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
 	}
 
 }

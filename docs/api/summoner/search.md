@@ -28,7 +28,6 @@ La ricerca è una prefix search limitata a 25 risultati nello shard richiesto.
 [
   {
     "summoner": {
-      "summonerId": 12345678,
       "puuid": "Qx7m2vW8-example-puuid",
       "riotId": "Player#EUW",
       "region": "EUW1",

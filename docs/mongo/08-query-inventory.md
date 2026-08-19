@@ -5,6 +5,7 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | Area | Query Mongo target | Budget applicativo | Consumer |
 |---|---|---:|---|
 | search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | SummonerService |
+| linked accounts by userId | `find({userId})` ordinato per `_id`; mappa a `Summoner` canonico (`region` come `LeagueShard`) | 1 | UserData / Discord |
 | profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfileService |
 | leaderboard | `$match` preliminare con `$elemMatch` + `$unwind` + `$match` esatto + `$facet` per `total` e pagina; projection summoner già filtrata | 2 | LeaderboardService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |

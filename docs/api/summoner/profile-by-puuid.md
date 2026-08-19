@@ -31,7 +31,6 @@ persiste.
 ```json
 {
   "summoner": {
-    "summonerId": 12345678,
     "puuid": "Qx7m2vW8-example-puuid",
     "riotId": "Player#EUW",
     "region": "EUW1",
@@ -411,7 +410,6 @@ persiste.
         "participants": [
           {
             "id": 1,
-            "summonerId": 12345678,
             "matchId": 6789012345,
             "win": true,
             "kda": "8/3/11",

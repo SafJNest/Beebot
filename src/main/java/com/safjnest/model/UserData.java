@@ -3,8 +3,11 @@ package com.safjnest.model;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.safjnest.core.Bot;
+import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
@@ -12,13 +15,13 @@ import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.log.LoggerIDpair;
 
 import net.dv8tion.jda.api.entities.User;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public class UserData {
     
     private final String USER_ID;
     private HashMap<String, AliasData> aliases;
-    private LinkedHashMap<String, String> riotAccounts;
+    private LinkedHashMap<String, Summoner> riotAccounts;
 
     private String globalGreetId;
     private HashMap<String, String> guildGreetIds;
@@ -53,8 +56,8 @@ public class UserData {
     }
 
 
-//     ▄████████  ▄█        ▄█     ▄████████    ▄████████ 
-//    ███    ███ ███       ███    ███    ███   ███    ███ 
+//     ▄████████  ▄█        ▄████████    ▄████████ 
+//    ███    ███ ███       ███    ███   ███    ███ 
 //    ███    ███ ███       ███▌   ███    ███   ███    █▀  
 //    ███    ███ ███       ███▌   ███    ███   ███        
 //  ▀███████████ ███       ███▌ ▀███████████ ▀███████████ 
@@ -187,10 +190,8 @@ public class UserData {
     private void retriveRiotAccounts() {
         this.riotAccounts = new LinkedHashMap<>();
         for (QueryRecord row : MongoDB.findAccountsByUserId(USER_ID)) {
-            String puuid = row.getAsString("puuid");
-            if (puuid == null) puuid = row.getAsString("_id");
-            String region = row.getAsString("region");
-            if (puuid != null && region != null) riotAccounts.put(puuid, region);
+            Summoner summoner = MongoDB.read(row, Summoner.class);
+            if (summoner != null && summoner.puuid() != null) riotAccounts.put(summoner.puuid(), summoner);
         }
     }
 
@@ -199,17 +200,17 @@ public class UserData {
     }
 
 
-    public HashMap<String, String> getRiotAccounts() {
+    public Map<String, Summoner> getRiotAccounts() {
         checkRiotAccounts();
         return riotAccounts;
     }
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = com.safjnest.lol.service.SummonerService.upsert(s, USER_ID);
+        boolean result = SummonerService.upsert(s, USER_ID);
         if (result) {
-            riotAccounts.put(s.getPUUID(), s.getPlatform().name());
-            com.safjnest.lol.service.SummonerService.invalidate(s.getPUUID(), s.getPlatform());
+            riotAccounts.put(s.puuid(), s);
+            SummonerService.invalidate(s.puuid(), s.region());
         }
         
         return result;
@@ -217,11 +218,12 @@ public class UserData {
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        String region = riotAccounts.get(puuid);
+        Summoner summoner = riotAccounts.get(puuid);
+        LeagueShard region = summoner == null ? null : summoner.region();
         boolean result = MongoDB.detachSummonerUser(puuid, USER_ID);
         if (result) {
             riotAccounts.remove(puuid);
-            if (region != null) com.safjnest.lol.service.SummonerService.invalidate(puuid, no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.valueOf(region));
+            if (region != null) SummonerService.invalidate(puuid, region);
         }
         
         return result;

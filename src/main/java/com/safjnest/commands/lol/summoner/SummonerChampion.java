@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
@@ -48,16 +49,16 @@ public class SummonerChampion extends SlashCommand {
   @Override
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
-    no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-    LeagueMessage.send(event.getHook(), userId, summoner, summoner.getPUUID(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
+    Summoner summoner = LeagueHandler.getSummonerByArgs(event);
+    String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.puuid()) != null ? event.getUser().getId() : null;
+    LeagueMessage.send(event.getHook(), userId, summoner, summoner.puuid(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
 	}
 
   @Override
 	protected void execute(CommandEvent event) {
-    no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
-    LeagueMessage.send(event, userId, summoner, summoner.getPUUID(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
+    Summoner summoner = LeagueHandler.getSummonerByArgs(event);
+    String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.puuid()) != null ? event.getAuthor().getId() : null;
+    LeagueMessage.send(event, userId, summoner, summoner.puuid(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
 	}
 
 }

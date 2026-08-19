@@ -30,7 +30,7 @@ public class ProfileServiceTest {
         statistics.add(match("none", LaneType.NONE), GameQueueType.ARAM, LaneType.NONE);
 
         SummonerView page = SummonerView.from(
-            new Summoner(1, "puuid", "Name#TAG", "EUW1", 10, 27),
+            new Summoner("puuid", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 27),
             List.of(new Rank(GameQueueType.RANKED_FLEX_SR, TierDivisionType.BRONZE_II, 15, 76, 131)),
             statistics,
             List.of(),

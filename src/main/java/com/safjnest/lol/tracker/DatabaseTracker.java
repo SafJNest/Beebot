@@ -327,7 +327,7 @@ public final class DatabaseTracker {
 
     private static boolean refreshProfileStatistics(ProfileStatisticsRequest request) {
         try {
-            LeagueShard shard = LeagueShard.valueOf(request.region());
+            LeagueShard shard = request.region();
             if (!PROFILE_SERVICE.refreshStatistics(request.puuid(), shard, request.filter(), request.rebuild())) {
                 BotLogger.error("Profile statistics refresh failed for summoner=" + request.puuid());
                 return false;
@@ -457,17 +457,15 @@ public final class DatabaseTracker {
     }
 
     private record ProfileStatisticsRequest(
-        int summonerId,
         String puuid,
         String riotId,
-        String region,
+        LeagueShard region,
         Filter filter,
         boolean rebuild
     ) {
 
         private static ProfileStatisticsRequest from(Summoner summoner, Filter filter, boolean rebuild) {
             return new ProfileStatisticsRequest(
-                summoner.summonerId(),
                 summoner.puuid(),
                 summoner.riotId(),
                 summoner.region(),

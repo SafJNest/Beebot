@@ -71,7 +71,7 @@ public class LiveGameTest {
         Stats<Integer> thirdChampionStats = new Stats<>(64);
         thirdChampionStats.games = 8;
         LiveGame.ProfileOverview overview = new LiveGame.ProfileOverview(
-            new Summoner(1, "puuid-1", "Player#EUW", "EUW1", 100, 29),
+            new Summoner("puuid-1", "Player#EUW", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 100, 29),
             List.of(new Rank(GameQueueType.RANKED_SOLO_5X5, null, 50, 10, 5)),
             List.of(new Mastery(157, 7, 200_000)),
             List.of(playedChampionStats, secondChampionStats, thirdChampionStats)
