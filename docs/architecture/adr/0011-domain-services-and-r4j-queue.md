@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-08-01
-- Amended: 2026-08-15
+- Amended: 2026-08-19
 
 ## Context
 
@@ -23,12 +23,17 @@ or concurrent Riot requests for the same shard.
   Mongo reads;
 - `ProfileService` owns profile-page composition and its `SUMMONER_OVERVIEW` cache.
 
-`R4JQueue` owns outbound Riot scheduling. It keeps one virtual-thread
-executor per `LeagueShard`, with high and low priority queues, and deduplicates
-an in-flight request by shard, operation and canonical resource id. A high
-request runs before queued low work but never interrupts a request already in
-flight. A successful, null or failed request is removed after completion;
-Redis and Mongo remain the only cache and persistence owners.
+`R4JQueue`, under `com.safjnest.lol.queue`, owns outbound Riot scheduling. It
+extends `AbstractQueueScheduler` with one channel and virtual-thread worker per
+`LeagueShard`. Shared priorities are `IMMEDIATE` and `BACKGROUND` (former high
+and low). Callers build a `QueueRequest` via `R4JQueue.request(...)` and submit
+through `R4JQueue.schedule`. Shared `QueueTask` instances carry the key,
+readable name, shard route, priority, supplier and completion future.
+`R4JQueue` deduplicates an in-flight request by shard, operation and canonical
+resource id. An immediate request runs before queued background work but never
+interrupts a request already in flight. A successful, null or failed request is
+removed after completion; Redis and Mongo remain the only cache and persistence
+owners.
 
 The canonical match identifier is always the full Riot ID, for example
 `EUW1_6789012345`. Numeric IDs are neither accepted nor exposed by the match
@@ -53,6 +58,8 @@ invariants remain in force.
 - Match API consumers must provide a full Riot match ID; HTTP statuses, Redis
   key formats and TTLs remain unchanged.
 - Every extracted Riot fetch passes through `R4JQueue`.
+- `QueueTask` and `AbstractQueueScheduler` are shared with `DatabaseTracker`, but their
+  registries, priority rules and workers remain separate.
 - Queue diagnostics are disabled by default; the owner-only `ptest log` toggle
   enables `BotLogger` entries for request reuse, enqueue, start and terminal
   completion or failure.
@@ -61,7 +68,7 @@ invariants remain in force.
   and requires neither Account nor Summoner API.
 - A spectator roster is seed-persisted from its PUUID, Riot ID, shard and icon
   before its background enrichment. Both match and spectator seeds enqueue only
-  a low-priority forced rank refresh; masteries are fetched only by their
+  a background forced rank refresh; masteries are fetched only by their
   cache/Mongo-miss flow, and participants are never hydrated through Account or
   Summoner API.
 - HTTP and Discord live-game consumers call `SummonerService.getLiveGame`; the

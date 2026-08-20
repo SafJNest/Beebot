@@ -97,7 +97,7 @@ stringhe specifiche.
 
 | Area | Proprietario | File principali |
 |---|---|---|
-| Scheduling e deduplicazione | `DatabaseTracker` | `lol/tracker/DatabaseTracker.java` |
+| Scheduling e deduplicazione | `DatabaseTracker` | `lol/queue/DatabaseTracker.java` |
 | Filtri matrice e cache pagina | `ChampionService` | `lol/service/ChampionService.java` |
 | Analisi, accumulatori e assemble | `ChampionAnalyzer` | `lol/service/ChampionAnalyzer.java` |
 | Materializzazione raw | `ChampionStatsProvider` | `lol/champion/ChampionStatsProvider.java` |

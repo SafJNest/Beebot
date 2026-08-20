@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-26
+- Amended: 2026-08-19
 - Supersedes: the no-application-queue portion of ADR-0004
 
 ## Context
@@ -11,14 +12,31 @@ Profile statistics and champion statistics/builds are expensive Mongo calculatio
 
 ## Decision
 
-`DatabaseTracker` owns asynchronous database calculation dispatch. It contains:
+`DatabaseTracker`, under `com.safjnest.lol.queue`, owns asynchronous database
+calculation dispatch. It extends `AbstractQueueScheduler` and configures:
 
-- one process-local FIFO `LinkedBlockingQueue` for champion tasks (builds and statistics) and three FIFO profile queues: `MANUAL`, `ON_DEMAND` and `STALE`;
-- one in-flight map keyed by the logical resource key and holding the task `CompletableFuture`;
+- fixed channels `PROFILE` and `CHAMPION`, each with shared priority lanes
+  `IMMEDIATE`, `NORMAL` and `BACKGROUND` (former `MANUAL` / `ON_DEMAND` /
+  `STALE`);
+- one inherited in-flight map keyed by the logical resource key and holding a shared `QueueTask`;
 - exactly two virtual-thread workers: worker 1 consumes profile work, while worker 2 serializes champion work and helps profiles only while its champion queue is empty;
 - task removal from the in-flight map only after success or failure.
 
-The queues store task suppliers and their completion futures. Suppliers are not started by the request thread. Duplicate submissions return the existing future and do not add another queue entry. A queued profile task is promoted when the same key is submitted at a higher priority; a running task is never interrupted. Champion builds, champion stats and scheduled champion refreshes execute only on worker 2 in one FIFO sequence. Profile workers always consume `MANUAL`, then `ON_DEMAND`, then `STALE`, preserving FIFO inside each priority. Worker 1 consumes profile work first and worker 2 may consume it when no champion task is waiting. Failed tasks complete exceptionally and become retryable after their key is removed.
+Callers and domain methods build a `QueueRequest` and call
+`DatabaseTracker.schedule`. Shared `QueueTask` instances carry the technical key,
+readable name, route, priority, supplier and completion future.
+`AbstractQueueScheduler` owns channels, priority lanes, workers, deduplication,
+optional work-stealing, completion cleanup and cancellation; `DatabaseTracker`
+owns routing, promote-on-reuse for profile routes, worker topology and
+diagnostics. Suppliers are not started by the request thread.
+Duplicate submissions return the existing future and do not add another queue
+entry. A queued profile task is promoted when the same key is submitted at a
+higher priority; a running task is never interrupted. Champion builds, champion
+stats and scheduled champion refreshes execute only on worker 2 in one FIFO
+sequence. Profile workers always consume `IMMEDIATE`, then `NORMAL`, then
+`BACKGROUND`, preserving FIFO inside each priority. Worker 1 consumes profile
+work first and worker 2 may consume it when no champion task is waiting. Failed
+tasks complete exceptionally and become retryable after their key is removed.
 
 Normal task lifecycle events are not written to the application log because high-volume queue/profile logging slows the workers. The owner-only `tracker` command reads the two worker snapshots on demand and reports readable job names, current work, queue positions, cumulative progress and scheduler state in three separate embeds. Task failures remain logged.
 
@@ -34,7 +52,7 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 - individual champion stats persistence key: `Filter.genericKey()`;
 - champion build key: `champion-build:<Filter.toKey()>`;
 - scheduled champion refresh key: `champion-data-refresh:<patch>`;
-- `POST /profile/{puuid}/refresh` submits one `MANUAL` `profile-refresh:<puuid>`; missing filtered aggregates submit `ON_DEMAND`; a stale persisted aggregate submits only its own `STALE` key;
+- `POST /profile/{puuid}/refresh` submits one `IMMEDIATE` `profile-refresh:<puuid>`; missing filtered aggregates submit `NORMAL`; a stale persisted aggregate submits only its own `BACKGROUND` key;
 - the latest three patch matrices for one queue are chained from oldest to newest, so each newer aggregate can read its previous-patch trend from storage;
 - the complete filter is snapshotted before it is queued;
 - worker failures are isolated to their task;
@@ -45,6 +63,8 @@ The queue owns profile-statistics refreshes, champion stats/build refreshes and 
 - A virtual-thread-per-refresh executor allows too many database scans to run concurrently.
 - Removing deduplication at dequeue time allows a duplicate request to overlap the existing calculation.
 - Moving match/R4J work into this queue would merge two different rate-limit and persistence flows.
+- Sharing `QueueTask` and `AbstractQueueScheduler` infrastructure does not merge the Riot and
+  database queues: each implementation keeps its own registry, routes and workers.
 
 ## Acceptance criteria
 

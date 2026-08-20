@@ -17,7 +17,7 @@ import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.tracker.DatabaseTracker;
+import com.safjnest.lol.queue.DatabaseTracker;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;

@@ -42,9 +42,26 @@ lol/model/statistics/
 
 lol/model/
   ChampionView
+
+lol/queue/
+  QueuePriority
+  QueueRequest
+  QueueTask
+  QueueChannel
+  QueueWorker
+  QueueWorkerStatus
+  AbstractQueueScheduler
+  R4JQueue
+  DatabaseWorkerType
+  ChampionMatrixRequest
+  DatabaseTracker
 ```
 
 Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
+`lol.queue` owns the shared abstract scheduler and the two distinct Riot and database queue implementations. Riot and DB keep separate registries and workers; only the scheduler machinery is shared.
+The current queue-first design (channels, priorities, insert-time routing, no steal) is described in [`new-queue.md`](new-queue.md).
+Queue implementation types stay as top-level files in the same package. Scheduler internals remain package-private instead of being exposed across subpackages.
+Operation-specific values are captured directly by each `QueueRequest` supplier; separate carrier types are reserved for stateful behavior such as champion-matrix coalescing.
 
 ## Statistics source of truth
 

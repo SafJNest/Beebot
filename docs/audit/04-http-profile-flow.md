@@ -28,9 +28,9 @@ Il percorso HTTP usa modelli canonici e avvia i tre flussi async di `SummonerSer
 
 ### Fix applicato — una fonte di verità per componente
 
-I service di dominio possiedono getter salvati, fetch Riot e scritture dei rispettivi componenti. `R4JQueue` possiede le Future condivise per shard. Non esiste una logica parallela di bootstrap del profilo. I wrapper sync del bot attendono le stesse Future usate dagli endpoint async.
+I service di dominio possiedono getter salvati, fetch Riot e scritture dei rispettivi componenti. `lol.queue.R4JQueue` possiede le Future condivise per shard tramite lo scheduler comune `AbstractQueueScheduler`/`QueueTask`. Non esiste una logica parallela di bootstrap del profilo. I wrapper sync del bot attendono le stesse Future usate dagli endpoint async.
 
-Evidenza: [SummonerService.java](../../src/main/java/com/safjnest/lol/service/SummonerService.java), [RankService.java](../../src/main/java/com/safjnest/lol/service/RankService.java), [MasteryService.java](../../src/main/java/com/safjnest/lol/service/MasteryService.java) e [R4JQueue.java](../../src/main/java/com/safjnest/lol/service/R4JQueue.java).
+Evidenza: [SummonerService.java](../../src/main/java/com/safjnest/lol/service/SummonerService.java), [RankService.java](../../src/main/java/com/safjnest/lol/service/RankService.java), [MasteryService.java](../../src/main/java/com/safjnest/lol/service/MasteryService.java) e [R4JQueue.java](../../src/main/java/com/safjnest/lol/queue/R4JQueue.java).
 
 `[]` viene persistito solo quando Riot restituisce esplicitamente una lista vuota; `null` o un errore Riot non diventano dati vuoti persistiti.
 

@@ -2,11 +2,26 @@
 
 Ricostruzione delle milestone LoL a partire dalla storia Git dei branch `lol-api` e `lol-api-mongo`. Le voci raggruppano i progressi funzionali e architetturali, non i singoli fix minori.
 
+## 2026-08-20 — Queue-first compute routing
+
+- Documentato il design queue-first in `docs/architecture/new-queue.md`:
+  enqueue sulla channel, un worker per coda, priorità a corsie, profile
+  sulla coda più scarica all’inserimento, niente steal.
+
 ## 2026-08-19 — Discord summoner Mongo-first cutover
 
 - Discord LoL commands risolvono l’identità sul modello canonico `Summoner` (Mongo/`SummonerService.get`), non più r4j per l’entry point.
 - `UserData` tiene `Map<String, Summoner>` collegati; `Summoner.region` è `LeagueShard`; rimosso `summonerId` dal modello e dal JSON pubblico.
 - Presentazione embed/button invariata; Tracker può ancora usare `getRiotSummoner` per il poll.
+- Unificata l'infrastruttura delle code LoL in `com.safjnest.lol.queue` con
+  `AbstractQueueScheduler`, `QueueRequest` e priorità condivise
+  `IMMEDIATE`/`NORMAL`/`BACKGROUND`, mantenendo separati registry e worker di
+  `R4JQueue` e `DatabaseTracker`. API e presentazione Discord invariate.
+- Estratti channel, worker, status e stato di coalescing in tipi top-level
+  dedicati nello stesso package; le request operative catturano direttamente
+  valori immutabili nella `Supplier`, senza un record per operazione.
+- Unificato lo snapshot diagnostico su `QueueWorkerStatus`, rimuovendo la
+  proiezione identica dedicata a `DatabaseTracker`.
 
 ## 2026-07-23 — `lol-api-mongo`
 

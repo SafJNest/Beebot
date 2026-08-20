@@ -105,7 +105,9 @@ No automatic `$unset` of legacy BSON `summonerId` (manual cleanup policy).
 
 - Tracker live polling still uses `getRiotSummoner` (by design for this pass)
 - Tracked accounts: `account.region()` is already `LeagueShard` (no `valueOf`)
-- `DatabaseTracker.ProfileStatisticsRequest`: dropped unused `summonerId`; `region` is `LeagueShard`
+- `lol.queue.DatabaseTracker` captures the profile PUUID, `LeagueShard`, filter
+  snapshot and rebuild flag directly in the queued supplier; no parallel request
+  carrier or legacy `summonerId` remains.
 
 ## Presentation
 

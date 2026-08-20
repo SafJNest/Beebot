@@ -26,6 +26,9 @@ The bot also provides several server stats tracking features, such as server sta
 ### **League of Legends Commands**
 Finally, the bot includes several commands related to the popular game League of Legends. You can use these commands to get information about summoner stats, match history, item builds, and more.
 
+LoL asynchronous work uses `com.safjnest.lol.queue.AbstractQueueScheduler`,
+with separate Riot (`R4JQueue`) and database (`DatabaseTracker`) registries.
+
 ## ***Build with***
 - Java version 17
 

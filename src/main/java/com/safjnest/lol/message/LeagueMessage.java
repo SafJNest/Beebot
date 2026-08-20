@@ -34,7 +34,7 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.tracker.DatabaseTracker;
+import com.safjnest.lol.queue.DatabaseTracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;

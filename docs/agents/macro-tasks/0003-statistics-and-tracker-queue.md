@@ -35,7 +35,9 @@ Separate statistics persistence from request handling and limit database calcula
 
 ## Acceptance criteria
 
-- database queue fields and processor methods are owned by `DatabaseTracker`;
+- database routing, queue fields and processor methods are owned by
+  `lol.queue.DatabaseTracker`; generic task lifecycle and in-flight cleanup are
+  inherited from `lol.queue.AbstractQueueScheduler`;
 - request paths only read ready aggregates and submit missing work asynchronously;
 - scheduler submits, but does not execute, the periodic champion refresh;
 - match queue processing remains available.
@@ -64,4 +66,10 @@ Mongo _id                  = random ObjectId, $setOnInsert only
 recentMatches              = separate MatchResult query with the same Filter
 ```
 
-`ProfileStatisticsService` owns read, calculation and persistence. `DatabaseTracker` owns async dispatch and in-flight deduplication using `profile-statistics:<puuid>:<filterKey>`. Overview, profile and `!summoner` read the same aggregate, while each existing presentation remains unchanged unless a style refactor is explicitly requested. `lastUpdate` is written after the calculation completes.
+`ProfileStatisticsService` owns read, calculation and persistence.
+`lol.queue.DatabaseTracker` owns async dispatch and uses the shared abstract
+scheduler for in-flight deduplication with
+`profile-statistics:<puuid>:<filterKey>`. Overview, profile and `!summoner` read
+the same aggregate, while each existing presentation remains unchanged unless a
+style refactor is explicitly requested. `lastUpdate` is written after the
+calculation completes.

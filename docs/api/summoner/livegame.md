@@ -126,5 +126,5 @@ level e gli altri dati canonici del Summoner.
 
 ## Owner
 
-`LolController`, `SummonerService`, `R4JQueue`, `RedisKey.SPECTATOR_CURRENT`
+`LolController`, `SummonerService`, `lol.queue.R4JQueue`, `RedisKey.SPECTATOR_CURRENT`
 e `LiveGame`.

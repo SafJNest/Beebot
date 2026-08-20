@@ -13,6 +13,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.queue.R4JQueue;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
@@ -88,11 +89,11 @@ public final class MatchService {
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         RegionShard region = shard.toRegionShard();
-        return R4JQueue.submit(shard, "match", gameId, () -> {
+        return R4JQueue.schedule(R4JQueue.request(shard, "match", gameId, () -> {
             LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
             if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
             return match;
-        });
+        }));
     }
 
     public static void cacheRiotMatch(LOLMatch match) {
@@ -186,14 +187,14 @@ public final class MatchService {
 
         try {
             String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
-            return R4JQueue.<List<String>>submit(summoner.getPlatform(), "match-list", id, () -> {
+            return R4JQueue.<List<String>>schedule(R4JQueue.request(summoner.getPlatform(), "match-list", id, () -> {
                 MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();
                 RedisClient.set(RedisKey.R4J_MATCH_LIST, values,
                     summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
                 return values;
-            }).join();
+            })).join();
         } catch (CompletionException exception) {
             return List.of();
         }

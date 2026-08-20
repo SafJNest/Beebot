@@ -13,6 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
+import com.safjnest.lol.queue.QueuePriority;
+import com.safjnest.lol.queue.R4JQueue;
+
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public class R4JQueueTest {
@@ -22,14 +25,14 @@ public class R4JQueueTest {
         AtomicInteger calls = new AtomicInteger();
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        CompletableFuture<Integer> first = R4JQueue.submit(LeagueShard.EUW1, "test-dedup", "same", () -> {
+        CompletableFuture<Integer> first = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-dedup", "same", () -> {
             calls.incrementAndGet();
             started.countDown();
             await(release);
             return calls.get();
-        });
+        }));
         assertTrue(started.await(2, TimeUnit.SECONDS));
-        CompletableFuture<Integer> second = R4JQueue.submit(LeagueShard.EUW1, "test-dedup", "same", calls::incrementAndGet);
+        CompletableFuture<Integer> second = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-dedup", "same", calls::incrementAndGet));
 
         assertSame(first, second);
         release.countDown();
@@ -41,14 +44,14 @@ public class R4JQueueTest {
     public void shouldSerializeRequestsForTheSameShard() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        CompletableFuture<Integer> first = R4JQueue.submit(LeagueShard.EUW1, "test-serial", "first", () -> {
+        CompletableFuture<Integer> first = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-serial", "first", () -> {
             started.countDown();
             await(release);
             return 1;
-        });
+        }));
         assertTrue(started.await(2, TimeUnit.SECONDS));
 
-        CompletableFuture<Integer> second = R4JQueue.submit(LeagueShard.EUW1, "test-serial", "second", () -> 2);
+        CompletableFuture<Integer> second = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-serial", "second", () -> 2));
         assertFalse(second.isDone());
         release.countDown();
 
@@ -60,14 +63,14 @@ public class R4JQueueTest {
     public void shouldAllowDifferentShardsToAdvanceIndependently() throws Exception {
         CountDownLatch firstStarted = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        CompletableFuture<Integer> first = R4JQueue.submit(LeagueShard.EUW1, "test-shard", "first", () -> {
+        CompletableFuture<Integer> first = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-shard", "first", () -> {
             firstStarted.countDown();
             await(release);
             return 1;
-        });
+        }));
         assertTrue(firstStarted.await(2, TimeUnit.SECONDS));
 
-        CompletableFuture<Integer> second = R4JQueue.submit(LeagueShard.EUN1, "test-shard", "second", () -> 2);
+        CompletableFuture<Integer> second = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUN1, "test-shard", "second", () -> 2));
         assertEquals(2, second.get(2, TimeUnit.SECONDS).intValue());
         release.countDown();
         assertEquals(1, first.join().intValue());
@@ -78,28 +81,28 @@ public class R4JQueueTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         CopyOnWriteArrayList<String> order = new CopyOnWriteArrayList<>();
-        CompletableFuture<Void> first = R4JQueue.submit(LeagueShard.EUW1, "test-priority", "first", () -> {
+        CompletableFuture<Void> first = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-priority", "first", () -> {
             started.countDown();
             await(release);
             order.add("first");
             return null;
-        });
+        }));
         assertTrue(started.await(2, TimeUnit.SECONDS));
 
-        CompletableFuture<Void> low = R4JQueue.submit(
+        CompletableFuture<Void> low = R4JQueue.schedule(R4JQueue.request(
             LeagueShard.EUW1,
             "test-priority",
             "low",
-            R4JQueue.Priority.LOW,
+            QueuePriority.BACKGROUND,
             () -> {
                 order.add("low");
                 return null;
             }
-        );
-        CompletableFuture<Void> high = R4JQueue.submit(LeagueShard.EUW1, "test-priority", "high", () -> {
+        ));
+        CompletableFuture<Void> high = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-priority", "high", () -> {
             order.add("high");
             return null;
-        });
+        }));
 
         release.countDown();
         first.join();
@@ -111,16 +114,16 @@ public class R4JQueueTest {
     @Test
     public void shouldRemoveFailedRequestsForRetry() {
         AtomicInteger calls = new AtomicInteger();
-        CompletableFuture<Integer> failed = R4JQueue.submit(LeagueShard.EUW1, "test-retry", "same", () -> {
+        CompletableFuture<Integer> failed = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-retry", "same", () -> {
             calls.incrementAndGet();
             throw new IllegalStateException("failure");
-        });
+        }));
         try {
             failed.join();
         } catch (Exception ignored) {
         }
 
-        CompletableFuture<Integer> retry = R4JQueue.submit(LeagueShard.EUW1, "test-retry", "same", calls::incrementAndGet);
+        CompletableFuture<Integer> retry = R4JQueue.schedule(R4JQueue.request(LeagueShard.EUW1, "test-retry", "same", calls::incrementAndGet));
         assertEquals(2, retry.join().intValue());
         assertEquals(2, calls.get());
     }

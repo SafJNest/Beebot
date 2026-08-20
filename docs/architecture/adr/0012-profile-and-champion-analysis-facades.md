@@ -27,10 +27,11 @@ receive only compatible participants from that same document. The bounded
 `match_events` pass is performed only for statistics. A build-only miss keeps
 the narrow build projection and never starts the events pass.
 
-`DatabaseTracker` keeps champion work on worker 2. While a matrix is queued,
-build filters for the same `patch + queue` are merged into the matrix request.
-After the matrix starts, a new build request is independently deduplicated by
-its full `Filter.toKey()` and is processed as build-only work.
+`lol.queue.DatabaseTracker` keeps champion work on worker 2 while inheriting
+the common task lifecycle from `AbstractQueueScheduler`. While a matrix is queued, build
+filters for the same `patch + queue` are merged into the matrix request. After
+the matrix starts, a new build request is independently deduplicated by its full
+`Filter.toKey()` and is processed as build-only work.
 
 ## Invariants
 

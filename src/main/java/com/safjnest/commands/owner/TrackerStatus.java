@@ -5,7 +5,8 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.lol.tracker.DatabaseTracker;
+import com.safjnest.lol.queue.DatabaseTracker;
+import com.safjnest.lol.queue.QueueWorkerStatus;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.utils.BotCommand;
@@ -34,7 +35,7 @@ public class TrackerStatus extends Command {
     @Override
     protected void execute(CommandEvent event) {
         TrackerScheduler.SchedulerStatus scheduler = TrackerScheduler.status();
-        List<DatabaseTracker.WorkerStatus> workers = DatabaseTracker.workerStatuses();
+        List<QueueWorkerStatus> workers = DatabaseTracker.workerStatuses();
 
         event.getChannel().sendMessageEmbeds(
             schedulerEmbed(scheduler).build(),
@@ -59,7 +60,7 @@ public class TrackerStatus extends Command {
         return embed;
     }
 
-    private static EmbedBuilder workerEmbed(DatabaseTracker.WorkerStatus status) {
+    private static EmbedBuilder workerEmbed(QueueWorkerStatus status) {
         EmbedBuilder embed = baseEmbed("Database worker " + status.id() + " (" + status.type() + ")");
         String state = status.currentJob() == null
             ? (status.running() ? "IDLE" : "STOPPED")

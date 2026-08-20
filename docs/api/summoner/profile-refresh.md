@@ -59,5 +59,6 @@ client può richiedere di nuovo `GET /profile/{puuid}`.
 
 ## Owner
 
-`SummonerService.refreshAsync`, `SummonerService.refresh`, `R4JQueue`,
-`ProfileService` e `DatabaseTracker`.
+`SummonerService.refreshAsync`, `SummonerService.refresh`,
+`lol.queue.R4JQueue`, `ProfileService` e `lol.queue.DatabaseTracker`. Il
+refactor del package queue non modifica endpoint, payload o presentazione.

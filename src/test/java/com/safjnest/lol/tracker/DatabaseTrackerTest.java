@@ -16,6 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import com.safjnest.lol.queue.DatabaseTracker;
+import com.safjnest.lol.queue.QueueWorkerStatus;
+
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class DatabaseTrackerTest {
@@ -44,15 +47,22 @@ public class DatabaseTrackerTest {
 
     @Test
     public void duplicateKeySharesQueuedFutureAndRunsOnce() throws Exception {
-        CountDownLatch blockersStarted = new CountDownLatch(1);
+        CountDownLatch buildStarted = new CountDownLatch(1);
+        CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch releaseBlockers = new CountDownLatch(1);
+        CompletableFuture<Void> buildBlocker = DatabaseTracker.submitBuild("test:queued-build-blocker", () -> {
+            buildStarted.countDown();
+            await(releaseBlockers);
+            return null;
+        });
+        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         CompletableFuture<Void> blocker = DatabaseTracker.submit("test:queued-blocker", () -> {
-            blockersStarted.countDown();
+            profileStarted.countDown();
             await(releaseBlockers);
             return null;
         });
 
-        assertTrue(blockersStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         AtomicInteger executions = new AtomicInteger();
         CompletableFuture<Integer> first = DatabaseTracker.submit("test:duplicate", () -> {
             executions.incrementAndGet();
@@ -65,6 +75,7 @@ public class DatabaseTrackerTest {
         releaseBlockers.countDown();
         assertEquals(Integer.valueOf(7), first.get(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        buildBlocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertEquals(1, executions.get());
     }
 
@@ -92,22 +103,24 @@ public class DatabaseTrackerTest {
 
     @Test
     public void manualProfileTasksRunBeforeOnDemandAndStaleTasks() throws Exception {
-        CountDownLatch workersStarted = new CountDownLatch(2);
+        CountDownLatch buildStarted = new CountDownLatch(1);
+        CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch releaseProfile = new CountDownLatch(1);
         CountDownLatch releaseBuild = new CountDownLatch(1);
         List<String> order = new ArrayList<>();
 
         CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:priority-build", () -> {
-            workersStarted.countDown();
+            buildStarted.countDown();
             await(releaseBuild);
             return null;
         });
+        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         CompletableFuture<Void> blocker = DatabaseTracker.submit("test:priority-blocker", () -> {
-            workersStarted.countDown();
+            profileStarted.countDown();
             await(releaseProfile);
             return null;
         });
-        assertTrue(workersStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
         CompletableFuture<Void> stale = DatabaseTracker.submitStale("test:priority-stale", () -> {
             order.add("stale");
@@ -140,22 +153,24 @@ public class DatabaseTrackerTest {
 
     @Test
     public void manualSubmissionPromotesTheQueuedStaleTaskWithTheSameKey() throws Exception {
-        CountDownLatch workersStarted = new CountDownLatch(2);
+        CountDownLatch buildStarted = new CountDownLatch(1);
+        CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch releaseProfile = new CountDownLatch(1);
         CountDownLatch releaseBuild = new CountDownLatch(1);
         List<String> order = new ArrayList<>();
 
         CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:promotion-build", () -> {
-            workersStarted.countDown();
+            buildStarted.countDown();
             await(releaseBuild);
             return null;
         });
+        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         CompletableFuture<Void> blocker = DatabaseTracker.submit("test:promotion-blocker", () -> {
-            workersStarted.countDown();
+            profileStarted.countDown();
             await(releaseProfile);
             return null;
         });
-        assertTrue(workersStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
         CompletableFuture<Integer> stale = DatabaseTracker.submitStale("test:promotion", () -> {
             order.add("promoted");
@@ -182,46 +197,58 @@ public class DatabaseTrackerTest {
     public void profileWorkerRunsOneTaskAtOnce() throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();
-        CountDownLatch started = new CountDownLatch(1);
-        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch buildStarted = new CountDownLatch(1);
+        CountDownLatch profileStarted = new CountDownLatch(1);
+        CountDownLatch releaseProfile = new CountDownLatch(1);
+        CountDownLatch releaseBuild = new CountDownLatch(1);
         List<CompletableFuture<Void>> futures = new ArrayList<>();
+        CompletableFuture<Void> buildBlocker = DatabaseTracker.submitBuild("test:parallel-build-blocker", () -> {
+            buildStarted.countDown();
+            await(releaseBuild);
+            return null;
+        });
+        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
         for (int i = 0; i < 3; i++) {
             int task = i;
             futures.add(DatabaseTracker.submit("test:parallel:" + task, () -> {
                 int current = active.incrementAndGet();
                 maximum.accumulateAndGet(current, Math::max);
-                started.countDown();
-                await(release);
+                profileStarted.countDown();
+                await(releaseProfile);
                 active.decrementAndGet();
                 return null;
             }));
         }
 
-        assertTrue(started.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         assertEquals(1, maximum.get());
-        release.countDown();
+        releaseProfile.countDown();
         for (CompletableFuture<Void> future : futures) future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        releaseBuild.countDown();
+        buildBlocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertEquals(1, maximum.get());
     }
 
     @Test
     public void championWorkerCanRunAlongsideProfileWorker() throws Exception {
-        CountDownLatch started = new CountDownLatch(2);
+        CountDownLatch buildStarted = new CountDownLatch(1);
+        CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
         CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:dedicated-build", () -> {
-            started.countDown();
+            buildStarted.countDown();
             await(release);
             return null;
         });
+        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         CompletableFuture<Void> general = DatabaseTracker.submit("test:dedicated-general", () -> {
-            started.countDown();
+            profileStarted.countDown();
             await(release);
             return null;
         });
 
-        assertTrue(started.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         release.countDown();
         build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         general.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -287,7 +314,7 @@ public class DatabaseTrackerTest {
         build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         boolean secondWorkerRanBuild = false;
-        for (DatabaseTracker.WorkerStatus status : DatabaseTracker.workerStatuses()) {
+        for (QueueWorkerStatus status : DatabaseTracker.workerStatuses()) {
             if (status.id() == 2 && status.started() > 0) secondWorkerRanBuild = true;
         }
         assertTrue(secondWorkerRanBuild);

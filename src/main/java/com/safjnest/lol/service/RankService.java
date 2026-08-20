@@ -11,6 +11,8 @@ import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.queue.QueuePriority;
+import com.safjnest.lol.queue.R4JQueue;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -59,17 +61,17 @@ public final class RankService {
     }
 
     public static CompletableFuture<List<Rank>> refreshAsync(String puuid, LeagueShard shard) {
-        return refreshAsync(puuid, shard, R4JQueue.Priority.HIGH);
+        return refreshAsync(puuid, shard, QueuePriority.IMMEDIATE);
     }
 
     public static CompletableFuture<List<Rank>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
-        return refreshAsync(puuid, shard, R4JQueue.Priority.LOW);
+        return refreshAsync(puuid, shard, QueuePriority.BACKGROUND);
     }
 
     private static CompletableFuture<List<Rank>> refreshAsync(
             String puuid,
             LeagueShard shard,
-            R4JQueue.Priority priority) {
+            QueuePriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
         return refreshEntriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
@@ -111,11 +113,11 @@ public final class RankService {
         if (shard == null || queue == null || tier == null || page < 0) return List.of();
 
         try {
-            return R4JQueue.<List<LeagueEntry>>submit(shard, "league-tier", queue.name() + ":" + tier.name() + ":" + page, () -> {
+            return R4JQueue.<List<LeagueEntry>>schedule(R4JQueue.request(shard, "league-tier", queue.name() + ":" + tier.name() + ":" + page, () -> {
                 List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI()
                     .getLeagueByTierDivision(shard, queue, tier, page);
                 return entries == null ? List.of() : entries;
-            }).join();
+            })).join();
         } catch (CompletionException exception) {
             return List.of();
         }
@@ -176,13 +178,13 @@ public final class RankService {
     }
 
     private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(String puuid, LeagueShard shard) {
-        return refreshEntriesFromRiotAsync(puuid, shard, R4JQueue.Priority.HIGH);
+        return refreshEntriesFromRiotAsync(puuid, shard, QueuePriority.IMMEDIATE);
     }
 
     private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(
             String puuid,
             LeagueShard shard,
-            R4JQueue.Priority priority) {
+            QueuePriority priority) {
         return fetchEntriesFromRiotAsync(puuid, shard, "league-entries-refresh", priority);
     }
 
@@ -191,21 +193,21 @@ public final class RankService {
         LeagueShard shard,
         String operation
     ) {
-        return fetchEntriesFromRiotAsync(puuid, shard, operation, R4JQueue.Priority.HIGH);
+        return fetchEntriesFromRiotAsync(puuid, shard, operation, QueuePriority.IMMEDIATE);
     }
 
     private static CompletableFuture<List<LeagueEntry>> fetchEntriesFromRiotAsync(
         String puuid,
         LeagueShard shard,
         String operation,
-        R4JQueue.Priority priority
+        QueuePriority priority
     ) {
-        return R4JQueue.<List<LeagueEntry>>submit(shard, operation, puuid, priority, () -> {
+        return R4JQueue.schedule(R4JQueue.request(shard, operation, puuid, priority, () -> {
             List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
             if (entries == null) throw new IllegalStateException("Riot returned no rank result");
             RedisClient.set(RedisKey.R4J_LEAGUE_ENTRIES, entries, shard.name(), puuid);
             return entries;
-        });
+        }));
     }
 
     private static List<Rank> cache(String puuid, LeagueShard shard) {

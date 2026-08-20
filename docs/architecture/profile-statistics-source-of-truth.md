@@ -5,7 +5,7 @@
 - Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, profilo HTTP e statistiche Mongo LoL
 - Owner di cache, persistenza e composizione: `ProfileService`
 - Owner del calcolo puro: `ProfileAnalyzer`
-- Owner del refresh asincrono: `DatabaseTracker`
+- Owner del refresh asincrono: `lol.queue.DatabaseTracker`
 
 Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `DatabaseTracker.startProfileStatistics`, `DatabaseTracker.startProfileMatchups`.
 
@@ -26,7 +26,7 @@ Il PUUID identifica l'account Riot. Il `Filter` identifica esattamente il datase
 `POST /api/lol/{shard}/profile/{puuid}/refresh` aggiorna prima Account,
 summoner, rank e mastery con `R4JQueue` e persiste ogni componente. Solo dopo
 la verifica riuscita aggiorna il campo interno Mongo `summoner.lastSeenAt` e
-accoda un unico `MANUAL profile-refresh:<puuid>` su `DatabaseTracker`.
+accoda un unico `IMMEDIATE profile-refresh:<puuid>` su `DatabaseTracker`.
 
 Il batch legge tutti i match del PUUID/shard una sola volta, in ordine
 `timeStart`, con cursor Mongo senza materializzare `List<Match>`, e rigenera
@@ -57,9 +57,9 @@ ordinate per `day * 24 + hour`, con Monday `0` e Sunday `6`.
 La persistenza segue lo stesso read-through delle statistiche, ma su una
 collection derivata dedicata: `Redis SUMMONER_ACTIVITY(PUUID, filterKey)`, poi
 Mongo `profile_activity` con `{ puuid, filterKey }`. Un valore assente restituisce `202
-profile_activity_pending` e viene accodato `ON_DEMAND`. Un valore stale resta
+profile_activity_pending` e viene accodato `NORMAL`. Un valore stale resta
 un `200` con il payload persistito e `metadata.refresh=true`, poi accoda solo
-l'activity in `STALE`; non viene calcolato nella request.
+l'activity in `BACKGROUND`; non viene calcolato nella request.
 Il valore `filter` della response è il `Filter` canonico, non un record
 parallelo.
 
@@ -104,7 +104,7 @@ Il JSON del profilo esistente non cambia.
 ## Freshness stale
 
 Un aggregato profile è stale oltre `30 giorni + jitter deterministico 0-14
-giorni`, derivato dal PUUID. La GET accoda il backstop `STALE` solo se
+giorni`, derivato dal PUUID. La GET accoda il backstop `BACKGROUND` solo se
 `lastSeenAt` è negli ultimi 60 giorni; il campo resta interno al documento
 `summoner`, non appartiene a `Summoner` né al JSON/API. Lo stale non accoda mai
 il refresh completo: overview accoda solo statistics, activity solo activity e
@@ -492,7 +492,7 @@ Prima di modificare questo flusso verificare:
 - `src/main/java/com/safjnest/lol/service/ProfileService.java`
 - `src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java`
-- `src/main/java/com/safjnest/lol/tracker/DatabaseTracker.java`
+- `src/main/java/com/safjnest/lol/queue/DatabaseTracker.java`
 - `src/main/java/com/safjnest/lol/tracker/Tracker.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessage.java`

@@ -34,7 +34,7 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.service.R4JQueue;
+import com.safjnest.lol.queue.R4JQueue;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
