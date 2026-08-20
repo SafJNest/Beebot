@@ -37,7 +37,7 @@ task is never interrupted.
 
 Champion stats matrices, champion builds and scheduled champion refreshes
 always enqueue on `CHAMPION` and stay FIFO on that channel. Profile-logical
-work (statistics, matchups, activity, profile refresh, `submit`) is assigned at
+work (statistics, matchups, activity and profile refresh) is assigned at
 insert to the channel with the lower load (`queued count + 1` if that worker is
 executing). Equal load prefers `PROFILE`, so champion stays free for builds.
 Both channels drain `IMMEDIATE`, then `NORMAL`, then `BACKGROUND`, preserving

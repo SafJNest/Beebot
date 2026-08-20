@@ -3,7 +3,9 @@ package com.safjnest.lol.queue;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-final class TestQueueScheduler extends AbstractQueueScheduler<String> {
+import com.safjnest.lol.model.status.QueueWorkerStatus;
+
+class TestQueueScheduler extends AbstractQueueScheduler<String> {
 
     TestQueueScheduler() {
         super("test shutdown");
@@ -16,6 +18,10 @@ final class TestQueueScheduler extends AbstractQueueScheduler<String> {
 
     List<QueueWorkerStatus> publicWorkerStatuses() {
         return schedulerWorkerStatuses();
+    }
+
+    int publicIncompleteCount(String route) {
+        return incompleteCount(route);
     }
 
     @Override

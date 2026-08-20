@@ -250,6 +250,72 @@ public class RedisClient {
         }
     }
 
+    public static Long getLong(String key) {
+        String value = get(key);
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    public static void setCached(String key, String value, int ttlSeconds) {
+        if (key == null || value == null || ttlSeconds <= 0 || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.setex(key, ttlSeconds, value);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static long ttl(String key) {
+        if (key == null || !canUseRedis()) return -2;
+        try (Jedis jedis = pool.getResource()) {
+            long remaining = jedis.ttl(key);
+            markAvailable();
+            return remaining;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return -2;
+        }
+    }
+
+    public static void setPersistent(String key, long value) {
+        if (key == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.set(key, Long.toString(value));
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static Long dbSize() {
+        if (!canUseRedis()) return null;
+        try (Jedis jedis = pool.getResource()) {
+            long size = jedis.dbSize();
+            markAvailable();
+            return size;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return null;
+        }
+    }
+
+    public static Long usedMemory() {
+        if (!canUseRedis()) return null;
+        try (Jedis jedis = pool.getResource()) {
+            Long memory = RedisMemoryParser.parseUsedMemory(jedis.info("memory"));
+            markAvailable();
+            return memory;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return null;
+        }
+    }
+
     public static void close() {
         pool.close();
     }

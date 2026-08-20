@@ -49,6 +49,12 @@ indexables e le altre liste pure restano array invariati.
 payload canonico e non `ResponseMetadata`, così una partita non attiva resta un
 successo HTTP `200` con campi game null e participants vuoti.
 
+`BotStatus` (`GET /api/status`) è un'altra eccezione object-root: espone metriche
+operative del processo senza `ResponseMetadata` e senza envelope LoL. Oltre a
+`league`, `process`, `system` e `redis`, include `tracker` (job del
+`TrackerScheduler` con progresso in memoria), `workers` (snapshot live dei
+due worker `DatabaseTracker`) e `riot` (snapshot completo di `R4JQueue` per shard).
+
 `ChampionStatistics.filter` remains part of the canonical object used by Redis
 and the shared JSON codec, but the Spring mapper ignores it through a Jackson mixin because it
 is an internal storage key and not part of the HTTP contract.

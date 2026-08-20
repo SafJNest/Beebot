@@ -16,7 +16,7 @@ public class QueueTaskTest {
     public void shouldCompleteAndCleanSuccessfulTask() {
         AtomicBoolean cleaned = new AtomicBoolean();
         QueueTask<String, Integer> task =
-            new QueueTask<>("key", "name", "route", QueuePriority.IMMEDIATE, () -> 7);
+            new QueueTask<>("key", "name", "route", "queue", QueuePriority.IMMEDIATE, () -> 7);
 
         assertEquals(null, task.execute(() -> cleaned.set(true)));
         assertTrue(cleaned.get());
@@ -30,6 +30,7 @@ public class QueueTaskTest {
             "key",
             "name",
             "route",
+            "queue",
             QueuePriority.IMMEDIATE,
             () -> {
                 throw new IllegalStateException("expected");
@@ -50,7 +51,7 @@ public class QueueTaskTest {
     @Test
     public void shouldPromoteOnlyToHigherPriority() {
         QueueTask<String, Integer> task =
-            new QueueTask<>("key", "name", "route", QueuePriority.BACKGROUND, () -> 7);
+            new QueueTask<>("key", "name", "route", "queue", QueuePriority.BACKGROUND, () -> 7);
 
         assertTrue(task.promote(QueuePriority.IMMEDIATE));
         assertEquals(QueuePriority.IMMEDIATE, task.priority());
@@ -61,7 +62,7 @@ public class QueueTaskTest {
     public void shouldCancelAndCleanPendingTask() {
         AtomicBoolean cleaned = new AtomicBoolean();
         QueueTask<String, Integer> task =
-            new QueueTask<>("key", "name", "route", QueuePriority.IMMEDIATE, () -> 7);
+            new QueueTask<>("key", "name", "route", "queue", QueuePriority.IMMEDIATE, () -> 7);
 
         task.cancel("shutdown", () -> cleaned.set(true));
 

@@ -45,5 +45,9 @@ public class LolApiConfig implements WebMvcConfigurer {
             .allowedOrigins("*")
             .allowedMethods("GET", "POST", "OPTIONS")
             .allowedHeaders("*");
+        registry.addMapping("/api/status")
+            .allowedOrigins("*")
+            .allowedMethods("GET", "OPTIONS")
+            .allowedHeaders("*");
     }
 }

@@ -36,7 +36,7 @@ lol/queue/
   QueueTask              in-flight item + CompletableFuture
   QueueChannel           three priority lanes on one route
   QueueWorker            one virtual thread that drains one channel
-  QueueWorkerStatus      snapshot for the tracker Discord command
+  model/status/QueueWorkerStatus canonical worker snapshot for commands and API
   AbstractQueueScheduler channels, workers, dedup, shutdown
   R4JQueue               Riot implementation
   DatabaseTracker        compute implementation
@@ -116,9 +116,8 @@ exactly one worker.
 
 - Champion stats matrices, champion builds and the scheduled champion
   refresh always go to `CHAMPION`. They stay serial on that channel.
-- Profile statistics, matchups, activity, profile refresh and
-  `submit` / `submitManual` / `submitStale` are PROFILE-logical. At insert
-  they go to the lighter channel.
+- Profile statistics, matchups, activity and profile refresh are PROFILE-logical.
+  At insert they go to the lighter channel.
 
 Example:
 
@@ -184,11 +183,12 @@ facades. Database shutdown still happens before Mongo close.
 
 ## Diagnostics
 
-`DatabaseTracker.workerStatuses()` / scheduler snapshots expose worker
-id, type (`profile` / `champion` or shard name), running flag, current
-job, queued names, submitted/started/finished counts. The owner `tracker`
-command still renders three embeds from that snapshot. Normal queue
-lifecycle is not written to the application log.
+`DatabaseTracker.workerStatuses()` / scheduler snapshots expose one canonical
+worker status: id, type (`profile` / `champion` or shard name), state, current
+job, queue position, in-flight count and at most 20 readable queued names.
+`queuedCount` remains the full queue length. The owner `tracker` command and
+the status API return this same snapshot. Normal queue lifecycle is not written
+to the application log.
 
 ## How to submit work
 
@@ -213,15 +213,14 @@ map. Duplicate keys must share the existing future.
   route, queued-task cancellation on shutdown
 - `QueueTaskTest`: complete, fail, promote, cancel
 - `R4JQueueTest`: Riot facade
-- `DatabaseTrackerTest`: still lives under `lol.tracker` and still uses
-  the old steal-oriented names in a few cases; placement tests for
-  least-loaded insert are the remaining verification gap
+- `DatabaseTrackerTest`: profile placement is selected at insert and never
+  changes after offer; profile priority promotion stays on its assigned channel
 
 ## Follow-up
 
 1. Rename `DatabaseTracker` → `ComputeQueue` and
    `DatabaseWorkerType` → `ComputeRoute`.
-2. Move `DatabaseTrackerTest` to `src/test/java/com/safjnest/lol/queue/`
-   and assert insert-time placement (no jump after offer).
+2. Add deterministic concurrency tests for lane promotion and champion-matrix
+   coalescing.
 3. ADR-0010, macro-task 0003/0007 and the queue-related audits were
    amended 2026-08-20 to match insert-time routing.

@@ -1,8 +1,10 @@
 package com.safjnest.lol.queue;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import com.safjnest.lol.model.status.QueueWorkerStatus;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -62,6 +64,10 @@ public final class R4JQueue extends AbstractQueueScheduler<LeagueShard> {
     public static void shutdown() {
         log("Shutting down queue");
         INSTANCE.shutdownScheduler();
+    }
+
+    public static List<QueueWorkerStatus> workerStatuses() {
+        return INSTANCE.schedulerWorkerStatuses();
     }
 
     // ============================================================================

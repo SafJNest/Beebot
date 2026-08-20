@@ -12,6 +12,7 @@ import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.spring.SpringServer;
+import com.safjnest.status.SystemMetricsSampler;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
@@ -22,6 +23,7 @@ public class App {
     private static Settings settings;
     private static Bot bot;
     private static SpringServer springServer;
+    private static Boolean trackingEnabled;
 
     public static void main(String args[]) {
         SafJNest.bee();
@@ -32,6 +34,7 @@ public class App {
 
         runSpring();
         TwitchClient.init();
+        SystemMetricsSampler.start();
         TrackerScheduler.start();
 
         bot = new Bot();
@@ -60,6 +63,7 @@ public class App {
 
     public static void shutdown() {
         BotLogger.trace("Shutting down the bot");
+        SystemMetricsSampler.stop();
         if (springServer != null) {
             try {
                 springServer.stop();
@@ -84,6 +88,16 @@ public class App {
             settings = SettingsLoader.getSettings();
         }
         return settings.getConfig().isTesting();
+    }
+
+    public static boolean tracking() {
+        if (trackingEnabled != null) return trackingEnabled;
+        return !isTesting();
+    }
+
+    public static boolean toggleTracking() {
+        trackingEnabled = !tracking();
+        return trackingEnabled;
     }
 
 }

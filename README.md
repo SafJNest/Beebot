@@ -28,6 +28,8 @@ Finally, the bot includes several commands related to the popular game League of
 
 LoL asynchronous work uses `com.safjnest.lol.queue.AbstractQueueScheduler`,
 with separate Riot (`R4JQueue`) and database (`DatabaseTracker`) registries.
+Operational process metrics are exposed at `GET /api/status` for the League-OS
+dashboard, including tracker scheduler progress and database worker snapshots.
 
 ## ***Build with***
 - Java version 17

@@ -17,17 +17,24 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 public class TrackerScheduler {
 
     private static volatile boolean started;
+    private static volatile boolean cronScheduled;
     private static volatile long startedAt;
     private static volatile boolean trackingRunning;
     private static volatile boolean highEloRunning;
     private static volatile boolean gameQueueRunning;
 
+    private static final long MATCH_LOOKUP_PERIOD = TimeConstant.SECOND * 10;
+
     public static synchronized void start() {
         if (started) return;
         started = true;
         startedAt = System.currentTimeMillis();
+        scheduleIfEnabled();
+    }
 
-        if (App.isTesting()) return;
+    public static synchronized void scheduleIfEnabled() {
+        if (cronScheduled || !App.tracking()) return;
+        cronScheduled = true;
 
         ChronoTask track = () -> retrieveSummoners();
         track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
@@ -42,7 +49,7 @@ public class TrackerScheduler {
         retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
-        refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
+        refreshMatchLookups.scheduleAtFixedRate(0, MATCH_LOOKUP_PERIOD, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshChampionData = () -> refreshChampionData();
         refreshChampionData.scheduleAtFixedTime(3, 0, 0);
@@ -70,6 +77,7 @@ public class TrackerScheduler {
             Set<LOLMatch> toAnalyze = Tracker.popQueue();
             if (toAnalyze.isEmpty()) return;
 
+            TrackerJobProgress.beginGameAnalysis(toAnalyze.size());
             TrackerState.acquire(Priority.MID);
             try {
                 for (LOLMatch match : toAnalyze) {
@@ -78,10 +86,13 @@ public class TrackerScheduler {
                         Tracker.analyzeMatchHistory(match).completeWithException();
                     } catch (Exception e) {
                         e.printStackTrace();
+                    } finally {
+                        TrackerJobProgress.advanceGameAnalysis();
                     }
                 }
             } finally {
                 TrackerState.release(Priority.MID);
+                TrackerJobProgress.endGameAnalysis();
             }
         } finally {
             gameQueueRunning = false;
@@ -99,6 +110,7 @@ public class TrackerScheduler {
             TrackerState.awaitCondition(Priority.MID);
             Tracker.retrieveHighEloEntries();
         } finally {
+            TrackerJobProgress.endHighElo();
             highEloRunning = false;
         }
     }
@@ -114,7 +126,7 @@ public class TrackerScheduler {
 
     public static SchedulerStatus status() {
         long now = System.currentTimeMillis();
-        boolean scheduled = started && !App.isTesting();
+        boolean scheduled = cronScheduled && App.tracking();
         return new SchedulerStatus(
             scheduled,
             trackingRunning,
@@ -122,7 +134,8 @@ public class TrackerScheduler {
             gameQueueRunning,
             scheduled ? nextPeriodicRun(0, TimeConstant.MINUTE * 10, now) : 0,
             scheduled ? nextPeriodicRun(TimeConstant.HOUR, TimeConstant.HOUR, now) : 0,
-            scheduled ? nextMidnight(now) : 0
+            scheduled ? nextMidnight(now) : 0,
+            scheduled ? nextPeriodicRun(0, MATCH_LOOKUP_PERIOD, now) : 0
         );
     }
 
@@ -149,6 +162,7 @@ public class TrackerScheduler {
         boolean gameQueueRunning,
         long nextTrackingAt,
         long nextHighEloAt,
-        long nextGameQueueAt
+        long nextGameQueueAt,
+        long nextMatchLookupAt
     ) {}
 }

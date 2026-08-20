@@ -9,15 +9,16 @@ public final class QueueTask<R, T> {
     private final String key;
     private final String name;
     private final R route;
+    private final R queue;
     private final Supplier<T> supplier;
     private final CompletableFuture<T> future;
     private volatile QueuePriority priority;
-    private volatile R queue;
 
-    QueueTask(String key, String name, R route, QueuePriority priority, Supplier<T> supplier) {
+    QueueTask(String key, String name, R route, R queue, QueuePriority priority, Supplier<T> supplier) {
         this.key = key;
         this.name = name;
         this.route = route;
+        this.queue = queue;
         this.priority = priority;
         this.supplier = supplier;
         this.future = new CompletableFuture<>();
@@ -38,11 +39,7 @@ public final class QueueTask<R, T> {
     }
 
     R queue() {
-        return queue != null ? queue : route;
-    }
-
-    void assignQueue(R queue) {
-        this.queue = queue;
+        return queue;
     }
 
     QueuePriority priority() {

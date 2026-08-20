@@ -2633,6 +2633,50 @@ public final class MongoDB {
         //if (App.isTesting()) BotLogger.trace("[MONGO] " + operation + " " + details);
     }
 
+    public static long estimatedMatchCount() {
+        try {
+            return matches().estimatedDocumentCount();
+        } catch (RuntimeException ignored) {
+            return 0;
+        }
+    }
+
+    public static long estimatedSummonerCount() {
+        try {
+            return summoners().estimatedDocumentCount();
+        } catch (RuntimeException ignored) {
+            return 0;
+        }
+    }
+
+    public static long totalMasteriesCount() {
+        try {
+            Document result = summoners().aggregate(List.of(
+                new Document("$project", new Document("count", new Document("$size", new Document("$ifNull", List.of("$masteries", List.of()))))),
+                new Document("$group", new Document("_id", null).append("total", new Document("$sum", "$count")))
+            )).first();
+            return result == null ? 0 : number(result, "total");
+        } catch (RuntimeException ignored) {
+            return 0;
+        }
+    }
+
+    public static Map<String, Long> rankTotalsByQueue() {
+        try {
+            Map<String, Long> totals = new LinkedHashMap<>();
+            for (Document entry : summoners().aggregate(List.of(
+                new Document("$unwind", "$ranks"),
+                new Document("$group", new Document("_id", "$ranks.queue").append("total", new Document("$sum", 1)))
+            ))) {
+                String queue = entry.getString("_id");
+                if (queue != null && !queue.isBlank()) totals.put(queue, number(entry, "total"));
+            }
+            return totals.isEmpty() ? Map.of() : Map.copyOf(totals);
+        } catch (RuntimeException ignored) {
+            return Map.of();
+        }
+    }
+
     private static MongoCollection<Document> matches() {
         return database().getCollection("match");
     }

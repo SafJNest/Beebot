@@ -1,76 +1,118 @@
 package com.safjnest.lol.queue;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 final class QueueChannel<R> {
 
-    private final BlockingQueue<QueueTask<R, ?>> immediate;
-    private final BlockingQueue<QueueTask<R, ?>> normal;
-    private final BlockingQueue<QueueTask<R, ?>> background;
-    private final Semaphore available;
+    private final Deque<QueueTask<R, ?>> immediate;
+    private final Deque<QueueTask<R, ?>> normal;
+    private final Deque<QueueTask<R, ?>> background;
+    private final ReentrantLock lock;
+    private final Condition available;
 
     QueueChannel() {
-        immediate = new LinkedBlockingQueue<>();
-        normal = new LinkedBlockingQueue<>();
-        background = new LinkedBlockingQueue<>();
-        available = new Semaphore(0);
+        immediate = new ArrayDeque<>();
+        normal = new ArrayDeque<>();
+        background = new ArrayDeque<>();
+        lock = new ReentrantLock();
+        available = lock.newCondition();
     }
 
     void offer(QueueTask<R, ?> task) {
-        lane(task.priority()).offer(task);
-        available.release();
+        lock.lock();
+        try {
+            lane(task.priority()).addLast(task);
+            available.signal();
+        } finally {
+            lock.unlock();
+        }
     }
 
     void promote(QueueTask<R, ?> task) {
-        if (immediate.remove(task) || normal.remove(task) || background.remove(task)) {
-            lane(task.priority()).offer(task);
+        lock.lock();
+        try {
+            if (immediate.remove(task) || normal.remove(task) || background.remove(task)) {
+                lane(task.priority()).addLast(task);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
     QueueTask<R, ?> take() throws InterruptedException {
-        available.acquire();
-        return next();
-    }
-
-    QueueTask<R, ?> poll() {
-        return available.tryAcquire() ? next() : null;
+        lock.lockInterruptibly();
+        try {
+            QueueTask<R, ?> task;
+            while ((task = next()) == null) available.await();
+            return task;
+        } finally {
+            lock.unlock();
+        }
     }
 
     int size() {
-        return immediate.size() + normal.size() + background.size();
+        lock.lock();
+        try {
+            return immediate.size() + normal.size() + background.size();
+        } finally {
+            lock.unlock();
+        }
     }
 
-    List<QueueTask<R, ?>> snapshot() {
-        List<QueueTask<R, ?>> result = new ArrayList<>();
-        result.addAll(immediate);
-        result.addAll(normal);
-        result.addAll(background);
-        return result;
+    List<QueueTask<R, ?>> snapshot(int maxSize) {
+        lock.lock();
+        try {
+            List<QueueTask<R, ?>> result = new ArrayList<>();
+            addSnapshot(result, immediate, maxSize);
+            addSnapshot(result, normal, maxSize);
+            addSnapshot(result, background, maxSize);
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 
     List<QueueTask<R, ?>> drain() {
-        List<QueueTask<R, ?>> drained = new ArrayList<>();
-        QueueTask<R, ?> task;
-        while ((task = poll()) != null) drained.add(task);
-        return drained;
+        lock.lock();
+        try {
+            List<QueueTask<R, ?>> drained = new ArrayList<>();
+            QueueTask<R, ?> task;
+            while ((task = next()) != null) drained.add(task);
+            return drained;
+        } finally {
+            lock.unlock();
+        }
     }
 
     private QueueTask<R, ?> next() {
-        QueueTask<R, ?> task = immediate.poll();
+        QueueTask<R, ?> task = immediate.pollFirst();
         if (task != null) return task;
-        task = normal.poll();
-        return task != null ? task : background.poll();
+        task = normal.pollFirst();
+        return task != null ? task : background.pollFirst();
     }
 
-    private BlockingQueue<QueueTask<R, ?>> lane(QueuePriority priority) {
+    private Deque<QueueTask<R, ?>> lane(QueuePriority priority) {
         return switch (priority) {
             case IMMEDIATE -> immediate;
             case NORMAL -> normal;
             case BACKGROUND -> background;
         };
+    }
+
+    private static <R> void addSnapshot(
+        List<QueueTask<R, ?>> result,
+        Deque<QueueTask<R, ?>> lane,
+        int maxSize
+    ) {
+        if (result.size() >= maxSize) return;
+        for (QueueTask<R, ?> task : lane) {
+            result.add(task);
+            if (result.size() >= maxSize) return;
+        }
     }
 }

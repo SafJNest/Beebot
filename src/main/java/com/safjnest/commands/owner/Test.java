@@ -26,6 +26,7 @@ import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.App;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
@@ -144,7 +145,12 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | log");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | tracking | log");
+            break;
+            case "tracking":
+                boolean enabled = App.toggleTracking();
+                if (enabled) TrackerScheduler.scheduleIfEnabled();
+                e.reply("Tracker scheduling " + (enabled ? "enabled" : "disabled") + ".");
             break;
             case "log":
                 e.reply("R4J queue logging " + (R4JQueue.toggleLogging() ? "enabled" : "disabled") + ".");

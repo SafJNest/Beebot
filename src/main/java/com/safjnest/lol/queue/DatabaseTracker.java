@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.status.QueueWorkerStatus;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
@@ -34,22 +34,6 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
 
     public static <T> CompletableFuture<T> schedule(QueueRequest<DatabaseWorkerType, T> request) {
         return INSTANCE.enqueue(request);
-    }
-
-    public static <T> CompletableFuture<T> submit(String key, Supplier<T> supplier) {
-        return schedule(new QueueRequest<>(key, key, DatabaseWorkerType.PROFILE, QueuePriority.NORMAL, supplier));
-    }
-
-    public static <T> CompletableFuture<T> submitBuild(String key, Supplier<T> supplier) {
-        return schedule(new QueueRequest<>(key, key, DatabaseWorkerType.CHAMPION, QueuePriority.NORMAL, supplier));
-    }
-
-    public static <T> CompletableFuture<T> submitManual(String key, Supplier<T> supplier) {
-        return schedule(new QueueRequest<>(key, key, DatabaseWorkerType.PROFILE, QueuePriority.IMMEDIATE, supplier));
-    }
-
-    public static <T> CompletableFuture<T> submitStale(String key, Supplier<T> supplier) {
-        return schedule(new QueueRequest<>(key, key, DatabaseWorkerType.PROFILE, QueuePriority.BACKGROUND, supplier));
     }
 
     public static CompletableFuture<Boolean> startProfileStatistics(
@@ -187,6 +171,10 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
 
     public static List<QueueWorkerStatus> workerStatuses() {
         return INSTANCE.schedulerWorkerStatuses();
+    }
+
+    public static int profileQueueSize() {
+        return INSTANCE.incompleteCount(DatabaseWorkerType.PROFILE);
     }
 
     // ============================================================================

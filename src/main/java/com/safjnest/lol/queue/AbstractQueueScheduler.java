@@ -7,6 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.safjnest.lol.model.status.QueueWorkerStatus;
+
 public abstract class AbstractQueueScheduler<R> {
 
     private final Object lifecycleLock;
@@ -63,6 +65,14 @@ public abstract class AbstractQueueScheduler<R> {
         return worker == null ? 0 : worker.load();
     }
 
+    protected final int incompleteCount(R route) {
+        int count = 0;
+        for (QueueTask<R, ?> task : tasks.values()) {
+            if (Objects.equals(task.route(), route) && !task.future().isDone()) count++;
+        }
+        return count;
+    }
+
     protected final <T> CompletableFuture<T> enqueue(QueueRequest<R, T> request) {
         Objects.requireNonNull(request, "request");
 
@@ -86,10 +96,10 @@ public abstract class AbstractQueueScheduler<R> {
                     request.key(),
                     request.name(),
                     request.route(),
+                    queue,
                     request.priority(),
                     request.supplier()
                 );
-                task.assignQueue(queue);
                 if (tasks.putIfAbsent(request.key(), task) == null) {
                     QueueWorker<R> worker = workers.get(queue);
                     channel(queue).offer(task);

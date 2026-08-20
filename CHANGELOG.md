@@ -4,9 +4,18 @@ Ricostruzione delle milestone LoL a partire dalla storia Git dei branch `lol-api
 
 ## 2026-08-20 — Queue-first compute routing
 
-- Documentato il design queue-first in `docs/architecture/new-queue.md`:
+- Documentato il design queue-first in `docs/new-queue.md` e allineati ADR/audit:
   enqueue sulla channel, un worker per coda, priorità a corsie, profile
   sulla coda più scarica all’inserimento, niente steal.
+- Aggiunto `GET /api/status` per la dashboard League-OS: snapshot OSHI/JVM/Redis
+  campionati fuori request e metriche League in memoria con cache Redis/TTL
+  (`gameQueue`, `profileQueue`, `gamesAnalyzed`, `totalSummoners`,
+  `totalMasteries`, `ranksByQueue`).
+- Esteso `BotStatus` con `tracker` (scheduler match tracker, progresso LP/high
+  elo/game analysis/sample games per regione, pending games) e `workers`
+  (snapshot profile/champion `DatabaseTracker`).
+- Aggiunto `riot` a `BotStatus`: snapshot completo `R4JQueue` per shard con
+  coda non troncata; `tracking.summoners` ordinato come il loop di analisi.
 
 ## 2026-08-19 — Discord summoner Mongo-first cutover
 

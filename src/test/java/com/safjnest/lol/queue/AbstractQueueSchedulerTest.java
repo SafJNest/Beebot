@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Test;
 
+import com.safjnest.lol.model.status.QueueWorkerStatus;
+
 public class AbstractQueueSchedulerTest {
 
     private TestQueueScheduler scheduler;
@@ -74,8 +76,8 @@ public class AbstractQueueSchedulerTest {
         assertEquals(2, statuses.size());
         assertEquals("main", statuses.get(0).type());
         assertEquals("helper", statuses.get(1).type());
-        assertTrue(statuses.get(0).running());
-        assertTrue(statuses.get(1).running());
+        assertEquals("idle", statuses.get(0).state());
+        assertEquals("idle", statuses.get(1).state());
     }
 
     @Test
@@ -107,8 +109,38 @@ public class AbstractQueueSchedulerTest {
         } catch (CompletionException exception) {
             assertTrue(exception.getCause() instanceof CancellationException);
             assertEquals("test shutdown", exception.getCause().getMessage());
+        } catch (CancellationException ignored) {
         }
+        try {
+            running.join();
+        } catch (CancellationException | CompletionException ignored) {
+        }
+    }
+
+    @Test
+    public void shouldCountIncompleteTasksByRequestRouteNotAssignedChannel() throws Exception {
+        scheduler = new HelperRoutedQueueScheduler();
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+
+        CompletableFuture<Void> running = scheduler.publicSchedule(new QueueRequest<>(
+            "helper-busy", "helper-busy", "helper", QueuePriority.NORMAL, () -> {
+                started.countDown();
+                await(release);
+                return null;
+            }
+        ));
+        assertTrue(started.await(2, TimeUnit.SECONDS));
+
+        CompletableFuture<Void> queued = scheduler.publicSchedule(new QueueRequest<>(
+            "main-on-helper", "main-on-helper", "main", QueuePriority.NORMAL, () -> null
+        ));
+
+        assertEquals(1, scheduler.publicIncompleteCount("main"));
+        release.countDown();
         running.join();
+        queued.join();
+        assertEquals(0, scheduler.publicIncompleteCount("main"));
     }
 
     private static void await(CountDownLatch latch) {
@@ -117,6 +149,13 @@ public class AbstractQueueSchedulerTest {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(exception);
+        }
+    }
+
+    private static final class HelperRoutedQueueScheduler extends TestQueueScheduler {
+        @Override
+        protected <T> String queueFor(QueueRequest<String, T> request) {
+            return "helper";
         }
     }
 }

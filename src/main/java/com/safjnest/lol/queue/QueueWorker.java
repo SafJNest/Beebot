@@ -7,9 +7,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.safjnest.lol.model.status.JobProgress;
+import com.safjnest.lol.model.status.QueueWorkerStatus;
+
 final class QueueWorker<R> {
 
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 30;
+    private static final int MAX_STATUS_QUEUED_JOBS = 20;
 
     private final AbstractQueueScheduler<R> scheduler;
     private final int id;
@@ -65,20 +69,25 @@ final class QueueWorker<R> {
     }
 
     QueueWorkerStatus status() {
-        List<String> queued = new ArrayList<>();
-        for (QueueTask<R, ?> task : channel.snapshot()) queued.add(task.name());
+        int queuedCount = channel.size();
+        List<String> queued = new ArrayList<>(Math.min(queuedCount, MAX_STATUS_QUEUED_JOBS));
+        for (QueueTask<R, ?> task : channel.snapshot(MAX_STATUS_QUEUED_JOBS)) queued.add(task.name());
         QueueTask<R, ?> task = currentTask;
         ExecutorService current = executor;
         boolean running = current != null && !current.isShutdown();
+        String state = task != null ? "running" : (running ? "idle" : "stopped");
+        JobProgress progress = task == null || submitted.get() <= 0
+            ? null
+            : new JobProgress((int) Math.min(finished.get() + 1, submitted.get()), (int) submitted.get());
         return new QueueWorkerStatus(
             id,
             type,
-            running,
+            state,
             task == null ? null : task.name(),
-            currentStartedAt,
-            submitted.get(),
-            started.get(),
-            finished.get(),
+            currentStartedAt > 0 ? currentStartedAt : null,
+            progress,
+            queuedCount,
+            queuedCount + (task == null ? 0 : 1),
             List.copyOf(queued)
         );
     }

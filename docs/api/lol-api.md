@@ -41,6 +41,10 @@ Gli esempi usano `http://localhost:8080` come base URL.
 - [Rank distribution](leaderboard/rank-distribution.md) — `GET /api/lol/leaderboard/rank-distribution`
 - [Top regions](leaderboard/top-regions.md) — `GET /api/lol/leaderboard/top-regions`
 
+### Status
+
+- [Bot status](status.md) — `GET /api/status`
+
 ## Contratto comune
 
 - Gli endpoint sono `GET`, salvo il refresh esplicito del profilo che usa `POST`.
@@ -50,7 +54,10 @@ Gli esempi usano `http://localhost:8080` come base URL.
   senza envelope `data`. Le quattro chiavi sono sempre presenti: `pagination`,
   `lastUpdate`, `refresh` e `filter`; i valori non applicabili sono `null`.
   `LiveGame` fa eccezione: usa il root booleano `notInGame` e non espone
-  metadata. Le liste pure, search e indexables restano array invariati.
+  metadata. `BotStatus` (`GET /api/status`) è un'altra eccezione object-root:
+  non è una risorsa LoL shard-scoped, non espone metadata e include `tracker` e
+  `workers` oltre a `league`, `process`, `system` e `redis`. Le liste pure,
+  search e indexables restano array invariati.
 - Gli errori usano sempre questo envelope:
 
 ```json

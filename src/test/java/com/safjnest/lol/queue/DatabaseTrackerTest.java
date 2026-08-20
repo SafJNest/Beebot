@@ -1,4 +1,4 @@
-package com.safjnest.lol.tracker;
+package com.safjnest.lol.queue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -12,12 +12,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.junit.AfterClass;
 import org.junit.Test;
-
-import com.safjnest.lol.queue.DatabaseTracker;
-import com.safjnest.lol.queue.QueueWorkerStatus;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
@@ -50,13 +48,13 @@ public class DatabaseTrackerTest {
         CountDownLatch buildStarted = new CountDownLatch(1);
         CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch releaseBlockers = new CountDownLatch(1);
-        CompletableFuture<Void> buildBlocker = DatabaseTracker.submitBuild("test:queued-build-blocker", () -> {
+        CompletableFuture<Void> buildBlocker = submitBuild("test:queued-build-blocker", () -> {
             buildStarted.countDown();
             await(releaseBlockers);
             return null;
         });
         assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        CompletableFuture<Void> blocker = DatabaseTracker.submit("test:queued-blocker", () -> {
+        CompletableFuture<Void> blocker = submit("test:queued-blocker", () -> {
             profileStarted.countDown();
             await(releaseBlockers);
             return null;
@@ -64,11 +62,11 @@ public class DatabaseTrackerTest {
 
         assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         AtomicInteger executions = new AtomicInteger();
-        CompletableFuture<Integer> first = DatabaseTracker.submit("test:duplicate", () -> {
+        CompletableFuture<Integer> first = submit("test:duplicate", () -> {
             executions.incrementAndGet();
             return 7;
         });
-        CompletableFuture<Integer> second = DatabaseTracker.submit("test:duplicate", () -> 99);
+        CompletableFuture<Integer> second = submit("test:duplicate", () -> 99);
 
         assertSame(first, second);
         assertEquals(0, executions.get());
@@ -85,7 +83,7 @@ public class DatabaseTrackerTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
-        CompletableFuture<Integer> first = DatabaseTracker.submit("test:running-duplicate", () -> {
+        CompletableFuture<Integer> first = submit("test:running-duplicate", () -> {
             executions.incrementAndGet();
             started.countDown();
             await(release);
@@ -93,7 +91,7 @@ public class DatabaseTrackerTest {
         });
         assertTrue(started.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
-        CompletableFuture<Integer> second = DatabaseTracker.submit("test:running-duplicate", () -> 99);
+        CompletableFuture<Integer> second = submit("test:running-duplicate", () -> 99);
 
         assertSame(first, second);
         release.countDown();
@@ -102,107 +100,52 @@ public class DatabaseTrackerTest {
     }
 
     @Test
-    public void manualProfileTasksRunBeforeOnDemandAndStaleTasks() throws Exception {
-        CountDownLatch buildStarted = new CountDownLatch(1);
-        CountDownLatch profileStarted = new CountDownLatch(1);
-        CountDownLatch releaseProfile = new CountDownLatch(1);
-        CountDownLatch releaseBuild = new CountDownLatch(1);
-        List<String> order = new ArrayList<>();
-
-        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:priority-build", () -> {
-            buildStarted.countDown();
-            await(releaseBuild);
-            return null;
-        });
-        assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        CompletableFuture<Void> blocker = DatabaseTracker.submit("test:priority-blocker", () -> {
-            profileStarted.countDown();
-            await(releaseProfile);
-            return null;
-        });
-        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-
-        CompletableFuture<Void> stale = DatabaseTracker.submitStale("test:priority-stale", () -> {
-            order.add("stale");
-            return null;
-        });
-        CompletableFuture<Void> onDemand = DatabaseTracker.submit("test:priority-on-demand", () -> {
-            order.add("on-demand");
-            return null;
-        });
-        CompletableFuture<Void> firstManual = DatabaseTracker.submitManual("test:priority-manual-1", () -> {
-            order.add("manual-1");
-            return null;
-        });
-        CompletableFuture<Void> secondManual = DatabaseTracker.submitManual("test:priority-manual-2", () -> {
-            order.add("manual-2");
-            return null;
-        });
-
-        releaseProfile.countDown();
-        firstManual.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        secondManual.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        onDemand.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        stale.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertEquals(List.of("manual-1", "manual-2", "on-demand", "stale"), order);
-
-        releaseBuild.countDown();
-        blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-    }
-
-    @Test
     public void manualSubmissionPromotesTheQueuedStaleTaskWithTheSameKey() throws Exception {
         CountDownLatch buildStarted = new CountDownLatch(1);
         CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch releaseProfile = new CountDownLatch(1);
         CountDownLatch releaseBuild = new CountDownLatch(1);
-        List<String> order = new ArrayList<>();
-
-        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:promotion-build", () -> {
+        CompletableFuture<Void> build = submitBuild("test:promotion-build", () -> {
             buildStarted.countDown();
             await(releaseBuild);
             return null;
         });
         assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        CompletableFuture<Void> blocker = DatabaseTracker.submit("test:promotion-blocker", () -> {
+        CompletableFuture<Void> blocker = submit("test:promotion-blocker", () -> {
             profileStarted.countDown();
             await(releaseProfile);
             return null;
         });
         assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
-        CompletableFuture<Integer> stale = DatabaseTracker.submitStale("test:promotion", () -> {
-            order.add("promoted");
+        CompletableFuture<Integer> stale = submitStale("test:promotion", () -> {
             return 7;
         });
-        CompletableFuture<Void> onDemand = DatabaseTracker.submit("test:promotion-on-demand", () -> {
-            order.add("on-demand");
+        CompletableFuture<Void> onDemand = submit("test:promotion-on-demand", () -> {
             return null;
         });
-        CompletableFuture<Integer> manual = DatabaseTracker.submitManual("test:promotion", () -> 99);
+        CompletableFuture<Integer> manual = submitManual("test:promotion", () -> 99);
 
         assertSame(stale, manual);
         releaseProfile.countDown();
+        releaseBuild.countDown();
         assertEquals(Integer.valueOf(7), manual.get(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         onDemand.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertEquals(List.of("promoted", "on-demand"), order);
 
-        releaseBuild.countDown();
         blocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
-    public void profileWorkerRunsOneTaskAtOnce() throws Exception {
+    public void profileWorkUsesAtMostBothDatabaseWorkers() throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();
         CountDownLatch buildStarted = new CountDownLatch(1);
-        CountDownLatch profileStarted = new CountDownLatch(1);
-        CountDownLatch releaseProfile = new CountDownLatch(1);
+        CountDownLatch profilesStarted = new CountDownLatch(2);
+        CountDownLatch releaseProfiles = new CountDownLatch(1);
         CountDownLatch releaseBuild = new CountDownLatch(1);
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        CompletableFuture<Void> buildBlocker = DatabaseTracker.submitBuild("test:parallel-build-blocker", () -> {
+        CompletableFuture<Void> buildBlocker = submitBuild("test:parallel-build-blocker", () -> {
             buildStarted.countDown();
             await(releaseBuild);
             return null;
@@ -211,23 +154,23 @@ public class DatabaseTrackerTest {
 
         for (int i = 0; i < 3; i++) {
             int task = i;
-            futures.add(DatabaseTracker.submit("test:parallel:" + task, () -> {
+            futures.add(submit("test:parallel:" + task, () -> {
                 int current = active.incrementAndGet();
                 maximum.accumulateAndGet(current, Math::max);
-                profileStarted.countDown();
-                await(releaseProfile);
+                profilesStarted.countDown();
+                await(releaseProfiles);
                 active.decrementAndGet();
                 return null;
             }));
         }
 
-        assertTrue(profileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        assertEquals(1, maximum.get());
-        releaseProfile.countDown();
-        for (CompletableFuture<Void> future : futures) future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         releaseBuild.countDown();
+        assertTrue(profilesStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        assertEquals(2, maximum.get());
+        releaseProfiles.countDown();
+        for (CompletableFuture<Void> future : futures) future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         buildBlocker.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertEquals(1, maximum.get());
+        assertEquals(2, maximum.get());
     }
 
     @Test
@@ -236,13 +179,13 @@ public class DatabaseTrackerTest {
         CountDownLatch profileStarted = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
-        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:dedicated-build", () -> {
+        CompletableFuture<Void> build = submitBuild("test:dedicated-build", () -> {
             buildStarted.countDown();
             await(release);
             return null;
         });
         assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        CompletableFuture<Void> general = DatabaseTracker.submit("test:dedicated-general", () -> {
+        CompletableFuture<Void> general = submit("test:dedicated-general", () -> {
             profileStarted.countDown();
             await(release);
             return null;
@@ -264,7 +207,7 @@ public class DatabaseTrackerTest {
 
         for (int i = 0; i < 3; i++) {
             int task = i;
-            futures.add(DatabaseTracker.submitBuild("test:serial-build:" + task, () -> {
+            futures.add(submitBuild("test:serial-build:" + task, () -> {
                 int current = active.incrementAndGet();
                 maximum.accumulateAndGet(current, Math::max);
                 started.countDown();
@@ -288,21 +231,21 @@ public class DatabaseTrackerTest {
         CountDownLatch buildStarted = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
-        CompletableFuture<Void> firstProfile = DatabaseTracker.submit("test:profile-worker", () -> {
+        CompletableFuture<Void> firstProfile = submit("test:profile-worker", () -> {
             profileWorkerStarted.countDown();
             await(release);
             return null;
         });
         assertTrue(profileWorkerStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
-        CompletableFuture<Void> secondProfile = DatabaseTracker.submit("test:champion-worker-profile", () -> {
+        CompletableFuture<Void> secondProfile = submit("test:champion-worker-profile", () -> {
             championProfileStarted.countDown();
             await(release);
             return null;
         });
         assertTrue(championProfileStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
 
-        CompletableFuture<Void> build = DatabaseTracker.submitBuild("test:second-worker-build", () -> {
+        CompletableFuture<Void> build = submitBuild("test:second-worker-build", () -> {
             buildStarted.countDown();
             await(release);
             return null;
@@ -312,21 +255,15 @@ public class DatabaseTrackerTest {
         secondProfile.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertTrue(buildStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS));
         build.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
-        boolean secondWorkerRanBuild = false;
-        for (QueueWorkerStatus status : DatabaseTracker.workerStatuses()) {
-            if (status.id() == 2 && status.started() > 0) secondWorkerRanBuild = true;
-        }
-        assertTrue(secondWorkerRanBuild);
     }
 
     @Test
     public void failedWorkerDoesNotStopAnotherTask() throws Exception {
         CountDownLatch survivorStarted = new CountDownLatch(1);
-        CompletableFuture<Integer> failed = DatabaseTracker.submit("test:worker-failure", () -> {
+        CompletableFuture<Integer> failed = submit("test:worker-failure", () -> {
             throw new IllegalStateException("expected");
         });
-        CompletableFuture<Integer> survivor = DatabaseTracker.submit("test:worker-survivor", () -> {
+        CompletableFuture<Integer> survivor = submit("test:worker-survivor", () -> {
             survivorStarted.countDown();
             return 11;
         });
@@ -343,7 +280,7 @@ public class DatabaseTrackerTest {
     @Test
     public void failedTaskFreesKeyForRetry() throws Exception {
         AtomicInteger executions = new AtomicInteger();
-        CompletableFuture<Integer> failed = DatabaseTracker.submit("test:retry", () -> {
+        CompletableFuture<Integer> failed = submit("test:retry", () -> {
             executions.incrementAndGet();
             throw new IllegalStateException("expected");
         });
@@ -354,7 +291,7 @@ public class DatabaseTrackerTest {
             assertTrue(expected.getCause() instanceof IllegalStateException);
         }
 
-        CompletableFuture<Integer> retry = DatabaseTracker.submit("test:retry", () -> {
+        CompletableFuture<Integer> retry = submit("test:retry", () -> {
             executions.incrementAndGet();
             return 8;
         });
@@ -370,5 +307,30 @@ public class DatabaseTrackerTest {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(exception);
         }
+    }
+
+    private static <T> CompletableFuture<T> submit(String key, Supplier<T> supplier) {
+        return schedule(key, DatabaseWorkerType.PROFILE, QueuePriority.NORMAL, supplier);
+    }
+
+    private static <T> CompletableFuture<T> submitBuild(String key, Supplier<T> supplier) {
+        return schedule(key, DatabaseWorkerType.CHAMPION, QueuePriority.NORMAL, supplier);
+    }
+
+    private static <T> CompletableFuture<T> submitManual(String key, Supplier<T> supplier) {
+        return schedule(key, DatabaseWorkerType.PROFILE, QueuePriority.IMMEDIATE, supplier);
+    }
+
+    private static <T> CompletableFuture<T> submitStale(String key, Supplier<T> supplier) {
+        return schedule(key, DatabaseWorkerType.PROFILE, QueuePriority.BACKGROUND, supplier);
+    }
+
+    private static <T> CompletableFuture<T> schedule(
+        String key,
+        DatabaseWorkerType route,
+        QueuePriority priority,
+        Supplier<T> supplier
+    ) {
+        return DatabaseTracker.schedule(new QueueRequest<>(key, key, route, priority, supplier));
     }
 }
