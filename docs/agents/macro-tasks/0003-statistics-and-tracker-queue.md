@@ -4,6 +4,10 @@ Implemented. Queue routing after 2026-08-20 follows amended ADR-0010
 (insert-time least-loaded profile placement, no steal). Do not copy the
 historical worker-2 steal wording below as current behavior.
 
+The request infrastructure and compute owner are now named
+`AbstractRequestDispatcher` and `ComputeRequestDispatcher`; tracker/match
+workflow ownership moved to `SyncRequestDispatcher` under ADR-0014.
+
 ## Objective
 
 Separate statistics persistence from request handling and limit database calculation concurrency.

@@ -35,11 +35,9 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.queue.R4JQueue;
+import com.safjnest.lol.queue.RiotRequestDispatcher;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
-import com.safjnest.lol.tracker.TrackerState;
-import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -153,7 +151,7 @@ public class Test extends Command{
                 e.reply("Tracker scheduling " + (enabled ? "enabled" : "disabled") + ".");
             break;
             case "log":
-                e.reply("R4J queue logging " + (R4JQueue.toggleLogging() ? "enabled" : "disabled") + ".");
+                e.reply("Riot dispatcher logging " + (RiotRequestDispatcher.toggleLogging() ? "enabled" : "disabled") + ".");
             break;
             case "timer":
                 Timer timer = new Timer();
@@ -838,13 +836,6 @@ public class Test extends Command{
                     //MatchTracker.retrieveOldGames(sum).queue();
                 }
             break;
-                case "lolqueue":
-                    System.out.println(Tracker.copyQueue().size());
-                break;
-                case "pushlolqueue":
-                    ChronoTask task =  () -> TrackerScheduler.popSet();
-                    task.queue();
-                break;
                 case "error":
                     List<String> a = new ArrayList<String>();
                     a.get(0);
@@ -904,12 +895,6 @@ public class Test extends Command{
                     eeeee.printStackTrace();
                 }
                 e.reply("Done");
-                break;
-            case "pausetracker":
-                TrackerState.acquire(Priority.HIGH);
-                break;
-            case "resumetracker":
-                TrackerState.release(Priority.HIGH);
                 break;
             case "champ":
                 ChronoTask champ = () -> {

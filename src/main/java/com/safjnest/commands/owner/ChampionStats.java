@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.lol.service.ChampionService.MatrixRefreshResult;
-import com.safjnest.lol.queue.DatabaseTracker;
+import com.safjnest.lol.queue.ComputeRequestDispatcher;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -50,7 +50,7 @@ public class ChampionStats extends Command {
             return;
         }
 
-        CompletableFuture<MatrixRefreshResult> future = DatabaseTracker.enqueueChampionStatsMatrix(patch, queue);
+        CompletableFuture<MatrixRefreshResult> future = ComputeRequestDispatcher.enqueueChampionStatsMatrix(patch, queue);
         event.reply("Champion stats matrix queued for patch=" + patch + ", queue=" + queue.name());
         future.whenComplete((result, error) -> {
             if (error != null) {

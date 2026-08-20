@@ -22,7 +22,6 @@ public class RedisKeyTest {
         assertEquals(6 * 60 * 60, RedisKey.MATCH_DETAIL.ttlSeconds());
         assertEquals(5 * 60, RedisKey.R4J_MATCH_NOT_FOUND.ttlSeconds());
         assertEquals(60 * 60, RedisKey.SUMMONER_DATA.ttlSeconds());
-        assertEquals(0, RedisKey.TRACKER_PENDING_MATCH_LIST.ttlSeconds());
         assertEquals(12 * 60 * 60, RedisKey.CHAMPION_STATS.ttlSeconds());
         assertEquals(60 * 60, RedisKey.SUMMONER_AUTOCOMPLETE.ttlSeconds());
         assertEquals(60 * 60, RedisKey.SUMMONER_SEARCH.ttlSeconds());

@@ -1,6 +1,6 @@
 package com.safjnest.lol.queue;
 
-public enum QueuePriority {
+public enum RequestPriority {
     IMMEDIATE,
     NORMAL,
     BACKGROUND

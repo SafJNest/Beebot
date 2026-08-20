@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.status.QueueWorkerStatus;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
@@ -18,21 +17,21 @@ import com.safjnest.utils.log.BotLogger;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
-public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorkerType> {
+public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<DatabaseWorkerType> {
 
-    private static final DatabaseTracker INSTANCE = new DatabaseTracker();
+    private static final ComputeRequestDispatcher INSTANCE = new ComputeRequestDispatcher();
     private static final ConcurrentMap<String, ChampionMatrixRequest> CHAMPION_MATRICES = new ConcurrentHashMap<>();
     private static final ProfileService PROFILE_SERVICE = new ProfileService();
     private static final ChampionService CHAMPION_SERVICE = new ChampionService();
     private static final CompletableFuture<Void> VOID = CompletableFuture.completedFuture(null);
     private static final CompletableFuture<Boolean> NOT_SCHEDULED = CompletableFuture.completedFuture(false);
 
-    private DatabaseTracker() {
-        super("Database task cancelled during shutdown");
+    private ComputeRequestDispatcher() {
+        super("compute", "Compute request cancelled during shutdown");
         registerRoutes(List.of(DatabaseWorkerType.PROFILE, DatabaseWorkerType.CHAMPION));
     }
 
-    public static <T> CompletableFuture<T> schedule(QueueRequest<DatabaseWorkerType, T> request) {
+    public static <T> CompletableFuture<T> schedule(Request<DatabaseWorkerType, T> request) {
         return INSTANCE.enqueue(request);
     }
 
@@ -53,11 +52,11 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         Filter filter,
         boolean rebuild
     ) {
-        return startProfileStatistics(summoner, filter, rebuild, QueuePriority.NORMAL);
+        return startProfileStatistics(summoner, filter, rebuild, RequestPriority.NORMAL);
     }
 
     public static CompletableFuture<Boolean> startStaleProfileStatistics(Summoner summoner, Filter filter) {
-        return startProfileStatistics(summoner, filter, false, QueuePriority.BACKGROUND);
+        return startProfileStatistics(summoner, filter, false, RequestPriority.BACKGROUND);
     }
 
     public static CompletableFuture<Boolean> startProfileMatchups(
@@ -65,7 +64,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileMatchups(puuid, shard, filter, QueuePriority.NORMAL);
+        return startProfileMatchups(puuid, shard, filter, RequestPriority.NORMAL);
     }
 
     public static CompletableFuture<Boolean> startStaleProfileMatchups(
@@ -73,7 +72,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileMatchups(puuid, shard, filter, QueuePriority.BACKGROUND);
+        return startProfileMatchups(puuid, shard, filter, RequestPriority.BACKGROUND);
     }
 
     public static CompletableFuture<Boolean> startProfileActivity(
@@ -81,7 +80,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileActivity(puuid, shard, filter, QueuePriority.NORMAL);
+        return startProfileActivity(puuid, shard, filter, RequestPriority.NORMAL);
     }
 
     public static CompletableFuture<Boolean> startStaleProfileActivity(
@@ -89,7 +88,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileActivity(puuid, shard, filter, QueuePriority.BACKGROUND);
+        return startProfileActivity(puuid, shard, filter, RequestPriority.BACKGROUND);
     }
 
     public static CompletableFuture<Boolean> startProfileRefresh(
@@ -102,11 +101,11 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         String puuid = summoner.puuid();
         String key = profileRefreshKey(puuid);
         String name = "profile refresh puuid=" + puuid;
-        return schedule(new QueueRequest<>(
+        return schedule(new Request<>(
             key,
             name,
             DatabaseWorkerType.PROFILE,
-            QueuePriority.IMMEDIATE,
+            RequestPriority.IMMEDIATE,
             () -> refreshProfileAggregates(puuid, shard)
         ));
     }
@@ -142,8 +141,8 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
         String patch = new Filter().patch();
         String key = "champion-data-refresh:" + patch;
-        return schedule(new QueueRequest<>(key, "champion data refresh patch=" + patch, DatabaseWorkerType.CHAMPION,
-            QueuePriority.NORMAL, () -> {
+        return schedule(new Request<>(key, "champion data refresh patch=" + patch, DatabaseWorkerType.CHAMPION,
+            RequestPriority.NORMAL, () -> {
                 CHAMPION_SERVICE.refresh();
                 return null;
             }));
@@ -166,21 +165,17 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
     }
 
     public static void shutdown() {
-        INSTANCE.shutdownScheduler();
+        INSTANCE.shutdownDispatcher();
     }
 
-    public static List<QueueWorkerStatus> workerStatuses() {
-        return INSTANCE.schedulerWorkerStatuses();
-    }
-
-    public static int profileQueueSize() {
-        return INSTANCE.incompleteCount(DatabaseWorkerType.PROFILE);
+    public static com.safjnest.lol.model.status.RequestDispatcherStatus status() {
+        return INSTANCE.snapshot();
     }
 
     // ============================================================================
 
     @Override
-    protected String channelName(DatabaseWorkerType route) {
+    protected String routeName(DatabaseWorkerType route) {
         return route == DatabaseWorkerType.PROFILE ? "profile" : "champion";
     }
 
@@ -190,7 +185,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
     }
 
     @Override
-    protected <T> DatabaseWorkerType queueFor(QueueRequest<DatabaseWorkerType, T> request) {
+    protected <T> DatabaseWorkerType queueFor(Request<DatabaseWorkerType, T> request) {
         if (request.route() != DatabaseWorkerType.PROFILE) return DatabaseWorkerType.CHAMPION;
         return load(DatabaseWorkerType.CHAMPION) < load(DatabaseWorkerType.PROFILE)
             ? DatabaseWorkerType.CHAMPION
@@ -203,7 +198,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
     }
 
     @Override
-    protected void onFailed(QueueTask<DatabaseWorkerType, ?> task, Throwable failure) {
+    protected void onFailed(RequestTask<DatabaseWorkerType, ?> task, Throwable failure) {
         try {
             BotLogger.error("Database task failed for key=" + task.key()
                 + " message=" + failure.getMessage());
@@ -215,7 +210,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         Summoner summoner,
         Filter filter,
         boolean rebuild,
-        QueuePriority priority
+        RequestPriority priority
     ) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null)
             return NOT_SCHEDULED;
@@ -225,7 +220,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         LeagueShard shard = summoner.region();
         String key = "profile-statistics:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile statistics " + (rebuild ? "rebuild " : "") + "puuid=" + puuid;
-        return schedule(new QueueRequest<>(
+        return schedule(new Request<>(
             key,
             name,
             DatabaseWorkerType.PROFILE,
@@ -238,7 +233,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         String puuid,
         LeagueShard shard,
         Filter filter,
-        QueuePriority priority
+        RequestPriority priority
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return NOT_SCHEDULED;
@@ -246,7 +241,7 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile matchups puuid=" + puuid;
-        return schedule(new QueueRequest<>(
+        return schedule(new Request<>(
             key,
             name,
             DatabaseWorkerType.PROFILE,
@@ -259,14 +254,14 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
         String puuid,
         LeagueShard shard,
         Filter filter,
-        QueuePriority priority
+        RequestPriority priority
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return NOT_SCHEDULED;
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         String key = "profile-activity:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile activity puuid=" + puuid;
-        return schedule(new QueueRequest<>(
+        return schedule(new Request<>(
             key,
             name,
             DatabaseWorkerType.PROFILE,
@@ -294,11 +289,11 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
             ChampionMatrixRequest request = new ChampionMatrixRequest();
             request.addBuild(buildFilter);
             CHAMPION_MATRICES.put(key, request);
-            CompletableFuture<ChampionService.MatrixRefreshResult> future = schedule(new QueueRequest<>(
+            CompletableFuture<ChampionService.MatrixRefreshResult> future = schedule(new Request<>(
                 key,
                 name,
                 DatabaseWorkerType.CHAMPION,
-                QueuePriority.NORMAL,
+                RequestPriority.NORMAL,
                 () -> {
                     request.start();
                     try {
@@ -329,11 +324,11 @@ public final class DatabaseTracker extends AbstractQueueScheduler<DatabaseWorker
             + " rank=" + filter.rank()
             + " region=" + filter.region()
             + " lane=" + filter.lane();
-        return schedule(new QueueRequest<>(
+        return schedule(new Request<>(
             key,
             name,
             DatabaseWorkerType.CHAMPION,
-            QueuePriority.NORMAL,
+            RequestPriority.NORMAL,
             () -> refreshChampionBuild(filter)
         ));
     }

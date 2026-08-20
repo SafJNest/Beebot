@@ -6,8 +6,9 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.queue.DatabaseTracker;
-import com.safjnest.lol.queue.R4JQueue;
+import com.safjnest.lol.queue.ComputeRequestDispatcher;
+import com.safjnest.lol.queue.RiotRequestDispatcher;
+import com.safjnest.lol.queue.SyncRequestDispatcher;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
@@ -72,8 +73,9 @@ public class App {
             }
         }
         bot.distruzione_demoniaca();
-        DatabaseTracker.shutdown();
-        R4JQueue.shutdown();
+        SyncRequestDispatcher.shutdown();
+        ComputeRequestDispatcher.shutdown();
+        RiotRequestDispatcher.shutdown();
         MongoDB.close();
     }
 

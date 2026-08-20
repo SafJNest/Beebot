@@ -7,7 +7,6 @@ import java.util.function.LongSupplier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.status.LeagueMetrics;
-import com.safjnest.lol.queue.DatabaseTracker;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -15,7 +14,6 @@ import com.safjnest.utils.JsonCodec;
 
 public final class LeagueMetricsStore {
 
-    private static final AtomicLong GAME_QUEUE = new AtomicLong();
     private static final AtomicLong GAMES_ANALYZED = new AtomicLong();
     private static final AtomicLong TOTAL_SUMMONERS = new AtomicLong();
     private static final AtomicLong TOTAL_MASTERIES = new AtomicLong();
@@ -34,8 +32,6 @@ public final class LeagueMetricsStore {
 
     public static LeagueMetrics snapshot() {
         return new LeagueMetrics(
-            GAME_QUEUE.get(),
-            DatabaseTracker.profileQueueSize(),
             GAMES_ANALYZED.get(),
             TOTAL_SUMMONERS.get(),
             TOTAL_MASTERIES.get(),
@@ -46,7 +42,6 @@ public final class LeagueMetricsStore {
     // ============================================================================
 
     private static void refresh(boolean force) {
-        refreshLong(RedisKey.STATUS_GAME_QUEUE, GAME_QUEUE, LeagueMetricsStore::gameQueueSource, force);
         refreshLong(RedisKey.STATUS_GAMES_ANALYZED, GAMES_ANALYZED, MongoDB::estimatedMatchCount, force);
         refreshLong(RedisKey.STATUS_TOTAL_SUMMONERS, TOTAL_SUMMONERS, MongoDB::estimatedSummonerCount, force);
         refreshLong(RedisKey.STATUS_TOTAL_MASTERIES, TOTAL_MASTERIES, MongoDB::totalMasteriesCount, force);
@@ -60,10 +55,6 @@ public final class LeagueMetricsStore {
 
     private static long trackedSummonerSource() {
         return MongoDB.findTrackedSummonerModels().size();
-    }
-
-    private static long gameQueueSource() {
-        return Math.max(0, RedisClient.countMembers(RedisKey.TRACKER_PENDING_MATCH_LIST.of()));
     }
 
     private static void refreshLong(RedisKey key, AtomicLong target, LongSupplier source, boolean force) {

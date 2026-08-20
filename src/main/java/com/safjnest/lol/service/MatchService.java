@@ -13,7 +13,9 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchResult;
-import com.safjnest.lol.queue.R4JQueue;
+import com.safjnest.lol.queue.RiotRequestDispatcher;
+import com.safjnest.lol.queue.RequestPriority;
+import com.safjnest.lol.queue.SyncRequestDispatcher;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
@@ -60,10 +62,13 @@ public final class MatchService {
         Match saved = find(gameId, shard);
         return saved != null
             ? CompletableFuture.completedFuture(saved)
-            : getRiotMatchAsync(gameId, shard).thenApplyAsync(source -> {
-                if (source == null) return null;
-                return Tracker.queueMatch(source);
-            });
+            : SyncRequestDispatcher.submit(
+                "match:" + shard.name() + ":" + gameId,
+                "match analysis id=" + gameId,
+                shard,
+                RequestPriority.IMMEDIATE,
+                () -> Tracker.persistFetchedMatch(getRiotMatch(gameId, shard))
+            );
     }
 
     public static Match get(String gameId, LeagueShard shard) {
@@ -89,7 +94,7 @@ public final class MatchService {
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         RegionShard region = shard.toRegionShard();
-        return R4JQueue.schedule(R4JQueue.request(shard, "match", gameId, () -> {
+        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "match", gameId, () -> {
             LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
             if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
             return match;
@@ -187,7 +192,7 @@ public final class MatchService {
 
         try {
             String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
-            return R4JQueue.<List<String>>schedule(R4JQueue.request(summoner.getPlatform(), "match-list", id, () -> {
+            return RiotRequestDispatcher.<List<String>>schedule(RiotRequestDispatcher.request(summoner.getPlatform(), "match-list", id, () -> {
                 MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();

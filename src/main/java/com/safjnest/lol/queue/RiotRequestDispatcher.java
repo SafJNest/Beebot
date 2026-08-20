@@ -4,44 +4,43 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import com.safjnest.lol.model.status.QueueWorkerStatus;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
-public final class R4JQueue extends AbstractQueueScheduler<LeagueShard> {
+public final class RiotRequestDispatcher extends AbstractRequestDispatcher<LeagueShard> {
 
-    private static final R4JQueue INSTANCE = new R4JQueue();
+    private static final RiotRequestDispatcher INSTANCE = new RiotRequestDispatcher();
     private static volatile boolean loggingEnabled;
 
-    private R4JQueue() {
-        super("R4J task cancelled during shutdown");
+    private RiotRequestDispatcher() {
+        super("riot", "Riot request cancelled during shutdown");
     }
 
-    public static <T> QueueRequest<LeagueShard, T> request(
+    public static <T> Request<LeagueShard, T> request(
         LeagueShard shard,
         String operation,
         String id,
         Supplier<T> supplier
     ) {
-        return request(shard, operation, id, QueuePriority.IMMEDIATE, supplier);
+        return request(shard, operation, id, RequestPriority.IMMEDIATE, supplier);
     }
 
-    public static <T> QueueRequest<LeagueShard, T> request(
+    public static <T> Request<LeagueShard, T> request(
         LeagueShard shard,
         String operation,
         String id,
-        QueuePriority priority,
+        RequestPriority priority,
         Supplier<T> supplier
     ) {
         String key = shard.name() + ":" + operation + ":" + id;
-        QueuePriority resolved = priority == QueuePriority.BACKGROUND
-            ? QueuePriority.BACKGROUND
-            : QueuePriority.IMMEDIATE;
-        return new QueueRequest<>(key, key, shard, resolved, supplier);
+        RequestPriority resolved = priority == RequestPriority.BACKGROUND
+            ? RequestPriority.BACKGROUND
+            : RequestPriority.IMMEDIATE;
+        return new Request<>(key, key, shard, resolved, supplier);
     }
 
-    public static <T> CompletableFuture<T> schedule(QueueRequest<LeagueShard, T> request) {
+    public static <T> CompletableFuture<T> schedule(Request<LeagueShard, T> request) {
         if (request == null
             || request.route() == null
             || request.key() == null || request.key().isBlank()
@@ -63,18 +62,18 @@ public final class R4JQueue extends AbstractQueueScheduler<LeagueShard> {
 
     public static void shutdown() {
         log("Shutting down queue");
-        INSTANCE.shutdownScheduler();
+        INSTANCE.shutdownDispatcher();
     }
 
-    public static List<QueueWorkerStatus> workerStatuses() {
-        return INSTANCE.schedulerWorkerStatuses();
+    public static com.safjnest.lol.model.status.RequestDispatcherStatus status() {
+        return INSTANCE.snapshot();
     }
 
     // ============================================================================
 
     @Override
-    protected String channelName(LeagueShard shard) {
-        return shard.name().toLowerCase();
+    protected String routeName(LeagueShard shard) {
+        return shard.name();
     }
 
     @Override
@@ -83,32 +82,32 @@ public final class R4JQueue extends AbstractQueueScheduler<LeagueShard> {
     }
 
     @Override
-    protected void onQueued(QueueTask<LeagueShard, ?> task) {
+    protected void onQueued(RequestTask<LeagueShard, ?> task) {
         log("Queued " + task.priority() + " request key=" + task.key());
     }
 
     @Override
-    protected void onReused(QueueTask<LeagueShard, ?> task) {
+    protected void onReused(RequestTask<LeagueShard, ?> task) {
         log("Reusing request key=" + task.key());
     }
 
     @Override
-    protected void onStarted(QueueTask<LeagueShard, ?> task) {
+    protected void onStarted(RequestTask<LeagueShard, ?> task) {
         log("Started " + task.priority() + " request key=" + task.key());
     }
 
     @Override
-    protected void onCompleted(QueueTask<LeagueShard, ?> task) {
+    protected void onCompleted(RequestTask<LeagueShard, ?> task) {
         log("Completed request key=" + task.key());
     }
 
     @Override
-    protected void onFailed(QueueTask<LeagueShard, ?> task, Throwable failure) {
+    protected void onFailed(RequestTask<LeagueShard, ?> task, Throwable failure) {
         log("Failed request key=" + task.key() + " error=" + failure.getClass().getSimpleName()
             + (failure.getMessage() == null ? "" : ": " + failure.getMessage()));
     }
 
     private static void log(String message) {
-        if (loggingEnabled) BotLogger.info("[R4JQueue] " + message);
+        if (loggingEnabled) BotLogger.info("[RiotRequestDispatcher] " + message);
     }
 }

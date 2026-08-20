@@ -1,6 +1,5 @@
 package com.safjnest.lol.service;
 
-import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.champion.ChampionStatsData;
 import com.safjnest.lol.champion.ChampionStatsProvider;
 import com.safjnest.lol.model.ChampionStatistics;
@@ -633,8 +632,7 @@ public final class ChampionAnalyzer {
     }
 
     private static void save(Map<Integer, ChampionStatistics> stats) {
-        ChronoTask saveTask = () -> MongoDB.upsertChampionStatistics(stats);
-        saveTask.queue();
+        MongoDB.upsertChampionStatistics(stats);
     }
 
     private static Map<TeamType, List<ChampionStatsData.Player>> byTeam(

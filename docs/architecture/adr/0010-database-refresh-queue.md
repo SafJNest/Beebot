@@ -4,6 +4,7 @@
 - Owner: Main agent
 - Date: 2026-07-26
 - Amended: 2026-08-20
+- Terminology: superseded by ADR-0014 (`ComputeRequestDispatcher`, `Request` and `RequestTask`)
 - Supersedes: the no-application-queue portion of ADR-0004
 
 ## Context

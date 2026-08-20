@@ -1,226 +1,51 @@
-# New queue
+# Request dispatcher
 
-Working note for the LoL queue rewrite in `com.safjnest.lol.queue`.
-The HTTP API, Discord presentation and persisted documents are unchanged.
-This document describes the current code, not the previous steal-based
-`DatabaseTracker`.
-
-The class that owns database calculations is still named `DatabaseTracker`.
-That name is misleading: the class does not poll or track matches. It is a
-compute queue, the sibling of `R4JQueue`. The intended rename is
-`ComputeQueue` with route enum `ComputeRoute` (`PROFILE`, `CHAMPION`).
-Until that rename lands, this document uses the names that exist in source.
-
-## Why it exists
-
-Two different backends need bounded concurrency:
-
-| Queue | Protects | Route key | Typical work |
-| --- | --- | --- | --- |
-| `R4JQueue` | Riot rate limits | `LeagueShard` | summoner, rank, mastery, match ids |
-| `DatabaseTracker` | Mongo scan/aggregate cost | `PROFILE` / `CHAMPION` | profile stats, champion matrices, builds |
-
-They share machinery (`AbstractQueueScheduler`) and keep separate
-registries, workers and in-flight maps. Sharing code does not merge the
-two queues.
-
-`Tracker` in `lol.tracker` is a third owner. It still owns match lookup
-and match analysis. Do not confuse it with `DatabaseTracker`.
-
-## Pieces
+`lol.queue` owns one shared request infrastructure and three separate dispatcher
+owners. A dispatcher never shares workers, routes, limits, in-flight tasks or
+deduplication with another dispatcher.
 
 ```text
-lol/queue/
-  QueuePriority          IMMEDIATE, NORMAL, BACKGROUND
-  QueueRequest           what a caller submits
-  QueueTask              in-flight item + CompletableFuture
-  QueueChannel           three priority lanes on one route
-  QueueWorker            one virtual thread that drains one channel
-  model/status/QueueWorkerStatus canonical worker snapshot for commands and API
-  AbstractQueueScheduler channels, workers, dedup, shutdown
-  R4JQueue               Riot implementation
-  DatabaseTracker        compute implementation
-  DatabaseWorkerType     PROFILE, CHAMPION
-  ChampionMatrixRequest  coalescing for champion stats + pending builds
+AbstractRequestDispatcher<R>
+  RequestQueue<R> -> RequestWorker<R> -> RequestTask<R, T>
 ```
 
-Callers never talk to a worker. They build a `QueueRequest` and call
-`R4JQueue.schedule` or `DatabaseTracker.schedule`. The scheduler pushes
-onto a `QueueChannel`. The matching `QueueWorker` takes from that channel
-and runs the supplier.
+`Request` is the immutable submission (`key`, `name`, route, priority and
+supplier). `RequestTask` is its deduplicated in-flight instance. Priorities are
+`IMMEDIATE`, `NORMAL` and `BACKGROUND`; a running task is never interrupted.
 
-```mermaid
-flowchart LR
-  caller[Caller]
-  req[QueueRequest]
-  pick[queueFor]
-  ch[QueueChannel lanes]
-  w[QueueWorker]
-  caller --> req --> pick --> ch --> w
-```
-
-## How enqueue works
-
-`AbstractQueueScheduler.enqueue` holds `lifecycleLock` for the whole
-decision:
-
-1. If the same `key` is already queued or running, return that future.
-   Profile keys may be promoted to a higher priority in the channel where
-   the task already sits (`task.queue()`, not `request.route()`).
-2. Otherwise `queueFor(request)` chooses the channel.
-3. `registerRoute` creates the channel and starts its worker if missing.
-4. A `QueueTask` is stored in the in-flight map, assigned to that channel,
-   then `channel.offer(task)`.
-5. The caller receives `task.future()`. The request thread never runs the
-   supplier.
-
-Default `queueFor` is identity: the request route is the channel.
-`R4JQueue` uses that default, so EUW work stays on the EUW channel.
-
-`DatabaseTracker` overrides it:
-
-```text
-if route is not PROFILE -> always CHAMPION
-else if load(CHAMPION) < load(PROFILE) -> CHAMPION
-else -> PROFILE
-```
-
-Load is `queued count + 1` if that worker is currently executing.
-Equal load prefers `PROFILE`, so champion stays free for builds.
-
-The logical route on the request stays `PROFILE` or `CHAMPION`. The
-physical channel can differ for profile work. `QueueTask.queue()` is the
-physical assignment; it does not change after offer. There is no steal.
-
-## Priorities
-
-`QueueChannel` has three FIFO lanes. `take` always drains
-`IMMEDIATE`, then `NORMAL`, then `BACKGROUND`.
-
-| Priority | Meaning in compute queue | Placement |
+| Dispatcher | Routes | Owner |
 | --- | --- | --- |
-| `IMMEDIATE` | manual profile refresh / owner submit | ahead of NORMAL and BACKGROUND |
-| `NORMAL` | user-triggered missing data | after other NORMAL, before BACKGROUND |
-| `BACKGROUND` | stale refresh | end of that channel |
+| `RiotRequestDispatcher` | one `LeagueShard` worker | outbound Riot API |
+| `ComputeRequestDispatcher` | `PROFILE`, `CHAMPION` | expensive Mongo compute |
+| `SyncRequestDispatcher` | one `LeagueShard` worker | tracking, rank, match, sample and participant refresh workflows |
 
-`R4JQueue.request` collapses non-background work to `IMMEDIATE`, so Riot
-calls are either interactive or explicit background.
+Every route has its own three-lane physical queue. An immediate EUW task can
+overtake background EUW work, but cannot reorder or block NA work.
 
-A running task is never interrupted. Promote only reorders a queued task
-inside its own channel.
+`RequestRun` is only live Sync batch state (`TRACKING`,
+`RANK_ENTRIES_HIGH`, `RANK_ENTRIES_ALL`, `MATCH_ANALYSIS`, `SAMPLE_GAMES`). It
+references its submitted child tasks, reuses an active logical run, and
+disappears when its final child completes. It is not persisted. A task can
+report `phase`, `progress` and a compact `itemId -> PENDING|DONE|MISSING|FAILED`
+map while it runs; the run exposes those task snapshots without a parallel
+Tracker telemetry store.
 
-## DatabaseTracker topology
+## Match flow
 
-Two channels exist from construction: `PROFILE` and `CHAMPION`. Each has
-exactly one worker.
-
-- Champion stats matrices, champion builds and the scheduled champion
-  refresh always go to `CHAMPION`. They stay serial on that channel.
-- Profile statistics, matchups, activity and profile refresh are PROFILE-logical.
-  At insert they go to the lighter channel.
-
-Example:
-
-1. First profile job starts on `PROFILE` (tie-break).
-2. Second profile job starts on `CHAMPION` (load `0` vs `1`).
-3. First build queues on `CHAMPION` behind the running profile job.
-4. Second build queues after the first build, still on `CHAMPION`.
-5. Third profile job goes to `PROFILE` if that channel still has fewer
-   items.
-
-At most two Mongo calculations run at once. Two champion calculations
-never run together, because they never leave the champion channel.
-A profile job that landed on champion delays later builds on that same
-channel; it does not move back to profile when profile becomes idle.
-
-`startChampionData` is three explicit outcomes: nothing (`VOID`),
-build-only, or statistics (optionally attaching a build through
-`startChampionStatistics`). Recent-patch matrices are still chained
-oldest to newest. Duplicate matrix keys coalesce through
-`ChampionMatrixRequest`.
-
-## R4JQueue topology
-
-One channel and worker per `LeagueShard`, created on first use.
-No least-loaded override, no steal. A slow shard fills only its own
-queue.
-
-## What changed versus the previous design
-
-| Before | After |
-| --- | --- |
-| Nested channel/worker types inside the schedulers | Top-level files in `lol.queue` |
-| Duplicated lane loops in Riot and DB queues | One `AbstractQueueScheduler` |
-| `ensureChannel` + `computeIfAbsent` side effects | `registerRoute` under the lifecycle lock |
-| Enqueue mixed channel lookup and worker counters | Always `channel.offer` |
-| Champion worker stole from PROFILE when idle | Assignment only at insert |
-| Tasks could start on a channel they were not offered to | Task stays on `task.queue()` |
-| Profile work always physically on PROFILE | Profile work may sit on CHAMPION if that channel is lighter |
-| Shutdown leaked `ExecutorService` to the scheduler | `requestStop` / `awaitStopped` / `drain` |
-| Nested ternaries in `startChampionData` | Linear `VOID` / build / statistics |
-
-Unchanged:
-
-- public HTTP status and payloads (`200`, `202`, `PARTIAL`)
-- Discord embeds, field order and tracker command layout
-- match lookup / match analysis queues on `Tracker`
-- `ProfileService` / `ChampionService` as calculation owners
-- dedup keys (`profile-statistics:…`, `champion-stats-matrix:…`, …)
-- at most two concurrent database calculations
-
-## Shutdown
-
-`shutdownScheduler`:
-
-1. snapshot workers
-2. `requestStop` on each (interrupt the virtual thread)
-3. `drain` every channel and cancel remaining futures
-4. clear maps
-5. `awaitStopped` outside the lock, 30s bound
-
-`DatabaseTracker.shutdown()` and `R4JQueue.shutdown()` are the public
-facades. Database shutdown still happens before Mongo close.
-
-## Diagnostics
-
-`DatabaseTracker.workerStatuses()` / scheduler snapshots expose one canonical
-worker status: id, type (`profile` / `champion` or shard name), state, current
-job, queue position, in-flight count and at most 20 readable queued names.
-`queuedCount` remains the full queue length. The owner `tracker` command and
-the status API return this same snapshot. Normal queue lifecycle is not written
-to the application log.
-
-## How to submit work
-
-```java
-R4JQueue.schedule(R4JQueue.request(shard, "summoner", puuid, () -> fetch));
-
-DatabaseTracker.schedule(new QueueRequest<>(
-    key,
-    readableName,
-    DatabaseWorkerType.PROFILE,   // or CHAMPION
-    QueuePriority.NORMAL,
-    () -> PROFILE_SERVICE.refreshStatistics(...)
-));
+```text
+OP.GG missing match -> Sync/IMMEDIATE/shard -> Riot -> cache + Mongo + participant seed
+API missing match   -> Sync/BACKGROUND/shard -> Riot -> cache + Mongo + participant seed
+tracker/sample/import -> Sync/BACKGROUND/shard -> Mongo persistence
 ```
 
-Do not start the supplier on the HTTP thread. Do not add a second in-flight
-map. Duplicate keys must share the existing future.
+Redis is cache only: it is not a queue, backlog or retry store. There is no
+match poller, no pending set, and no restart recovery for Sync tasks.
 
-## Tests
+`thenApplyAsync` and `thenComposeAsync` in a domain service remain continuations
+of an already-owned request; new background work must enter one of the three
+dispatchers.
 
-- `AbstractQueueSchedulerTest`: lane order, one worker per registered
-  route, queued-task cancellation on shutdown
-- `QueueTaskTest`: complete, fail, promote, cancel
-- `R4JQueueTest`: Riot facade
-- `DatabaseTrackerTest`: profile placement is selected at insert and never
-  changes after offer; profile priority promotion stays on its assigned channel
-
-## Follow-up
-
-1. Rename `DatabaseTracker` → `ComputeQueue` and
-   `DatabaseWorkerType` → `ComputeRoute`.
-2. Add deterministic concurrency tests for lane promotion and champion-matrix
-   coalescing.
-3. ADR-0010, macro-task 0003/0007 and the queue-related audits were
-   amended 2026-08-20 to match insert-time routing.
+Rank entries are scheduled as real leaf tasks before execution: one task for
+each `shard + tier + queue`. `RequestRun.tasks` can therefore be grouped by
+task `route` to render the seven shard groups and their pending/running/done
+rank jobs without parsing task names.

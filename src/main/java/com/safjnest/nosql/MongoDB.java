@@ -1936,6 +1936,21 @@ public final class MongoDB {
         return update.getMatchedCount() > 0;
     }
 
+    public static boolean upsertRank(String puuid, LeagueShard shard, Rank rank, long mmr) {
+        if (rank == null || rank.queue() == null) return false;
+
+        Document value = write(rank);
+        value.put("mmr", mmr);
+        Bson filter = Filters.and(summonerFilter(puuid, shard), Filters.eq("ranks.queue", rank.queue().name()));
+        UpdateResult update = summoners().updateOne(filter, Updates.set("ranks.$", value));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank update was not acknowledged");
+        if (update.getMatchedCount() > 0) return true;
+
+        update = summoners().updateOne(summonerFilter(puuid, shard), Updates.push("ranks", value));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank insert was not acknowledged");
+        return update.getMatchedCount() > 0;
+    }
+
     public static boolean upsertMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
         List<Document> values = new ArrayList<>();
         if (masteries != null) for (Mastery mastery : masteries) values.add(write(mastery));

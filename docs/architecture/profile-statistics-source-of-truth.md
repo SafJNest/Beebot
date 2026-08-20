@@ -349,6 +349,16 @@ esiste già, deduplica i PUUID e processa una pagina alla volta attendendo il
 completamento prima della pagina successiva. In questo modo la mole di lavoro
 non riempie la FIFO né mantiene in memoria l'intero elenco high elo.
 
+Il job rank entries, avviato da `pushhighelo` o `getallrank`, salva ogni
+`LeagueEntry` nella sola queue a cui appartiene. High elo (Master+) e all
+entries (sotto Master) condividono lo stesso job e non possono sovrapporsi;
+una richiesta concorrente aggiunge la fascia complementare alla stessa
+esecuzione. Per un summoner già persistito non esegue chiamate identity Riot e aggiorna
+atomically soltanto quell'elemento di `summoner.ranks[]`. Per un PUUID assente
+risolve prima Summoner e, se il Riot ID non è già disponibile, Account, poi
+persiste l'identità prima del rank. Il tracker avvia un worker per shard; il
+rate limiting outbound resta di proprietà di `R4JQueue` per shard.
+
 Il comando owner `tracker` legge on demand lo stato degli scheduler, dei game
 in coda e dei due worker `DatabaseTracker`, senza aggiungere logging nel
 percorso caldo dei refresh.

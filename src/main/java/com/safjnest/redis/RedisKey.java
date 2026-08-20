@@ -20,7 +20,6 @@ public enum RedisKey {
     R4J_SUMMONER_REFRESH_COOLDOWN("r4j:summoner:refresh:cooldown:%s:%s", Duration.ofSeconds(60)), // Original: 2 minutes.
 
     MATCH_DETAIL("los:%s:%s:match:%s:detail", Duration.ofSeconds(60)), // Original: 6 hours.
-    TRACKER_PENDING_MATCH_LIST("tracker:queue:pending-matches", Duration.ofSeconds(60)), // Original: persistent.
     SUMMONER_DATA("los:%s:%s:summoner:%s:data", Duration.ofSeconds(60)), // Original: 1 hour.
     SUMMONER_AUTOCOMPLETE("los:%s:%s:summoner:autocomplete:%s", Duration.ofSeconds(60)), // Original: 6 hours.
     SUMMONER_SEARCH("los:%s:%s:summoner:search:%s", Duration.ofSeconds(60)), // Original: 1 hour.

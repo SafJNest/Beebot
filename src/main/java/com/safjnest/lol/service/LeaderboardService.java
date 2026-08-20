@@ -17,7 +17,7 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
 import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.queue.DatabaseTracker;
+import com.safjnest.lol.queue.ComputeRequestDispatcher;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.SeasonUtils;
@@ -81,7 +81,7 @@ public class LeaderboardService {
             statisticsBySummoner.putAll(profileService.getStatistics(entry.getValue(), entry.getKey(), season));
         for (Summoner summoner : summoners) {
             if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
-            DatabaseTracker.startProfileStatistics(summoner, season);
+            ComputeRequestDispatcher.startProfileStatistics(summoner, season);
         }
 
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
@@ -203,7 +203,7 @@ public class LeaderboardService {
 
         List<CompletableFuture<Boolean>> refreshes = new ArrayList<>();
         for (Summoner summoner : selected) {
-            refreshes.add(DatabaseTracker.startProfileStatistics(summoner, filter, true));
+            refreshes.add(ComputeRequestDispatcher.startProfileStatistics(summoner, filter, true));
         }
 
         for (int index = 0; index < refreshes.size(); index++) {

@@ -46,50 +46,52 @@ lol/model/
 lol/model/status/
   BotStatus
   LeagueMetrics
-  TrackerMetrics
-  WorkerMetrics
-  QueueWorkerStatus
+  RequestDispatcherStatus
+  RequestQueueStatus
+  RequestWorkerStatus
+  RequestTaskStatus
+  RequestRunStatus
   JobProgress
   JvmMetrics
   SystemMetrics
   RedisMetrics
 
 lol/queue/
-  QueuePriority
-  QueueRequest
-  QueueTask
-  QueueChannel
-  QueueWorker
-  AbstractQueueScheduler
-  R4JQueue
+  RequestPriority
+  Request
+  RequestTask
+  RequestQueue
+  RequestWorker
+  RequestRun
+  AbstractRequestDispatcher
+  RiotRequestDispatcher
   DatabaseWorkerType
   ChampionMatrixRequest
-  DatabaseTracker
+  ComputeRequestDispatcher
+  SyncRequestDispatcher
 
 lol/tracker/
   Tracker
   TrackerScheduler
-  TrackerJobProgress
 
 status/
   StatusService
   SystemMetricsSampler
   LeagueMetricsStore
-  TrackerMetricsStore
 ```
 
 Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
-`lol.queue` owns the shared abstract scheduler and the two distinct Riot and database queue implementations. Riot and DB keep separate registries and workers; only the scheduler machinery is shared.
+`lol.queue` owns the shared request dispatcher infrastructure and three distinct owners. Riot, compute and Sync keep separate registries and workers; only the dispatcher machinery is shared.
 
 Queue glossary:
 
-- `R4JQueue` — outbound Riot work, one channel per `LeagueShard`;
-- `DatabaseTracker` — Mongo compute work, channels `PROFILE` and `CHAMPION`;
-- `Tracker` — match lookup and match analysis only, not the compute queue.
+- `RiotRequestDispatcher` — outbound Riot work, one queue per `LeagueShard`;
+- `ComputeRequestDispatcher` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
+- `SyncRequestDispatcher` — tracking, rank, match, sample and participant refresh workflows, one queue per shard.
 
 Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
 Queue implementation types stay as top-level files in the same package. Scheduler internals remain package-private instead of being exposed across subpackages.
-Operation-specific values are captured directly by each `QueueRequest` supplier; separate carrier types are reserved for stateful behavior such as champion-matrix coalescing.
+Operation-specific values are captured directly by each `Request` supplier; separate carrier types are reserved for stateful behavior such as champion-matrix coalescing.
 
 ## Statistics source of truth
 
@@ -108,6 +110,7 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
 - [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md)
 - [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md)
+- [ADR-0014: Request dispatcher architecture](adr/0014-request-dispatcher-architecture.md)
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
 

@@ -18,8 +18,6 @@ public class LeagueMetricsStoreTest {
     @Test
     public void snapshotNeverReturnsNegativeCounters() {
         LeagueMetrics metrics = LeagueMetricsStore.snapshot();
-        assertEquals(true, metrics.gameQueue() >= 0);
-        assertEquals(true, metrics.profileQueue() >= 0);
         assertEquals(true, metrics.gamesAnalyzed() >= 0);
         assertEquals(true, metrics.totalSummoners() >= 0);
         assertEquals(true, metrics.totalMasteries() >= 0);

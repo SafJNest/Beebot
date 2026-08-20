@@ -17,7 +17,7 @@ import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.queue.DatabaseTracker;
+import com.safjnest.lol.queue.ComputeRequestDispatcher;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
@@ -168,7 +168,7 @@ public class ChampionService {
         ResponseMetadata metadata = new ResponseMetadata(null, lastUpdate > 0 ? lastUpdate : null, refresh, base);
         ChampionTierList result = new ChampionTierList(ChampionTierAnalyzer.analyze(ready, sources), metadata);
         if (refresh) {
-            DatabaseTracker.enqueueChampionStatsMatrix(base.patch(), base.queue());
+            ComputeRequestDispatcher.enqueueChampionStatsMatrix(base.patch(), base.queue());
             return ApiResult.partial(result, metadata);
         }
         RedisClient.set(RedisKey.CHAMPION_TIER_LIST, result, base.genericKey());
@@ -280,7 +280,7 @@ public class ChampionService {
         boolean statisticsPending = stats == null || isStale(statsLastUpdate);
         boolean buildPending = build == null || isStale(buildLastUpdate);
         if (statisticsPending || buildPending) {
-            DatabaseTracker.startChampionData(filter, statisticsPending, buildPending);
+            ComputeRequestDispatcher.startChampionData(filter, statisticsPending, buildPending);
             return ApiResult.pending(metadata(statsLastUpdate, buildLastUpdate, true, filter));
         }
         ChampionView page = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),

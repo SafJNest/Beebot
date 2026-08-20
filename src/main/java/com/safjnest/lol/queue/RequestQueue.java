@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-final class QueueChannel<R> {
+final class RequestQueue<R> {
 
-    private final Deque<QueueTask<R, ?>> immediate;
-    private final Deque<QueueTask<R, ?>> normal;
-    private final Deque<QueueTask<R, ?>> background;
+    private final Deque<RequestTask<R, ?>> immediate;
+    private final Deque<RequestTask<R, ?>> normal;
+    private final Deque<RequestTask<R, ?>> background;
     private final ReentrantLock lock;
     private final Condition available;
 
-    QueueChannel() {
+    RequestQueue() {
         immediate = new ArrayDeque<>();
         normal = new ArrayDeque<>();
         background = new ArrayDeque<>();
@@ -23,7 +23,7 @@ final class QueueChannel<R> {
         available = lock.newCondition();
     }
 
-    void offer(QueueTask<R, ?> task) {
+    void offer(RequestTask<R, ?> task) {
         lock.lock();
         try {
             lane(task.priority()).addLast(task);
@@ -33,21 +33,19 @@ final class QueueChannel<R> {
         }
     }
 
-    void promote(QueueTask<R, ?> task) {
+    void promote(RequestTask<R, ?> task) {
         lock.lock();
         try {
-            if (immediate.remove(task) || normal.remove(task) || background.remove(task)) {
-                lane(task.priority()).addLast(task);
-            }
+            if (immediate.remove(task) || normal.remove(task) || background.remove(task)) lane(task.priority()).addLast(task);
         } finally {
             lock.unlock();
         }
     }
 
-    QueueTask<R, ?> take() throws InterruptedException {
+    RequestTask<R, ?> take() throws InterruptedException {
         lock.lockInterruptibly();
         try {
-            QueueTask<R, ?> task;
+            RequestTask<R, ?> task;
             while ((task = next()) == null) available.await();
             return task;
         } finally {
@@ -64,10 +62,10 @@ final class QueueChannel<R> {
         }
     }
 
-    List<QueueTask<R, ?>> snapshot(int maxSize) {
+    List<RequestTask<R, ?>> snapshot(int maxSize) {
         lock.lock();
         try {
-            List<QueueTask<R, ?>> result = new ArrayList<>();
+            List<RequestTask<R, ?>> result = new ArrayList<>();
             addSnapshot(result, immediate, maxSize);
             addSnapshot(result, normal, maxSize);
             addSnapshot(result, background, maxSize);
@@ -77,11 +75,11 @@ final class QueueChannel<R> {
         }
     }
 
-    List<QueueTask<R, ?>> drain() {
+    List<RequestTask<R, ?>> drain() {
         lock.lock();
         try {
-            List<QueueTask<R, ?>> drained = new ArrayList<>();
-            QueueTask<R, ?> task;
+            List<RequestTask<R, ?>> drained = new ArrayList<>();
+            RequestTask<R, ?> task;
             while ((task = next()) != null) drained.add(task);
             return drained;
         } finally {
@@ -89,14 +87,14 @@ final class QueueChannel<R> {
         }
     }
 
-    private QueueTask<R, ?> next() {
-        QueueTask<R, ?> task = immediate.pollFirst();
+    private RequestTask<R, ?> next() {
+        RequestTask<R, ?> task = immediate.pollFirst();
         if (task != null) return task;
         task = normal.pollFirst();
         return task != null ? task : background.pollFirst();
     }
 
-    private Deque<QueueTask<R, ?>> lane(QueuePriority priority) {
+    private Deque<RequestTask<R, ?>> lane(RequestPriority priority) {
         return switch (priority) {
             case IMMEDIATE -> immediate;
             case NORMAL -> normal;
@@ -105,12 +103,12 @@ final class QueueChannel<R> {
     }
 
     private static <R> void addSnapshot(
-        List<QueueTask<R, ?>> result,
-        Deque<QueueTask<R, ?>> lane,
+        List<RequestTask<R, ?>> result,
+        Deque<RequestTask<R, ?>> lane,
         int maxSize
     ) {
         if (result.size() >= maxSize) return;
-        for (QueueTask<R, ?> task : lane) {
+        for (RequestTask<R, ?> task : lane) {
             result.add(task);
             if (result.size() >= maxSize) return;
         }
