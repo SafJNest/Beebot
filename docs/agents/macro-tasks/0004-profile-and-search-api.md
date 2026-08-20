@@ -1,5 +1,7 @@
 # Macro-task 0004: profile and search API
 
+Implemented. Page composition is `ProfileService` (ADR-0012), not `ProfilePageService`.
+
 ## Objective
 
 Move profile and search endpoints to the canonical summoner models and remove Spring success DTO duplication.

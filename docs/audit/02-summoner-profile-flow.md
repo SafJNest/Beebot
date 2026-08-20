@@ -1,5 +1,7 @@
 # Audit 02 — comando `summoner profile`
 
+As-of 2026-07-22; class names updated 2026-08-20. Queue routing: ADR-0010.
+
 Per il contratto completo e il runbook di recupero contesto vedere [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 ## Percorso runtime attuale
@@ -9,7 +11,7 @@ Per il contratto completo e il runbook di recupero contesto vedere [`profile-sta
   -> risoluzione account/cache
   -> Riot API solo quando il profilo Mongo è incompleto
   -> SummonerService.upsert
-  -> ProfileStatisticsService.get / DatabaseTracker refresh
+  -> ProfileService.get / DatabaseTracker refresh
   -> LeagueMessage.send
 ```
 
@@ -17,7 +19,7 @@ L’account e il profilo vengono persistiti direttamente in MongoDB. `LeagueDB` 
 
 ## Contratto Mongo
 
-`ProfileStatisticsService` è il proprietario del calcolo e del refresh. Legge da Mongo i match proiettati usando lo stesso `Filter` completo del comando e persiste un documento flat indicizzato da `puuid + filterKey`, che contiene:
+`ProfileService` è il proprietario del calcolo e del refresh. `ProfileAnalyzer` è puro. Legge da Mongo i match proiettati usando lo stesso `Filter` completo del comando e persiste un documento flat indicizzato da `puuid + filterKey`, che contiene:
 
 - `total`;
 - `queueStats`, `laneStats`, `championStats` con il contesto queue/lane per ogni champion;

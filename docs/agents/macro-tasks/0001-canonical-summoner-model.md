@@ -1,5 +1,7 @@
 # Macro-task 0001: canonical summoner model
 
+Implemented. Summoner factories now live on `SummonerService` (ADR-0011); `LeagueService` is gone.
+
 ## Objective
 
 Create and adopt the canonical summoner model shared by profile, search and leaderboard.

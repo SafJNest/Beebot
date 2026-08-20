@@ -5,6 +5,7 @@
 - [MongoDB LoL migration](mongo/README.md)
 - [LoL HTTP API](api/lol-api.md) — indice per scope e reference endpoint
 - [LoL architecture](architecture/README.md)
+- [LoL queues (walkthrough)](new-queue.md)
 - [Profile statistics source of truth](architecture/profile-statistics-source-of-truth.md)
 - [LoL/Mongo flow audits](audit/README.md)
 - [Agent workflow](agents/README.md)

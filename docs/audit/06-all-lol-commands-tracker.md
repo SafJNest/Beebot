@@ -1,6 +1,6 @@
 # Audit 06 — comandi LoL e Tracker
 
-- Data: 2026-07-22
+- Data: 2026-07-22 (class names / queue routing refreshed 2026-08-20)
 - Tipo: audit statico end-to-end
 - Scope: tutti i comandi sotto `commands/lol`, `LeagueMessage`, i service LoL, `LeagueDB`, `MongoDB`, `Tracker` e `TrackerScheduler`
 - Fix applicati nello stesso pass: runtime LoL Mongo-only, schema match Mongo, query profile/OP.GG, account ownership e bans/eventi JSON
@@ -9,7 +9,7 @@
 
 | Comando | Entry point | Percorso dati | Esito statico |
 |---|---|---|---|
-| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | `UserData`/Mongo canonical → Riot solo su miss → `ProfileStatisticsService` per PUUID+Filter → Redis | coerente; presentazione invariata |
+| `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | `UserData`/Mongo canonical → Riot solo su miss → `ProfileService` per PUUID+Filter → Redis | coerente; presentazione invariata |
 | `/summoner overview` | `SummonerOverview` | canonical identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
 | `/summoner champion` | `SummonerChampion` | canonical identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
 | `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | `SummonerService.upsert` + cache `Map<puuid, Summoner>` | coerente; aggiorna cache locale e Redis |
@@ -17,7 +17,7 @@
 | `/summoner track` | `SummonerTrack` | `MongoDB.setSummonerTracking` → Tracker | coerente; il comando controlla l’esito Mongo |
 | `/opgg` | `Opgg` → `LeagueMessage.getOpggEmbed` | Riot match list/detail → query participant Mongo per rank/lp/gain → Tracker queue | coerente dopo `findSummonerData`; persistenza match è asincrona |
 | `/livegame` | `Livegame` → spectator flow | Redis spectator → Riot spectator API; account mirror iniziale | coerente, non è un flusso match persistito |
-| `/champion` | `Champion` | `ChampionStatsService` + `BuildService` → Redis/Mongo aggregate → embed | coerente staticamente; non usa MariaDB match direttamente |
+| `/champion` | `Champion` | `ChampionService` → Redis/Mongo aggregate → embed | coerente staticamente; non usa MariaDB match direttamente |
 | `/champions` | `Champions` → `LeagueMessage` | champion aggregate Mongo/Redis → ranking embed | coerente staticamente; dipende da refresh DatabaseTracker |
 | `/augment` | `Augment` | catalogo augment in memoria/Riot | fuori dal persistence match |
 | `/item` | `Item` | Data Dragon/cache R4J | fuori dal persistence match |
@@ -31,7 +31,7 @@
 `SummonerProfile` risolve e aggiorna l’account direttamente in Mongo. `LeagueMessage.getSummonerEmbed` legge:
 
 1. identity e rank tramite `SummonerService` e `RankService`/Mongo;
-2. statistiche aggregate flat tramite `ProfileStatisticsService` usando il `Filter` completo;
+2. statistiche aggregate flat tramite `ProfileService` usando il `Filter` completo;
 3. l'embed storico del profilo, alimentato dal nuovo aggregato senza modificare la presentazione;
 4. `lastUpdate` del documento, quando l'aggregato è disponibile.
 

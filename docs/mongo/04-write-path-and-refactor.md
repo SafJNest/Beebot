@@ -17,6 +17,6 @@ Account/summoner, detach, tracking, participant, match, rank ed eventi, profile 
 
 ## Letture
 
-I consumer LoL leggono da MongoDB: SummonerService, RankService, MasteryService, MatchService, ProfileStatisticsService, LeaderboardService, BuildService, ChampionDataRefreshService, ChampionStatsService, Tracker, LeagueMessage e LeagueHandler per le query migrate.
+I consumer LoL leggono da MongoDB: SummonerService, RankService, MasteryService, MatchService, ProfileService, ChampionService, LeaderboardService, Tracker, LeagueMessage e LeagueHandler per le query migrate.
 
 API, cache e modelli canonici restano invariati salvo aggiornamento esplicito del contratto. Custom builds e summoner.metrics non vengono copiati né ricreati da Mongo.

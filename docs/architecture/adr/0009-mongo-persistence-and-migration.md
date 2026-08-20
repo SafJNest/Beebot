@@ -48,7 +48,9 @@ Mongo userà:
 
 ## Boundary
 
-`LeagueService` resta il boundary LoL cache-aware. La persistenza runtime Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` è confinato al percorso di lettura della migration.
+`SummonerService`, `RankService`, `MasteryService`, `MatchService` and
+`ProfileService` are the LoL cache-aware runtime boundaries (ADR-0011 / ADR-0012).
+La persistenza runtime Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` è confinato al percorso di lettura della migration.
 
 Spring continua a possedere solo controller, configurazione HTTP ed error model. `QueryRecord` è il contenitore comune delle projection; gli oggetti complessi usano i modelli LoL già esistenti.
 

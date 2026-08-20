@@ -223,5 +223,5 @@ map. Duplicate keys must share the existing future.
    `DatabaseWorkerType` → `ComputeRoute`.
 2. Move `DatabaseTrackerTest` to `src/test/java/com/safjnest/lol/queue/`
    and assert insert-time placement (no jump after offer).
-3. Amend ADR-0010, macro-task 0003 and any doc that still says worker 2
-   steals profile work when the champion queue is empty.
+3. ADR-0010, macro-task 0003/0007 and the queue-related audits were
+   amended 2026-08-20 to match insert-time routing.

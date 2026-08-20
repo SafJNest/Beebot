@@ -1,5 +1,7 @@
 # Audit 05 — matrice contratti query e backlog
 
+As-of 2026-07-20; write owners updated 2026-08-20 (`ProfileService` / `ChampionService`).
+
 ## Audit query Mongo — implementato staticamente 2026-07-20
 
 | Percorso | Prima | Flusso attuale | Budget |
@@ -18,13 +20,13 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 
 | MariaDB / consumer | Mongo attuale | Contratto atteso | Esito |
 |---|---|---|---|
-| `ProfileStatisticsService` → overview/profile/`!summoner` | `findProfileStatistics` + refresh proiettato | aggregato flat per PUUID e `Filter`, con champion/lane/queue/matchup/ping | **implementato; runtime da verificare** |
+| `ProfileService` → overview/profile/`!summoner` | `findProfileStatistics` + refresh proiettato | aggregato flat per PUUID e `Filter`, con champion/lane/queue/matchup/ping | **implementato; runtime da verificare** |
 | `LeagueDB.getSummonerData(puuid, shard)` → OP.GG | `findSummonerData` | participant rows con `game_id`, `rank`, `lp`, `gain`, `win` | **fix applicato; runtime da verificare** |
-| `ProfileStatisticsService` → recent matches | `findProfileRecentMatches` | `MatchResult` leggero separato dallo stesso filtro | coerente, da verificare runtime |
+| `ProfileService` → recent matches | `findProfileRecentMatches` | `MatchResult` leggero separato dallo stesso filtro | coerente, da verificare runtime |
 | `LeagueDB.getMatchHistory/count` | `getMatches/countMatches` | `Filter` unico per participant, champion, lane, patch, rank e relazioni; match completi dopo paging; count diretto Mongo senza lookup summoner preliminare | **fix applicato; runtime da verificare** |
 | `LeagueDB.getMatch` usato dalla migration | `MongoMigration` + `MongoDB.upsertMatchDocument` | `_id` full Riot, `region`, `game_id`, match completo | MariaDB letto solo dalla migration; runtime direct-write Mongo |
 | `LeagueDB.setSummonerData` storico | `MongoDB.upsertParticipant` | participant flat aggiornato nel match con `rank`, `lp`, `gain` | il runtime usa conversione Riot e upsert idempotente direct-write Mongo |
-| `LeagueDB.getProfileStatistics` | `findProfileStatistics` | `ProfileStatistics` BSON flat e batch `{puuid, filterKey}` | mapping presente, write owner `ProfileStatisticsService` |
+| `LeagueDB.getProfileStatistics` | `findProfileStatistics` | `ProfileStatistics` BSON flat e batch `{puuid, filterKey}` | mapping presente, write owner `ProfileService` |
 | `Tracker.analyzeChampionData` | `findMatchBans` | stringa JSON valida | **fix applicato con `Document.toJson()`** |
 | `LeagueDB.saveChampionBuild/Stats` storico | `upsertChampionBuild/Statistics` | JSON/BSON Mongo, bulk unordered per batch | ack del replace/bulk verificato |
 
@@ -52,7 +54,7 @@ restare bloccante e gli indici multikey non garantiscono un sort covered.
 
 ### P1 — rendere affidabili gli aggiornamenti Mongo
 
-1. verificare con il runtime il writer effettivo di `ProfileStatisticsService.refresh`;
+1. verificare con il runtime il writer effettivo di `ProfileService.refreshStatistics`;
 2. correggere `Tracker` su queue, participant Riot null e queue Redis incoerente;
 3. distinguere conversione bans/eventi fallita da payload vuoto.
 

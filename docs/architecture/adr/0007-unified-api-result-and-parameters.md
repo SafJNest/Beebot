@@ -3,6 +3,8 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Amended: 2026-08-20
+- Service names in Impact: `ChampionService` and `ProfileService` (ADR-0012); `LeagueService` removed (ADR-0011)
 
 ## Context
 
@@ -59,7 +61,7 @@ matchups stale usano `202` con metadata del filtro richiesto.
 ## Impact
 
 `ChampionController`, `LolController` and `LeaderboardController` now use the
-same parameter and response helpers. `ChampionPageService`, `LeagueService`
+same parameter and response helpers. `ChampionService`, `ProfileService`
 and `LeaderboardService` return `ApiResult` where asynchronous or partial
 states are meaningful.
 

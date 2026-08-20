@@ -1,6 +1,7 @@
 # Current LoL persistence audit
 
 - Snapshot: 2026-07-26
+- Names/routing refresh: 2026-08-20 (see ADR-0010, ADR-0011, ADR-0012)
 - Owner: main agent
 - Scope: MongoDB migration for the `league_of_legends` domain
 - Source files: `LeagueDB`, LoL services, tracker, message handlers and canonical models

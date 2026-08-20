@@ -3,6 +3,8 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Amended: 2026-08-20
+- Ownership of LeagueService and ProfileStatisticsService: superseded by ADR-0011 and ADR-0012
 
 ## Context
 
@@ -31,9 +33,9 @@ Controllers return canonical models directly. A new DTO is allowed only when an 
 
 ## Ownership
 
-- `LeagueService` owns construction of base summoner data from service/database records.
+- `SummonerService` owns construction of base summoner data from service/database records.
 - Canonical model factories own projection and field assembly.
-- `ProfileStatisticsService` owns statistics persistence and refresh.
+- `ProfileService` owns statistics persistence and refresh; `ProfileAnalyzer` is pure.
 - `DatabaseTracker` owns asynchronous database refresh dispatch and in-flight deduplication; `Tracker` owns only match lookup and match analysis queues.
 - `LeaderboardService` owns filtering, pagination, cache and distribution access.
 

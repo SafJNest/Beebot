@@ -1,5 +1,8 @@
 # Macro-task 0007: champion API
 
+Implemented. Service ownership is `ChampionService` / `ChampionAnalyzer`
+(ADR-0012). Queue routing after 2026-08-20 follows amended ADR-0010.
+
 ## Obiettivo
 
 Esporre statistiche champion e un unico aggregato build/stats in una response HTTP unica, senza calcoli pesanti durante la request.
@@ -7,16 +10,16 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 ## Dipendenze
 
 - ADR-0001, ADR-0005 e ADR-0006;
-- `ChampionStatsService`, `BuildService` e `ChampionDataRefreshService` esistenti;
+- `ChampionService` esistente;
 - coda asincrona `DatabaseTracker`.
 
 ## Perimetro
 
 - `ChampionView`;
 - `ChampionController`;
-- `ChampionPageService`;
+- `ChampionService`;
 - letture persistite e fallback nello stesso overload `get(filter, allowCompute)`;
-- un solo `ChampionPageService.get` con `compute` interno per l’API;
+- un solo `ChampionService.get` con `compute` interno per l’API;
 - `ApiResult` e `LolApiResponses` condivisi con match e leaderboard;
 - parsing dei parametri centralizzato in `LolApiParameters`;
 - avvio immediato dei refresh Profile Statistics e Champion Data in `DatabaseTracker`;
@@ -56,7 +59,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
   vuote) e non riaccoda indefinitamente la stessa richiesta;
 - nessuna computazione raw durante la request.
 - le statistiche globali condividono `Filter.genericKey()`, mentre le build usano `Filter.toKey()` e vengono accodate indipendentemente;
-- build e statistiche champion usano sempre il worker 2 e una sola sequenza FIFO; i refresh profilo usano il worker 1 e possono essere aiutati dal worker 2 soltanto quando la coda champion è vuota; la deduplicazione resta condivisa;
+- build e statistiche champion usano sempre la coda `CHAMPION` e una sola sequenza FIFO; i refresh profilo vanno all’inserimento sulla coda con meno carico; la deduplicazione resta condivisa;
 - per una queue delle ultime tre patch, le matrici stats vengono accodate dalla più vecchia alla più nuova e il fallback trend legge solo la proiezione partecipanti in batch da 100, senza caricare eventi;
 - in test lo scheduler non parte automaticamente;
 - la coda Redis dei match resta separata e invariata;

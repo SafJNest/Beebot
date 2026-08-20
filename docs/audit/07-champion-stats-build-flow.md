@@ -4,6 +4,7 @@
 - Tipo: audit statico e decisione di flusso
 - Stato: implementato staticamente, validazione Mongo runtime ancora necessaria
 - Scope: `ChampionService`, `ChampionAnalyzer`, Mongo streaming e `DatabaseTracker`
+- Queue routing: ADR-0010 amended 2026-08-20 (no steal; champion work always on `CHAMPION`)
 
 ## Decisione
 
@@ -50,7 +51,7 @@ GET champion/Thresh
 risposta HTTP: 202 pending
 ```
 
-I due job possono partire in parallelo. La pagina diventa pronta solo quando sono disponibili sia le statistiche globali per Thresh sia la build di Thresh.
+I due job stanno entrambi sulla coda `CHAMPION` (FIFO, eventualmente coalesced). Un job profilo su `PROFILE` può girare in parallelo. La pagina diventa pronta solo quando sono disponibili sia le statistiche globali per Thresh sia la build di Thresh.
 
 Il job globale:
 
@@ -93,16 +94,15 @@ Non sono ammessi due calcoli globali identici.
 `ChampionService` non calcola statistiche durante la request: se stats o build mancano, restituisce `PENDING` e chiama `DatabaseTracker.startChampionData` indicando quali risorse mancano. Per una matrice in attesa, il tracker unisce le build richieste nello stesso job; dopo l'avvio, una build nuova è un job build-only deduplicato.
 
 Quando un refresh termina correttamente senza giochi validi, non lascia più la
-risorsa in stato mancante: `BuildService` persiste un aggregate build con
-`games=0` e liste vuote, mentre `ChampionDataRefreshService` persiste per il
-filtro un documento `champion_stats` vuoto con `ready=true`. Se un champion
+risorsa in stato mancante: `ChampionService` persiste un aggregate build con
+`games=0` e liste vuote, e un documento `champion_stats` vuoto con `ready=true`. Se un champion
 valido non è presente in un filtro pronto, il read costruisce
 `ChampionStatistics.empty(filter)` e restituisce `200`; `202` resta riservato
 al periodo in cui il filtro non esiste o non è ancora pronto.
 
-`ChampionDataRefreshService` espone ora refresh separati: `refreshBuild(filter)` mantiene il champion, mentre `refreshStats(filter)` costruisce il filtro globale senza champion.
+`ChampionService.refreshBuild(filter)` mantiene il champion, mentre il refresh stats costruisce il filtro globale senza champion.
 
-`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e projection Mongo su `filterKey` e `statistics.<championId>`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. Il job stats usa il worker generale e il job build usa il worker dedicato: possono essere eseguiti in parallelo, mentre le build restano seriali tra loro.
+`DatabaseTracker` usa due chiavi distinte: `champion-stats-matrix:<patch>:<queue>` e `champion-build:<filter.toKey()>`. Prima di accodare il job matrice viene verificata la presenza della statistica richiesta tramite cache e projection Mongo su `filterKey` e `statistics.<championId>`. Due champion diversi condividono quindi una sola scansione globale, ma mantengono build indipendenti. Matrice e build usano entrambe la coda `CHAMPION` e restano seriali tra loro; un refresh profilo può girare sull’altra coda.
 
 Al termine della matrice, ogni combinazione riuscita viene salvata con `ready`
 nel documento aggregato, anche quando non contiene match: questo impedisce che
@@ -114,7 +114,7 @@ stesso patch.
 
 `ChampionAnalyzer` esegue una scansione streaming dei match, aggrega overview, lane, matchup, synergy, metriche e power curve e, quando richiesta, alimenta nello stesso documento anche la build. Per il trend usa prima le statistiche persistite del patch precedente; la scansione raw precedente resta solo il fallback quando il dato persistito è incompleto.
 
-La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRawBatch` mantiene il cursor aperto con `batchSize(100)` e il provider consegna a `BuildService` blocchi di massimo 100 record. `BuildService` aggrega e svuota ogni blocco prima di leggere il successivo; anche il blocco finale può essere parziale. Le statistiche globali usano una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`: il provider converte e parsea un solo match per volta, poi svuota i riferimenti Java a match ed eventi.
+La build non materializza più la lista completa di `QueryRecord`: `MongoDB.forEachChampionBuildRawBatch` mantiene il cursor aperto con `batchSize(100)` e il provider consegna a `ChampionService` / `ChampionAnalyzer` blocchi di massimo 100 record. L'aggregazione svuota ogni blocco prima di leggere il successivo; anche il blocco finale può essere parziale. Le statistiche globali usano una sola aggregation cursor con `$lookup` su `match_events` e `batchSize(1)`: il provider converte e parsea un solo match per volta, poi svuota i riferimenti Java a match ed eventi.
 
 Il flusso registra tempi e contatori per lettura streaming dei match, lettura eventi, materializzazione raw, parsing, aggregazione, trend, assemblaggio e coda di persistenza. Gli indici Mongo non sono stati modificati: restano da valutare con `explain("executionStats")` su dati rappresentativi.
 

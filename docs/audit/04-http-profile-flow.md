@@ -1,5 +1,7 @@
 # Audit 04 — profilo HTTP, bootstrap e statistiche
 
+As-of 2026-07-22; queue routing updated 2026-08-20 (ADR-0010).
+
 ## Percorso
 
 ```text
@@ -36,7 +38,7 @@ Evidenza: [SummonerService.java](../../src/main/java/com/safjnest/lol/service/Su
 
 ### Coerente — refresh statistiche Mongo
 
-`ProfileService.refreshStatistics` legge match proiettati da Mongo usando il `Filter` completo, delega il calcolo a `ProfileAnalyzer` e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh sulla FIFO del worker DB generale, separata dalla FIFO champion. È il comportamento previsto per il runtime Mongo-only.
+`ProfileService.refreshStatistics` legge match proiettati da Mongo usando il `Filter` completo, delega il calcolo a `ProfileAnalyzer` e salva il risultato flat con `MongoDB.upsertProfileStatistics` tramite `puuid + filterKey`. `DatabaseTracker` accoda il refresh come lavoro PROFILE-logical: all’inserimento va sulla coda `PROFILE` o `CHAMPION` con carico minore. Le matrici e le build champion restano sulla coda `CHAMPION`. È il comportamento previsto per il runtime Mongo-only.
 
 Evidenza: [ProfileService.java](../../src/main/java/com/safjnest/lol/service/ProfileService.java).
 

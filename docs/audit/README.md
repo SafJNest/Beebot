@@ -1,6 +1,7 @@
 # Audit flussi LoL e MongoDB
 
 - Data: 2026-07-22
+- Aggiornamento nomi/routing: 2026-08-20 (ADR-0010, `ProfileService`, `ChampionService`)
 - Tipo: audit statico del codice e dei contratti
 - Runtime Mongo: non eseguito in questo workspace; MariaDB resta autorizzato solo da `MongoMigration`
 - Scope: scritture `LeagueDB`, tutti i comandi LoL, `Tracker`, profilo HTTP e query usate dai consumer

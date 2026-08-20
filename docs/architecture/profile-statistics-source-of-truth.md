@@ -1,7 +1,7 @@
 # Profile statistics: unica fonte di verità
 
 - Stato: implementato staticamente; verifica runtime Mongo ed explain ancora pendenti
-- Ultimo aggiornamento: 2026-07-28
+- Ultimo aggiornamento: 2026-08-20
 - Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, profilo HTTP e statistiche Mongo LoL
 - Owner di cache, persistenza e composizione: `ProfileService`
 - Owner del calcolo puro: `ProfileAnalyzer`
@@ -326,13 +326,13 @@ La `filterKey` del documento deve essere confrontata byte per byte con `Filter.t
 Discord/API request
   -> risolve Summoner e PUUID
   -> costruisce un Filter completo
-  -> ProfileStatisticsService.get(PUUID, Filter)
+  -> ProfileService.get(PUUID, Filter)
        -> Redis SUMMONER_STATISTICS(PUUID, filterKey)
        -> Mongo {puuid, filterKey}
   -> hit: usa ProfileStatistics
   -> miss: DatabaseTracker.startProfileStatistics(Summoner, Filter)
        -> risposta parziale/pending, nessun calcolo sincrono
-       -> FIFO del worker generale DB
+       -> coda PROFILE-logical (canale più scarico all’inserimento)
             -> Mongo match projection con lo stesso Filter
             -> ProfileStatistics.add(match, puuid, filter)
             -> set lastUpdate dopo il calcolo

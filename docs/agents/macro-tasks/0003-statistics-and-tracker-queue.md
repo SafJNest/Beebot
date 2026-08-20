@@ -1,5 +1,9 @@
 # Macro-task 0003: statistics and DatabaseTracker asynchronous generation
 
+Implemented. Queue routing after 2026-08-20 follows amended ADR-0010
+(insert-time least-loaded profile placement, no steal). Do not copy the
+historical worker-2 steal wording below as current behavior.
+
 ## Objective
 
 Separate statistics persistence from request handling and limit database calculation concurrency.
@@ -13,7 +17,7 @@ Separate statistics persistence from request handling and limit database calcula
 
 - reduce `ProfileStatisticsService` to read and refresh methods;
 - move API-triggered generation and in-flight deduplication into `DatabaseTracker`;
-- serialize champion builds and statistics on worker 2; worker 1 consumes profile work and worker 2 may help profiles only while no champion task is queued;
+- serialize champion builds and statistics on the `CHAMPION` channel; profile-logical work is assigned at insert to the lighter channel;
 - keep the existing match queues separate and unchanged;
 - keep calendar ownership in `TrackerScheduler`, which only submits scheduled database work.
 
@@ -28,7 +32,7 @@ Separate statistics persistence from request handling and limit database calcula
 - API-triggered generation is submitted immediately to the database queue;
 - no raw aggregate calculation runs on an HTTP request thread;
 - repeated requests for the same PUUID and complete summoner filter are deduplicated while queued or running;
-- champion builds and statistics always execute on worker 2 in one FIFO sequence; profile jobs can execute on either worker;
+- champion builds and statistics always execute on the `CHAMPION` channel in one FIFO sequence; profile jobs can execute on either channel;
 - one failed generation does not stop another generation;
 - failed in-flight markers are removed so a later request can retry;
 - match lookup and match analysis queues remain process-owned and unchanged.
@@ -66,7 +70,7 @@ Mongo _id                  = random ObjectId, $setOnInsert only
 recentMatches              = separate MatchResult query with the same Filter
 ```
 
-`ProfileStatisticsService` owns read, calculation and persistence.
+`ProfileService` owns read, calculation and persistence; `ProfileAnalyzer` is pure.
 `lol.queue.DatabaseTracker` owns async dispatch and uses the shared abstract
 scheduler for in-flight deduplication with
 `profile-statistics:<puuid>:<filterKey>`. Overview, profile and `!summoner` read

@@ -3,6 +3,8 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Amended: 2026-08-20
+- Service ownership superseded by ADR-0012; public HTTP contract remains in force
 
 ## Context
 
@@ -10,13 +12,13 @@ Champion statistics and builds are already persisted by the existing champion re
 
 ## Decision
 
-Expose `GET /api/lol/champion/{champion}` through `ChampionController` and `ChampionPageService`.
+Expose `GET /api/lol/champion/{champion}` through `ChampionController` and `ChampionService`.
 
 The request accepts optional `rank`, `region`, `queue` and `role` parameters. Missing rank and region mean that those dimensions are not filtered. Missing queue selects `TEAM_BUILDER_RANKED_SOLO`. A supplied rank keeps the existing minimum-tier behavior of `Filter`.
 
 The success model is `ChampionView`, containing champion identity, `ChampionStatistics` and one `Build` aggregate. `Build` contains independent, bounded option lists for core builds/items, starters, boots, support items, item slots, complete rune configurations, summoner spell configurations, skill orders, prismatics and augment slots. `ChampionStatistics` contains the overview, advanced metrics, all valid matchups and all valid lane synergies. No list position means highest win rate or most used.
 
-The HTTP request is orchestrated by one `ChampionPageService.get` flow. It first reads the complete page from Redis. On a miss, its internal `compute` reads the persisted stats and build components from Redis/DB without calculating match data. If either component is missing, the filter is deduplicated in `DatabaseTracker`, a matrix refresh rooted at the requested `patch + queue` is submitted to the general database queue while a missing build is submitted to the dedicated build queue, and the request returns HTTP 202. The matrix contains one aggregate document per generated filter combination; Mongo reads only `statistics.<championId>` for a single champion, while Redis keeps the requested champion only. A ready filter without that champion returns an empty 200 result; when both components are available, the service builds `ChampionView` and caches the complete page. Statistics aggregate e build salvano ciascuno un `lastUpdate` top-level Mongo: un valore assente, zero o vecchio di una settimana è una miss logica, accoda solo la componente stale e conserva tutte le varianti globali richieste dagli altri filtri.
+The HTTP request is orchestrated by one `ChampionService.get` flow. It first reads the complete page from Redis. On a miss, its internal `compute` reads the persisted stats and build components from Redis/DB without calculating match data. If either component is missing, the filter is deduplicated in `DatabaseTracker`, a matrix refresh rooted at the requested `patch + queue` is submitted on the `CHAMPION` channel, a missing build is submitted on the same `CHAMPION` channel (FIFO behind other champion work, coalesced into a queued matrix when possible), and the request returns HTTP 202. The matrix contains one aggregate document per generated filter combination; Mongo reads only `statistics.<championId>` for a single champion, while Redis keeps the requested champion only. A ready filter without that champion returns an empty 200 result; when both components are available, the service builds `ChampionView` and caches the complete page. Statistics aggregate e build salvano ciascuno un `lastUpdate` top-level Mongo: un valore assente, zero o vecchio di una settimana è una miss logica, accoda solo la componente stale e conserva tutte le varianti globali richieste dagli altri filtri.
 
 The scheduler is started explicitly and idempotently by the application. It owns the calendar trigger and submits the scheduled full champion refresh to `DatabaseTracker`; API-triggered work remains request-driven and deduplicated by the same database queue.
 
@@ -25,10 +27,9 @@ Champion statistics, builds and profile statistics use the shared Jackson JSON c
 ## Ownership
 
 - `ChampionController` owns HTTP parsing and status mapping.
-- `ChampionPageService` owns filter construction, page cache and response assembly.
+- `ChampionService` owns filter construction, page cache, response assembly, persisted statistics/build reads and refresh entry points.
 - `ChampionUtils` owns champion name and image resolution.
-- `ChampionStatsService` owns champion statistics persistence, advanced aggregation, matchup and lane-synergy rebuild operations; its internal API read is storage-only.
-- `BuildService` owns the single build aggregate persistence and rebuild operation; its internal API read is storage-only.
+- `ChampionAnalyzer` owns composed champion statistics and build computation.
 - `DatabaseTracker` owns asynchronous champion data requests and in-flight deduplication.
 - Match queue ownership remains in the existing match tracker flow.
 
