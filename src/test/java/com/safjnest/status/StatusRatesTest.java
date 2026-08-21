@@ -15,6 +15,14 @@ public class StatusRatesTest {
     }
 
     @Test
+    public void convertsOpDeltasToPerSecondRates() {
+        assertEquals(10.0, StatusRates.opsPerSecond(0, 10, 1_000_000_000L), 0.0001);
+        assertEquals(20.0, StatusRates.opsPerSecond(100, 110, 500_000_000L), 0.0001);
+        assertEquals(0.0, StatusRates.opsPerSecond(50, 40, 1_000_000_000L), 0.0001);
+        assertEquals(0.0, StatusRates.opsPerSecond(0, 100, 0), 0.0001);
+    }
+
+    @Test
     public void convertsLoadToRoundedPercent() {
         assertEquals(13.7, StatusRates.percent(0.137), 0.0001);
         assertEquals(0.0, StatusRates.percent(-1), 0.0001);

@@ -23,11 +23,12 @@ Every route has its own three-lane physical queue. An immediate EUW task can
 overtake background EUW work, but cannot reorder or block NA work.
 
 `RequestRun` is only live Sync batch state (`TRACKING`,
-`RANK_ENTRIES_HIGH`, `RANK_ENTRIES_ALL`, `MATCH_ANALYSIS`, `SAMPLE_GAMES`). It
+`RANK_ENTRIES`, `MATCH_ANALYSIS`, `SAMPLE_GAMES`). It
 references its submitted child tasks, reuses an active logical run, and
 disappears when its final child completes. It is not persisted. A task can
 report `phase`, `progress` and a compact `itemId -> PENDING|DONE|MISSING|FAILED`
-map while it runs; the run exposes those task snapshots without a parallel
+map plus optional `itemLabels` (for example `puuid -> riotId`) while it runs;
+the run exposes those task snapshots without a parallel
 Tracker telemetry store.
 
 ## Match flow

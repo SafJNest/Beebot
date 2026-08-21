@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -26,8 +25,6 @@ import org.json.JSONObject;
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ConnectionString;
-import com.mongodb.event.CommandListener;
-import com.mongodb.event.CommandStartedEvent;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -284,13 +281,6 @@ public final class MongoDB {
     private static final String MONGO_URI_ERROR = "Mongo URI is missing from settings.json";
     private static MongoClient client;
     private static MongoDatabase database;
-    private static final AtomicLong COMMAND_COUNT = new AtomicLong();
-    private static final CommandListener COMMAND_LISTENER = new CommandListener() {
-        @Override
-        public void commandStarted(CommandStartedEvent event) {
-            COMMAND_COUNT.incrementAndGet();
-        }
-    };
     private static boolean collectionsReady;
 
     private MongoDB() {
@@ -334,7 +324,7 @@ public final class MongoDB {
             }
             client = MongoClients.create(MongoClientSettings.builder()
                     .applyConnectionString(connection)
-                    .addCommandListener(COMMAND_LISTENER)
+                    .addCommandListener(MongoCommandMonitor.listener())
                     .build());
         }
         return client;
@@ -348,11 +338,36 @@ public final class MongoDB {
     }
 
     public static long commandCount() {
-        return COMMAND_COUNT.get();
+        MongoCommandMonitor.ClientOpcounters counters = MongoCommandMonitor.clientOpcounters();
+        return counters.insert() + counters.query() + counters.update()
+                + counters.delete() + counters.command() + counters.getmore();
     }
 
-    public static long resetCommandCount() {
-        return COMMAND_COUNT.getAndSet(0);
+    public static MongoServerStatusSnapshot serverStatusSnapshot() {
+        try {
+            Document response = getClient().getDatabase("admin").runCommand(new Document("serverStatus", 1)
+                    .append("opcounters", 1)
+                    .append("connections", 1)
+                    .append("mem", 1));
+            if (response == null) return null;
+            Document opcounters = response.get("opcounters", Document.class);
+            Document connections = response.get("connections", Document.class);
+            Document mem = response.get("mem", Document.class);
+            if (opcounters == null) return null;
+            MongoCommandMonitor.ClientOpcounters counters = new MongoCommandMonitor.ClientOpcounters(
+                    number(opcounters, "insert"),
+                    number(opcounters, "query"),
+                    number(opcounters, "update"),
+                    number(opcounters, "delete"),
+                    number(opcounters, "command"),
+                    number(opcounters, "getmore"));
+            Long currentConnections = connections == null ? null : number(connections, "current");
+            Long residentMb = mem == null ? null : number(mem, "resident");
+            Long virtualMb = mem == null ? null : number(mem, "virtual");
+            return new MongoServerStatusSnapshot(counters, currentConnections, residentMb, virtualMb);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
     }
 
     public static Document collectionStats(String collection) {

@@ -991,9 +991,9 @@
 
     "test": {
         "alias" : ["wip"],
-        "help"  : "Extreme Safj things",
+        "help"  : "Owner diagnostics. `test gc` requests JVM garbage collection.",
         "category" : "Owner",
-        "arguments" : "faker"
+        "arguments" : "[gc | diagnostic]"
     },
 
     "championstats": {

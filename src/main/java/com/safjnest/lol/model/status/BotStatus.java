@@ -6,7 +6,8 @@ public record BotStatus(
     java.util.List<RequestDispatcherStatus> dispatchers,
     JvmMetrics process,
     SystemMetrics system,
-    RedisMetrics redis
+    RedisMetrics redis,
+    MongoMetrics mongo
 ) {
 
     public static final String ONLINE = "online";
@@ -16,8 +17,9 @@ public record BotStatus(
         java.util.List<RequestDispatcherStatus> dispatchers,
         JvmMetrics process,
         SystemMetrics system,
-        RedisMetrics redis
+        RedisMetrics redis,
+        MongoMetrics mongo
     ) {
-        return new BotStatus(ONLINE, league, dispatchers, process, system, redis);
+        return new BotStatus(ONLINE, league, dispatchers, process, system, redis, mongo);
     }
 }

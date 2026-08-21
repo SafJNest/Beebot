@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 
 import com.safjnest.lol.model.status.RequestDispatcherStatus;
 import com.safjnest.lol.model.status.RequestQueueStatus;
@@ -76,6 +77,13 @@ public abstract class AbstractRequestDispatcher<R> {
             if (Objects.equals(task.route(), route) && !task.future().isDone()) count++;
         }
         return count;
+    }
+
+    protected final boolean hasIncompleteTask(R queueRoute, Predicate<RequestTask<R, ?>> filter) {
+        for (RequestTask<R, ?> task : tasks.values()) {
+            if (Objects.equals(task.queue(), queueRoute) && !task.future().isDone() && filter.test(task)) return true;
+        }
+        return false;
     }
 
     protected final RequestRun createRun(String key, String type) {

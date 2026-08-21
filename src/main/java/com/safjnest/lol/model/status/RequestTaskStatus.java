@@ -16,6 +16,7 @@ public record RequestTaskStatus(
     Long startedAt,
     String phase,
     JobProgress progress,
-    Map<String, String> items
+    Map<String, String> items,
+    Map<String, String> itemLabels
 ) {
 }

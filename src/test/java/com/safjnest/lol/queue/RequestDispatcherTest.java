@@ -85,6 +85,7 @@ public class RequestDispatcherTest {
         CompletableFuture<Void> future = dispatcher.submit("sample-euw", "EUW", RequestPriority.BACKGROUND, run, task -> {
             task.phase("PERSISTING");
             task.trackItems(java.util.List.of("EUW1_1", "EUW1_2"));
+            task.labelItem("EUW1_1", "Alpha#EUW");
             task.done("EUW1_1");
             started.countDown();
             await(release);
@@ -100,9 +101,24 @@ public class RequestDispatcherTest {
         assertEquals(2, task.progress().total());
         assertEquals("DONE", task.items().get("EUW1_1"));
         assertEquals("PENDING", task.items().get("EUW1_2"));
+        assertEquals("Alpha#EUW", task.itemLabels().get("EUW1_1"));
 
         release.countDown();
         future.get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void keepsProfilesOffChampionWhileHeavyChampionWorkExists() {
+        assertEquals(DatabaseWorkerType.CHAMPION,
+            ComputeRequestDispatcher.profileQueue(3, 0, false));
+        assertEquals(DatabaseWorkerType.PROFILE,
+            ComputeRequestDispatcher.profileQueue(3, 0, true));
+        assertEquals(DatabaseWorkerType.PROFILE,
+            ComputeRequestDispatcher.profileQueue(0, 0, false));
+        assertTrue(ComputeRequestDispatcher.isHeavyChampionTaskKey("champion-stats-matrix:16.12:TEAM_BUILDER_RANKED_SOLO"));
+        assertTrue(ComputeRequestDispatcher.isHeavyChampionTaskKey("champion-build:Ahri"));
+        assertTrue(ComputeRequestDispatcher.isHeavyChampionTaskKey("champion-data-refresh:16.12"));
+        assertFalse(ComputeRequestDispatcher.isHeavyChampionTaskKey("profile-statistics:puuid:current"));
     }
 
     private static final class TestDispatcher extends AbstractRequestDispatcher<String> {

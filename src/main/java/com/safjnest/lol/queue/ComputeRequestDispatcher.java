@@ -187,9 +187,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
     @Override
     protected <T> DatabaseWorkerType queueFor(Request<DatabaseWorkerType, T> request) {
         if (request.route() != DatabaseWorkerType.PROFILE) return DatabaseWorkerType.CHAMPION;
-        return load(DatabaseWorkerType.CHAMPION) < load(DatabaseWorkerType.PROFILE)
-            ? DatabaseWorkerType.CHAMPION
-            : DatabaseWorkerType.PROFILE;
+        return profileQueue(load(DatabaseWorkerType.PROFILE), load(DatabaseWorkerType.CHAMPION), championReserved());
     }
 
     @Override
@@ -316,6 +314,17 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         return "profile-refresh:" + puuid;
     }
 
+    static DatabaseWorkerType profileQueue(int profileLoad, int championLoad, boolean championReserved) {
+        if (championReserved) return DatabaseWorkerType.PROFILE;
+        return championLoad < profileLoad ? DatabaseWorkerType.CHAMPION : DatabaseWorkerType.PROFILE;
+    }
+
+    static boolean isHeavyChampionTaskKey(String key) {
+        return key != null && (key.startsWith("champion-stats-matrix:")
+            || key.startsWith("champion-build:")
+            || key.startsWith("champion-data-refresh:"));
+    }
+
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
         String key = "champion-build:" + filter.toKey();
         String name = "champion build champion=" + filter.champion()
@@ -331,6 +340,11 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
             RequestPriority.NORMAL,
             () -> refreshChampionBuild(filter)
         ));
+    }
+
+    private boolean championReserved() {
+        return hasIncompleteTask(DatabaseWorkerType.CHAMPION,
+            task -> isHeavyChampionTaskKey(task.key()));
     }
 
     private static boolean refreshProfileStatistics(

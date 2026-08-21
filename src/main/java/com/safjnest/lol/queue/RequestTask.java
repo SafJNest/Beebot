@@ -28,6 +28,7 @@ public final class RequestTask<R, T> {
     private final RequestRun run;
     private final long queuedAt;
     private final ConcurrentHashMap<String, String> items;
+    private final ConcurrentHashMap<String, String> itemLabels;
     private final AtomicInteger total;
     private final AtomicInteger processed;
     private volatile RequestPriority priority;
@@ -46,6 +47,7 @@ public final class RequestTask<R, T> {
         future = new CompletableFuture<>();
         queuedAt = System.currentTimeMillis();
         items = new ConcurrentHashMap<>();
+        itemLabels = new ConcurrentHashMap<>();
         total = new AtomicInteger();
         processed = new AtomicInteger();
         state = RequestState.QUEUED;
@@ -95,6 +97,11 @@ public final class RequestTask<R, T> {
         if (items.putIfAbsent(value, PENDING) == null) total.incrementAndGet();
     }
 
+    public void labelItem(String value, String label) {
+        if (value == null || value.isBlank() || label == null || label.isBlank()) return;
+        itemLabels.put(value, label);
+    }
+
     public void done(String value) { terminal(value, DONE); }
 
     public void missing(String value) { terminal(value, MISSING); }
@@ -128,6 +135,7 @@ public final class RequestTask<R, T> {
 
     RequestTaskStatus status() {
         Map<String, String> snapshot = items.isEmpty() ? Map.of() : Map.copyOf(new LinkedHashMap<>(items));
+        Map<String, String> labels = itemLabels.isEmpty() ? Map.of() : Map.copyOf(new LinkedHashMap<>(itemLabels));
         int count = total.get();
         JobProgress progress = count == 0 ? null : new JobProgress(Math.min(processed.get(), count), count);
         return new RequestTaskStatus(
@@ -141,7 +149,8 @@ public final class RequestTask<R, T> {
             startedAt > 0 ? startedAt : null,
             phase,
             progress,
-            snapshot
+            snapshot,
+            labels
         );
     }
 

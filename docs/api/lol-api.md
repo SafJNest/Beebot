@@ -55,8 +55,8 @@ Gli esempi usano `http://localhost:8080` come base URL.
   `lastUpdate`, `refresh` e `filter`; i valori non applicabili sono `null`.
   `LiveGame` fa eccezione: usa il root booleano `notInGame` e non espone
   metadata. `BotStatus` (`GET /api/status`) è un'altra eccezione object-root:
-  non è una risorsa LoL shard-scoped, non espone metadata e include `tracker` e
-  `workers` oltre a `league`, `process`, `system` e `redis`. Le liste pure,
+  non è una risorsa LoL shard-scoped, non espone metadata e include `league`,
+  `dispatchers`, `process`, `system`, `redis` e `mongo`. Le liste pure,
   search e indexables restano array invariati.
 - Gli errori usano sempre questo envelope:
 

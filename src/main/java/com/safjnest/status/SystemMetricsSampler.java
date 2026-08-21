@@ -12,6 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.lol.model.status.JvmMetrics;
+import com.safjnest.lol.model.status.MongoMetrics;
 import com.safjnest.lol.model.status.RedisMetrics;
 import com.safjnest.lol.model.status.SystemMetrics;
 import com.safjnest.redis.RedisClient;
@@ -110,6 +111,7 @@ public final class SystemMetricsSampler {
         JvmMetrics jvm = snapshot.jvm();
         SystemMetrics system = snapshot.system();
         RedisMetrics redis = snapshot.redis();
+        MongoMetrics mongo = snapshot.mongo();
 
         try {
             jvm = sampleProcess();
@@ -124,7 +126,12 @@ public final class SystemMetricsSampler {
             if (sampledRedis != null) redis = sampledRedis;
         } catch (Exception ignored) {}
 
-        snapshot = new SampledMetrics(jvm, system, redis);
+        try {
+            MongoMetricsSampler.sampleTick();
+            mongo = MongoMetricsSampler.snapshot();
+        } catch (Exception ignored) {}
+
+        snapshot = new SampledMetrics(jvm, system, redis, mongo);
 
         flushTicks++;
         if (flushTicks >= LEAGUE_METRICS_REFRESH_TICKS) {

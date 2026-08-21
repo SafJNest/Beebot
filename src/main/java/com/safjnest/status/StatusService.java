@@ -6,6 +6,7 @@ import java.util.Map;
 import com.safjnest.lol.model.status.BotStatus;
 import com.safjnest.lol.model.status.LeagueMetrics;
 import com.safjnest.lol.model.status.JvmMetrics;
+import com.safjnest.lol.model.status.MongoMetrics;
 import com.safjnest.lol.model.status.RequestDispatcherStatus;
 import com.safjnest.lol.model.status.RedisMetrics;
 import com.safjnest.lol.model.status.SystemMetrics;
@@ -24,7 +25,8 @@ public class StatusService {
         JvmMetrics process = sampled.jvm();
         SystemMetrics system = sampled.system();
         RedisMetrics redis = sampled.redis();
-        return BotStatus.online(league, dispatchers, process, system, redis);
+        MongoMetrics mongo = sampled.mongo();
+        return BotStatus.online(league, dispatchers, process, system, redis, mongo);
     }
 
     // ============================================================================

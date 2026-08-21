@@ -90,7 +90,10 @@ public class Tracker {
                 run,
                 task -> {
                     task.phase("TRACKING");
-                    for (com.safjnest.lol.model.summoner.Summoner account : shardAccounts) task.trackItem(account.puuid());
+                    for (com.safjnest.lol.model.summoner.Summoner account : shardAccounts) {
+                        task.trackItem(account.puuid());
+                        task.labelItem(account.puuid(), account.riotId());
+                    }
                     for (com.safjnest.lol.model.summoner.Summoner account : shardAccounts) retrieveSummoner(account, task);
                     return null;
                 }
@@ -1123,8 +1126,8 @@ public class Tracker {
         List<LeagueShard> shards = LeagueShardUtils.getActives();
         List<TierDivisionType> highEloTiers = highElo ? highEloTiers() : List.of();
         List<TierDivisionType> allEntriesTiers = allEntries ? allEntriesTiers() : List.of();
-        String type = highElo ? "RANK_ENTRIES_HIGH" : "RANK_ENTRIES_ALL";
-        RequestRun run = SyncRequestDispatcher.beginRun(highElo ? "rank-entries-high" : "rank-entries-all", type);
+        String type = "RANK_ENTRIES";
+        RequestRun run = SyncRequestDispatcher.beginRun("rank-entries", type);
 
         BotLogger.info("[LPTracker] Pushing rank entries highElo=" + highElo + " allEntries=" + allEntries);
         for (LeagueShard shard : shards) {
@@ -1139,7 +1142,7 @@ public class Tracker {
     private static void enqueueHighRankEntries(LeagueShard shard, TierDivisionType tier, GameQueueType queue, RequestRun run) {
         String key = "rank-high:" + shard.name() + ":" + tier.name() + ":" + queue.name();
         SyncRequestDispatcher.submit(key, "rank entries tier=" + tier.name() + " queue=" + queue.name(), shard,
-            RequestPriority.NORMAL, run, task -> {
+            RequestPriority.BACKGROUND, run, task -> {
                 task.phase("FETCHING");
                 try {
                     URLEndpoint endpoint = tier == TierDivisionType.CHALLENGER_I ? URLEndpoint.V4_LEAGUE_CHALLENGER
