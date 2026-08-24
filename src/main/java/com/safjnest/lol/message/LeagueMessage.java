@@ -29,6 +29,7 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.MatchTrackingUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.MatchService;
@@ -983,40 +984,59 @@ public class LeagueMessage {
         }
     }
 
+    private static String getFormattedLpGain(int gain) {
+        return (gain > 0 ? "+" : "") + gain + " LP";
+    }
+
+    private static boolean hasTrackedRank(QueryRecord row) {
+        return MatchTrackingUtils.hasTrackedRank(row.getAsBoolean("tracked"), row.getValue("rank") != null);
+    }
+
+    private static TierDivisionType getPreviousTrackedRank(List<QueryRecord> result, int index) {
+        for (int previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
+            QueryRecord previous = result.get(previousIndex);
+            if (!hasTrackedRank(previous)) continue;
+            TierDivisionType rank = previous.getAsTier("rank");
+            if (rank != null) return rank;
+        }
+        return null;
+    }
+
+    private static boolean isRankedSolo(Match match) {
+        return match != null && GameQueueTypeUtils.canonicalQueue(match.queue) == GameQueueType.RANKED_SOLO_5X5;
+    }
+
     private static String getOpggMatchTitle(Match match, Participant participant, List<QueryRecord> result) {
         String title = GameQueueTypeUtils.prettyName(match.queue) + ": " + (participant.win ? "WIN" : "LOSE");
         for (int index = 0; index < result.size(); index++) {
             QueryRecord row = result.get(index);
             if (!match.gameId.equals(row.getAsString("game_id"))) continue;
 
+            if (!hasTrackedRank(row)) return title + " ? LP";
             TierDivisionType rank = row.getAsTier("rank");
-            TierDivisionType previousRank = index > 0 ? result.get(index - 1).getAsTier("rank") : null;
-            String displayRank = LeagueMessageUtils.getFormattedRank(rank, true);
+            if (rank == null) return title + " ? LP";
+            TierDivisionType previousRank = getPreviousTrackedRank(result, index);
             int gainValue = row.getAsInt("gain");
-            String gain = gainValue > 0 ? "+" + gainValue + " LP" : gainValue + " LP";
+            String gain = getFormattedLpGain(gainValue);
 
-            if (previousRank != null) {
-                String sign = participant.win ? "+" : "-";
-                title = GameQueueTypeUtils.prettyName(match.queue) + ": " + (participant.win ? "WIN" : "LOSE") + " " + sign + result.get(index).getAsInt("gain");
-            }
-            if (rank == TierDivisionType.UNRANKED) {
+            if (rank == TierDivisionType.UNRANKED || previousRank == TierDivisionType.UNRANKED) {
                 title = "Placement: " + (participant.win ? "WIN" : "LOSE");
             } else if (previousRank != null && rank != null && rank.ordinal() < previousRank.ordinal()) {
-                title = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
+                title = "Promoted to " + LeagueMessageUtils.getFormattedRank(rank, true) + " " + row.getAsInt("lp") + "LP";
             } else if (previousRank != null && rank != null && rank.ordinal() > previousRank.ordinal()) {
-                title = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
+                title = "Demoted to " + LeagueMessageUtils.getFormattedRank(rank, true) + " " + row.getAsInt("lp") + "LP";
             } else if (!row.getAsBoolean("win") && gainValue == 0) {
                 title += " -0 LP";
-            } else if (previousRank == null) {
+            } else {
                 title += " " + gain;
             }
             return title;
         }
 
-        if (participant.gain != 0) {
-            String gain = participant.gain > 0 ? "+" + participant.gain : String.valueOf(participant.gain);
-            title += " " + gain + " LP";
-        }
+        if (isRankedSolo(match)) return title + " ? LP";
+        if (participant.rank == TierDivisionType.UNRANKED) return "Placement: " + (participant.win ? "WIN" : "LOSE");
+        if (!participant.win && participant.gain == 0) return title + " -0 LP";
+        if (participant.gain != 0) title += " " + getFormattedLpGain(participant.gain);
         return title;
     }
 

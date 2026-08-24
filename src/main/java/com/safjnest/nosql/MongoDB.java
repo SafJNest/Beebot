@@ -66,6 +66,7 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.MatchTrackingUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.utils.JsonCodec;
@@ -946,11 +947,11 @@ public final class MongoDB {
 
     static boolean isMatchTrackedDocument(Document document, String referencePuuid) {
         if (document == null || referencePuuid == null || referencePuuid.isBlank()) return false;
-        if (Boolean.TRUE.equals(document.getBoolean("tracked"))) return true;
+        if (MatchTrackingUtils.hasTrackedRank(Boolean.TRUE.equals(document.getBoolean("tracked")), false)) return true;
 
         for (Document participant : documents(document.get("participants"))) {
             if (!referencePuuid.equals(participant.getString("puuid"))) continue;
-            return participant.get("rank") != null;
+            return MatchTrackingUtils.hasTrackedRank(false, participant.get("rank") != null);
         }
         return false;
     }
@@ -1123,14 +1124,23 @@ public final class MongoDB {
             GameQueueType queue) {
         traceRead("match.findSummonerData", "puuid=" + puuid + " queue=" + queue);
         List<QueryRecord> result = new ArrayList<>();
-        for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))
+        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        Bson filter = matchFilter(puuid, shard, timeStart, timeEnd, null);
+        if (canonicalQueue == GameQueueType.RANKED_SOLO_5X5) {
+            filter = Filters.and(filter, Filters.in("queue",
+                GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name()));
+        } else if (queue != null) {
+            filter = Filters.and(filter, Filters.eq("queue", queue.name()));
+        }
+        for (Document document : matches().find(filter)
                 .projection(Projections.include("_id", "timeStart", "timeEnd", "patch",
-                        "participants.puuid", "participants.rank", "participants.lp", "participants.gain", "participants.win"))
+                        "tracked", "participants.puuid", "participants.rank", "participants.lp", "participants.gain", "participants.win"))
                 .sort(Sorts.ascending("timeStart", "_id"))) {
             String gameId = gameId(document);
             for (Document participant : documents(document.get("participants"))) {
                 if (!puuid.equals(participant.getString("puuid"))) continue;
                 Document row = new Document("game_id", gameId)
+                        .append("tracked", document.get("tracked", false))
                         .append("rank", participant.get("rank"))
                         .append("lp", participant.get("lp", 0))
                         .append("gain", participant.get("gain", 0))

@@ -40,12 +40,12 @@ public enum RedisKey {
     CHAMPION_PAGE("los:champion:%s:page:%s", Duration.ofSeconds(60)), // Original: 1 hour.
     CHAMPION_TIER_LIST("los:champion:tier-list:%s", Duration.ofSeconds(60)), // Original: 1 day.
 
-    STATUS_GAME_QUEUE("status:game-queue", Duration.ofSeconds(15)),
-    STATUS_GAMES_ANALYZED("status:games-analyzed", Duration.ofMinutes(10)),
-    STATUS_TOTAL_SUMMONERS("status:total-summoners", Duration.ofMinutes(10)),
-    STATUS_TOTAL_MASTERIES("status:total-masteries", Duration.ofMinutes(10)),
-    STATUS_RANKS_BY_QUEUE("status:ranks-by-queue", Duration.ofMinutes(10)),
-    STATUS_TRACKED_SUMMONERS("status:tracked-summoners", Duration.ofMinutes(10));
+    STATUS_GAME_QUEUE("status:game-queue",Duration.ofDays(10)),
+    STATUS_GAMES_ANALYZED("status:games-analyzed", Duration.ofDays(10)),
+    STATUS_TOTAL_SUMMONERS("status:total-summoners", Duration.ofDays(10)),
+    STATUS_TOTAL_MASTERIES("status:total-masteries", Duration.ofDays(10)),
+    STATUS_RANKS_BY_QUEUE("status:ranks-by-queue", Duration.ofDays(10)),
+    STATUS_TRACKED_SUMMONERS("status:tracked-summoners", Duration.ofDays(10));
 
     private final String pattern;
     private final Duration ttl;

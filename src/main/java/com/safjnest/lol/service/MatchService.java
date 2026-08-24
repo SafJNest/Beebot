@@ -170,6 +170,17 @@ public final class MatchService {
         RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
     }
 
+    public static void invalidate(Match match) {
+        if (match == null || !valid(match.gameId, match.leagueShard)) return;
+        invalidate(match.gameId, match.leagueShard);
+        if (match.participants == null) return;
+        for (com.safjnest.lol.model.match.Participant participant : match.participants) {
+            if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
+            RedisClient.delete(RedisKey.SUMMONER_DATA.of(
+                LeagueShardUtils.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid));
+        }
+    }
+
     public static List<String> getRecentIds(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,

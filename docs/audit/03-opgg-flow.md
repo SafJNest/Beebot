@@ -36,21 +36,22 @@ righe participant Mongo con:
 - `lp`;
 - `gain`;
 - `win`;
+- `tracked`;
 - `time_start`, `time_end`, `patch`.
 
 Il contratto è Mongo: [MongoDB.java](../../src/main/java/com/safjnest/nosql/MongoDB.java).
 
 ## Rilievo
 
-### Fix applicato — il blocco LP riceve participant rows
+### Contratto LP — solo snapshot tracked
 
 `MatchService.getSummonerData` usa `findSummonerData`, separata dal profile aggregate. La proiezione produce `game_id`, `rank`, `lp`, `gain`, `win`, `time_start`, `time_end` e `patch`, in ordine cronologico.
 
-Il consumer confronta `row.getAsLong("game_id")` con l’id del match e legge `rank`, `lp` e `gain`.
+Il consumer confronta `game_id` con l’id del match e considera attendibili `rank`, `lp` e `gain` quando il documento match ha `tracked=true` oppure il participant ha già `rank != null`, come nel predicate del tracker per i documenti legacy. Un match ranked raw, non ancora arricchito, mostra `? LP`; non viene convertito in `0 LP`, placement, promozione o retrocessione.
 
-Evidenza: [MatchService.java](../../src/main/java/com/safjnest/lol/service/MatchService.java) e [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java).
+La timeline ignora gli snapshot raw quando cerca il rank precedente. Il confronto queue include entrambe le rappresentazioni Solo/Duo (`TEAM_BUILDER_RANKED_SOLO` e `RANKED_SOLO_5X5`), mentre il tracking invalida la cache `SUMMONER_DATA` di ogni partecipante dopo la riscrittura Mongo.
 
-Il confronto ora può trovare il match tramite `game_id`; resta da verificare il valore visualizzato con una sequenza rank reale e cache `SUMMONER_DATA` pulita.
+Evidenza: [MongoDB.java](../../src/main/java/com/safjnest/nosql/MongoDB.java), [MatchService.java](../../src/main/java/com/safjnest/lol/service/MatchService.java) e [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java).
 
 ## Persistenza durante il comando
 
@@ -65,8 +66,7 @@ Questa fase non esegue chiamate Account API o Summoner API per i participant.
 L’Account API può ancora servire alla risoluzione iniziale di un Riot ID che non
 è noto localmente.
 
-Il match e il seed summoner sono disponibili senza enrichment aggiuntivo. Rank,
-LP e gain mostrati restano quelli già persistiti per quel participant/match.
+Il match e il seed summoner sono disponibili senza enrichment aggiuntivo. Finché non avviene il tracking, il renderer non usa i valori LP default del raw match: per una partita ranked mostra `? LP`.
 
 ## Refresh matchlist OP.GG
 

@@ -385,7 +385,7 @@ public class Tracker {
 
         match.rank = TierDivisionUtils.getAverageRank(ranks);
         if (!MongoDB.upsertMatch(currentFullGameId, match, true)) return null;
-        MatchService.invalidate(currentFullGameId, source.getPlatform());
+        MatchService.invalidate(match);
         if (trackedSummoner != null && !trackedSummoner.isBlank())
             BotLogger.info("[LPTracker] Pushed match data for " + trackedSummoner + " (" + referencePuuid + ")");
         return match;
