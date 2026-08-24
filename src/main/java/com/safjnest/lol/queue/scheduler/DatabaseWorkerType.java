@@ -1,4 +1,4 @@
-package com.safjnest.lol.queue;
+package com.safjnest.lol.queue.scheduler;
 
 public enum DatabaseWorkerType {
     PROFILE,

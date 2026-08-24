@@ -3,13 +3,37 @@
 `GET /api/status` returns cached counters plus live snapshots. It performs no
 Riot request and no persistent match-queue read.
 
-`league` contains only persistent counters. All live backlog is under
-`dispatchers`; the obsolete `tracker`, `workers`, `riot`, `gameQueue` and
-`profileQueue` fields were removed.
+`league` contains only persistent counters. `jobs` is the authoritative live
+job tree; `dispatchers` is the physical queue/worker projection. The obsolete
+`tracker`, `workers`, `riot`, `gameQueue` and `profileQueue` fields were removed.
 
-Each dispatcher reports its routes, the single worker for each route and its
-current task plus up to twenty queued tasks. `runs` is populated only by live
-Sync batches and vanishes after the final child finishes.
+Each scheduler reports its routes, the single worker for each route and its
+current job plus up to twenty queued jobs. Job snapshots include `pid` and
+`ppid`. `runs` is a compatibility projection derived from active registry roots
+for tracking, sample games and rank entries; it is not lifecycle state.
+
+Each `jobs` item has `pid`, `ppid`, scheduler `type`, logical `route`, priority
+and lifecycle state. Physical placement belongs to `dispatchers.queues[].worker`.
+`children` contains only PIDs of currently active children;
+resolve their details against the same `jobs` array. A duplicate active job
+has `followingPid` and no physical queue entry. The registry and status output
+contain only active jobs: a job disappears as soon as its body and all its
+children have terminated.
+
+The top-level `jobs` projection includes every job in the first three levels from
+a root, then at most 100 fourth-level jobs ordered by priority and enqueue time.
+It exposes phase and aggregate `progress`, but never per-item `items` or `itemLabels`.
+For example, `rank-entries` exposes its regional/tier job and `500/1000`
+progress without serializing the thousand summoner PUUIDs.
+
+A leaf job reports its own item progress. A parent reports terminal direct
+children over direct children created, including children that already left the
+registry. A root that starts two children reports `0/2`; if both children each
+start two further jobs, the root remains `0/2` while each child reports `0/2`.
+
+A nested job cannot exceed its parent priority: `IMMEDIATE` requested from a
+`BACKGROUND` job remains `BACKGROUND`; `IMMEDIATE` requested from `NORMAL`
+remains `NORMAL`.
 
 `mongo` is sampled every second in background by `SystemMetricsSampler`. A
 `GET /api/status` read returns the latest in-memory snapshot; it does not
@@ -80,6 +104,25 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
     "totalMasteries": 4123901,
     "ranksByQueue": { "RANKED_SOLO_5X5": 401203 }
   },
+  "jobs": [{
+    "pid": 101,
+    "ppid": 0,
+    "type": "SyncScheduler",
+    "key": "tracking",
+    "name": "tracking summoners",
+    "route": null,
+    "priority": "IMMEDIATE",
+    "state": "WAITING_CHILDREN",
+    "followingPid": null,
+    "queuedAt": 1755680400000,
+    "startedAt": 1755680400001,
+    "completedAt": null,
+    "phase": "TRACKING",
+    "progress": null,
+    "items": {},
+    "itemLabels": {},
+    "children": [102]
+  }],
   "dispatchers": [
     {
       "id": "sync",
@@ -88,33 +131,38 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
         "worker": {
           "id": 1,
           "state": "RUNNING",
-          "currentTask": {
+          "currentJob": {
+            "pid": 102,
+            "ppid": 101,
+            "type": "SyncScheduler",
             "key": "match:EUW1:EUW1_6789012345",
             "name": "match analysis id=EUW1_6789012345",
             "route": "EUW1",
             "priority": "BACKGROUND",
             "state": "RUNNING",
-            "runId": "uuid",
+            "followingPid": null,
             "queuedAt": 1755680400000,
             "startedAt": 1755680400123,
+            "completedAt": null,
             "phase": "PERSISTING",
             "progress": { "current": 100, "total": 1000 },
-            "items": { "EUW1_6789012345": "DONE", "EUW1_6789012346": "PENDING" },
-            "itemLabels": {}
+            "items": {},
+            "itemLabels": {},
+            "children": []
           },
           "queuedCount": 1,
           "inFlight": 2,
-          "queuedTasks": []
+          "queuedJobs": []
         }
       }],
       "runs": [{
-        "id": "uuid",
+        "id": "101",
         "type": "TRACKING",
         "state": "RUNNING",
         "queuedAt": 1755680400000,
         "startedAt": 1755680400123,
         "progress": { "current": 1, "total": 7 },
-        "tasks": []
+        "jobs": []
       }]
     },
     { "id": "riot", "queues": [], "runs": [] },

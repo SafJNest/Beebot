@@ -21,7 +21,7 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.queue.ComputeRequestDispatcher;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.nosql.MongoDB;
@@ -102,7 +102,7 @@ public class ProfileService {
         ProfileStatistics statistics = page != null && isReady(page)
             ? page.overview().statistics()
             : getStatistics(summoner.puuid(), shard, filter);
-        if (statistics == null) ComputeRequestDispatcher.startProfileStatistics(summoner, filter);
+        if (statistics == null) ComputeScheduler.startProfileStatistics(summoner, filter);
         else if (isStale(summoner.puuid(), statistics.lastUpdate)) enqueueStaleStatistics(summoner, shard, filter);
         return statistics;
     }
@@ -170,7 +170,7 @@ public class ProfileService {
             ProfileActivity response = activity.withMetadata(metadata(lastUpdate, true, filter));
             return ApiResult.partial(response, response.metadata());
         }
-        ComputeRequestDispatcher.startProfileActivity(puuid, shard, filter);
+        ComputeScheduler.startProfileActivity(puuid, shard, filter);
         return ApiResult.pending(metadata(0, true, filter));
     }
 
@@ -194,7 +194,7 @@ public class ProfileService {
         if (!isReadyFuture(profileFuture)) return ApiResult.pending(metadata(0, true, filter));
         Summoner profile = completed(profileFuture);
         if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return ApiResult.notFound();
-        ComputeRequestDispatcher.startProfileMatchups(puuid, shard, filter);
+        ComputeScheduler.startProfileMatchups(puuid, shard, filter);
         return ApiResult.pending(metadata(0, true, filter));
     }
 
@@ -311,7 +311,7 @@ public class ProfileService {
 
     public static void startRefresh(Summoner summoner, LeagueShard shard) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || shard == null) return;
-        ComputeRequestDispatcher.startProfileRefresh(summoner, shard);
+        ComputeScheduler.startProfileRefresh(summoner, shard);
     }
 
     // ============================================================================
@@ -359,15 +359,15 @@ public class ProfileService {
 
     private static void enqueueStaleStatistics(Summoner summoner, LeagueShard shard, Filter filter) {
         if (summoner == null || shard == null || filter == null || !isStaleEligible(summoner.puuid())) return;
-        ComputeRequestDispatcher.startStaleProfileStatistics(summoner, filter);
+        ComputeScheduler.startStaleProfileStatistics(summoner, filter);
     }
 
     private static void enqueueStaleActivity(String puuid, LeagueShard shard, Filter filter) {
-        if (isStaleEligible(puuid)) ComputeRequestDispatcher.startStaleProfileActivity(puuid, shard, filter);
+        if (isStaleEligible(puuid)) ComputeScheduler.startStaleProfileActivity(puuid, shard, filter);
     }
 
     private static void enqueueStaleMatchups(String puuid, LeagueShard shard, Filter filter) {
-        if (isStaleEligible(puuid)) ComputeRequestDispatcher.startStaleProfileMatchups(puuid, shard, filter);
+        if (isStaleEligible(puuid)) ComputeScheduler.startStaleProfileMatchups(puuid, shard, filter);
     }
 
     private static boolean isStaleEligible(String puuid) {

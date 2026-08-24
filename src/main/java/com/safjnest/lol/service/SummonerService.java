@@ -16,7 +16,8 @@ import java.util.concurrent.CompletionException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.match.LiveGame;
-import com.safjnest.lol.queue.RiotRequestDispatcher;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.lol.model.summoner.Mastery;
@@ -133,12 +134,13 @@ public final class SummonerService {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner cached = cacheRiotSummoner(puuid, shard);
         if (cached != null) return saveAsync(cached).thenApply(ignored -> cached);
 
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "summoner", puuid, () -> {
+        return QueueHandler.<no.stelar7.api.r4j.pojo.lol.summoner.Summoner>immediate(RiotScheduler.class, shard, shard.name() + ":summoner:" + puuid,
+            "summoner puuid=" + puuid, ignored -> {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                 RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
             if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
             return summoner;
-        })).thenComposeAsync(summoner -> summoner == null
+        }).thenComposeAsync(summoner -> summoner == null
             ? CompletableFuture.completedFuture(null)
             : saveAsync(summoner).thenApply(ignored -> summoner));
     }
@@ -192,12 +194,13 @@ public final class SummonerService {
         RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT.of(shard.name(), puuid), RiotAccount.class);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "account", puuid, () -> {
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account:" + puuid,
+            "account puuid=" + puuid, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
             if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
             return account;
-        }));
+        });
     }
 
     public static CompletableFuture<RiotAccount> getRiotAccountAsync(String name, String tag, LeagueShard shard) {
@@ -207,7 +210,8 @@ public final class SummonerService {
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         String riotId = name + "#" + tag;
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "account", riotId, () -> {
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account:" + riotId,
+            "account riotId=" + riotId, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByTag(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), name, tag);
             if (account != null) {
@@ -215,7 +219,7 @@ public final class SummonerService {
                 RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), account.getPUUID());
             }
             return account;
-        }));
+        });
     }
 
     public static String getPuuidByRiotId(String name, String tag, LeagueShard shard) {
@@ -257,11 +261,12 @@ public final class SummonerService {
         if (cached != null) return cached;
 
         try {
-            return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "spectator", puuid, () -> {
+            return QueueHandler.<SpectatorGameInfo>immediate(RiotScheduler.class, shard, shard.name() + ":spectator:" + puuid,
+                "spectator puuid=" + puuid, ignored -> {
                 SpectatorGameInfo game = RIOT_API.getLoLAPI().getSpectatorAPI().getCurrentGame(shard, puuid);
                 if (game != null) RedisClient.set(RedisKey.R4J_SPECTATOR_CURRENT, game, shard.name(), puuid);
                 return game;
-            })).join();
+            }).join();
         } catch (CompletionException exception) {
             return null;
         }
@@ -334,24 +339,26 @@ public final class SummonerService {
     // ============================================================================
 
     private static CompletableFuture<RiotAccount> refreshRiotAccountAsync(String puuid, LeagueShard shard) {
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "account-refresh", puuid, () -> {
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account-refresh:" + puuid,
+            "account refresh puuid=" + puuid, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
             if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
             return account;
-        }));
+        });
     }
 
     private static CompletableFuture<no.stelar7.api.r4j.pojo.lol.summoner.Summoner> refreshRiotSummonerAsync(
         String puuid,
         LeagueShard shard
     ) {
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "summoner-refresh", puuid, () -> {
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":summoner-refresh:" + puuid,
+            "summoner refresh puuid=" + puuid, ignored -> {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                 RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
             if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
             return summoner;
-        }));
+        });
     }
 
     private static CompletableFuture<RefreshResult> refreshProfile(

@@ -14,9 +14,9 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchResult;
-import com.safjnest.lol.queue.RiotRequestDispatcher;
-import com.safjnest.lol.queue.RequestPriority;
-import com.safjnest.lol.queue.SyncRequestDispatcher;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.nosql.MongoDB;
@@ -64,12 +64,12 @@ public final class MatchService {
         Match saved = find(gameId, shard);
         return saved != null
             ? CompletableFuture.completedFuture(saved)
-            : SyncRequestDispatcher.submit(
+            : QueueHandler.immediate(
+                SyncScheduler.class,
+                shard,
                 "match:" + shard.name() + ":" + gameId,
                 "match analysis id=" + gameId,
-                shard,
-                RequestPriority.IMMEDIATE,
-                () -> Tracker.persistFetchedMatch(getRiotMatch(gameId, shard))
+                ignored -> Tracker.persistFetchedMatch(getRiotMatch(gameId, shard))
             );
     }
 
@@ -100,11 +100,12 @@ public final class MatchService {
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         RegionShard region = shard.toRegionShard();
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, "match", gameId, () -> {
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
+            "match id=" + gameId, ignored -> {
             LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
             if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
             return match;
-        }));
+        });
     }
 
     public static void cacheRiotMatch(LOLMatch match) {
@@ -214,18 +215,37 @@ public final class MatchService {
         if (cached != null) return cached;
 
         try {
-            String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
-            return RiotRequestDispatcher.<List<String>>schedule(RiotRequestDispatcher.request(summoner.getPlatform(), "match-list", id, () -> {
+            return getIdsAsync(summoner, queue, index, count, startTime, type).join();
+        } catch (CompletionException exception) {
+            return List.of();
+        }
+    }
+
+    public static CompletableFuture<List<String>> getIdsAsync(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue,
+            int index,
+            int count,
+            long startTime,
+            MatchlistMatchType type) {
+        if (summoner == null || index < 0 || count < 0 || startTime < 0) return CompletableFuture.completedFuture(List.of());
+
+        int requestedCount = count == 0 ? MATCH_LIST_BATCH_SIZE : count;
+        String requestKey = matchListRequestKey(queue, requestedCount, startTime, type);
+        String cacheKey = RedisKey.R4J_MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
+        List<String> cached = RedisClient.get(cacheKey, MATCH_IDS_TYPE);
+        if (cached != null) return CompletableFuture.completedFuture(cached);
+
+        String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
+        return QueueHandler.immediate(RiotScheduler.class, summoner.getPlatform(), summoner.getPlatform().name() + ":match-list:" + id,
+            "match list puuid=" + summoner.getPUUID(), ignored -> {
                 MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();
                 RedisClient.set(RedisKey.R4J_MATCH_LIST, values,
                     summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
                 return values;
-            })).join();
-        } catch (CompletionException exception) {
-            return List.of();
-        }
+            });
     }
 
     public static List<String> getSeasonPuuids(LeagueShard shard, long seasonStart, long seasonEnd) {

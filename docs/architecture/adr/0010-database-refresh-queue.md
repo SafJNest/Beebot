@@ -4,7 +4,7 @@
 - Owner: Main agent
 - Date: 2026-07-26
 - Amended: 2026-08-20
-- Terminology: superseded by ADR-0014 (`ComputeRequestDispatcher`, `Request` and `RequestTask`)
+- Terminology: superseded by ADR-0014 (`ComputeScheduler`, `Job` and `QueueHandler`)
 - Supersedes: the no-application-queue portion of ADR-0004
 
 ## Context
@@ -30,7 +30,7 @@ readable name, logical route, assigned channel, priority, supplier and
 completion future. `AbstractQueueScheduler` owns channels, priority lanes,
 workers, deduplication, completion cleanup and cancellation.
 `DatabaseTracker` owns routing, promote-on-reuse for profile-logical keys,
-worker topology and diagnostics. Suppliers are not started by the request
+worker topology and diagnostics. Job bodies are not started by the request
 thread. Duplicate submissions return the existing future and do not add another
 queue entry. A queued profile-logical task is promoted in the channel where it
 already sits when the same key is submitted at a higher priority; a running

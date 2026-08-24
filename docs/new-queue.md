@@ -1,35 +1,40 @@
-# Request dispatcher
+# Global job scheduler
 
-`lol.queue` owns one shared request infrastructure and three separate dispatcher
-owners. A dispatcher never shares workers, routes, limits, in-flight tasks or
-deduplication with another dispatcher.
+`lol.queue` owns one registry/router boundary and three separate physical
+scheduler owners. A scheduler never shares workers, routes or priority lanes
+with another scheduler.
 
 ```text
-AbstractRequestDispatcher<R>
-  RequestQueue<R> -> RequestWorker<R> -> RequestTask<R, T>
+QueueHandler -> Router -> Registry -> AbstractScheduler<R>
+                                      JobQueue -> JobWorker -> Job
 ```
 
-`Request` is the immutable submission (`key`, `name`, route, priority and
-supplier). `RequestTask` is its deduplicated in-flight instance. Priorities are
-`IMMEDIATE`, `NORMAL` and `BACKGROUND`; a running task is never interrupted.
+`Job` is the submission data (`PID`, `PPID`, scheduler class, key, name,
+logical route, priority, work and progress). `Registry` owns lifecycle,
+descendants, futures and follower deduplication; the physical scheduler owns
+queue placement and workers.
+`QueueHandler.immediate`, `.normal` and `.background` submit it. Priorities are
+`IMMEDIATE`, `NORMAL` and `BACKGROUND`; a running job body is never interrupted.
 
 | Dispatcher | Routes | Owner |
 | --- | --- | --- |
-| `RiotRequestDispatcher` | one `LeagueShard` worker | outbound Riot API |
-| `ComputeRequestDispatcher` | `PROFILE`, `CHAMPION` | expensive Mongo compute |
-| `SyncRequestDispatcher` | one `LeagueShard` worker | tracking, rank, match, sample and participant refresh workflows |
+| `RiotScheduler` | one `LeagueShard` worker | outbound Riot API |
+| `ComputeScheduler` | `PROFILE`, `CHAMPION` | expensive Mongo compute |
+| `SyncScheduler` | one `LeagueShard` worker | tracking, rank, match, sample and participant refresh workflows |
 
 Every route has its own three-lane physical queue. An immediate EUW task can
 overtake background EUW work, but cannot reorder or block NA work.
 
-`RequestRun` is only live Sync batch state (`TRACKING`,
+`runs` is only a derived compatibility view for live Sync roots (`TRACKING`,
 `RANK_ENTRIES`, `MATCH_ANALYSIS`, `SAMPLE_GAMES`). It
-references its submitted child tasks, reuses an active logical run, and
-disappears when its final child completes. It is not persisted. A task can
+is derived from submitted child jobs and disappears when its root completes.
+It is not persisted. A task can
 report `phase`, `progress` and a compact `itemId -> PENDING|DONE|MISSING|FAILED`
 map plus optional `itemLabels` (for example `puuid -> riotId`) while it runs;
-the run exposes those task snapshots without a parallel
-Tracker telemetry store.
+the run exposes those child job snapshots without a parallel Tracker telemetry
+store. A job body can call `QueueHandler.retain(job)` and later
+`QueueHandler.resume(job, callback)` so the worker is released while the logical
+parent waits for the callback and its descendants.
 
 ## Match flow
 
@@ -67,6 +72,6 @@ of an already-owned request; new background work must enter one of the three
 dispatchers.
 
 Rank entries are scheduled as real leaf tasks before execution: one task for
-each `shard + tier + queue`. `RequestRun.tasks` can therefore be grouped by
+each `shard + tier + queue`. The derived `runs[].tasks` can therefore be grouped by
 task `route` to render the seven shard groups and their pending/running/done
 rank jobs without parsing task names.

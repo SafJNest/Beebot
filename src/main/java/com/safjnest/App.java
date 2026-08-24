@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.queue.ComputeRequestDispatcher;
-import com.safjnest.lol.queue.RiotRequestDispatcher;
-import com.safjnest.lol.queue.SyncRequestDispatcher;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
@@ -36,6 +37,7 @@ public class App {
         runSpring();
         TwitchClient.init();
         SystemMetricsSampler.start();
+        QueueHandler.start();
         TrackerScheduler.start();
 
         bot = new Bot();
@@ -73,9 +75,10 @@ public class App {
             }
         }
         bot.distruzione_demoniaca();
-        SyncRequestDispatcher.shutdown();
-        ComputeRequestDispatcher.shutdown();
-        RiotRequestDispatcher.shutdown();
+        QueueHandler.shutdown();
+        SyncScheduler.shutdown();
+        ComputeScheduler.shutdown();
+        RiotScheduler.shutdown();
         MongoDB.close();
     }
 

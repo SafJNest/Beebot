@@ -13,8 +13,9 @@ import java.util.concurrent.CompletionException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.queue.RequestPriority;
-import com.safjnest.lol.queue.RiotRequestDispatcher;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -65,21 +66,21 @@ public final class RankService {
     }
 
     public static CompletableFuture<List<Rank>> refreshAsync(String puuid, LeagueShard shard) {
-        return refreshAsync(puuid, shard, RequestPriority.IMMEDIATE);
+        return refreshAsync(puuid, shard, JobPriority.IMMEDIATE);
     }
 
     public static CompletableFuture<List<Rank>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
-        return refreshAsync(puuid, shard, RequestPriority.BACKGROUND);
+        return refreshAsync(puuid, shard, JobPriority.BACKGROUND);
     }
 
-    public static List<Rank> refreshSync(String puuid, LeagueShard shard, RequestPriority priority) {
+    public static List<Rank> refreshSync(String puuid, LeagueShard shard, JobPriority priority) {
         if (!valid(puuid, shard)) throw new IllegalArgumentException("A PUUID and shard are required for rank refresh");
 
         hardInvalidate(puuid, shard);
         waitForTrackerRankRefresh();
         List<LeagueEntry> entries = fetchEntriesFromRiotAsync(
             puuid, shard, "league-entries-tracker-refresh",
-            priority == null ? RequestPriority.IMMEDIATE : priority).join();
+            priority == null ? JobPriority.IMMEDIATE : priority).join();
         List<Rank> ranks = toRanks(entries);
         saveRanks(puuid, shard, ranks, false);
         return ranks;
@@ -88,7 +89,7 @@ public final class RankService {
     private static CompletableFuture<List<Rank>> refreshAsync(
             String puuid,
             LeagueShard shard,
-            RequestPriority priority) {
+            JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
         return refreshEntriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
@@ -130,11 +131,13 @@ public final class RankService {
         if (shard == null || queue == null || tier == null || page < 0) return List.of();
 
         try {
-            return RiotRequestDispatcher.<List<LeagueEntry>>schedule(RiotRequestDispatcher.request(shard, "league-tier", queue.name() + ":" + tier.name() + ":" + page, () -> {
+            String id = queue.name() + ":" + tier.name() + ":" + page;
+            return QueueHandler.<List<LeagueEntry>>immediate(RiotScheduler.class, shard, shard.name() + ":league-tier:" + id,
+                "league tier " + id, ignored -> {
                 List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI()
                     .getLeagueByTierDivision(shard, queue, tier, page);
                 return entries == null ? List.of() : entries;
-            })).join();
+            }).join();
         } catch (CompletionException exception) {
             return List.of();
         }
@@ -207,13 +210,13 @@ public final class RankService {
     }
 
     private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(String puuid, LeagueShard shard) {
-        return refreshEntriesFromRiotAsync(puuid, shard, RequestPriority.IMMEDIATE);
+        return refreshEntriesFromRiotAsync(puuid, shard, JobPriority.IMMEDIATE);
     }
 
     private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(
             String puuid,
             LeagueShard shard,
-            RequestPriority priority) {
+            JobPriority priority) {
         return fetchEntriesFromRiotAsync(puuid, shard, "league-entries-refresh", priority);
     }
 
@@ -222,21 +225,30 @@ public final class RankService {
         LeagueShard shard,
         String operation
     ) {
-        return fetchEntriesFromRiotAsync(puuid, shard, operation, RequestPriority.IMMEDIATE);
+        return fetchEntriesFromRiotAsync(puuid, shard, operation, JobPriority.IMMEDIATE);
     }
 
     private static CompletableFuture<List<LeagueEntry>> fetchEntriesFromRiotAsync(
         String puuid,
         LeagueShard shard,
         String operation,
-        RequestPriority priority
+        JobPriority priority
     ) {
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, operation, puuid, priority, () -> {
+        return switch (priority) {
+            case IMMEDIATE -> QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
+                operation + " puuid=" + puuid, ignored -> fetchEntries(shard, puuid));
+            case NORMAL -> QueueHandler.normal(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
+                operation + " puuid=" + puuid, ignored -> fetchEntries(shard, puuid));
+            case BACKGROUND -> QueueHandler.background(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
+                operation + " puuid=" + puuid, ignored -> fetchEntries(shard, puuid));
+        };
+    }
+
+    private static List<LeagueEntry> fetchEntries(LeagueShard shard, String puuid) {
             List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
             if (entries == null) throw new IllegalStateException("Riot returned no rank result");
             RedisClient.set(RedisKey.R4J_LEAGUE_ENTRIES, entries, shard.name(), puuid);
             return entries;
-        }));
     }
 
     private static List<Rank> cache(String puuid, LeagueShard shard) {

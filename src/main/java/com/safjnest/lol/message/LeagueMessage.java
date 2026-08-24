@@ -34,7 +34,7 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.queue.ComputeRequestDispatcher;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
@@ -1393,7 +1393,7 @@ public class LeagueMessage {
         ProfileStatistics statistics = PROFILE_SERVICE.getStatistics(summoner.puuid(), summoner.region(), filter);
         if (statistics == null) {
             com.safjnest.lol.model.summoner.Summoner saved = SummonerService.find(summoner.puuid(), summoner.region());
-            if (saved != null) ComputeRequestDispatcher.startProfileStatistics(saved, filter);
+            if (saved != null) ComputeScheduler.startProfileStatistics(saved, filter);
         }
         return statistics;
     }

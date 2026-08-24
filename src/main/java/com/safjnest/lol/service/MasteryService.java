@@ -9,8 +9,9 @@ import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.queue.RequestPriority;
-import com.safjnest.lol.queue.RiotRequestDispatcher;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -55,17 +56,17 @@ public final class MasteryService {
     }
 
     public static CompletableFuture<List<Mastery>> refreshAsync(String puuid, LeagueShard shard) {
-        return refreshAsync(puuid, shard, RequestPriority.IMMEDIATE);
+        return refreshAsync(puuid, shard, JobPriority.IMMEDIATE);
     }
 
     public static CompletableFuture<List<Mastery>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
-        return refreshAsync(puuid, shard, RequestPriority.BACKGROUND);
+        return refreshAsync(puuid, shard, JobPriority.BACKGROUND);
     }
 
     private static CompletableFuture<List<Mastery>> refreshAsync(
             String puuid,
             LeagueShard shard,
-            RequestPriority priority) {
+            JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
         return refreshRiotMasteriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
@@ -112,7 +113,7 @@ public final class MasteryService {
     private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(
             String puuid,
             LeagueShard shard,
-            RequestPriority priority) {
+            JobPriority priority) {
         return fetchRiotMasteriesAsync(puuid, shard, "masteries-refresh", priority);
     }
 
@@ -121,21 +122,30 @@ public final class MasteryService {
         LeagueShard shard,
         String operation
     ) {
-        return fetchRiotMasteriesAsync(puuid, shard, operation, RequestPriority.IMMEDIATE);
+        return fetchRiotMasteriesAsync(puuid, shard, operation, JobPriority.IMMEDIATE);
     }
 
     private static CompletableFuture<List<ChampionMastery>> fetchRiotMasteriesAsync(
         String puuid,
         LeagueShard shard,
         String operation,
-        RequestPriority priority
+        JobPriority priority
     ) {
-        return RiotRequestDispatcher.schedule(RiotRequestDispatcher.request(shard, operation, puuid, priority, () -> {
+        return switch (priority) {
+            case IMMEDIATE -> QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
+                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+            case NORMAL -> QueueHandler.normal(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
+                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+            case BACKGROUND -> QueueHandler.background(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
+                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+        };
+    }
+
+    private static List<ChampionMastery> fetchMasteries(LeagueShard shard, String puuid) {
             List<ChampionMastery> masteries = RIOT_API.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
             if (masteries == null) throw new IllegalStateException("Riot returned no mastery result");
             RedisClient.set(RedisKey.R4J_CHAMPION_MASTERIES, masteries, shard.name(), puuid);
             return masteries;
-        }));
     }
 
     private static List<Mastery> cache(String puuid, LeagueShard shard) {

@@ -1,4 +1,4 @@
-package com.safjnest.lol.queue;
+package com.safjnest.lol.queue.worker;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -7,15 +7,18 @@ import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-final class RequestQueue<R> {
+import com.safjnest.lol.queue.job.Job;
+import com.safjnest.lol.queue.job.JobPriority;
 
-    private final Deque<RequestTask<R, ?>> immediate;
-    private final Deque<RequestTask<R, ?>> normal;
-    private final Deque<RequestTask<R, ?>> background;
+public final class JobQueue {
+
+    private final Deque<Job<?>> immediate;
+    private final Deque<Job<?>> normal;
+    private final Deque<Job<?>> background;
     private final ReentrantLock lock;
     private final Condition available;
 
-    RequestQueue() {
+    public JobQueue() {
         immediate = new ArrayDeque<>();
         normal = new ArrayDeque<>();
         background = new ArrayDeque<>();
@@ -23,37 +26,28 @@ final class RequestQueue<R> {
         available = lock.newCondition();
     }
 
-    void offer(RequestTask<R, ?> task) {
+    public void offer(Job<?> job) {
         lock.lock();
         try {
-            lane(task.priority()).addLast(task);
+            lane(job.priority()).addLast(job);
             available.signal();
         } finally {
             lock.unlock();
         }
     }
 
-    void promote(RequestTask<R, ?> task) {
-        lock.lock();
-        try {
-            if (immediate.remove(task) || normal.remove(task) || background.remove(task)) lane(task.priority()).addLast(task);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    RequestTask<R, ?> take() throws InterruptedException {
+    public Job<?> take() throws InterruptedException {
         lock.lockInterruptibly();
         try {
-            RequestTask<R, ?> task;
-            while ((task = next()) == null) available.await();
-            return task;
+            Job<?> job;
+            while ((job = next()) == null) available.await();
+            return job;
         } finally {
             lock.unlock();
         }
     }
 
-    int size() {
+    public int size() {
         lock.lock();
         try {
             return immediate.size() + normal.size() + background.size();
@@ -62,10 +56,10 @@ final class RequestQueue<R> {
         }
     }
 
-    List<RequestTask<R, ?>> snapshot(int maxSize) {
+    public List<Job<?>> snapshot(int maxSize) {
         lock.lock();
         try {
-            List<RequestTask<R, ?>> result = new ArrayList<>();
+            List<Job<?>> result = new ArrayList<>();
             addSnapshot(result, immediate, maxSize);
             addSnapshot(result, normal, maxSize);
             addSnapshot(result, background, maxSize);
@@ -75,26 +69,26 @@ final class RequestQueue<R> {
         }
     }
 
-    List<RequestTask<R, ?>> drain() {
+    public List<Job<?>> drain() {
         lock.lock();
         try {
-            List<RequestTask<R, ?>> drained = new ArrayList<>();
-            RequestTask<R, ?> task;
-            while ((task = next()) != null) drained.add(task);
+            List<Job<?>> drained = new ArrayList<>();
+            Job<?> job;
+            while ((job = next()) != null) drained.add(job);
             return drained;
         } finally {
             lock.unlock();
         }
     }
 
-    private RequestTask<R, ?> next() {
-        RequestTask<R, ?> task = immediate.pollFirst();
-        if (task != null) return task;
-        task = normal.pollFirst();
-        return task != null ? task : background.pollFirst();
+    private Job<?> next() {
+        Job<?> job = immediate.pollFirst();
+        if (job != null) return job;
+        job = normal.pollFirst();
+        return job != null ? job : background.pollFirst();
     }
 
-    private Deque<RequestTask<R, ?>> lane(RequestPriority priority) {
+    private Deque<Job<?>> lane(JobPriority priority) {
         return switch (priority) {
             case IMMEDIATE -> immediate;
             case NORMAL -> normal;
@@ -102,14 +96,14 @@ final class RequestQueue<R> {
         };
     }
 
-    private static <R> void addSnapshot(
-        List<RequestTask<R, ?>> result,
-        Deque<RequestTask<R, ?>> lane,
+    private static void addSnapshot(
+        List<Job<?>> result,
+        Deque<Job<?>> lane,
         int maxSize
     ) {
         if (result.size() >= maxSize) return;
-        for (RequestTask<R, ?> task : lane) {
-            result.add(task);
+        for (Job<?> job : lane) {
+            result.add(job);
             if (result.size() >= maxSize) return;
         }
     }

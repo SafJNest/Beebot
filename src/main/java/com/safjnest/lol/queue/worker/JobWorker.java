@@ -1,4 +1,4 @@
-package com.safjnest.lol.queue;
+package com.safjnest.lol.queue.worker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,37 +6,41 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.lol.model.status.RequestTaskStatus;
-import com.safjnest.lol.model.status.RequestWorkerStatus;
+import com.safjnest.lol.model.status.JobStatus;
+import com.safjnest.lol.model.status.WorkerStatus;
+import com.safjnest.lol.queue.job.Job;
+import com.safjnest.lol.queue.scheduler.AbstractScheduler;
 
-final class RequestWorker<R> {
+public final class JobWorker<R> {
 
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 30;
     private static final int MAX_STATUS_QUEUED_TASKS = 20;
 
-    private final AbstractRequestDispatcher<R> dispatcher;
+    private final AbstractScheduler<R> dispatcher;
     private final int id;
-    private final RequestQueue<R> queue;
-    private volatile RequestTask<R, ?> currentTask;
+    private final R route;
+    private final JobQueue queue;
+    private volatile Job<?> currentJob;
     private volatile ExecutorService executor;
 
-    RequestWorker(AbstractRequestDispatcher<R> dispatcher, int id, RequestQueue<R> queue) {
+    public JobWorker(AbstractScheduler<R> dispatcher, R route, int id, JobQueue queue) {
         this.dispatcher = dispatcher;
+        this.route = route;
         this.id = id;
         this.queue = queue;
     }
 
-    void start(String threadName) {
+    public void start(String threadName) {
         executor = Executors.newSingleThreadExecutor(Thread.ofVirtual().name(threadName, 0).factory());
         executor.submit(this::run);
     }
 
-    void requestStop() {
+    public void requestStop() {
         ExecutorService current = executor;
         if (current != null) current.shutdownNow();
     }
 
-    void awaitStopped() {
+    public void awaitStopped() {
         ExecutorService current = executor;
         executor = null;
         if (current == null) return;
@@ -48,46 +52,43 @@ final class RequestWorker<R> {
         }
     }
 
-    int load() {
-        return queue.size() + (currentTask == null ? 0 : 1);
+    public int load() {
+        return queue.size() + (currentJob == null ? 0 : 1);
     }
 
-    RequestWorkerStatus status() {
+    public WorkerStatus status() {
         int queuedCount = queue.size();
-        List<RequestTaskStatus> queued = new ArrayList<>(Math.min(queuedCount, MAX_STATUS_QUEUED_TASKS));
-        for (RequestTask<R, ?> task : queue.snapshot(MAX_STATUS_QUEUED_TASKS)) queued.add(task.status());
+        List<JobStatus> queued = new ArrayList<>(Math.min(queuedCount, MAX_STATUS_QUEUED_TASKS));
+        for (Job<?> job : queue.snapshot(MAX_STATUS_QUEUED_TASKS)) queued.add(dispatcher.status(job));
         ExecutorService current = executor;
-        RequestWorkerState state = currentTask != null
-            ? RequestWorkerState.RUNNING
-            : (current != null && !current.isShutdown() ? RequestWorkerState.IDLE : RequestWorkerState.STOPPED);
-        return new RequestWorkerStatus(
+        WorkerState state = currentJob != null
+            ? WorkerState.RUNNING
+            : (current != null && !current.isShutdown() ? WorkerState.IDLE : WorkerState.STOPPED);
+        return new WorkerStatus(
             id,
             state,
-            currentTask == null ? null : currentTask.status(),
+            currentJob == null ? null : dispatcher.status(currentJob),
             queuedCount,
-            queuedCount + (currentTask == null ? 0 : 1),
+            queuedCount + (currentJob == null ? 0 : 1),
             List.copyOf(queued)
         );
     }
 
     private void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            RequestTask<R, ?> task;
+            Job<?> job;
             try {
-                task = queue.take();
+                job = queue.take();
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
                 return;
             }
-            currentTask = task;
-            task.start();
-            dispatcher.onStarted(task);
+            currentJob = job;
             try {
-                Throwable failure = dispatcher.executeTask(task);
-                if (failure == null) dispatcher.onCompleted(task);
-                else dispatcher.onFailed(task, failure);
+                dispatcher.execute(job, route, id);
             } finally {
-                currentTask = null;
+                currentJob = null;
+                dispatcher.workerReleased(job);
             }
         }
     }

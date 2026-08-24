@@ -1,13 +1,17 @@
-package com.safjnest.lol.queue;
+package com.safjnest.lol.queue.scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.job.Job;
+import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.utils.PatchUtils;
@@ -17,22 +21,22 @@ import com.safjnest.utils.log.BotLogger;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
-public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<DatabaseWorkerType> {
+public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType> {
 
-    private static final ComputeRequestDispatcher INSTANCE = new ComputeRequestDispatcher();
+    private static final ComputeScheduler INSTANCE = new ComputeScheduler();
     private static final ConcurrentMap<String, ChampionMatrixRequest> CHAMPION_MATRICES = new ConcurrentHashMap<>();
     private static final ProfileService PROFILE_SERVICE = new ProfileService();
     private static final ChampionService CHAMPION_SERVICE = new ChampionService();
     private static final CompletableFuture<Void> VOID = CompletableFuture.completedFuture(null);
     private static final CompletableFuture<Boolean> NOT_SCHEDULED = CompletableFuture.completedFuture(false);
 
-    private ComputeRequestDispatcher() {
+    private ComputeScheduler() {
         super("compute", "Compute request cancelled during shutdown");
         registerRoutes(List.of(DatabaseWorkerType.PROFILE, DatabaseWorkerType.CHAMPION));
     }
 
-    public static <T> CompletableFuture<T> schedule(Request<DatabaseWorkerType, T> request) {
-        return INSTANCE.enqueue(request);
+    public static AbstractScheduler<DatabaseWorkerType> scheduler() {
+        return INSTANCE;
     }
 
     public static CompletableFuture<Boolean> startProfileStatistics(
@@ -52,11 +56,11 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         Filter filter,
         boolean rebuild
     ) {
-        return startProfileStatistics(summoner, filter, rebuild, RequestPriority.NORMAL);
+        return startProfileStatistics(summoner, filter, rebuild, JobPriority.NORMAL);
     }
 
     public static CompletableFuture<Boolean> startStaleProfileStatistics(Summoner summoner, Filter filter) {
-        return startProfileStatistics(summoner, filter, false, RequestPriority.BACKGROUND);
+        return startProfileStatistics(summoner, filter, false, JobPriority.BACKGROUND);
     }
 
     public static CompletableFuture<Boolean> startProfileMatchups(
@@ -64,7 +68,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileMatchups(puuid, shard, filter, RequestPriority.NORMAL);
+        return startProfileMatchups(puuid, shard, filter, JobPriority.NORMAL);
     }
 
     public static CompletableFuture<Boolean> startStaleProfileMatchups(
@@ -72,7 +76,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileMatchups(puuid, shard, filter, RequestPriority.BACKGROUND);
+        return startProfileMatchups(puuid, shard, filter, JobPriority.BACKGROUND);
     }
 
     public static CompletableFuture<Boolean> startProfileActivity(
@@ -80,7 +84,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileActivity(puuid, shard, filter, RequestPriority.NORMAL);
+        return startProfileActivity(puuid, shard, filter, JobPriority.NORMAL);
     }
 
     public static CompletableFuture<Boolean> startStaleProfileActivity(
@@ -88,7 +92,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         LeagueShard shard,
         Filter filter
     ) {
-        return startProfileActivity(puuid, shard, filter, RequestPriority.BACKGROUND);
+        return startProfileActivity(puuid, shard, filter, JobPriority.BACKGROUND);
     }
 
     public static CompletableFuture<Boolean> startProfileRefresh(
@@ -101,13 +105,8 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         String puuid = summoner.puuid();
         String key = profileRefreshKey(puuid);
         String name = "profile refresh puuid=" + puuid;
-        return schedule(new Request<>(
-            key,
-            name,
-            DatabaseWorkerType.PROFILE,
-            RequestPriority.IMMEDIATE,
-            () -> refreshProfileAggregates(puuid, shard)
-        ));
+        return submit(DatabaseWorkerType.PROFILE, JobPriority.IMMEDIATE, key, name,
+            ignored -> refreshProfileAggregates(puuid, shard));
     }
 
     public static CompletableFuture<Void> startChampionData(
@@ -141,11 +140,11 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
         String patch = new Filter().patch();
         String key = "champion-data-refresh:" + patch;
-        return schedule(new Request<>(key, "champion data refresh patch=" + patch, DatabaseWorkerType.CHAMPION,
-            RequestPriority.NORMAL, () -> {
+        return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key,
+            "champion data refresh patch=" + patch, ignored -> {
                 CHAMPION_SERVICE.refresh();
                 return null;
-            }));
+            });
     }
 
     public static CompletableFuture<ChampionService.MatrixRefreshResult> enqueueChampionStatsMatrix(
@@ -168,7 +167,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         INSTANCE.shutdownDispatcher();
     }
 
-    public static com.safjnest.lol.model.status.RequestDispatcherStatus status() {
+    public static com.safjnest.lol.model.status.SchedulerStatus status() {
         return INSTANCE.snapshot();
     }
 
@@ -185,20 +184,21 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
     }
 
     @Override
-    protected <T> DatabaseWorkerType queueFor(Request<DatabaseWorkerType, T> request) {
-        if (request.route() != DatabaseWorkerType.PROFILE) return DatabaseWorkerType.CHAMPION;
+    protected DatabaseWorkerType routeForJob(Object route) {
+        if (route instanceof DatabaseWorkerType workerType) return workerType;
+        throw new IllegalArgumentException("Compute jobs require a DatabaseWorkerType");
+    }
+
+    @Override
+    protected DatabaseWorkerType queueFor(DatabaseWorkerType route) {
+        if (route != DatabaseWorkerType.PROFILE) return DatabaseWorkerType.CHAMPION;
         return profileQueue(load(DatabaseWorkerType.PROFILE), load(DatabaseWorkerType.CHAMPION), championReserved());
     }
 
     @Override
-    protected boolean promoteOnReuse(DatabaseWorkerType route) {
-        return route == DatabaseWorkerType.PROFILE;
-    }
-
-    @Override
-    protected void onFailed(RequestTask<DatabaseWorkerType, ?> task, Throwable failure) {
+    protected void onBodyFailed(com.safjnest.lol.queue.job.Job<?> job, Throwable failure) {
         try {
-            BotLogger.error("Database task failed for key=" + task.key()
+            BotLogger.error("Database task failed for key=" + job.key()
                 + " message=" + failure.getMessage());
         } catch (Throwable ignored) {
         }
@@ -208,7 +208,7 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         Summoner summoner,
         Filter filter,
         boolean rebuild,
-        RequestPriority priority
+        JobPriority priority
     ) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null)
             return NOT_SCHEDULED;
@@ -218,20 +218,15 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         LeagueShard shard = summoner.region();
         String key = "profile-statistics:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile statistics " + (rebuild ? "rebuild " : "") + "puuid=" + puuid;
-        return schedule(new Request<>(
-            key,
-            name,
-            DatabaseWorkerType.PROFILE,
-            priority,
-            () -> refreshProfileStatistics(puuid, shard, requestFilter, rebuild)
-        ));
+        return submit(DatabaseWorkerType.PROFILE, priority, key, name,
+            ignored -> refreshProfileStatistics(puuid, shard, requestFilter, rebuild));
     }
 
     private static CompletableFuture<Boolean> startProfileMatchups(
         String puuid,
         LeagueShard shard,
         Filter filter,
-        RequestPriority priority
+        JobPriority priority
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return NOT_SCHEDULED;
@@ -239,33 +234,23 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile matchups puuid=" + puuid;
-        return schedule(new Request<>(
-            key,
-            name,
-            DatabaseWorkerType.PROFILE,
-            priority,
-            () -> refreshProfileMatchups(puuid, shard, requestFilter)
-        ));
+        return submit(DatabaseWorkerType.PROFILE, priority, key, name,
+            ignored -> refreshProfileMatchups(puuid, shard, requestFilter));
     }
 
     private static CompletableFuture<Boolean> startProfileActivity(
         String puuid,
         LeagueShard shard,
         Filter filter,
-        RequestPriority priority
+        JobPriority priority
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return NOT_SCHEDULED;
         Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
         String key = "profile-activity:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile activity puuid=" + puuid;
-        return schedule(new Request<>(
-            key,
-            name,
-            DatabaseWorkerType.PROFILE,
-            priority,
-            () -> refreshProfileActivity(puuid, shard, requestFilter)
-        ));
+        return submit(DatabaseWorkerType.PROFILE, priority, key, name,
+            ignored -> refreshProfileActivity(puuid, shard, requestFilter));
     }
 
     private static CompletableFuture<ChampionService.MatrixRefreshResult> enqueueChampionStatsMatrix(
@@ -287,20 +272,15 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
             ChampionMatrixRequest request = new ChampionMatrixRequest();
             request.addBuild(buildFilter);
             CHAMPION_MATRICES.put(key, request);
-            CompletableFuture<ChampionService.MatrixRefreshResult> future = schedule(new Request<>(
-                key,
-                name,
-                DatabaseWorkerType.CHAMPION,
-                RequestPriority.NORMAL,
-                () -> {
+            CompletableFuture<ChampionService.MatrixRefreshResult> future = submit(
+                DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name, ignored -> {
                     request.start();
                     try {
                         return CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, request.buildFilters());
                     } finally {
                         CHAMPION_MATRICES.remove(key, request);
                     }
-                }
-            ));
+                });
             request.setFuture(future);
             return future;
         }
@@ -333,18 +313,22 @@ public final class ComputeRequestDispatcher extends AbstractRequestDispatcher<Da
             + " rank=" + filter.rank()
             + " region=" + filter.region()
             + " lane=" + filter.lane();
-        return schedule(new Request<>(
-            key,
-            name,
-            DatabaseWorkerType.CHAMPION,
-            RequestPriority.NORMAL,
-            () -> refreshChampionBuild(filter)
-        ));
+        return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name,
+            ignored -> refreshChampionBuild(filter));
     }
 
     private boolean championReserved() {
         return hasIncompleteTask(DatabaseWorkerType.CHAMPION,
             task -> isHeavyChampionTaskKey(task.key()));
+    }
+
+    private static <T> CompletableFuture<T> submit(DatabaseWorkerType route, JobPriority priority,
+        String key, String name, Function<Job<T>, T> work) {
+        return switch (priority) {
+            case IMMEDIATE -> QueueHandler.immediate(ComputeScheduler.class, route, key, name, work);
+            case NORMAL -> QueueHandler.normal(ComputeScheduler.class, route, key, name, work);
+            case BACKGROUND -> QueueHandler.background(ComputeScheduler.class, route, key, name, work);
+        };
     }
 
     private static boolean refreshProfileStatistics(

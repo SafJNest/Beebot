@@ -46,29 +46,35 @@ lol/model/
 lol/model/status/
   BotStatus
   LeagueMetrics
-  RequestDispatcherStatus
-  RequestQueueStatus
-  RequestWorkerStatus
-  RequestTaskStatus
-  RequestRunStatus
+  SchedulerStatus
+  QueueStatus
+  WorkerStatus
+  RunStatus
+  JobStatus
   JobProgress
   JvmMetrics
   SystemMetrics
   RedisMetrics
 
 lol/queue/
-  RequestPriority
-  Request
-  RequestTask
-  RequestQueue
-  RequestWorker
-  RequestRun
-  AbstractRequestDispatcher
-  RiotRequestDispatcher
-  DatabaseWorkerType
-  ChampionMatrixRequest
-  ComputeRequestDispatcher
-  SyncRequestDispatcher
+  QueueHandler
+  Registry
+  Router
+  job/
+    Job
+    JobPriority
+    JobState
+  scheduler/
+    AbstractScheduler
+    RiotScheduler
+    ComputeScheduler
+    SyncScheduler
+    DatabaseWorkerType
+    ChampionMatrixRequest
+  worker/
+    JobQueue
+    JobWorker
+    WorkerState
 
 lol/tracker/
   Tracker
@@ -81,17 +87,25 @@ status/
 ```
 
 Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
-`lol.queue` owns the shared request dispatcher infrastructure and three distinct owners. Riot, compute and Sync keep separate registries and workers; only the dispatcher machinery is shared.
+`lol.queue` owns the global in-memory registry plus the shared physical
+scheduler infrastructure. `QueueHandler` is the sole public submission API.
+`Job` is the registered data object. Riot,
+compute and Sync retain distinct workers and route-local priority queues; the
+registry tracks their logical parent/child tree and does not merge their queues.
 
 Queue glossary:
 
-- `RiotRequestDispatcher` — outbound Riot work, one queue per `LeagueShard`;
-- `ComputeRequestDispatcher` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
-- `SyncRequestDispatcher` — tracking, rank, match, sample and participant refresh workflows, one queue per shard.
+- `RiotScheduler` — outbound Riot work, one queue per `LeagueShard`;
+- `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
+- `SyncScheduler` — tracking, rank, match, sample and participant refresh workflows, one queue per shard.
 
 Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
-Queue implementation types stay as top-level files in the same package. Scheduler internals remain package-private instead of being exposed across subpackages.
-Operation-specific values are captured directly by each `Request` supplier; separate carrier types are reserved for stateful behavior such as champion-matrix coalescing.
+The package boundary is intentional: `job/` owns lifecycle data, `scheduler/`
+owns route selection and physical queues, and `worker/` owns queue draining.
+A job body receives the `Job` itself for phase/item reporting; simple bodies
+ignore it. An async callback calls `QueueHandler.retain(job)` before the body
+returns and `QueueHandler.resume(job, callback)` when it schedules or completes
+its children.
 
 ## Statistics source of truth
 
@@ -110,7 +124,7 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
 - [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md)
 - [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md)
-- [ADR-0014: Request dispatcher architecture](adr/0014-request-dispatcher-architecture.md)
+- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md)
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
 

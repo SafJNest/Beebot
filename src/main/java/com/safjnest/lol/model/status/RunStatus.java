@@ -2,15 +2,15 @@ package com.safjnest.lol.model.status;
 
 import java.util.List;
 
-import com.safjnest.lol.queue.RequestState;
+import com.safjnest.lol.queue.job.JobState;
 
-public record RequestRunStatus(
+public record RunStatus(
     String id,
     String type,
-    RequestState state,
+    JobState state,
     Long queuedAt,
     Long startedAt,
     JobProgress progress,
-    List<RequestTaskStatus> tasks
+    List<JobStatus> jobs
 ) {
 }

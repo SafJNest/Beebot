@@ -4,9 +4,11 @@ Implemented. Queue routing after 2026-08-20 follows amended ADR-0010
 (insert-time least-loaded profile placement, no steal). Do not copy the
 historical worker-2 steal wording below as current behavior.
 
-The request infrastructure and compute owner are now named
-`AbstractRequestDispatcher` and `ComputeRequestDispatcher`; tracker/match
-workflow ownership moved to `SyncRequestDispatcher` under ADR-0014.
+The scheduler infrastructure and compute owner are now named
+`AbstractScheduler` and `ComputeScheduler`; tracker/match workflow ownership
+moved to `SyncScheduler` under ADR-0014. The submission boundary is
+`QueueHandler.immediate` / `.normal` / `.background`; `Registry` owns lifecycle
+and deduplication, while scheduler workers remain route-local physical executors.
 
 ## Objective
 

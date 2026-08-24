@@ -4,7 +4,7 @@
 - Owner: Main agent
 - Date: 2026-08-01
 - Amended: 2026-08-19
-- Terminology: superseded by ADR-0014 (`RiotRequestDispatcher`, `Request` and `RequestTask`)
+- Terminology: superseded by ADR-0014 (`RiotScheduler`, `Job` and `QueueHandler`)
 
 ## Context
 
