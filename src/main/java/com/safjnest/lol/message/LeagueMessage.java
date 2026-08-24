@@ -316,9 +316,10 @@ public class LeagueMessage {
     private static List<Match> getOpggMatches(Summoner summoner, LeagueMessageParameter parameter) {
         List<Match> matches = new ArrayList<>();
         int limit = parameter.getMessageType().getPageItem();
-        for (String gameId : getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset())) {
+        List<String> gameIds = getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset());
+        for (int position = 0; position < gameIds.size(); position++) {
             if (matches.size() >= limit) break;
-            Match match = MatchService.get(gameId, summoner.region());
+            Match match = MatchService.getOpgg(gameIds.get(position), summoner.region());
             if (match != null) matches.add(match);
         }
         return matches;

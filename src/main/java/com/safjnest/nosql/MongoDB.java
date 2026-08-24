@@ -935,6 +935,50 @@ public final class MongoDB {
         return match;
     }
 
+    public static boolean isMatchTracked(String fullGameId, String referencePuuid) {
+        if (fullGameId == null || fullGameId.isBlank() || referencePuuid == null || referencePuuid.isBlank()) return false;
+
+        Document document = matches().find(Filters.eq("_id", fullGameId))
+                .projection(Projections.include("tracked", "participants.puuid", "participants.rank"))
+                .first();
+        return isMatchTrackedDocument(document, referencePuuid);
+    }
+
+    static boolean isMatchTrackedDocument(Document document, String referencePuuid) {
+        if (document == null || referencePuuid == null || referencePuuid.isBlank()) return false;
+        if (Boolean.TRUE.equals(document.getBoolean("tracked"))) return true;
+
+        for (Document participant : documents(document.get("participants"))) {
+            if (!referencePuuid.equals(participant.getString("puuid"))) continue;
+            return participant.get("rank") != null;
+        }
+        return false;
+    }
+
+    public static Participant findPreviousParticipant(
+            String puuid,
+            LeagueShard shard,
+            GameQueueType queue,
+            long beforeTimeStart) {
+        if (puuid == null || puuid.isBlank() || shard == null || queue == null || beforeTimeStart <= 0) return null;
+
+        Bson filter = Filters.and(
+                Filters.elemMatch("participants", Filters.eq("puuid", puuid)),
+                Filters.eq("region", shard.name()),
+                Filters.eq("queue", queue.name()),
+                Filters.lt("timeStart", beforeTimeStart));
+        Document document = matches().find(filter)
+                .projection(Projections.include("participants"))
+                .sort(Sorts.descending("timeStart", "_id"))
+                .first();
+        if (document == null) return null;
+
+        for (Document participant : documents(document.get("participants"))) {
+            if (puuid.equals(participant.getString("puuid"))) return readParticipant(matchRecord(participant));
+        }
+        return null;
+    }
+
     public static List<com.safjnest.lol.model.match.MatchResult> findMatchResults(
             String puuid,
             LeagueShard shard,
@@ -1996,16 +2040,25 @@ public final class MongoDB {
     }
 
     public static boolean upsertMatch(String fullGameId, Match match) {
+        return upsertMatch(fullGameId, match, false);
+    }
+
+    public static boolean upsertMatch(String fullGameId, Match match, boolean tracked) {
         if (match == null) return false;
-        upsertMatchDocument(fullGameId, match);
+        upsertMatchDocument(fullGameId, match, tracked);
         upsertMatchEvents(fullGameId, match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap());
         return true;
     }
 
     public static boolean upsertMatchDocument(String fullGameId, Match match) {
+        return upsertMatchDocument(fullGameId, match, false);
+    }
+
+    public static boolean upsertMatchDocument(String fullGameId, Match match, boolean tracked) {
         if (match == null) return false;
         Document document = write(match);
         document.put("_id", fullGameId);
+        document.put("tracked", tracked);
         replace(matches(), document);
         return true;
     }

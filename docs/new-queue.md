@@ -42,6 +42,26 @@ tracker/sample/import -> Sync/BACKGROUND/shard -> Mongo persistence
 Redis is cache only: it is not a queue, backlog or retry store. There is no
 match poller, no pending set, and no restart recovery for Sync tasks.
 
+Match ingestion has two levels. Raw ingestion persists the canonical match,
+events and participant identity seed with the internal Mongo marker
+`tracked=false`; it does not refresh participant ranks. Tracked enrichment
+invalidates Redis and R4J rank caches, waits 500 ms and obtains every current
+participant rank directly from Riot before updating `summoner.ranks[]`, Redis
+and the match. Mongo participant history and the embedded Mongo rank remain
+baseline-only inputs for LP gain; they never supply the participant's current
+rank. The complete match is then persisted with `tracked=true`. The marker is
+storage-only and does not alter the HTTP `Match` contract or Discord
+presentation.
+
+The scheduled tracked-summoner flow waits for its latest ranked match to finish
+enrichment; its second Riot match is raw-persisted only as a history reference.
+OP.GG remains responsive: all missing cards are raw-persisted immediately and
+never start LP/rank tracked enrichment.
+
+After the final `tracked=true` persistence, the scheduled tracked-summoner flow
+emits one `LPTracker` success log for that summoner. Raw ingestion and
+already-tracked matches do not emit this log.
+
 `thenApplyAsync` and `thenComposeAsync` in a domain service remain continuations
 of an already-owned request; new background work must enter one of the three
 dispatchers.

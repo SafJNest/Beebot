@@ -4,12 +4,14 @@ import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.RequestPriority;
 import com.safjnest.lol.queue.RiotRequestDispatcher;
@@ -21,12 +23,14 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 
 public final class RankService {
 
+    private static final long TRACKER_RANK_REFRESH_WAIT_MILLIS = 500;
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<List<Rank>> RANKS_TYPE = new TypeReference<List<Rank>>() {};
@@ -66,6 +70,19 @@ public final class RankService {
 
     public static CompletableFuture<List<Rank>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
         return refreshAsync(puuid, shard, RequestPriority.BACKGROUND);
+    }
+
+    public static List<Rank> refreshSync(String puuid, LeagueShard shard, RequestPriority priority) {
+        if (!valid(puuid, shard)) throw new IllegalArgumentException("A PUUID and shard are required for rank refresh");
+
+        hardInvalidate(puuid, shard);
+        waitForTrackerRankRefresh();
+        List<LeagueEntry> entries = fetchEntriesFromRiotAsync(
+            puuid, shard, "league-entries-tracker-refresh",
+            priority == null ? RequestPriority.IMMEDIATE : priority).join();
+        List<Rank> ranks = toRanks(entries);
+        saveRanks(puuid, shard, ranks, false);
+        return ranks;
     }
 
     private static CompletableFuture<List<Rank>> refreshAsync(
@@ -250,6 +267,27 @@ public final class RankService {
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
         RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
+    }
+
+    private static void hardInvalidate(String puuid, LeagueShard shard) {
+        RedisClient.delete(List.of(
+            RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid),
+            RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid)
+        ));
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("platform", shard);
+        data.put("id", puuid);
+        LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, data);
+    }
+
+    private static void waitForTrackerRankRefresh() {
+        try {
+            Thread.sleep(TRACKER_RANK_REFRESH_WAIT_MILLIS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted before Riot rank refresh", exception);
+        }
     }
 
     private static List<Rank> toRanks(List<LeagueEntry> entries) {

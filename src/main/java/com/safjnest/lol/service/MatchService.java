@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
@@ -25,6 +26,7 @@ import com.safjnest.sql.QueryRecord;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
@@ -77,6 +79,10 @@ public final class MatchService {
         } catch (CompletionException exception) {
             return null;
         }
+    }
+
+    public static Match getOpgg(String gameId, LeagueShard shard) {
+        return get(gameId, shard);
     }
 
     public static LOLMatch getRiotMatch(String gameId, LeagueShard shard) {
@@ -173,6 +179,23 @@ public final class MatchService {
         List<String> values = getIds(summoner, queue, batchIndex, MATCH_LIST_BATCH_SIZE, 0, null);
         int batchOffset = index - batchIndex;
         return batchOffset >= values.size() ? List.of() : values.subList(batchOffset, values.size());
+    }
+
+    public static void refreshRecentIds(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue,
+            int index) {
+        if (summoner == null || index < 0) return;
+
+        int batchIndex = index / MATCH_LIST_BATCH_SIZE * MATCH_LIST_BATCH_SIZE;
+        String requestKey = matchListRequestKey(queue, MATCH_LIST_BATCH_SIZE, 0, null);
+        RedisClient.delete(RedisKey.R4J_MATCH_LIST.of(
+            summoner.getPlatform().name(),
+            summoner.getPUUID(),
+            requestKey,
+            batchIndex
+        ));
+        LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, queue);
     }
 
     public static List<String> getIds(

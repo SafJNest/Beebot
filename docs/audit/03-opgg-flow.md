@@ -9,10 +9,9 @@
   -> LeagueMessage.build(OPGG)
   -> MatchService.getRecentIds / Riot API (via r4j match-list bridge)
   -> MatchService.get / Riot match API
-  -> Tracker.queueMatch
+  -> Sync immediate raw match persistence
   -> Mongo match write
   -> Mongo summoner seed from each participant
-  -> low-priority forced rank refresh
   -> MatchService.getSummonerData / MongoDB.findSummonerData
   -> getOpggEmbedMatch
 ```
@@ -53,21 +52,30 @@ Evidenza: [MatchService.java](../../src/main/java/com/safjnest/lol/service/Match
 
 Il confronto ora può trovare il match tramite `game_id`; resta da verificare il valore visualizzato con una sequenza rank reale e cache `SUMMONER_DATA` pulita.
 
-## Persistenza e refresh durante il comando
+## Persistenza durante il comando
 
 Per ogni match Riot visualizzato il Tracker:
 
 1. salva il match Mongo;
 2. fa l’upsert di ogni summoner direttamente dal `MatchParticipant` Riot con
    PUUID, `riotId#riotTag`, shard, icona e livello;
-3. accoda soltanto rank e mastery, in quest’ordine, nella priorità bassa R4J.
+3. non accoda refresh rank, mastery o calcolo LP.
 
 Questa fase non esegue chiamate Account API o Summoner API per i participant.
 L’Account API può ancora servire alla risoluzione iniziale di un Riot ID che non
 è noto localmente.
 
-Il match e il seed summoner sono disponibili prima dell’enrichment basso; rank e
-mastery possono quindi essere temporaneamente quelli già persistiti.
+Il match e il seed summoner sono disponibili senza enrichment aggiuntivo. Rank,
+LP e gain mostrati restano quelli già persistiti per quel participant/match.
+
+## Refresh matchlist OP.GG
+
+Il pulsante refresh dell’embed OP.GG ha una responsabilità distinta dal refresh
+profilo: invalida esclusivamente il blocco Riot match-list di 100 ID che
+contiene la pagina e la corrispondente cache R4J, poi il render dell’embed
+richiede di nuovo gli ID a Riot. Non aggiorna account, summoner, rank, mastery,
+spectator, statistiche profilo o i dettagli già persistiti. Non esiste ancora
+un endpoint HTTP per questa operazione.
 
 ## Verifica runtime
 
