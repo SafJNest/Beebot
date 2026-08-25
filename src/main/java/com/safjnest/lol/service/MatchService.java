@@ -3,6 +3,7 @@ package com.safjnest.lol.service;
 import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -11,11 +12,15 @@ import java.util.concurrent.CompletionException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.match.RankHistory;
+import com.safjnest.lol.model.match.RankHistoryMatch;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
@@ -31,6 +36,7 @@ import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.utils.JsonCodec;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -45,6 +51,7 @@ public final class MatchService {
     private static final int MATCH_LIST_BATCH_SIZE = 100;
 
     private static final TypeReference<List<String>> MATCH_IDS_TYPE = new TypeReference<List<String>>() {};
+    private static final TypeReference<List<RankHistoryMatch>> RANK_HISTORY_TYPE = new TypeReference<>() {};
 
     private static final no.stelar7.api.r4j.impl.R4J RIOT_API = com.safjnest.lol.LeagueHandler.getRiotApi();
 
@@ -100,7 +107,8 @@ public final class MatchService {
         }
 
         Match match = MongoDB.findMatch(fullGameId);
-        if (match == null) {
+        boolean created = match == null;
+        if (created) {
             match = Match.fromR4J(source);
             if (match == null) return null;
             MongoDB.createRawMatch(fullGameId, match);
@@ -109,6 +117,7 @@ public final class MatchService {
         for (var participant : source.getParticipants()) {
             if (!MongoDB.upsertSummoner(participant, source.getPlatform())) return null;
         }
+        if (created) invalidate(match);
         deleteRiotMatch(fullGameId, source.getPlatform());
         return match;
     }
@@ -232,6 +241,33 @@ public final class MatchService {
         return new MatchPage(items, limit, offset, total, hasMore);
     }
 
+    public static RankHistory getRankHistory(
+            String puuid,
+            LeagueShard shard,
+            long timeStart,
+            long timeEnd,
+            GameQueueType queue,
+            MatchOrder order) {
+        if (!valid(puuid, shard) || timeStart < 0 || timeEnd < 0 || timeEnd != 0 && timeEnd < timeStart || order == null) {
+            return new RankHistory(List.of(), 0, null);
+        }
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        if (season == null) throw new IllegalStateException("Current season range is unavailable");
+
+        long effectiveStart = Math.max(timeStart == 0 ? season.start() : timeStart, season.start());
+        long effectiveEnd = Math.min(timeEnd == 0 ? season.end() : timeEnd, season.end());
+        Filter filter = Filter.summoner(effectiveStart, effectiveEnd).setQueue(queue);
+        if (effectiveEnd < effectiveStart) return new RankHistory(List.of(), 0, ResponseMetadata.ready(null, filter));
+
+        List<RankHistoryMatch> source = rankHistorySource(puuid, shard, season);
+        List<RankHistoryMatch> items = new ArrayList<>();
+        for (RankHistoryMatch match : source) {
+            if (matchesRankHistoryFilter(match, effectiveStart, effectiveEnd, queue)) items.add(match);
+        }
+        items.sort(rankHistoryOrder(order));
+        return new RankHistory(items, items.size(), ResponseMetadata.ready(null, filter));
+    }
+
     public static void invalidate(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
         RedisClient.delete(RedisKey.MATCH_DETAIL.of(LeagueShardUtils.cacheRegion(shard), shard.name(), gameId));
@@ -252,6 +288,7 @@ public final class MatchService {
             if (MongoDB.updateUntrackedParticipantRankProgress(gameId, puuid, progress)) {
                 invalidate(gameId, shard);
                 RedisClient.delete(RedisKey.SUMMONER_DATA.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
+                invalidateRankHistory(puuid, shard);
             }
         }
     }
@@ -264,6 +301,7 @@ public final class MatchService {
             if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
             RedisClient.delete(RedisKey.SUMMONER_DATA.of(
                 LeagueShardUtils.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid));
+            invalidateRankHistory(participant.puuid, match.leagueShard);
         }
     }
 
@@ -366,6 +404,43 @@ public final class MatchService {
     }
 
     // ============================================================================
+
+    private static List<RankHistoryMatch> rankHistorySource(
+            String puuid,
+            LeagueShard shard,
+            SeasonUtils.SeasonRange season) {
+        String cacheRegion = LeagueShardUtils.cacheRegion(shard);
+        String key = RedisKey.SUMMONER_RANK_HISTORY.of(cacheRegion, shard.name(), puuid, season.season());
+        List<RankHistoryMatch> cached = RedisClient.get(key, RANK_HISTORY_TYPE);
+        if (cached != null) return cached;
+
+        List<RankHistoryMatch> source = MongoDB.findRankHistoryMatches(puuid, shard, season.start(), season.end());
+        RedisClient.setCached(key, JsonCodec.toJson(source), RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
+        return source;
+    }
+
+    private static boolean matchesRankHistoryFilter(
+            RankHistoryMatch match,
+            long timeStart,
+            long timeEnd,
+            GameQueueType queue) {
+        return match != null && (queue == null || queue == match.queue())
+            && match.timeStart() >= timeStart && match.timeStart() <= timeEnd;
+    }
+
+    private static Comparator<RankHistoryMatch> rankHistoryOrder(MatchOrder order) {
+        Comparator<RankHistoryMatch> comparator = Comparator.comparingLong(RankHistoryMatch::timeStart)
+            .thenComparing(RankHistoryMatch::gameId);
+        return order.ascending() ? comparator : comparator.reversed();
+    }
+
+    private static void invalidateRankHistory(String puuid, LeagueShard shard) {
+        if (!valid(puuid, shard)) return;
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        if (season == null) return;
+        RedisClient.delete(RedisKey.SUMMONER_RANK_HISTORY.of(
+            LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, season.season()));
+    }
 
     private static MatchListBuilder matchListBuilder(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,

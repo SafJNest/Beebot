@@ -32,6 +32,7 @@ public enum RedisKey {
     SUMMONER_ACTIVITY("los:%s:%s:summoner:%s:activity:%s", Duration.ofSeconds(60)), // Original: 12 hours.
     SUMMONER_MATCHUPS("los:%s:%s:summoner:%s:matchups:%s", Duration.ofSeconds(60)), // Original: 12 hours.
     SUMMONER_RECENT_MATCHES("los:%s:%s:summoner:%s:recent-matches:%s", Duration.ofSeconds(60)), // Original: 30 minutes.
+    SUMMONER_RANK_HISTORY("los:%s:%s:summoner:%s:rank-history:%s", Duration.ofDays(1)),
     LEADERBOARD_VERSION("los:leaderboard:version", Duration.ofSeconds(60)), // Original: persistent.
     LEADERBOARD_PAGE("los:leaderboard:page:%s:%s:%s:%s:%s:%s", Duration.ofSeconds(60)), // Original: 1 day.
     LEADERBOARD_RANK_DISTRIBUTION("los:leaderboard:rank-distribution:%s:%s:%s", Duration.ofSeconds(60)), // Original: 12 hours.

@@ -35,6 +35,7 @@ public class RedisKeyTest {
         assertEquals(6 * 60 * 60, RedisKey.SUMMONER_ACTIVITY.ttlSeconds());
         assertEquals(6 * 60 * 60, RedisKey.SUMMONER_MATCHUPS.ttlSeconds());
         assertEquals(60 * 60, RedisKey.SUMMONER_RECENT_MATCHES.ttlSeconds());
+        assertEquals(24 * 60 * 60, RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
         assertEquals(0, RedisKey.LEADERBOARD_VERSION.ttlSeconds());
         assertEquals(60 * 60, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
         assertEquals(12 * 60 * 60, RedisKey.LEADERBOARD_RANK_DISTRIBUTION.ttlSeconds());
@@ -59,6 +60,7 @@ public class RedisKeyTest {
         String summonerStatistics = RedisKey.SUMMONER_STATISTICS.of("EUROPE", "EUW1", "puuid-1", "filter");
         String summonerActivity = RedisKey.SUMMONER_ACTIVITY.of("EUROPE", "EUW1", "puuid-1", "filter");
         String summonerMatchups = RedisKey.SUMMONER_MATCHUPS.of("EUROPE", "EUW1", "puuid-1", "filter");
+        String rankHistory = RedisKey.SUMMONER_RANK_HISTORY.of("EUROPE", "EUW1", "puuid-1", 16);
 
         assertTrue(!firstRanks.equals(secondRanks));
         assertTrue(!firstMasteries.equals(secondMasteries));
@@ -66,6 +68,7 @@ public class RedisKeyTest {
         assertTrue(summonerStatistics.endsWith("ls:EUROPE:EUW1:summoner:puuid-1:statistics:filter"));
         assertTrue(summonerActivity.endsWith("ls:EUROPE:EUW1:summoner:puuid-1:activity:filter"));
         assertTrue(summonerMatchups.endsWith("ls:EUROPE:EUW1:summoner:puuid-1:matchups:filter"));
+        assertTrue(rankHistory.endsWith("ls:EUROPE:EUW1:summoner:puuid-1:rank-history:16"));
         assertTrue(RedisKey.SUMMONER_SEARCH.of("EUROPE", "EUW1", "query").endsWith("ls:EUROPE:EUW1:summoner:search:query"));
         assertTrue(RedisKey.SUMMONER_AUTOCOMPLETE.of("EUROPE", "EUW1", "query").endsWith("ls:EUROPE:EUW1:summoner:autocomplete:query"));
         assertTrue(RedisKey.CHAMPION_PAGE.of(157, "page-key").endsWith("ls:champion:157:page:page-key"));

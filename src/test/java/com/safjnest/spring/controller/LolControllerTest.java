@@ -56,6 +56,14 @@ public class LolControllerTest {
     }
 
     @Test
+    public void shouldExposeRankHistory() throws NoSuchMethodException {
+        GetMapping mapping = LolController.class.getMethod("rankHistory", String.class, String.class,
+            String.class, long.class, long.class, String.class).getAnnotation(GetMapping.class);
+
+        assertEquals("/profile/{puuid}/rank-history", mapping.value()[0]);
+    }
+
+    @Test
     public void shouldParseProfileMatchupsFilterDefaults() {
         com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(0, 0, null, null, null, 5);
 

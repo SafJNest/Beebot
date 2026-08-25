@@ -1023,6 +1023,22 @@ public final class MongoDB {
         return result;
     }
 
+    public static List<com.safjnest.lol.model.match.RankHistoryMatch> findRankHistoryMatches(
+            String puuid,
+            LeagueShard shard,
+            long seasonStart,
+            long seasonEnd) {
+        if (puuid == null || puuid.isBlank() || shard == null || seasonStart <= 0 || seasonEnd < seasonStart) return List.of();
+        List<com.safjnest.lol.model.match.RankHistoryMatch> result = new ArrayList<>();
+        for (Document document : matches().find(matchFilter(puuid, shard, seasonStart, seasonEnd, null))
+                .projection(rankHistoryProjection()).sort(Sorts.ascending("timeStart", "_id"))) {
+            com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);
+            com.safjnest.lol.model.match.RankHistoryMatch value = com.safjnest.lol.model.match.RankHistoryMatch.from(match, puuid);
+            if (value != null) result.add(value);
+        }
+        return result;
+    }
+
     public static List<Match> findProfileStatisticsMatches(
             String puuid,
             LeagueShard shard,
@@ -3117,6 +3133,12 @@ public final class MongoDB {
                 "participants.item3", "participants.item4", "participants.item5", "participants.item6",
                 "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",
                 "participants.secondaryRunes", "participants.statsRunes");
+    }
+
+    private static Bson rankHistoryProjection() {
+        return Projections.include("_id", "queue", "timeStart", "timeEnd",
+                "participants.puuid", "participants.win", "participants.champion", "participants.lane",
+                "participants.team", "participants.rankProgress");
     }
 
     private static Bson profileStatisticsMatchProjection() {
