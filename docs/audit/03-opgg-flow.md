@@ -32,9 +32,7 @@ righe participant Mongo con:
 
 - `summoner_id`;
 - `game_id`;
-- `rank` come `TierDivisionType`;
-- `lp`;
-- `gain`;
+- `rankProgress` (`rank`, `lp`, `gain`, `previousRank`, `previousLp`);
 - `win`;
 - `tracked`;
 - `time_start`, `time_end`, `patch`.
@@ -43,13 +41,22 @@ Il contratto è Mongo: [MongoDB.java](../../src/main/java/com/safjnest/nosql/Mon
 
 ## Rilievo
 
-### Contratto LP — solo snapshot tracked
+### Contratto LP — snapshot e tracking autorevole
 
 `MatchService.getSummonerData` usa `findSummonerData`, separata dal profile aggregate. La proiezione produce `game_id`, `rank`, `lp`, `gain`, `win`, `time_start`, `time_end` e `patch`, in ordine cronologico.
 
-Il consumer confronta `game_id` con l’id del match e considera attendibili `rank`, `lp` e `gain` quando il documento match ha `tracked=true` oppure il participant ha già `rank != null`, come nel predicate del tracker per i documenti legacy. Un match ranked raw, non ancora arricchito, mostra `? LP`; non viene convertito in `0 LP`, placement, promozione o retrocessione.
+Il consumer confronta `game_id` con l’id del match e usa esclusivamente il
+`rankProgress` participant per il renderer. Il tracker usa invece soltanto
+`tracked=true` come guard: uno snapshot OP.GG parziale non può impedirne il
+completamento. Uno snapshot senza gain/predecessore mostra `? LP`, non `0 LP`,
+placement, promozione o retrocessione.
 
-La timeline ignora gli snapshot raw quando cerca il rank precedente. Il confronto queue include entrambe le rappresentazioni Solo/Duo (`TEAM_BUILDER_RANKED_SOLO` e `RANKED_SOLO_5X5`), mentre il tracking invalida la cache `SUMMONER_DATA` di ogni partecipante dopo la riscrittura Mongo.
+Le transizioni sono calcolate esclusivamente da `rankProgress.previousRank` e
+`previousLp`: `+20 LP`, `0 LP`, `? LP`, placement, promozione e retrocessione
+non sono stringhe salvate. Il confronto queue include entrambe le
+rappresentazioni Solo/Duo (`TEAM_BUILDER_RANKED_SOLO` e `RANKED_SOLO_5X5`),
+mentre il tracking invalida la cache `SUMMONER_DATA` di ogni partecipante dopo
+la riscrittura Mongo.
 
 Evidenza: [MongoDB.java](../../src/main/java/com/safjnest/nosql/MongoDB.java), [MatchService.java](../../src/main/java/com/safjnest/lol/service/MatchService.java) e [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java).
 

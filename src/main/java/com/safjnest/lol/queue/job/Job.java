@@ -22,7 +22,7 @@ public final class Job<T> {
     private final Object route;
     private final String key;
     private final String name;
-    private final JobPriority priority;
+    private volatile JobPriority priority;
     private final Function<Job<T>, T> work;
     private final ConcurrentHashMap<String, String> items;
     private final ConcurrentHashMap<String, String> itemLabels;
@@ -53,6 +53,11 @@ public final class Job<T> {
     public String key() { return key; }
     public String name() { return name; }
     public JobPriority priority() { return priority; }
+    public boolean promote(JobPriority requested) {
+        if (requested == null || requested.ordinal() >= priority.ordinal()) return false;
+        priority = requested;
+        return true;
+    }
     public Function<Job<T>, T> work() { return work; }
 
     public void phase(String value) { phase = value; }

@@ -74,6 +74,14 @@ Prima dell'accettazione eseguire su un database con dati rappresentativi:
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}, {riotId: 1, ranks: 1}).sort({riotId: 1}).limit(25).explain("executionStats")
 db.match.find({participants: {$elemMatch: {puuid: "puuid", champion: 1}}, region: "EUW1", queue: "RANKED_SOLO_5X5", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
+db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}, timeStart: {$lt: 1714514400000}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
+db.match.distinct("participants.puuid", {region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}})
+db.match.aggregate([
+  {$match: {queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}}},
+  {$unwind: "$participants"},
+  {$group: {_id: {region: "$region", puuid: "$participants.puuid"}}},
+  {$sort: {"_id.region": 1, "_id.puuid": 1}}
+], {allowDiskUse: true}).explain("executionStats")
 db.summoner.aggregate([
   {$unwind: "$ranks"},
   {$match: {region: "EUW1", "ranks.queue": "RANKED_SOLO_5X5"}},

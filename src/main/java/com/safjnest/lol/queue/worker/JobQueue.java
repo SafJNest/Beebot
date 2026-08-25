@@ -36,6 +36,20 @@ public final class JobQueue {
         }
     }
 
+    public boolean promote(Job<?> job, JobPriority priority) {
+        lock.lock();
+        try {
+            if (job == null || priority == null || priority.ordinal() >= job.priority().ordinal()) return false;
+            if (!immediate.remove(job) && !normal.remove(job) && !background.remove(job)) return false;
+            if (!job.promote(priority)) return false;
+            lane(priority).addFirst(job);
+            available.signal();
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public Job<?> take() throws InterruptedException {
         lock.lockInterruptibly();
         try {

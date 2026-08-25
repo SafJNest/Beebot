@@ -455,7 +455,7 @@ public final class SummonerService {
         for (var participant : game.getParticipants()) {
             if (participant == null || participant.getPuuid() == null || participant.getPuuid().isBlank()) continue;
             if (!MongoDB.upsertSummoner(participant, shard)) continue;
-            Tracker.enqueueParticipantRefresh(participant.getPuuid(), shard);
+            RankService.refreshBackgroundAsync(participant.getPuuid(), shard);
         }
     }
 

@@ -104,7 +104,7 @@ public class RouterTest {
     }
 
     @Test
-    public void doesNotPromoteAChildAboveItsParentPriority() throws Exception {
+    public void allowsAnImmediateChildAboveItsBackgroundParentPriority() throws Exception {
         router.register(sync);
         CountDownLatch childStarted = new CountDownLatch(1);
         CountDownLatch childRelease = new CountDownLatch(1);
@@ -121,7 +121,7 @@ public class RouterTest {
 
         assertTrue(childStarted.await(2, TimeUnit.SECONDS));
         var jobs = registry.snapshot();
-        assertEquals(JobPriority.BACKGROUND, jobs.get(1).priority());
+        assertEquals(JobPriority.IMMEDIATE, jobs.get(1).priority());
         childRelease.countDown();
         root.get(2, TimeUnit.SECONDS);
         assertTrue(awaitEmpty(registry));
@@ -229,6 +229,40 @@ public class RouterTest {
         assertEquals(Integer.valueOf(1), follower.get(2, TimeUnit.SECONDS));
         assertEquals(1, calls.get());
         assertTrue(awaitEmpty(registry));
+    }
+
+    @Test
+    public void promotesAQueuedSourceWhenAnImmediateFollowerArrives() throws Exception {
+        router.register(sync);
+        CountDownLatch blockerStarted = new CountDownLatch(1);
+        CountDownLatch blockerRelease = new CountDownLatch(1);
+        List<String> order = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger calls = new AtomicInteger();
+
+        var blocker = router.submit(SyncTestScheduler.class, "EUW", "blocker", "blocker", JobPriority.IMMEDIATE, ignored -> {
+            blockerStarted.countDown();
+            await(blockerRelease);
+            return null;
+        });
+        assertTrue(blockerStarted.await(2, TimeUnit.SECONDS));
+        var source = router.submit(SyncTestScheduler.class, "EUW", "rank", "rank", JobPriority.BACKGROUND, ignored -> {
+            order.add("rank");
+            return calls.incrementAndGet();
+        });
+        var normal = router.submit(SyncTestScheduler.class, "EUW", "normal", "normal", JobPriority.NORMAL, ignored -> {
+            order.add("normal");
+            return null;
+        });
+        var follower = router.submit(SyncTestScheduler.class, "EUW", "rank", "rank", JobPriority.IMMEDIATE,
+            ignored -> calls.incrementAndGet());
+
+        blockerRelease.countDown();
+        blocker.get(2, TimeUnit.SECONDS);
+        assertEquals(Integer.valueOf(1), source.get(2, TimeUnit.SECONDS));
+        assertEquals(Integer.valueOf(1), follower.get(2, TimeUnit.SECONDS));
+        normal.get(2, TimeUnit.SECONDS);
+        assertEquals(List.of("rank", "normal"), order);
+        assertEquals(1, calls.get());
     }
 
     @Test

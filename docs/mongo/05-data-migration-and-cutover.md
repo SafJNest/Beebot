@@ -19,6 +19,29 @@ Le fasi sono eseguite in questo ordine:
 1. `summoners` → collection `summoner`, con `ranks[]` e `masteries[]` caricati nello stesso batch;
 2. `matches` → collection `match`, con `participants[]` flat nel documento;
 3. `match_events` → payload eventi separato, solo quando il documento evento non esiste.
+4. `rank-progress-schema-v1` → sola scansione Mongo dei match: sposta
+   `participants.rank`, `lp` e `gain` in `participants.rankProgress` e rimuove
+   i campi plain;
+5. `rank-progress-history-v1` → sola scansione Mongo per `(region, puuid)`,
+   Solo/Duo ordinata `timeStart DESC, _id DESC`, che ricostruisce gli snapshot
+   precedenti senza chiamate Riot o letture MariaDB.
+
+La schema pass seleziona al massimo 10.000 soli `_id` di match che contengono
+ancora `participants.rank`, `lp` o `gain`, quindi esegue un unico
+`updateMany` con aggregation pipeline direttamente su Mongo: costruisce
+`rankProgress` e rimuove i campi plain senza trasferire array `participants`
+nel JVM. Su documenti già canonici la pass termina senza leggere i match. La
+discovery history è un cursor di aggregation (`match → unwind participant →
+group(region, puuid)`), quindi non materializza tutti i subject in memoria.
+Per ogni subject la timeline è una query streaming che proietta soltanto
+`_id`, `tracked` e il suo `rankProgress`; gli aggiornamenti sono `bulkWrite`
+posizionali da 1.000 e non riscrivono l'intero array `participants`.
+Per un match non tracked il predecessore viene collegato soltanto quando il
+gain legacy coincide con quello rank-aware, eccetto le transizioni placement:
+`UNRANKED → ranked` forza `gain = lp` corrente e `ranked → UNRANKED` forza
+`gain = 0`, così corregge gli storici MariaDB che avevano registrato il gain
+in modo errato. Questa tolleranza appartiene solo alla migration; il tracker
+runtime continua a validare il suo snapshot corrente.
 
 Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre il documento `match` usa `_id` come full Riot match ID e conserva solo `region` tra i dati di shard. Match, rank, mastery e participant non conservano identificativi numerici MariaDB. La migration normalizza i match già presenti rimuovendo i campi legacy duplicati e aggiungendo `patchMajor`; non modifica participant o eventi esistenti.
 
@@ -52,6 +75,25 @@ Non viene usato `OFFSET`, non viene materializzato il risultato completo e non v
 `migration_runs` contiene run, fase, high-water mark, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
 
 Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v6-match-schema`. Prima di ogni query pesante il runner ricontrolla gli `_id` presenti in Mongo; i match già presenti vengono inoltre normalizzati senza rilettura da MariaDB, mentre un match mancante viene caricato dal backfill. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
+
+Le due fasi RankProgress hanno checkpoint distinti per `runId`. Con lo stesso
+`runId` e `resume=true`, un checkpoint `COMPLETED` non viene rieseguito. Un
+nuovo `runId`, o `resume=false`, riscorre Mongo ed è idempotente: completa o
+ricontrolla `rankProgress`, ma non ricarica i match già presenti da MariaDB.
+Gli indici dichiarati, inclusi `match_rank_progress_history` e
+`match_rank_progress_subjects`, devono esistere prima del job; il runner
+RankProgress non li valida né li crea.
+
+## Recupero mirato dei summoner tracked
+
+`%test migrate-tracked` esegue una recovery esplicita, senza checkpoint, per i
+soli documenti `summoner.tracking=true`. Per ogni PUUID legge la sua intera
+history da MariaDB, crea soltanto i match Mongo assenti e i loro eventi
+mancanti, quindi ripristina sui soli match `tracked != true` il base snapshot
+del participant (`rank`, `lp`, `gain`) senza predecessore. Infine ricostruisce
+`previousRank`, `previousLp` e gain rank-aware per le timeline Solo/Duo di quel
+PUUID. Un match `tracked=true` resta la fonte runtime autorevole e non viene
+sovrascritto dalla recovery.
 
 `highWaterMark > 0` permette di fermare intenzionalmente il backfill a un id. In quel caso il checkpoint resta `PAUSED` e può essere ripreso senza perdere la pagina già completata.
 

@@ -37,6 +37,10 @@ public class GameQueueTypeUtils {
         : queue;
   }
 
+  public static boolean isRankedSolo(GameQueueType queue) {
+    return canonicalQueue(queue) == GameQueueType.RANKED_SOLO_5X5;
+  }
+
   public static String prettyName(GameQueueType queue) {
     String name = switch (queue) {
         case CHERRY          -> "Arena";

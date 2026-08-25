@@ -6,7 +6,6 @@ import java.util.List;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class Participant {
     public int id;
@@ -18,9 +17,7 @@ public class Participant {
     public LaneType lane;
     public TeamType team;
     public int roleQuestId;
-    public TierDivisionType rank;
-    public int lp;
-    public int gain;
+    public RankProgress rankProgress;
     public int damage;
     public int damageTaken;
     public int damageBuilding;

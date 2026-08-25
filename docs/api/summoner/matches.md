@@ -39,6 +39,18 @@ chiamate Riot, lookup o rigenerazioni statistiche.
       "win": true,
       "kda": "8/2/11",
       "championId": 103,
+      "participants": [
+        {
+          "puuid": "Qx7m2vW8-example-puuid",
+          "rankProgress": {
+            "rank": "DIAMOND_II",
+            "lp": 74,
+            "gain": 21,
+            "previousRank": "DIAMOND_II",
+            "previousLp": 53
+          }
+        }
+      ],
       "primaryRunes": [8112, 8143, 8138, 8105],
       "secondaryRunes": [8347, 8304],
       "statsRunes": [5008, 5008, 5011]
@@ -61,7 +73,9 @@ offset e pagine restano stabili.
 Ogni risultato espone le rune del summoner richiesto: la prima voce di
 `primaryRunes` e `secondaryRunes` è l'albero, le altre sono le rune scelte;
 `statsRunes` contiene i tre shard statistici. I partecipanti restano una
-projection leggera e non includono queste configurazioni.
+projection leggera e non includono queste configurazioni; quando disponibile,
+ognuno include il `rankProgress` già persistito. Non esistono più campi
+participant top-level `rank`, `lp` o `gain`.
 
 La pagina mantiene i campi esistenti e aggiunge `metadata` root con
 `pagination` (`limit`, `offset`, `total`, `hasMore`), il filtro richiesto e

@@ -176,9 +176,7 @@ public class Match extends AbstractEntity<Match> {
             case "win" -> participant.win = booleanValue(value);
             case "kda" -> participant.kda = stringValue(value);
             case "champion" -> participant.champion = intValue(value);
-            case "rank" -> participant.rank = enumValue(value, TierDivisionType.class);
-            case "lp" -> participant.lp = intValue(value);
-            case "gain" -> participant.gain = intValue(value);
+            case "rankProgress" -> participant.rankProgress = rankProgressValue(value);
             case "damage" -> participant.damage = intValue(value);
             case "cs" -> participant.cs = intValue(value);
             case "goldEarned" -> participant.goldEarned = intValue(value);
@@ -203,5 +201,18 @@ public class Match extends AbstractEntity<Match> {
         if (value == null) return null;
         if (type.isInstance(value)) return type.cast(value);
         return Enum.valueOf(type, String.valueOf(value));
+    }
+
+    private static RankProgress rankProgressValue(Object value) {
+        if (value instanceof RankProgress progress) return progress;
+        if (!(value instanceof Map<?, ?> values)) return null;
+        TierDivisionType rank = enumValue(values.get("rank"), TierDivisionType.class);
+        Integer lp = values.get("lp") == null ? null : intValue(values.get("lp"));
+        if (rank == null || lp == null) return null;
+        RankProgress progress = new RankProgress(rank, lp,
+                values.get("gain") == null ? null : intValue(values.get("gain")),
+                enumValue(values.get("previousRank"), TierDivisionType.class),
+                values.get("previousLp") == null ? null : intValue(values.get("previousLp")));
+        return progress;
     }
 }

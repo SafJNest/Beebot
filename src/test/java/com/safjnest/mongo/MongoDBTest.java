@@ -3,6 +3,7 @@ package com.safjnest.mongo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -13,8 +14,11 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import com.mongodb.client.model.WriteModel;
+
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
@@ -38,9 +42,7 @@ public class MongoDBTest {
         Participant participant = new Participant();
         participant.puuid = "p1";
         participant.item0 = 1055;
-        participant.rank = TierDivisionType.GOLD_II;
-        participant.lp = 73;
-        participant.gain = 21;
+        participant.rankProgress = new RankProgress(TierDivisionType.GOLD_II, 73, 21, null, null);
         match.participants = List.of(participant);
 
         Document document = MongoDB.toDocument(match);
@@ -58,9 +60,13 @@ public class MongoDBTest {
         assertFalse(document.containsKey("leagueShard"));
         assertFalse(document.containsKey("legacyMatchId"));
         assertEquals(1055, savedParticipant.getInteger("item0").intValue());
-        assertEquals("GOLD_II", savedParticipant.getString("rank"));
-        assertEquals(73, savedParticipant.getInteger("lp").intValue());
-        assertEquals(21, savedParticipant.getInteger("gain").intValue());
+        Document progress = savedParticipant.get("rankProgress", Document.class);
+        assertEquals("GOLD_II", progress.getString("rank"));
+        assertEquals(73, progress.getInteger("lp").intValue());
+        assertEquals(21, progress.getInteger("gain").intValue());
+        assertFalse(savedParticipant.containsKey("rank"));
+        assertFalse(savedParticipant.containsKey("lp"));
+        assertFalse(savedParticipant.containsKey("gain"));
         assertFalse(savedParticipant.containsKey("build"));
         assertFalse(savedParticipant.containsKey("id"));
         assertFalse(savedParticipant.containsKey("summonerId"));
@@ -158,17 +164,17 @@ public class MongoDBTest {
 
         Participant participant = new Participant();
         participant.puuid = "puuid-1";
-        participant.rank = TierDivisionType.PLATINUM_I;
-        participant.lp = 63;
-        participant.gain = 23;
+        participant.rankProgress = new RankProgress(TierDivisionType.PLATINUM_I, 63, 23, TierDivisionType.PLATINUM_II, 40);
         match.participants = List.of(participant);
 
         Match decoded = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(match)), Match.class);
         Participant decodedParticipant = decoded.participants.get(0);
 
-        assertEquals(TierDivisionType.PLATINUM_I, decodedParticipant.rank);
-        assertEquals(63, decodedParticipant.lp);
-        assertEquals(23, decodedParticipant.gain);
+        assertEquals(TierDivisionType.PLATINUM_I, decodedParticipant.rankProgress.rank);
+        assertEquals(63, decodedParticipant.rankProgress.lp.intValue());
+        assertEquals(23, decodedParticipant.rankProgress.gain.intValue());
+        assertEquals(TierDivisionType.PLATINUM_II, decodedParticipant.rankProgress.previousRank);
+        assertEquals(40, decodedParticipant.rankProgress.previousLp.intValue());
     }
 
     @Test
@@ -179,6 +185,37 @@ public class MongoDBTest {
         match.eventData = Map.of("champion_kills", List.of(Map.of("timestamp", 1000)));
 
         assertFalse(MongoDB.toDocument(match).containsKey("events"));
+    }
+
+    @Test
+    public void rankProgressSchemaPipelineSupportsBsonNullValues() throws Exception {
+        Method method = MongoDB.class.getDeclaredMethod("rankProgressSchemaUpdate");
+        method.setAccessible(true);
+
+        List<?> pipeline = (List<?>) method.invoke(null);
+
+        assertEquals(1, pipeline.size());
+        assertNotNull(pipeline.getFirst());
+    }
+
+    @Test
+    public void rankProgressHistoryMigrationRepairsLegacyUnrankedPlacementGain() throws Exception {
+        Method method = MongoDB.class.getDeclaredMethod("rankProgressHistoryUpdate",
+                Document.class, String.class, RankProgress.class, RankProgress.class);
+        method.setAccessible(true);
+
+        Document rawMatch = new Document("_id", "EUW1_1").append("tracked", false);
+        RankProgress placement = new RankProgress(TierDivisionType.SILVER_III, 89, 90, null, null);
+        RankProgress unranked = new RankProgress(TierDivisionType.UNRANKED, 0, 0, null, null);
+        WriteModel<?> repaired = (WriteModel<?>) method.invoke(null, rawMatch, "puuid", placement, unranked);
+
+        assertNotNull(repaired);
+
+        RankProgress mismatchedRankedGain = new RankProgress(TierDivisionType.SILVER_III, 89, 90, null, null);
+        RankProgress previousRanked = new RankProgress(TierDivisionType.SILVER_III, 70, 0, null, null);
+        WriteModel<?> skipped = (WriteModel<?>) method.invoke(null, rawMatch, "puuid", mismatchedRankedGain, previousRanked);
+
+        assertNull(skipped);
     }
 
     @Test

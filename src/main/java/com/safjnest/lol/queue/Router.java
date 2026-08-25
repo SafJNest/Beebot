@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.AbstractScheduler;
+import com.safjnest.utils.log.BotLogger;
 
 public final class Router {
 
@@ -52,6 +53,12 @@ public final class Router {
                 registry.released(job);
             }
         } else {
+            Job<?> source = registry.source(job);
+            JobPriority before = source == null ? null : source.priority();
+            if (source != null && scheduler.promote(source, job.priority())) {
+                BotLogger.info("[Queue] Promoted key=" + source.key() + " route=" + source.route()
+                    + " " + before + " -> " + source.priority());
+            }
             registry.released(job);
         }
         return future;

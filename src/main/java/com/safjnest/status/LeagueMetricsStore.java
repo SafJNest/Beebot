@@ -23,11 +23,15 @@ public final class LeagueMetricsStore {
     private LeagueMetricsStore() {}
 
     public static void seed() {
-        refresh(true);
+        refresh();
     }
 
     public static void refresh() {
-        refresh(false);
+        refreshLong(RedisKey.STATUS_GAMES_ANALYZED, GAMES_ANALYZED, MongoDB::estimatedMatchCount);
+        refreshLong(RedisKey.STATUS_TOTAL_SUMMONERS, TOTAL_SUMMONERS, MongoDB::estimatedSummonerCount);
+        refreshLong(RedisKey.STATUS_TOTAL_MASTERIES, TOTAL_MASTERIES, MongoDB::totalMasteriesCount);
+        refreshLong(RedisKey.STATUS_TRACKED_SUMMONERS, TRACKED_SUMMONERS, LeagueMetricsStore::trackedSummonerSource);
+        refreshRanksByQueue();
     }
 
     public static LeagueMetrics snapshot() {
@@ -41,14 +45,6 @@ public final class LeagueMetricsStore {
 
     // ============================================================================
 
-    private static void refresh(boolean force) {
-        refreshLong(RedisKey.STATUS_GAMES_ANALYZED, GAMES_ANALYZED, MongoDB::estimatedMatchCount, force);
-        refreshLong(RedisKey.STATUS_TOTAL_SUMMONERS, TOTAL_SUMMONERS, MongoDB::estimatedSummonerCount, force);
-        refreshLong(RedisKey.STATUS_TOTAL_MASTERIES, TOTAL_MASTERIES, MongoDB::totalMasteriesCount, force);
-        refreshLong(RedisKey.STATUS_TRACKED_SUMMONERS, TRACKED_SUMMONERS, LeagueMetricsStore::trackedSummonerSource, force);
-        refreshRanksByQueue(force);
-    }
-
     public static long trackedSummoners() {
         return TRACKED_SUMMONERS.get();
     }
@@ -57,15 +53,13 @@ public final class LeagueMetricsStore {
         return MongoDB.findTrackedSummonerModels().size();
     }
 
-    private static void refreshLong(RedisKey key, AtomicLong target, LongSupplier source, boolean force) {
+    private static void refreshLong(RedisKey key, AtomicLong target, LongSupplier source) {
         try {
             String redisKey = key.of();
-            if (!force && RedisClient.ttl(redisKey) > 0) {
-                Long cached = RedisClient.getLong(redisKey);
-                if (cached != null) {
-                    target.set(Math.max(0, cached));
-                    return;
-                }
+            Long cached = RedisClient.getLong(redisKey);
+            if (cached != null) {
+                target.set(Math.max(0, cached));
+                return;
             }
             long value = Math.max(0, source.getAsLong());
             target.set(value);
@@ -74,15 +68,13 @@ public final class LeagueMetricsStore {
         }
     }
 
-    private static void refreshRanksByQueue(boolean force) {
+    private static void refreshRanksByQueue() {
         try {
             String redisKey = RedisKey.STATUS_RANKS_BY_QUEUE.of();
-            if (!force && RedisClient.ttl(redisKey) > 0) {
-                Map<String, Long> cached = RedisClient.get(redisKey, new TypeReference<Map<String, Long>>() {});
-                if (cached != null) {
-                    RANKS_BY_QUEUE.set(cached);
-                    return;
-                }
+            Map<String, Long> cached = RedisClient.get(redisKey, new TypeReference<Map<String, Long>>() {});
+            if (cached != null) {
+                RANKS_BY_QUEUE.set(cached);
+                return;
             }
             Map<String, Long> value = MongoDB.rankTotalsByQueue();
             RANKS_BY_QUEUE.set(value);

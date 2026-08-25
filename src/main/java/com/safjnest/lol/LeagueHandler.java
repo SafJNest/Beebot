@@ -42,6 +42,7 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -408,7 +409,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         int games = wins + losses;
         long wrPercent = games > 0 ? (long) Math.ceil((wins * 100.0) / games) : 0;
         return CustomEmojiHandler.getFormattedEmoji(rank.tier().getTier()) + " "
-            + LeagueMessageUtils.getFormattedRank(rank.tier(), false) + " " + rank.lp() + " LP\n"
+            + TierDivisionUtils.getFormattedRank(rank.tier(), false) + " " + rank.lp() + " LP\n"
             + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 

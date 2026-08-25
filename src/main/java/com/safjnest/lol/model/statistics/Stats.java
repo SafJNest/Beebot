@@ -100,7 +100,7 @@ public class Stats<T> {
         if (participant == null) return;
         addValues(participant.win, kda(participant.kda), participant.damage, participant.damageBuilding,
             participant.damageTaken, participant.healing, participant.visionScore, participant.ward,
-            participant.wardKilled, participant.cs, participant.goldEarned, participant.gain,
+            participant.wardKilled, participant.cs, participant.goldEarned, participant.rankProgress == null || participant.rankProgress.gain == null ? 0 : participant.rankProgress.gain,
             participant.level, participant.doubles, participant.triples, participant.quadruples,
             participant.pentas, participant.q, participant.w, participant.e, participant.r, participant.d,
             participant.f, participant.subTeamPlacement, timeStart, timeEnd, teamKills, enemyTeamKills, arena, calculate);

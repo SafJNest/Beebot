@@ -11,13 +11,17 @@ import java.util.Set;
 import org.bson.Document;
 
 import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.Participant;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.utils.log.BotLogger;
 
 public final class MongoMigration {
 
     private static final String CHECKPOINT_COLLECTION = "migration_runs";
     private static final String MIGRATION_VERSION = "raw-v6-match-schema";
+    private static final String RANK_PROGRESS_SCHEMA_PHASE = "rank-progress-schema-v1";
+    private static final String RANK_PROGRESS_HISTORY_PHASE = "rank-progress-history-v1";
     private static final int DEFAULT_BATCH_SIZE = 500_000;
     private static final int MAX_BATCH_SIZE = 500_000;
     private static final int MAX_MATCH_BATCH_SIZE = 50_000;
@@ -40,9 +44,119 @@ public final class MongoMigration {
         MigrationReport report = new MigrationReport(effective.dryRun());
         try {
             for (String phase : PHASES) migratePhase(phase, effective, report);
+            migrateRankProgress(effective, report);
             return report;
         } finally {
             requestCollection();
+        }
+    }
+
+    public static MigrationReport migrateRankProgress() {
+        return migrateRankProgress(Options.defaults());
+    }
+
+    public static MigrationReport migrateRankProgress(Options options) {
+        Options effective = options == null ? Options.defaults() : options;
+        MigrationReport report = new MigrationReport(effective.dryRun());
+        try {
+            migrateRankProgress(effective, report);
+            return report;
+        } finally {
+            requestCollection();
+        }
+    }
+
+    public static MigrationReport migrateTrackedRankProgress() {
+        MigrationReport report = new MigrationReport(false);
+        int summoners = 0;
+        BotLogger.info("[TrackedRankProgress] Starting MariaDB recovery");
+        try (com.mongodb.client.MongoCursor<Document> cursor = MongoDB.trackedSummonerCursor()) {
+            while (cursor.hasNext()) {
+                String puuid = cursor.next().getString("_id");
+                if (puuid == null || puuid.isBlank()) continue;
+                recoverTrackedRankProgress(puuid, report);
+                report.accept("tracked-summoners", puuid);
+                summoners++;
+                if (summoners % 100 == 0) {
+                    BotLogger.info("[TrackedRankProgress] Processed summoners=" + summoners
+                            + " updates=" + report.processed());
+                    requestCollection();
+                }
+            }
+        } catch (RuntimeException exception) {
+            BotLogger.error("[TrackedRankProgress] Failed summoners=" + summoners + " error="
+                    + exception.getClass().getSimpleName() + ": " + exception.getMessage());
+            throw exception;
+        } finally {
+            requestCollection();
+        }
+        BotLogger.info("[TrackedRankProgress] Completed summoners=" + summoners + " updates=" + report.processed());
+        return report;
+    }
+
+    private static void migrateRankProgress(Options options, MigrationReport report) {
+        BotLogger.info("[RankProgress] Starting run=" + options.runId() + " resume=" + options.resume()
+                + " dryRun=" + options.dryRun() + " batchSize=" + options.batchSize());
+        try {
+            migrateRankProgressSchema(options, report);
+            migrateRankProgressHistory(options, report);
+            BotLogger.info("[RankProgress] Completed run=" + options.runId() + " processed=" + report.processed());
+        } catch (RuntimeException exception) {
+            BotLogger.error("[RankProgress] Failed run=" + options.runId() + " error="
+                    + exception.getClass().getSimpleName() + ": " + exception.getMessage());
+            throw exception;
+        }
+    }
+
+    private static void recoverTrackedRankProgress(String puuid, MigrationReport report) {
+        List<Match> sourceMatches = LeagueDB.getMatchesByPuuid(puuid);
+        Map<String, Match> matchesByIdentity = new LinkedHashMap<>();
+        Set<String> regions = new HashSet<>();
+        try {
+            for (Match match : sourceMatches) {
+                String identity = matchIdentity(match);
+                matchesByIdentity.put(identity, match);
+                if (match.leagueShard != null) regions.add(match.leagueShard.name());
+            }
+
+            List<String> identities = new ArrayList<>(matchesByIdentity.keySet());
+            Set<String> existingMatches = MongoDB.findExistingIds("match", identities);
+            Set<String> existingEvents = MongoDB.findExistingIds("match_events", identities);
+            List<Integer> missingEventIds = new ArrayList<>();
+            Set<String> missingEventIdentities = new HashSet<>();
+            try {
+                for (Map.Entry<String, Match> entry : matchesByIdentity.entrySet()) {
+                    String identity = entry.getKey();
+                    Match match = entry.getValue();
+                    if (!existingMatches.contains(identity) && MongoDB.createRawMatch(identity, match)) {
+                        report.accept("tracked-matches", identity);
+                    }
+                    if (!existingEvents.contains(identity)) {
+                        missingEventIds.add(match.id);
+                        missingEventIdentities.add(identity);
+                    }
+                    Participant participant = participant(match, puuid);
+                    if (participant != null && MongoDB.restoreUntrackedParticipantRankProgress(identity, puuid, participant.rankProgress)) {
+                        report.accept("tracked-rank-progress", identity);
+                    }
+                }
+                migrateMissingEvents(Options.defaults(), missingEventIds, missingEventIdentities);
+            } finally {
+                existingMatches.clear();
+                existingEvents.clear();
+                identities.clear();
+                missingEventIds.clear();
+                missingEventIdentities.clear();
+            }
+
+            for (String region : regions) {
+                int updated = MongoDB.rebuildRankProgressHistory(new MongoDB.RankProgressSubject(region, puuid), false);
+                for (int index = 0; index < updated; index++) report.accept("tracked-rank-history", region + "|" + puuid);
+            }
+        } finally {
+            matchesByIdentity.clear();
+            regions.clear();
+            sourceMatches.clear();
         }
     }
 
@@ -53,6 +167,75 @@ public final class MongoMigration {
             return;
         }
         migrateMatches(options, report, checkpoint);
+    }
+
+    private static Participant participant(Match match, String puuid) {
+        if (match == null || match.participants == null) return null;
+        for (Participant participant : match.participants) {
+            if (participant != null && puuid.equals(participant.puuid)) return participant;
+        }
+        return null;
+    }
+
+    private static void migrateRankProgressSchema(Options options, MigrationReport report) {
+        RankProgressCheckpoint checkpoint = options.resume()
+                ? readRankProgressCheckpoint(options.runId(), RANK_PROGRESS_SCHEMA_PHASE)
+                : RankProgressCheckpoint.empty();
+        if ("COMPLETED".equals(checkpoint.status())) {
+            BotLogger.info("[RankProgress] Schema already completed run=" + options.runId());
+            return;
+        }
+
+        String cursor = checkpoint.cursor();
+        long processed = checkpoint.processed();
+        BotLogger.info("[RankProgress] Schema start run=" + options.runId() + " cursor=" + cursor + " processed=" + processed);
+        while (true) {
+            MongoDB.RankProgressPage page = MongoDB.migrateRankProgressSchemaPage(cursor, pageSize("matches", options.batchSize()), options.dryRun());
+            if (page.processed() == 0) break;
+            processed += page.processed();
+            cursor = page.cursor();
+            for (int index = 0; index < page.updated(); index++) report.accept(RANK_PROGRESS_SCHEMA_PHASE, cursor);
+            if (!options.dryRun()) writeRankProgressCheckpoint(options, RANK_PROGRESS_SCHEMA_PHASE, cursor, processed, "RUNNING");
+            BotLogger.info("[RankProgress] Schema page run=" + options.runId() + " processed=" + processed
+                    + " updated=" + page.updated() + " cursor=" + cursor);
+            requestCollection();
+        }
+        if (!options.dryRun()) writeRankProgressCheckpoint(options, RANK_PROGRESS_SCHEMA_PHASE, cursor, processed, "COMPLETED");
+        BotLogger.info("[RankProgress] Schema completed run=" + options.runId() + " processed=" + processed);
+    }
+
+    private static void migrateRankProgressHistory(Options options, MigrationReport report) {
+        RankProgressCheckpoint checkpoint = options.resume()
+                ? readRankProgressCheckpoint(options.runId(), RANK_PROGRESS_HISTORY_PHASE)
+                : RankProgressCheckpoint.empty();
+        if ("COMPLETED".equals(checkpoint.status())) {
+            BotLogger.info("[RankProgress] History already completed run=" + options.runId());
+            return;
+        }
+
+        String cursor = checkpoint.cursor();
+        long processed = checkpoint.processed();
+        int batchSize = Math.min(pageSize("matches", options.batchSize()), 5_000);
+        BotLogger.info("[RankProgress] History start run=" + options.runId()
+                + " cursor=" + cursor + " processed=" + processed);
+        try (com.mongodb.client.MongoCursor<Document> subjects = MongoDB.rankProgressSubjectCursor(cursor)) {
+            int inBatch = 0;
+            while (subjects.hasNext()) {
+                MongoDB.RankProgressSubject subject = MongoDB.RankProgressSubject.from(subjects.next());
+                int updated = MongoDB.rebuildRankProgressHistory(subject, options.dryRun());
+                processed++;
+                cursor = subject.cursor();
+                for (int index = 0; index < updated; index++) report.accept(RANK_PROGRESS_HISTORY_PHASE, cursor);
+                if (++inBatch < batchSize) continue;
+                if (!options.dryRun()) writeRankProgressCheckpoint(options, RANK_PROGRESS_HISTORY_PHASE, cursor, processed, "RUNNING");
+                BotLogger.info("[RankProgress] History page run=" + options.runId() + " processed=" + processed
+                        + " cursor=" + cursor);
+                inBatch = 0;
+                requestCollection();
+            }
+        }
+        if (!options.dryRun()) writeRankProgressCheckpoint(options, RANK_PROGRESS_HISTORY_PHASE, cursor, processed, "COMPLETED");
+        BotLogger.info("[RankProgress] History completed run=" + options.runId() + " processed=" + processed);
     }
 
     private static void migrateMatches(Options options, MigrationReport report, Checkpoint checkpoint) {
@@ -429,8 +612,25 @@ public final class MongoMigration {
                 .append("batchSize", options.batchSize()).append("updatedAt", System.currentTimeMillis()));
     }
 
+    private static RankProgressCheckpoint readRankProgressCheckpoint(String runId, String phase) {
+        QueryRecord record = MongoDB.findRecord(CHECKPOINT_COLLECTION, rankProgressCheckpointId(runId, phase));
+        if (record == null) return RankProgressCheckpoint.empty();
+        return new RankProgressCheckpoint(record.get("cursor"), record.getAsLong("processed"), record.get("status"));
+    }
+
+    private static void writeRankProgressCheckpoint(Options options, String phase, String cursor, long processed, String status) {
+        MongoDB.upsertDocument(CHECKPOINT_COLLECTION, new Document("_id", rankProgressCheckpointId(options.runId(), phase))
+                .append("runId", options.runId()).append("version", phase).append("phase", phase).append("status", status)
+                .append("cursor", cursor).append("processed", processed)
+                .append("batchSize", options.batchSize()).append("updatedAt", System.currentTimeMillis()));
+    }
+
     private static String checkpointId(String runId, String phase) {
         return MIGRATION_VERSION + ":" + runId + ":" + phase;
+    }
+
+    private static String rankProgressCheckpointId(String runId, String phase) {
+        return phase + ":" + runId;
     }
 
     private static String matchIdentity(Match match) {
@@ -504,5 +704,9 @@ public final class MongoMigration {
 
     private record Checkpoint(long highWaterMark, long processed) {
         private static Checkpoint empty() { return new Checkpoint(0, 0); }
+    }
+
+    private record RankProgressCheckpoint(String cursor, long processed, String status) {
+        private static RankProgressCheckpoint empty() { return new RankProgressCheckpoint(null, 0, null); }
     }
 }

@@ -15,6 +15,7 @@ import org.json.JSONObject;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.utils.SettingsLoader;
@@ -59,6 +60,26 @@ public final class LeagueDB extends AbstractDB {
             }
         } catch (SQLException exception) {
             throw new IllegalStateException("Unable to read MariaDB match migration ids=" + ids.size(), exception);
+        }
+    }
+
+    public static List<Match> getMatchesByPuuid(String puuid) {
+        if (puuid == null || puuid.isBlank()) return List.of();
+        String query = "SELECT sm.* FROM participant st "
+                + "JOIN `match` sm ON st.match_id = sm.id "
+                + "JOIN summoner su ON su.id = st.summoner_id "
+                + "WHERE su.puuid = ? ORDER BY sm.time_start DESC, sm.id DESC";
+
+        try (Connection connection = INSTANCE.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, puuid);
+            try (ResultSet result = statement.executeQuery()) {
+                Map<Integer, Match> matches = readMatches(result);
+                loadParticipants(connection, matches);
+                connection.commit();
+                return new ArrayList<>(matches.values());
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Unable to read MariaDB match migration puuid=" + puuid, exception);
         }
     }
 
@@ -144,9 +165,8 @@ public final class LeagueDB extends AbstractDB {
         participant.roleQuestId = result.getInt("role_quest_id");
         participant.subTeam = result.getInt("subteam");
         participant.subTeamPlacement = result.getInt("subteam_placement");
-        participant.rank = enumValue(TierDivisionType.class, result.getString("rank"));
-        participant.lp = result.getInt("lp");
-        participant.gain = result.getInt("gain");
+        TierDivisionType rank = enumValue(TierDivisionType.class, result.getString("rank"));
+        participant.rankProgress = rank == null ? null : new RankProgress(rank, result.getInt("lp"), result.getInt("gain"), null, null);
         participant.damage = result.getInt("damage");
         participant.damageBuilding = result.getInt("damage_building");
         participant.healing = result.getInt("healing");

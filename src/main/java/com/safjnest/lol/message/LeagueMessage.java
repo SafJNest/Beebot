@@ -29,8 +29,9 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.MatchTrackingUtils;
+import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
@@ -64,6 +65,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.model.match.RankProgress;
 
 public class LeagueMessage {
 
@@ -320,9 +322,10 @@ public class LeagueMessage {
         List<String> gameIds = getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset());
         for (int position = 0; position < gameIds.size(); position++) {
             if (matches.size() >= limit) break;
-            Match match = MatchService.getOpgg(gameIds.get(position), summoner.region());
+            Match match = MatchService.get(gameIds.get(position), summoner.region());
             if (match != null) matches.add(match);
         }
+        MatchService.enrichOpggMatches(matches, summoner.region());
         return matches;
     }
 
@@ -959,7 +962,8 @@ public class LeagueMessage {
     }
 
     private static String getOpggRankIcon(Participant participant, Match match) {
-        if (participant.rank != null) return LeagueMessageUtils.getFormattedRank(participant.rank, true);
+        if (participant.rankProgress != null && participant.rankProgress.rank != null)
+            return TierDivisionUtils.getFormattedRank(participant.rankProgress.rank, true);
         if (participant.puuid == null || match.leagueShard == null) return CustomEmojiHandler.getFormattedEmoji("unranked");
         return LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(participant.puuid, match.leagueShard));
     }
@@ -988,22 +992,22 @@ public class LeagueMessage {
         return (gain > 0 ? "+" : "") + gain + " LP";
     }
 
-    private static boolean hasTrackedRank(QueryRecord row) {
-        return MatchTrackingUtils.hasTrackedRank(row.getAsBoolean("tracked"), row.getValue("rank") != null);
+    private static boolean hasRankSnapshot(QueryRecord row) {
+        return RankProgressUtils.hasCurrentSnapshot(getRankProgress(row));
     }
 
-    private static TierDivisionType getPreviousTrackedRank(List<QueryRecord> result, int index) {
-        for (int previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
-            QueryRecord previous = result.get(previousIndex);
-            if (!hasTrackedRank(previous)) continue;
-            TierDivisionType rank = previous.getAsTier("rank");
-            if (rank != null) return rank;
-        }
-        return null;
+    private static RankProgress getRankProgress(QueryRecord row) {
+        QueryRecord value = row == null ? null : row.getAsRecord("rankProgress");
+        TierDivisionType rank = value == null ? null : value.getAsTier("rank");
+        if (rank == null || value == null || !value.containsKey("lp")) return null;
+        Integer gain = value.containsKey("gain") && value.getValue("gain") != null ? value.getAsInt("gain") : null;
+        TierDivisionType previousRank = value.getAsTier("previousRank");
+        Integer previousLp = value.containsKey("previousLp") && value.getValue("previousLp") != null ? value.getAsInt("previousLp") : null;
+        return new RankProgress(rank, value.getAsInt("lp"), gain, previousRank, previousLp);
     }
 
     private static boolean isRankedSolo(Match match) {
-        return match != null && GameQueueTypeUtils.canonicalQueue(match.queue) == GameQueueType.RANKED_SOLO_5X5;
+        return match != null && GameQueueTypeUtils.isRankedSolo(match.queue);
     }
 
     private static String getOpggMatchTitle(Match match, Participant participant, List<QueryRecord> result) {
@@ -1012,31 +1016,35 @@ public class LeagueMessage {
             QueryRecord row = result.get(index);
             if (!match.gameId.equals(row.getAsString("game_id"))) continue;
 
-            if (!hasTrackedRank(row)) return title + " ? LP";
-            TierDivisionType rank = row.getAsTier("rank");
-            if (rank == null) return title + " ? LP";
-            TierDivisionType previousRank = getPreviousTrackedRank(result, index);
-            int gainValue = row.getAsInt("gain");
-            String gain = getFormattedLpGain(gainValue);
+            if (!hasRankSnapshot(row)) return title + " ? LP";
+            RankProgress progress = getRankProgress(row);
+            if (progress == null) return title + " ? LP";
+            TierDivisionType rank = progress.rank;
+            Integer gainValue = progress.gain;
 
-            if (rank == TierDivisionType.UNRANKED || previousRank == TierDivisionType.UNRANKED) {
+            if (RankProgressUtils.isPlacement(progress)) {
                 title = "Placement: " + (participant.win ? "WIN" : "LOSE");
-            } else if (previousRank != null && rank != null && rank.ordinal() < previousRank.ordinal()) {
-                title = "Promoted to " + LeagueMessageUtils.getFormattedRank(rank, true) + " " + row.getAsInt("lp") + "LP";
-            } else if (previousRank != null && rank != null && rank.ordinal() > previousRank.ordinal()) {
-                title = "Demoted to " + LeagueMessageUtils.getFormattedRank(rank, true) + " " + row.getAsInt("lp") + "LP";
+            } else if (RankProgressUtils.isPromotion(progress)) {
+                title = "Promoted to " + TierDivisionUtils.getFormattedRank(rank, true) + " " + progress.lp + "LP";
+            } else if (RankProgressUtils.isDemotion(progress)) {
+                title = "Demoted to " + TierDivisionUtils.getFormattedRank(rank, true) + " " + progress.lp + "LP";
+            } else if (gainValue == null || gainValue == 0 && !RankProgressUtils.hasPreviousSnapshot(progress)) {
+                return title + " ? LP";
             } else if (!row.getAsBoolean("win") && gainValue == 0) {
                 title += " -0 LP";
             } else {
-                title += " " + gain;
+                title += " " + getFormattedLpGain(gainValue);
             }
             return title;
         }
 
         if (isRankedSolo(match)) return title + " ? LP";
-        if (participant.rank == TierDivisionType.UNRANKED) return "Placement: " + (participant.win ? "WIN" : "LOSE");
-        if (!participant.win && participant.gain == 0) return title + " -0 LP";
-        if (participant.gain != 0) title += " " + getFormattedLpGain(participant.gain);
+        RankProgress progress = participant.rankProgress;
+        if (!RankProgressUtils.hasCurrentSnapshot(progress) || progress.gain == null) return title;
+        if (RankProgressUtils.isPlacement(progress)) return "Placement: " + (participant.win ? "WIN" : "LOSE");
+        if (progress.gain == 0 && !RankProgressUtils.hasPreviousSnapshot(progress)) return title + " ? LP";
+        if (!participant.win && progress.gain == 0) return title + " -0 LP";
+        title += " " + getFormattedLpGain(progress.gain);
         return title;
     }
 
@@ -1228,7 +1236,7 @@ public class LeagueMessage {
                             int wins = entry.getWins();
                             int losses = entry.getLosses();
                             double winrate = (Double.valueOf(wins) / Double.valueOf(wins + losses)) * 100;
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormattedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + TierDivisionUtils.getFormattedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
                             entryName = GameQueueTypeUtils.prettyName(entry.getQueueType());
                         }
 

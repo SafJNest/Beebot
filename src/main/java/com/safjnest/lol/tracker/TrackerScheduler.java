@@ -6,6 +6,7 @@ import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.service.LeaderboardService;
+import com.safjnest.lol.service.RankService;
 import com.safjnest.utils.TimeConstant;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -49,11 +50,11 @@ public final class TrackerScheduler {
     }
 
     public static void retrieveHighEloEntries() {
-        Tracker.retrieveRankEntries(true, false);
+        RankService.enqueueRankEntries(true, false);
     }
 
     public static void retrieveAllEntries() {
-        Tracker.retrieveRankEntries(false, true);
+        RankService.enqueueRankEntries(false, true);
     }
 
     public static void refreshChampionData() {

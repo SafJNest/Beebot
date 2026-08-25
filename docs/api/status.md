@@ -1,7 +1,9 @@
 # Scope: status — Bot metrics
 
-`GET /api/status` returns cached counters plus live snapshots. It performs no
-Riot request and no persistent match-queue read.
+`GET /api/status` returns cached counters plus live snapshots. The counters
+reuse their Redis values, including at process startup; MongoDB is queried only
+when a cache value is absent or unreadable. It performs no Riot request and no
+persistent match-queue read.
 
 `league` contains only persistent counters. `jobs` is the authoritative live
 job tree; `dispatchers` is the physical queue/worker projection. The obsolete

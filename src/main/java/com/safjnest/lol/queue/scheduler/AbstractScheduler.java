@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 
 import com.safjnest.lol.queue.Registry;
 import com.safjnest.lol.queue.job.Job;
+import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.worker.JobQueue;
 import com.safjnest.lol.queue.worker.JobWorker;
 import com.safjnest.lol.model.status.SchedulerStatus;
@@ -104,6 +105,15 @@ public abstract class AbstractScheduler<R> {
             taskQueues.put(job.pid(), queueRoute);
             queue(queueRoute).offer(job);
             onQueued(job);
+        }
+    }
+
+    public final boolean promote(Job<?> job, JobPriority priority) {
+        if (job == null || priority == null) return false;
+        synchronized (lifecycleLock) {
+            R queueRoute = taskQueues.get(job.pid());
+            if (tasks.get(job.pid()) != job || queueRoute == null) return false;
+            return queue(queueRoute).promote(job, priority);
         }
     }
 

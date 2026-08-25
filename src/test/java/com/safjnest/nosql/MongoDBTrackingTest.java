@@ -15,19 +15,17 @@ public class MongoDBTrackingTest {
         Document document = new Document("tracked", true)
                 .append("participants", List.of(new Document("puuid", "puuid-1")));
 
-        assertTrue(MongoDB.isMatchTrackedDocument(document, "puuid-1"));
-        assertTrue(MongoDB.isMatchTrackedDocument(document, "puuid-2"));
+        assertTrue(MongoDB.isMatchTrackedDocument(document));
     }
 
     @Test
-    public void legacyParticipantRankCompletesOnlyItsReference() {
+    public void participantSnapshotDoesNotCompleteTheMatch() {
         Document document = new Document("participants", List.of(
                 new Document("puuid", "puuid-1").append("rank", "GOLD_II"),
                 new Document("puuid", "puuid-2")
         ));
 
-        assertTrue(MongoDB.isMatchTrackedDocument(document, "puuid-1"));
-        assertFalse(MongoDB.isMatchTrackedDocument(document, "puuid-2"));
+        assertFalse(MongoDB.isMatchTrackedDocument(document));
     }
 
     @Test
@@ -35,6 +33,6 @@ public class MongoDBTrackingTest {
         Document document = new Document("tracked", false)
                 .append("participants", List.of(new Document("puuid", "puuid-1")));
 
-        assertFalse(MongoDB.isMatchTrackedDocument(document, "puuid-1"));
+        assertFalse(MongoDB.isMatchTrackedDocument(document));
     }
 }

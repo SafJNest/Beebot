@@ -100,6 +100,11 @@ Queue glossary:
 - `SyncScheduler` — tracking, rank, match, sample and participant refresh workflows, one queue per shard.
 
 Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
+`MatchService` owns raw match persistence and can only create a raw
+`tracked=false` document; it cannot replace a completed match. `Tracker` owns
+the subsequent RankProgress history completion and commits the single
+`tracked=false -> true` transition. OP.GG may persist a best-effort participant
+`{ rank, lp }` snapshot, but never gain or predecessor data.
 The package boundary is intentional: `job/` owns lifecycle data, `scheduler/`
 owns route selection and physical queues, and `worker/` owns queue draining.
 A job body receives the `Job` itself for phase/item reporting; simple bodies

@@ -3,6 +3,7 @@ package com.safjnest.lol.service;
 import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
@@ -31,7 +33,6 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 
 public final class RankService {
 
-    private static final long TRACKER_RANK_REFRESH_WAIT_MILLIS = 500;
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<List<Rank>> RANKS_TYPE = new TypeReference<List<Rank>>() {};
@@ -77,10 +78,8 @@ public final class RankService {
         if (!valid(puuid, shard)) throw new IllegalArgumentException("A PUUID and shard are required for rank refresh");
 
         hardInvalidate(puuid, shard);
-        waitForTrackerRankRefresh();
-        List<LeagueEntry> entries = fetchEntriesFromRiotAsync(
-            puuid, shard, "league-entries-tracker-refresh",
-            priority == null ? JobPriority.IMMEDIATE : priority).join();
+        List<LeagueEntry> entries = refreshEntriesFromRiotAsync(
+            puuid, shard, priority == null ? JobPriority.IMMEDIATE : priority).join();
         List<Rank> ranks = toRanks(entries);
         saveRanks(puuid, shard, ranks, false);
         return ranks;
@@ -163,6 +162,29 @@ public final class RankService {
         save(shard, entry);
     }
 
+    public static void saveEntry(LeagueShard shard, LeagueEntry entry) {
+        if (entry == null || !valid(entry.getPuuid(), shard)) return;
+        if (SummonerService.find(entry.getPuuid(), shard) == null) {
+            var summoner = SummonerService.getRiotSummoner(entry.getPuuid(), shard);
+            if (summoner == null) return;
+            if (SummonerService.find(entry.getPuuid(), shard) == null && !SummonerService.upsert(summoner, null)) return;
+        }
+        put(shard, entry);
+    }
+
+    public static void enqueueRankEntries(boolean highElo, boolean allEntries) {
+        List<TierDivisionType> highTiers = highElo ? highEloTiers() : List.of();
+        List<TierDivisionType> allTiers = allEntries ? allEntryTiers() : List.of();
+        QueueHandler.background(SyncScheduler.class, null, "rank-entries", "RANK_ENTRIES", root -> {
+            for (LeagueShard shard : LeagueShardUtils.getActives()) {
+                for (TierDivisionType tier : highTiers) for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR))
+                    enqueueTier(shard, tier, queue, 0);
+                for (TierDivisionType tier : allTiers) enqueueTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, -1);
+            }
+            return null;
+        });
+    }
+
     public static void save(String puuid, LeagueShard shard, List<LeagueEntry> entries) {
         if (!valid(puuid, shard) || entries == null) return;
         saveRanks(puuid, shard, toRanks(entries));
@@ -194,6 +216,44 @@ public final class RankService {
                 return ranks;
             });
         });
+    }
+
+    private static void enqueueTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue, int page) {
+        String key = (page == 0 ? "rank-high:" : "rank-all:") + shard.name() + ':' + tier.name() + ':' + queue.name();
+        QueueHandler.background(SyncScheduler.class, shard, key, "rank entries tier=" + tier.name() + " queue=" + queue.name(), task -> {
+            int currentPage = page;
+            do {
+                task.phase("FETCHING");
+                List<LeagueEntry> entries = getByTier(shard, queue, tier, currentPage);
+                task.phase("PERSISTING");
+                for (LeagueEntry entry : entries) {
+                    task.trackItem(entry.getPuuid());
+                    try {
+                        saveEntry(shard, entry);
+                        task.done(entry.getPuuid());
+                    } catch (Exception exception) {
+                        task.failed(entry.getPuuid());
+                    }
+                }
+                if (page == 0 || entries.isEmpty()) break;
+                currentPage++;
+            } while (true);
+            return null;
+        });
+    }
+
+    private static List<TierDivisionType> highEloTiers() {
+        List<TierDivisionType> result = new ArrayList<>();
+        for (TierDivisionType tier : TierDivisionType.values()) if (TierDivisionUtils.isHighElo(tier)) result.add(tier);
+        return result;
+    }
+
+    private static List<TierDivisionType> allEntryTiers() {
+        List<TierDivisionType> result = new ArrayList<>(List.of(TierDivisionType.values()));
+        Collections.reverse(result);
+        result.remove(0);
+        result.removeIf(tier -> TierDivisionUtils.isHighElo(tier) || tier == TierDivisionType.UNRANKED);
+        return result;
     }
 
     private static CompletableFuture<List<LeagueEntry>> getEntriesAsync(String puuid, LeagueShard shard) {
@@ -291,15 +351,6 @@ public final class RankService {
         data.put("platform", shard);
         data.put("id", puuid);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, data);
-    }
-
-    private static void waitForTrackerRankRefresh() {
-        try {
-            Thread.sleep(TRACKER_RANK_REFRESH_WAIT_MILLIS);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted before Riot rank refresh", exception);
-        }
     }
 
     private static List<Rank> toRanks(List<LeagueEntry> entries) {

@@ -6,10 +6,9 @@ Il tracker usa MongoDB come unica persistenza LoL:
 
 ```text
 Riot LOLMatch
-  -> Tracker.analyzeMatchHistory(...)
-  -> MongoDB.upsertMatchDocument(full Riot match id, Match)
-  -> MongoDB.upsertParticipant(full Riot match id, Participant)
-  -> MongoDB.updateMatchRank(...)
+  -> MatchService.persistRaw(...)
+  -> MongoDB.createRawMatch(full Riot match id, Match, tracked=false)
+  -> participant summoner seed
   -> MongoDB.upsertMatchEvents(...)
 ```
 
@@ -22,13 +21,15 @@ Per ogni match devono esistere:
 - `match._id = REGION_gameId`;
 - `region` e `game_id` derivati dal full Riot match id;
 - `bans.BLUE` e `bans.RED` come array BSON;
-- participant flat dentro `participants`, inclusi `rank`, `lp` e `gain` quando disponibili;
-- rank ed eventi aggiornati tramite scritture Mongo separate/idempotenti;
+- participant flat dentro `participants`, incluso soltanto `rankProgress` quando disponibile;
+- snapshot OP.GG aggiornato solo su `tracked:false`; gain/storico solo dal tracker;
 - eventi nella collection `match_events`, referenziati dal full match id.
 
 ## Implementazione
 
-`Tracker` converte direttamente `LOLMatch` nel modello canonico `Match` e i partecipanti Riot nel modello canonico `Participant`. Il match viene scritto prima, seguito dagli upsert atomici dei partecipanti; rank ed eventi sono aggiornati sullo stesso identificativo full Riot.
+`MatchService` possiede la persistenza raw create-only. `Tracker` completa solo
+il RankProgress autorevole e committa `tracked:true`; nessun flusso raw può
+declassare un match già completo.
 
 Il controllo di esistenza per i match già processati usa `MongoDB.hasMatch`. Le vecchie chiamate `saveMatch`, `setSummonerData`, `setMatchRank`, `setMatchEvent` e `updateSummonerEntries` di `LeagueDB` non fanno più parte del runtime.
 

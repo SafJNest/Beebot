@@ -73,24 +73,6 @@ public class LeagueMessageUtils {
         return String.valueOf(number);
     }
 
-    public static String getFormattedRank(TierDivisionType rank, boolean withEmoji) {
-        if (rank == null) return "";
-        String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
-
-        if (division.equals("2") && rank.getDivision().equals("IV")) division = "4";
-        else if (rank.ordinal() < 3) division = "";
-
-        String tier = rank.prettyName().charAt(0) + "";
-
-        if(rank == TierDivisionType.MASTER_I) tier = "MS";
-        else if (rank == TierDivisionType.GRANDMASTER_I) tier  = "GM";
-        else if (rank == TierDivisionType.CHALLENGER_I) tier = "CH";
-
-        if (withEmoji) return CustomEmojiHandler.getFormattedEmoji(rank.getTier()) + tier + division;
-        else return tier + division;
-
-    }
-
     public static String getFormattedDuration(int seconds) {
         int S = seconds % 60;
         int H = seconds / 60;

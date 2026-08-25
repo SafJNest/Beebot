@@ -298,6 +298,8 @@ non modifica indici esistenti e non fonde automaticamente documenti duplicati.
 | `summoner` | `summoner_leaderboard_region` | `region, ranks.queue, ranks.rank` | multikey |
 | `summoner` | `summoner_leaderboard_global` | `ranks.queue, ranks.rank, region` | multikey |
 | `match` | `match_participant_time` | `participants.puuid, timeStart, _id` | multikey |
+| `match` | `match_rank_progress_history` | `participants.puuid, region, queue, timeStart DESC, _id DESC` | multikey; timeline Solo/Duo per participant |
+| `match` | `match_rank_progress_subjects` | `queue, region, participants.puuid` | multikey; discovery soggetti backfill |
 | `match` | `match_shard_time` | `region, timeStart` | — |
 | `match` | `match_shard_patch_time` | `region, patchMajor, timeStart` | — |
 | `match` | `match_patch` | `patchMajor` | — |

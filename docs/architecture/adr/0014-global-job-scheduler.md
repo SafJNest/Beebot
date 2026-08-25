@@ -52,6 +52,9 @@ Progress is registry-owned: leaf jobs report their own items; every parent
 reports terminal direct children over direct children created, including
 completed children that have already been removed from the registry.
 
-Priority is also registry-owned for nested work. A child can retain or lower its
-requested priority but cannot exceed its parent priority. This prevents a
-background root from promoting its Riot descendants to `IMMEDIATE`.
+Priority is registry-owned and deduplicated work is promotable. A later request
+with a more urgent priority promotes the queued source job in its existing
+scheduler route and moves it to the front of that lane; the new caller remains
+a follower of the same future. Parent/child links describe status ownership,
+not a priority ceiling: an `IMMEDIATE` child may exceed a background parent.
+Running work is never preempted or duplicated.

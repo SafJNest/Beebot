@@ -80,6 +80,12 @@ public final class Registry {
         return entry(job).followingPid != null;
     }
 
+    public Job<?> source(Job<?> job) {
+        Entry<?> entry = entry(job);
+        Entry<?> source = entry.followingPid == null ? null : entries.get(entry.followingPid);
+        return source == null ? null : source.job;
+    }
+
     public void started(Job<?> job) {
         synchronized (this) {
             Entry<?> entry = entry(job);
@@ -361,7 +367,7 @@ public final class Registry {
     }
 
     private static JobPriority inheritedPriority(JobPriority parent, JobPriority requested) {
-        return parent.ordinal() >= requested.ordinal() ? parent : requested;
+        return parent.ordinal() <= requested.ordinal() ? parent : requested;
     }
 
     @SuppressWarnings("unchecked")

@@ -62,9 +62,13 @@ risposta reale contiene tutti i partecipanti disponibili del match.
       "lane": "MID",
       "team": "BLUE",
       "roleQuestId": 0,
-      "rank": "DIAMOND_II",
-      "lp": 74,
-      "gain": 21,
+      "rankProgress": {
+        "rank": "DIAMOND_II",
+        "lp": 74,
+        "gain": 21,
+        "previousRank": "DIAMOND_II",
+        "previousLp": 53
+      },
       "damage": 18432,
       "damageTaken": 14987,
       "damageBuilding": 4210,
@@ -121,9 +125,13 @@ risposta reale contiene tutti i partecipanti disponibili del match.
       "lane": "UTILITY",
       "team": "RED",
       "roleQuestId": 2011,
-      "rank": "DIAMOND_III",
-      "lp": 52,
-      "gain": -18,
+      "rankProgress": {
+        "rank": "DIAMOND_III",
+        "lp": 52,
+        "gain": -18,
+        "previousRank": "DIAMOND_III",
+        "previousLp": 70
+      },
       "damage": 8432,
       "damageTaken": 22001,
       "damageBuilding": 1021,
@@ -173,6 +181,11 @@ risposta reale contiene tutti i partecipanti disponibili del match.
   ]
 }
 ```
+
+`participant.rankProgress` è l'unico contratto rank del participant. Contiene
+lo snapshot corrente (`rank`, `lp`), il gain opzionale e lo snapshot precedente
+opzionale. I precedenti campi top-level `rank`, `lp` e `gain` del participant
+sono stati rimossi intenzionalmente dal JSON pubblico.
 
 ## Stati ed errori
 

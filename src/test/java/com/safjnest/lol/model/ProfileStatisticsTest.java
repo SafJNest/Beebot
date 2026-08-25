@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.utils.JsonCodec;
@@ -22,6 +23,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class ProfileStatisticsTest {
@@ -88,13 +90,22 @@ public class ProfileStatisticsTest {
     }
 
     @Test
-    public void persistsMatchResultAndParticipantThroughJson() {
+    public void persistsMatchResultAndParticipantThroughJson() throws Exception {
         MatchResult source = match("game", 1, "2/1/3", 10);
+        source.participants().get(0).rankProgress = new RankProgress(
+                TierDivisionType.GOLD_II, 54, 0, TierDivisionType.GOLD_II, 54);
 
-        MatchResult decoded = JsonCodec.fromJson(JsonCodec.toJson(source), MatchResult.class);
+        String json = JsonCodec.toJson(source);
+        String apiJson = new ObjectMapper().writeValueAsString(source);
+        MatchResult decoded = JsonCodec.fromJson(json, MatchResult.class);
 
         assertEquals(source.gameId(), decoded.gameId());
         assertEquals(source.participants().get(0).puuid(), decoded.participants().get(0).puuid());
+        assertEquals(TierDivisionType.GOLD_II, decoded.participants().get(0).rankProgress.rank);
+        assertTrue(new ObjectMapper().readTree(apiJson).path("participants").get(0).has("rankProgress"));
+        assertFalse(new ObjectMapper().readTree(apiJson).path("participants").get(0).has("rank"));
+        assertFalse(new ObjectMapper().readTree(apiJson).path("participants").get(0).has("lp"));
+        assertFalse(new ObjectMapper().readTree(apiJson).path("participants").get(0).has("gain"));
         assertNull(JsonCodec.fromJson("not-json", ProfileStatistics.class));
     }
 
@@ -116,7 +127,7 @@ public class ProfileStatisticsTest {
         player.win = true;
         player.kda = "3/1/4";
         player.damage = 1000;
-        player.gain = 21;
+        player.rankProgress = new RankProgress(TierDivisionType.GOLD_II, 21, 21, null, null);
         player.pings.put("danger", 2);
 
         Participant opponent = new Participant();

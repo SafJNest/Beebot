@@ -1,6 +1,7 @@
 package com.safjnest.nosql;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,6 +59,7 @@ import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -66,8 +68,8 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
-import com.safjnest.lol.utils.MatchTrackingUtils;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
@@ -87,6 +89,8 @@ public final class MongoDB {
     private static final int MAX_SEARCH_RESULTS = 25;
     private static final int MAX_BATCH_IDS = 2_000;
     private static final int EXISTS_QUERY_BATCH_SIZE = 2_000;
+    private static final int RANK_PROGRESS_SCHEMA_PAGE_SIZE = 10_000;
+    private static final int RANK_PROGRESS_HISTORY_BULK_SIZE = 1_000;
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final String LEADERBOARD_AGGREGATES_COLLECTION = "leaderboard_aggregates";
     private static final String RANK_DISTRIBUTION_AGGREGATE = "rank-distribution";
@@ -119,6 +123,11 @@ public final class MongoDB {
                     new Document("ranks.queue", 1).append("ranks.rank", 1).append("region", 1), false, null),
             index("match", "match_participant_time",
                     new Document("participants.puuid", 1).append("timeStart", 1).append("_id", 1), false, null),
+            index("match", "match_rank_progress_history",
+                    new Document("participants.puuid", 1).append("region", 1).append("queue", 1)
+                            .append("timeStart", -1).append("_id", -1), false, null),
+            index("match", "match_rank_progress_subjects",
+                    new Document("queue", 1).append("region", 1).append("participants.puuid", 1), false, null),
             index("match", "match_shard_time",
                     new Document("region", 1).append("timeStart", -1), false, null),
             index("match", "match_shard_patch_time",
@@ -303,6 +312,14 @@ public final class MongoDB {
         return getDatabase();
     }
 
+    /**
+     * Index creation is deliberately opt-in: normal application startup must not mutate a live
+     * database schema. Migrations invoke this before relying on a new access path.
+     */
+    public static synchronized void ensureDeclaredIndexes() {
+        ensureIndexes(getDatabase());
+    }
+
     public static String getDatabaseName() {
         return getDatabaseName(App.isTesting());
     }
@@ -382,7 +399,7 @@ public final class MongoDB {
         List<Document> samples = collection.aggregate(List.of(
                 new Document("$sample", new Document("size", boundedSample)),
                 new Document("$project", new Document("bsonBytes", new Document("$bsonSize", "$$ROOT"))
-                        .append("hasUserId", new Document("$cond", List.of(new Document("$ne", List.of("$userId", null)), 1, 0)))
+                        .append("hasUserId", new Document("$cond", List.of(new Document("$ne", Arrays.asList("$userId", null)), 1, 0)))
                         .append("isTracking", new Document("$cond", List.of(new Document("$eq", List.of("$tracking", true)), 1, 0)))
                         .append("masteriesBytes", new Document("$bsonSize", new Document("masteries", "$masteries")))
                         .append("region", 1))))
@@ -720,15 +737,15 @@ public final class MongoDB {
         String puuid = summoner.getString("puuid");
         if (puuid == null) puuid = summoner.getString("_id");
         Document latest = matches().find(matchFilter(puuid, parseShard(summoner.getString("region")), timeStart, 0, GameQueueType.TEAM_BUILDER_RANKED_SOLO))
-                .projection(Projections.include("_id", "timeStart", "participants.puuid", "participants.rank", "participants.lp"))
+                .projection(Projections.include("_id", "timeStart", "participants.puuid", "participants.rankProgress"))
                 .sort(Sorts.descending("timeStart")).first();
         Document row = new Document("puuid", puuid).append("region", summoner.getString("region"));
         if (latest == null) return QueryRecordParser.fromDocument(row);
         row.append("game_id", latest.getString("_id"))
                 .append("time_start", latest.get("timeStart", 0L));
         for (Document participant : documents(latest.get("participants"))) if (puuid.equals(participant.getString("puuid"))) {
-            row.append("rank", participant.getString("rank"));
-            row.append("lp", participant.getInteger("lp", 0));
+            Document progress = participant.get("rankProgress", Document.class);
+            row.append("rankProgress", progress);
             break;
         }
         return QueryRecordParser.fromDocument(row);
@@ -936,38 +953,38 @@ public final class MongoDB {
         return match;
     }
 
-    public static boolean isMatchTracked(String fullGameId, String referencePuuid) {
-        if (fullGameId == null || fullGameId.isBlank() || referencePuuid == null || referencePuuid.isBlank()) return false;
-
+    public static boolean isMatchTracked(String fullGameId) {
+        if (fullGameId == null || fullGameId.isBlank()) return false;
         Document document = matches().find(Filters.eq("_id", fullGameId))
-                .projection(Projections.include("tracked", "participants.puuid", "participants.rank"))
-                .first();
-        return isMatchTrackedDocument(document, referencePuuid);
+                .projection(Projections.include("tracked")).first();
+        return document != null && Boolean.TRUE.equals(document.getBoolean("tracked"));
     }
 
-    static boolean isMatchTrackedDocument(Document document, String referencePuuid) {
-        if (document == null || referencePuuid == null || referencePuuid.isBlank()) return false;
-        if (MatchTrackingUtils.hasTrackedRank(Boolean.TRUE.equals(document.getBoolean("tracked")), false)) return true;
-
-        for (Document participant : documents(document.get("participants"))) {
-            if (!referencePuuid.equals(participant.getString("puuid"))) continue;
-            return MatchTrackingUtils.hasTrackedRank(false, participant.get("rank") != null);
-        }
-        return false;
+    static boolean isMatchTrackedDocument(Document document) {
+        return document != null && Boolean.TRUE.equals(document.getBoolean("tracked"));
     }
 
     public static Participant findPreviousParticipant(
             String puuid,
             LeagueShard shard,
             GameQueueType queue,
-            long beforeTimeStart) {
+            long beforeTimeStart,
+            String beforeMatchId) {
         if (puuid == null || puuid.isBlank() || shard == null || queue == null || beforeTimeStart <= 0) return null;
 
+        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        Bson queueFilter = canonicalQueue == GameQueueType.RANKED_SOLO_5X5
+                ? Filters.in("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name())
+                : Filters.eq("queue", queue.name());
+        Bson beforeFilter = beforeMatchId == null || beforeMatchId.isBlank()
+                ? Filters.lt("timeStart", beforeTimeStart)
+                : Filters.or(Filters.lt("timeStart", beforeTimeStart),
+                        Filters.and(Filters.eq("timeStart", beforeTimeStart), Filters.lt("_id", beforeMatchId)));
         Bson filter = Filters.and(
                 Filters.elemMatch("participants", Filters.eq("puuid", puuid)),
                 Filters.eq("region", shard.name()),
-                Filters.eq("queue", queue.name()),
-                Filters.lt("timeStart", beforeTimeStart));
+                queueFilter,
+                beforeFilter);
         Document document = matches().find(filter)
                 .projection(Projections.include("participants"))
                 .sort(Sorts.descending("timeStart", "_id"))
@@ -1134,16 +1151,14 @@ public final class MongoDB {
         }
         for (Document document : matches().find(filter)
                 .projection(Projections.include("_id", "timeStart", "timeEnd", "patch",
-                        "tracked", "participants.puuid", "participants.rank", "participants.lp", "participants.gain", "participants.win"))
+                        "tracked", "participants.puuid", "participants.rankProgress", "participants.win"))
                 .sort(Sorts.ascending("timeStart", "_id"))) {
             String gameId = gameId(document);
             for (Document participant : documents(document.get("participants"))) {
                 if (!puuid.equals(participant.getString("puuid"))) continue;
                 Document row = new Document("game_id", gameId)
                         .append("tracked", document.get("tracked", false))
-                        .append("rank", participant.get("rank"))
-                        .append("lp", participant.get("lp", 0))
-                        .append("gain", participant.get("gain", 0))
+                        .append("rankProgress", participant.get("rankProgress"))
                         .append("win", participant.get("win", false))
                         .append("time_start", document.get("timeStart", 0L))
                         .append("time_end", document.get("timeEnd", 0L))
@@ -1169,6 +1184,14 @@ public final class MongoDB {
             result.add(summoner(document));
         }
         return result;
+    }
+
+    public static MongoCursor<Document> trackedSummonerCursor() {
+        return summoners().find(Filters.eq("tracking", true))
+                .projection(Projections.include("_id"))
+                .sort(Sorts.ascending("_id"))
+                .batchSize(1_000)
+                .iterator();
     }
 
     public static List<ProfileIndexable> refreshProfileIndexables() {
@@ -2060,6 +2083,42 @@ public final class MongoDB {
         return true;
     }
 
+    public static boolean createRawMatch(String fullGameId, Match match) {
+        if (fullGameId == null || fullGameId.isBlank() || match == null) return false;
+        Document document = write(match);
+        document.put("_id", fullGameId);
+        document.put("tracked", false);
+        UpdateResult update = matches().updateOne(Filters.eq("_id", fullGameId),
+                new Document("$setOnInsert", document), new UpdateOptions().upsert(true));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo raw match create was not acknowledged id=" + fullGameId);
+        if (update.getUpsertedId() == null) return false;
+        upsertMatchEvents(fullGameId, match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap());
+        return true;
+    }
+
+    public static boolean updateUntrackedParticipantRankProgress(String fullGameId, String puuid, RankProgress progress) {
+        if (fullGameId == null || fullGameId.isBlank() || puuid == null || puuid.isBlank()
+                || !RankProgressUtils.hasCurrentSnapshot(progress)) return false;
+        Bson missingSnapshot = Filters.or(Filters.exists("rankProgress", false), Filters.exists("rankProgress.rank", false),
+                Filters.exists("rankProgress.lp", false));
+        Bson filter = Filters.and(Filters.eq("_id", fullGameId), Filters.ne("tracked", true),
+                Filters.elemMatch("participants", Filters.and(Filters.eq("puuid", puuid), missingSnapshot)));
+        UpdateResult update = matches().updateOne(filter, Updates.set("participants.$.rankProgress", rankProgressDocument(progress)));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank snapshot update was not acknowledged id=" + fullGameId);
+        return update.getModifiedCount() > 0;
+    }
+
+    public static boolean restoreUntrackedParticipantRankProgress(String fullGameId, String puuid, RankProgress progress) {
+        if (fullGameId == null || fullGameId.isBlank() || puuid == null || puuid.isBlank()
+                || !RankProgressUtils.hasCurrentSnapshot(progress)) return false;
+        RankProgress restored = new RankProgress(progress.rank, progress.lp, progress.gain, null, null);
+        Bson filter = Filters.and(Filters.eq("_id", fullGameId), Filters.ne("tracked", true),
+                Filters.elemMatch("participants", Filters.eq("puuid", puuid)));
+        UpdateResult update = matches().updateOne(filter, Updates.set("participants.$.rankProgress", rankProgressDocument(restored)));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank progress restore was not acknowledged id=" + fullGameId);
+        return update.getModifiedCount() > 0;
+    }
+
     public static boolean upsertMatchDocument(String fullGameId, Match match) {
         return upsertMatchDocument(fullGameId, match, false);
     }
@@ -2105,6 +2164,146 @@ public final class MongoDB {
             }
         }
         return updated;
+    }
+
+    public static RankProgressPage migrateRankProgressSchemaPage(String afterId, int limit, boolean dryRun) {
+        int boundedLimit = Math.max(1, Math.min(RANK_PROGRESS_SCHEMA_PAGE_SIZE, limit));
+        Bson legacyProgress = Filters.or(Filters.exists("participants.rank"), Filters.exists("participants.lp"), Filters.exists("participants.gain"));
+        Bson filter = afterId == null || afterId.isBlank() ? legacyProgress : Filters.and(Filters.gt("_id", afterId), legacyProgress);
+        int processed = 0;
+        String cursor = afterId;
+        for (Document match : matches().find(filter)
+                .projection(Projections.include("_id"))
+                .sort(Sorts.ascending("_id"))
+                .limit(boundedLimit)) {
+            cursor = match.getString("_id");
+            processed++;
+        }
+        if (processed == 0 || dryRun) return new RankProgressPage(cursor, processed, 0);
+        Bson page = afterId == null || afterId.isBlank()
+                ? Filters.lte("_id", cursor)
+                : Filters.and(Filters.gt("_id", afterId), Filters.lte("_id", cursor));
+        UpdateResult result = matches().updateMany(Filters.and(page, legacyProgress), rankProgressSchemaUpdate());
+        if (!result.wasAcknowledged()) throw new IllegalStateException("Mongo RankProgress schema update was not acknowledged");
+        return new RankProgressPage(cursor, processed, (int) result.getModifiedCount());
+    }
+
+    private static List<Bson> rankProgressSchemaUpdate() {
+        Document legacyFields = new Document("$in", List.of("$$field.k", List.of("rank", "lp", "gain")));
+        Document withoutLegacyFields = new Document("$arrayToObject", new Document("$filter", new Document("input",
+                new Document("$objectToArray", "$$participant")).append("as", "field")
+                .append("cond", new Document("$not", List.of(legacyFields)))));
+        Document noProgress = new Document("$eq", Arrays.asList(new Document("$ifNull", Arrays.asList("$$progress", null)), null));
+        Document hasRank = new Document("$ne", Arrays.asList(new Document("$ifNull", Arrays.asList("$$participant.rank", null)), null));
+        Document hasLegacyGain = new Document("$ne", Arrays.asList(new Document("$ifNull", Arrays.asList("$$participant.gain", null)), null));
+        Document progressHasNoGain = new Document("$eq", Arrays.asList(new Document("$ifNull", Arrays.asList("$$progress.gain", null)), null));
+        Document migratedProgress = new Document("$mergeObjects", List.of(
+                new Document("rank", "$$participant.rank").append("lp", new Document("$ifNull", List.of("$$participant.lp", 0))),
+                new Document("$cond", List.of(hasLegacyGain, new Document("gain", "$$participant.gain"), new Document()))));
+        Document newProgress = new Document("rankProgress", migratedProgress);
+        Document completedProgress = new Document("rankProgress", new Document("$mergeObjects", List.of(
+                "$$progress", new Document("gain", "$$participant.gain"))));
+        Document needsNewProgress = new Document("$and", List.of(noProgress, hasRank));
+        Document needsCompletedProgress = new Document("$and", List.of(
+                new Document("$not", List.of(noProgress)), progressHasNoGain, hasLegacyGain));
+        Document progress = new Document("$cond", List.of(needsNewProgress, newProgress,
+                new Document("$cond", List.of(needsCompletedProgress, completedProgress, new Document()))));
+        Document participant = new Document("$let", new Document("vars", new Document("progress", "$$participant.rankProgress"))
+                .append("in", new Document("$mergeObjects", List.of(withoutLegacyFields, progress))));
+        Document participants = new Document("$map", new Document("input", "$participants").append("as", "participant")
+                .append("in", participant));
+        return List.of(new Document("$set", new Document("participants", participants)));
+    }
+
+    public static MongoCursor<Document> rankProgressSubjectCursor(String afterCursor) {
+        List<Bson> pipeline = new ArrayList<>();
+        pipeline.add(new Document("$match", new Document("queue", new Document("$in", List.of(
+                GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name())))));
+        pipeline.add(new Document("$unwind", "$participants"));
+        pipeline.add(new Document("$match", new Document("participants.puuid", new Document("$nin", Arrays.asList(null, "")))));
+        pipeline.add(new Document("$group", new Document("_id", new Document("region", "$region")
+                .append("puuid", "$participants.puuid"))));
+        if (afterCursor != null && !afterCursor.isBlank()) {
+            int separator = afterCursor.indexOf('|');
+            if (separator <= 0 || separator == afterCursor.length() - 1)
+                throw new IllegalArgumentException("Invalid RankProgress subject cursor=" + afterCursor);
+            String region = afterCursor.substring(0, separator);
+            String puuid = afterCursor.substring(separator + 1);
+            pipeline.add(new Document("$match", new Document("$or", List.of(
+                    new Document("_id.region", new Document("$gt", region)),
+                    new Document("_id.region", region).append("_id.puuid", new Document("$gt", puuid))))));
+        }
+        pipeline.add(new Document("$sort", new Document("_id.region", 1).append("_id.puuid", 1)));
+        return matches().aggregate(pipeline).allowDiskUse(true).batchSize(RANK_PROGRESS_HISTORY_BULK_SIZE).iterator();
+    }
+
+    public static int rebuildRankProgressHistory(RankProgressSubject subject, boolean dryRun) {
+        if (subject == null || subject.puuid().isBlank() || subject.region().isBlank()) return 0;
+        Document filter = new Document("participants.puuid", subject.puuid())
+                .append("region", subject.region())
+                .append("queue", new Document("$in", List.of(
+                        GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name())));
+        List<Bson> pipeline = List.of(
+                new Document("$match", filter),
+                new Document("$sort", new Document("timeStart", -1).append("_id", -1)),
+                new Document("$unwind", "$participants"),
+                new Document("$match", new Document("participants.puuid", subject.puuid())),
+                new Document("$project", new Document("_id", 1).append("tracked", 1)
+                        .append("rankProgress", "$participants.rankProgress")));
+        Document newerMatch = null;
+        RankProgress newerProgress = null;
+        List<WriteModel<Document>> updates = new ArrayList<>(RANK_PROGRESS_HISTORY_BULK_SIZE);
+        int updated = 0;
+        for (Document match : matches().aggregate(pipeline).batchSize(RANK_PROGRESS_HISTORY_BULK_SIZE)) {
+            Document progressDocument = match.get("rankProgress", Document.class);
+            RankProgress current = progressDocument == null ? null : readRankProgress(matchRecord(progressDocument));
+            if (newerMatch != null) {
+                WriteModel<Document> update = rankProgressHistoryUpdate(
+                        newerMatch, subject.puuid(), newerProgress, current);
+                if (update != null) {
+                    updates.add(update);
+                    updated++;
+                    if (!dryRun && updates.size() == RANK_PROGRESS_HISTORY_BULK_SIZE) {
+                        bulkWrite(matches(), updates);
+                        updates.clear();
+                    }
+                }
+            }
+            newerMatch = match;
+            newerProgress = current;
+        }
+        if (newerMatch != null) {
+            WriteModel<Document> update = rankProgressHistoryUpdate(newerMatch, subject.puuid(), newerProgress, null);
+            if (update != null) {
+                updates.add(update);
+                updated++;
+            }
+        }
+        if (!dryRun && !updates.isEmpty()) bulkWrite(matches(), updates);
+        return updated;
+    }
+
+    private static WriteModel<Document> rankProgressHistoryUpdate(
+            Document match,
+            String puuid,
+            RankProgress current,
+            RankProgress previous) {
+        if (!RankProgressUtils.hasCurrentSnapshot(current)) return null;
+        RankProgress rebuilt = new RankProgress(current.rank, current.lp, current.gain, null, null);
+        if (RankProgressUtils.hasCurrentSnapshot(previous)) {
+            int expectedGain = RankProgressUtils.calculateGain(GameQueueType.RANKED_SOLO_5X5, rebuilt, previous);
+            boolean tracked = Boolean.TRUE.equals(match.getBoolean("tracked"));
+            boolean unrankedTransition = rebuilt.rank == TierDivisionType.UNRANKED || previous.rank == TierDivisionType.UNRANKED;
+            if (tracked || unrankedTransition || rebuilt.gain != null && rebuilt.gain == expectedGain) {
+                rebuilt.previousRank = previous.rank;
+                rebuilt.previousLp = previous.lp;
+                if (unrankedTransition) rebuilt.gain = expectedGain;
+            }
+        }
+        if (rankProgressEquals(current, rebuilt)) return null;
+        return new UpdateOneModel<>(Filters.and(Filters.eq("_id", match.getString("_id")),
+                Filters.eq("participants.puuid", puuid)),
+                Updates.set("participants.$.rankProgress", rankProgressDocument(rebuilt)));
     }
 
         public static boolean upsertParticipant(String fullGameId, Participant participant) {
@@ -2418,8 +2617,8 @@ public final class MongoDB {
         participant.kda = record.getAsString("kda"); participant.champion = record.getAsInt("champion");
         participant.lane = record.getAsEnum("lane", no.stelar7.api.r4j.basic.constants.types.lol.LaneType.class);
         participant.team = record.getAsEnum("team", no.stelar7.api.r4j.basic.constants.types.lol.TeamType.class);
-        participant.roleQuestId = record.getAsInt("roleQuestId"); participant.rank = record.getAsEnum("rank", TierDivisionType.class);
-        participant.lp = record.getAsInt("lp"); participant.gain = record.getAsInt("gain"); participant.damage = record.getAsInt("damage"); participant.damageTaken = record.getAsInt("damageTaken");
+        participant.roleQuestId = record.getAsInt("roleQuestId"); participant.rankProgress = readRankProgress(record.getAsRecord("rankProgress"));
+        participant.damage = record.getAsInt("damage"); participant.damageTaken = record.getAsInt("damageTaken");
         participant.damageBuilding = record.getAsInt("damageBuilding"); participant.healing = record.getAsInt("healing"); participant.cs = record.getAsInt("cs");
         participant.goldEarned = record.getAsInt("goldEarned"); participant.ward = record.getAsInt("ward"); participant.wardKilled = record.getAsInt("wardKilled");
         participant.visionScore = record.getAsInt("visionScore"); participant.pings = new HashMap<>(readIntegerMap(record, "pings"));
@@ -2460,14 +2659,61 @@ public final class MongoDB {
                 readIntegerList(record, "primaryRunes"), readIntegerList(record, "secondaryRunes"), readIntegerList(record, "statsRunes"), readParticipants(record));
     }
 
+    private static RankProgress readRankProgress(QueryRecord record) {
+        if (record == null) return null;
+        TierDivisionType rank = record.getAsEnum("rank", TierDivisionType.class);
+        if (rank == null) return null;
+        Integer lp = integerValue(record, "lp");
+        if (lp == null) return null;
+        return new RankProgress(rank, lp, integerValue(record, "gain"),
+                record.getAsEnum("previousRank", TierDivisionType.class), integerValue(record, "previousLp"));
+    }
+
+    private static boolean rankProgressEquals(RankProgress left, RankProgress right) {
+        return left.rank == right.rank && Objects.equals(left.lp, right.lp)
+                && Objects.equals(left.gain, right.gain) && left.previousRank == right.previousRank
+                && Objects.equals(left.previousLp, right.previousLp);
+    }
+
+    private static Integer integerValue(QueryRecord record, String key) {
+        return record != null && record.containsKey(key) && record.getValue(key) != null ? record.getAsInt(key) : null;
+    }
+
+    private static Document rankProgressDocument(RankProgress value) {
+        if (!RankProgressUtils.hasCurrentSnapshot(value)) return null;
+        Document document = new Document("rank", value.rank.name()).append("lp", value.lp);
+        if (value.gain != null) document.append("gain", value.gain);
+        if (value.previousRank != null) document.append("previousRank", value.previousRank.name());
+        if (value.previousLp != null) document.append("previousLp", value.previousLp);
+        return document;
+    }
+
+    public record RankProgressPage(String cursor, int processed, int updated) {
+    }
+
+    public record RankProgressSubject(String region, String puuid) {
+        public static RankProgressSubject from(Document value) {
+            Document id = value == null ? null : value.get("_id", Document.class);
+            if (id == null || id.getString("region") == null || id.getString("puuid") == null)
+                throw new IllegalArgumentException("Invalid RankProgress subject=" + value);
+            return new RankProgressSubject(id.getString("region"), id.getString("puuid"));
+        }
+
+        public String cursor() {
+            return region + "|" + puuid;
+        }
+    }
+
     private static Document participantDocument(Participant value) {
         if (value == null || value.puuid == null || value.puuid.isBlank()) throw new IllegalArgumentException("Participant.puuid is required for Mongo persistence");
         Document document = new Document("win", value.win).append("champion", value.champion).append("roleQuestId", value.roleQuestId)
-                .append("lp", value.lp).append("gain", value.gain).append("damage", value.damage).append("damageTaken", value.damageTaken).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
+                .append("damage", value.damage).append("damageTaken", value.damageTaken).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
                 .append("subTeam", value.subTeam).append("subTeamPlacement", value.subTeamPlacement).append("level", value.level).append("doubles", value.doubles).append("triples", value.triples).append("quadruples", value.quadruples).append("pentas", value.pentas)
                 .append("item0", value.item0).append("item1", value.item1).append("item2", value.item2).append("item3", value.item3).append("item4", value.item4).append("item5", value.item5).append("item6", value.item6).append("turretKills", value.turretKills).append("q", value.q).append("w", value.w).append("e", value.e).append("r", value.r).append("d", value.d).append("f", value.f).append("summonerSpell1", value.summonerSpell1).append("summonerSpell2", value.summonerSpell2)
                 .append("primaryRunes", integerList(value.primaryRunes)).append("secondaryRunes", integerList(value.secondaryRunes)).append("statsRunes", integerList(value.statsRunes)).append("skillOrder", integerList(value.skillOrder)).append("augments", integerList(value.augments)).append("starterItems", integerList(value.starterItems)).append("buildPath", integerList(value.buildPath)).append("boots", value.boots).append("supportItem", value.supportItem);
-        putIfNotNull(document, "kda", value.kda); putIfNotNull(document, "puuid", value.puuid); putIfNotNull(document, "riotId", value.riotId); putIfNotNull(document, "riotTag", value.riotTag); putEnum(document, "lane", value.lane); putEnum(document, "team", value.team); putEnum(document, "rank", value.rank);
+        putIfNotNull(document, "kda", value.kda); putIfNotNull(document, "puuid", value.puuid); putIfNotNull(document, "riotId", value.riotId); putIfNotNull(document, "riotTag", value.riotTag); putEnum(document, "lane", value.lane); putEnum(document, "team", value.team);
+        Document rankProgress = rankProgressDocument(value.rankProgress);
+        if (rankProgress != null) document.append("rankProgress", rankProgress);
         return document;
     }
 
@@ -2866,7 +3112,7 @@ public final class MongoDB {
                 "_id", "queue", "timeStart", "timeEnd",
                 "participants.puuid", "participants.riotId", "participants.riotTag", "participants.level",
                 "participants.win", "participants.kda", "participants.champion", "participants.lane",
-                "participants.team", "participants.damage", "participants.cs", "participants.goldEarned",
+                "participants.team", "participants.rankProgress", "participants.damage", "participants.cs", "participants.goldEarned",
                 "participants.visionScore", "participants.item0", "participants.item1", "participants.item2",
                 "participants.item3", "participants.item4", "participants.item5", "participants.item6",
                 "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",

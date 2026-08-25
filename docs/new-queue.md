@@ -50,7 +50,7 @@ match poller, no pending set, and no restart recovery for Sync tasks.
 Match ingestion has two levels. Raw ingestion persists the canonical match,
 events and participant identity seed with the internal Mongo marker
 `tracked=false`; it does not refresh participant ranks. Tracked enrichment
-invalidates Redis and R4J rank caches, waits 500 ms and obtains every current
+invalidates Redis and R4J rank caches and obtains every current
 participant rank directly from Riot before updating `summoner.ranks[]`, Redis
 and the match. Mongo participant history and the embedded Mongo rank remain
 baseline-only inputs for LP gain; they never supply the participant's current
@@ -60,8 +60,11 @@ presentation.
 
 The scheduled tracked-summoner flow waits for its latest ranked match to finish
 enrichment; its second Riot match is raw-persisted only as a history reference.
-OP.GG remains responsive: all missing cards are raw-persisted immediately and
-never start LP/rank tracked enrichment.
+OP.GG remains responsive: displayed cards are raw-persisted immediately, then a
+best-effort current `{ rank, lp }` snapshot is written for each participant.
+Missing snapshots start the same deduplicated background rank refresh used by
+the tracker. OP.GG never writes gain or predecessor data; only `tracked=true`
+commits the authoritative history.
 
 After the final `tracked=true` persistence, the scheduled tracked-summoner flow
 emits one `LPTracker` success log for that summoner. Raw ingestion and

@@ -29,7 +29,7 @@ public class MongoIndexPolicyTest {
         field.setAccessible(true);
         List<?> definitions = (List<?>) field.get(null);
 
-        assertEquals(21, definitions.size());
+        assertEquals(23, definitions.size());
         Set<String> names = new HashSet<>();
         for (Object definition : definitions) {
             Method name = definition.getClass().getDeclaredMethod("name");
@@ -40,6 +40,7 @@ public class MongoIndexPolicyTest {
         assertEquals(Set.of(
                 "summoner_search_prefix", "summoner_riot_id", "summoner_user_accounts", "summoner_tracking_true",
                 "summoner_leaderboard_region", "summoner_leaderboard_global", "match_participant_time",
+                "match_rank_progress_history", "match_rank_progress_subjects",
                 "match_shard_time", "match_shard_patch_time", "match_patch", "match_champion_filter",
                 "match_champion_keyset", "profile_statistics_identity", "profile_statistics_period",
                 "profile_activity_identity", "profile_matchups_identity",
@@ -51,7 +52,7 @@ public class MongoIndexPolicyTest {
         assertPolicy(definitions, "summoner_riot_id", "summoner",
                 new Document("region", 1).append("riotId", 1), false, null);
         assertPolicy(definitions, "summoner_user_accounts", "summoner",
-                new Document("userId", 1).append("_id", 1), false, null);
+                new Document("userId", 1), false, null);
         assertPolicy(definitions, "summoner_tracking_true", "summoner",
                 new Document("tracking", 1), false, new Document("tracking", true));
         assertPolicy(definitions, "summoner_leaderboard_region", "summoner",
@@ -60,6 +61,11 @@ public class MongoIndexPolicyTest {
                 new Document("ranks.queue", 1).append("ranks.rank", 1).append("region", 1), false, null);
         assertPolicy(definitions, "match_participant_time", "match",
                 new Document("participants.puuid", 1).append("timeStart", 1).append("_id", 1), false, null);
+        assertPolicy(definitions, "match_rank_progress_history", "match",
+                new Document("participants.puuid", 1).append("region", 1).append("queue", 1)
+                        .append("timeStart", -1).append("_id", -1), false, null);
+        assertPolicy(definitions, "match_rank_progress_subjects", "match",
+                new Document("queue", 1).append("region", 1).append("participants.puuid", 1), false, null);
         assertPolicy(definitions, "match_shard_time", "match",
                 new Document("region", 1).append("timeStart", -1), false, null);
         assertPolicy(definitions, "match_shard_patch_time", "match",

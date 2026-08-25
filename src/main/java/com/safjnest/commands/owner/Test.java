@@ -32,6 +32,7 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.MatchDiscoveryService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileService;
@@ -143,7 +144,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | tracking | log | gc");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | tracking | log | migrate | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -864,7 +865,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGames = () -> {
                         System.out.println(args[1]);
                         try {
-                            Tracker.retrieveMatchHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
+                            MatchDiscoveryService.importHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), null);
                         } catch (Exception eee) { eee.printStackTrace(); }
                     };
                     retrieveAllGames.queue();
@@ -873,7 +874,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            Tracker.retrieveMatchHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
+                            MatchDiscoveryService.importHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
                         }
                     };
                     retrieveAllGamesFast.queue();
@@ -959,6 +960,18 @@ public class Test extends Command{
                     MongoMigration.migrateAll();
                 };
                 migrate.queue();
+                break;
+            case "migrate-tracked":
+                ChronoTask migrateTracked = MongoMigration::migrateTrackedRankProgress;
+                migrateTracked.queue();
+                e.reply("Tracked RankProgress recovery queued.");
+                break;
+            case "rankprogress":
+                String runId = args.length > 1 && !args[1].isBlank() ? args[1].trim() : "rankprogress-v1";
+                ChronoTask rankProgress = () -> MongoMigration.migrateRankProgress(
+                        new MongoMigration.Options(false, 500_000, runId, true, 0));
+                rankProgress.queue();
+                e.reply("RankProgress migration queued: run=" + runId + ".");
                 break;
         }
     }  

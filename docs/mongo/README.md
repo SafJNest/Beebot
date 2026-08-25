@@ -68,7 +68,14 @@ Per `profile_statistics`, `profile_activity` e `profile_matchups`, `_id` non è 
 
 ## Indici e spazio
 
-Durante il backfill le collection vengono create e poi ricevono il registry di indici dichiarato in `MongoDB.java`. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 20.000 documenti; i match restano in sotto-batch da 1.000.
+Durante il backfill le collection vengono create; l'avvio ordinario e il job
+RankProgress non creano indici. `match_rank_progress_history` e
+`match_rank_progress_subjects` devono quindi essere applicati prima della
+ricostruzione. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB
+vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti
+di match già presenti richiedono solo la colonna `events`. I summoner vengono
+inviati con bulk unordered da 20.000 documenti; i match restano in sotto-batch
+da 1.000.
 
 L'inizializzazione è create-only e idempotente: crea gli indici mancanti, riusa quelli compatibili e interrompe il bootstrap su conflitti di nome, key pattern o opzioni. Non esegue `dropIndex` e il preflight dell'indice unique `profile_statistics_identity` interrompe l'avvio su identità mancanti o duplicate senza modificare i dati. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
