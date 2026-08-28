@@ -267,10 +267,6 @@ public final class RankService {
         return fetchEntriesFromRiotAsync(puuid, shard, "league-entries");
     }
 
-    private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(String puuid, LeagueShard shard) {
-        return refreshEntriesFromRiotAsync(puuid, shard, JobPriority.IMMEDIATE);
-    }
-
     private static CompletableFuture<List<LeagueEntry>> refreshEntriesFromRiotAsync(
             String puuid,
             LeagueShard shard,

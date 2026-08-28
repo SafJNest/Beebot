@@ -27,12 +27,12 @@ public class LeagueMessageParameter {
     private Filter filter;
 
     public LeagueMessageParameter(LeagueMessageType messageType) {
-        this.messageType = normalize(messageType);
+        this.messageType = messageType;
         this.filter = defaultFilter(this.messageType);
     }
 
     public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
-        this.messageType = normalize(messageType);
+        this.messageType = messageType;
         this.filter = filter != null ? filter : defaultFilter(this.messageType);
         applyFilterState(this.filter);
     }
@@ -46,7 +46,7 @@ public class LeagueMessageParameter {
         boolean showChampion,
         int offset
     ) {
-        this.messageType = normalize(messageType);
+        this.messageType = messageType;       
         this.filter = defaultFilter(this.messageType).setPeriod(period).setQueue(queueType).setLane(laneType);
         this.champion = champion;
         this.showChampion = showChampion;
@@ -119,11 +119,6 @@ public class LeagueMessageParameter {
         return new Filter();
     }
 
-    private static LeagueMessageType normalize(LeagueMessageType messageType) {
-        return messageType == LeagueMessageType.OVERVIEW_PING || messageType == LeagueMessageType.OVERVIEW_OBJECTIVES
-            ? LeagueMessageType.OVERVIEW : messageType;
-    }
-
     private void applyFilter(Filter value) {
         filter = value != null ? value : defaultFilter(messageType);
         applyFilterState(filter);
@@ -138,7 +133,7 @@ public class LeagueMessageParameter {
 
     public LeagueMessageType getMessageType() { return messageType; }
 
-    public void setMessageType(LeagueMessageType messageType) { this.messageType = normalize(messageType); }
+    public void setMessageType(LeagueMessageType messageType) { this.messageType = messageType; }
 
     public long[] getPeriod() { return filter.period(); }
 

@@ -91,7 +91,6 @@ final class ChampionBuildEngine {
 
     static void accept(BuildAccumulator accumulator, QueryRecord record) {
         if (accumulator == null || record == null) return;
-        accumulator.totalRecords++;
         ChampionBuildData.Game game = ChampionBuildProvider.parse(record, accumulator.filter);
         if (game == null) return;
         accumulator.games++;
@@ -159,7 +158,6 @@ final class ChampionBuildEngine {
         private final SkillOrderTrie skillOrders = new SkillOrderTrie();
         private final Map<Integer, int[]> prismatics = new LinkedHashMap<>();
         private final Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
-        private int totalRecords;
         private int games;
         private int wins;
 

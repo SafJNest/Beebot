@@ -116,10 +116,10 @@ public class APOD extends SlashCommand {
         FileUpload imageUpload = null;
         if(type.equals("image")) {
             try {
-                InputStream imageStream = new URL(jsonResponse.get("url").toString()).openStream();
+                InputStream imageStream = new URI(jsonResponse.get("url").toString()).toURL().openStream();
                 byte[] imageBytes = imageStream.readAllBytes();
                 imageUpload = FileUpload.fromData(imageBytes, "apod.jpg");
-            } catch (IOException e) {
+            } catch (IOException | URISyntaxException e) {
                 e.printStackTrace();
             }
             eb.setImage("attachment://apod.jpg");

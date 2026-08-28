@@ -72,7 +72,6 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryRecordParser;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -580,10 +579,6 @@ public final class MongoDB {
         return QueryRecordParser.fromDocument(row);
     }
 
-    private static QueryRecord row(Document document) {
-        return QueryRecordParser.fromDocument(document);
-    }
-
     private static boolean matchesChampionFilter(Document participant, Filter filter) {
         if (filter == null) return true;
         if (filter.champion() != 0 && participant.getInteger("champion", 0) != filter.champion()) return false;
@@ -613,13 +608,6 @@ public final class MongoDB {
         for (Object item : values) if (item instanceof Number number) result.add(number.intValue());
         return result;
     }
-
-    private static Participant participant(Match match, String puuid) {
-        if (match == null || match.participants == null) return null;
-        for (Participant participant : match.participants) if (participant != null && puuid != null && puuid.equals(participant.puuid)) return participant;
-        return null;
-    }
-
 
     private static MongoCollection<Document> summoners() {
         return database().getCollection("summoner");

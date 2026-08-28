@@ -1,14 +1,12 @@
 package com.safjnest.lol.tracker;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -61,14 +59,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class Tracker {
 
-    private static final List<GameQueueType> HIGH_ELO_QUEUES = List.of(
-        GameQueueType.RANKED_SOLO_5X5,
-        GameQueueType.RANKED_FLEX_SR
-    );
     private static final long timelineSnapshotInterval = TimeConstant.MINUTE * 5;
-
-    private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.CHERRY);
-
 
     static void retrieveSummoners() {
         List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();

@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.safjnest.App;
 import com.safjnest.lol.model.status.JvmMetrics;
 import com.safjnest.lol.model.status.MongoMetrics;
 import com.safjnest.lol.model.status.RedisMetrics;
@@ -77,8 +78,10 @@ public final class SystemMetricsSampler {
             } catch (Exception exception) {
                 BotLogger.error("Failed to initialize system metrics sampler: " + exception.getMessage());
             }
-            LeagueMetricsStore.seed();
-            sample();
+            if (!App.isTesting()) {
+                LeagueMetricsStore.seed();
+                sample();
+            }
             executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
                 Thread thread = new Thread(runnable, "system-metrics-sampler");
                 thread.setDaemon(true);

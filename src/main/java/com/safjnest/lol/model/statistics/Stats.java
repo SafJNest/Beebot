@@ -105,7 +105,7 @@ public class Stats<T> {
             participant.f, participant.subTeamPlacement, timeStart, timeEnd, teamKills, enemyTeamKills, arena, calculate);
     }
 
-    public void merge(Stats other) {
+    public void merge(Stats<?> other) {
         games += other.games;
         wins += other.wins;
         kills += other.kills;

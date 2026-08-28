@@ -1,6 +1,6 @@
 package com.safjnest.core.chat;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -250,7 +250,7 @@ public class ChatHandler {
                     if(!otherOmegle.getWebhook().getName().equals(name)) {
                         otherOmegle.getWebhook().getManager()
                             .setName(name)
-                            .setAvatar(Icon.from(new URL(ChampionUtils.getChampionProfilePic(name)).openStream()))
+                            .setAvatar(Icon.from(new URI(ChampionUtils.getChampionProfilePic(name)).toURL().openStream()))
                         .complete();
                     }
                 }

@@ -37,7 +37,6 @@ import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.UserData;

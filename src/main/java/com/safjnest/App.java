@@ -35,6 +35,7 @@ public class App {
         settings = SettingsLoader.getSettings();
 
         runSpring();
+        
         TwitchClient.init();
         SystemMetricsSampler.start();
         QueueHandler.start();

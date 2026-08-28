@@ -70,8 +70,6 @@ public class LeaderboardService {
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        List<String> puuids = new ArrayList<>(summoners.size());
-        for (Summoner summoner : summoners) puuids.add(summoner.puuid());
         Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
         Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
         for (Summoner summoner : summoners) {
@@ -130,10 +128,11 @@ public class LeaderboardService {
     }
 
     public void rebuildHighEloAndTrackedProfileStatistics() {
-        Filter filter = Filter.summoner();
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        Filter filter = season == null
+            ? Filter.summoner()
+            : Filter.summoner(season.start(), season.end());
         Set<String> processedPuuids = new HashSet<>();
-        int candidates = 0;
-        int submitted = 0;
 
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             for (GameQueueType queue : PROFILE_REBUILD_QUEUES) {
@@ -145,8 +144,7 @@ public class LeaderboardService {
                         );
                         if (page.isEmpty()) break;
 
-                        candidates += page.size();
-                        submitted += rebuildProfilePage(page, filter, processedPuuids);
+                        rebuildProfilePage(page, filter, processedPuuids);
                         offset += page.size();
                         if (page.size() < DEFAULT_PAGE_SIZE) break;
                     }
@@ -155,8 +153,7 @@ public class LeaderboardService {
         }
 
         List<Summoner> tracked = MongoDB.findTrackedSummonerModels();
-        candidates += tracked.size();
-        submitted += rebuildProfilePage(tracked, filter, processedPuuids);
+        rebuildProfilePage(tracked, filter, processedPuuids);
 
     }
 
