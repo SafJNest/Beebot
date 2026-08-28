@@ -28,7 +28,7 @@ Create and adopt the canonical summoner model shared by profile, search and lead
 ## Invariants
 
 - `riotId` remains a `String`;
-- `Rank` contains queue, tier, LP, wins, losses and derived games/winrate data;
+- `Rank` contains tier, LP, wins, losses and derived games/winrate data; its canonical queue is the `Map<GameQueueType, Rank>` key;
 - `Mastery` is the only mastery name;
 - `SummonerView` is the complete profile projection;
 - no mapper owns domain construction.

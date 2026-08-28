@@ -13,7 +13,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
@@ -21,6 +20,9 @@ import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankHistory;
 import com.safjnest.lol.model.match.RankHistoryMatch;
+import com.safjnest.lol.model.match.RankHistoryMetadata;
+import com.safjnest.lol.model.match.RankHistoryQuery;
+import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
@@ -241,31 +243,29 @@ public final class MatchService {
         return new MatchPage(items, limit, offset, total, hasMore);
     }
 
-    public static RankHistory getRankHistory(
-            String puuid,
-            LeagueShard shard,
-            long timeStart,
-            long timeEnd,
-            GameQueueType queue,
-            MatchOrder order) {
-        if (!valid(puuid, shard) || timeStart < 0 || timeEnd < 0 || timeEnd != 0 && timeEnd < timeStart || order == null) {
+    public static RankHistory getRankHistory(String puuid, LeagueShard shard, RankHistoryQuery query) {
+        if (!valid(puuid, shard) || query == null || !isRankHistoryQueue(query.queue()) || query.order() == null) {
             return new RankHistory(List.of(), 0, null);
         }
-        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        if (season == null) throw new IllegalStateException("Current season range is unavailable");
+        RankHistoryPeriod period = rankHistoryPeriod(query);
+        Filter filter = Filter.summoner(period.timeStart(), period.timeEnd()).setQueue(query.queue());
+        RankHistoryMetadata metadata = new RankHistoryMetadata(
+            query.view() == null ? null : query.view().value(),
+            period.season() == null ? null : period.season().year(),
+            query.patch(),
+            query.timeStart() == 0 ? null : query.timeStart(),
+            query.timeEnd() == 0 ? null : query.timeEnd(),
+            filter
+        );
+        if (period.timeEnd() < period.timeStart()) return new RankHistory(List.of(), 0, metadata);
 
-        long effectiveStart = Math.max(timeStart == 0 ? season.start() : timeStart, season.start());
-        long effectiveEnd = Math.min(timeEnd == 0 ? season.end() : timeEnd, season.end());
-        Filter filter = Filter.summoner(effectiveStart, effectiveEnd).setQueue(queue);
-        if (effectiveEnd < effectiveStart) return new RankHistory(List.of(), 0, ResponseMetadata.ready(null, filter));
-
-        List<RankHistoryMatch> source = rankHistorySource(puuid, shard, season);
+        List<RankHistoryMatch> source = rankHistorySource(puuid, shard, period.seasons());
         List<RankHistoryMatch> items = new ArrayList<>();
         for (RankHistoryMatch match : source) {
-            if (matchesRankHistoryFilter(match, effectiveStart, effectiveEnd, queue)) items.add(match);
+            if (matchesRankHistoryFilter(match, period.timeStart(), period.timeEnd(), query.queue(), query.patch())) items.add(match);
         }
-        items.sort(rankHistoryOrder(order));
-        return new RankHistory(items, items.size(), ResponseMetadata.ready(null, filter));
+        items.sort(rankHistoryOrder(query.order()));
+        return new RankHistory(items, items.size(), metadata);
     }
 
     public static void invalidate(String gameId, LeagueShard shard) {
@@ -276,19 +276,18 @@ public final class MatchService {
 
     // ============================================================================
 
-    private static Rank soloRank(List<Rank> ranks) {
-        if (ranks == null) return null;
-        for (Rank rank : ranks) if (rank != null && GameQueueTypeUtils.isRankedSolo(rank.queue())) return rank;
-        return null;
+    private static Rank soloRank(Map<GameQueueType, Rank> ranks) {
+        return ranks == null ? null : ranks.get(GameQueueType.RANKED_SOLO_5X5);
     }
 
     private static void persistOpggSnapshot(List<String> gameIds, String puuid, RankProgress progress, LeagueShard shard) {
         if (!RankProgressUtils.hasCurrentSnapshot(progress) || gameIds == null) return;
         for (String gameId : gameIds) {
             if (MongoDB.updateUntrackedParticipantRankProgress(gameId, puuid, progress)) {
+                Match match = MongoDB.findMatch(gameId);
                 invalidate(gameId, shard);
                 RedisClient.delete(RedisKey.SUMMONER_DATA.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
-                invalidateRankHistory(puuid, shard);
+                invalidateRankHistory(puuid, shard, match == null ? 0 : match.timeStart);
             }
         }
     }
@@ -301,7 +300,7 @@ public final class MatchService {
             if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
             RedisClient.delete(RedisKey.SUMMONER_DATA.of(
                 LeagueShardUtils.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid));
-            invalidateRankHistory(participant.puuid, match.leagueShard);
+            invalidateRankHistory(participant.puuid, match.leagueShard, match.timeStart);
         }
     }
 
@@ -408,6 +407,15 @@ public final class MatchService {
     private static List<RankHistoryMatch> rankHistorySource(
             String puuid,
             LeagueShard shard,
+            List<SeasonUtils.SeasonRange> seasons) {
+        List<RankHistoryMatch> result = new ArrayList<>();
+        for (SeasonUtils.SeasonRange season : seasons) result.addAll(rankHistorySource(puuid, shard, season));
+        return result;
+    }
+
+    private static List<RankHistoryMatch> rankHistorySource(
+            String puuid,
+            LeagueShard shard,
             SeasonUtils.SeasonRange season) {
         String cacheRegion = LeagueShardUtils.cacheRegion(shard);
         String key = RedisKey.SUMMONER_RANK_HISTORY.of(cacheRegion, shard.name(), puuid, season.season());
@@ -423,9 +431,11 @@ public final class MatchService {
             RankHistoryMatch match,
             long timeStart,
             long timeEnd,
-            GameQueueType queue) {
-        return match != null && (queue == null || queue == match.queue())
-            && match.timeStart() >= timeStart && match.timeStart() <= timeEnd;
+            GameQueueType queue,
+            String patch) {
+        return match != null && GameQueueTypeUtils.canonicalQueue(queue) == GameQueueTypeUtils.canonicalQueue(match.queue())
+            && match.timeStart() >= timeStart && match.timeStart() <= timeEnd
+            && (patch == null || patch.equals(match.patch()));
     }
 
     private static Comparator<RankHistoryMatch> rankHistoryOrder(MatchOrder order) {
@@ -434,13 +444,59 @@ public final class MatchService {
         return order.ascending() ? comparator : comparator.reversed();
     }
 
-    private static void invalidateRankHistory(String puuid, LeagueShard shard) {
-        if (!valid(puuid, shard)) return;
+    private static boolean isRankHistoryQueue(GameQueueType queue) {
+        GameQueueType canonical = GameQueueTypeUtils.canonicalQueue(queue);
+        return canonical == GameQueueType.RANKED_SOLO_5X5 || canonical == GameQueueType.RANKED_FLEX_SR;
+    }
+
+    private static RankHistoryPeriod rankHistoryPeriod(RankHistoryQuery query) {
+        SeasonUtils.SeasonRange selected = rankHistorySeason(query);
+        long now = System.currentTimeMillis();
+        long start = selected.start();
+        long end = selected.end();
+        if (query.view() == RankHistoryView.PROFILE) {
+            start = now - java.time.Duration.ofDays(10).toMillis();
+            end = now;
+            selected = null;
+        } else if (query.timeStart() != 0) {
+            start = Math.max(start, query.timeStart());
+        } else if (query.timeEnd() != 0) {
+            end = Math.min(end, query.timeEnd());
+        }
+        List<SeasonUtils.SeasonRange> seasons = selected == null
+            ? SeasonUtils.getSeasonRanges(start, end)
+            : List.of(selected);
+        return new RankHistoryPeriod(selected, seasons, start, end);
+    }
+
+    private static SeasonUtils.SeasonRange rankHistorySeason(RankHistoryQuery query) {
+        if (query.season() != null) return SeasonUtils.getSeasonRange(query.season());
+        if (query.patch() != null) {
+            int separator = query.patch().indexOf('.');
+            int year = 2010 + Integer.parseInt(query.patch().substring(0, separator));
+            SeasonUtils.SeasonRange season = SeasonUtils.getSeasonRange(year);
+            if (season == null) throw new IllegalArgumentException("No configured season matches patch " + query.patch());
+            return season;
+        }
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        if (season == null) throw new IllegalStateException("Current season range is unavailable");
+        return season;
+    }
+
+    private static void invalidateRankHistory(String puuid, LeagueShard shard, long timeStart) {
+        if (!valid(puuid, shard)) return;
+        SeasonUtils.SeasonRange season = SeasonUtils.getSeasonRange(timeStart);
         if (season == null) return;
         RedisClient.delete(RedisKey.SUMMONER_RANK_HISTORY.of(
             LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, season.season()));
     }
+
+    private record RankHistoryPeriod(
+        SeasonUtils.SeasonRange season,
+        List<SeasonUtils.SeasonRange> seasons,
+        long timeStart,
+        long timeEnd
+    ) {}
 
     private static MatchListBuilder matchListBuilder(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,

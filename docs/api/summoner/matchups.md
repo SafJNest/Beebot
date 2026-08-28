@@ -25,15 +25,14 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ma
 | `queue` | query | enum `GameQueueType` oppure `ALL` | no | `ALL` | Queue da filtrare; omissione e `ALL` aggregano tutte le queue. |
 | `patch` | query | `major.minor` | no | nessun filtro | Fallback quando `start` e `end` sono entrambi assenti; se il periodo è presente viene ignorata. |
 | `role` | query | enum `LaneType` | no | tutti i ruoli | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`. Non è valido con queue senza lane. |
-| `minGames` | query | integer `>= 1` | no | `5` | Soglia applicata solo alle righe matchup; i champion giocati non vengono rimossi. |
+| `minGames` | query | integer `>= 1` | no | `5` | Soglia applicata solo alle mappe matchup nelle singole foglie. |
 
 ## Risposta `200`
 
-La response contiene una sola riga per ogni champion giocato. I champion
-giocati in più ruoli vengono uniti quando `role` è omesso. Ogni matchup conta
-solo l’avversario sulla stessa lane e usa il modello completo `Stats`.
-L'esempio seguente mostra solo i campi principali di `Stats`; la response reale
-mantiene tutti i campi del modello esistente.
+La source of truth è una foglia `champion × CanonicalQueue × position`.
+Ogni foglia conserva i suoi accumulatori base e, sotto `matchups`, soltanto gli
+avversari incontrati nella stessa posizione. Non sono salvati aggregate per
+champion, queue o posizione, né `reference`, `winrate`, `kda` o campi `avg*`.
 
 ```json
 {
@@ -53,44 +52,45 @@ mantiene tutti i campi del modello esistente.
   "timeStart": 1711929600000,
   "timeEnd": 1714521600000,
   "lastUpdate": 1714521600000,
-  "champions": [
-    {
-      "champion": 157,
-      "stats": {
-        "reference": 157,
-        "games": 42,
-        "wins": 24,
-        "winrate": 57.14,
-        "kda": 4.03,
-        "avgCs": 200.5,
-        "avgDamage": 16293.36,
-        "avgKillParticipation": 64.63,
-        "lastPlayedAt": 1714518000000
-      },
-      "matchups": [
-        {
-          "champion": 412,
-          "stats": {
-            "reference": 412,
-            "games": 6,
-            "wins": 3,
-            "winrate": 50.0,
-            "kda": 2.4,
-            "avgCs": 188.0,
-            "avgDamage": 15120.0,
-            "avgKillParticipation": 58.2,
-            "lastPlayedAt": 1714518000000
+  "champions": {
+    "157": {
+      "RANKED_SOLO": {
+        "TOP": {
+          "games": 42,
+          "wins": 24,
+          "kills": 183,
+          "deaths": 86,
+          "assists": 211,
+          "damage": 684321,
+          "gold": 441320,
+          "championLevelTotal": 756,
+          "playtime": 110880000,
+          "lastPlayedAt": 1714518000000,
+          "matchups": {
+            "412": {
+              "games": 6,
+              "wins": 3,
+              "kills": 22,
+              "deaths": 18,
+              "assists": 31,
+              "damage": 91240,
+              "gold": 61780,
+              "championLevelTotal": 108,
+              "playtime": 15840000,
+              "lastPlayedAt": 1714518000000
+            }
           }
         }
-      ]
+      }
     }
-  ]
+  }
 }
 ```
 
-`champion` è l’ID numerico del champion. Il consumer risolve nome e immagine
-tramite i propri dati statici. La response contiene aggregati e non include
-la lista dei singoli game.
+Champion e avversario sono chiavi numeriche dell'object. Il consumer risolve
+nome e immagine dai dati statici e calcola i totali/medie richiesti sommando le
+foglie. Una posizione assente o non applicabile è `UNKNOWN`; le queue Riot sono
+normalizzate in `CanonicalQueue` durante l'ingestion.
 
 Se viene passato `start` senza `end`, la fine del periodo è la fine della
 giornata corrente (`23:59:59.999`, timezone del server), così il `filterKey`

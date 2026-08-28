@@ -1,18 +1,13 @@
 package com.safjnest.lol.model.statistics;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class Stats<T> {
+    @JsonIgnore
     public T reference;
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public List<Map<GameQueueType, Map<String, Stats<Void>>>> context = new ArrayList<>();
     public long games;
     public long wins;
     public long kills;
@@ -20,7 +15,8 @@ public class Stats<T> {
     public long assists;
     public long damage;
     public long damageBuilding;
-    public long damageTaken;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Long damageTaken;
     public long healing;
     public long vision;
     public long ward;
@@ -28,7 +24,8 @@ public class Stats<T> {
     public long cs;
     public long gold;
     public long lpGain;
-    public long level;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Long championLevelTotal;
     public long doubles;
     public long triples;
     public long quadruples;
@@ -39,36 +36,38 @@ public class Stats<T> {
     public long r;
     public long d;
     public long f;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long arenaFirst;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long arenaSecond;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long arenaThird;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long arenaPlacementSum;
     public long playtime;
     public long lastPlayedAt;
     public double killParticipationSum;
-    public long killParticipationGames;
     public double deathShareSum;
-    public long deathShareGames;
 
-    public double winrate;
-    public double kda;
-    public double avgKills;
-    public double avgDeaths;
-    public double avgAssists;
-    public double avgDamage;
-    public double avgDamageBuilding;
-    public double avgDamageTaken;
-    public double avgHealing;
-    public double avgVision;
-    public double avgWard;
-    public double avgWardKilled;
-    public double avgCs;
-    public double avgGold;
-    public double avgLpGain;
-    public double avgLevel;
-    public double avgArenaPlacement;
-    public Double avgKillParticipation;
-    public Double avgDeathShare;
+    @JsonIgnore public double winrate;
+    @JsonIgnore public double kda;
+    @JsonIgnore public double avgKills;
+    @JsonIgnore public double avgDeaths;
+    @JsonIgnore public double avgAssists;
+    @JsonIgnore public double avgDamage;
+    @JsonIgnore public double avgDamageBuilding;
+    @JsonIgnore public Double avgDamageTaken;
+    @JsonIgnore public double avgHealing;
+    @JsonIgnore public double avgVision;
+    @JsonIgnore public double avgWard;
+    @JsonIgnore public double avgWardKilled;
+    @JsonIgnore public double avgCs;
+    @JsonIgnore public double avgGold;
+    @JsonIgnore public double avgLpGain;
+    @JsonIgnore public Double avgLevel;
+    @JsonIgnore public Double avgArenaPlacement;
+    @JsonIgnore public Double avgKillParticipation;
+    @JsonIgnore public Double avgDeathShare;
 
     public Stats() {}
 
@@ -101,12 +100,12 @@ public class Stats<T> {
         addValues(participant.win, kda(participant.kda), participant.damage, participant.damageBuilding,
             participant.damageTaken, participant.healing, participant.visionScore, participant.ward,
             participant.wardKilled, participant.cs, participant.goldEarned, participant.rankProgress == null || participant.rankProgress.gain == null ? 0 : participant.rankProgress.gain,
-            participant.level, participant.doubles, participant.triples, participant.quadruples,
+            participant.championLevel, participant.doubles, participant.triples, participant.quadruples,
             participant.pentas, participant.q, participant.w, participant.e, participant.r, participant.d,
             participant.f, participant.subTeamPlacement, timeStart, timeEnd, teamKills, enemyTeamKills, arena, calculate);
     }
 
-    public void merge(Stats<?> other) {
+    public void merge(Stats other) {
         games += other.games;
         wins += other.wins;
         kills += other.kills;
@@ -114,7 +113,7 @@ public class Stats<T> {
         assists += other.assists;
         damage += other.damage;
         damageBuilding += other.damageBuilding;
-        damageTaken += other.damageTaken;
+        damageTaken = sum(damageTaken, other.damageTaken);
         healing += other.healing;
         vision += other.vision;
         ward += other.ward;
@@ -122,7 +121,7 @@ public class Stats<T> {
         cs += other.cs;
         gold += other.gold;
         lpGain += other.lpGain;
-        level += other.level;
+        championLevelTotal = sum(championLevelTotal, other.championLevelTotal);
         doubles += other.doubles;
         triples += other.triples;
         quadruples += other.quadruples;
@@ -140,40 +139,58 @@ public class Stats<T> {
         playtime += other.playtime;
         lastPlayedAt = Math.max(lastPlayedAt, other.lastPlayedAt);
         killParticipationSum += other.killParticipationSum;
-        killParticipationGames += other.killParticipationGames;
         deathShareSum += other.deathShareSum;
-        deathShareGames += other.deathShareGames;
         recalculate();
     }
 
     public void recalculate() {
         winrate = percent(wins, games);
         kda = deaths > 0 ? rounded((double) (kills + assists) / deaths) : kills + assists;
-        avgKills = average(kills);
-        avgDeaths = average(deaths);
-        avgAssists = average(assists);
-        avgDamage = average(damage);
-        avgDamageBuilding = average(damageBuilding);
-        avgDamageTaken = average(damageTaken);
-        avgHealing = average(healing);
-        avgVision = average(vision);
-        avgWard = average(ward);
-        avgWardKilled = average(wardKilled);
-        avgCs = average(cs);
-        avgGold = average(gold);
-        avgLpGain = average(lpGain);
-        avgLevel = average(level);
-        avgArenaPlacement = average(arenaPlacementSum);
-        avgKillParticipation = killParticipationGames > 0 ? rounded(killParticipationSum / killParticipationGames) : null;
-        avgDeathShare = deathShareGames > 0 ? rounded(deathShareSum / deathShareGames) : null;
+        avgKills = average(kills); avgDeaths = average(deaths); avgAssists = average(assists);
+        avgDamage = average(damage); avgDamageBuilding = average(damageBuilding); avgDamageTaken = average(damageTaken);
+        avgHealing = average(healing); avgVision = average(vision); avgWard = average(ward); avgWardKilled = average(wardKilled);
+        avgCs = average(cs); avgGold = average(gold); avgLpGain = average(lpGain); avgLevel = average(championLevelTotal);
+        avgArenaPlacement = avgArenaPlacement(); avgKillParticipation = avgKillParticipation(); avgDeathShare = avgDeathShare();
     }
 
+    @JsonIgnore
     public long losses() {
         return games - wins;
     }
 
-    private double average(long value) {
+    @JsonIgnore
+    public double winrate() {
+        return percent(wins, games);
+    }
+
+    @JsonIgnore
+    public double kda() {
+        return deaths > 0 ? rounded((double) (kills + assists) / deaths) : kills + assists;
+    }
+
+    @JsonIgnore
+    public double average(long value) {
         return games > 0 ? rounded((double) value / games) : 0;
+    }
+
+    @JsonIgnore
+    public Double average(Long value) {
+        return value == null ? null : average(value.longValue());
+    }
+
+    @JsonIgnore
+    public Double avgKillParticipation() {
+        return games > 0 ? rounded(killParticipationSum / games) : null;
+    }
+
+    @JsonIgnore
+    public Double avgDeathShare() {
+        return games > 0 ? rounded(deathShareSum / games) : null;
+    }
+
+    @JsonIgnore
+    public Double avgArenaPlacement() {
+        return games > 0 ? rounded((double) arenaPlacementSum / games) : null;
     }
 
     private static double percent(long part, long total) {
@@ -195,7 +212,7 @@ public class Stats<T> {
         int[] kdaValues,
         int damage,
         int damageBuilding,
-        int damageTaken,
+        Integer damageTaken,
         int healing,
         int vision,
         int ward,
@@ -203,7 +220,7 @@ public class Stats<T> {
         int cs,
         int gold,
         int lpGain,
-        int level,
+        Integer championLevel,
         int doubles,
         int triples,
         int quadruples,
@@ -229,7 +246,7 @@ public class Stats<T> {
         assists += kdaValues[2];
         this.damage += damage;
         this.damageBuilding += damageBuilding;
-        this.damageTaken += damageTaken;
+        this.damageTaken = sum(this.damageTaken, damageTaken == null ? null : damageTaken.longValue());
         this.healing += healing;
         this.vision += vision;
         this.ward += ward;
@@ -237,7 +254,7 @@ public class Stats<T> {
         this.cs += cs;
         this.gold += gold;
         this.lpGain += lpGain;
-        this.level += level;
+        championLevelTotal = sum(championLevelTotal, championLevel == null ? null : championLevel.longValue());
         this.doubles += doubles;
         this.triples += triples;
         this.quadruples += quadruples;
@@ -258,13 +275,17 @@ public class Stats<T> {
         lastPlayedAt = Math.max(lastPlayedAt, timeStart);
         if (teamKills > 0) {
             killParticipationSum += ((double) (kdaValues[0] + kdaValues[2]) / teamKills) * 100;
-            killParticipationGames++;
         }
         if (enemyTeamKills > 0) {
             deathShareSum += ((double) kdaValues[1] / enemyTeamKills) * 100;
-            deathShareGames++;
         }
         if (calculate) recalculate();
+    }
+
+    private static Long sum(Long current, Long value) {
+        if (value == null) return current;
+        if (current == null) return value;
+        return current + value;
     }
 
     private static int integer(String value) {

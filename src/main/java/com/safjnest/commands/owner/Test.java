@@ -144,7 +144,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | tracking | log | migrate | migrate-tracked | rankprogress | gc");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | leaderboard-aggregates | tracking | log | migrate | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -892,6 +892,16 @@ public class Test extends Command{
             case "highstats":
                 ChronoTask rebuildHighEloStats = () -> new LeaderboardService().rebuildHighEloAndTrackedProfileStatistics();
                 rebuildHighEloStats.queue();
+            break;
+            case "leaderboard-aggregates":
+                ChronoTask rebuildLeaderboardAggregates = () -> {
+                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild report = LeaderboardService.rebuildAllAggregates();
+                    System.out.println("[LeaderboardAggregates] Generated " + report.total()
+                            + " snapshots: distributions=" + report.rankDistributions()
+                            + " counts=" + report.counts() + " topRegions=" + report.topRegions());
+                };
+                rebuildLeaderboardAggregates.queue();
+                e.reply("Leaderboard aggregate rebuild queued.");
             break;
             case "sleep":
                 try {

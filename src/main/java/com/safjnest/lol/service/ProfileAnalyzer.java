@@ -51,26 +51,22 @@ public final class ProfileAnalyzer {
     public static final class MatchupsAccumulator {
         private final String puuid;
         private final Filter filter;
-        private final ProfileStatistics statistics;
         private final ProfileMatchups.Accumulator matchups;
 
         private MatchupsAccumulator(String puuid, Filter filter) {
             this.puuid = puuid;
             this.filter = filter;
-            statistics = new ProfileStatistics(filter == null ? 0 : filter.timeStart());
             matchups = ProfileMatchups.accumulator(filter);
         }
 
         public void accept(Match match) {
             ProfileMatchContext context = ProfileMatchContext.from(match, puuid, filter);
             if (!context.inCurrentSplit()) return;
-            statistics.addRaw(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
             matchups.accept(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
         }
 
         public ProfileMatchups finish() {
-            statistics.finish();
-            return matchups.finish(statistics).withLastUpdate(System.currentTimeMillis());
+            return matchups.finish().withLastUpdate(System.currentTimeMillis());
         }
     }
 
@@ -107,7 +103,7 @@ public final class ProfileAnalyzer {
             return new ProfileRefresh(
                 statistics,
                 activity.finish(),
-                matchups.finish(statistics).withLastUpdate(System.currentTimeMillis())
+                matchups.finish().withLastUpdate(System.currentTimeMillis())
             );
         }
     }

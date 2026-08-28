@@ -1,6 +1,7 @@
 package com.safjnest.lol.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -9,6 +10,8 @@ import org.junit.Test;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.CanonicalQueue;
+import com.safjnest.lol.model.statistics.ProfileMatchupLeaf;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.utils.JsonCodec;
 
@@ -19,83 +22,83 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 public class ProfileMatchupsTest {
 
     @Test
-    public void aggregatesOneChampionAcrossMultipleRoles() {
+    public void persistsMatchupsInsideTheirChampionQueuePositionLeaf() {
         ProfileMatchups matchups = ProfileMatchups.from(List.of(
             match("top", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("mid", 200, 1, LaneType.MID, 2, LaneType.MID, false)
         ), "puuid", filter());
 
-        assertEquals(1, matchups.champions().size());
-        assertEquals(1, matchups.champions().get(0).champion());
-        assertEquals(2, matchups.champions().get(0).stats().games);
-        assertEquals(1, matchups.champions().get(0).matchups().size());
-        assertEquals(2, matchups.champions().get(0).matchups().get(0).champion());
-        assertEquals(2, matchups.champions().get(0).matchups().get(0).stats().games);
-        assertEquals(1, matchups.champions().get(0).matchups().get(0).stats().wins);
+        ProfileMatchupLeaf top = matchups.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
+        ProfileMatchupLeaf mid = matchups.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("MID");
+        assertEquals(1, top.games);
+        assertEquals(1, mid.games);
+        assertEquals(Long.valueOf(18), top.championLevelTotal);
+        assertEquals(1, top.matchups.get(2).games);
+        assertEquals(Long.valueOf(18), top.matchups.get(2).championLevelTotal);
+        assertEquals(1, mid.matchups.get(2).games);
     }
 
     @Test
-    public void filtersByRoleAndIgnoresOpponentsOnAnotherLane() {
-        Filter filter = filter();
-        filter.setLane(LaneType.TOP);
+    public void canonicalizesEquivalentRankedSoloQueues() {
         ProfileMatchups matchups = ProfileMatchups.from(List.of(
-            match("top", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
-            match("different-lane", 200, 1, LaneType.TOP, 3, LaneType.MID, true),
-            match("mid", 300, 1, LaneType.MID, 2, LaneType.MID, true)
-        ), "puuid", filter);
+            match("current", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
+            match("legacy", 200, 1, LaneType.TOP, 2, LaneType.TOP, false,
+                GameQueueType.RANKED_SOLO_5X5, "14.10")
+        ), "puuid", allQueuesFilter());
 
-        assertEquals(2, matchups.champions().get(0).stats().games);
-        assertEquals(1, matchups.champions().get(0).matchups().size());
-        assertEquals(2, matchups.champions().get(0).matchups().get(0).champion());
+        assertEquals(2, matchups.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").games);
     }
 
     @Test
-    public void filtersByQueuePatchAndRole() {
-        Filter filter = filter()
-            .setQueue(GameQueueType.RANKED_FLEX_SR)
-            .setPatch("14.10")
-            .setLane(LaneType.TOP);
+    public void assignsMissingPositionToUnknownLeaf() {
         ProfileMatchups matchups = ProfileMatchups.from(List.of(
-            match("valid", 100, 1, LaneType.TOP, 2, LaneType.TOP, true, GameQueueType.RANKED_FLEX_SR, "14.10"),
-            match("queue", 200, 1, LaneType.TOP, 3, LaneType.TOP, true, GameQueueType.TEAM_BUILDER_RANKED_SOLO, "14.10"),
-            match("patch", 300, 1, LaneType.TOP, 4, LaneType.TOP, true, GameQueueType.RANKED_FLEX_SR, "14.9"),
-            match("role", 400, 1, LaneType.MID, 5, LaneType.MID, true, GameQueueType.RANKED_FLEX_SR, "14.10")
-        ), "puuid", filter);
+            match("arena", 100, 1, LaneType.NONE, 2, LaneType.NONE, true, GameQueueType.CHERRY, "14.10")
+        ), "puuid", allQueuesFilter());
 
-        assertEquals(1, matchups.champions().get(0).stats().games);
-        assertEquals(1, matchups.champions().get(0).matchups().size());
-        assertEquals(2, matchups.champions().get(0).matchups().get(0).champion());
+        assertEquals(1, matchups.champions().get(1).get(CanonicalQueue.ARENA).get("UNKNOWN").games);
     }
 
     @Test
-    public void minimumGamesFiltersOnlyMatchups() {
+    public void minimumGamesFiltersOnlyLeafMatchups() {
         ProfileMatchups matchups = ProfileMatchups.from(List.of(
             match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("two", 200, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("three", 300, 1, LaneType.TOP, 3, LaneType.TOP, false)
-        ), "puuid", filter());
+        ), "puuid", filter()).withMinGames(2);
 
-        ProfileMatchups filtered = matchups.withMinGames(2);
+        ProfileMatchupLeaf leaf = matchups.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
+        assertEquals(3, leaf.games);
+        assertEquals(1, leaf.matchups.size());
+        assertTrue(leaf.matchups.containsKey(2));
+    }
 
-        assertEquals(1, filtered.champions().size());
-        assertEquals(3, filtered.champions().get(0).stats().games);
-        assertEquals(1, filtered.champions().get(0).matchups().size());
-        assertEquals(2, filtered.champions().get(0).matchups().get(0).champion());
+    @Test
+    public void serializesOnlyKeyedRawAccumulators() {
+        ProfileMatchups matchups = ProfileMatchups.from(
+            List.of(match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true)), "puuid", filter());
+
+        String json = JsonCodec.toJson(matchups);
+        assertTrue(json.contains("\"RANKED_SOLO\""));
+        assertTrue(json.contains("\"matchups\":{\"2\""));
+        assertFalse(json.contains("\"reference\""));
+        assertFalse(json.contains("\"avgKills\""));
+        assertFalse(json.contains("\"winrate\""));
+        assertFalse(json.contains("\"kda\""));
+        assertFalse(json.contains("\"schemaVersion\""));
     }
 
     @Test
     public void roundTripsThroughSharedJsonCodec() {
         ProfileMatchups source = ProfileMatchups.from(
-            List.of(match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true)),
-            "puuid", filter());
+            List.of(match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true)), "puuid", filter());
 
         ProfileMatchups decoded = JsonCodec.fromJson(JsonCodec.toJson(source), ProfileMatchups.class);
         ProfileMatchups bsonDecoded = JsonCodec.fromDocument(JsonCodec.toDocument(source), ProfileMatchups.class);
 
-        assertTrue(decoded != null);
-        assertEquals(1, decoded.champions().get(0).matchups().get(0).stats().games);
-        assertTrue(bsonDecoded != null);
-        assertEquals(1, bsonDecoded.champions().get(0).matchups().get(0).stats().games);
+        assertTrue(decoded.hasLeafMatchups());
+        assertEquals(1, decoded.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").matchups.get(2).games);
+        assertTrue(bsonDecoded.hasLeafMatchups());
+        assertEquals(1, bsonDecoded.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").matchups.get(2).games);
     }
 
     private static Filter filter() {
@@ -109,39 +112,28 @@ public class ProfileMatchupsTest {
             .setPeriod(0, 0);
     }
 
-    private static Match match(
-        String id,
-        long time,
-        int champion,
-        LaneType playerLane,
-        int opponentChampion,
-        LaneType opponentLane,
-        boolean win
-    ) {
+    private static Filter allQueuesFilter() {
+        return filter().setQueue(null);
+    }
+
+    private static Match match(String id, long time, int champion, LaneType playerLane, int opponentChampion,
+                               LaneType opponentLane, boolean win) {
         return match(id, time, champion, playerLane, opponentChampion, opponentLane, win,
             GameQueueType.TEAM_BUILDER_RANKED_SOLO, "14.10");
     }
 
-    private static Match match(
-        String id,
-        long time,
-        int champion,
-        LaneType playerLane,
-        int opponentChampion,
-        LaneType opponentLane,
-        boolean win,
-        GameQueueType queue,
-        String patch
-    ) {
+    private static Match match(String id, long time, int champion, LaneType playerLane, int opponentChampion,
+                               LaneType opponentLane, boolean win, GameQueueType queue, String patch) {
         Match match = new Match();
         match.gameId = id;
         match.queue = queue;
         match.patch = patch;
         match.timeStart = time;
         match.timeEnd = time + 1;
-        Participant player = participant("puuid", champion, playerLane, TeamType.BLUE, win);
-        Participant opponent = participant("opponent-" + id, opponentChampion, opponentLane, TeamType.RED, !win);
-        match.participants = List.of(player, opponent);
+        match.participants = List.of(
+            participant("puuid", champion, playerLane, TeamType.BLUE, win),
+            participant("opponent-" + id, opponentChampion, opponentLane, TeamType.RED, !win)
+        );
         return match;
     }
 
@@ -156,6 +148,7 @@ public class ProfileMatchupsTest {
         participant.damage = 100;
         participant.cs = 20;
         participant.goldEarned = 300;
+        participant.championLevel = 18;
         return participant;
     }
 }

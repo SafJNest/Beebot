@@ -159,7 +159,6 @@ public final class LeagueDB extends AbstractDB {
         participant.win = result.getBoolean("win");
         participant.kda = result.getString("kda");
         participant.champion = result.getInt("champion");
-        participant.level = result.getInt("level");
         participant.team = enumValue(TeamType.class, result.getString("team"));
         participant.lane = enumValue(LaneType.class, result.getString("lane"));
         participant.roleQuestId = result.getInt("role_quest_id");

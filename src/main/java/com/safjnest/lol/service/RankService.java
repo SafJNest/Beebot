@@ -4,7 +4,6 @@ import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,64 +34,64 @@ public final class RankService {
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
-    private static final TypeReference<List<Rank>> RANKS_TYPE = new TypeReference<List<Rank>>() {};
+    private static final TypeReference<Map<GameQueueType, Rank>> RANKS_TYPE = new TypeReference<>() {};
 
     private static final no.stelar7.api.r4j.impl.R4J RIOT_API = com.safjnest.lol.LeagueHandler.getRiotApi();
 
     private RankService() {
     }
 
-    public static List<Rank> find(String puuid, LeagueShard shard) {
+    public static Map<GameQueueType, Rank> find(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return null;
 
-        List<Rank> cached = cache(puuid, shard);
+        Map<GameQueueType, Rank> cached = cache(puuid, shard);
         if (cached != null) return cached;
 
-        List<Rank> stored = query(puuid, shard);
+        Map<GameQueueType, Rank> stored = query(puuid, shard);
         if (stored != null) RedisClient.set(RedisKey.SUMMONER_RANKS, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         return stored;
     }
 
-    public static CompletableFuture<List<Rank>> getAsync(String puuid, LeagueShard shard) {
-        List<Rank> saved = find(puuid, shard);
+    public static CompletableFuture<Map<GameQueueType, Rank>> getAsync(String puuid, LeagueShard shard) {
+        Map<GameQueueType, Rank> saved = find(puuid, shard);
         return saved != null ? CompletableFuture.completedFuture(saved) : fetch(puuid, shard);
     }
 
-    public static List<Rank> get(String puuid, LeagueShard shard) {
+    public static Map<GameQueueType, Rank> get(String puuid, LeagueShard shard) {
         try {
             return getAsync(puuid, shard).join();
         } catch (CompletionException exception) {
-            return List.of();
+            return Map.of();
         }
     }
 
-    public static CompletableFuture<List<Rank>> refreshAsync(String puuid, LeagueShard shard) {
+    public static CompletableFuture<Map<GameQueueType, Rank>> refreshAsync(String puuid, LeagueShard shard) {
         return refreshAsync(puuid, shard, JobPriority.IMMEDIATE);
     }
 
-    public static CompletableFuture<List<Rank>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
+    public static CompletableFuture<Map<GameQueueType, Rank>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
         return refreshAsync(puuid, shard, JobPriority.BACKGROUND);
     }
 
-    public static List<Rank> refreshSync(String puuid, LeagueShard shard, JobPriority priority) {
+    public static Map<GameQueueType, Rank> refreshSync(String puuid, LeagueShard shard, JobPriority priority) {
         if (!valid(puuid, shard)) throw new IllegalArgumentException("A PUUID and shard are required for rank refresh");
 
         hardInvalidate(puuid, shard);
         List<LeagueEntry> entries = refreshEntriesFromRiotAsync(
             puuid, shard, priority == null ? JobPriority.IMMEDIATE : priority).join();
-        List<Rank> ranks = toRanks(entries);
+        Map<GameQueueType, Rank> ranks = toRanks(entries);
         saveRanks(puuid, shard, ranks, false);
         return ranks;
     }
 
-    private static CompletableFuture<List<Rank>> refreshAsync(
+    private static CompletableFuture<Map<GameQueueType, Rank>> refreshAsync(
             String puuid,
             LeagueShard shard,
             JobPriority priority) {
-        if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
+        if (!valid(puuid, shard)) return CompletableFuture.completedFuture(Map.of());
 
         return refreshEntriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
-            List<Rank> ranks = toRanks(entries);
+            Map<GameQueueType, Rank> ranks = toRanks(entries);
             saveRanks(puuid, shard, ranks, false);
             return ranks;
         });
@@ -101,10 +100,8 @@ public final class RankService {
     public static Rank getByQueue(String puuid, LeagueShard shard, GameQueueType queue) {
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(
             queue == null ? GameQueueType.RANKED_SOLO_5X5 : queue);
-        for (Rank rank : get(puuid, shard)) {
-            if (rank.queue() == selectedQueue) return rank;
-        }
-        return unranked(selectedQueue);
+        Rank rank = get(puuid, shard).get(selectedQueue);
+        return rank == null ? Rank.unranked() : rank;
     }
 
     public static List<LeagueEntry> getEntries(String puuid, LeagueShard shard) {
@@ -193,25 +190,26 @@ public final class RankService {
     public static void save(LeagueShard shard, LeagueEntry entry) {
         if (entry == null || !valid(entry.getPuuid(), shard)) return;
 
+        GameQueueType queue = GameQueueTypeUtils.canonicalQueue(entry.getQueueType());
         Rank rank = toRank(entry);
         if (rank == null || !MongoDB.upsertRank(
-                entry.getPuuid(), shard, rank, TierDivisionUtils.getMmr(rank.tier(), rank.lp()))) return;
+                entry.getPuuid(), shard, queue, rank, TierDivisionUtils.getMmr(rank.tier(), rank.lp()))) return;
 
-        List<Rank> ranks = replaceRank(find(entry.getPuuid(), shard), rank);
+        Map<GameQueueType, Rank> ranks = replaceRank(find(entry.getPuuid(), shard), queue, rank);
         RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), entry.getPuuid());
         ProfileService.invalidate(entry.getPuuid(), shard);
     }
 
     // ============================================================================
 
-    private static CompletableFuture<List<Rank>> fetch(String puuid, LeagueShard shard) {
-        if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
+    private static CompletableFuture<Map<GameQueueType, Rank>> fetch(String puuid, LeagueShard shard) {
+        if (!valid(puuid, shard)) return CompletableFuture.completedFuture(Map.of());
 
         return SummonerService.getAsync(puuid, shard).thenCompose(summoner -> {
             if (summoner == null) return CompletableFuture.failedFuture(
                 new IllegalStateException("Summoner is not available for rank persistence"));
             return getEntriesAsync(puuid, shard).thenApplyAsync(entries -> {
-                List<Rank> ranks = toRanks(entries);
+                Map<GameQueueType, Rank> ranks = toRanks(entries);
                 saveRanks(puuid, shard, ranks, true);
                 return ranks;
             });
@@ -311,11 +309,11 @@ public final class RankService {
             return entries;
     }
 
-    private static List<Rank> cache(String puuid, LeagueShard shard) {
+    private static Map<GameQueueType, Rank> cache(String puuid, LeagueShard shard) {
         return RedisClient.get(RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), RANKS_TYPE);
     }
 
-    private static List<Rank> query(String puuid, LeagueShard shard) {
+    private static Map<GameQueueType, Rank> query(String puuid, LeagueShard shard) {
         return MongoDB.findRanks(puuid, shard);
     }
 
@@ -323,19 +321,16 @@ public final class RankService {
         return RedisClient.get(RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid), LEAGUE_ENTRIES_TYPE);
     }
 
-    private static void saveRanks(String puuid, LeagueShard shard, List<Rank> ranks) {
+    private static void saveRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
         saveRanks(puuid, shard, ranks, true);
     }
 
-    private static void saveRanks(String puuid, LeagueShard shard, List<Rank> ranks, boolean invalidateProfile) {
+    private static void saveRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks, boolean invalidateProfile) {
         if (!valid(puuid, shard) || ranks == null) return;
 
-        Map<GameQueueType, Long> mmr = new HashMap<>();
-        for (Rank rank : ranks) {
-            if (rank != null && rank.queue() != null) {
-                mmr.put(rank.queue(), (long) TierDivisionUtils.getMmr(rank.tier(), rank.lp()));
-            }
-        }
+        Map<GameQueueType, Long> mmr = new LinkedHashMap<>();
+        for (Map.Entry<GameQueueType, Rank> entry : ranks.entrySet()) if (entry.getKey() != null && entry.getValue() != null)
+            mmr.put(entry.getKey(), (long) TierDivisionUtils.getMmr(entry.getValue().tier(), entry.getValue().lp()));
         MongoDB.upsertRanks(puuid, shard, ranks, mmr);
         RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
@@ -353,13 +348,13 @@ public final class RankService {
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, data);
     }
 
-    private static List<Rank> toRanks(List<LeagueEntry> entries) {
-        List<Rank> ranks = new ArrayList<>();
+    private static Map<GameQueueType, Rank> toRanks(List<LeagueEntry> entries) {
+        Map<GameQueueType, Rank> ranks = new LinkedHashMap<>();
         if (entries == null) return ranks;
 
         for (LeagueEntry entry : entries) {
             Rank rank = toRank(entry);
-            if (rank != null) ranks.add(rank);
+            if (rank != null) ranks.put(GameQueueTypeUtils.canonicalQueue(entry.getQueueType()), rank);
         }
         return ranks;
     }
@@ -367,7 +362,6 @@ public final class RankService {
     private static Rank toRank(LeagueEntry entry) {
         if (entry == null || entry.getQueueType() == null) return null;
         return new Rank(
-            GameQueueTypeUtils.canonicalQueue(entry.getQueueType()),
             entry.getTierDivisionType(),
             entry.getLeaguePoints(),
             entry.getWins(),
@@ -375,21 +369,13 @@ public final class RankService {
         );
     }
 
-    private static List<Rank> replaceRank(List<Rank> current, Rank next) {
-        List<Rank> ranks = current == null ? new ArrayList<>() : new ArrayList<>(current);
-        for (int index = 0; index < ranks.size(); index++) {
-            Rank rank = ranks.get(index);
-            if (rank != null && rank.queue() == next.queue()) {
-                ranks.set(index, next);
-                return ranks;
-            }
-        }
-        ranks.add(next);
+    private static Map<GameQueueType, Rank> replaceRank(
+            Map<GameQueueType, Rank> current,
+            GameQueueType queue,
+            Rank next) {
+        Map<GameQueueType, Rank> ranks = current == null ? new LinkedHashMap<>() : new LinkedHashMap<>(current);
+        ranks.put(queue, next);
         return ranks;
-    }
-
-    private static Rank unranked(GameQueueType queue) {
-        return new Rank(queue, TierDivisionType.UNRANKED, 0, 0, 0);
     }
 
 }

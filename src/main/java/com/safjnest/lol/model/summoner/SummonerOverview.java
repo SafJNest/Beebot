@@ -6,7 +6,6 @@ import java.util.Map;
 
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.lol.utils.ChampionUtils;
 
 public record SummonerOverview(
@@ -37,20 +36,23 @@ public record SummonerOverview(
         List<MatchResult> recentMatches
     ) {
         ProfileStatistics aggregate = statistics != null ? statistics : new ProfileStatistics();
+        aggregate.finish();
         List<MatchResult> matches = recentMatches != null ? List.copyOf(recentMatches) : List.of();
         Map<Integer, Champion> championMap = new HashMap<>();
         if (champions != null) championMap.putAll(champions);
-        for (Stats<Integer> stat : aggregate.championStats) championMap.putIfAbsent(stat.reference, champion(stat.reference));
+        Map<Integer, com.safjnest.lol.model.statistics.Stats<Void>> championStats = aggregate.championStats();
+        for (Integer championId : championStats.keySet()) championMap.putIfAbsent(championId, champion(championId));
         for (MatchResult match : matches) championMap.putIfAbsent(match.championId(), champion(match.championId()));
         StringBuilder form = new StringBuilder();
         for (MatchResult match : matches) form.append(match.win() ? 'W' : 'L');
 
         Champion mostPlayed = null;
-        Stats<Integer> best = null;
-        for (Stats<Integer> stat : aggregate.championStats) {
-            if (best == null || stat.games > best.games || stat.games == best.games && stat.reference < best.reference) best = stat;
+        Integer best = null;
+        for (Map.Entry<Integer, com.safjnest.lol.model.statistics.Stats<Void>> entry : championStats.entrySet()) {
+            if (best == null || entry.getValue().games > championStats.get(best).games
+                || entry.getValue().games == championStats.get(best).games && entry.getKey() < best) best = entry.getKey();
         }
-        if (best != null) mostPlayed = championMap.get(best.reference);
+        if (best != null) mostPlayed = championMap.get(best);
 
         return new SummonerOverview(
             aggregate,

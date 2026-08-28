@@ -51,7 +51,7 @@ Match ingestion has two levels. Raw ingestion persists the canonical match,
 events and participant identity seed with the internal Mongo marker
 `tracked=false`; it does not refresh participant ranks. Tracked enrichment
 invalidates Redis and R4J rank caches and obtains every current
-participant rank directly from Riot before updating `summoner.ranks[]`, Redis
+participant rank directly from Riot before updating `summoner.ranks{}`, Redis
 and the match. Mongo participant history and the embedded Mongo rank remain
 baseline-only inputs for LP gain; they never supply the participant's current
 rank. The complete match is then persisted with `tracked=true`. The marker is

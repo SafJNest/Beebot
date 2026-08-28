@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +34,6 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.IndexModel;
-import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.Sorts;
@@ -68,6 +65,7 @@ import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -93,96 +91,23 @@ public final class MongoDB {
     private static final int RANK_PROGRESS_HISTORY_BULK_SIZE = 1_000;
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final String LEADERBOARD_AGGREGATES_COLLECTION = "leaderboard_aggregates";
+    private static final String GLOBAL_LEADERBOARD_REGION = "GLOBAL";
+    private static final String PAGE_COUNT_AGGREGATE = "page-count";
     private static final String RANK_DISTRIBUTION_AGGREGATE = "rank-distribution";
     private static final String TOP_REGIONS_AGGREGATE = "top-regions";
-    private static final String PROFILE_STATISTICS_IDENTITY_INDEX = "profile_statistics_identity";
-    private static final String PROFILE_ACTIVITY_IDENTITY_INDEX = "profile_activity_identity";
-    private static final String PROFILE_MATCHUPS_IDENTITY_INDEX = "profile_matchups_identity";
     private static final String CHAMPION_INDEXABLES_COLLECTION = "champions_indexable";
     private static final String PROFILE_INDEXABLES_COLLECTION = "profiles_indexable";
     private static final List<String> INDEXABLE_PROFILE_RANKS = List.of(
             TierDivisionType.MASTER_I.name(),
             TierDivisionType.GRANDMASTER_I.name(),
             TierDivisionType.CHALLENGER_I.name());
+    private static final List<GameQueueType> LEADERBOARD_QUEUES = List.of(
+            GameQueueType.RANKED_SOLO_5X5,
+            GameQueueType.RANKED_FLEX_SR);
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
             "champion_builds", "champion_stats", "profile_activity", "profile_matchups", LEADERBOARD_AGGREGATES_COLLECTION,
             CHAMPION_INDEXABLES_COLLECTION, PROFILE_INDEXABLES_COLLECTION, "migration_runs");
-    private static final List<IndexDefinition> INDEX_DEFINITIONS = List.of(
-            index("summoner", "summoner_search_prefix",
-                    new Document("region", 1).append("riotSearch", 1).append("riotId", 1), false, null),
-            index("summoner", "summoner_riot_id",
-                    new Document("region", 1).append("riotId", 1), false, null),
-            index("summoner", "summoner_user_accounts",
-                    new Document("userId", 1), false, null),
-            index("summoner", "summoner_tracking_true",
-                    new Document("tracking", 1), false, new Document("tracking", true)),
-            index("summoner", "summoner_leaderboard_region",
-                    new Document("region", 1).append("ranks.queue", 1).append("ranks.rank", 1), false, null),
-            index("summoner", "summoner_leaderboard_global",
-                    new Document("ranks.queue", 1).append("ranks.rank", 1).append("region", 1), false, null),
-            index("match", "match_participant_time",
-                    new Document("participants.puuid", 1).append("timeStart", 1).append("_id", 1), false, null),
-            index("match", "match_rank_progress_history",
-                    new Document("participants.puuid", 1).append("region", 1).append("queue", 1)
-                            .append("timeStart", -1).append("_id", -1), false, null),
-            index("match", "match_rank_progress_subjects",
-                    new Document("queue", 1).append("region", 1).append("participants.puuid", 1), false, null),
-            index("match", "match_shard_time",
-                    new Document("region", 1).append("timeStart", -1), false, null),
-            index("match", "match_shard_patch_time",
-                    new Document("region", 1).append("patchMajor", 1).append("timeStart", -1), false, null),
-            index("match", "match_patch",
-                    new Document("patchMajor", 1), false, null),
-            index("match", "match_champion_filter",
-                    new Document("queue", 1).append("region", 1).append("rank", 1)
-                            .append("participants.champion", 1).append("participants.lane", 1).append("patchMajor", 1), false, null),
-            index("match", "match_champion_keyset",
-                    new Document("queue", 1).append("region", 1).append("rank", 1)
-                            .append("participants.champion", 1).append("participants.lane", 1), false, null),
-            index("profile_statistics", PROFILE_STATISTICS_IDENTITY_INDEX,
-                    new Document("puuid", 1).append("filterKey", 1), true, null),
-            index("profile_statistics", "profile_statistics_period",
-                    new Document("puuid", 1).append("timeEnd", -1).append("timeStart", 1), false, null),
-            index("profile_activity", PROFILE_ACTIVITY_IDENTITY_INDEX,
-                    new Document("puuid", 1).append("filterKey", 1), true, null),
-            index("profile_matchups", PROFILE_MATCHUPS_IDENTITY_INDEX,
-                    new Document("puuid", 1).append("filterKey", 1), true, null),
-            index("champion_builds", "champion_builds_filter",
-                    new Document("filterKey", 1), false, null),
-            index("champion_stats", "champion_stats_filter",
-                    new Document("filterKey", 1), false, null),
-            index("champion_stats", "champion_stats_filter_champion",
-                    new Document("filterKey", 1).append("championId", 1), false, null),
-            index(CHAMPION_INDEXABLES_COLLECTION, "champions_indexable_patch",
-                    new Document("patchMajor", 1).append("championId", 1).append("role", 1), false, null),
-            index(PROFILE_INDEXABLES_COLLECTION, "profiles_indexable_order",
-                    new Document("region", 1).append("riotId", 1), false, null));
-
-    private record IndexDefinition(
-            String collection,
-            String name,
-            Document keys,
-            boolean unique,
-            Document partialFilter) {
-
-        private IndexModel model() {
-            IndexOptions options = new IndexOptions().name(name);
-            if (unique) options.unique(true);
-            if (partialFilter != null) options.partialFilterExpression(partialFilter);
-            return new IndexModel(keys, options);
-        }
-    }
-
-    private static IndexDefinition index(
-            String collection,
-            String name,
-            Document keys,
-            boolean unique,
-            Document partialFilter) {
-        return new IndexDefinition(collection, name, keys, unique, partialFilter);
-    }
-
     private static void ensureCollections(MongoDatabase database) {
         List<String> existing = database.listCollectionNames().into(new ArrayList<>());
         for (String name : COLLECTION_NAMES) if (!existing.contains(name)) {
@@ -191,93 +116,6 @@ public final class MongoDB {
             } catch (MongoCommandException exception) {
                 if (exception.getCode() != 48 && !"NamespaceExists".equals(exception.getErrorCodeName())) throw exception;
             }
-        }
-    }
-
-    private static void ensureIndexes(MongoDatabase database) {
-        for (IndexDefinition definition : INDEX_DEFINITIONS) {
-            MongoCollection<Document> collection = database.getCollection(definition.collection());
-            List<Document> existing = collection.listIndexes().into(new ArrayList<>());
-            Document named = null;
-            Document sameKeys = null;
-            Document incompatibleSameKeys = null;
-            for (Document index : existing) {
-                if (definition.name().equals(index.getString("name"))) named = index;
-                if (sameIndexKeys(index.get("key"), definition.keys())) {
-                    if (compatibleIndex(index, definition)) sameKeys = index;
-                    else incompatibleSameKeys = index;
-                }
-            }
-
-            if (named != null && (!sameIndexKeys(named.get("key"), definition.keys())
-                    || !compatibleIndex(named, definition))) {
-                throw indexConflict(collection, definition, named);
-            }
-            if (incompatibleSameKeys != null) {
-                throw indexConflict(collection, definition, incompatibleSameKeys);
-            }
-            if (sameKeys != null && compatibleIndex(sameKeys, definition)) continue;
-            if (definition.unique() && PROFILE_STATISTICS_IDENTITY_INDEX.equals(definition.name())) {
-                verifyProfileStatisticsIdentity(collection);
-            }
-            collection.createIndexes(List.of(definition.model()));
-        }
-    }
-
-    private static boolean compatibleIndex(Document existing, IndexDefinition definition) {
-        boolean unique = Boolean.TRUE.equals(existing.getBoolean("unique", false));
-        if (unique != definition.unique()) return false;
-        Object partialFilter = existing.get("partialFilterExpression");
-        return definition.partialFilter() == null
-                ? partialFilter == null
-                : definition.partialFilter().equals(partialFilter);
-    }
-
-    private static boolean sameIndexKeys(Object value, Document expected) {
-        if (!(value instanceof Document actual) || actual.size() != expected.size()) return false;
-        Iterator<Map.Entry<String, Object>> actualIterator = actual.entrySet().iterator();
-        Iterator<Map.Entry<String, Object>> expectedIterator = expected.entrySet().iterator();
-        while (actualIterator.hasNext()) {
-            Map.Entry<String, Object> actualEntry = actualIterator.next();
-            Map.Entry<String, Object> expectedEntry = expectedIterator.next();
-            if (!Objects.equals(actualEntry.getKey(), expectedEntry.getKey())
-                    || !Objects.equals(actualEntry.getValue(), expectedEntry.getValue())) return false;
-        }
-        return true;
-    }
-
-    private static IllegalStateException indexConflict(
-            MongoCollection<Document> collection,
-            IndexDefinition definition,
-            Document existing) {
-        return new IllegalStateException("Mongo index conflict collection="
-                + collection.getNamespace().getCollectionName() + " expected=" + definition.name()
-                + " keys=" + definition.keys() + " unique=" + definition.unique()
-                + " partial=" + definition.partialFilter() + " existing=" + existing.getString("name")
-                + " existingKeys=" + existing.get("key") + " existingUnique="
-                + Boolean.TRUE.equals(existing.getBoolean("unique", false)) + " existingPartial="
-                + existing.get("partialFilterExpression"));
-    }
-
-    private static void verifyProfileStatisticsIdentity(MongoCollection<Document> collection) {
-        long invalid = collection.countDocuments(Filters.or(
-                Filters.eq("puuid", null), Filters.eq("puuid", ""),
-                Filters.eq("filterKey", null), Filters.eq("filterKey", "")));
-        if (invalid > 0) {
-            throw new IllegalStateException("Cannot create " + PROFILE_STATISTICS_IDENTITY_INDEX
-                    + ": profile_statistics contains " + invalid
-                    + " documents without a valid puuid/filterKey identity");
-        }
-
-        List<Document> duplicates = collection.aggregate(List.of(
-                new Document("$group", new Document("_id", new Document("puuid", "$puuid")
-                        .append("filterKey", "$filterKey")).append("count", new Document("$sum", 1))),
-                new Document("$match", new Document("count", new Document("$gt", 1))),
-                new Document("$limit", 10)
-        )).into(new ArrayList<>());
-        if (!duplicates.isEmpty()) {
-            throw new IllegalStateException("Cannot create " + PROFILE_STATISTICS_IDENTITY_INDEX
-                    + ": duplicate profile_statistics puuid/filterKey identities require manual cleanup");
         }
     }
 
@@ -302,7 +140,6 @@ public final class MongoDB {
         }
         if (!collectionsReady) {
             ensureCollections(database);
-            //ensureIndexes(database);
             collectionsReady = true;
         }
         return database;
@@ -310,14 +147,6 @@ public final class MongoDB {
 
     public static MongoDatabase initialize() {
         return getDatabase();
-    }
-
-    /**
-     * Index creation is deliberately opt-in: normal application startup must not mutate a live
-     * database schema. Migrations invoke this before relying on a new access path.
-     */
-    public static synchronized void ensureDeclaredIndexes() {
-        ensureIndexes(getDatabase());
     }
 
     public static String getDatabaseName() {
@@ -810,7 +639,7 @@ public final class MongoDB {
 
     public record SummonerSearchResult(Summoner summoner, Rank soloRank) {}
 
-    public record ProfileProjection(Summoner summoner, List<Rank> ranks, List<Mastery> masteries) {}
+    public record ProfileProjection(Summoner summoner, Map<GameQueueType, Rank> ranks, List<Mastery> masteries) {}
 
     public static String findPuuid(String riotId, LeagueShard shard) {
         traceRead("summoner.findPuuid", "region=" + shard);
@@ -883,11 +712,10 @@ public final class MongoDB {
         Document document = summoners().find(summonerFilter(puuid, shard))
                 .projection(Projections.include("ranks")).first();
         if (document == null) return null;
-        for (Rank rank : ranks(document)) if (queue == null || rank.queue() == queue) return rank;
-        return null;
+        return queue == null ? null : ranks(document).get(GameQueueTypeUtils.canonicalQueue(queue));
     }
 
-    public static List<Rank> findRanks(String puuid, LeagueShard shard) {
+    public static Map<GameQueueType, Rank> findRanks(String puuid, LeagueShard shard) {
         traceRead("summoner.findRanks", "puuid=" + puuid);
         Document document = summoners().find(summonerFilter(puuid, shard))
                 .projection(Projections.include("ranks")).first();
@@ -1030,7 +858,9 @@ public final class MongoDB {
             long seasonEnd) {
         if (puuid == null || puuid.isBlank() || shard == null || seasonStart <= 0 || seasonEnd < seasonStart) return List.of();
         List<com.safjnest.lol.model.match.RankHistoryMatch> result = new ArrayList<>();
-        for (Document document : matches().find(matchFilter(puuid, shard, seasonStart, seasonEnd, null))
+        Bson filter = Filters.and(matchFilter(puuid, shard, seasonStart, seasonEnd, null), Filters.in("queue",
+            GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name(), GameQueueType.RANKED_FLEX_SR.name()));
+        for (Document document : matches().find(filter)
                 .projection(rankHistoryProjection()).sort(Sorts.ascending("timeStart", "_id"))) {
             com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);
             com.safjnest.lol.model.match.RankHistoryMatch value = com.safjnest.lol.model.match.RankHistoryMatch.from(match, puuid);
@@ -1711,9 +1541,7 @@ public final class MongoDB {
         return new ChampionRawDocuments(result, matchReadNanos, eventReadNanos);
     }
 
-    public record LeaderboardQuery(long total, List<Summoner> summoners) {}
-
-    public static LeaderboardQuery findLeaderboardPage(
+    public static List<Summoner> findLeaderboardPage(
             TierType rank,
             GameQueueType queue,
             String region,
@@ -1721,45 +1549,43 @@ public final class MongoDB {
             int limit) {
         int boundedLimit = Math.max(0, Math.min(50, limit));
         int boundedOffset = (int) Math.min(Integer.MAX_VALUE, Math.max(0, offset));
-        if (boundedLimit == 0) return new LeaderboardQuery(0, List.of());
+        if (boundedLimit == 0) return List.of();
 
-        Document facet = summoners().aggregate(leaderboardPagePipeline(rank, queue, region, boundedOffset, boundedLimit)).first();
-        if (facet == null) return new LeaderboardQuery(0, List.of());
-
-        long total = 0;
-        List<?> totals = facet.getList("total", Object.class, List.of());
-        if (!totals.isEmpty() && totals.get(0) instanceof Document totalDocument) {
-            total = number(totalDocument, "value");
-        }
         List<Summoner> page = new ArrayList<>();
-        for (Object value : facet.getList("page", Object.class, List.of())) {
-            if (value instanceof Document document) page.add(summoner(document));
-        }
-        return new LeaderboardQuery(total, page);
+        for (Document document : summoners().find(leaderboardFilter(rank, queue, region))
+                .projection(leaderboardPageProjection(queue))
+                .sort(Sorts.descending(mmrPath(queue)))
+                .skip(boundedOffset)
+                .limit(boundedLimit)) page.add(summoner(document));
+        return page;
     }
 
-    static List<Document> leaderboardPagePipeline(
-            TierType rank,
-            GameQueueType queue,
-            String region,
-            int offset,
-            int limit) {
-        return List.of(
-                new Document("$match", leaderboardCandidateFilter(rank, queue, region)),
-                new Document("$unwind", "$ranks"),
-                new Document("$match", leaderboardFilter(rank, queue, region)),
-                new Document("$facet", new Document("total", List.of(new Document("$count", "value")))
-                        .append("page", List.of(
-                                new Document("$sort", new Document("ranks.mmr", -1).append("_id", 1)),
-                                new Document("$skip", offset),
-                                new Document("$limit", limit),
-                                new Document("$project", new Document("_id", 1)
-                                        .append("riotId", 1).append("region", 1)
-                                        .append("level", 1).append("icon", 1)
-                                        .append("ranks", List.of("$ranks"))
-                                        .append("masteries", 1))
-                        )))
-        );
+    public static Long findLeaderboardAggregateCount(TierType rank, GameQueueType queue, String region) {
+        if (rank != null) {
+            List<LeaderboardDistribution.Entry> distribution = readLeaderboardAggregate(
+                    rankDistributionAggregateKey(queue, region), RANK_DISTRIBUTION_AGGREGATE);
+            if (distribution != null) for (LeaderboardDistribution.Entry entry : distribution)
+                if (rank.name().equals(entry.key())) return entry.players();
+        }
+        String aggregateKey = leaderboardCountAggregateKey(queue, region, rank);
+        Document aggregate = leaderboardAggregates().find(Filters.and(
+                Filters.eq("_id", aggregateKey),
+                Filters.eq("type", PAGE_COUNT_AGGREGATE))).first();
+        if (aggregate == null || !aggregate.containsKey("count")) return null;
+        return number(aggregate, "count");
+    }
+
+    public static long findLeaderboardCount(TierType rank, GameQueueType queue, String region) {
+        Long stored = findLeaderboardAggregateCount(rank, queue, region);
+        if (stored != null) return stored;
+
+        long total = summoners().countDocuments(leaderboardFilter(rank, queue, region));
+        storeLeaderboardCount(queue, region, rank, total);
+        return total;
+    }
+
+    static Bson leaderboardPageProjection(GameQueueType queue) {
+        return Projections.include("_id", "riotId", "region", "level", "icon", rankPath(queue), "masteries");
     }
 
     public static List<LeaderboardDistribution.Entry> findRankDistribution(GameQueueType queue, String region) {
@@ -1785,10 +1611,8 @@ public final class MongoDB {
 
     static List<Document> leaderboardDistributionPipeline(GameQueueType queue, String region) {
         return List.of(
-                new Document("$match", leaderboardCandidateFilter(null, queue, region)),
-                new Document("$unwind", "$ranks"),
                 new Document("$match", leaderboardFilter(null, queue, region)),
-                new Document("$group", new Document("_id", "$ranks.rank")
+                new Document("$group", new Document("_id", "$" + rankPath(queue) + ".rank")
                         .append("players", new Document("$sum", 1)))
         );
     }
@@ -1818,6 +1642,11 @@ public final class MongoDB {
 
     static String topRegionsAggregateKey(GameQueueType queue, TierType rank) {
         return TOP_REGIONS_AGGREGATE + ":" + queueName(queue) + ":" + (rank == null ? "ALL" : rank.name());
+    }
+
+    static String leaderboardCountAggregateKey(GameQueueType queue, String region, TierType rank) {
+        return PAGE_COUNT_AGGREGATE + ":" + queueName(queue) + ":" + regionName(region)
+                + ":" + (rank == null ? "ALL" : rank.name());
     }
 
     private static List<LeaderboardDistribution.Entry> readLeaderboardAggregate(
@@ -1851,7 +1680,37 @@ public final class MongoDB {
                 findRankDistribution(queue, scope.getString("region"));
             } else if (TOP_REGIONS_AGGREGATE.equals(type) && scope.getString("rank") != null) {
                 findTopRegions(queue, TierType.valueOf(scope.getString("rank")));
+            } else if (PAGE_COUNT_AGGREGATE.equals(type)) {
+                findLeaderboardCount(tier(scope.getString("rank")), queue, scope.getString("region"));
             }
+        }
+    }
+
+    public static LeaderboardAggregateRebuild rebuildAllLeaderboardAggregates() {
+        deleteLeaderboardAggregates(new Document());
+        int rankDistributions = 0;
+        int counts = 0;
+        int topRegions = 0;
+
+        for (GameQueueType queue : LEADERBOARD_QUEUES) {
+            for (String region : leaderboardRegions()) {
+                findRankDistribution(queue, region);
+                rankDistributions++;
+                findLeaderboardCount(null, queue, region);
+                counts++;
+            }
+            for (TierType rank : TierType.values()) {
+                findTopRegions(queue, rank);
+                topRegions++;
+            }
+        }
+        return new LeaderboardAggregateRebuild(rankDistributions, counts, topRegions);
+    }
+
+    public record LeaderboardAggregateRebuild(int rankDistributions, int counts, int topRegions) {
+
+        public int total() {
+            return rankDistributions + counts + topRegions;
         }
     }
 
@@ -1878,6 +1737,19 @@ public final class MongoDB {
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo leaderboard aggregate write was not acknowledged");
     }
 
+    private static void storeLeaderboardCount(GameQueueType queue, String region, TierType rank, long count) {
+        String aggregateKey = leaderboardCountAggregateKey(queue, region, rank);
+        Document aggregate = new Document("_id", aggregateKey)
+                .append("type", PAGE_COUNT_AGGREGATE)
+                .append("queue", queueName(queue))
+                .append("region", regionName(region))
+                .append("rank", rank == null ? "ALL" : rank.name())
+                .append("count", count);
+        UpdateResult update = leaderboardAggregates().replaceOne(
+                Filters.eq("_id", aggregateKey), aggregate, new ReplaceOptions().upsert(true));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo leaderboard count write was not acknowledged");
+    }
+
     private static void deleteLeaderboardAggregates(Bson filter) {
         if (!leaderboardAggregates().deleteMany(filter).wasAcknowledged()) {
             throw new IllegalStateException("Mongo leaderboard aggregate rebuild was not acknowledged");
@@ -1889,17 +1761,45 @@ public final class MongoDB {
     }
 
     private static GameQueueType queue(String value) {
-        return value == null || "ALL".equals(value) ? null : GameQueueType.valueOf(value);
+        if (value == null || "ALL".equals(value)) return null;
+        try {
+            return GameQueueTypeUtils.canonicalQueue(GameQueueType.valueOf(value));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static TierType tier(String value) {
+        if (value == null || "ALL".equals(value)) return null;
+        try {
+            return TierType.valueOf(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     private static String regionName(String region) {
-        return region == null || region.isBlank() ? "GLOBAL" : region;
+        return region == null || region.isBlank() ? GLOBAL_LEADERBOARD_REGION : region;
+    }
+
+    private static List<String> leaderboardRegions() {
+        List<String> regions = new ArrayList<>(LeagueShardUtils.getActives().size() + 1);
+        regions.add(GLOBAL_LEADERBOARD_REGION);
+        for (LeagueShard shard : LeagueShardUtils.getActives()) regions.add(shard.name());
+        return regions;
+    }
+
+    private static String rankPath(GameQueueType queue) {
+        if (queue == null) throw new IllegalArgumentException("A canonical rank queue is required");
+        return "ranks." + GameQueueTypeUtils.canonicalQueue(queue).name();
+    }
+
+    private static String mmrPath(GameQueueType queue) {
+        return rankPath(queue) + ".mmr";
     }
 
     static List<Document> leaderboardTopRegionsPipeline(GameQueueType queue, TierType rank) {
         return List.of(
-                new Document("$match", leaderboardCandidateFilter(rank, queue, "GLOBAL")),
-                new Document("$unwind", "$ranks"),
                 new Document("$match", leaderboardFilter(rank, queue, "GLOBAL")),
                 new Document("$group", new Document("_id", "$region").append("players", new Document("$sum", 1))),
                 new Document("$sort", new Document("players", -1).append("_id", 1))
@@ -2030,32 +1930,20 @@ public final class MongoDB {
                 Updates.set("tracking", tracked)).getMatchedCount() > 0;
     }
 
-    public static boolean upsertRanks(String puuid, LeagueShard shard, List<Rank> ranks, Map<GameQueueType, Long> mmrByQueue) {
-        List<Document> values = new ArrayList<>();
-        if (ranks != null) {
-            for (Rank rank : ranks) {
-                Document value = write(rank);
-                if (mmrByQueue != null && mmrByQueue.containsKey(rank.queue())) value.put("mmr", mmrByQueue.get(rank.queue()));
-                values.add(value);
-            }
-        }
+    public static boolean upsertRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks, Map<GameQueueType, Long> mmrByQueue) {
+        Document values = writeRanks(ranks, mmrByQueue);
         UpdateResult update = summoners().updateOne(summonerFilter(puuid, shard), Updates.set("ranks", values));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo ranks update was not acknowledged");
         return update.getMatchedCount() > 0;
     }
 
-    public static boolean upsertRank(String puuid, LeagueShard shard, Rank rank, long mmr) {
-        if (rank == null || rank.queue() == null) return false;
+    public static boolean upsertRank(String puuid, LeagueShard shard, GameQueueType queue, Rank rank, long mmr) {
+        if (rank == null || queue == null) return false;
 
         Document value = write(rank);
         value.put("mmr", mmr);
-        Bson filter = Filters.and(summonerFilter(puuid, shard), Filters.eq("ranks.queue", rank.queue().name()));
-        UpdateResult update = summoners().updateOne(filter, Updates.set("ranks.$", value));
+        UpdateResult update = summoners().updateOne(summonerFilter(puuid, shard), Updates.set(rankPath(queue), value));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank update was not acknowledged");
-        if (update.getMatchedCount() > 0) return true;
-
-        update = summoners().updateOne(summonerFilter(puuid, shard), Updates.push("ranks", value));
-        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank insert was not acknowledged");
         return update.getMatchedCount() > 0;
     }
 
@@ -2387,6 +2275,8 @@ public final class MongoDB {
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (!"_id".equals(entry.getKey())) updates.add(Updates.set(entry.getKey(), entry.getValue()));
         }
+        for (String obsolete : List.of("schemaVersion", "statistics", "total", "queueStats", "laneStats", "championStats", "matchups", "duoStats"))
+            updates.add(Updates.unset(obsolete));
         updates.add(Updates.setOnInsert("_id", new ObjectId()));
         UpdateResult result = profileStatistics().updateOne(
                 Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey)),
@@ -2572,11 +2462,10 @@ public final class MongoDB {
             putIfNotNull(document, "region", summoner.region() == null ? null : summoner.region().name());
             putIfNotNull(document, "userId", summoner.userId());
             if (summoner.tracking()) document.put("tracking", true);
-            if (!summoner.ranks().isEmpty()) document.put("ranks", writeRanks(summoner.ranks()));
+            document.put("ranks", writeRanks(summoner.ranks(), null));
             if (!summoner.masteries().isEmpty()) document.put("masteries", writeMasteries(summoner.masteries()));
         } else if (value instanceof Rank rank) {
-            document = new Document("queue", rank.queue() == null ? null : rank.queue().name())
-                    .append("rank", rank.tier() == null ? null : rank.tier().name()).append("lp", rank.lp())
+            document = new Document("rank", rank.tier() == null ? null : rank.tier().name()).append("lp", rank.lp())
                     .append("mmr", TierDivisionUtils.getMmr(rank.tier(), rank.lp()))
                     .append("wins", rank.wins()).append("losses", rank.losses());
         } else if (value instanceof Mastery mastery) {
@@ -2597,8 +2486,7 @@ public final class MongoDB {
     private static Summoner readSummoner(QueryRecord record) {
         String puuid = record.getAsString("puuid");
         if (puuid == null) puuid = record.getAsString("_id");
-        List<Rank> ranks = new ArrayList<>();
-        for (QueryRecord rank : record.getAsRecords("ranks")) ranks.add(readRank(rank));
+        Map<GameQueueType, Rank> ranks = ranks(QueryRecordParser.toDocument(record));
         List<Mastery> masteries = new ArrayList<>();
         for (QueryRecord mastery : record.getAsRecords("masteries")) masteries.add(readMastery(mastery));
         return Summoner.hydrated(puuid, record.getAsString("riotId"),
@@ -2607,7 +2495,7 @@ public final class MongoDB {
     }
 
     private static Rank readRank(QueryRecord record) {
-        return new Rank(record.getAsEnum("queue", GameQueueType.class), record.getAsEnum("rank", TierDivisionType.class),
+        return new Rank(record.getAsEnum("rank", TierDivisionType.class),
                 record.getAsInt("lp"), record.getAsInt("wins"), record.getAsInt("losses"));
     }
 
@@ -2615,9 +2503,16 @@ public final class MongoDB {
         return new Mastery(record.getAsInt("championId"), record.getAsInt("level"), record.getAsInt("points"));
     }
 
-    private static List<Document> writeRanks(List<Rank> ranks) {
-        List<Document> result = new ArrayList<>();
-        if (ranks != null) for (Rank rank : ranks) if (rank != null) result.add(write(rank));
+    private static Document writeRanks(Map<GameQueueType, Rank> ranks, Map<GameQueueType, Long> mmrByQueue) {
+        Document result = new Document();
+        if (ranks != null) for (Map.Entry<GameQueueType, Rank> entry : ranks.entrySet()) {
+            GameQueueType queue = entry.getKey() == null ? null : GameQueueTypeUtils.canonicalQueue(entry.getKey());
+            Rank rank = entry.getValue();
+            if (queue == null || rank == null) continue;
+            Document value = write(rank);
+            if (mmrByQueue != null && mmrByQueue.containsKey(queue)) value.put("mmr", mmrByQueue.get(queue));
+            result.put(queue.name(), value);
+        }
         return result;
     }
 
@@ -2634,13 +2529,13 @@ public final class MongoDB {
         participant.lane = record.getAsEnum("lane", no.stelar7.api.r4j.basic.constants.types.lol.LaneType.class);
         participant.team = record.getAsEnum("team", no.stelar7.api.r4j.basic.constants.types.lol.TeamType.class);
         participant.roleQuestId = record.getAsInt("roleQuestId"); participant.rankProgress = readRankProgress(record.getAsRecord("rankProgress"));
-        participant.damage = record.getAsInt("damage"); participant.damageTaken = record.getAsInt("damageTaken");
+        participant.damage = record.getAsInt("damage"); participant.damageTaken = integerValue(record, "damageTaken");
         participant.damageBuilding = record.getAsInt("damageBuilding"); participant.healing = record.getAsInt("healing"); participant.cs = record.getAsInt("cs");
         participant.goldEarned = record.getAsInt("goldEarned"); participant.ward = record.getAsInt("ward"); participant.wardKilled = record.getAsInt("wardKilled");
         participant.visionScore = record.getAsInt("visionScore"); participant.pings = new HashMap<>(readIntegerMap(record, "pings"));
         participant.subTeam = record.getAsInt("subTeam"); participant.subTeamPlacement = record.getAsInt("subTeamPlacement");
         participant.puuid = record.getAsString("puuid"); participant.riotId = record.getAsString("riotId"); participant.riotTag = record.getAsString("riotTag");
-        participant.level = record.getAsInt("level"); participant.doubles = record.getAsInt("doubles"); participant.triples = record.getAsInt("triples");
+        participant.championLevel = integerValue(record, "championLevel"); participant.doubles = record.getAsInt("doubles"); participant.triples = record.getAsInt("triples");
         participant.quadruples = record.getAsInt("quadruples"); participant.pentas = record.getAsInt("pentas");
         participant.item0 = record.getAsInt("item0"); participant.item1 = record.getAsInt("item1"); participant.item2 = record.getAsInt("item2");
         participant.item3 = record.getAsInt("item3"); participant.item4 = record.getAsInt("item4"); participant.item5 = record.getAsInt("item5"); participant.item6 = record.getAsInt("item6"); participant.turretKills = record.getAsInt("turretKills");
@@ -2723,11 +2618,11 @@ public final class MongoDB {
     private static Document participantDocument(Participant value) {
         if (value == null || value.puuid == null || value.puuid.isBlank()) throw new IllegalArgumentException("Participant.puuid is required for Mongo persistence");
         Document document = new Document("win", value.win).append("champion", value.champion).append("roleQuestId", value.roleQuestId)
-                .append("damage", value.damage).append("damageTaken", value.damageTaken).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
-                .append("subTeam", value.subTeam).append("subTeamPlacement", value.subTeamPlacement).append("level", value.level).append("doubles", value.doubles).append("triples", value.triples).append("quadruples", value.quadruples).append("pentas", value.pentas)
+                .append("damage", value.damage).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
+                .append("subTeam", value.subTeam).append("subTeamPlacement", value.subTeamPlacement).append("doubles", value.doubles).append("triples", value.triples).append("quadruples", value.quadruples).append("pentas", value.pentas)
                 .append("item0", value.item0).append("item1", value.item1).append("item2", value.item2).append("item3", value.item3).append("item4", value.item4).append("item5", value.item5).append("item6", value.item6).append("turretKills", value.turretKills).append("q", value.q).append("w", value.w).append("e", value.e).append("r", value.r).append("d", value.d).append("f", value.f).append("summonerSpell1", value.summonerSpell1).append("summonerSpell2", value.summonerSpell2)
                 .append("primaryRunes", integerList(value.primaryRunes)).append("secondaryRunes", integerList(value.secondaryRunes)).append("statsRunes", integerList(value.statsRunes)).append("skillOrder", integerList(value.skillOrder)).append("augments", integerList(value.augments)).append("starterItems", integerList(value.starterItems)).append("buildPath", integerList(value.buildPath)).append("boots", value.boots).append("supportItem", value.supportItem);
-        putIfNotNull(document, "kda", value.kda); putIfNotNull(document, "puuid", value.puuid); putIfNotNull(document, "riotId", value.riotId); putIfNotNull(document, "riotTag", value.riotTag); putEnum(document, "lane", value.lane); putEnum(document, "team", value.team);
+        putIfNotNull(document, "kda", value.kda); putIfNotNull(document, "puuid", value.puuid); putIfNotNull(document, "riotId", value.riotId); putIfNotNull(document, "riotTag", value.riotTag); putIfNotNull(document, "damageTaken", value.damageTaken); putIfNotNull(document, "championLevel", value.championLevel); putEnum(document, "lane", value.lane); putEnum(document, "team", value.team);
         Document rankProgress = rankProgressDocument(value.rankProgress);
         if (rankProgress != null) document.append("rankProgress", rankProgress);
         return document;
@@ -3020,8 +2915,9 @@ public final class MongoDB {
         try {
             Map<String, Long> totals = new LinkedHashMap<>();
             for (Document entry : summoners().aggregate(List.of(
-                new Document("$unwind", "$ranks"),
-                new Document("$group", new Document("_id", "$ranks.queue").append("total", new Document("$sum", 1)))
+                new Document("$project", new Document("queues", new Document("$objectToArray", "$ranks"))),
+                new Document("$unwind", "$queues"),
+                new Document("$group", new Document("_id", "$queues.k").append("total", new Document("$sum", 1)))
             ))) {
                 String queue = entry.getString("_id");
                 if (queue != null && !queue.isBlank()) totals.put(queue, number(entry, "total"));
@@ -3126,7 +3022,7 @@ public final class MongoDB {
     private static Bson matchResultProjection() {
         return Projections.include(
                 "_id", "queue", "timeStart", "timeEnd",
-                "participants.puuid", "participants.riotId", "participants.riotTag", "participants.level",
+                "participants.puuid", "participants.riotId", "participants.riotTag", "participants.championLevel",
                 "participants.win", "participants.kda", "participants.champion", "participants.lane",
                 "participants.team", "participants.rankProgress", "participants.damage", "participants.cs", "participants.goldEarned",
                 "participants.visionScore", "participants.item0", "participants.item1", "participants.item2",
@@ -3136,7 +3032,7 @@ public final class MongoDB {
     }
 
     private static Bson rankHistoryProjection() {
-        return Projections.include("_id", "queue", "timeStart", "timeEnd",
+        return Projections.include("_id", "queue", "patch", "timeStart", "timeEnd",
                 "participants.puuid", "participants.win", "participants.champion", "participants.lane",
                 "participants.team", "participants.rankProgress");
     }
@@ -3206,9 +3102,10 @@ public final class MongoDB {
     }
 
     private static Bson profileIndexableFilter() {
-        return Filters.or(
-                Filters.eq("tracking", true),
-                Filters.elemMatch("ranks", Filters.in("rank", INDEXABLE_PROFILE_RANKS)));
+        List<Bson> ranks = new ArrayList<>();
+        for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR))
+            ranks.add(Filters.in(rankPath(queue) + ".rank", INDEXABLE_PROFILE_RANKS));
+        return Filters.or(Filters.eq("tracking", true), Filters.or(ranks));
     }
 
     private static List<String> playableRoleNames() {
@@ -3217,23 +3114,11 @@ public final class MongoDB {
         return result;
     }
 
-    private static Bson leaderboardFilter(TierType rank, GameQueueType queue, String region) {
+    static Bson leaderboardFilter(TierType rank, GameQueueType queue, String region) {
         List<Bson> filters = new ArrayList<>();
-        if (queue != null) filters.add(Filters.eq("ranks.queue", queue.name()));
+        if (queue != null) filters.add(Filters.exists(mmrPath(queue), true));
         if (region != null && !"GLOBAL".equals(region)) filters.add(Filters.eq("region", region));
-        if (rank != null) filters.add(Filters.in("ranks.rank", divisionNames(rank)));
-        return filters.isEmpty() ? new Document() : Filters.and(filters);
-    }
-
-    private static Bson leaderboardCandidateFilter(TierType rank, GameQueueType queue, String region) {
-        List<Bson> filters = new ArrayList<>();
-        if (region != null && !"GLOBAL".equals(region)) filters.add(Filters.eq("region", region));
-
-        List<Bson> rankFilters = new ArrayList<>();
-        if (queue != null) rankFilters.add(Filters.eq("queue", queue.name()));
-        if (rank != null) rankFilters.add(Filters.in("rank", divisionNames(rank)));
-        if (!rankFilters.isEmpty()) filters.add(Filters.elemMatch("ranks", Filters.and(rankFilters)));
-
+        if (rank != null) filters.add(Filters.in(rankPath(queue) + ".rank", divisionNames(rank)));
         return filters.isEmpty() ? new Document() : Filters.and(filters);
     }
 
@@ -3331,25 +3216,33 @@ public final class MongoDB {
     }
 
     private static Rank soloRank(Document document) {
-        for (Rank rank : ranks(document)) {
-            if (rank.queue() == GameQueueType.RANKED_SOLO_5X5) return rank;
-        }
-        return null;
+        return ranks(document).get(GameQueueType.RANKED_SOLO_5X5);
     }
 
-    private static List<Rank> ranks(Document document) {
+    private static Map<GameQueueType, Rank> ranks(Document document) {
         Object value = document.get("ranks");
-        if (!(value instanceof List<?> values)) return List.of();
-        List<Rank> result = new ArrayList<>(values.size());
-        for (Object item : values) if (item instanceof Document rank) result.add(rankFromDocument(rank));
+        if (value instanceof Document values) return objectRanks(values);
+        if (!(value instanceof List<?> values)) return Map.of();
+        // TODO remove legacy ranks array compatibility after Mongo migration
+        Map<GameQueueType, Rank> result = new LinkedHashMap<>();
+        for (Object item : values) if (item instanceof Document rank) {
+            GameQueueType queue = queue(rank.getString("queue"));
+            if (queue != null) result.put(queue, rankFromDocument(rank));
+        }
+        return result;
+    }
+
+    private static Map<GameQueueType, Rank> objectRanks(Document values) {
+        Map<GameQueueType, Rank> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            GameQueueType queue = queue(entry.getKey());
+            if (queue != null && entry.getValue() instanceof Document rank) result.put(queue, rankFromDocument(rank));
+        }
         return result;
     }
 
     private static Rank rankFromDocument(Document document) {
-        GameQueueType queue;
-        try { queue = GameQueueType.valueOf(document.getString("queue")); }
-        catch (RuntimeException ignored) { queue = GameQueueType.RANKED_SOLO_5X5; }
-        return new Rank(queue, division(document.getString("rank")), document.getInteger("lp", 0),
+        return new Rank(division(document.getString("rank")), document.getInteger("lp", 0),
                 document.getInteger("wins", 0), document.getInteger("losses", 0));
     }
 

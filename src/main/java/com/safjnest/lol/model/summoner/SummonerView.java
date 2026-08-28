@@ -8,19 +8,21 @@ import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+
 public record SummonerView(
     Summoner summoner,
-    List<Rank> ranks,
+    Map<GameQueueType, Rank> ranks,
     SummonerOverview overview,
     @JsonInclude(JsonInclude.Include.NON_NULL) ResponseMetadata metadata
 ) {
 
-    public SummonerView(Summoner summoner, List<Rank> ranks, SummonerOverview overview) {
+    public SummonerView(Summoner summoner, Map<GameQueueType, Rank> ranks, SummonerOverview overview) {
         this(summoner, ranks, overview, null);
     }
     public static SummonerView from(
         Summoner summoner,
-        List<Rank> ranks,
+        Map<GameQueueType, Rank> ranks,
         ProfileStatistics statistics,
         List<Mastery> masteries
     ) {
@@ -29,7 +31,7 @@ public record SummonerView(
 
     public static SummonerView from(
         Summoner summoner,
-        List<Rank> ranks,
+        Map<GameQueueType, Rank> ranks,
         ProfileStatistics statistics,
         List<Mastery> masteries,
         Map<Integer, SummonerOverview.Champion> champions
@@ -39,7 +41,7 @@ public record SummonerView(
 
     public static SummonerView from(
         Summoner summoner,
-        List<Rank> ranks,
+        Map<GameQueueType, Rank> ranks,
         ProfileStatistics statistics,
         List<Mastery> masteries,
         List<MatchResult> recentMatches
@@ -49,7 +51,7 @@ public record SummonerView(
 
     public static SummonerView from(
         Summoner summoner,
-        List<Rank> ranks,
+        Map<GameQueueType, Rank> ranks,
         ProfileStatistics statistics,
         List<Mastery> masteries,
         Map<Integer, SummonerOverview.Champion> champions,
@@ -58,8 +60,8 @@ public record SummonerView(
         return from(summoner, ranks, SummonerOverview.from(statistics, masteries, champions, recentMatches));
     }
 
-    public static SummonerView from(Summoner summoner, List<Rank> ranks, SummonerOverview overview) {
-        return new SummonerView(summoner, ranks != null ? List.copyOf(ranks) : List.of(),
+    public static SummonerView from(Summoner summoner, Map<GameQueueType, Rank> ranks, SummonerOverview overview) {
+        return new SummonerView(summoner, ranks != null ? Map.copyOf(ranks) : Map.of(),
             overview != null ? overview : SummonerOverview.from(null, List.of()));
     }
 

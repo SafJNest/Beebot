@@ -518,8 +518,20 @@ public final class MongoMigration {
     }
 
     private static void appendEmbedded(Document summoner, String phase, Document value) {
+        if ("ranks".equals(phase)) {
+            String queue = value.getString("queue");
+            if (queue == null || queue.isBlank()) throw new IllegalArgumentException("Migrated rank queue is required");
+            Document ranks = summoner.get("ranks", Document.class);
+            if (ranks == null) {
+                ranks = new Document();
+                summoner.put("ranks", ranks);
+            }
+            value.remove("queue");
+            ranks.put(queue, value);
+            return;
+        }
         String field = "ranks".equals(phase) ? "ranks" : "masteries";
-        String identityField = "ranks".equals(phase) ? "queue" : "championId";
+        String identityField = "championId";
         @SuppressWarnings("unchecked")
         List<Document> values = (List<Document>) summoner.get(field);
         if (values == null) {
@@ -550,6 +562,7 @@ public final class MongoMigration {
                 .append("region", row.get("region"))
                 .append("level", row.getAsInt("level"))
                 .append("icon", row.getAsInt("icon"))
+                .append("ranks", new Document())
                 .append("riotSearch", normalize(row.get("riot_id")));
         if (row.get("user_id") != null && !row.get("user_id").isBlank()) document.put("userId", row.get("user_id"));
         if (row.getAsBoolean("tracking")) document.put("tracking", true);

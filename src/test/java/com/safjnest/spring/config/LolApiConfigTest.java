@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -18,9 +19,12 @@ import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.SummonerView;
 
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class LolApiConfigTest {
 
@@ -61,7 +65,7 @@ public class LolApiConfigTest {
         Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
 
         String summonerJson = mapper.writeValueAsString(summoner);
-        String viewJson = mapper.writeValueAsString(SummonerView.from(summoner, List.of(), null, List.of()));
+        String viewJson = mapper.writeValueAsString(SummonerView.from(summoner, Map.of(), null, List.of()));
 
         assertFalse(summonerJson.contains("\"summonerId\""));
         assertTrue(summonerJson.contains("\"puuid\":\"puuid-42\""));
@@ -70,8 +74,22 @@ public class LolApiConfigTest {
         assertTrue(summonerJson.contains("\"icon\":1234"));
         assertTrue(viewJson.contains("\"summoner\":{"));
         assertTrue(viewJson.contains("\"region\":\"EUW1\""));
+        assertTrue(viewJson.contains("\"ranks\":{}"));
         assertFalse(summonerJson.contains("\"dirty\""));
         assertFalse(viewJson.contains("\"dirty\""));
+    }
+
+    @Test
+    public void serializesRanksAsCanonicalQueueObjectWithoutEmbeddedQueue() throws Exception {
+        ObjectMapper mapper = apiMapper();
+        Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
+
+        String json = mapper.writeValueAsString(SummonerView.from(summoner,
+            Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(TierDivisionType.MASTER_I, 500, 10, 5)), null, List.of()));
+
+        assertTrue(json.contains("\"ranks\":{\"RANKED_SOLO_5X5\":{"));
+        assertFalse(json.contains("\"ranks\":["));
+        assertFalse(json.contains("\"queue\":"));
     }
 
     @Test

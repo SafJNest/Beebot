@@ -21,6 +21,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.RankHistory;
+import com.safjnest.lol.model.match.RankHistoryQuery;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.service.MatchService;
@@ -128,26 +129,25 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid,
             @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "view", required = false) String viewValue,
+            @RequestParam(name = "season", required = false) Integer seasonValue,
+            @RequestParam(name = "patch", required = false) String patchValue,
             @RequestParam(name = "timeStart", defaultValue = "0") long timeStart,
             @RequestParam(name = "timeEnd", defaultValue = "0") long timeEnd,
             @RequestParam(name = "sort", required = false) String sortValue
     ) {
         LeagueShard shard = LolApiParameters.requiredShard(shardValue);
         String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
-        Filter filter = LolApiParameters.activityFilter(
+        RankHistoryQuery query = LolApiParameters.rankHistoryQuery(
+            queueValue,
+            viewValue,
+            seasonValue,
+            patchValue,
             timeStart,
             timeEnd,
-            LolApiParameters.optionalQueue(queueValue),
-            0
+            sortValue
         );
-        return MatchService.getRankHistory(
-            profilePuuid,
-            shard,
-            filter.timeStart(),
-            filter.timeEnd(),
-            filter.queue(),
-            LolApiParameters.matchOrder(sortValue)
-        );
+        return MatchService.getRankHistory(profilePuuid, shard, query);
     }
 
     @GetMapping("/profile/{puuid}/activity")

@@ -38,6 +38,8 @@ public class RedisKeyTest {
         assertEquals(24 * 60 * 60, RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
         assertEquals(0, RedisKey.LEADERBOARD_VERSION.ttlSeconds());
         assertEquals(60 * 60, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
+        assertEquals(12 * 60 * 60, RedisKey.LEADERBOARD_COUNT.ttlSeconds());
+        assertEquals(60, RedisKey.LEADERBOARD_COUNT_LOCK.ttlSeconds());
         assertEquals(12 * 60 * 60, RedisKey.LEADERBOARD_RANK_DISTRIBUTION.ttlSeconds());
         assertEquals(12 * 60 * 60, RedisKey.LEADERBOARD_TOP_REGIONS.ttlSeconds());
         assertEquals(60 * 60, RedisKey.CHAMPION_PAGE.ttlSeconds());
@@ -74,6 +76,8 @@ public class RedisKeyTest {
         assertTrue(RedisKey.CHAMPION_PAGE.of(157, "page-key").endsWith("ls:champion:157:page:page-key"));
         assertTrue(RedisKey.CHAMPION_STATS.of(157, "stats-key").endsWith("ls:champion:157:stats:stats-key"));
         assertTrue(RedisKey.CHAMPION_TIER_LIST.of("tier-key").endsWith("ls:champion:tier-list:tier-key"));
+        assertTrue(RedisKey.LEADERBOARD_COUNT.of(3, "RANKED_SOLO_5X5", "EUW1", "ALL")
+                .endsWith("ls:leaderboard:count:3:RANKED_SOLO_5X5:EUW1:ALL"));
     }
 
     @Test

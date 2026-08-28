@@ -29,10 +29,14 @@ public class RankHistoryMatchTest {
 
         RankHistoryMatch result = RankHistoryMatch.from(match, "player");
 
+        assertEquals("player", result.puuid());
         assertEquals(22, result.champion());
-        assertEquals(Integer.valueOf(67), result.enemy());
-        assertEquals(Integer.valueOf(40), result.duo());
-        assertEquals(Integer.valueOf(12), result.duoEnemy());
+        assertEquals(Integer.valueOf(67), result.enemyChampion());
+        assertEquals("enemy", result.enemyPuuid());
+        assertEquals(Integer.valueOf(40), result.duoChampion());
+        assertEquals("duo", result.duoPuuid());
+        assertEquals(Integer.valueOf(12), result.duoEnemyChampion());
+        assertEquals("enemy-duo", result.duoEnemyPuuid());
     }
 
     @Test
@@ -46,9 +50,9 @@ public class RankHistoryMatchTest {
 
         RankHistoryMatch result = RankHistoryMatch.from(match, "player");
 
-        assertEquals(Integer.valueOf(36), result.enemy());
-        assertNull(result.duo());
-        assertNull(result.duoEnemy());
+        assertEquals(Integer.valueOf(36), result.enemyChampion());
+        assertNull(result.duoChampion());
+        assertNull(result.duoEnemyChampion());
     }
 
     private static Participant participant(String puuid, LaneType lane, TeamType team, int champion) {

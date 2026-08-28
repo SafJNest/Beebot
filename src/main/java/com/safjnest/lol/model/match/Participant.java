@@ -19,7 +19,7 @@ public class Participant {
     public int roleQuestId;
     public RankProgress rankProgress;
     public int damage;
-    public int damageTaken;
+    public Integer damageTaken;
     public int damageBuilding;
     public int healing;
     public int cs;
@@ -34,7 +34,7 @@ public class Participant {
     public String riotId;
     public String riotTag;
 
-    public int level;
+    public Integer championLevel;
 
     public int doubles;
     public int triples;

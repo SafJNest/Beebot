@@ -51,14 +51,14 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | Origine | Target | Chiave | Forma |
 |---|---|---|---|
 | `summoner` | `summoner` | `_id = puuid` | documento aggregato |
-| `rank` | `summoner.ranks[]` | `queue + region` | embedded |
+| `rank` | `summoner.ranks{}` | `queue key + region` | embedded |
 | `masteries` | `summoner.masteries[]` | `championId` | embedded |
 | `match` | `match` | `_id = full Riot match ID` | documento aggregato |
 | `match.events` | `match_events` | `_id = full Riot match ID` | JSON separato, WiredTiger Zstandard |
 | `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
-| `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat, `_id` casuale stabile |
+| `profile_statistics` | `profile_statistics` | `puuid + filterKey` | documento flat con foglie `champions`, `_id` casuale stabile |
 | `profile_activity` | `profile_activity` | `puuid + filterKey` | aggregate derivato BSON |
-| `profile_matchups` | `profile_matchups` | `puuid + filterKey` | aggregate derivato BSON |
+| `profile_matchups` | `profile_matchups` | `puuid + filterKey` | foglie champion/queue/position/opponent BSON |
 | `champion` | `champion` | `championId` | catalogo |
 | `champion_builds` | `champion_builds` | `filterKey + buildKey` | aggregate, non migrato |
 | `champion_stats` | `champion_stats` | `_id = filterKey` | mega-aggregate per filtro; documenti `filterKey + championId` legacy |
@@ -81,9 +81,8 @@ Esempio concettuale:
   "userId": "discord-user-id",
   "tracking": true,
   "lastUpdate": 1710000000000,
-  "ranks": [
-    {
-      "queue": "RANKED_SOLO_5X5",
+  "ranks": {
+    "RANKED_SOLO_5X5": {
       "region": "EUW1",
       "rank": "EMERALD_II",
       "lp": 90,
@@ -92,7 +91,7 @@ Esempio concettuale:
       "losses": 80,
       "lastUpdate": 1710000000000
     }
-  ],
+  },
   "masteries": [
     {
       "championId": 157,
@@ -112,8 +111,8 @@ Esempio concettuale:
 - il nuovo flusso non pulisce automaticamente dati precedenti; l'operatore elimina manualmente i payload obsoleti;
 - `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;
-- la leaderboard non duplica le righe rank: `leaderboard_aggregates` contiene solo snapshot ricostruibili di distribuzione e top-region;
-- il rank identifica la coda tramite `queue`, non tramite un ID numerico;
+- la leaderboard non duplica le righe rank: `leaderboard_aggregates` contiene solo snapshot ricostruibili di distribuzione, top-region e count;
+- il rank identifica la coda tramite la key canonica dell'object `ranks`, non tramite un ID numerico;
 - più regioni sono rappresentate da `region` nel rank quando il dataset lo richiede;
 - non duplicare una seconda identità `Summoner` in wrapper o modelli di persistenza.
 
@@ -216,24 +215,51 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 ## Query leaderboard
 
-La leaderboard usa direttamente `summoner.ranks[]`. Mongo esegue `$unwind`, filtra
-lo stesso elemento per queue, tier e regione, quindi usa `$facet` per totale e
-pagina. L'ordinamento è `ranks.mmr DESC, _id ASC`, dove `_id` è il PUUID.
+La leaderboard usa direttamente `summoner.ranks.<QUEUE>.mmr`. Mongo filtra il
+path MMR selezionato per queue, tier e regione, quindi legge la pagina con una
+`find()` ordinata e limitata. L'ordinamento è `ranks.<QUEUE>.mmr DESC`.
 
 La pagina proietta soltanto identità summoner, il rank selezionato e le masteries;
 `LeaderboardService` aggiunge le statistiche già presenti in cache o Mongo e
-costruisce il modello canonico `LeaderboardPage`. Distribuzione e top-region
-vengono salvati come snapshot in `leaderboard_aggregates` e vengono ricostruiti
-ogni 12 ore. I filtri mai materializzati vengono calcolati lazy al successivo
-accesso. Non vengono persistite righe o pagine leaderboard.
+costruisce il modello canonico `LeaderboardPage`. Il totale è indipendente dalla
+pagina e risolve Redis, poi il count snapshot in `leaderboard_aggregates`, poi
+`countDocuments()`; quest'ultimo ripopola entrambi i livelli. Distribuzione,
+top-region e count vengono salvati come snapshot e ricostruiti ogni 12 ore. I
+filtri mai materializzati vengono calcolati lazy al successivo accesso. Non
+vengono persistite righe o pagine leaderboard.
 
-Ogni snapshot usa un `_id` stabile per tipo e filtro, contiene `entries`, il
-filtro canonico e la lista aggregata. La collection è derivata e può essere
-cancellata e ricostruita senza perdita dei rank.
+Ogni snapshot usa un `_id` stabile per tipo e filtro: distribuzione e top-region
+contengono `entries`, mentre `page-count` contiene il valore `count`; tutti
+mantengono queue, scope e tier quando applicabile. La collection è derivata e
+può essere cancellata e ricostruita senza perdita dei rank.
+
+Gli indici della pagina sono gestiti operativamente fuori dal runtime. Non
+includono `_id`.
+
+Pagine all-ranks (`rank` omesso): sort MMR senza filtro divisione.
+
+```javascript
+{"ranks.RANKED_SOLO_5X5.mmr": -1}
+{"region": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
+{"ranks.RANKED_FLEX_SR.mmr": -1}
+{"region": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
+```
+
+Pagine tier-scoped (`rank=SILVER`, ecc.): filtro su `ranks.<QUEUE>.rank` e sort
+MMR. Creazione manuale in [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
+
+```javascript
+{"ranks.RANKED_SOLO_5X5.rank": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
+{"region": 1, "ranks.RANKED_SOLO_5X5.rank": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
+{"ranks.RANKED_FLEX_SR.rank": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
+{"region": 1, "ranks.RANKED_FLEX_SR.rank": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
+```
+
+Ogni indice rank usa `partialFilterExpression` su `ranks.<QUEUE>.mmr`.
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root; `champion_stats` salva un solo mega-aggregato per filtro e `build` mantiene la propria struttura. Un refresh completato senza giochi validi salva `ready=true` e `statistics={}`: il documento è comunque valido e impedisce di confondere il caso "nessun dato" con "refresh ancora pendente". I champion senza dati non vengono inseriti nella mappa `statistics`; se il filtro è pronto, la lettura di un champion valido assente restituisce quindi un aggregate vuoto con `200`. Le build usano `filter.toKey()` per `_id` e `filterKey`; le stats usano `filter.genericKey()` per `_id` e `filterKey`, con `statistics.<championId>` per i singoli champion. I vecchi documenti `filterKey + championId` e i marker `ready` separati restano leggibili durante la compatibilità. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
+Le collection di statistiche e build hanno chiavi composte stabili e payload strutturati. `profile_statistics` salva `ProfileStatistics` direttamente a root con le sole foglie `champions.<championId>.<canonicalQueue>.<position>`; `champion_stats` salva un solo mega-aggregato per filtro e `build` mantiene la propria struttura. Un refresh completato senza giochi validi salva `champions={}`: il documento è comunque valido e impedisce di confondere il caso "nessun dato" con "refresh ancora pendente". I champion senza dati non vengono inseriti nella mappa `champions`; se il filtro è pronto, la lettura di un champion valido assente restituisce quindi un aggregate vuoto con `200`. Le build usano `filter.toKey()` per `_id` e `filterKey`; le profile stats usano `filter.toSummonerKey()` per `filterKey`. I documenti legacy senza la mappa `champions` vengono rigenerati. Non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload` nel nuovo documento profile.
 
 ### `profile_statistics`: chiave e indice
 
@@ -253,10 +279,11 @@ match senza modificare `profile_statistics`.
 ### `profile_matchups`: chiave e payload
 
 `ProfileMatchups` usa una collection derivata separata, con la stessa identità
-logica `{ puuid, filterKey }`. Il documento contiene `puuid`, `filterKey` e il
-payload BSON strutturato `matchups`; `minGames` resta fuori dalla chiave perché
-è soltanto una soglia della response. L'indice unique
-`profile_matchups_identity` protegge la cardinalità uno-a-uno.
+logica `{ puuid, filterKey }`. Il payload BSON `matchups` conserva soltanto le foglie
+`champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`.
+`minGames` resta fuori dalla chiave perché è soltanto una soglia della response.
+L'indice unique `profile_matchups_identity` protegge la cardinalità uno-a-uno;
+i payload legacy senza la mappa `champions` vengono rigenerati.
 
 ### `champions_indexable`
 
@@ -284,50 +311,18 @@ MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserv
 
 ## Indici
 
-`MongoDB.ensureIndexes()` possiede il registry degli indici secondari. Il
-bootstrap è create-only e idempotente: crea gli indici mancanti, riusa quelli
-compatibili e interrompe l'avvio in caso di conflitto. Non esegue `dropIndex`,
-non modifica indici esistenti e non fonde automaticamente documenti duplicati.
-
-| Collection | Nome | Key pattern | Opzioni |
-|---|---|---|---|
-| `summoner` | `summoner_search_prefix` | `region, riotSearch, riotId` | — |
-| `summoner` | `summoner_riot_id` | `region, riotId` | — |
-| `summoner` | `summoner_user_accounts` | `userId, _id` | — |
-| `summoner` | `summoner_tracking_true` | `tracking` | partial `tracking=true` |
-| `summoner` | `summoner_leaderboard_region` | `region, ranks.queue, ranks.rank` | multikey |
-| `summoner` | `summoner_leaderboard_global` | `ranks.queue, ranks.rank, region` | multikey |
-| `match` | `match_participant_time` | `participants.puuid, timeStart, _id` | multikey |
-| `match` | `match_rank_progress_history` | `participants.puuid, region, queue, timeStart DESC, _id DESC` | multikey; timeline Solo/Duo per participant |
-| `match` | `match_rank_progress_subjects` | `queue, region, participants.puuid` | multikey; discovery soggetti backfill |
-| `match` | `match_shard_time` | `region, timeStart` | — |
-| `match` | `match_shard_patch_time` | `region, patchMajor, timeStart` | — |
-| `match` | `match_patch` | `patchMajor` | — |
-| `match` | `match_champion_filter` | `queue, region, rank, participants.champion, participants.lane, patchMajor` | multikey |
-| `match` | `match_champion_keyset` | `queue, region, rank, participants.champion, participants.lane` | multikey |
-| `profile_statistics` | `profile_statistics_identity` | `puuid, filterKey` | `unique` |
-| `profile_statistics` | `profile_statistics_period` | `puuid, timeEnd, timeStart` | — |
-| `profile_activity` | `profile_activity_identity` | `puuid, filterKey` | `unique` |
-| `profile_matchups` | `profile_matchups_identity` | `puuid, filterKey` | `unique` |
-| `champion_builds` | `champion_builds_filter` | `filterKey` | — |
-| `champion_stats` | `champion_stats_filter` | `filterKey` | — |
-| `champion_stats` | `champion_stats_filter_champion` | `filterKey, championId` | legacy, mantenuto durante la compatibilità |
-| `champions_indexable` | `champions_indexable_patch` | `patchMajor, championId, role` | — |
-| `profiles_indexable` | `profiles_indexable_order` | `region, riotId` | — |
-
-`match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` e i
-lookup diretti per PUUID/full match ID usano soltanto l'indice nativo `_id`.
-
-Il preflight di `profile_statistics_identity` fallisce se trova identità
-mancanti o duplicati `{puuid, filterKey}`. La correzione dei dati resta
-un'operazione manuale e separata dal bootstrap.
+La gestione degli indici è esterna al runtime e alla migration. `MongoDB` crea
+soltanto le collection necessarie: non crea, verifica, modifica o rimuove
+indici. Gli indici devono seguire i filtri e gli ordinamenti effettivi descritti
+in [`08-query-inventory.md`](08-query-inventory.md) e sono verificati
+operativamente con `explain("executionStats")`.
 
 ## Schema come codice
 
 La struttura Mongo è posseduta dal codice applicativo per quanto riguarda le
-collection, il formato dei documenti e il registry degli indici. La policy
-degli indici è condivisa tra database production e test; il database viene
-selezionato prima del bootstrap tramite `App.isTesting()`.
+collection e il formato dei documenti. Gli indici sono gestiti dal database
+operator. Il database viene selezionato prima del bootstrap tramite
+`App.isTesting()`.
 
 Il bootstrap previsto è:
 
@@ -335,15 +330,14 @@ Il bootstrap previsto è:
   MongoClient
   -> databaseName = App.isTesting() ? "beebot_test" : "beebot"
   -> MongoDB.ensureCollections(database)
-  -> MongoDB.ensureIndexes(database)
   -> MongoDB query/write methods
 ```
 
-Il bootstrap crea soltanto le collection e gli indici mancanti, in modo
-idempotente e senza modifiche distruttive. Un indice esistente incompatibile
-richiede una migrazione operativa esterna al runtime.
+Il bootstrap crea soltanto le collection mancanti, in modo idempotente e senza
+modifiche agli indici.
 
-Il codice è la fonte di verità operativa; questo documento descrive collection, chiavi e motivazione degli indici, ma non sostituisce le definizioni versionate nel registry.
+Il codice è la fonte di verità per collection e documenti; questo documento
+descrive i pattern query che guidano la gestione operativa degli indici.
 
 ## Acceptance criteria
 

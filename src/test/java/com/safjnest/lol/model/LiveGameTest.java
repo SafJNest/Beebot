@@ -72,7 +72,7 @@ public class LiveGameTest {
         thirdChampionStats.games = 8;
         LiveGame.ProfileOverview overview = new LiveGame.ProfileOverview(
             new Summoner("puuid-1", "Player#EUW", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 100, 29),
-            List.of(new Rank(GameQueueType.RANKED_SOLO_5X5, null, 50, 10, 5)),
+            Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(null, 50, 10, 5)),
             List.of(new Mastery(157, 7, 200_000)),
             List.of(playedChampionStats, secondChampionStats, thirdChampionStats)
         );
@@ -91,7 +91,7 @@ public class LiveGameTest {
         assertEquals(List.of(8345, 8347), game.participants().getFirst().runes().secondaryRunes());
         assertEquals(List.of(5008, 5008, 5010), game.participants().getFirst().runes().statShards());
         assertEquals(157, game.participants().getFirst().profileOverview().masteries().getFirst().championId());
-        assertEquals(157, game.participants().getFirst().profileOverview().championStats().getFirst().reference.intValue());
+        assertTrue(game.participants().getFirst().profileOverview().championStats().containsKey(157));
         assertEquals(3, game.participants().getFirst().profileOverview().championStats().size());
         assertNull(game.participants().get(1).puuid());
         assertEquals(110, game.participants().get(1).championId());

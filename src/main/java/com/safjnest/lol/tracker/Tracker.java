@@ -222,16 +222,14 @@ public class Tracker {
     }
 
     private static Rank refreshRank(String puuid, LeagueShard shard, GameQueueType queue, JobPriority priority) {
-        List<Rank> ranks = RankService.refreshSync(puuid, shard, priority);
+        Map<GameQueueType, Rank> ranks = RankService.refreshSync(puuid, shard, priority);
         Rank rank = findRank(ranks, queue);
         return rank == null ? Rank.unranked() : rank;
     }
 
-    private static Rank findRank(List<Rank> ranks, GameQueueType queue) {
+    private static Rank findRank(Map<GameQueueType, Rank> ranks, GameQueueType queue) {
         GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
-        if (ranks == null) return null;
-        for (Rank rank : ranks) if (rank != null && rank.queue() == canonicalQueue) return rank;
-        return null;
+        return ranks == null ? null : ranks.get(canonicalQueue);
     }
 
     public static Match loadMatch(LOLMatch source) {
@@ -308,7 +306,7 @@ public class Tracker {
         participant.puuid = source.getPuuid();
         participant.riotId = source.getRiotIdName();
         participant.riotTag = source.getRiotIdTagline();
-        participant.level = source.getSummonerLevel();
+        participant.championLevel = source.getChampionLevel();
         participant.doubles = source.getDoubleKills();
         participant.triples = source.getTripleKills();
         participant.quadruples = source.getQuadraKills();

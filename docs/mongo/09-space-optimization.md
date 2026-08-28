@@ -31,14 +31,10 @@ I consumer ricevono il PUUID già presente nel modello Riot/Summoner. Non esisto
 
 ## Indici
 
-`MongoDB.ensureIndexes()` crea soltanto gli indici secondari dichiarati nel
-registry, riusa quelli compatibili e non esegue `dropIndex` o modifiche
-automatiche. I nomi e i key pattern sono documentati in
-[`01-db-structure.md`](01-db-structure.md). I vincoli unique sono
-`profile_statistics_identity`, `profile_activity_identity` e
-`profile_matchups_identity`, tutti su `{puuid, filterKey}`; il bootstrap
-esegue il preflight delle statistiche e si interrompe su identità mancanti o
-duplicate.
+Gli indici sono gestiti dall'operatore del database, fuori dal runtime e dalla
+migration. I key pattern devono seguire le query documentate in
+[`01-db-structure.md`](01-db-structure.md). I vincoli unique su `{puuid,
+filterKey}` richiedono un preflight operativo di identità mancanti o duplicate.
 
 Gli `explain("executionStats")` devono verificare le query calde, incluse le letture per `profile_matchups`:
 

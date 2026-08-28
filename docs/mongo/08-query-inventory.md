@@ -7,13 +7,13 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` ordinato per `_id`; mappa a `Summoner` canonico (`region` come `LeagueShard`) | 1 | UserData / Discord |
 | profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfileService |
-| leaderboard | `$match` preliminare con `$elemMatch` + `$unwind` + `$match` esatto + `$facet` per `total` e pagina; projection summoner già filtrata | 2 | LeaderboardService |
+| leaderboard | `find` su `ranks.<QUEUE>.mmr` con filtro queue/tier/regione, sort MMR e projection limitata; total separato Redis → aggregate → `countDocuments` | 1 per pagina + count solo su cache miss | LeaderboardService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | history | participant filter in un unico `$elemMatch`, projection/paging limitati; `countDocuments` diretto | 1 + eventi batch | LeagueMessage |
 | match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
 | match events | `_id: {$in: [...]}` su `match_events` | 1 | match detail/history |
 | champion | match id con projection; build e statistiche leggono solo participant richiesti; batch raw senza `Match -> Participant` completo | 2 per batch (+ count/trend) | Champion services |
-| leaderboard aggregates | snapshot Mongo `leaderboard_aggregates` per filtro; rebuild ogni 12 ore e `$match` preliminare + `$unwind` + `$match` esatto + `$group` su `summoner.ranks[]` per nuovo filtro | 1 | LeaderboardService |
+| leaderboard aggregates | snapshot Mongo `leaderboard_aggregates` per filtro; rebuild ogni 12 ore e `$match` + `$group` sul path `summoner.ranks.<QUEUE>` per nuovo filtro | 1 | LeaderboardService |
 | writes | update atomici, pipeline participant, bulk unordered per build/statistiche/summoner; unique `{puuid, filterKey}` | 1 per update/batch | MongoDB/tracker |
 
 ## Projection e filtri
@@ -28,16 +28,16 @@ Le query paginated sono limitate a 100 match, 50 summoner leaderboard, 25 risult
 
 PUUID è l'identità summoner e `_id` del documento; il Riot match ID completo è l'identità match; enum R4J usa `name()`; bans usa BLUE e RED; participant resta flat; upsert/update/delete sono idempotenti; letture e scritture applicative Mongo-only; errori di lettura Mongo espliciti.
 
-MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` come BSON strutturato; `profile_statistics` salva direttamente i campi `timeStart`, `timeEnd`, `lastUpdate`, `total`, `queueStats`, `laneStats`, `championStats` con il relativo contesto queue/lane, `matchups`, `duoStats`, `pings` e gli aggregati collegati, mai sotto un campo `statistics`. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; i documenti legacy vengono rigenerati con il nuovo `puuid + filterKey`.
+MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` come BSON strutturato; `profile_statistics` salva direttamente i timestamp e le sole foglie `champions.<championId>.<canonicalQueue>.<position>`, oltre a `pings`, `spellOne` e `spellTwo`, mai sotto un campo `statistics`. I matchup vivono soltanto nella collection `profile_matchups`; non esistono `matchups` o `duoStats` root. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; i documenti legacy vengono rigenerati con il nuovo `puuid + filterKey`.
+
+`profile_matchups` è una collection separata: il suo payload `matchups` conserva esclusivamente `champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`. Non salva righe aggregate per champion o matchup fuori dalla foglia.
 
 Il dettaglio del formato di `filterKey`, del motivo dell'indice composto e della differenza tra aggregato e `recentMatches` è in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 ## Policy degli indici
 
-`MongoDB.ensureIndexes()` applica un registry create-only con nomi stabili. Un
-indice già presente con key pattern e opzioni compatibili viene riutilizzato;
-un conflitto interrompe il bootstrap e non viene corretto con `dropIndex`. Gli
-indici seguono le query effettive:
+Gli indici sono gestiti dall'operatore del database, non dal runtime né dalla
+migration. Devono seguire le query effettive:
 
 | Collection | Indice | Query coperta |
 |---|---|---|
@@ -45,7 +45,7 @@ indici seguono le query effettive:
 | `summoner` | `summoner_riot_id` | fallback exact/case-insensitive di `findPuuid` |
 | `summoner` | `summoner_user_accounts` | account Discord per `userId`, ordinati per `_id` |
 | `summoner` | `summoner_tracking_true` | tracker e account con `tracking=true` |
-| `summoner` | `summoner_leaderboard_region`, `summoner_leaderboard_global` | `$match` iniziale dei rank embedded regionale/globale |
+| `summoner` | MMR Solo/Flex globali e composti per regione | `find` leaderboard su `ranks.<QUEUE>.mmr` (all-ranks) o `ranks.<QUEUE>.rank + mmr` (tier-scoped), sort MMR discendente |
 | `match` | `match_participant_time` | history, profilo, OPGG, match recenti e dati LP |
 | `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | query temporali, region/patchMajor, bans e champion wins |
 | `match` | `match_champion_filter` | batch champion con filtro equality-first e participant/lane |
@@ -63,9 +63,9 @@ lookup diretti di match/summoner restano coperti da `_id`. Non vengono creati
 indici su `masteries`, metriche participant o ogni combinazione possibile di
 `Filter`; `opponent` e `duo` restano filtri relazionali applicati in Java.
 
-`profile_statistics_identity` viene creato solo dopo il preflight di identità
-mancanti e duplicati. Il preflight interrompe il bootstrap e richiede cleanup
-manuale, senza cancellare o fondere documenti.
+L'unicità di `{puuid, filterKey}` richiede un controllo operativo di identità
+mancanti e duplicati prima di applicare il relativo indice unique; il cleanup
+resta manuale.
 
 ## Explain richiesti
 
@@ -82,17 +82,23 @@ db.match.aggregate([
   {$group: {_id: {region: "$region", puuid: "$participants.puuid"}}},
   {$sort: {"_id.region": 1, "_id.puuid": 1}}
 ], {allowDiskUse: true}).explain("executionStats")
-db.summoner.aggregate([
-  {$unwind: "$ranks"},
-  {$match: {region: "EUW1", "ranks.queue": "RANKED_SOLO_5X5"}},
-  {$sort: {"ranks.mmr": -1, _id: 1}},
-  {$limit: 50}
-]).explain("executionStats")
+db.summoner.find(
+  {region: "EUW1", "ranks.RANKED_SOLO_5X5.mmr": {$exists: true}},
+  {_id: 1, riotId: 1, region: 1, level: 1, icon: 1, "ranks.RANKED_SOLO_5X5": 1, masteries: 1}
+).sort({"ranks.RANKED_SOLO_5X5.mmr": -1}).limit(50).explain("executionStats")
+db.summoner.find(
+  {
+    region: "EUW1",
+    "ranks.RANKED_SOLO_5X5.mmr": {$exists: true},
+    "ranks.RANKED_SOLO_5X5.rank": {$in: ["SILVER_IV", "SILVER_III", "SILVER_II", "SILVER_I"]}
+  },
+  {_id: 1, riotId: 1, region: 1, level: 1, icon: 1, "ranks.RANKED_SOLO_5X5": 1, masteries: 1}
+).sort({"ranks.RANKED_SOLO_5X5.mmr": -1}).skip(50).limit(50).explain("executionStats")
 ```
 
 Gli explain devono verificare `executionTimeMillis`, `totalKeysExamined`,
 `totalDocsExamined`, `nReturned`, `winningPlan`, `indexName` e l'assenza di
-`COLLSCAN`; per aggregation registrare anche eventuali stage `SORT` e
-`usedDisk`. Confrontare la baseline prima/dopo con `collStats` e
-`indexSizes`. La leaderboard resta parzialmente applicativa: dopo `$unwind` e
-`$facet`, il sort su `ranks.mmr` non è promesso come covered dall'indice.
+`COLLSCAN` e l'assenza di un `SORT` bloccante. Confrontare la baseline prima/dopo con `collStats` e
+`indexSizes`. La leaderboard all-ranks usa `ranks.<QUEUE>.mmr`; le pagine
+tier-scoped usano gli indici composti `rank + mmr` descritti in
+[`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).

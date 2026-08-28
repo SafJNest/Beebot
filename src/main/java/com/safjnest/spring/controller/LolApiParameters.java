@@ -10,9 +10,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.RankHistoryQuery;
+import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -53,11 +56,62 @@ public final class LolApiParameters {
         return parseEnum(value, GameQueueType.class, "queue");
     }
 
+    public static GameQueueType rankHistoryQueue(String value) {
+        GameQueueType queue = value == null || value.isBlank()
+            ? GameQueueType.RANKED_SOLO_5X5
+            : optionalQueue(value);
+        GameQueueType canonical = GameQueueTypeUtils.canonicalQueue(queue);
+        if (canonical == GameQueueType.RANKED_SOLO_5X5 || canonical == GameQueueType.RANKED_FLEX_SR) return canonical;
+        throw invalid("queue", "must be RANKED_SOLO_5X5, RANKED_FLEX_SR or TEAM_BUILDER_RANKED_SOLO");
+    }
+
+    public static RankHistoryQuery rankHistoryQuery(
+        String queueValue,
+        String viewValue,
+        Integer seasonValue,
+        String patchValue,
+        long timeStart,
+        long timeEnd,
+        String sortValue
+    ) {
+        if (timeStart < 0) throw invalid("timeStart", "must be greater than or equal to 0");
+        if (timeEnd < 0) throw invalid("timeEnd", "must be greater than or equal to 0");
+        if (timeStart != 0 && timeEnd != 0) {
+            throw invalid("timeEnd", "cannot be combined with timeStart; use season with timeStart to query from a date through that season");
+        }
+
+        RankHistoryView view = rankHistoryView(viewValue);
+        String patch = patch(patchValue);
+        if (view != null && (seasonValue != null || patch != null || timeStart != 0 || timeEnd != 0)) {
+            throw invalid("view", "cannot be combined with season, patch, timeStart or timeEnd");
+        }
+        if (patch != null && (seasonValue != null || timeStart != 0 || timeEnd != 0)) {
+            throw invalid("patch", "cannot be combined with view, season, timeStart or timeEnd");
+        }
+        if (seasonValue != null && SeasonUtils.getSeasonRange(seasonValue) == null) {
+            throw invalid("season", "must identify a configured season year; available years are " + rankHistorySeasons());
+        }
+        if (patch != null && SeasonUtils.getSeasonRange(2010 + patchMajor(patch)) == null) {
+            throw invalid("patch", "must identify a patch from a configured season; available season years are " + rankHistorySeasons());
+        }
+        return new RankHistoryQuery(rankHistoryQueue(queueValue), view, seasonValue, patch, timeStart, timeEnd,
+            matchOrder(sortValue));
+    }
+
     public static String patch(String value) {
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim();
         if (!normalized.matches("\\d+\\.\\d+")) throw invalid("patch", "must have the form major.minor");
         return normalized;
+    }
+
+    public static RankHistoryView rankHistoryView(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return RankHistoryView.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw invalid("view", "must be profile");
+        }
     }
 
     public static int minGames(int value) {
@@ -170,6 +224,18 @@ public final class LolApiParameters {
         if (start < 0) throw invalid("start", "must be greater than or equal to 0");
         if (end < 0) throw invalid("end", "must be greater than or equal to 0");
         if (start != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
+    }
+
+    private static String rankHistorySeasons() {
+        StringJoiner joiner = new StringJoiner(", ");
+        for (SeasonUtils.SeasonRange season : SeasonUtils.getSeasonRanges()) {
+            joiner.add(String.valueOf(season.year()));
+        }
+        return joiner.length() == 0 ? "none" : joiner.toString();
+    }
+
+    private static int patchMajor(String patch) {
+        return Integer.parseInt(patch.substring(0, patch.indexOf('.')));
     }
 
     private static long endOfToday() {

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -31,7 +32,7 @@ public class ProfileServiceTest {
 
         SummonerView page = SummonerView.from(
             new Summoner("puuid", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 27),
-            List.of(new Rank(GameQueueType.RANKED_FLEX_SR, TierDivisionType.BRONZE_II, 15, 76, 131)),
+            Map.of(GameQueueType.RANKED_FLEX_SR, new Rank(TierDivisionType.BRONZE_II, 15, 76, 131)),
             statistics,
             List.of(),
             java.util.Map.of(1, new SummonerOverview.Champion("Annie", "image")),
@@ -40,7 +41,7 @@ public class ProfileServiceTest {
 
         assertEquals(1, page.overview().statistics().laneStats.get(0).games);
         assertEquals(LaneType.TOP, page.overview().statistics().laneStats.get(0).reference);
-        assertEquals(GameQueueType.RANKED_FLEX_SR, page.ranks().get(0).queue());
+        assertEquals(TierDivisionType.BRONZE_II, page.ranks().get(GameQueueType.RANKED_FLEX_SR).tier());
         assertEquals(27, page.summoner().icon());
         assertEquals("BLUE", page.overview().recentMatches().get(0).participants().get(0).team());
     }

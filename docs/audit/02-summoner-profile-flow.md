@@ -21,10 +21,13 @@ L’account e il profilo vengono persistiti direttamente in MongoDB. `LeagueDB` 
 
 `ProfileService` è il proprietario del calcolo e del refresh. `ProfileAnalyzer` è puro. Legge da Mongo i match proiettati usando lo stesso `Filter` completo del comando e persiste un documento flat indicizzato da `puuid + filterKey`, che contiene:
 
-- `total`;
-- `queueStats`, `laneStats`, `championStats` con il contesto queue/lane per ogni champion;
-- `matchups`, `duoStats` e `pings`;
+- le sole foglie `champion × canonicalQueue × position`;
+- `pings`, `spellOne` e `spellTwo`;
 - `lastUpdate` e gli estremi temporali dell'aggregato.
+
+I matchup sono esclusivamente nella collection `profile_matchups`, nella foglia
+`champion × canonicalQueue × position × opponent`; non esistono `matchups` o
+`duoStats` root in `profile_statistics`.
 
 Il documento match resta la sorgente dei participant; `recentMatches` viene caricato separatamente come `MatchResult` leggero dallo stesso filtro e non viene serializzato dentro `ProfileStatistics`.
 

@@ -84,7 +84,7 @@ Le colonne che rappresentano un campione o una regione restano valori applicativ
 
 ## Leaderboard
 
-`leaderboard_distribution` è una tabella storica derivata del database SQL. Il runtime LoL Mongo non la legge né la aggiorna: la leaderboard e le distribuzioni vengono calcolate direttamente da `summoner.ranks[]` in Mongo. La definizione resta documentata per installazioni SQL e per il contesto storico della migration.
+`leaderboard_distribution` è una tabella storica derivata del database SQL. Il runtime LoL Mongo non la legge né la aggiorna: la leaderboard e le distribuzioni vengono calcolate direttamente da `summoner.ranks{}` in Mongo. La definizione resta documentata per installazioni SQL e per il contesto storico della migration.
 
 Non è presente una migration dedicata a `leaderboard_distribution` nel repository: per installazioni SQL esistenti si usa la definizione base [`leaderboard_distribution.sql`](../../database/league_of_legends/leaderboard_distribution.sql), mentre le migration successive riguardano gli indici e la normalizzazione di `rank`.
 

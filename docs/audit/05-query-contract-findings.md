@@ -8,7 +8,7 @@ As-of 2026-07-20; write owners updated 2026-08-20 (`ProfileService` / `ChampionS
 |---|---|---|---:|
 | search/autocomplete | search + N query rank | projection summoner con rank Solo incorporato, condivisa dai due consumer | 1 |
 | profile | base + ranks + masteries separati | projection `ProfileProjection`; statistiche Redis/Mongo separate per disponibilità | 2 |
-| leaderboard | count + pagina + `findSummoner` per riga | `$match`/`$elemMatch` preliminare + `$unwind`/`$match` esatto su `summoner.ranks[]` + `$facet` total/pagina + batch statistics | 2 |
+| leaderboard | count + pagina + `findSummoner` per riga | `$match` diretto su `summoner.ranks.<QUEUE>` + `$facet` total/pagina + batch statistics | 2 |
 | profile statistics | loop di find singole | `{puuid, filterKey}` con documento flat e batch per filtro | 1 |
 | history/count | hydration completa e filtro Java | `$elemMatch` sullo stesso participant, paging Mongo e `countDocuments` | 1 |
 | champion raw | `Document -> Match -> Participant` | projection raw tipizzata per metadata e participant | 1 per batch |
@@ -34,10 +34,10 @@ Il risultato HTTP resta canonico: `SummonerView` e `SummonerLeaderboard` non cam
 
 ### Indici applicativi e verifica runtime
 
-`MongoDB.ensureIndexes()` ora possiede un registry create-only e idempotente
-per search, history, champion, leaderboard e profile statistics. La policy
-include `profile_statistics_identity` unique su `{puuid, filterKey}` con
-preflight di documenti invalidi e duplicati; `opponent` e `duo` restano filtri
+Gli indici per search, history, champion, leaderboard e profile statistics sono
+gestiti operativamente fuori dal runtime e dalla migration.
+`profile_statistics_identity` richiede un preflight operativo di documenti
+invalidi e duplicati su `{puuid, filterKey}`; `opponent` e `duo` restano filtri
 relazionali applicati in Java. Lookup diretti di match, eventi, checkpoint e
 aggregati restano su `_id`.
 

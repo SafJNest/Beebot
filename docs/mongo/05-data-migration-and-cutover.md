@@ -16,7 +16,7 @@ La dimensione massima configurabile per la pagina `summoner` è 500.000 righe. O
 
 Le fasi sono eseguite in questo ordine:
 
-1. `summoners` → collection `summoner`, con `ranks[]` e `masteries[]` caricati nello stesso batch;
+1. `summoners` → collection `summoner`, con `ranks{}` e `masteries[]` caricati nello stesso batch;
 2. `matches` → collection `match`, con `participants[]` flat nel documento;
 3. `match_events` → payload eventi separato, solo quando il documento evento non esiste.
 4. `rank-progress-schema-v1` → sola scansione Mongo dei match: sposta
@@ -74,7 +74,7 @@ Non viene usato `OFFSET`, non viene materializzato il risultato completo e non v
 
 `migration_runs` contiene run, fase, high-water mark, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
 
-Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v6-match-schema`. Prima di ogni query pesante il runner ricontrolla gli `_id` presenti in Mongo; i match già presenti vengono inoltre normalizzati senza rilettura da MariaDB, mentre un match mancante viene caricato dal backfill. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
+Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v6-match-schema`. Prima di ogni query pesante il runner ricontrolla gli `_id` presenti in Mongo; i match già presenti vengono inoltre normalizzati senza rilettura da MariaDB, mentre un match mancante viene caricato dal backfill. Gli upsert sono idempotenti; rank e masteries vengono fusi rispettivamente nell'object `ranks{}` tramite la key `queue` e nell'array masteries tramite `championId`. Un checkpoint di una versione precedente non viene riutilizzato.
 
 Le due fasi RankProgress hanno checkpoint distinti per `runId`. Con lo stesso
 `runId` e `resume=true`, un checkpoint `COMPLETED` non viene rieseguito. Un
@@ -104,7 +104,7 @@ sovrascritto dalla recovery.
 3. eliminare il database/collection target prima del run, così schema, indici e documenti partono puliti;
 4. eseguire un dry-run con un high-water mark piccolo;
 5. eseguire il backfill reale con batch 500.000 per `summoner` e 50.000 per `match`;
-6. controllare `summoner`, `match`, `match_events`, `ranks[]`, `masteries[]`, `participants[]`;
+6. controllare `summoner`, `match`, `match_events`, `ranks{}`, `masteries[]`, `participants[]`;
 7. ripetere con `resume=true` per verificare idempotenza e high-water mark;
 8. costruire solo dopo build e profile statistics tramite i flussi applicativi.
 

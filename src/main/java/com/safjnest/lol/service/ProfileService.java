@@ -30,6 +30,7 @@ import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.TimeConstant;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class ProfileService {
 
@@ -62,7 +63,7 @@ public class ProfileService {
 
         Filter filter = Filter.summoner();
         ProfileStatistics statistics = getStatistics(profile, shard);
-        List<Rank> ranks = RankService.find(puuid, shard);
+        Map<GameQueueType, Rank> ranks = RankService.find(puuid, shard);
         List<Mastery> masteries = MasteryService.find(puuid, shard);
         boolean refresh = ranks == null || masteries == null
             || statistics == null || isStale(profile.puuid(), statistics.lastUpdate);
@@ -178,6 +179,7 @@ public class ProfileService {
         if (shard == null || puuid == null || puuid.isBlank() || requestFilter == null) return ApiResult.notFound();
         Filter filter = requestFilter.aggregationFilter();
         ProfileMatchups matchups = getMatchups(shard, puuid, filter);
+        if (matchups != null && !matchups.hasLeafMatchups()) matchups = null;
         long lastUpdate = matchups == null ? 0 : matchups.lastUpdate();
         if (matchups != null && isStale(puuid, lastUpdate)) {
             enqueueStaleMatchups(puuid, shard, filter);
@@ -201,9 +203,10 @@ public class ProfileService {
     public ProfileMatchups getMatchups(LeagueShard shard, String puuid, Filter filter) {
         if (shard == null || puuid == null || puuid.isBlank() || filter == null) return null;
         ProfileMatchups matchups = RedisClient.get(matchupsKey(puuid, shard, filter), ProfileMatchups.class);
-        if (matchups != null) return matchups;
+        if (matchups != null && matchups.hasLeafMatchups()) return matchups;
         matchups = MongoDB.findProfileMatchups(puuid, filter);
-        if (matchups != null) cacheMatchups(puuid, shard, filter, matchups);
+        if (matchups == null || !matchups.hasLeafMatchups()) return null;
+        cacheMatchups(puuid, shard, filter, matchups);
         return matchups;
     }
 
@@ -317,7 +320,7 @@ public class ProfileService {
     // ============================================================================
 
     private static boolean isCurrent(ProfileStatistics statistics) {
-        return statistics != null && statistics.hasChampionContext();
+        return statistics != null && statistics.hasLeafStatistics();
     }
 
     static boolean isStale(String puuid, long lastUpdate) {
@@ -413,8 +416,7 @@ public class ProfileService {
             && !page.summoner().puuid().isBlank()
             && page.overview() != null
             && page.overview().statistics() != null
-            && page.overview().statistics().total != null
-            && page.overview().statistics().total.games >= MIN_PROFILE_GAMES;
+            && page.overview().statistics().total().games >= MIN_PROFILE_GAMES;
     }
 
     private static SummonerView withoutRecentMatches(SummonerView page) {

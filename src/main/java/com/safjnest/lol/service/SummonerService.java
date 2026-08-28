@@ -32,6 +32,7 @@ import com.safjnest.redis.RedisKey;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -283,7 +284,7 @@ public final class SummonerService {
             com.safjnest.lol.model.summoner.Rank rank = row.soloRank() != null
                 ? row.soloRank()
                 : com.safjnest.lol.model.summoner.Rank.unranked();
-            summoners.add(SummonerView.from(row.summoner(), List.of(rank), new ProfileStatistics(), List.of()));
+            summoners.add(SummonerView.from(row.summoner(), Map.of(GameQueueType.RANKED_SOLO_5X5, rank), new ProfileStatistics(), List.of()));
         }
         RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
         return summoners;
@@ -416,37 +417,26 @@ public final class SummonerService {
             Summoner summoner = find(puuid, shard);
             if (summoner == null) continue;
 
-            List<com.safjnest.lol.model.summoner.Rank> ranks = RankService.find(puuid, shard);
+            Map<GameQueueType, com.safjnest.lol.model.summoner.Rank> ranks = RankService.find(puuid, shard);
             List<Mastery> masteries = MasteryService.find(puuid, shard);
-            List<Stats<Integer>> championStats = championStats(profileService.getStatistics(summoner, shard), entry.getValue());
+            Map<Integer, Stats<Void>> championStats = championStats(profileService.getStatistics(summoner, shard), entry.getValue());
             result.put(puuid, new LiveGame.ProfileOverview(summoner, ranks, masteries, championStats));
         }
         return result;
     }
 
-    private static List<Stats<Integer>> championStats(ProfileStatistics statistics, Integer championId) {
-        if (statistics == null || statistics.championStats == null) return List.of();
-
-        List<Stats<Integer>> result = new ArrayList<>(3);
-        Set<Integer> champions = new HashSet<>();
-        for (Stats<Integer> stat : statistics.championStats) {
-            if (stat != null && championId != null && championId.equals(stat.reference)) {
-                result.add(stat);
-                champions.add(stat.reference);
-                break;
-            }
-        }
-        List<Stats<Integer>> mostPlayed = new ArrayList<>();
-        for (Stats<Integer> stat : statistics.championStats) {
-            if (stat != null && stat.reference != null && !champions.contains(stat.reference)) mostPlayed.add(stat);
-        }
-        mostPlayed.sort(Comparator.comparingLong((Stats<Integer> stat) -> stat.games).reversed()
-            .thenComparing(stat -> stat.reference));
-        for (Stats<Integer> stat : mostPlayed) {
+    private static Map<Integer, Stats<Void>> championStats(ProfileStatistics statistics, Integer championId) {
+        if (statistics == null) return Map.of();
+        Map<Integer, Stats<Void>> available = statistics.championStats();
+        List<Integer> ids = new ArrayList<>(available.keySet());
+        ids.sort(Comparator.comparingLong((Integer id) -> available.get(id).games).reversed().thenComparingInt(Integer::intValue));
+        Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
+        if (championId != null && available.containsKey(championId)) result.put(championId, available.get(championId));
+        for (Integer id : ids) {
             if (result.size() == 3) break;
-            if (champions.add(stat.reference)) result.add(stat);
+            result.putIfAbsent(id, available.get(id));
         }
-        return List.copyOf(result);
+        return Map.copyOf(result);
     }
 
     private static void queueSpectatorSummoners(SpectatorGameInfo game, LeagueShard shard) {

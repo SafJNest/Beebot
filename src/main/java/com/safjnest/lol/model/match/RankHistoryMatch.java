@@ -9,14 +9,19 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 public record RankHistoryMatch(
     String gameId,
     GameQueueType queue,
+    String patch,
     long timeStart,
     long timeEnd,
     boolean win,
     LaneType lane,
+    String puuid,
     int champion,
-    Integer enemy,
-    Integer duo,
-    Integer duoEnemy,
+    Integer enemyChampion,
+    String enemyPuuid,
+    Integer duoChampion,
+    String duoPuuid,
+    Integer duoEnemyChampion,
+    String duoEnemyPuuid,
     RankProgress rankProgress
 ) {
 
@@ -29,8 +34,9 @@ public record RankHistoryMatch(
         Participant enemy = participant(match.participants, player.lane, player.team, false);
         Participant duo = participant(match.participants, duoLane, player.team, true);
         Participant duoEnemy = participant(match.participants, duoLane, player.team, false);
-        return new RankHistoryMatch(match.gameId, match.queue, match.timeStart, match.timeEnd, player.win,
-            player.lane, player.champion, champion(enemy), champion(duo), champion(duoEnemy), player.rankProgress);
+        return new RankHistoryMatch(match.gameId, match.queue, match.patch, match.timeStart, match.timeEnd, player.win,
+            player.lane, player.puuid, player.champion, champion(enemy), puuid(enemy), champion(duo), puuid(duo),
+            champion(duoEnemy), puuid(duoEnemy), player.rankProgress);
     }
 
     // ============================================================================
@@ -63,5 +69,9 @@ public record RankHistoryMatch(
 
     private static Integer champion(Participant participant) {
         return participant == null ? null : participant.champion;
+    }
+
+    private static String puuid(Participant participant) {
+        return participant == null ? null : participant.puuid;
     }
 }

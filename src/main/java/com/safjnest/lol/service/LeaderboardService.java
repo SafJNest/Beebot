@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
@@ -41,6 +42,7 @@ public class LeaderboardService {
         GameQueueType.RANKED_SOLO_5X5,
         GameQueueType.RANKED_FLEX_SR
     );
+    private static final Map<String, Object> LEADERBOARD_COUNT_LOCKS = new ConcurrentHashMap<>();
 
     private final ProfileService profileService = new ProfileService();
 
@@ -61,11 +63,10 @@ public class LeaderboardService {
         if (cached != null) return ApiResult.ready(cached);
 
         long offset = (long) (page - 1) * limit;
-        MongoDB.LeaderboardQuery query = MongoDB.findLeaderboardPage(
+        List<Summoner> summoners = MongoDB.findLeaderboardPage(
             rank, selectedQueue, selectedRegion, offset, limit
         );
-        long total = query.total();
-        List<Summoner> summoners = query.summoners();
+        long total = findLeaderboardCount(version, rank, selectedQueue, selectedRegion);
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
@@ -87,11 +88,12 @@ public class LeaderboardService {
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
         for (int index = 0; index < summoners.size(); index++) {
             Summoner summoner = summoners.get(index);
-            Rank rankValue = summoner.ranks().isEmpty() ? Rank.unranked() : summoner.ranks().get(0);
+            Rank rankValue = summoner.ranks().get(selectedQueue);
+            if (rankValue == null) rankValue = Rank.unranked();
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
             SummonerView view = SummonerView.from(
                 summoner,
-                List.of(rankValue),
+                Map.of(selectedQueue, rankValue),
                 statistics,
                 statistics == null ? List.of() : summoner.masteries()
             );
@@ -138,15 +140,15 @@ public class LeaderboardService {
                 for (TierType rank : PROFILE_REBUILD_RANKS) {
                     long offset = 0;
                     while (true) {
-                        MongoDB.LeaderboardQuery page = MongoDB.findLeaderboardPage(
+                        List<Summoner> page = MongoDB.findLeaderboardPage(
                             rank, queue, shard.name(), offset, DEFAULT_PAGE_SIZE
                         );
-                        if (page.summoners().isEmpty()) break;
+                        if (page.isEmpty()) break;
 
-                        candidates += page.summoners().size();
-                        submitted += rebuildProfilePage(page.summoners(), filter, processedPuuids);
-                        offset += page.summoners().size();
-                        if (offset >= page.total()) break;
+                        candidates += page.size();
+                        submitted += rebuildProfilePage(page, filter, processedPuuids);
+                        offset += page.size();
+                        if (page.size() < DEFAULT_PAGE_SIZE) break;
                     }
                 }
             }
@@ -183,11 +185,40 @@ public class LeaderboardService {
         RedisClient.increment(RedisKey.LEADERBOARD_VERSION.of());
     }
 
+    public static MongoDB.LeaderboardAggregateRebuild rebuildAllAggregates() {
+        MongoDB.LeaderboardAggregateRebuild report = MongoDB.rebuildAllLeaderboardAggregates();
+        RedisClient.increment(RedisKey.LEADERBOARD_VERSION.of());
+        return report;
+    }
+
     // ============================================================================
 
     private static long cacheVersion() {
         Long version = RedisClient.get(RedisKey.LEADERBOARD_VERSION.of(), Long.class);
         return version == null ? 0 : version;
+    }
+
+    private static long findLeaderboardCount(long version, TierType rank, GameQueueType queue, String region) {
+        String rankKey = rank == null ? ALL_RANKS : rank.name();
+        String cacheKey = RedisKey.LEADERBOARD_COUNT.of(version, queue.name(), region, rankKey);
+        Long cached = RedisClient.getLong(cacheKey);
+        if (cached != null && cached >= 0) return cached;
+
+        Object lock = LEADERBOARD_COUNT_LOCKS.computeIfAbsent(cacheKey, ignored -> new Object());
+        synchronized (lock) {
+            cached = RedisClient.getLong(cacheKey);
+            if (cached != null && cached >= 0) return cached;
+
+            boolean claimed = RedisClient.claim(RedisKey.LEADERBOARD_COUNT_LOCK, "1", version, queue.name(), region, rankKey);
+            try {
+                Long aggregate = MongoDB.findLeaderboardAggregateCount(rank, queue, region);
+                long total = aggregate == null ? MongoDB.findLeaderboardCount(rank, queue, region) : aggregate;
+                RedisClient.setCached(cacheKey, Long.toString(total), RedisKey.LEADERBOARD_COUNT.ttlSeconds());
+                return total;
+            } finally {
+                if (claimed) RedisClient.delete(RedisKey.LEADERBOARD_COUNT_LOCK.of(version, queue.name(), region, rankKey));
+            }
+        }
     }
 
     private static void requireRank(TierType rank) {

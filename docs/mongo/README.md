@@ -10,7 +10,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Un errore Mongo è esplicito nel runtime e non attiva fallback MariaDB.
 - App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
 - Custom builds e summoner.metrics sono fuori scope.
-- Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
+- Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks{}` e `masteries[]` nello stesso batch, poi `match` con participant.
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build e `leaderboard_aggregates` vengono costruiti successivamente dall'applicazione; gli ultimi contengono solo snapshot ricostruibili di distribuzione e top-region.
 - Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, ecc.) senza prefisso `lol_`.
@@ -25,7 +25,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 
 La persistenza Mongo/NoSQL LoL vive nel package `com.safjnest.nosql` e ha questi file principali:
 
-- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, schema, registry degli indici, query, mapping e write runtime;
+- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, collection, query, mapping e write runtime;
 - `src/main/java/com/safjnest/nosql/MongoMigration.java`: backfill batchabile MariaDB → Mongo;
 - `src/main/java/com/safjnest/nosql/AbstractEntity.java` e `NoSqlEntityExecutor.java`: infrastruttura comune per le entity persistite in NoSQL.
 
@@ -47,7 +47,9 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 7. 07-agent-strategy.md
 8. 08-query-inventory.md
 9. 09-space-optimization.md
-10. ADR-0009
+10. 10-ranks-object-migration.md
+11. 11-leaderboard-rank-indexes.md
+12. ADR-0009
 
 ## Regole BSON
 

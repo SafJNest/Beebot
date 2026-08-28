@@ -50,14 +50,34 @@ public record LiveGame(
 
     public record ProfileOverview(
         Summoner summoner,
-        List<Rank> ranks,
+        Map<GameQueueType, Rank> ranks,
         List<Mastery> masteries,
-        List<Stats<Integer>> championStats
+        Map<Integer, Stats<Void>> championStats
     ) {
+        public ProfileOverview(
+            Summoner summoner,
+            Map<GameQueueType, Rank> ranks,
+            List<Mastery> masteries,
+            List<Stats<Integer>> championStats
+        ) {
+            this(summoner, ranks, masteries, indexedChampionStats(championStats));
+        }
+
         public ProfileOverview {
-            ranks = ranks != null ? List.copyOf(ranks) : List.of();
+            ranks = ranks != null ? Map.copyOf(ranks) : Map.of();
             masteries = masteries != null ? List.copyOf(masteries) : List.of();
-            championStats = championStats != null ? List.copyOf(championStats) : List.of();
+            championStats = championStats != null ? Map.copyOf(championStats) : Map.of();
+        }
+
+        private static Map<Integer, Stats<Void>> indexedChampionStats(List<Stats<Integer>> values) {
+            Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
+            if (values != null) for (Stats<Integer> value : values)
+                if (value != null && value.reference != null) {
+                    Stats<Void> copy = new Stats<>();
+                    copy.merge(value);
+                    result.put(value.reference, copy);
+                }
+            return result;
         }
     }
 

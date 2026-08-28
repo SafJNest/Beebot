@@ -72,13 +72,15 @@ participant sono `null`.
     },
     "profileOverview": {
       "summoner": {"puuid": "Qx7m2vW8-example-puuid", "riotId": "Player#EUW", "region": "EUW1", "level": 527, "icon": 29},
-      "ranks": [],
+      "ranks": {
+        "RANKED_SOLO_5X5": {"rank": "DIAMOND_I", "lp": 50, "wins": 10, "losses": 5}
+      },
       "masteries": [{"championId": 157, "level": 7, "points": 200000}],
-      "championStats": [
-        {"reference": 157, "games": 42, "wins": 24, "winrate": 57.14},
-        {"reference": 238, "games": 31, "wins": 18, "winrate": 58.06},
-        {"reference": 64, "games": 22, "wins": 10, "winrate": 45.45}
-      ]
+      "championStats": {
+        "157": {"games": 42, "wins": 24, "kills": 286, "deaths": 198, "assists": 512},
+        "238": {"games": 31, "wins": 18, "kills": 185, "deaths": 143, "assists": 204},
+        "64": {"games": 22, "wins": 10, "kills": 124, "deaths": 118, "assists": 176}
+      }
     }
   }]
 }

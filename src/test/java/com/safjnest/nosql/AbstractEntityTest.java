@@ -127,13 +127,11 @@ class AbstractEntityTest {
 
         Summoner summoner = new Summoner("puuid", "name#tag", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 1);
         summoner.setRank(GameQueueType.RANKED_FLEX_SR,
-                new Rank(GameQueueType.RANKED_FLEX_SR, TierDivisionType.DIAMOND_IV, 50, 10, 5));
+                new Rank(TierDivisionType.DIAMOND_IV, 50, 10, 5));
 
         assertTrue(summoner.update());
-        assertEquals("replaceOrAppendArrayElement", operations.get(0).get("type"));
-        assertEquals("ranks", operations.get(0).get("path"));
-        assertEquals("queue", operations.get(0).get("keyField"));
-        assertEquals("RANKED_FLEX_SR", operations.get(0).get("keyValue"));
+        assertEquals("set", operations.get(0).get("type"));
+        assertEquals("ranks.RANKED_FLEX_SR", operations.get(0).get("path"));
     }
 
     @Test

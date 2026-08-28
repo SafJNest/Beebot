@@ -58,7 +58,8 @@ public class LolControllerTest {
     @Test
     public void shouldExposeRankHistory() throws NoSuchMethodException {
         GetMapping mapping = LolController.class.getMethod("rankHistory", String.class, String.class,
-            String.class, long.class, long.class, String.class).getAnnotation(GetMapping.class);
+            String.class, String.class, Integer.class, String.class, long.class, long.class, String.class)
+            .getAnnotation(GetMapping.class);
 
         assertEquals("/profile/{puuid}/rank-history", mapping.value()[0]);
     }
@@ -139,7 +140,7 @@ public class LolControllerTest {
 
     @Test
     public void shouldMapProfileMatchupsResponseStates() {
-        ProfileMatchups payload = new ProfileMatchups(null, 0, 0, 0, java.util.List.of());
+        ProfileMatchups payload = new ProfileMatchups(null, 0, 0, 0, java.util.Map.of());
         ResponseEntity<?> ready = LolApiResponses.from(
             ApiResult.ready(payload), "pending", "Pending", "Not found");
         ResponseEntity<?> pending = LolApiResponses.from(
@@ -166,6 +167,20 @@ public class LolControllerTest {
         assertEquals(MatchOrder.DESC, LolApiParameters.matchOrder(null));
         assertEquals(100, LolApiParameters.matchLimit(100));
         assertEquals(0, LolApiParameters.matchOffset(0));
+    }
+
+    @Test
+    public void shouldRestrictRankHistoryToRankedQueues() {
+        assertEquals(GameQueueType.RANKED_SOLO_5X5, LolApiParameters.rankHistoryQueue(null));
+        assertEquals(GameQueueType.RANKED_SOLO_5X5, LolApiParameters.rankHistoryQueue("team_builder_ranked_solo"));
+        assertEquals(GameQueueType.RANKED_FLEX_SR, LolApiParameters.rankHistoryQueue("ranked_flex_sr"));
+
+        try {
+            LolApiParameters.rankHistoryQueue("aram");
+            throw new AssertionError("Expected an invalid rank history queue");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
     }
 
     @Test
@@ -200,4 +215,5 @@ public class LolControllerTest {
             return exception;
         }
     }
+
 }

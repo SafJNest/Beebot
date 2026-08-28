@@ -9,6 +9,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.nosql.AbstractEntity;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -32,7 +33,7 @@ public class Summoner extends AbstractEntity<Summoner> {
     @JsonIgnore
     private boolean tracking;
     @JsonIgnore
-    private List<Rank> ranks = new ArrayList<>();
+    private Map<GameQueueType, Rank> ranks = new LinkedHashMap<>();
     @JsonIgnore
     private List<Mastery> masteries = new ArrayList<>();
 
@@ -58,12 +59,12 @@ public class Summoner extends AbstractEntity<Summoner> {
             int icon,
             String userId,
             boolean tracking,
-            List<Rank> ranks,
+            Map<GameQueueType, Rank> ranks,
             List<Mastery> masteries) {
         Summoner summoner = new Summoner(puuid, riotId, region, level, icon);
         summoner.userId = userId;
         summoner.tracking = tracking;
-        summoner.ranks = ranks == null ? new ArrayList<>() : new ArrayList<>(ranks);
+        summoner.ranks = ranks == null ? new LinkedHashMap<>() : new LinkedHashMap<>(ranks);
         summoner.masteries = masteries == null ? new ArrayList<>() : new ArrayList<>(masteries);
         summoner.markExisting();
         return summoner;
@@ -97,8 +98,8 @@ public class Summoner extends AbstractEntity<Summoner> {
         return tracking;
     }
 
-    public List<Rank> ranks() {
-        return List.copyOf(ranks);
+    public Map<GameQueueType, Rank> ranks() {
+        return Map.copyOf(ranks);
     }
 
     public List<Mastery> masteries() {
@@ -131,18 +132,9 @@ public class Summoner extends AbstractEntity<Summoner> {
 
     public Summoner setRank(GameQueueType queue, Rank rank) {
         if (queue == null || rank == null) throw new IllegalArgumentException("Summoner rank queue and value are required");
-        List<Rank> values = new ArrayList<>(ranks);
-        boolean replaced = false;
-        for (int index = 0; index < values.size(); index++) {
-            if (queue.equals(values.get(index).queue())) {
-                values.set(index, rank);
-                replaced = true;
-                break;
-            }
-        }
-        if (!replaced) values.add(rank);
-        ranks = values;
-        replaceOrAppendArrayElement("ranks", "queue", queue.name(), rank);
+        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        ranks.put(canonicalQueue, rank);
+        setValue("ranks." + canonicalQueue.name(), rank);
         return this;
     }
 
@@ -203,7 +195,7 @@ public class Summoner extends AbstractEntity<Summoner> {
         if (region != null) values.put("region", region.name());
         if (userId != null) values.put("userId", userId);
         if (tracking) values.put("tracking", true);
-        if (!ranks.isEmpty()) values.put("ranks", ranks);
+        values.put("ranks", ranks);
         if (!masteries.isEmpty()) values.put("masteries", masteries);
         return values;
     }

@@ -22,6 +22,7 @@ import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.utils.ChampionUtils;
@@ -606,7 +607,7 @@ public class LeagueMessage {
         switch (match.queue){
             case STRAWBERRY:
                 content = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.champion)) + " Level: " + 
-                        (me.level > 0 ? me.level : 1) +
+                        (me.championLevel != null && me.championLevel > 0 ? me.championLevel : 1) +
                         " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
                         + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " " 
@@ -622,7 +623,7 @@ public class LeagueMessage {
                 String swarmTeam = "";
                 for(Participant mt : match.participants)
                     swarmTeam += CustomEmojiHandler.getFormattedEmoji(String.valueOf(mt.champion)) + " Level: " +  
-                            (mt.level > 0 ? mt.level : 1) +
+                            (mt.championLevel != null && mt.championLevel > 0 ? mt.championLevel : 1) +
                             " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.goldEarned + "\n";
 
                 eb.addField("Swarm Team", swarmTeam, true);
@@ -698,14 +699,15 @@ public class LeagueMessage {
 
                     HashMap<String, String> stats = new HashMap<>();
                     stats.put("damageDealt", String.valueOf(mt.damage));
-                    stats.put("damageTaken", String.valueOf(mt.damageTaken));
+                    if (mt.damageTaken != null) stats.put("damageTaken", String.valueOf(mt.damageTaken));
                     totalStats.put(mt, stats);
 
                     TeamType currentTeam = me.subTeam == mt.subTeam ? TeamType.BLUE : TeamType.RED;
                     HashMap<String, String> currentStats = teamStats.get(currentTeam);
                     currentStats.put("kills", String.valueOf(getKdaValue(mt.kda, 0) + getTeamValue(currentStats, "kills")));
                     currentStats.put("damageDealt", String.valueOf(mt.damage + getTeamValue(currentStats, "damageDealt")));
-                    currentStats.put("damageTaken", String.valueOf(mt.damageTaken + getTeamValue(currentStats, "damageTaken")));
+                    if (mt.damageTaken != null)
+                        currentStats.put("damageTaken", String.valueOf(mt.damageTaken + getTeamValue(currentStats, "damageTaken")));
                 }
                 
                 String blueTeam = "";
@@ -725,7 +727,9 @@ public class LeagueMessage {
                 String arenaKillParticipation = String.format("%.1f", (double) (getKdaValue(me.kda, 0) + getKdaValue(me.kda, 2)) / arenaTeamKills * 100);
                 String arenaPersonalStatsText = "**KDA**: " + me.kda + " (" + arenaKillParticipation + "% kill participation)\n"
                         + "**Damage Dealt to champion**: " + LeagueMessageUtils.formatNumber(arenaPersonalStats.get("damageDealt")) + " (" + LeagueMessageUtils.getPosition(totalStats, arenaPersonalStats, "damageDealt") + "th in the game)\n"
-                        + "**Damage Taken**: " + LeagueMessageUtils.formatNumber(arenaPersonalStats.get("damageTaken")) + " (" + LeagueMessageUtils.getPosition(totalStats, arenaPersonalStats, "damageTaken") + "th in the game)\n";
+                        + "**Damage Taken**: " + (arenaPersonalStats.containsKey("damageTaken")
+                            ? LeagueMessageUtils.formatNumber(arenaPersonalStats.get("damageTaken")) + " (" + LeagueMessageUtils.getPosition(totalStats, arenaPersonalStats, "damageTaken") + "th in the game)"
+                            : "Unavailable") + "\n";
                 eb.addField("Personal Stats", arenaPersonalStatsText, false);
 
                 eb.addField("Build", content, false);
@@ -769,7 +773,7 @@ public class LeagueMessage {
 
                     HashMap<String, String> stats = new HashMap<>();
                     stats.put("damageDealt", String.valueOf(participant.damage));
-                    stats.put("damageTaken", String.valueOf(participant.damageTaken));
+                    if (participant.damageTaken != null) stats.put("damageTaken", String.valueOf(participant.damageTaken));
                     stats.put("heal", String.valueOf(participant.healing));
                     stats.put("vision", String.valueOf(participant.visionScore));
                     totalStats.put(participant, stats);
@@ -849,7 +853,7 @@ public class LeagueMessage {
         switch (match.queue) {
             case STRAWBERRY:
                 String swarmContent = CustomEmojiHandler.getFormattedEmoji(getChampionName(me.champion))
-                        + " Level: " + (me.level > 0 ? me.level : 1)
+                        + " Level: " + (me.championLevel != null && me.championLevel > 0 ? me.championLevel : 1)
                         + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
                         + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + getSwarmItemsLine(me);
@@ -858,7 +862,7 @@ public class LeagueMessage {
                 StringBuilder swarmTeam = new StringBuilder();
                 for (Participant participant : match.participants) {
                     swarmTeam.append(CustomEmojiHandler.getFormattedEmoji(getChampionName(participant.champion)))
-                            .append(" Level: ").append(participant.level > 0 ? participant.level : 1)
+                            .append(" Level: ").append(participant.championLevel != null && participant.championLevel > 0 ? participant.championLevel : 1)
                             .append(" | ").append(CustomEmojiHandler.getFormattedEmoji("golds"))
                             .append(participant.goldEarned).append("\n");
                 }
@@ -1301,7 +1305,7 @@ public class LeagueMessage {
                 } else {
                     switch (parameter.getMessageType()) {
                         case OVERVIEW -> eb = getGenericStats(eb, statistics, summoner, parameter);
-                        case MATCHUP -> eb = getLegacyMatchups(eb, statistics, parameter);
+                        case MATCHUP -> eb = getLegacyMatchups(eb, statistics, summoner, parameter);
                         case OVERVIEW_CHAMPIONS -> eb = getLegacyChampions(eb, statistics, summoner, parameter);
                         default -> { }
                     }
@@ -1644,15 +1648,21 @@ public class LeagueMessage {
         eb.addField(" ", columns[2].toString(), true);
     }
 
-    private static EmbedBuilder getLegacyMatchups(EmbedBuilder eb, ProfileStatistics statistics, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getLegacyMatchups(
+        EmbedBuilder eb,
+        ProfileStatistics statistics,
+        Summoner summoner,
+        LeagueMessageParameter parameter
+    ) {
         if (statistics.total == null || statistics.total.games == 0) {
             eb.setDescription("Not enough games");
             return eb;
         }
         eb.setDescription("Summoner has played **" + statistics.total.games + "** games with "
             + statistics.championStats.size() + " different champions");
-        eb = LeagueMessageUtils.buildMatchups("matchups", eb, toLegacyMatchups(statistics.matchups));
-        if (parameter.isDuo()) eb = LeagueMessageUtils.buildMatchups("duo", eb, toLegacyMatchups(statistics.duoStats));
+        ProfileMatchups matchups = PROFILE_SERVICE.getMatchups(summoner.region(), summoner.puuid(), parameter.toFilter());
+        if (matchups == null) ComputeScheduler.startProfileMatchups(summoner.puuid(), summoner.region(), parameter.toFilter());
+        else eb = LeagueMessageUtils.buildMatchups("matchups", eb, toLegacyMatchups(matchups.aggregateMatchups()));
         return eb;
     }
 
@@ -1681,10 +1691,10 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static HashMap<Integer, int[]> toLegacyMatchups(Map<Integer, Stats<Integer>> values) {
+    private static HashMap<Integer, int[]> toLegacyMatchups(Map<Integer, ? extends Stats<?>> values) {
         HashMap<Integer, int[]> result = new HashMap<>();
         if (values == null) return result;
-        for (Stats<Integer> stat : values.values()) result.put(stat.reference, new int[] {(int) stat.wins, (int) stat.losses()});
+        for (Map.Entry<Integer, ? extends Stats<?>> stat : values.entrySet()) result.put(stat.getKey(), new int[] {(int) stat.getValue().wins, (int) stat.getValue().losses()});
         return result;
     }
 

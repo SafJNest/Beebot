@@ -10,14 +10,32 @@ The current API serializes similar data through profile DTOs, leaderboard DTOs a
 
 ## Decision
 
+### Amendment 2026-08-27: profile-statistics leaf contract
+
+`overview.statistics` serializza soltanto le foglie
+`champions.<championId>.<canonicalQueue>.<position>`. Le queue sono
+canonicalizzate all'ingestion e ogni partita raggiunge una posizione, usando
+`UNKNOWN` quando lane/position manca o non ha significato. `total`, aggregati
+per champion/queue/lane, `context`, `reference`, `winrate`, `kda` e tutti i
+campi `avg*` non fanno parte del payload persistito o HTTP; eventuali viste
+legacy sono ricostruite solo in memoria. I valori opzionali assenti sono omessi,
+non trasformati in zero. I campi Arena sono presenti soltanto nella foglia
+`ARENA → UNKNOWN`; `avgArenaPlacement` usa `arenaPlacementSum / games` di
+quella foglia. Questo emendamento sostituisce i paragrafi
+successivi incompatibili relativi alle champion rows.
+
+`GET /profile/{puuid}/matchups` usa la collection distinta `profile_matchups`
+e serializza le sole foglie
+`champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`.
+Anche questo payload non contiene aggregate che rimuovono queue/position, né
+`reference`, `winrate`, `kda` o `avg*`; il consumer compone le proprie viste.
+`ProfileStatistics` non conserva un aggregate root `matchups` o `duoStats`.
+
 Success payloads use canonical models from `lol.model`. Spring retains only HTTP error models.
 
 Profile exposes the complete `SummonerView` shape. Leaderboard exposes page metadata and rows of `SummonerLeaderboard`, each with the same nested `summoner` view.
 
-Profile champion rows keep their generic aggregate fields and additionally
-expose `context`, an array containing canonical queue keys mapped to lane keys.
-Lane-less queues use exactly one `UNKNOWN` entry. The nested values reuse the
-complete `Stats` metric set.
+Profile statistics expose the canonical leaf map described above.
 
 The leaderboard contract remains:
 

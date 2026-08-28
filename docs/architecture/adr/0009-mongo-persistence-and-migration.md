@@ -9,11 +9,25 @@
 
 Il documento `match` usa il full Riot match ID direttamente in `_id` e `region` come unico campo di shard. `fullGameId`, `gameId`, `game_id` e `leagueShard` sono residui di mapping e non vengono persistiti. `patch` conserva la versione completa, mentre `patchMajor` conserva i primi due segmenti, per esempio `14.2`, ed è il campo usato dai filtri Mongo. La migration `raw-v6-match-schema` normalizza anche i match già presenti senza riscrivere participant o eventi. Il contratto HTTP resta invariato: `Match` continua a essere il modello canonico della response.
 
+## Amendment 2026-08-27
+
+`summoner.ranks` is a BSON object keyed by canonical `GameQueueType.name()`, for example
+`ranks.RANKED_SOLO_5X5`. The embedded `Rank` value has no `queue` field. Runtime
+models use `Map<GameQueueType, Rank>` and every write produces the object form.
+The Mongo reader centrally accepts legacy `ranks[]` only until the manual migration
+has reduced `db.summoner.countDocuments({ranks: {$type: "array"}})` to zero.
+Leaderboard queries read the selected dynamic queue path directly; they do not
+unwind ranks. Redis keys retain their existing names, so rank/profile/search/
+leaderboard payloads must be invalidated at deployment before serving the new
+object contract.
+
 ## Amendment 2026-07-26
 
-La leaderboard mantiene `summoner.ranks[]` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution e top-region: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina e il totale restano derivati dai rank embedded; Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
+La leaderboard mantiene `summoner.ranks` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution, top-region e count della leaderboard: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina usa una `find()` limitata e ordinata sul path MMR della queue; il totale segue Redis, aggregate Mongo e solo infine `countDocuments()`. Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
 
-Il bootstrap Mongo possiede anche la policy degli indici secondari dichiarati in `MongoDB.java`. `ensureIndexes(MongoDatabase)` viene eseguito dopo `ensureCollections(MongoDatabase)`, crea soltanto gli indici mancanti, usa nomi stabili e non esegue mai `dropIndex` o modifiche automatiche. Un indice esistente con stesso key pattern e opzioni compatibili viene riutilizzato; un conflitto di key pattern, nome, `unique` o partial filter interrompe il bootstrap con errore esplicito. Prima di creare `profile_statistics_identity`, il bootstrap verifica duplicati e identità mancanti su `{puuid, filterKey}` e non esegue cleanup automatici.
+Gli indici secondari sono gestiti operativamente fuori dal runtime e dalla
+migration. `MongoDB` crea soltanto le collection mancanti e non crea, verifica,
+modifica o rimuove indici.
 
 ## Context
 
@@ -42,7 +56,7 @@ Mongo userà:
 - rank e mastery incorporate nel summoner;
 - champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
-- collection separate solo per dati derivati che richiedono un access pattern autonomo; la leaderboard usa direttamente `summoner.ranks[]` per le righe e mantiene soltanto gli snapshot aggregati in `leaderboard_aggregates`;
+- collection separate solo per dati derivati che richiedono un access pattern autonomo; la leaderboard usa direttamente `summoner.ranks` per le righe e mantiene soltanto gli snapshot aggregati in `leaderboard_aggregates`;
 - nessun identificativo numerico MariaDB viene scritto nei documenti Mongo; le chiavi canoniche sono PUUID, full Riot match ID, queue e championId.
 - gli eventi match sono separati in `match_events` e compressi da WiredTiger con Zstandard; match e masteries restano BSON normale.
 
@@ -101,7 +115,7 @@ I campi numerici dei modelli pubblici restano compatibili con il modello storico
 ### Negative
 
 - il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
-- la leaderboard richiede `$unwind` e filtri su `summoner.ranks[]`; gli indici multikey riducono il `$match` iniziale, ma righe e totale vengono calcolati da Mongo e gli aggregati di distribuzione/top-region vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
+- la leaderboard richiede un indice MMR per queue e scope; la pagina legge `ranks.<QUEUE>.mmr` con `find()` limitata, mentre il totale usa Redis e gli aggregate Mongo prima del fallback `countDocuments()`; distribuzione, top-region e count vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
 - il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
 - il backfill e il runtime devono essere verificati separatamente.
 

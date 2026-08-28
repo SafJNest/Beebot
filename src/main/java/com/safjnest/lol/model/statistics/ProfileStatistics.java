@@ -1,10 +1,8 @@
 package com.safjnest.lol.model.statistics;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.safjnest.lol.model.Filter;
@@ -23,44 +21,43 @@ public class ProfileStatistics {
     public long lastUpdate;
     public long oldestMatchAt;
     public long newestMatchAt;
-    public Stats<Void> total = new Stats<>();
-    public List<Stats<GameQueueType>> queueStats = new ArrayList<>();
-    public List<Stats<LaneType>> laneStats = new ArrayList<>();
-    public List<Stats<Integer>> championStats = new ArrayList<>();
-    public Map<Integer, Stats<Integer>> matchups = new LinkedHashMap<>();
-    public Map<Integer, Stats<Integer>> duoStats = new LinkedHashMap<>();
+    public Map<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champions = new LinkedHashMap<>();
     public Map<String, Long> pings = new LinkedHashMap<>();
     public Map<Integer, Long> spellOne = new LinkedHashMap<>();
     public Map<Integer, Long> spellTwo = new LinkedHashMap<>();
+    @JsonIgnore public Stats<Void> total = new Stats<>();
+    @JsonIgnore public java.util.List<Stats<GameQueueType>> queueStats = new java.util.ArrayList<>();
+    @JsonIgnore public java.util.List<Stats<LaneType>> laneStats = new java.util.ArrayList<>();
+    @JsonIgnore public java.util.List<Stats<Integer>> championStats = new java.util.ArrayList<>();
 
     public ProfileStatistics() {}
 
     public ProfileStatistics(long timeStart) {
         this.timeStart = timeStart;
-        this.timeEnd = timeStart;
+        timeEnd = timeStart;
     }
 
     @JsonIgnore
-    public boolean hasChampionContext() {
-        if (total == null || total.games == 0) return true;
-        if (championStats == null || championStats.isEmpty()) return false;
-        for (Stats<Integer> champion : championStats)
-            if (champion == null || champion.context == null || champion.context.isEmpty()) return false;
-        return true;
+    public boolean hasLeafStatistics() {
+        finish();
+        return champions != null;
     }
 
     public void add(MatchResult match, GameQueueType queue, LaneType lane) {
         if (match == null || queue == null) return;
-        total.add(match);
-        stat(queueStats, queue).add(match);
-        if (lane != null && lane != LaneType.NONE) stat(laneStats, lane).add(match);
-        Stats<Integer> champion = stat(championStats, match.championId());
-        champion.add(match);
-        Stats<Void> context = contextStat(champion, queue, lane);
-        if (context != null) context.add(match);
-        timeEnd = Math.max(timeEnd, match.timeEnd());
-        oldestMatchAt = oldestMatchAt == 0 ? match.timeStart() : Math.min(oldestMatchAt, match.timeStart());
-        newestMatchAt = Math.max(newestMatchAt, match.timeStart());
+        Participant participant = new Participant();
+        participant.win = match.win();
+        participant.kda = match.kda();
+        participant.champion = match.championId();
+        participant.lane = lane;
+        participant.damage = match.damage();
+        participant.visionScore = match.vision();
+        participant.cs = match.cs();
+        participant.goldEarned = match.gold();
+        leaf(participant.champion, CanonicalQueue.from(queue), lane).add(participant,
+            match.timeStart(), match.timeEnd(), match.teamKills(), 0, false);
+        updateTime(match.timeStart(), match.timeEnd());
+        finish();
     }
 
     public void add(Match match, String puuid, Filter filter) {
@@ -72,113 +69,143 @@ public class ProfileStatistics {
     }
 
     public void addRaw(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
-        add(match, player, teamKills, enemyTeamKills, arena, false);
+        if (match != null && player != null) add(match, player, teamKills, enemyTeamKills, arena, false);
     }
 
     public void finish() {
-        finish(total);
-        for (Stats<GameQueueType> stats : queueStats) finish(stats);
-        for (Stats<LaneType> stats : laneStats) finish(stats);
-        for (Stats<Integer> stats : championStats) finish(stats);
-        for (Stats<Integer> stats : matchups.values()) finish(stats);
-        for (Stats<Integer> stats : duoStats.values()) finish(stats);
+        total = total();
+        queueStats = new java.util.ArrayList<>();
+        for (Map.Entry<CanonicalQueue, Stats<Void>> entry : queueStats().entrySet()) {
+            Stats<GameQueueType> stat = new Stats<>(legacyQueue(entry.getKey()));
+            stat.merge(entry.getValue());
+            queueStats.add(stat);
+        }
+        laneStats = new java.util.ArrayList<>();
+        for (Map.Entry<String, Stats<Void>> entry : laneStats().entrySet()) {
+            LaneType lane;
+            try { lane = LaneType.valueOf(entry.getKey()); }
+            catch (IllegalArgumentException ignored) { lane = LaneType.NONE; }
+            Stats<LaneType> stat = new Stats<>(lane);
+            stat.merge(entry.getValue());
+            laneStats.add(stat);
+        }
+        championStats = new java.util.ArrayList<>();
+        for (Map.Entry<Integer, Stats<Void>> entry : championStats().entrySet()) {
+            Stats<Integer> stat = new Stats<>(entry.getKey());
+            stat.merge(entry.getValue());
+            championStats.add(stat);
+        }
+    }
+
+    @JsonIgnore
+    public Stats<Void> total() {
+        Stats<Void> total = new Stats<>();
+        forEachLeaf(total::merge);
+        return total;
+    }
+
+    @JsonIgnore
+    public Map<Integer, Stats<Void>> championStats() {
+        Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
+        if (champions == null) return result;
+        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champion : champions.entrySet()) {
+            Stats<Void> total = new Stats<>();
+            forEachQueueLeaf(champion.getValue(), total::merge);
+            result.put(champion.getKey(), total);
+        }
+        return result;
+    }
+
+    @JsonIgnore
+    public Map<CanonicalQueue, Stats<Void>> queueStats() {
+        Map<CanonicalQueue, Stats<Void>> result = new LinkedHashMap<>();
+        if (champions == null) return result;
+        for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : champions.values()) if (queues != null)
+            for (Map.Entry<CanonicalQueue, Map<String, Stats<Void>>> queue : queues.entrySet()) {
+                Stats<Void> total = result.computeIfAbsent(queue.getKey(), ignored -> new Stats<>());
+                forEachLeaf(queue.getValue(), total::merge);
+            }
+        return result;
+    }
+
+    @JsonIgnore
+    public Map<String, Stats<Void>> laneStats() {
+        Map<String, Stats<Void>> result = new LinkedHashMap<>();
+        if (champions == null) return result;
+        for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : champions.values()) if (queues != null)
+            for (Map<String, Stats<Void>> lanes : queues.values()) if (lanes != null)
+                for (Map.Entry<String, Stats<Void>> lane : lanes.entrySet())
+                    result.computeIfAbsent(lane.getKey(), ignored -> new Stats<>()).merge(lane.getValue());
+        return result;
     }
 
     private void add(Match match, String puuid, Filter filter, boolean calculate) {
         if (match == null || puuid == null || puuid.isBlank() || match.participants == null) return;
         Participant player = participant(match, puuid);
         if (player == null || !matchesFilter(match, player, filter)) return;
-
         boolean arena = GameQueueTypeUtils.isCherry(match.queue);
-        int teamKills = kills(match, player, arena, false);
-        int enemyTeamKills = arena ? 0 : kills(match, player, false, true);
-        add(match, player, teamKills, enemyTeamKills, arena, calculate);
+        add(match, player, kills(match, player, arena, false), arena ? 0 : kills(match, player, false, true), arena, calculate);
     }
 
     private void add(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena, boolean calculate) {
-        add(total, match, player, teamKills, enemyTeamKills, arena, calculate);
-        if (match.queue != null) add(stat(queueStats, match.queue), match, player, teamKills, enemyTeamKills, arena, calculate);
-        if (player.lane != null && player.lane != LaneType.NONE)
-            add(stat(laneStats, player.lane), match, player, teamKills, enemyTeamKills, arena, calculate);
-        Stats<Integer> champion = stat(championStats, player.champion);
-        add(champion, match, player, teamKills, enemyTeamKills, arena, calculate);
-        Stats<Void> context = contextStat(champion, match.queue, player.lane);
-        if (context != null) add(context, match, player, teamKills, enemyTeamKills, arena, calculate);
-
-        if (player.pings != null) for (Map.Entry<String, Integer> entry : player.pings.entrySet()) {
+        Stats<Void> leaf = leaf(player.champion, CanonicalQueue.from(match.queue), player.lane);
+        if (calculate) leaf.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+        else leaf.addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+        if (player.pings != null) for (Map.Entry<String, Integer> entry : player.pings.entrySet())
             if (entry.getKey() != null && entry.getValue() != null) pings.merge(entry.getKey(), entry.getValue().longValue(), Long::sum);
-        }
         if (player.summonerSpell1 != 0) spellOne.merge(player.summonerSpell1, 1L, Long::sum);
         if (player.summonerSpell2 != 0) spellTwo.merge(player.summonerSpell2, 1L, Long::sum);
-
-        if (player.lane != null && player.lane != LaneType.NONE) {
-            for (Participant opponent : match.participants) {
-                if (opponent == null || opponent == player || opponent.champion == 0) continue;
-                if (opponent.team != player.team && opponent.lane == player.lane)
-                    add(matchups.computeIfAbsent(opponent.champion, Stats::new), match, player, teamKills, enemyTeamKills, arena, calculate);
-            }
-        }
-
-        for (Participant duo : match.participants) {
-            if (duo == null || duo == player || duo.champion == 0 || duo.team != player.team) continue;
-            boolean sameDuo = arena
-                ? duo.subTeam == player.subTeam
-                : (duo.lane == LaneType.BOT || duo.lane == LaneType.UTILITY)
-                    && (player.lane == LaneType.BOT || player.lane == LaneType.UTILITY);
-            if (sameDuo) add(duoStats.computeIfAbsent(duo.champion, Stats::new), match, player, teamKills, enemyTeamKills, arena, calculate);
-        }
-
-        timeEnd = Math.max(timeEnd, match.timeEnd);
-        oldestMatchAt = oldestMatchAt == 0 ? match.timeStart : Math.min(oldestMatchAt, match.timeStart);
-        newestMatchAt = Math.max(newestMatchAt, match.timeStart);
+        updateTime(match.timeStart, match.timeEnd);
     }
 
-    private static void add(Stats<?> stats, Match match, Participant player, int teamKills, int enemyTeamKills,
-                            boolean arena, boolean calculate) {
-        if (calculate) stats.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
-        else stats.addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+    private Stats<Void> leaf(int champion, CanonicalQueue queue, LaneType lane) {
+        return champions.computeIfAbsent(champion, ignored -> new LinkedHashMap<>())
+            .computeIfAbsent(queue, ignored -> new LinkedHashMap<>())
+            .computeIfAbsent(laneKey(lane), ignored -> new Stats<>());
     }
 
-    private static void finish(Stats<?> stats) {
-        if (stats == null) return;
-        stats.recalculate();
-        if (stats.context != null) for (Map<GameQueueType, Map<String, Stats<Void>>> queueContext : stats.context)
-            for (Map<String, Stats<Void>> lanes : queueContext.values()) for (Stats<Void> context : lanes.values()) finish(context);
+    private static GameQueueType legacyQueue(CanonicalQueue queue) {
+        return switch (queue) {
+            case RANKED_SOLO -> GameQueueType.RANKED_SOLO_5X5;
+            case RANKED_FLEX -> GameQueueType.RANKED_FLEX_SR;
+            case NORMAL_DRAFT -> GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5;
+            case NORMAL_BLIND -> GameQueueType.NORMAL_5V5_BLIND_PICK;
+            case ARAM -> GameQueueType.ARAM;
+            case ARENA -> GameQueueType.CHERRY;
+            case SWIFTPLAY -> GameQueueType.SWIFTPLAY;
+            case URF -> GameQueueType.URF;
+            case ULTBOOK -> GameQueueType.ULTBOOK;
+            case NEXUS_BLITZ -> GameQueueType.NEXUS_BLITZ;
+            case SWARM -> GameQueueType.STRAWBERRY;
+            case SPECIAL -> GameQueueType.ONEFORALL_5X5;
+            case OTHER -> GameQueueType.CUSTOM;
+        };
     }
 
-    private static <T> Stats<T> stat(List<Stats<T>> stats, T reference) {
-        for (Stats<T> value : stats) if (Objects.equals(value.reference, reference)) return value;
-        Stats<T> value = new Stats<>(reference);
-        stats.add(value);
-        return value;
+    private static String laneKey(LaneType lane) {
+        return lane == null || lane == LaneType.NONE ? "UNKNOWN" : lane.name();
     }
 
-    private static Stats<Void> contextStat(Stats<Integer> champion, GameQueueType queue, LaneType lane) {
-        if (champion == null || queue == null) return null;
-        String laneKey = contextLane(queue, lane);
-        if (laneKey == null) return null;
-        if (champion.context == null) champion.context = new ArrayList<>();
-        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
-        for (Map<GameQueueType, Map<String, Stats<Void>>> queueContext : champion.context) {
-            Map<String, Stats<Void>> lanes = queueContext.get(canonicalQueue);
-            if (lanes != null) return lanes.computeIfAbsent(laneKey, ignored -> new Stats<>());
-        }
-        Map<String, Stats<Void>> lanes = new LinkedHashMap<>();
-        lanes.put(laneKey, new Stats<>());
-        Map<GameQueueType, Map<String, Stats<Void>>> queueContext = new LinkedHashMap<>();
-        queueContext.put(canonicalQueue, lanes);
-        champion.context.add(queueContext);
-        return lanes.get(laneKey);
+    private void updateTime(long start, long end) {
+        timeEnd = Math.max(timeEnd, end);
+        oldestMatchAt = oldestMatchAt == 0 ? start : Math.min(oldestMatchAt, start);
+        newestMatchAt = Math.max(newestMatchAt, start);
     }
 
-    private static String contextLane(GameQueueType queue, LaneType lane) {
-        if (!GameQueueTypeUtils.hasLane(queue)) return "UNKNOWN";
-        return lane == null || lane == LaneType.NONE ? null : lane.name();
+    private void forEachLeaf(Consumer<Stats<?>> consumer) {
+        if (champions != null) for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : champions.values()) forEachQueueLeaf(queues, consumer);
+    }
+
+    private static void forEachQueueLeaf(Map<CanonicalQueue, Map<String, Stats<Void>>> queues, Consumer<Stats<?>> consumer) {
+        if (queues != null) for (Map<String, Stats<Void>> lanes : queues.values()) forEachLeaf(lanes, consumer);
+    }
+
+    private static void forEachLeaf(Map<String, Stats<Void>> lanes, Consumer<Stats<?>> consumer) {
+        if (lanes != null) for (Stats<Void> stats : lanes.values()) if (stats != null) consumer.accept(stats);
     }
 
     private static Participant participant(Match match, String puuid) {
-        for (Participant participant : match.participants)
-            if (participant != null && puuid.equals(participant.puuid)) return participant;
+        for (Participant participant : match.participants) if (participant != null && puuid.equals(participant.puuid)) return participant;
         return null;
     }
 
@@ -186,8 +213,7 @@ public class ProfileStatistics {
         int result = 0;
         for (Participant participant : match.participants) {
             if (participant == null) continue;
-            boolean selected = sameArenaTeam
-                ? participant.subTeam == player.subTeam
+            boolean selected = sameArenaTeam ? participant.subTeam == player.subTeam
                 : enemyTeam ? participant.team != player.team : participant.team == player.team;
             if (selected) result += kills(participant.kda);
         }
@@ -195,9 +221,7 @@ public class ProfileStatistics {
     }
 
     public static boolean matchesFilter(Match match, String puuid, Filter filter) {
-        if (match == null || puuid == null || puuid.isBlank()) return false;
-        Participant player = participant(match, puuid);
-        return matchesFilter(match, player, filter);
+        return match != null && puuid != null && !puuid.isBlank() && matchesFilter(match, participant(match, puuid), filter);
     }
 
     public static boolean matchesFilter(Match match, Participant player, Filter filter) {
@@ -211,20 +235,14 @@ public class ProfileStatistics {
         if (!matchesRank(match.rank, filter)) return false;
         if (filter.opponent() != 0 && !hasOpponent(match, player, filter.opponent())) return false;
         if (filter.duo() != 0 && !hasDuo(match, player, filter.duo())) return false;
-        return inPeriod(match, filter);
+        return (filter.timeStart() == 0 || match.timeStart >= filter.timeStart())
+            && (filter.timeEnd() == 0 || match.timeEnd <= filter.timeEnd());
     }
 
     private static boolean matchesRank(TierType rank, Filter filter) {
         if (filter.rank() == null) return true;
-        if (rank == null) return false;
-        return filter.rankBehavior() == Filter.RankBehavior.EXACT
-            ? rank == filter.rank()
-            : rank.ordinal() <= filter.rank().ordinal();
-    }
-
-    private static boolean inPeriod(Match match, Filter filter) {
-        return (filter.timeStart() == 0 || match.timeStart >= filter.timeStart())
-            && (filter.timeEnd() == 0 || match.timeEnd <= filter.timeEnd());
+        return rank != null && (filter.rankBehavior() == Filter.RankBehavior.EXACT
+            ? rank == filter.rank() : rank.ordinal() <= filter.rank().ordinal());
     }
 
     private static boolean matchesPatch(String patch, String filterPatch) {

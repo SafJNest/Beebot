@@ -27,6 +27,7 @@ import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecordParser;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
@@ -123,13 +124,33 @@ public class MongoDBTest {
 
     @Test
     public void embeddedRankAndMasteryDoNotPersistMariaDbIds() {
-        Document rank = MongoDB.toDocument(new Rank(null, null, 0, 0, 0));
+        Document rank = MongoDB.toDocument(new Rank(null, 0, 0, 0));
         Document mastery = MongoDB.toDocument(new Mastery(157, 30, 250000));
 
         assertFalse(rank.containsKey("id"));
         assertFalse(rank.containsKey("legacyRankId"));
         assertFalse(mastery.containsKey("id"));
         assertFalse(mastery.containsKey("legacyMasteryId"));
+    }
+
+    @Test
+    public void summonerRanksSerializeAsCanonicalQueueObjectAndReadLegacyArrays() {
+        Summoner source = Summoner.hydrated("puuid-ranks", "Name#TAG", LeagueShard.EUW1, 1, 1,
+            null, false, Map.of(
+                GameQueueType.RANKED_SOLO_5X5, new Rank(TierDivisionType.MASTER_I, 500, 10, 5),
+                GameQueueType.RANKED_FLEX_SR, new Rank(TierDivisionType.DIAMOND_I, 50, 8, 4)
+            ), List.of());
+
+        Document document = MongoDB.toDocument(source);
+        Document ranks = document.get("ranks", Document.class);
+        assertEquals(TierDivisionType.MASTER_I.name(), ranks.get("RANKED_SOLO_5X5", Document.class).getString("rank"));
+        assertFalse(ranks.get("RANKED_SOLO_5X5", Document.class).containsKey("queue"));
+        assertEquals(TierDivisionType.DIAMOND_I.name(), ranks.get("RANKED_FLEX_SR", Document.class).getString("rank"));
+
+        Document legacy = new Document("_id", "puuid-legacy").append("region", LeagueShard.EUW1.name())
+            .append("ranks", List.of(new Document("queue", "RANKED_SOLO_5X5").append("rank", "MASTER_I").append("lp", 500)));
+        Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(legacy), Summoner.class);
+        assertEquals(TierDivisionType.MASTER_I, decoded.ranks().get(GameQueueType.RANKED_SOLO_5X5).tier());
     }
 
     @Test

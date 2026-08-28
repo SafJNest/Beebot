@@ -76,15 +76,18 @@ presente, definisce il periodo e prevale su `patch`; se mancano entrambi,
 `minGames` ha default 5 e filtra solo le righe matchup della response; non
 partecipa a `Filter.toSummonerKey()`.
 
-La response viene costruita da `ProfileMatchups`: una riga per ogni champion
-giocato, le cui statistiche generiche usano `Stats`, e una lista di matchup
-per champion avversario. I matchup contano soltanto l'avversario sulla stessa
-lane. Quando il role filter è omesso, le partite dello stesso champion in
-ruoli diversi vengono aggregate nella stessa riga.
+`ProfileMatchups` ha un contratto separato da `ProfileStatistics`: salva solo
+le foglie `champions.<championId>.<CanonicalQueue>.<position>`. Ogni foglia
+contiene gli accumulatori base e `matchups.<opponentChampionId>` per gli
+avversari incontrati nella stessa posizione. Non salva aggregate per champion,
+queue o lane, né `reference`, `winrate`, `kda` o `avg*`; questi valori vengono
+calcolati dal consumer. `UNKNOWN` conserva le partite senza posizione valida e
+le queue Riot vengono canonicalizzate all'ingestion.
 
-`ProfileStatistics.matchups` resta l'aggregato storico globale usato dal
-profilo e da Discord; non è la sorgente della relazione champion giocato →
-matchup. Il nuovo aggregato ha un proprio read-through Redis/Mongo:
+`ProfileMatchups` è l'unica sorgente persistita dei matchup. Un consumer che
+serve una vista globale la ricostruisce sommando le foglie; `ProfileStatistics`
+non conserva `matchups` né `duoStats`. `ProfileMatchups` ha un proprio
+read-through Redis/Mongo:
 
 ```text
 Redis SUMMONER_MATCHUPS(PUUID, filterKey)
@@ -167,7 +170,7 @@ Il valore completo, non solo il periodo o la queue, deve essere usato per la let
 
 ## Documento Mongo
 
-La collection è `profile_statistics`. Il documento target è flat:
+La collection è `profile_statistics`. Il documento target è flat e conserva soltanto le foglie aggregabili:
 
 ```json
 {
@@ -179,54 +182,39 @@ La collection è `profile_statistics`. Il documento target è flat:
   "lastUpdate": 1710002200000,
   "oldestMatchAt": 1710000000000,
   "newestMatchAt": 1710002100000,
-  "total": {},
-  "queueStats": [],
-  "laneStats": [],
-  "championStats": [],
-  "matchups": {},
-  "duoStats": {},
+  "champions": {
+    "157": {
+      "RANKED_SOLO": {
+        "TOP": { "games": 42, "wins": 24, "championLevelTotal": 756 }
+      }
+    }
+  },
   "pings": {},
   "spellOne": {},
   "spellTwo": {}
 }
 ```
 
-Non deve esistere il campo root `statistics` per i nuovi documenti. `ProfileStatistics` contiene gli aggregati esplosi:
+Non deve esistere il campo root `statistics` per i nuovi documenti.
+`champions` è la sola source of truth delle statistiche principali, alla
+granularità `champion × CanonicalQueue × position`. Ogni game entra in una
+foglia; una posizione assente o non applicabile usa sempre `UNKNOWN`.
 
-- totale complessivo;
-- aggregati per queue, lane e champion;
-- matchup lane/champion;
-- duo/champion alleato;
-- pings;
-- summoner spell;
-- metriche di performance e timestamp di primo/ultimo match.
+Le queue Riot vengono normalizzate all'ingestion in `CanonicalQueue`
+(`RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA`, ecc.). Non
+vengono persistiti `total`, `queueStats`, `laneStats`, champion totals,
+`context`, `reference`, `winrate`, `kda` o campi `avg*`. Discord può ricreare
+queste viste in memoria, ma Mongo, Redis e HTTP espongono soltanto le foglie.
+`pings`, `spellOne` e `spellTwo` restano strutture dedicate perché non
+richiedono la stessa granularità. I matchup vivono soltanto in
+`profile_matchups`; non esistono aggregate matchup o duo nel documento
+principale.
 
-Ogni elemento di `championStats` mantiene le metriche aggregate del champion e
-può includere `context`, una lista di mappe queue/lane. Le queue usano i nomi
-canonici R4J; `TEAM_BUILDER_RANKED_SOLO` viene esposta come
-`RANKED_SOLO_5X5` nel contesto. Le queue senza lane usano una sola chiave
-`UNKNOWN`:
-
-```json
-"context": [
-  {
-    "RANKED_SOLO_5X5": {
-      "TOP": {},
-      "MID": {}
-    }
-  },
-  {
-    "CHERRY": {
-      "UNKNOWN": {}
-    }
-  }
-]
-```
-
-I valori sotto ogni lane hanno lo stesso set completo di metriche di `Stats`.
-`context` non viene serializzato su `total`, `queueStats` o `laneStats` quando
-è vuoto. I dati senza lane in una queue che normalmente supporta le lane non
-entrano nel contesto, ma continuano a contribuire agli aggregati generici.
+`championLevelTotal` è la somma dei soli `MatchParticipant.getChampionLevel()`.
+Un campo metrico assente significa raw storico non disponibile; `0` presente
+è un valore raccolto. Le medie sono del consumer. I campi Arena esistono solo
+nella foglia `ARENA → UNKNOWN`: `avgArenaPlacement` è
+`arenaPlacementSum / games` di quella foglia.
 
 `timeStart` e `timeEnd` nel payload descrivono l'intervallo/progresso dei dati aggregati. L'identità completa del filtro, inclusa la fine del periodo richiesto, è `filterKey`.
 
@@ -278,8 +266,8 @@ db.profile_statistics.updateOne(
       puuid: "<PUUID>",
       filterKey: "<CANONICAL_KEY>",
       timeStart: ..., timeEnd: ..., lastUpdate: ...,
-      total: ..., queueStats: ..., laneStats: ...,
-      championStats: ..., matchups: ..., duoStats: ..., pings: ...
+      champions: { <championId>: { <canonicalQueue>: { <position>: <Stats> } } },
+      pings: ..., spellOne: ..., spellTwo: ...
     },
     $setOnInsert: { _id: ObjectId() }
   },
@@ -354,7 +342,7 @@ Il job rank entries, avviato da `pushhighelo` o `getallrank`, salva ogni
 entries (sotto Master) condividono lo stesso job e non possono sovrapporsi;
 una richiesta concorrente aggiunge la fascia complementare alla stessa
 esecuzione. Per un summoner già persistito non esegue chiamate identity Riot e aggiorna
-atomically soltanto quell'elemento di `summoner.ranks[]`. Per un PUUID assente
+atomically soltanto il path `summoner.ranks.<QUEUE>`. Per un PUUID assente
 risolve prima Summoner e, se il Riot ID non è già disponibile, Account, poi
 persiste l'identità prima del rank. Il tracker avvia un worker per shard; il
 rate limiting outbound resta di proprietà di `R4JQueue` per shard.
@@ -458,8 +446,8 @@ PUUID ritrova le proiezioni del summoner senza un token letterale `puuid`.
 | overview summoner | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | dopo refresh statistiche o componenti summoner; non contiene `recentMatches` |
 | match raw | chiavi match esistenti | secondo `RedisKey` | `MatchService`/`Tracker` | secondo il flusso match |
 
-Un aggregato Mongo privo di `championStats[*].context` viene trattato come
-obsoleto e rigenerato da `DatabaseTracker`. I TTL delle chiavi Redis restano
+Un aggregato Mongo privo di `champions` viene trattato come obsoleto e
+rigenerato da `ComputeScheduler`. I TTL delle chiavi Redis restano
 definiti esclusivamente da `RedisKey`; la scadenza riduce la permanenza delle
 proiezioni, ma non sostituisce l’invalidazione esplicita dopo un refresh
 riuscito.
@@ -470,8 +458,8 @@ Non usare la cache della profile page come fonte di verità per le statistiche. 
 
 L'API continua a restituire i modelli canonici `SummonerView` e `SummonerOverview`. Nel JSON pubblico:
 
-- `overview.statistics` contiene l'aggregato filtrato;
-- `overview.statistics.championStats[*].context` distingue ogni champion per queue canonica e lane;
+- `overview.statistics` contiene le foglie filtrate in `champions`;
+- `overview.statistics.champions[championId][canonicalQueue][position]` distingue champion, queue e lane;
 - `overview.recentMatches` contiene la lista leggera separata;
 - `overview.statistics.lastUpdate` indica il completamento del calcolo;
 - `Match` completo resta riservato a dettagli e timeline.

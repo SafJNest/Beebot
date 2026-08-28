@@ -14,7 +14,7 @@
 - `RedisKey` owns all LoL Redis patterns and TTLs. Temporarily, `RedisClient` assigns a 60-second expiration to every newly written key, including locks, counters, lists and sets; remove this override before release to restore the declared policy.
 - R4J match payloads remain persistent until tracker consumption and successful Mongo persistence; transient processing failures leave the queue state retryable.
 - `LeagueDB` is reduced to SQL execution and migration reads.
-- Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`; `MongoDB` owns the declared create-only secondary-index registry.
+- Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`; secondary indexes are managed outside the runtime.
 - `QueryRecord` and `List<QueryRecord>` are the common flat/nested projection contract.
 
 The canonical profile-statistics flow is documented in [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md). It is the starting point for changes involving `Filter`, `ProfileStatistics`, `SummonerOverview`, `recentMatches` or `lastUpdate`.

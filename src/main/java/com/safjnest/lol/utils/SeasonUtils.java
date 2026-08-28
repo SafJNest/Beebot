@@ -17,7 +17,7 @@ public final class SeasonUtils {
 
     private SeasonUtils() {}
 
-    public record SeasonRange(int season, long start, long end) {}
+    public record SeasonRange(int season, int year, long start, long end) {}
 
     public static long[] getCurrentSplitRange() {
         JSONObject file = readFile();
@@ -58,9 +58,29 @@ public final class SeasonUtils {
                 end = Math.max(end, splitEnd);
                 current |= now >= splitStart && now <= splitEnd;
             }
-            if (current) return new SeasonRange(Integer.parseInt(season.get("season").toString()), start, end);
+            if (current) return seasonRange(season, start, end);
         }
         return null;
+    }
+
+    public static SeasonRange getSeasonRange(int year) {
+        for (SeasonRange season : getSeasonRanges()) if (season.year() == year) return season;
+        return null;
+    }
+
+    public static SeasonRange getSeasonRange(long time) {
+        if (time <= 0) return null;
+        for (SeasonRange season : getSeasonRanges()) if (time >= season.start() && time <= season.end()) return season;
+        return null;
+    }
+
+    public static List<SeasonRange> getSeasonRanges(long timeStart, long timeEnd) {
+        if (timeStart <= 0 || timeEnd < timeStart) return List.of();
+        List<SeasonRange> result = new ArrayList<>();
+        for (SeasonRange season : getSeasonRanges()) {
+            if (timeStart <= season.end() && timeEnd >= season.start()) result.add(season);
+        }
+        return result;
     }
 
     public static long[] getPreviousSplitRange() {
@@ -119,6 +139,31 @@ public final class SeasonUtils {
     }
 
     // ============================================================================
+
+    public static List<SeasonRange> getSeasonRanges() {
+        JSONObject file = readFile();
+        if (file == null) return List.of();
+        List<SeasonRange> result = new ArrayList<>();
+        for (Object value : (JSONArray) file.get("seasons")) {
+            JSONObject season = (JSONObject) value;
+            long start = Long.MAX_VALUE;
+            long end = Long.MIN_VALUE;
+            for (Object splitValue : (JSONArray) season.get("splits")) {
+                JSONObject split = (JSONObject) splitValue;
+                long splitStart = parseDate(split.get("start_date"));
+                long splitEnd = parseDate(split.get("end_date"));
+                start = Math.min(start, splitStart);
+                end = Math.max(end, splitEnd);
+            }
+            if (start <= end) result.add(seasonRange(season, start, end));
+        }
+        return result;
+    }
+
+    private static SeasonRange seasonRange(JSONObject season, long start, long end) {
+        int seasonNumber = Integer.parseInt(season.get("season").toString());
+        return new SeasonRange(seasonNumber, 2010 + seasonNumber, start, end);
+    }
 
     private static JSONObject readFile() {
         try (FileReader reader = new FileReader(SEASON_FILE)) {
