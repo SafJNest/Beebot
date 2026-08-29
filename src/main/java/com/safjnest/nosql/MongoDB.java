@@ -383,12 +383,6 @@ public final class MongoDB {
         return count;
     }
 
-    public static boolean hasMatchByGameId(String gameId) {
-        String id = gameId == null ? "" : gameId;
-        Document document = id.indexOf('_') > 0 ? matches().find(Filters.eq("_id", id)).first() : matches().find(Filters.regex("_id", Pattern.compile("^.*_" + Pattern.quote(id) + "$"))).first();
-        return document != null;
-    }
-
     public static long findLatestMatchTime(String patch, LeagueShard shard) {
         Bson filter = Filters.and(Filters.eq("patchMajor", patchMajor(patch)), Filters.eq("region", shard.name()));
         Document document = matches().find(filter).sort(Sorts.descending("timeStart")).first();
@@ -1975,14 +1969,15 @@ public final class MongoDB {
         return true;
     }
 
-    public static boolean createRawMatch(String fullGameId, Match match) {
-        if (fullGameId == null || fullGameId.isBlank() || match == null) return false;
+    public static boolean insertMatch(Match match) {
+        if (match == null || match.gameId == null || match.gameId.isBlank()) return false;
+        String fullGameId = match.gameId;
         Document document = write(match);
         document.put("_id", fullGameId);
         document.put("tracked", false);
         UpdateResult update = matches().updateOne(Filters.eq("_id", fullGameId),
                 new Document("$setOnInsert", document), new UpdateOptions().upsert(true));
-        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo raw match create was not acknowledged id=" + fullGameId);
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo match insert was not acknowledged id=" + fullGameId);
         if (update.getUpsertedId() == null) return false;
         upsertMatchEvents(fullGameId, match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap());
         return true;

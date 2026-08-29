@@ -16,6 +16,7 @@ public class ActivityFilter extends Filter {
         setRegion(null);
         setOpponent(0);
         setDuo(0);
+        setPeriod(Filter.canonical().period());
     }
 
     public int minGames() {

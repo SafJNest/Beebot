@@ -9,7 +9,7 @@
   -> LeagueMessage.build(OPGG)
   -> MatchService.getRecentIds / Riot API (via r4j match-list bridge)
   -> MatchService.get / Riot match API
-  -> Sync immediate raw match persistence
+  -> Sync immediate match insert
   -> Mongo match write
   -> Mongo summoner seed from each participant
   -> MatchService.getSummonerData / MongoDB.findSummonerData
@@ -55,8 +55,8 @@ Le transizioni sono calcolate esclusivamente da `rankProgress.previousRank` e
 `previousLp`: `+20 LP`, `0 LP`, `? LP`, placement, promozione e retrocessione
 non sono stringhe salvate. Il confronto queue include entrambe le
 rappresentazioni Solo/Duo (`TEAM_BUILDER_RANKED_SOLO` e `RANKED_SOLO_5X5`),
-mentre il tracking invalida la cache `SUMMONER_DATA` di ogni partecipante dopo
-la riscrittura Mongo.
+mentre il tracking invalida solo la cache detail del match dopo la riscrittura
+Mongo.
 
 Evidenza: [MongoDB.java](../../src/main/java/com/safjnest/nosql/MongoDB.java), [MatchService.java](../../src/main/java/com/safjnest/lol/service/MatchService.java) e [LeagueMessage.java](../../src/main/java/com/safjnest/lol/message/LeagueMessage.java).
 
@@ -73,7 +73,7 @@ Questa fase non esegue chiamate Account API o Summoner API per i participant.
 L’Account API può ancora servire alla risoluzione iniziale di un Riot ID che non
 è noto localmente.
 
-Il match e il seed summoner sono disponibili senza enrichment aggiuntivo. Finché non avviene il tracking, il renderer non usa i valori LP default del raw match: per una partita ranked mostra `? LP`.
+Il match e il seed summoner sono disponibili senza enrichment aggiuntivo. Finché non avviene il tracking, il renderer non usa i valori LP default del match non tracciato: per una partita ranked mostra `? LP`.
 
 ## Refresh matchlist OP.GG
 

@@ -104,13 +104,13 @@ public record ProfileMatchups(
         public void accept(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
             if (match == null || player == null) return;
             ProfileMatchupLeaf leaf = leaf(player.champion, CanonicalQueue.from(match.queue), player.lane);
-            leaf.addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+            leaf.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
             if (player.lane != null && player.lane != LaneType.NONE && match.participants != null)
                 for (Participant opponent : match.participants)
                     if (opponent != null && opponent != player && opponent.champion != 0
                         && opponent.team != player.team && opponent.lane == player.lane)
                         leaf.matchups.computeIfAbsent(opponent.champion, ignored -> new Stats<>())
-                            .addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                            .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
             oldestMatchAt = oldestMatchAt == 0 ? match.timeStart : Math.min(oldestMatchAt, match.timeStart);
             newestMatchAt = Math.max(newestMatchAt, match.timeEnd);
         }

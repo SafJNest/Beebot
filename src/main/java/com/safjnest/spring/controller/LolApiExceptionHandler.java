@@ -8,6 +8,7 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -66,6 +67,10 @@ public class LolApiExceptionHandler {
     @ExceptionHandler({ NoHandlerFoundException.class, NoResourceFoundException.class })
     public ResponseEntity<LolApiError> handleNotFound(Exception exception) {
         return error(HttpStatus.NOT_FOUND, "not_found", "Endpoint not found");
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleAsyncRequestNotUsable(AsyncRequestNotUsableException exception) {
     }
 
     @ExceptionHandler(Exception.class)

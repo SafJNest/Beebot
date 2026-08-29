@@ -9,6 +9,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
+import com.safjnest.lol.utils.SeasonUtils;
+
 public class FilterTest {
 
     @Test
@@ -29,5 +31,17 @@ public class FilterTest {
 
         assertEquals(source.toSummonerKey(), restored.toSummonerKey());
         assertEquals(Filter.RankBehavior.EXACT, restored.rankBehavior());
+    }
+
+    @Test
+    public void canonicalFilterUsesTheCurrentSeason() {
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        Filter filter = Filter.canonical();
+
+        assertEquals(season == null ? 0 : season.start(), filter.timeStart());
+        assertEquals(season == null ? 0 : season.end(), filter.timeEnd());
+        assertEquals(0, filter.champion());
+        assertEquals(null, filter.queue());
+        assertEquals(null, filter.patch());
     }
 }

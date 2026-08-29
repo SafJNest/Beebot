@@ -90,7 +90,7 @@ public class Stats<T> {
         add(participant, timeStart, timeEnd, teamKills, enemyTeamKills, arena, true);
     }
 
-    void addRaw(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
+    void accumulate(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
         add(participant, timeStart, timeEnd, teamKills, enemyTeamKills, arena, false);
     }
 

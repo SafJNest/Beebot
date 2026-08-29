@@ -32,8 +32,8 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionService;
-import com.safjnest.lol.service.MatchDiscoveryService;
 import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
@@ -864,7 +864,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGames = () -> {
                         System.out.println(args[1]);
                         try {
-                            MatchDiscoveryService.importHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), null);
+                            MatchService.importHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), null);
                         } catch (Exception eee) { eee.printStackTrace(); }
                     };
                     retrieveAllGames.queue();
@@ -873,7 +873,7 @@ public class Test extends Command{
                     ChronoTask retrieveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            MatchDiscoveryService.importHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
+                            MatchService.importHistory(SummonerService.getRiotSummoner(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
                         }
                     };
                     retrieveAllGamesFast.queue();

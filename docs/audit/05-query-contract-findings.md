@@ -54,7 +54,7 @@ restare bloccante e gli indici multikey non garantiscono un sort covered.
 
 ### P1 — rendere affidabili gli aggiornamenti Mongo
 
-1. verificare con il runtime il writer effettivo di `ProfileService.refreshStatistics`;
+1. verificare con il runtime il writer effettivo di `ProfileService.generateStatistics`;
 2. correggere `Tracker` su queue, participant Riot null e queue Redis incoerente;
 3. distinguere conversione bans/eventi fallita da payload vuoto.
 

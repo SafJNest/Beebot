@@ -128,7 +128,7 @@ public final class MongoMigration {
                 for (Map.Entry<String, Match> entry : matchesByIdentity.entrySet()) {
                     String identity = entry.getKey();
                     Match match = entry.getValue();
-                    if (!existingMatches.contains(identity) && MongoDB.createRawMatch(identity, match)) {
+                    if (!existingMatches.contains(identity) && MongoDB.insertMatch(match)) {
                         report.accept("tracked-matches", identity);
                     }
                     if (!existingEvents.contains(identity)) {

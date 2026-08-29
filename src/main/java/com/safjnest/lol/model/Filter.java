@@ -30,10 +30,6 @@ public class Filter {
     }
 
     public static Filter summoner(long timeStart, long timeEnd) {
-        return summoner().setPeriod(timeStart, timeEnd);
-    }
-
-    public static Filter summoner() {
         return new Filter()
             .setChampion(0)
             .setLane(null)
@@ -42,7 +38,22 @@ public class Filter {
             .setPatch(null)
             .setRegion(null)
             .setOpponent(0)
-            .setDuo(0);
+            .setDuo(0)
+            .setPeriod(timeStart, timeEnd);
+    }
+
+    public static Filter canonical() {
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        return new Filter()
+            .setChampion(0)
+            .setLane(null)
+            .setQueue(null)
+            .setRank(null)
+            .setPatch(null)
+            .setRegion(null)
+            .setOpponent(0)
+            .setDuo(0)
+            .setPeriod(season == null ? 0 : season.start(), season == null ? 0 : season.end());
     }
 
     public static Filter fromGenericKey(String key) {

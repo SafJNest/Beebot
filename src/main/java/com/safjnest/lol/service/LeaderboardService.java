@@ -21,7 +21,6 @@ import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -69,7 +68,7 @@ public class LeaderboardService {
         long total = findLeaderboardCount(version, rank, selectedQueue, selectedRegion);
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
-        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        Filter filter = Filter.canonical();
         Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
         Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
         for (Summoner summoner : summoners) {
@@ -77,10 +76,10 @@ public class LeaderboardService {
             puuidsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(summoner.puuid());
         }
         for (Map.Entry<LeagueShard, List<String>> entry : puuidsByShard.entrySet())
-            statisticsBySummoner.putAll(profileService.getStatistics(entry.getValue(), entry.getKey(), season));
+            statisticsBySummoner.putAll(profileService.getStatistics(entry.getValue(), entry.getKey(), filter));
         for (Summoner summoner : summoners) {
             if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
-            ComputeScheduler.startProfileStatistics(summoner, season);
+            ComputeScheduler.startProfileStatistics(summoner, filter);
         }
 
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
@@ -128,10 +127,7 @@ public class LeaderboardService {
     }
 
     public void rebuildHighEloAndTrackedProfileStatistics() {
-        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        Filter filter = season == null
-            ? Filter.summoner()
-            : Filter.summoner(season.start(), season.end());
+        Filter filter = Filter.canonical();
         Set<String> processedPuuids = new HashSet<>();
 
         for (LeagueShard shard : LeagueShardUtils.getActives()) {

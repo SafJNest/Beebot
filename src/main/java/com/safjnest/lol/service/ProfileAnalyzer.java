@@ -14,18 +14,6 @@ public final class ProfileAnalyzer {
 
     private ProfileAnalyzer() {}
 
-    public static ProfileStatistics updateStatistics(
-        ProfileStatistics statistics,
-        List<Match> matches,
-        String puuid,
-        Filter filter
-    ) {
-        if (statistics == null) statistics = new ProfileStatistics(filter.timeStart());
-        if (matches == null) return statistics;
-        for (Match match : matches) statistics.add(match, puuid, filter);
-        return statistics;
-    }
-
     public static ProfileActivity activity(List<Match> matches, String puuid, Filter filter) {
         return ProfileActivity.from(matches == null ? List.of() : matches, puuid, filter);
     }
@@ -61,7 +49,7 @@ public final class ProfileAnalyzer {
 
         public void accept(Match match) {
             ProfileMatchContext context = ProfileMatchContext.from(match, puuid, filter);
-            if (!context.inCurrentSplit()) return;
+            if (!context.isCanonical()) return;
             matchups.accept(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
         }
 
@@ -93,8 +81,8 @@ public final class ProfileAnalyzer {
         public void accept(Match match) {
             ProfileMatchContext context = ProfileMatchContext.from(match, puuid, statisticsFilter);
             activity.accept(match, context.player());
-            if (!context.inCurrentSplit()) return;
-            statistics.addRaw(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
+            if (!context.isCanonical()) return;
+            statistics.accumulate(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
             matchups.accept(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
         }
 
@@ -117,7 +105,7 @@ public final class ProfileAnalyzer {
     private record ProfileMatchContext(
         Match match,
         Participant player,
-        boolean inCurrentSplit,
+        boolean isCanonical,
         boolean arena,
         int teamKills,
         int enemyTeamKills

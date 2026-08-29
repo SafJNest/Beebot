@@ -146,7 +146,8 @@ public final class LolApiParameters {
         if (end < 0) throw invalid("end", "must be greater than or equal to 0");
         if (start != 0 && end != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
         if (champion < 0) throw invalid("champion", "must be greater than or equal to 0");
-        return Filter.summoner(start, end).setQueue(queue).setChampion(champion);
+        Filter filter = start == 0 && end == 0 ? Filter.canonical() : Filter.summoner(start, end);
+        return filter.setQueue(queue).setChampion(champion);
     }
 
     public static LeagueShard region(String value) {

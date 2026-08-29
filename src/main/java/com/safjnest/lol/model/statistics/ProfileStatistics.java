@@ -64,11 +64,11 @@ public class ProfileStatistics {
         add(match, puuid, filter, true);
     }
 
-    public void addRaw(Match match, String puuid, Filter filter) {
+    public void accumulate(Match match, String puuid, Filter filter) {
         add(match, puuid, filter, false);
     }
 
-    public void addRaw(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
+    public void accumulate(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
         if (match != null && player != null) add(match, player, teamKills, enemyTeamKills, arena, false);
     }
 
@@ -150,7 +150,7 @@ public class ProfileStatistics {
     private void add(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena, boolean calculate) {
         Stats<Void> leaf = leaf(player.champion, CanonicalQueue.from(match.queue), player.lane);
         if (calculate) leaf.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
-        else leaf.addRaw(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+        else leaf.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
         if (player.pings != null) for (Map.Entry<String, Integer> entry : player.pings.entrySet())
             if (entry.getKey() != null && entry.getValue() != null) pings.merge(entry.getKey(), entry.getValue().longValue(), Long::sum);
         if (player.summonerSpell1 != 0) spellOne.merge(player.summonerSpell1, 1L, Long::sum);

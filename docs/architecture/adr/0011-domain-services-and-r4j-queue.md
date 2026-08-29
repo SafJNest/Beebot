@@ -20,8 +20,8 @@ or concurrent Riot requests for the same shard.
   state and summoner cache invalidation;
 - `RankService` owns rank and raw league-entry reads and persistence;
 - `MasteryService` owns mastery reads and persistence;
-- `MatchService` owns match, raw Riot match, match-list and match-derived
-  Mongo reads;
+- `MatchService` owns match, R4J match, match-list, background match fetch and
+  match-derived Mongo reads;
 - `ProfileService` owns profile-page composition and its `SUMMONER_OVERVIEW` cache.
 
 `R4JQueue`, under `com.safjnest.lol.queue`, owns outbound Riot scheduling. It

@@ -98,7 +98,7 @@ resta stabile durante la giornata.
 Se viene passato solo `end`, non viene applicato un limite inferiore. Quando
 almeno uno tra `start` e `end` è presente, il periodo prevale e `patch` non
 viene applicata; se mancano entrambi, `patch` filtra la patch mantenendo il
-periodo dello split corrente.
+periodo della season canonical.
 
 ## Stati ed errori
 

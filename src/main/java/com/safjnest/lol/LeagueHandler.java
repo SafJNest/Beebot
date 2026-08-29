@@ -755,7 +755,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static boolean isMatchDBCached(String gameId) {
-        return MongoDB.hasMatchByGameId(gameId);
+        return MongoDB.hasMatch(gameId);
     }
 
     public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {

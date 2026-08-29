@@ -12,7 +12,7 @@
 - MariaDB is retained only as the migration source through `MongoMigration`.
 - Redis owns cache and temporary asynchronous state.
 - `RedisKey` owns all LoL Redis patterns and TTLs. Temporarily, `RedisClient` assigns a 60-second expiration to every newly written key, including locks, counters, lists and sets; remove this override before release to restore the declared policy.
-- R4J match payloads remain persistent until tracker consumption and successful Mongo persistence; transient processing failures leave the queue state retryable.
+- R4J match payloads remain persistent until MatchService completes the insert or discards the source. Each queued match does one fetch/insert attempt; no Redis retry or negative-cache state exists.
 - `LeagueDB` is reduced to SQL execution and migration reads.
 - Mongo runtime is concentrated in `MongoDB`, `QueryRecordParser` and `MongoMigration`; secondary indexes are managed outside the runtime.
 - `QueryRecord` and `List<QueryRecord>` are the common flat/nested projection contract.

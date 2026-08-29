@@ -375,7 +375,7 @@ public final class SummonerService {
         return RankService.refreshAsync(source.getPUUID(), sourceShard)
             .thenCompose(ignored -> MasteryService.refreshAsync(source.getPUUID(), sourceShard))
             .thenApply(ignored -> {
-                ProfileService.startRefresh(profile, sourceShard);
+                ProfileService.refreshProfile(profile, sourceShard);
                 return new RefreshResult(source, true);
             });
     }
@@ -416,7 +416,8 @@ public final class SummonerService {
 
             Map<GameQueueType, com.safjnest.lol.model.summoner.Rank> ranks = RankService.find(puuid, shard);
             List<Mastery> masteries = MasteryService.find(puuid, shard);
-            Map<Integer, Stats<Void>> championStats = championStats(profileService.getStatistics(summoner, shard), entry.getValue());
+            Map<Integer, Stats<Void>> championStats = championStats(
+                profileService.getStatistics(summoner, shard, Filter.canonical()), entry.getValue());
             result.put(puuid, new LiveGame.ProfileOverview(summoner, ranks, masteries, championStats));
         }
         return result;

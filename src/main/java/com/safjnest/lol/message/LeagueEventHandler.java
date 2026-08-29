@@ -176,7 +176,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "refresh" -> {
                 LeagueShard shard = LeagueShard.valueOf(region);
                 if (parameter.getMessageType() == LeagueMessageType.OPGG) {
-                    MatchService.refreshRecentIds(
+                    MatchService.invalidateMatchlist(
                         SummonerService.getRiotSummoner(puuid, shard),
                         parameter.getQueueType(),
                         parameter.getOffset()

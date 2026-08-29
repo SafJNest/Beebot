@@ -110,7 +110,7 @@ public class Tracker {
                 try { Thread.sleep(350); }
                 catch (InterruptedException exception) { Thread.currentThread().interrupt(); }
 
-                List<String> matchIds = MatchService.getIds(
+                List<String> matchIds = MatchService.getMatchlist(
                     summoner, GameQueueType.TEAM_BUILDER_RANKED_SOLO, 0, 2, 0, null);
                 if (matchIds == null || matchIds.isEmpty()) {
                     task.done(account.puuid());
@@ -126,7 +126,7 @@ public class Tracker {
                 }
                 if (shard != summoner.getPlatform()) summoner = SummonerService.getRiotSummoner(summoner.getPUUID(), shard);
 
-                LOLMatch match = MatchService.getRiotMatch(currentMatchId, shard);
+                LOLMatch match = MatchService.fetch(currentMatchId, shard);
                 if (match == null || !GameQueueTypeUtils.isRankedSolo(match.getQueue())) {
                     task.missing(account.puuid());
                     return;
@@ -170,8 +170,8 @@ public class Tracker {
         LeagueShard shard = MatchUtils.matchShard(matchId, fallbackShard);
         if (matchId == null || matchId.isBlank() || shard == null || MongoDB.hasMatch(matchId)) return;
 
-        LOLMatch match = MatchService.getRiotMatch(matchId, shard);
-        if (match != null) MatchService.persistRaw(match);
+        LOLMatch match = MatchService.fetch(matchId, shard);
+        if (match != null) MatchService.insert(match);
     }
 
     private static Match trackMatch(LOLMatch source, String referencePuuid, String trackedSummoner, JobPriority priority) {
@@ -180,7 +180,7 @@ public class Tracker {
 
         String currentFullGameId = MatchUtils.fullGameId(source);
         if (MongoDB.isMatchTracked(currentFullGameId)) return MongoDB.findMatch(currentFullGameId);
-        if (MatchService.persistRaw(source) == null) return null;
+        if (MatchService.insert(source) == null) return null;
 
         Match match = loadMatch(source);
         if (match == null || match.participants == null) return null;
@@ -206,7 +206,7 @@ public class Tracker {
 
         match.rank = TierDivisionUtils.getAverageRank(ranks);
         if (!MongoDB.upsertMatch(currentFullGameId, match, true)) return null;
-        MatchService.invalidate(match);
+        MatchService.invalidate(match.gameId, match.leagueShard);
         if (trackedSummoner != null && !trackedSummoner.isBlank())
             BotLogger.info("[LPTracker] Pushed match data for " + trackedSummoner + " (" + referencePuuid + ")");
         return match;
@@ -867,7 +867,7 @@ public class Tracker {
                             Summoner summoner = SummonerService.getRiotSummoner(entry.getPuuid(), shard);
                             List<String> matchIds = new ArrayList<>();
                             for (int start = 0; matchIds.size() == start; start += 100) {
-                                matchIds.addAll(MatchService.getIds(
+                                matchIds.addAll(MatchService.getMatchlist(
                                     summoner,
                                     queue,
                                     start,
@@ -892,7 +892,7 @@ public class Tracker {
                     int i = 0;
                     for (MatchEntry me : allMatches) {
                         try {
-                            LOLMatch match = MatchService.getRiotMatch(me.matchId(), me.summoner().getPlatform());
+                            LOLMatch match = MatchService.fetch(me.matchId(), me.summoner().getPlatform());
                             if (match == null) {
                                 task.missing(me.matchId());
                                 continue;
@@ -903,7 +903,7 @@ public class Tracker {
                             }
                             i++;
                             BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
-                            Match persisted = MatchService.persistRaw(match);
+                            Match persisted = MatchService.insert(match);
                             if (persisted == null) task.failed(me.matchId());
                             else task.done(me.matchId());
                             Thread.sleep(350);

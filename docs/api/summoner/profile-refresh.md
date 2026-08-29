@@ -32,8 +32,8 @@ Dopo la verifica del profilo, la POST aggiorna internamente
 `summoner.lastSeenAt`. `DatabaseTracker` riceve un unico job manuale ad alta
 priorità, deduplicato `profile-refresh:<puuid>`, che rigenera da zero
 statistics, activity, matchups e contesto champion del profilo canonico. I filtri canonici sono:
-overview/matchups sullo split corrente senza patch, queue o lane; activity
-senza intervallo, queue o champion. Il job legge i match una volta tramite
+overview, matchups e activity sulla season canonical senza patch, queue, lane
+o champion. Il job legge i match una volta tramite
 cursor Mongo e salva i tre documenti solo dopo il completamento dei tre
 accumulatori.
 

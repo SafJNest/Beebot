@@ -26,6 +26,7 @@ import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
@@ -39,6 +40,7 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.JsonCodec;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -84,9 +86,9 @@ public final class MatchService {
             : QueueHandler.immediate(
                 SyncScheduler.class,
                 shard,
-                "match:" + shard.name() + ":" + gameId,
+                "match:" + gameId,
                 "match analysis id=" + gameId,
-                ignored -> persistRaw(getRiotMatch(gameId, shard))
+                ignored -> insert(fetch(gameId, shard))
             );
     }
 
@@ -98,46 +100,42 @@ public final class MatchService {
         }
     }
 
-    public static Match persistRaw(LOLMatch source) {
+    public static Match insert(LOLMatch source) {
         if (source == null || source.getPlatform() == null) return null;
         String fullGameId = MatchUtils.fullGameId(source);
-        cacheRiotMatch(source);
+        cacheR4JMatch(source);
         if ((!SeasonUtils.isCurrentSplit(source.getGameStartTimestamp())
                 && GameQueueTypeUtils.isRankedSolo(source.getQueue())) || MatchUtils.isRemake(source)) {
-            deleteRiotMatch(fullGameId, source.getPlatform());
+            invalidateR4JMatch(fullGameId, source.getPlatform());
             return null;
         }
 
-        Match match = MongoDB.findMatch(fullGameId);
-        boolean created = match == null;
-        if (created) {
-            match = Match.fromR4J(source);
-            if (match == null) return null;
-            MongoDB.createRawMatch(fullGameId, match);
-        }
+        Match match = Match.fromR4J(source);
+        if (match == null) return null;
+        boolean inserted = MongoDB.insertMatch(match);
         if (source.getParticipants() == null) return null;
         for (var participant : source.getParticipants()) {
             if (!MongoDB.upsertSummoner(participant, source.getPlatform())) return null;
         }
-        if (created) invalidate(match);
-        deleteRiotMatch(fullGameId, source.getPlatform());
-        return match;
+        if (inserted) invalidate(match.gameId, match.leagueShard);
+        invalidateR4JMatch(fullGameId, source.getPlatform());
+        return inserted ? match : find(fullGameId, source.getPlatform());
     }
 
-    public static CompletableFuture<Match> persistRawAsync(LOLMatch source, JobPriority priority) {
+    public static CompletableFuture<Match> insertAsync(LOLMatch source, JobPriority priority) {
         if (source == null || source.getPlatform() == null) return CompletableFuture.completedFuture(null);
         String gameId = MatchUtils.fullGameId(source);
         return switch (priority == null ? JobPriority.NORMAL : priority) {
             case IMMEDIATE -> QueueHandler.immediate(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match persistence id=" + gameId, ignored -> persistRaw(source));
+                "match insert id=" + gameId, ignored -> insert(source));
             case NORMAL -> QueueHandler.normal(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match persistence id=" + gameId, ignored -> persistRaw(source));
+                "match insert id=" + gameId, ignored -> insert(source));
             case BACKGROUND -> QueueHandler.background(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match persistence id=" + gameId, ignored -> persistRaw(source));
+                "match insert id=" + gameId, ignored -> insert(source));
         };
     }
 
-    public static void enrichOpggMatches(List<Match> matches, LeagueShard shard) {
+    public static void upsertRankProgress(List<Match> matches, LeagueShard shard) {
         if (matches == null || matches.isEmpty() || shard == null) return;
         Map<String, List<String>> gameIdsByPuuid = new java.util.LinkedHashMap<>();
         for (Match match : matches) {
@@ -154,28 +152,28 @@ public final class MatchService {
             String puuid = entry.getKey();
             Rank rank = ranks.get(puuid);
             if (rank != null) {
-                persistOpggSnapshot(entry.getValue(), puuid, RankProgressUtils.snapshot(rank), shard);
+                upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(rank), shard);
                 continue;
             }
             RankService.refreshBackgroundAsync(puuid, shard).whenComplete((refreshed, failure) -> {
                 if (failure != null) return;
-                persistOpggSnapshot(entry.getValue(), puuid, RankProgressUtils.snapshot(soloRank(refreshed)), shard);
+                upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(soloRank(refreshed)), shard);
             });
         }
     }
 
-    public static LOLMatch getRiotMatch(String gameId, LeagueShard shard) {
+    public static LOLMatch fetch(String gameId, LeagueShard shard) {
         try {
-            return getRiotMatchAsync(gameId, shard).join();
+            return fetchAsync(gameId, shard).join();
         } catch (CompletionException exception) {
             return null;
         }
     }
 
-    public static CompletableFuture<LOLMatch> getRiotMatchAsync(String gameId, LeagueShard shard) {
+    public static CompletableFuture<LOLMatch> fetchAsync(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
 
-        LOLMatch cached = cacheRiotMatch(gameId, shard);
+        LOLMatch cached = getCachedR4JMatch(gameId, shard);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         RegionShard region = shard.toRegionShard();
@@ -187,31 +185,60 @@ public final class MatchService {
         });
     }
 
-    public static void cacheRiotMatch(LOLMatch match) {
+    public static void cacheR4JMatch(LOLMatch match) {
         if (match == null || match.getPlatform() == null) return;
 
         String gameId = match.getPlatform().name() + "_" + match.getGameId();
         RedisClient.set(RedisKey.R4J_MATCH, match, match.getPlatform().toRegionShard().name(), gameId);
-        RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(match.getPlatform().name(), gameId));
     }
 
-    public static void deleteRiotMatch(String gameId, LeagueShard shard) {
+    public static void invalidateR4JMatch(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
         RedisClient.delete(RedisKey.R4J_MATCH.of(shard.toRegionShard().name(), gameId));
     }
 
     public static ApiResult<Match> getDetail(String gameId, LeagueShard shard) {
         Match match = find(gameId, shard);
-        if (match != null) {
-            RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
-            return ApiResult.ready(match);
-        }
-
-        String notFound = RedisClient.get(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
-        if ("1".equals(notFound)) return ApiResult.notFound();
-
-        MatchDiscoveryService.enqueueLookup(shard, gameId);
+        if (match != null) return ApiResult.ready(match);
+        queue(shard, gameId);
         return ApiResult.pending();
+    }
+
+    public static void queue(LeagueShard shard, String gameId) {
+        if (!valid(gameId, shard)) return;
+        QueueHandler.background(SyncScheduler.class, shard, "match:" + gameId,
+            "match fetch id=" + gameId, task -> fetchAndInsert(task, shard, gameId));
+    }
+
+    public static void queueRecentMatches(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, int limit) {
+        if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null || limit < 1) return;
+        String key = "recent-matches:" + summoner.getPlatform().name() + ':' + summoner.getPUUID();
+        QueueHandler.background(SyncScheduler.class, summoner.getPlatform(), key,
+            "recent matches puuid=" + summoner.getPUUID(), task -> {
+                QueueHandler.retain(task);
+                getMatchlistAsync(summoner, null, 0, limit, 0, null).whenComplete((matchIds, failure) ->
+                    QueueHandler.resume(task, () -> queueMissingMatches(summoner.getPlatform(), matchIds, failure)));
+                return null;
+            });
+    }
+
+    public static void importHistory(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, GameQueueType queue) {
+        if (summoner == null || summoner.getPlatform() == null) return;
+        try {
+            List<String> matchIds = new ArrayList<>();
+            List<String> page = getMatchlist(summoner, queue, 0, MATCH_LIST_BATCH_SIZE, 0, null);
+            while (page != null && !page.isEmpty()) {
+                matchIds.addAll(page);
+                for (String matchId : page) {
+                    if (LeagueHandler.isMatchDBCached(matchId)) continue;
+                    LOLMatch match = fetch(matchId, summoner.getPlatform());
+                    if (match != null) insertAsync(match, JobPriority.BACKGROUND);
+                }
+                page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null);
+            }
+        } catch (Exception exception) {
+            BotLogger.error("Match history import failed for puuid=" + summoner.getPUUID() + " message=" + exception.getMessage());
+        }
     }
 
     public static MatchPage getPage(
@@ -271,37 +298,6 @@ public final class MatchService {
     public static void invalidate(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
         RedisClient.delete(RedisKey.MATCH_DETAIL.of(LeagueShardUtils.cacheRegion(shard), shard.name(), gameId));
-        RedisClient.delete(RedisKey.R4J_MATCH_NOT_FOUND.of(shard.name(), gameId));
-    }
-
-    // ============================================================================
-
-    private static Rank soloRank(Map<GameQueueType, Rank> ranks) {
-        return ranks == null ? null : ranks.get(GameQueueType.RANKED_SOLO_5X5);
-    }
-
-    private static void persistOpggSnapshot(List<String> gameIds, String puuid, RankProgress progress, LeagueShard shard) {
-        if (!RankProgressUtils.hasCurrentSnapshot(progress) || gameIds == null) return;
-        for (String gameId : gameIds) {
-            if (MongoDB.updateUntrackedParticipantRankProgress(gameId, puuid, progress)) {
-                Match match = MongoDB.findMatch(gameId);
-                invalidate(gameId, shard);
-                RedisClient.delete(RedisKey.SUMMONER_DATA.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
-                invalidateRankHistory(puuid, shard, match == null ? 0 : match.timeStart);
-            }
-        }
-    }
-
-    public static void invalidate(Match match) {
-        if (match == null || !valid(match.gameId, match.leagueShard)) return;
-        invalidate(match.gameId, match.leagueShard);
-        if (match.participants == null) return;
-        for (com.safjnest.lol.model.match.Participant participant : match.participants) {
-            if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
-            RedisClient.delete(RedisKey.SUMMONER_DATA.of(
-                LeagueShardUtils.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid));
-            invalidateRankHistory(participant.puuid, match.leagueShard, match.timeStart);
-        }
     }
 
     public static List<String> getRecentIds(
@@ -311,12 +307,12 @@ public final class MatchService {
         if (summoner == null || index < 0) return List.of();
 
         int batchIndex = index / MATCH_LIST_BATCH_SIZE * MATCH_LIST_BATCH_SIZE;
-        List<String> values = getIds(summoner, queue, batchIndex, MATCH_LIST_BATCH_SIZE, 0, null);
+        List<String> values = getMatchlist(summoner, queue, batchIndex, MATCH_LIST_BATCH_SIZE, 0, null);
         int batchOffset = index - batchIndex;
         return batchOffset >= values.size() ? List.of() : values.subList(batchOffset, values.size());
     }
 
-    public static void refreshRecentIds(
+    public static void invalidateMatchlist(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             int index) {
@@ -333,7 +329,7 @@ public final class MatchService {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, queue);
     }
 
-    public static List<String> getIds(
+    public static List<String> getMatchlist(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             int index,
@@ -349,13 +345,13 @@ public final class MatchService {
         if (cached != null) return cached;
 
         try {
-            return getIdsAsync(summoner, queue, index, count, startTime, type).join();
+            return getMatchlistAsync(summoner, queue, index, count, startTime, type).join();
         } catch (CompletionException exception) {
             return List.of();
         }
     }
 
-    public static CompletableFuture<List<String>> getIdsAsync(
+    public static CompletableFuture<List<String>> getMatchlistAsync(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             int index,
@@ -403,6 +399,35 @@ public final class MatchService {
     }
 
     // ============================================================================
+
+    private static Rank soloRank(Map<GameQueueType, Rank> ranks) {
+        return ranks == null ? null : ranks.get(GameQueueType.RANKED_SOLO_5X5);
+    }
+
+    private static void upsertRankProgress(List<String> gameIds, String puuid, RankProgress progress, LeagueShard shard) {
+        if (!RankProgressUtils.hasCurrentSnapshot(progress) || gameIds == null) return;
+        for (String gameId : gameIds) {
+            if (MongoDB.updateUntrackedParticipantRankProgress(gameId, puuid, progress)) invalidate(gameId, shard);
+        }
+    }
+
+    private static Match fetchAndInsert(Job<?> task, LeagueShard shard, String gameId) {
+        task.phase("FETCH");
+        task.trackItem(gameId);
+        Match match = insert(fetch(gameId, shard));
+        if (match != null) task.done(gameId);
+        else task.missing(gameId);
+        return match;
+    }
+
+    private static void queueMissingMatches(LeagueShard shard, List<String> matchIds, Throwable failure) {
+        if (failure != null) throw new IllegalStateException("Recent matches lookup failed", failure);
+        if (matchIds == null) return;
+        for (String matchId : matchIds) {
+            if (MongoDB.hasMatch(matchId)) continue;
+            queue(MatchUtils.matchShard(matchId, shard), matchId);
+        }
+    }
 
     private static List<RankHistoryMatch> rankHistorySource(
             String puuid,
@@ -483,14 +508,6 @@ public final class MatchService {
         return season;
     }
 
-    private static void invalidateRankHistory(String puuid, LeagueShard shard, long timeStart) {
-        if (!valid(puuid, shard)) return;
-        SeasonUtils.SeasonRange season = SeasonUtils.getSeasonRange(timeStart);
-        if (season == null) return;
-        RedisClient.delete(RedisKey.SUMMONER_RANK_HISTORY.of(
-            LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, season.season()));
-    }
-
     private record RankHistoryPeriod(
         SeasonUtils.SeasonRange season,
         List<SeasonUtils.SeasonRange> seasons,
@@ -522,7 +539,7 @@ public final class MatchService {
             + ":type=" + (type == null ? "null" : type.name());
     }
 
-    private static LOLMatch cacheRiotMatch(String gameId, LeagueShard shard) {
+    private static LOLMatch getCachedR4JMatch(String gameId, LeagueShard shard) {
         return RedisClient.get(
             RedisKey.R4J_MATCH.of(shard.toRegionShard().name(), gameId),
             LOLMatch.class

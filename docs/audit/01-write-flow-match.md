@@ -6,8 +6,8 @@ Il tracker usa MongoDB come unica persistenza LoL:
 
 ```text
 Riot LOLMatch
-  -> MatchService.persistRaw(...)
-  -> MongoDB.createRawMatch(full Riot match id, Match, tracked=false)
+  -> MatchService.insert(...)
+  -> MongoDB.insertMatch(Match, tracked=false)
   -> participant summoner seed
   -> MongoDB.upsertMatchEvents(...)
 ```
@@ -27,7 +27,7 @@ Per ogni match devono esistere:
 
 ## Implementazione
 
-`MatchService` possiede la persistenza raw create-only. `Tracker` completa solo
+`MatchService` possiede l'inserimento create-only del match non tracciato. `Tracker` completa solo
 il RankProgress autorevole e committa `tracked:true`; nessun flusso raw può
 declassare un match già completo.
 

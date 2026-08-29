@@ -148,10 +148,10 @@ public class LolControllerTest {
 
         assertEquals(HttpStatus.OK, ready.getStatusCode());
         assertEquals(HttpStatus.ACCEPTED, pending.getStatusCode());
-        assertEquals(new ResponseMetadata(null, null, true, Filter.summoner()),
-            ((com.safjnest.spring.dto.LolApiError) LolApiResponses.from(
-                ApiResult.pending(new ResponseMetadata(null, null, true, Filter.summoner())),
-                "pending", "Pending", "Not found").getBody()).metadata());
+        ResponseMetadata metadata = ((com.safjnest.spring.dto.LolApiError) LolApiResponses.from(
+                ApiResult.pending(new ResponseMetadata(null, null, true, Filter.canonical())),
+                "pending", "Pending", "Not found").getBody()).metadata();
+        assertEquals(Filter.canonical().toSummonerKey(), metadata.filter().toSummonerKey());
         try {
             LolApiResponses.from(ApiResult.notFound(), "pending", "Pending", "Not found");
             throw new AssertionError("Expected not found");

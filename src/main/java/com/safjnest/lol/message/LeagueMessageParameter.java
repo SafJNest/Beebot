@@ -114,7 +114,7 @@ public class LeagueMessageParameter {
         if (messageType == LeagueMessageType.PROFILE || messageType == LeagueMessageType.OVERVIEW
             || messageType == LeagueMessageType.MATCHUP || messageType == LeagueMessageType.OVERVIEW_CHAMPIONS
             || messageType == LeagueMessageType.OVERVIEW_OPGG) {
-            return Filter.summoner();
+            return Filter.canonical();
         }
         return new Filter();
     }

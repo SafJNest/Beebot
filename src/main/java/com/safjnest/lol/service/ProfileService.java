@@ -42,27 +42,27 @@ public class ProfileService {
     private static final long STALE_LAST_SEEN_MILLIS = TimeConstant.DAY * 60L;
 
     public ApiResult<SummonerView> get(LeagueShard shard, String puuid) {
+        Filter filter = Filter.canonical();
         String key = RedisKey.SUMMONER_OVERVIEW.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
         if (cached != null && isReady(cached)) {
-            ProfileStatistics statistics = getStatistics(cached.summoner(), shard);
+            ProfileStatistics statistics = getStatistics(cached.summoner(), shard, filter);
             boolean refresh = isStale(puuid, statistics == null ? 0 : statistics.lastUpdate);
             SummonerView page = SummonerView.from(cached.summoner(), cached.ranks(), statistics,
                 cached.overview().masteries(), cached.overview().champions(),
-                getRecentMatches(puuid, shard, Filter.summoner())).withMetadata(
-                metadata(statistics == null ? 0 : statistics.lastUpdate, refresh, Filter.summoner()));
+                getRecentMatches(puuid, shard, filter)).withMetadata(
+                metadata(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
             return refresh ? ApiResult.partial(page, page.metadata()) : ApiResult.ready(page, page.metadata());
         }
 
         CompletableFuture<Summoner> profileFuture = SummonerService.getAsync(puuid, shard);
         if (!isReadyFuture(profileFuture))
-            return ApiResult.pending(metadata(0, true, Filter.summoner()));
+            return ApiResult.pending(metadata(0, true, filter));
 
         Summoner profile = completed(profileFuture);
         if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return ApiResult.notFound();
 
-        Filter filter = Filter.summoner();
-        ProfileStatistics statistics = getStatistics(profile, shard);
+        ProfileStatistics statistics = getStatistics(profile, shard, filter);
         Map<GameQueueType, Rank> ranks = RankService.find(puuid, shard);
         List<Mastery> masteries = MasteryService.find(puuid, shard);
         boolean refresh = ranks == null || masteries == null
@@ -80,7 +80,7 @@ public class ProfileService {
 
     public ApiResult<SummonerView> get(LeagueShard shard, String gameName, String tagLine) {
         CompletableFuture<String> puuidFuture = SummonerService.getPuuidByRiotIdAsync(gameName, tagLine, shard);
-        if (!isReadyFuture(puuidFuture)) return ApiResult.pending(metadata(0, true, Filter.summoner()));
+        if (!isReadyFuture(puuidFuture)) return ApiResult.pending(metadata(0, true, Filter.canonical()));
         String puuid = completed(puuidFuture);
         return puuid != null ? get(shard, puuid) : ApiResult.notFound();
     }
@@ -95,21 +95,12 @@ public class ProfileService {
         return statistics;
     }
 
-    public ProfileStatistics getStatistics(Summoner summoner, LeagueShard shard) {
+    public ProfileStatistics getStatistics(Summoner summoner, LeagueShard shard, Filter filter) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || shard == null) return null;
-
-        Filter filter = Filter.summoner();
-        SummonerView page = RedisClient.get(RedisKey.SUMMONER_OVERVIEW.of(LeagueShardUtils.cacheRegion(shard), shard.name(), summoner.puuid()), SummonerView.class);
-        ProfileStatistics statistics = page != null && isReady(page)
-            ? page.overview().statistics()
-            : getStatistics(summoner.puuid(), shard, filter);
+        ProfileStatistics statistics = getStatistics(summoner.puuid(), shard, filter);
         if (statistics == null) ComputeScheduler.startProfileStatistics(summoner, filter);
         else if (isStale(summoner.puuid(), statistics.lastUpdate)) enqueueStaleStatistics(summoner, shard, filter);
         return statistics;
-    }
-
-    public ProfileStatistics getStatistics(String puuid, LeagueShard shard, SeasonUtils.SeasonRange season) {
-        return season == null ? null : getStatistics(puuid, shard, Filter.summoner(season.start(), season.end()));
     }
 
     public Map<String, ProfileStatistics> getStatistics(List<String> puuids, LeagueShard shard, Filter filter) {
@@ -137,10 +128,6 @@ public class ProfileService {
             }
         }
         return result;
-    }
-
-    public Map<String, ProfileStatistics> getStatistics(List<String> puuids, LeagueShard shard, SeasonUtils.SeasonRange season) {
-        return season == null ? Map.of() : getStatistics(puuids, shard, Filter.summoner(season.start(), season.end()));
     }
 
     public List<MatchResult> getRecentMatches(String puuid, LeagueShard shard, Filter filter) {
@@ -214,21 +201,13 @@ public class ProfileService {
         return MongoDB.findProfileIndexables();
     }
 
-    public boolean refresh(LeagueShard shard, String puuid, boolean rebuild) {
-        Summoner profile = SummonerService.find(puuid, shard);
-        if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return false;
-        boolean refreshed = refreshStatistics(puuid, shard, Filter.summoner(), rebuild);
-        if (refreshed) invalidate(puuid, shard);
-        return refreshed;
-    }
-
-    public boolean refreshStatistics(String puuid, LeagueShard shard, Filter filter, boolean rebuild) {
+    public boolean generateStatistics(String puuid, LeagueShard shard, Filter filter, boolean rebuild) {
         if (puuid == null || shard == null || filter == null) return false;
         ProfileStatistics statistics = rebuild ? null : getStatistics(puuid, shard, filter);
         long afterTime = rebuild || statistics == null || statistics.timeEnd == filter.timeStart() ? 0 : statistics.timeEnd + 1;
         ProfileStatistics result = statistics == null ? new ProfileStatistics(filter.timeStart()) : statistics;
         MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, afterTime, currentEnd(filter),
-            match -> result.addRaw(match, puuid, filter));
+            match -> result.accumulate(match, puuid, filter));
         result.finish();
         statistics = result;
         statistics.lastUpdate = System.currentTimeMillis();
@@ -240,11 +219,7 @@ public class ProfileService {
         return saved;
     }
 
-    public boolean refreshStatistics(String puuid, LeagueShard shard, SeasonUtils.SeasonRange season, boolean rebuild) {
-        return season != null && refreshStatistics(puuid, shard, Filter.summoner(season.start(), season.end()), rebuild);
-    }
-
-    public boolean refreshMatchups(String puuid, LeagueShard shard, Filter filter) {
+    public boolean generateMatchups(String puuid, LeagueShard shard, Filter filter) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null) return false;
         ProfileAnalyzer.MatchupsAccumulator accumulator = ProfileAnalyzer.matchupsAccumulator(puuid, filter);
         MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, accumulator::accept);
@@ -254,7 +229,7 @@ public class ProfileService {
         return saved;
     }
 
-    public boolean refreshActivity(LeagueShard shard, String puuid, Filter filter) {
+    public boolean generateActivity(LeagueShard shard, String puuid, Filter filter) {
         if (shard == null || puuid == null || puuid.isBlank() || filter == null)
             return false;
         ProfileActivity.Accumulator accumulator = ProfileActivity.accumulator(puuid, filter);
@@ -265,24 +240,22 @@ public class ProfileService {
         return saved;
     }
 
-    public boolean refreshCanonicalAggregates(LeagueShard shard, String puuid) {
+    public boolean refreshProfile(LeagueShard shard, String puuid) {
         if (shard == null || puuid == null || puuid.isBlank()) return false;
-        Filter statisticsFilter = canonicalStatisticsFilter();
-        Filter activityFilter = canonicalActivityFilter();
-        Filter matchupsFilter = canonicalMatchupsFilter();
+        Filter filter = Filter.canonical();
         ProfileAnalyzer.ProfileRefreshAccumulator accumulator = ProfileAnalyzer.refreshAccumulator(
-            puuid, statisticsFilter, activityFilter, matchupsFilter);
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, activityFilter, 0, 0, accumulator::accept);
+            puuid, filter, filter, filter);
+        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, accumulator::accept);
         ProfileAnalyzer.ProfileRefresh refresh = accumulator.finish();
         refresh.statistics().lastUpdate = System.currentTimeMillis();
-        boolean statisticsSaved = MongoDB.upsertProfileStatistics(puuid, statisticsFilter, refresh.statistics());
-        boolean activitySaved = MongoDB.upsertProfileActivity(puuid, activityFilter, refresh.activity());
-        boolean matchupsSaved = MongoDB.upsertProfileMatchups(puuid, matchupsFilter, refresh.matchups());
+        boolean statisticsSaved = MongoDB.upsertProfileStatistics(puuid, filter, refresh.statistics());
+        boolean activitySaved = MongoDB.upsertProfileActivity(puuid, filter, refresh.activity());
+        boolean matchupsSaved = MongoDB.upsertProfileMatchups(puuid, filter, refresh.matchups());
         if (!statisticsSaved || !activitySaved || !matchupsSaved) return false;
-        cacheStatistics(puuid, shard, statisticsFilter, refresh.statistics());
-        cacheActivity(puuid, shard, activityFilter, refresh.activity());
-        cacheMatchups(puuid, shard, matchupsFilter, refresh.matchups());
-        RedisClient.delete(recentMatchesKey(puuid, shard, statisticsFilter));
+        cacheStatistics(puuid, shard, filter, refresh.statistics());
+        cacheActivity(puuid, shard, filter, refresh.activity());
+        cacheMatchups(puuid, shard, filter, refresh.matchups());
+        RedisClient.delete(recentMatchesKey(puuid, shard, filter));
         return true;
     }
 
@@ -296,7 +269,10 @@ public class ProfileService {
         try {
             int refreshed = 0;
             for (String puuid : MatchService.getSeasonPuuids(shard, season.start(), season.end()))
-                if (refresh(shard, puuid, rebuild)) refreshed++;
+                if (generateStatistics(puuid, shard, Filter.canonical(), rebuild)) {
+                    invalidate(puuid, shard);
+                    refreshed++;
+                }
             return refreshed;
         } finally {
             ALL_PROFILE_STATS_REFRESH_RUNNING.set(false);
@@ -312,9 +288,9 @@ public class ProfileService {
         MongoDB.touchSummonerLastSeen(puuid);
     }
 
-    public static void startRefresh(Summoner summoner, LeagueShard shard) {
+    public static void refreshProfile(Summoner summoner, LeagueShard shard) {
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || shard == null) return;
-        ComputeScheduler.startProfileRefresh(summoner, shard);
+        ComputeScheduler.refreshProfile(summoner, shard);
     }
 
     // ============================================================================
@@ -346,18 +322,6 @@ public class ProfileService {
 
     private static ResponseMetadata metadata(long lastUpdate, boolean refresh, Filter filter) {
         return new ResponseMetadata(null, lastUpdate > 0 ? lastUpdate : null, refresh, filter);
-    }
-
-    private static Filter canonicalStatisticsFilter() {
-        return Filter.summoner();
-    }
-
-    private static Filter canonicalActivityFilter() {
-        return Filter.summoner(0, 0);
-    }
-
-    private static Filter canonicalMatchupsFilter() {
-        return Filter.summoner();
     }
 
     private static void enqueueStaleStatistics(Summoner summoner, LeagueShard shard, Filter filter) {

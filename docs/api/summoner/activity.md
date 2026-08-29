@@ -20,14 +20,15 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ac
 |---|---|---|---:|---|---|
 | `shard` | path | enum `LeagueShard` | sì | — | Shard del profilo. |
 | `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
-| `start` | query | epoch millis | no | `0` | Inizio del periodo; `0` significa nessun limite inferiore. |
-| `end` | query | epoch millis | no | `0` | Fine del periodo; `0` significa nessun limite superiore. |
+| `start` | query | epoch millis | no | `0` | Inizio esplicito del periodo; se `start` e `end` sono entrambi `0`, si usa la season canonical. |
+| `end` | query | epoch millis | no | `0` | Fine esplicita del periodo; se presente da solo lascia il limite inferiore aperto. |
 | `queue` | query | enum `GameQueueType` oppure `ALL` | no | `ALL` | Queue da filtrare; `ALL` viene normalizzato a nessun filtro queue. |
 | `champion` | query | integer | no | `0` | Champion del summoner; `0` significa tutti. |
 
 `start` e `end` devono essere positivi o `0`; quando sono entrambi presenti,
-`end` non può precedere `start`. Il filtro interno usa `Filter.summoner(start,
-end)` e aggiunge soltanto queue e champion.
+`end` non può precedere `start`. Senza bound temporali il filtro interno usa
+`Filter.canonical()`; con almeno un bound usa `Filter.summoner(start, end)` e
+aggiunge soltanto queue e champion.
 
 La response contiene tutte le sessioni del periodo in un unico payload. Non
 usa cursor, limit, offset o timezone nel contratto HTTP.

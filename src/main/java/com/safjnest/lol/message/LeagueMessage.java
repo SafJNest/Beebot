@@ -326,7 +326,7 @@ public class LeagueMessage {
             Match match = MatchService.get(gameIds.get(position), summoner.region());
             if (match != null) matches.add(match);
         }
-        MatchService.enrichOpggMatches(matches, summoner.region());
+        MatchService.upsertRankProgress(matches, summoner.region());
         return matches;
     }
 

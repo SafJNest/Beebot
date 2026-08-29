@@ -31,8 +31,8 @@ accoda un unico `IMMEDIATE profile-refresh:<puuid>` su `DatabaseTracker`.
 Il batch legge tutti i match del PUUID/shard una sola volta, in ordine
 `timeStart`, con cursor Mongo senza materializzare `List<Match>`, e rigenera
 da zero soltanto le tre varianti canoniche: statistics e
-matchups sullo split corrente senza patch/queue/lane, activity senza periodo,
-queue o champion. I filtri derivati restano on-demand. Il breakdown champion del profilo è incluso in
+matchups e activity sul filtro canonical della season corrente, senza
+patch/queue/lane/champion. I filtri derivati restano on-demand. Il breakdown champion del profilo è incluso in
 `ProfileStatistics`; il refresh non avvia statistiche globali champion e non
 richiede né modifica la matchlist.
 
@@ -40,8 +40,9 @@ richiede né modifica la matchlist.
 
 L'endpoint `GET /api/lol/{shard}/profile/{puuid}/activity` usa soltanto i
 parametri `start`, `end`, `queue` e `champion`. Il controller costruisce un
-`Filter.summoner(start, end)`, normalizza `queue=ALL` a queue nulla e usa `0`
-come valore neutro per champion.
+`Filter.canonical()` quando `start` e `end` sono entrambi omessi; con un bound
+esplicito usa `Filter.summoner(start, end)`. Normalizza `queue=ALL` a queue
+nulla e usa `0` come valore neutro per champion.
 
 Il servizio legge i match con `MongoDB.findProfileStatisticsMatches`, quindi
 riusa lo stesso `buildMatchFilter` e la stessa verifica completa del filtro
@@ -72,7 +73,7 @@ queue, `role` omesso significa tutti i ruoli. Se `start` è presente senza
 timezone del server, così la chiave resta stabile durante la giornata; se viene
 passato solo `end`, resta il limite inferiore aperto. Quando almeno uno dei due bound è
 presente, definisce il periodo e prevale su `patch`; se mancano entrambi,
-`patch` è il fallback mentre il periodo resta quello dello split corrente.
+`patch` è il fallback mentre il periodo resta quello della season canonical.
 `minGames` ha default 5 e filtra solo le righe matchup della response; non
 partecipa a `Filter.toSummonerKey()`.
 
@@ -131,7 +132,7 @@ matchups solo matchups.
 | `timeStart` | Inizio del periodo, `0` senza limite |
 | `timeEnd` | Fine del periodo, `0` senza limite |
 
-Il profilo base usa `Filter.summoner()`:
+Il profilo base, la leaderboard e le API senza filtri usano `Filter.canonical()`:
 
 ```text
 champion = 0
@@ -142,10 +143,10 @@ patch = null
 region = null
 opponent = 0
 duo = 0
-period = current split
+period = current season
 ```
 
-I pulsanti `General`, `Current Split` e `Previous Split` modificano soltanto il periodo dello stesso oggetto. Queue, lane, champion e gli altri selettori modificano lo stesso filtro e producono un aggregato distinto.
+I filtri espliciti modificano il periodo dello stesso oggetto. Queue, lane, champion e gli altri selettori producono un aggregato distinto.
 
 ### `toKey()` e `toSummonerKey()` non sono intercambiabili
 
@@ -322,7 +323,7 @@ Discord/API request
        -> risposta parziale/pending, nessun calcolo sincrono
        -> coda PROFILE-logical (canale più scarico all’inserimento)
             -> Mongo match projection con lo stesso Filter
-            -> ProfileStatistics.add(match, puuid, filter)
+            -> ProfileStatistics.accumulate(match, puuid, filter)
             -> set lastUpdate dopo il calcolo
             -> upsert atomico {puuid, filterKey}
             -> cache ProfileStatistics
@@ -332,7 +333,7 @@ Discord/API request
 Il case owner `test highstats` esegue un rebuild esplicito delle statistiche
 profilo per Challenger, Grandmaster e `tracking=true`, considerando tutte le
 regioni attive e le due queue ranked per l'alta elo. Usa lo stesso
-`Filter.summoner()` del frontend, forza `rebuild=true` anche quando l'aggregato
+`Filter.canonical()` del frontend, forza `rebuild=true` anche quando l'aggregato
 esiste già, deduplica i PUUID e processa una pagina alla volta attendendo il
 completamento prima della pagina successiva. In questo modo la mole di lavoro
 non riempie la FIFO né mantiene in memoria l'intero elenco high elo.
@@ -440,7 +441,7 @@ PUUID ritrova le proiezioni del summoner senza un token letterale `puuid`.
 | rank summoner | `SUMMONER_RANKS(region, shard, PUUID)` | 6h | `RankService` | dopo refresh del componente o `SummonerService.invalidate` |
 | mastery summoner | `SUMMONER_MASTERIES(region, shard, PUUID)` | 6h | `MasteryService` | dopo refresh del componente o `SummonerService.invalidate` |
 | statistiche aggregate | `SUMMONER_STATISTICS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
-| activity aggregate | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileActivityService` | aggiornamento dopo upsert |
+| activity aggregate | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
 | summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
 | recent matches | `SUMMONER_RECENT_MATCHES(region, shard, PUUID, filterKey)` | 1h | `ProfileService` | dopo refresh statistiche |
 | overview summoner | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | dopo refresh statistiche o componenti summoner; non contiene `recentMatches` |

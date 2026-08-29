@@ -15,7 +15,6 @@ import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.utils.PatchUtils;
-import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -37,14 +36,6 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     public static AbstractScheduler<DatabaseWorkerType> scheduler() {
         return INSTANCE;
-    }
-
-    public static CompletableFuture<Boolean> startProfileStatistics(
-        Summoner summoner,
-        SeasonUtils.SeasonRange season
-    ) {
-        if (season == null) return NOT_SCHEDULED;
-        return startProfileStatistics(summoner, Filter.summoner(season.start(), season.end()));
     }
 
     public static CompletableFuture<Boolean> startProfileStatistics(Summoner summoner, Filter filter) {
@@ -95,7 +86,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         return startProfileActivity(puuid, shard, filter, JobPriority.BACKGROUND);
     }
 
-    public static CompletableFuture<Boolean> startProfileRefresh(
+    public static CompletableFuture<Boolean> refreshProfile(
         Summoner summoner,
         LeagueShard shard
     ) {
@@ -106,7 +97,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         String key = profileRefreshKey(puuid);
         String name = "profile refresh puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, JobPriority.IMMEDIATE, key, name,
-            ignored -> refreshProfileAggregates(puuid, shard));
+            ignored -> refreshProfile(puuid, shard));
     }
 
     public static CompletableFuture<Void> startChampionData(
@@ -219,7 +210,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         String key = "profile-statistics:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile statistics " + (rebuild ? "rebuild " : "") + "puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, priority, key, name,
-            ignored -> refreshProfileStatistics(puuid, shard, requestFilter, rebuild));
+            ignored -> generateProfileStatistics(puuid, shard, requestFilter, rebuild));
     }
 
     private static CompletableFuture<Boolean> startProfileMatchups(
@@ -235,7 +226,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile matchups puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, priority, key, name,
-            ignored -> refreshProfileMatchups(puuid, shard, requestFilter));
+            ignored -> generateProfileMatchups(puuid, shard, requestFilter));
     }
 
     private static CompletableFuture<Boolean> startProfileActivity(
@@ -250,7 +241,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         String key = "profile-activity:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile activity puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, priority, key, name,
-            ignored -> refreshProfileActivity(puuid, shard, requestFilter));
+            ignored -> generateProfileActivity(puuid, shard, requestFilter));
     }
 
     private static CompletableFuture<ChampionService.MatrixRefreshResult> enqueueChampionStatsMatrix(
@@ -331,14 +322,14 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         };
     }
 
-    private static boolean refreshProfileStatistics(
+    private static boolean generateProfileStatistics(
         String puuid,
         LeagueShard shard,
         Filter filter,
         boolean rebuild
     ) {
         try {
-            if (!PROFILE_SERVICE.refreshStatistics(puuid, shard, filter, rebuild)) {
+            if (!PROFILE_SERVICE.generateStatistics(puuid, shard, filter, rebuild)) {
                 BotLogger.error("Profile statistics refresh failed for summoner=" + puuid);
                 return false;
             }
@@ -352,9 +343,9 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         }
     }
 
-    private static boolean refreshProfileMatchups(String puuid, LeagueShard shard, Filter filter) {
+    private static boolean generateProfileMatchups(String puuid, LeagueShard shard, Filter filter) {
         try {
-            if (!PROFILE_SERVICE.refreshMatchups(puuid, shard, filter)) {
+            if (!PROFILE_SERVICE.generateMatchups(puuid, shard, filter)) {
                 BotLogger.error("Profile matchups refresh failed for puuid=" + puuid);
                 return false;
             }
@@ -366,9 +357,9 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         }
     }
 
-    private static boolean refreshProfileActivity(String puuid, LeagueShard shard, Filter filter) {
+    private static boolean generateProfileActivity(String puuid, LeagueShard shard, Filter filter) {
         try {
-            if (!PROFILE_SERVICE.refreshActivity(shard, puuid, filter)) {
+            if (!PROFILE_SERVICE.generateActivity(shard, puuid, filter)) {
                 BotLogger.error("Profile activity refresh failed for puuid=" + puuid);
                 return false;
             }
@@ -380,9 +371,9 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         }
     }
 
-    private static boolean refreshProfileAggregates(String puuid, LeagueShard shard) {
+    private static boolean refreshProfile(String puuid, LeagueShard shard) {
         try {
-            if (!PROFILE_SERVICE.refreshCanonicalAggregates(shard, puuid)) {
+            if (!PROFILE_SERVICE.refreshProfile(shard, puuid)) {
                 BotLogger.error("Profile aggregate refresh failed for puuid=" + puuid);
                 return false;
             }

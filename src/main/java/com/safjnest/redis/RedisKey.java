@@ -16,7 +16,6 @@ public enum RedisKey {
     R4J_SPECTATOR_CURRENT("r4j:match:current:%s:%s", Duration.ofSeconds(60)), // Original: 60 seconds.
     R4J_MATCH_LIST("r4j:match:list:%s:%s:%s:%s", Duration.ofSeconds(60)), // Original: 1 hour.
     R4J_MATCH("r4j:match:by-id:%s:%s", Duration.ofSeconds(60)), // Original: persistent.
-    R4J_MATCH_NOT_FOUND("r4j:match:not-found:%s:%s", Duration.ofSeconds(60)), // Original: 5 minutes.
     R4J_SUMMONER_REFRESH_COOLDOWN("r4j:summoner:refresh:cooldown:%s:%s", Duration.ofSeconds(60)), // Original: 2 minutes.
 
     MATCH_DETAIL("los:%s:%s:match:%s:detail", Duration.ofSeconds(60)), // Original: 6 hours.
