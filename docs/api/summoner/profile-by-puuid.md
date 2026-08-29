@@ -54,6 +54,8 @@ queue, posizione e medie dai dati ricevuti. `overview.masteries`,
 
 Non vengono restituiti né salvati `total`, `queueStats`, `laneStats`,
 `championStats`, `reference`, `context`, `winrate`, `kda` o campi `avg*`.
+Una foglia può includere `isOtp: true` solo per l'unico champion OTP della
+stessa queue; il caso non OTP è omesso.
 
 Le queue del dataset sono `CanonicalQueue`, non enum Riot: per esempio
 `RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA` e `SWIFTPLAY`.

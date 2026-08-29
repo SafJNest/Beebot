@@ -33,9 +33,9 @@ public enum RedisKey {
     SUMMONER_RECENT_MATCHES("los:%s:%s:summoner:%s:recent-matches:%s", Duration.ofSeconds(60)), // Original: 30 minutes.
     SUMMONER_RANK_HISTORY("los:%s:%s:summoner:%s:rank-history:%s", Duration.ofDays(1)),
     LEADERBOARD_VERSION("los:leaderboard:version", Duration.ofSeconds(60)), // Original: persistent.
-    LEADERBOARD_PAGE("los:leaderboard:page:%s:%s:%s:%s:%s:%s:%s", Duration.ofSeconds(60)), // Original: 1 day.
-    LEADERBOARD_COUNT("los:leaderboard:count:%s:%s:%s:%s:%s", Duration.ofHours(12)),
-    LEADERBOARD_COUNT_LOCK("los:leaderboard:count-lock:%s:%s:%s:%s:%s", Duration.ofMinutes(1)),
+    LEADERBOARD_PAGE("los:leaderboard:page:%s:%s:%s:%s:%s:%s:%s:%s", Duration.ofSeconds(60)), // Original: 1 day.
+    LEADERBOARD_COUNT("los:leaderboard:count:%s:%s:%s:%s:%s:%s", Duration.ofHours(12)),
+    LEADERBOARD_COUNT_LOCK("los:leaderboard:count-lock:%s:%s:%s:%s:%s:%s", Duration.ofMinutes(1)),
     LEADERBOARD_RANK_DISTRIBUTION("los:leaderboard:rank-distribution:%s:%s:%s", Duration.ofSeconds(60)), // Original: 12 hours.
     LEADERBOARD_TOP_REGIONS("los:leaderboard:top-regions:%s:%s:%s", Duration.ofSeconds(60)), // Original: 12 hours.
     CHAMPION_STATS("los:champion:%s:stats:%s", Duration.ofSeconds(60)), // Original: 12 hours.

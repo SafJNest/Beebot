@@ -71,7 +71,7 @@ public class ProfileStatisticsTest {
     public void persistsArenaFieldsOnlyOnArenaLeaf() throws Exception {
         ProfileStatistics statistics = new ProfileStatistics();
         statistics.add(match(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 18, 100), "puuid", null);
-        statistics.add(match(GameQueueType.CHERRY, LaneType.NONE, 18, 100, 3), "puuid", null);
+        statistics.add(arenaMatch(GameQueueType.CHERRY, LaneType.NONE, 18, 100, 3), "puuid", null);
         statistics.finish();
 
         Stats<Void> ranked = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
@@ -82,11 +82,34 @@ public class ProfileStatisticsTest {
         assertFalse(new ObjectMapper().writeValueAsString(statistics).contains("arenaGames"));
     }
 
-    private static Match match(GameQueueType queue, LaneType lane, int championLevel, Integer damageTaken) {
-        return match(queue, lane, championLevel, damageTaken, 0);
+    @Test
+    public void marksOnlyTheDominantChampionAsOtpForQueueAcrossRoles() {
+        ProfileStatistics statistics = new ProfileStatistics();
+        for (int index = 0; index < 40; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 1, 18, 100), "puuid", null);
+        for (int index = 0; index < 31; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.JUNGLE, 1, 18, 100), "puuid", null);
+        for (int index = 0; index < 14; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 2, 18, 100), "puuid", null);
+        for (int index = 0; index < 15; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 3, 18, 100), "puuid", null);
+        statistics.finish();
+
+        assertEquals(Boolean.TRUE, statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").isOtp);
+        assertEquals(Boolean.TRUE, statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("JUNGLE").isOtp);
+        assertNull(statistics.champions.get(2).get(CanonicalQueue.RANKED_SOLO).get("TOP").isOtp);
+        assertNull(statistics.champions.get(3).get(CanonicalQueue.RANKED_SOLO).get("TOP").isOtp);
     }
 
-    private static Match match(GameQueueType queue, LaneType lane, int championLevel, Integer damageTaken, int placement) {
+    private static Match match(GameQueueType queue, LaneType lane, int championLevel, Integer damageTaken) {
+        return match(queue, lane, 1, championLevel, damageTaken, 0);
+    }
+
+    private static Match arenaMatch(GameQueueType queue, LaneType lane, int championLevel, Integer damageTaken, int placement) {
+        return match(queue, lane, 1, championLevel, damageTaken, placement);
+    }
+
+    private static Match championMatch(GameQueueType queue, LaneType lane, int champion, int championLevel, Integer damageTaken) {
+        return match(queue, lane, champion, championLevel, damageTaken, 0);
+    }
+
+    private static Match match(GameQueueType queue, LaneType lane, int champion, int championLevel, Integer damageTaken, int placement) {
         Match match = new Match();
         match.leagueShard = LeagueShard.EUW1;
         match.queue = queue;
@@ -94,7 +117,7 @@ public class ProfileStatisticsTest {
         match.timeEnd = 2_000;
         Participant participant = new Participant();
         participant.puuid = "puuid";
-        participant.champion = 1;
+        participant.champion = champion;
         participant.lane = lane;
         participant.team = TeamType.BLUE;
         participant.win = true;

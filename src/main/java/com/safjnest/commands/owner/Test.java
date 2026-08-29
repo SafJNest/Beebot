@@ -144,7 +144,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | competitive [stats] | leaderboard-aggregates | tracking | log | migrate | migrate-tracked | rankprogress | gc");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | competitive [stats] | otp | leaderboard-aggregates | tracking | log | migrate | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -910,6 +910,17 @@ public class Test extends Command{
                 };
                 rebuildCompetitive.queue();
                 e.reply(buildStatistics ? "Competitive rebuild and statistics backfill queued." : "Competitive rebuild queued.");
+            break;
+            case "otp":
+                ChronoTask refreshOtp = () -> {
+                    com.safjnest.nosql.MongoDB.OtpRefresh otp = com.safjnest.nosql.MongoDB.refreshCanonicalProfileOtp();
+                    com.safjnest.nosql.MongoDB.CompetitiveRebuild competitive = CompetitiveService.rebuild();
+                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
+                    System.out.println("[Otp] statsScanned=" + otp.scanned() + " statsSaved=" + otp.saved()
+                            + " competitiveEntries=" + competitive.entries() + " aggregates=" + aggregates.total());
+                };
+                refreshOtp.queue();
+                e.reply("OTP refresh queued.");
             break;
             case "leaderboard-aggregates":
                 ChronoTask rebuildLeaderboardAggregates = () -> {

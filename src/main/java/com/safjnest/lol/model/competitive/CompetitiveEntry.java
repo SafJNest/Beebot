@@ -10,6 +10,7 @@ public record CompetitiveEntry(
     GameQueueType queue,
     long mmr,
     LaneType primary,
+    Integer otpChampionId,
     long lastUpdate
 ) {
 

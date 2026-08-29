@@ -178,6 +178,16 @@ public final class LolApiParameters {
         }
     }
 
+    public static Integer otpChampion(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            int champion = Integer.parseInt(value.trim());
+            if (champion > 0) return champion;
+        } catch (NumberFormatException ignored) {
+        }
+        throw invalid("otp", "must be a champion ID greater than 0");
+    }
+
     public static int page(int page) {
         if (page < 1) throw invalid("page", "must be greater than 0");
         return page;

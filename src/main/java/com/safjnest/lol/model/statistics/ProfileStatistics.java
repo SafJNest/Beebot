@@ -10,6 +10,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.OPTUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -73,6 +74,7 @@ public class ProfileStatistics {
     }
 
     public void finish() {
+        OPTUtils.refresh(champions);
         total = total();
         queueStats = new java.util.ArrayList<>();
         for (Map.Entry<CanonicalQueue, Stats<Void>> entry : queueStats().entrySet()) {

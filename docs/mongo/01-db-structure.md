@@ -218,6 +218,8 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 `competitive` contiene una riga per PUUID e queue se esiste il rank. MMR è
 calcolato dal rank; `primary` resta assente finché le statistiche canoniche non
 esistono e poi deriva dal numero massimo di game per lane nelle foglie profile.
+Se il champion dominante della stessa queue e primary è OTP, `otpChampionId` è
+presente; altrimenti è omesso.
 La query filtra
 `queue`, `region`, `primary` opzionale e range MMR del tier, ordina
 `mmr DESC` e restituisce una pagina di PUUID. Una seconda query

@@ -18,7 +18,7 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - wrap one canonical `SummonerView` in each `SummonerLeaderboard`;
 - remove `toSummoner`, `overview`, `mostPlayed`, `championName`, `ratio`, `rounded`, local Riot ID parsing and `distributionVersion`;
 - preserve fixed page size, defaults and distribution endpoints;
-- query the derived `competitive` index by queue/region/MMR/primary role, then load the page PUUIDs from `summoner` with one `$in`;
+- query the derived `competitive` index by queue/region/MMR/primary role/OTP champion, then load the page PUUIDs from `summoner` with one `$in`;
 - persist rank-distribution, top-region and leaderboard-count aggregate snapshots in Mongo, keyed by filter;
 - cache complete pages and aggregate responses with versioned deterministic keys;
 - reuse the existing per-summoner Profile Statistics cache for overview data;
@@ -39,7 +39,7 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - missing profile statistics start immediately in the background and are never rebuilt synchronously;
 - distributions are grouped from `competitive` and returned through `LeaderboardDistribution`;
 - aggregate snapshots and the `competitive` projection are derived and rebuildable; `summoner.ranks` remains the rank source of truth;
-- MMR and primary role live only in `competitive`; persisted ranks keep Riot rank, LP, wins and losses;
+- MMR, primary role and optional OTP champion ID live only in `competitive`; persisted ranks keep Riot rank, LP, wins and losses;
 - page and total are independent: the page is a bounded `find()`, while the total resolves Redis, then `leaderboard_aggregates`, then `countDocuments()`;
 - the page cache includes a global version and an incomplete page is never cached.
 

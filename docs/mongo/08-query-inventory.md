@@ -7,7 +7,7 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` ordinato per `_id`; mappa a `Summoner` canonico (`region` come `LeagueShard`) | 1 | UserData / Discord |
 | profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfileService |
-| leaderboard | `find` su `competitive` con filtro queue/tier/regione/ruolo, sort MMR e PUUID limitati; un `$in` su `summoner._id` carica la pagina; total separato Redis → aggregate → `countDocuments` | 2 per pagina + count solo su cache miss | LeaderboardService |
+| leaderboard | `find` su `competitive` con filtro queue/tier/regione/ruolo/OTP, sort MMR e PUUID limitati; un `$in` su `summoner._id` carica la pagina; total separato Redis → aggregate → `countDocuments` | 2 per pagina + count solo su cache miss | LeaderboardService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | history | participant filter in un unico `$elemMatch`, projection/paging limitati; `countDocuments` diretto | 1 + eventi batch | LeagueMessage |
 | match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
@@ -45,7 +45,7 @@ migration. Devono seguire le query effettive:
 | `summoner` | `summoner_riot_id` | fallback exact/case-insensitive di `findPuuid` |
 | `summoner` | `summoner_user_accounts` | account Discord per `userId`, ordinati per `_id` |
 | `summoner` | `summoner_tracking_true` | tracker e account con `tracking=true` |
-| `competitive` | queue/region/role/MMR con PUUID | pagina leaderboard, sort `mmr DESC`; indice specifico per scope |
+| `competitive` | queue/region/role/OTP/MMR con PUUID | pagina leaderboard, sort `mmr DESC`; indice specifico per scope |
 | `match` | `match_participant_time` | history, profilo, OPGG, match recenti e dati LP |
 | `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | query temporali, region/patchMajor, bans e champion wins |
 | `match` | `match_champion_filter` | batch champion con filtro equality-first e participant/lane |

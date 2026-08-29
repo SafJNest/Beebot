@@ -75,8 +75,8 @@ public class RedisKeyTest {
         assertTrue(RedisKey.CHAMPION_PAGE.of(157, "page-key").endsWith("ls:champion:157:page:page-key"));
         assertTrue(RedisKey.CHAMPION_STATS.of(157, "stats-key").endsWith("ls:champion:157:stats:stats-key"));
         assertTrue(RedisKey.CHAMPION_TIER_LIST.of("tier-key").endsWith("ls:champion:tier-list:tier-key"));
-        assertTrue(RedisKey.LEADERBOARD_COUNT.of(3, "RANKED_SOLO_5X5", "EUW1", "ALL", "UTILITY")
-                .endsWith("ls:leaderboard:count:3:RANKED_SOLO_5X5:EUW1:ALL:UTILITY"));
+        assertTrue(RedisKey.LEADERBOARD_COUNT.of(3, "RANKED_SOLO_5X5", "EUW1", "ALL", "UTILITY", "40")
+                .endsWith("ls:leaderboard:count:3:RANKED_SOLO_5X5:EUW1:ALL:UTILITY:40"));
     }
 
     @Test

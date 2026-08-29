@@ -31,8 +31,14 @@ for that queue exists; the primary lane is absent until canonical profile
 statistics are available. There is no `filterKey` and no materialized
 leaderboard page.
 
+The same projection may contain optional `otpChampionId`, copied from the
+single canonical queue-level OTP classification; it is independent from the
+primary lane and non-OTP rows omit it. `!test otp` recomputes this
+classification from existing canonical statistics, then rebuilds
+`competitive` and leaderboard aggregates.
+
 Leaderboard reads filter/sort/page `competitive` first (MMR range, optional
-region and primary lane), then fetch the limited PUUID list from `summoner` by
+region, primary lane and OTP champion ID), then fetch the limited PUUID list from `summoner` by
 `_id: {$in: [...]}`. Rank refresh and canonical profile-statistics refresh both
 upsert or remove the affected competitive rows. `!test competitive` rebuilds
 the projection for the initial population or repair. Side-specific base

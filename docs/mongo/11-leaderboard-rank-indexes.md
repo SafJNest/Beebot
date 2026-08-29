@@ -12,6 +12,7 @@ derivata `competitive`, una riga per `{ puuid, queue }`:
   queue: "RANKED_SOLO_5X5",
   mmr: 2470,
   primary: "UTILITY",
+  otpChampionId: 40,
   lastUpdate: 1720000000000
 }
 ```
@@ -19,7 +20,9 @@ derivata `competitive`, una riga per `{ puuid, queue }`:
 Una riga esiste se è presente il rank della queue. `primary` è nullo finché non
 esistono statistiche canoniche della stessa queue e poi deriva dalle foglie
 `profile_statistics.champions.<championId>.<CanonicalQueue>.<position>`; non
-esiste `filterKey` nella collection. La leaderboard ottiene i PUUID ordinati e
+esiste `filterKey` nella collection. `otpChampionId` è opzionale: contiene
+l'unico champion OTP della queue, calcolato sommando tutte le lane giocabili;
+per i non-OTP il campo è omesso. La leaderboard ottiene i PUUID ordinati e
 paginati da `competitive`, poi carica i soli summoner della pagina con `_id:
 {$in: [...]}`.
 
@@ -28,6 +31,10 @@ leaderboard e invalida la loro versione Redis. `!test competitive stats` fa lo
 stesso e, per ogni summoner ranked senza statistiche canoniche, esegue un task
 background `profile-statistics` alla volta: non crea una coda con l'intera base
 utenti in memoria.
+
+`!test otp` ricalcola la classificazione OTP per tutte le profile statistics
+canoniche, ricostruisce `competitive` (quindi `otpChampionId`) e rigenera gli
+aggregate/cache leaderboard. Non scarica match né crea nuovi profile refresh.
 
 Gli indici sono gestiti manualmente dall'operatore: il runtime non crea, cambia
 o rimuove indici.
@@ -54,6 +61,26 @@ db.competitive.createIndex(
   { queue: 1, region: 1, primary: 1, mmr: -1 },
   { name: "competitive_queue_region_primary_mmr" }
 );
+
+db.competitive.createIndex(
+  { queue: 1, otpChampionId: 1, mmr: -1 },
+  { name: "competitive_queue_otp_mmr" }
+);
+
+db.competitive.createIndex(
+  { queue: 1, region: 1, otpChampionId: 1, mmr: -1 },
+  { name: "competitive_queue_region_otp_mmr" }
+);
+
+db.competitive.createIndex(
+  { queue: 1, primary: 1, otpChampionId: 1, mmr: -1 },
+  { name: "competitive_queue_primary_otp_mmr" }
+);
+
+db.competitive.createIndex(
+  { queue: 1, region: 1, primary: 1, otpChampionId: 1, mmr: -1 },
+  { name: "competitive_queue_region_primary_otp_mmr" }
+);
 ```
 
 ## Cleanup di `summoner.ranks`
@@ -70,6 +97,7 @@ db.competitive.find(
     queue: "RANKED_SOLO_5X5",
     region: "EUW1",
     primary: "UTILITY",
+    otpChampionId: 40,
     mmr: { $gte: 30000 }
   },
   { _id: 0, puuid: 1 }

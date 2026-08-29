@@ -27,6 +27,7 @@ public class LeaderboardController {
             @RequestParam(value = "region", required = false) String regionValue,
             @RequestParam(value = "queue", required = false) String queueValue,
             @RequestParam(value = "role", required = false) String roleValue,
+            @RequestParam(value = "otp", required = false) String otpValue,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "50") int limit
     ) {
@@ -35,6 +36,7 @@ public class LeaderboardController {
         LolApiParameters.validateRole(queue, role);
         ApiResult<LeaderboardPage> result = leaderboardService.getLeaderboard(
                 LolApiParameters.rank(rankValue), queue, LolApiParameters.region(regionValue), role,
+                LolApiParameters.otpChampion(otpValue),
                 LolApiParameters.page(page),
                 LolApiParameters.limit(limit)
             );

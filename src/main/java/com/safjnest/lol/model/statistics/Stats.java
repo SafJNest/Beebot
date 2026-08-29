@@ -12,6 +12,8 @@ public class Stats<T> {
     public T reference;
     public long games;
     public long wins;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean isOtp;
     public long blueGames;
     public long blueWins;
     public long redGames;

@@ -35,6 +35,20 @@ public class MongoLeaderboardTest {
     }
 
     @Test
+    public void competitiveFilterUsesOtpChampionId() {
+        String value = MongoDB.competitiveFilter(
+                TierType.CHALLENGER,
+                GameQueueType.RANKED_SOLO_5X5,
+                LeagueShard.EUW1.name(),
+                LaneType.UTILITY,
+                40)
+            .toBsonDocument(Document.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry()).toJson();
+
+        assertTrue(value.contains("otpChampionId"));
+        assertTrue(value.contains("40"));
+    }
+
+    @Test
     public void competitiveFilterKeepsGlobalScopeAndChallengerOpenEnded() {
         String value = MongoDB.competitiveFilter(
                 TierType.CHALLENGER,

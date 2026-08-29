@@ -104,7 +104,7 @@ public final class CompetitiveService {
         }
     }
 
-    private static CompetitiveEntry entry(
+    static CompetitiveEntry entry(
         String puuid,
         LeagueShard shard,
         Map<GameQueueType, Rank> ranks,
@@ -115,10 +115,11 @@ public final class CompetitiveService {
         GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
         Rank rank = ranks == null ? null : ranks.get(canonicalQueue);
         LaneType primary = primary(statistics, CanonicalQueue.from(canonicalQueue));
+        Integer otpChampionId = otpChampion(statistics, CanonicalQueue.from(canonicalQueue));
         if (rank == null || rank.tier() == null) return null;
         long mmr = TierDivisionUtils.getMmr(rank.tier(), rank.lp());
         if (mmr < 0) return null;
-        return new CompetitiveEntry(puuid, shard, canonicalQueue, mmr, primary, now);
+        return new CompetitiveEntry(puuid, shard, canonicalQueue, mmr, primary, otpChampionId, now);
     }
 
     private static boolean hasRank(Map<GameQueueType, Rank> ranks) {
@@ -156,5 +157,18 @@ public final class CompetitiveService {
             }
         }
         return games == 0 ? null : result;
+    }
+
+    private static Integer otpChampion(ProfileStatistics statistics, CanonicalQueue queue) {
+        if (statistics == null || statistics.champions == null) return null;
+        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champion : statistics.champions.entrySet()) {
+            Map<CanonicalQueue, Map<String, Stats<Void>>> queues = champion.getValue();
+            if (queues == null) continue;
+            Map<String, Stats<Void>> lanes = queues.get(queue);
+            if (lanes == null) continue;
+            for (Stats<Void> values : lanes.values())
+                if (values != null && Boolean.TRUE.equals(values.isOtp)) return champion.getKey();
+        }
+        return null;
     }
 }

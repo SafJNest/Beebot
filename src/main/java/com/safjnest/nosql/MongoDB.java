@@ -1547,12 +1547,23 @@ public final class MongoDB {
             LaneType role,
             long offset,
             int limit) {
+        return findLeaderboardPage(rank, queue, region, role, null, offset, limit);
+    }
+
+    public static List<Summoner> findLeaderboardPage(
+            TierType rank,
+            GameQueueType queue,
+            String region,
+            LaneType role,
+            Integer otpChampionId,
+            long offset,
+            int limit) {
         int boundedLimit = Math.max(0, Math.min(50, limit));
         int boundedOffset = (int) Math.min(Integer.MAX_VALUE, Math.max(0, offset));
         if (boundedLimit == 0) return List.of();
 
         List<String> puuids = new ArrayList<>(boundedLimit);
-        for (Document document : competitive().find(competitiveFilter(rank, queue, region, role))
+        for (Document document : competitive().find(competitiveFilter(rank, queue, region, role, otpChampionId))
                 .projection(Projections.include("puuid"))
                 .sort(Sorts.descending("mmr"))
                 .skip(boundedOffset)
@@ -1597,7 +1608,14 @@ public final class MongoDB {
     }
 
     public static long findLeaderboardCount(TierType rank, GameQueueType queue, String region, LaneType role) {
-        if (role != null) return competitive().countDocuments(competitiveFilter(rank, queue, region, role));
+        return findLeaderboardCount(rank, queue, region, role, null);
+    }
+
+    public static long findLeaderboardCount(
+        TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId
+    ) {
+        if (role != null || otpChampionId != null)
+            return competitive().countDocuments(competitiveFilter(rank, queue, region, role, otpChampionId));
         Long stored = findLeaderboardAggregateCount(rank, queue, region);
         if (stored != null) return stored;
 
@@ -1960,6 +1978,7 @@ public final class MongoDB {
                 .append("mmr", entry.mmr())
                 .append("lastUpdate", entry.lastUpdate());
         if (entry.primary() != null) value.append("primary", entry.primary().name());
+        if (entry.otpChampionId() != null) value.append("otpChampionId", entry.otpChampionId());
         UpdateResult update = competitive().replaceOne(Filters.eq("_id", entry.id()), value, new ReplaceOptions().upsert(true));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo competitive update was not acknowledged");
         return true;
@@ -1995,6 +2014,28 @@ public final class MongoDB {
     }
 
     public record CompetitiveRebuild(long candidates, long entries, long removed) {}
+
+    public static OtpRefresh refreshCanonicalProfileOtp() {
+        Filter filter = Filter.canonical();
+        long scanned = 0;
+        long saved = 0;
+        try (MongoCursor<Document> cursor = profileStatistics().find(Filters.eq("filterKey", filter.toSummonerKey()))
+                .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE)
+                .iterator()) {
+            while (cursor.hasNext()) {
+                Document document = cursor.next();
+                String puuid = document.getString("puuid");
+                ProfileStatistics statistics = readProfileStatistics(document);
+                if (puuid == null || puuid.isBlank() || statistics == null) continue;
+                scanned++;
+                statistics.finish();
+                if (upsertProfileStatistics(puuid, filter, statistics)) saved++;
+            }
+        }
+        return new OtpRefresh(scanned, saved);
+    }
+
+    public record OtpRefresh(long scanned, long saved) {}
 
     public static boolean upsertMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
         List<Document> values = new ArrayList<>();
@@ -3162,10 +3203,15 @@ public final class MongoDB {
     }
 
     static Bson competitiveFilter(TierType rank, GameQueueType queue, String region, LaneType role) {
+        return competitiveFilter(rank, queue, region, role, null);
+    }
+
+    static Bson competitiveFilter(TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId) {
         List<Bson> filters = new ArrayList<>();
         if (queue != null) filters.add(Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()));
         if (region != null && !"GLOBAL".equals(region)) filters.add(Filters.eq("region", region));
         if (role != null) filters.add(Filters.eq("primary", role.name()));
+        if (otpChampionId != null) filters.add(Filters.eq("otpChampionId", otpChampionId));
         if (rank != null) {
             TierDivisionUtils.MmrRange range = TierDivisionUtils.getMmrRange(rank);
             filters.add(Filters.gte("mmr", range.minimum()));

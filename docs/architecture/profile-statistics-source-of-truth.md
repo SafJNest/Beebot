@@ -297,6 +297,23 @@ Conseguenze:
 5. non usare `replace` con un `_id` derivato da PUUID o stagione;
 6. non cercare più per `{ puuid, seasonStart }`.
 
+### Classificazione OTP
+
+Per ogni CanonicalQueue esiste al massimo un champion OTP. I game del champion
+sono sommati su tutte le posizioni giocabili della queue; con N game, p1 e p2
+come share dei primi due champion, il primo è OTP quando:
+
+```text
+N >= 20
+p1 >= 0.50 + 0.30 * exp(-N / 250)
+p1 - p2 >= 0.15
+```
+
+La flag `isOtp: true` è salvata in ogni foglia giocabile del champion
+vincente nella stessa queue; per ogni altro champion il campo è omesso. È una
+classificazione derivata, non un contatore: ogni `finish()` la azzera e la
+ricostruisce. UNKNOWN e le lane non giocabili non possono produrre un OTP.
+
 ### Bootstrap Mongo
 
 Il bootstrap crea solo le collection e gli indici mancanti e non modifica o

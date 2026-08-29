@@ -22,7 +22,9 @@ risoluzione, la response è lo stesso `SummonerView` di
 Il consumer ricava totale, medie, winrate, KDA e breakdown queue/lane dalle
 foglie. Non esistono `total`, `queueStats`, `laneStats`, `championStats`,
 `reference`, `context`, `winrate`, `kda` o campi `avg*` nel payload delle
-statistics. Rank e mastery restano letture Redis/Mongo; la GET non esegue
+statistics. La sola classificazione derivata ammessa nella foglia è
+`isOtp: true`, omessa per tutti gli altri champion della stessa queue. Rank e mastery restano
+letture Redis/Mongo; la GET non esegue
 chiamate Riot sincrone.
 
 ## Stati ed errori
