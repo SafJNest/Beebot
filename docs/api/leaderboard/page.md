@@ -9,6 +9,7 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
   --data-urlencode 'rank=DIAMOND' \
   --data-urlencode 'region=EUW1' \
   --data-urlencode 'queue=TEAM_BUILDER_RANKED_SOLO' \
+  --data-urlencode 'role=UTILITY' \
   --data-urlencode 'page=1' \
   --data-urlencode 'limit=50'
 ```
@@ -18,6 +19,7 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
 | `rank` | `TierType` | tutti | Tier e relative divisioni. |
 | `region` | `LeagueShard` | tutti | Shard da filtrare. |
 | `queue` | `GameQueueType` | `TEAM_BUILDER_RANKED_SOLO` | Queue della leaderboard. |
+| `role` | `LaneType` | tutti | Ruolo primario: `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`; esclude i profili senza statistiche/lane primaria e richiede una queue con lane. |
 | `page` | integer | `1` | Pagina 1-based, almeno `1`. |
 | `limit` | integer | `50` | Da `1` a `50`. |
 
@@ -41,9 +43,11 @@ Se le statistics non sono disponibili, la riga mantiene summoner e rank con
 overview vuota e il refresh viene accodato; la pagina non diventa una cache di
 un aggregate separato.
 
-Internamente la pagina è una query MMR limitata e il `total` è risolto in modo
-indipendente da Redis, poi da `leaderboard_aggregates`, quindi da Mongo solo se
-entrambi mancano. Il payload HTTP non cambia.
+Internamente la pagina legge `competitive` per filtro MMR/tier/ruolo, sort e
+paginazione dei PUUID; poi legge soltanto i summoner della pagina con un `$in`
+su `_id`. Il `total` è risolto da Redis, poi (senza ruolo) da
+`leaderboard_aggregates`, quindi con `countDocuments()` su `competitive`.
+Il payload HTTP non cambia.
 
 ## Stati ed errori
 

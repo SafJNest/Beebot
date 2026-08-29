@@ -32,6 +32,7 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.CompetitiveService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.LeaderboardService;
@@ -143,7 +144,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | leaderboard-aggregates | tracking | log | migrate | migrate-tracked | rankprogress | gc");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | competitive [stats] | leaderboard-aggregates | tracking | log | migrate | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -891,6 +892,24 @@ public class Test extends Command{
             case "highstats":
                 ChronoTask rebuildHighEloStats = () -> new LeaderboardService().rebuildHighEloAndTrackedProfileStatistics();
                 rebuildHighEloStats.queue();
+            break;
+            case "competitive":
+                boolean buildStatistics = args.length > 1 && "stats".equalsIgnoreCase(args[1].trim());
+                ChronoTask rebuildCompetitive = () -> {
+                    com.safjnest.nosql.MongoDB.CompetitiveRebuild report = CompetitiveService.rebuild();
+                    CompetitiveService.StatisticsBuild statistics = buildStatistics
+                        ? CompetitiveService.buildMissingStatistics()
+                        : null;
+                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
+                    System.out.println("[Competitive] candidates=" + report.candidates()
+                            + " entries=" + report.entries() + " removed=" + report.removed()
+                            + " aggregates=" + aggregates.total()
+                            + (statistics == null ? "" : " statsRanked=" + statistics.ranked()
+                                + " statsScheduled=" + statistics.scheduled()
+                                + " statsCompleted=" + statistics.completed()));
+                };
+                rebuildCompetitive.queue();
+                e.reply(buildStatistics ? "Competitive rebuild and statistics backfill queued." : "Competitive rebuild queued.");
             break;
             case "leaderboard-aggregates":
                 ChronoTask rebuildLeaderboardAggregates = () -> {

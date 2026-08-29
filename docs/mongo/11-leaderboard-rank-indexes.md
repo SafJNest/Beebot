@@ -1,136 +1,90 @@
-# Leaderboard rank indexes
+# Competitive leaderboard indexes
 
-Tier-filtered leaderboard pages filter on `ranks.<QUEUE>.rank` and sort on
-`ranks.<QUEUE>.mmr DESC`. The MMR-only indexes documented in
-[`01-db-structure.md`](01-db-structure.md) remain required for all-ranks pages;
-these compound indexes cover tier-scoped pages such as `rank=SILVER`.
+`summoner.ranks` conserva soltanto il rank Riot (`rank`, `lp`, `wins`,
+`losses`). L'ordinamento MMR e il ruolo primario vivono nella collection
+derivata `competitive`, una riga per `{ puuid, queue }`:
 
-Run manually on each environment after deploy. The runtime does not create or
-drop indexes.
+```javascript
+{
+  _id: "<puuid>:RANKED_SOLO_5X5",
+  puuid: "<puuid>",
+  region: "EUW1",
+  queue: "RANKED_SOLO_5X5",
+  mmr: 2470,
+  primary: "UTILITY",
+  lastUpdate: 1720000000000
+}
+```
+
+Una riga esiste se è presente il rank della queue. `primary` è nullo finché non
+esistono statistiche canoniche della stessa queue e poi deriva dalle foglie
+`profile_statistics.champions.<championId>.<CanonicalQueue>.<position>`; non
+esiste `filterKey` nella collection. La leaderboard ottiene i PUUID ordinati e
+paginati da `competitive`, poi carica i soli summoner della pagina con `_id:
+{$in: [...]}`.
+
+`!test competitive` svuota e ricostruisce la proiezione, rigenera gli snapshot
+leaderboard e invalida la loro versione Redis. `!test competitive stats` fa lo
+stesso e, per ogni summoner ranked senza statistiche canoniche, esegue un task
+background `profile-statistics` alla volta: non crea una coda con l'intera base
+utenti in memoria.
+
+Gli indici sono gestiti manualmente dall'operatore: il runtime non crea, cambia
+o rimuove indici.
 
 ## Create
 
 ```javascript
-const soloRankMmr = "ranks.RANKED_SOLO_5X5.rank";
-const soloMmr = "ranks.RANKED_SOLO_5X5.mmr";
-const flexRankMmr = "ranks.RANKED_FLEX_SR.rank";
-const flexMmr = "ranks.RANKED_FLEX_SR.mmr";
-
-db.summoner.createIndex(
-  { [soloRankMmr]: 1, [soloMmr]: -1 },
-  {
-    name: "summoner_leaderboard_solo_rank_mmr",
-    partialFilterExpression: { [soloMmr]: { $exists: true } }
-  }
+db.competitive.createIndex(
+  { queue: 1, mmr: -1 },
+  { name: "competitive_queue_mmr" }
 );
 
-db.summoner.createIndex(
-  { region: 1, [soloRankMmr]: 1, [soloMmr]: -1 },
-  {
-    name: "summoner_leaderboard_solo_region_rank_mmr",
-    partialFilterExpression: { [soloMmr]: { $exists: true } }
-  }
+db.competitive.createIndex(
+  { queue: 1, region: 1, mmr: -1 },
+  { name: "competitive_queue_region_mmr" }
 );
 
-db.summoner.createIndex(
-  { [flexRankMmr]: 1, [flexMmr]: -1 },
-  {
-    name: "summoner_leaderboard_flex_rank_mmr",
-    partialFilterExpression: { [flexMmr]: { $exists: true } }
-  }
+db.competitive.createIndex(
+  { queue: 1, primary: 1, mmr: -1 },
+  { name: "competitive_queue_primary_mmr" }
 );
 
-db.summoner.createIndex(
-  { region: 1, [flexRankMmr]: 1, [flexMmr]: -1 },
-  {
-    name: "summoner_leaderboard_flex_region_rank_mmr",
-    partialFilterExpression: { [flexMmr]: { $exists: true } }
-  }
+db.competitive.createIndex(
+  { queue: 1, region: 1, primary: 1, mmr: -1 },
+  { name: "competitive_queue_region_primary_mmr" }
 );
 ```
 
-Keep the existing MMR-only indexes:
+## Cleanup di `summoner.ranks`
 
-```javascript
-{"ranks.RANKED_SOLO_5X5.mmr": -1}
-{"region": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
-{"ranks.RANKED_FLEX_SR.mmr": -1}
-{"region": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
-```
+Dopo che `!test competitive` ha popolato l'indice, rimuovere i vecchi campi
+MMR embedded e gli indici `summoner_leaderboard_*` / `ranks.*.mmr`. La query di
+cleanup è in [`10-ranks-object-migration.md`](10-ranks-object-migration.md).
 
 ## Validate
 
 ```javascript
-db.summoner.getIndexes().filter(index =>
-  index.name.startsWith("summoner_leaderboard_") && index.name.includes("rank")
-);
-```
-
-Tier-filtered page (GLOBAL, Silver, page 2):
-
-```javascript
-db.summoner.find(
+db.competitive.find(
   {
-    "ranks.RANKED_SOLO_5X5.mmr": { $exists: true },
-    "ranks.RANKED_SOLO_5X5.rank": {
-      $in: ["SILVER_IV", "SILVER_III", "SILVER_II", "SILVER_I"]
-    }
+    queue: "RANKED_SOLO_5X5",
+    region: "EUW1",
+    primary: "UTILITY",
+    mmr: { $gte: 30000 }
   },
-  {
-    _id: 1,
-    riotId: 1,
-    region: 1,
-    level: 1,
-    icon: 1,
-    "ranks.RANKED_SOLO_5X5": 1,
-    masteries: 1
-  }
+  { _id: 0, puuid: 1 }
 )
-.sort({ "ranks.RANKED_SOLO_5X5.mmr": -1 })
+.sort({ mmr: -1 })
 .skip(50)
 .limit(50)
 .explain("executionStats");
-```
 
-Expected: `winningPlan` uses `summoner_leaderboard_solo_rank_mmr`, low
-`totalKeysExamined` relative to collection size, no blocking `SORT`.
-
-Regional variant:
-
-```javascript
 db.summoner.find(
-  {
-    region: "EUW1",
-    "ranks.RANKED_SOLO_5X5.mmr": { $exists: true },
-    "ranks.RANKED_SOLO_5X5.rank": {
-      $in: ["SILVER_IV", "SILVER_III", "SILVER_II", "SILVER_I"]
-    }
-  },
-  {
-    _id: 1,
-    riotId: 1,
-    region: 1,
-    level: 1,
-    icon: 1,
-    "ranks.RANKED_SOLO_5X5": 1,
-    masteries: 1
-  }
-)
-.sort({ "ranks.RANKED_SOLO_5X5.mmr": -1 })
-.limit(50)
-.explain("executionStats");
+  { _id: { $in: ["<puuid-1>", "<puuid-2>"] } },
+  { _id: 1, riotId: 1, region: 1, level: 1, icon: 1, ranks: 1, masteries: 1 }
+).explain("executionStats");
 ```
 
-Expected: `summoner_leaderboard_solo_region_rank_mmr`.
-
-All-ranks page must keep using the MMR-only index:
-
-```javascript
-db.summoner.find(
-  { "ranks.RANKED_SOLO_5X5.mmr": { $exists: true } },
-  { _id: 1, "ranks.RANKED_SOLO_5X5": 1 }
-)
-.sort({ "ranks.RANKED_SOLO_5X5.mmr": -1 })
-.limit(50)
-.explain("executionStats");
-```
+Il primo explain deve usare l'indice che corrisponde allo scope (con `primary`
+se il ruolo è richiesto), senza `COLLSCAN` o `SORT` bloccante. Il secondo deve
+risolvere l'`$in` sul primary key `_id` di `summoner`.

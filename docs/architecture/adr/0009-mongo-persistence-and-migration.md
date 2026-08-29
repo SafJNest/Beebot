@@ -21,6 +21,25 @@ unwind ranks. Redis keys retain their existing names, so rank/profile/search/
 leaderboard payloads must be invalidated at deployment before serving the new
 object contract.
 
+## Amendment 2026-08-29
+
+`Rank` remains the canonical Riot queue payload and stores no MMR. The derived
+`competitive` collection owns the leaderboard access path with one row per
+`{puuid, canonicalQueue}`: `puuid`, `region`, `queue`, calculated `mmr`,
+statistics-derived primary lane and `lastUpdate`. A row exists when the rank
+for that queue exists; the primary lane is absent until canonical profile
+statistics are available. There is no `filterKey` and no materialized
+leaderboard page.
+
+Leaderboard reads filter/sort/page `competitive` first (MMR range, optional
+region and primary lane), then fetch the limited PUUID list from `summoner` by
+`_id: {$in: [...]}`. Rank refresh and canonical profile-statistics refresh both
+upsert or remove the affected competitive rows. `!test competitive` rebuilds
+the projection for the initial population or repair. Side-specific base
+counters (`blueGames`, `blueWins`, `redGames`, `redWins`) are persisted in the
+same profile-statistics leaves, so future side/queue/lane aggregates do not
+need match scans.
+
 ## Amendment 2026-07-26
 
 La leaderboard mantiene `summoner.ranks` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution, top-region e count della leaderboard: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina usa una `find()` limitata e ordinata sul path MMR della queue; il totale segue Redis, aggregate Mongo e solo infine `countDocuments()`. Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
@@ -115,7 +134,7 @@ I campi numerici dei modelli pubblici restano compatibili con il modello storico
 ### Negative
 
 - il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
-- la leaderboard richiede un indice MMR per queue e scope; la pagina legge `ranks.<QUEUE>.mmr` con `find()` limitata, mentre il totale usa Redis e gli aggregate Mongo prima del fallback `countDocuments()`; distribuzione, top-region e count vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
+- la leaderboard richiede una proiezione derivata e indici MMR per queue/scope; la pagina legge prima `competitive`, poi i summoner della sola pagina, mentre il totale usa Redis e gli aggregate Mongo prima del fallback `countDocuments()`; distribuzione, top-region e count vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
 - il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
 - il backfill e il runtime devono essere verificati separatamente.
 

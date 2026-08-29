@@ -215,6 +215,8 @@ public class ProfileService {
         if (saved) {
             cacheStatistics(puuid, shard, filter, statistics);
             RedisClient.delete(recentMatchesKey(puuid, shard, filter));
+            if (Filter.canonical().toSummonerKey().equals(filter.toSummonerKey()))
+                CompetitiveService.refreshFromStatistics(puuid, shard, statistics);
         }
         return saved;
     }
@@ -256,6 +258,7 @@ public class ProfileService {
         cacheActivity(puuid, shard, filter, refresh.activity());
         cacheMatchups(puuid, shard, filter, refresh.matchups());
         RedisClient.delete(recentMatchesKey(puuid, shard, filter));
+        CompetitiveService.refreshFromStatistics(puuid, shard, refresh.statistics());
         return true;
     }
 

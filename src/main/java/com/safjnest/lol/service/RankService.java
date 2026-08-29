@@ -192,11 +192,11 @@ public final class RankService {
 
         GameQueueType queue = GameQueueTypeUtils.canonicalQueue(entry.getQueueType());
         Rank rank = toRank(entry);
-        if (rank == null || !MongoDB.upsertRank(
-                entry.getPuuid(), shard, queue, rank, TierDivisionUtils.getMmr(rank.tier(), rank.lp()))) return;
+        if (rank == null || !MongoDB.upsertRank(entry.getPuuid(), shard, queue, rank)) return;
 
         Map<GameQueueType, Rank> ranks = replaceRank(find(entry.getPuuid(), shard), queue, rank);
         RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), entry.getPuuid());
+        CompetitiveService.refreshFromRanks(entry.getPuuid(), shard, ranks);
         ProfileService.invalidate(entry.getPuuid(), shard);
     }
 
@@ -324,11 +324,9 @@ public final class RankService {
     private static void saveRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks, boolean invalidateProfile) {
         if (!valid(puuid, shard) || ranks == null) return;
 
-        Map<GameQueueType, Long> mmr = new LinkedHashMap<>();
-        for (Map.Entry<GameQueueType, Rank> entry : ranks.entrySet()) if (entry.getKey() != null && entry.getValue() != null)
-            mmr.put(entry.getKey(), (long) TierDivisionUtils.getMmr(entry.getValue().tier(), entry.getValue().lp()));
-        MongoDB.upsertRanks(puuid, shard, ranks, mmr);
+        MongoDB.upsertRanks(puuid, shard, ranks);
         RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        CompetitiveService.refreshFromRanks(puuid, shard, ranks);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
     }
 

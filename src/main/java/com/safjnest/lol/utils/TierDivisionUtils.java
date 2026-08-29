@@ -14,6 +14,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class TierDivisionUtils {
 
+  public record MmrRange(int minimum, Integer maximum) {}
+
   public static boolean isHighElo(TierDivisionType division) {
     return Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I).contains(division);
   }
@@ -99,6 +101,32 @@ public class TierDivisionUtils {
     };
 
     return base < 0 ? -1 : base + Math.max(lp, 0);
+  }
+
+  public static MmrRange getMmrRange(TierType tier) {
+    if (tier == null) return new MmrRange(0, null);
+    return switch (tier) {
+      case IRON -> new MmrRange(0, 400);
+      case BRONZE -> new MmrRange(400, 800);
+      case SILVER -> new MmrRange(800, 1200);
+      case GOLD -> new MmrRange(1200, 1600);
+      case PLATINUM -> new MmrRange(1600, 2000);
+      case EMERALD -> new MmrRange(2000, 2400);
+      case DIAMOND -> new MmrRange(2400, 10000);
+      case MASTER -> new MmrRange(10000, 20000);
+      case GRANDMASTER -> new MmrRange(20000, 30000);
+      case CHALLENGER -> new MmrRange(30000, null);
+      case UNRANKED -> new MmrRange(-1, 0);
+    };
+  }
+
+  public static TierType getTierFromMmr(long mmr) {
+    for (TierType tier : TierType.values()) {
+      if (tier == TierType.UNRANKED) continue;
+      MmrRange range = getMmrRange(tier);
+      if (mmr >= range.minimum() && (range.maximum() == null || mmr < range.maximum())) return tier;
+    }
+    return TierType.UNRANKED;
   }
 
   public static List<TierType> getHigherTiers(TierType tier) {

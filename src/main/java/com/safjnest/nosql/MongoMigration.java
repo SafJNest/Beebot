@@ -468,7 +468,7 @@ public final class MongoMigration {
 
     private static List<QueryRecord> queryEmbeddedPage(String phase, List<Long> summonerIds, long afterId) {
         String query = switch (phase) {
-            case "ranks" -> "SELECT r.id, r.summoner_id, s.puuid, r.region, r.queue, r.`rank`, r.lp, r.mmr, r.wins, r.losses, r.last_update "
+            case "ranks" -> "SELECT r.id, r.summoner_id, s.puuid, r.region, r.queue, r.`rank`, r.lp, r.wins, r.losses, r.last_update "
                     + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id WHERE r.id > " + afterId
                     + " AND s.id IN " + sqlIds(summonerIds)
                     + " ORDER BY r.id ASC LIMIT " + EMBEDDED_BATCH_SIZE;
@@ -577,7 +577,6 @@ public final class MongoMigration {
                     .append("queue", row.get("queue"))
                     .append("rank", row.get("rank"))
                     .append("lp", row.getAsInt("lp"))
-                    .append("mmr", row.getAsInt("mmr"))
                     .append("wins", row.getAsInt("wins"))
                     .append("losses", row.getAsInt("losses"))
                     .append("lastUpdate", epochMillis(row, "last_update"));

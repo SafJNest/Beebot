@@ -64,6 +64,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `champion_stats` | `champion_stats` | `_id = filterKey` | mega-aggregate per filtro; documenti `filterKey + championId` legacy |
 | champion indexables | `champions_indexable` | `_id = championId + role` | proiezione derivata della major patch corrente |
 | profile indexables | `profiles_indexable` | `_id = puuid` | proiezione derivata per URL pubblici |
+| competitive leaderboard | `competitive` | `_id = puuid + queue` | proiezione derivata MMR/ruolo |
 | leaderboard aggregates | `leaderboard_aggregates` | `_id = tipo + filtro` | snapshot derivato |
 | migration checkpoints | `migration_runs` | `_id = runId` | operational state |
 
@@ -86,7 +87,6 @@ Esempio concettuale:
       "region": "EUW1",
       "rank": "EMERALD_II",
       "lp": 90,
-      "mmr": 1490,
       "wins": 100,
       "losses": 80,
       "lastUpdate": 1710000000000
@@ -111,7 +111,7 @@ Esempio concettuale:
 - il nuovo flusso non pulisce automaticamente dati precedenti; l'operatore elimina manualmente i payload obsoleti;
 - `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;
-- la leaderboard non duplica le righe rank: `leaderboard_aggregates` contiene solo snapshot ricostruibili di distribuzione, top-region e count;
+- `competitive` è la proiezione derivata che unisce MMR calcolato, queue e ruolo primario; `leaderboard_aggregates` contiene solo snapshot ricostruibili di distribuzione, top-region e count;
 - il rank identifica la coda tramite la key canonica dell'object `ranks`, non tramite un ID numerico;
 - più regioni sono rappresentate da `region` nel rank quando il dataset lo richiede;
 - non duplicare una seconda identità `Summoner` in wrapper o modelli di persistenza.
@@ -215,47 +215,28 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 ## Query leaderboard
 
-La leaderboard usa direttamente `summoner.ranks.<QUEUE>.mmr`. Mongo filtra il
-path MMR selezionato per queue, tier e regione, quindi legge la pagina con una
-`find()` ordinata e limitata. L'ordinamento è `ranks.<QUEUE>.mmr DESC`.
+`competitive` contiene una riga per PUUID e queue se esiste il rank. MMR è
+calcolato dal rank; `primary` resta assente finché le statistiche canoniche non
+esistono e poi deriva dal numero massimo di game per lane nelle foglie profile.
+La query filtra
+`queue`, `region`, `primary` opzionale e range MMR del tier, ordina
+`mmr DESC` e restituisce una pagina di PUUID. Una seconda query
+`summoner._id: {$in: [...]}` carica solo i modelli della pagina e il servizio
+ricompone l'ordine. `summoner.ranks` non contiene MMR.
 
-La pagina proietta soltanto identità summoner, il rank selezionato e le masteries;
-`LeaderboardService` aggiunge le statistiche già presenti in cache o Mongo e
-costruisce il modello canonico `LeaderboardPage`. Il totale è indipendente dalla
-pagina e risolve Redis, poi il count snapshot in `leaderboard_aggregates`, poi
-`countDocuments()`; quest'ultimo ripopola entrambi i livelli. Distribuzione,
-top-region e count vengono salvati come snapshot e ricostruiti ogni 12 ore. I
-filtri mai materializzati vengono calcolati lazy al successivo accesso. Non
-vengono persistite righe o pagine leaderboard.
+Il totale risolve Redis, poi (senza ruolo) il count snapshot in
+`leaderboard_aggregates`, poi `countDocuments()` su `competitive`. Distribuzione,
+top-region e count sono snapshot ricostruibili; il ruolo è una query diretta
+cacheata separatamente. Non vengono materializzate pagine.
 
 Ogni snapshot usa un `_id` stabile per tipo e filtro: distribuzione e top-region
 contengono `entries`, mentre `page-count` contiene il valore `count`; tutti
 mantengono queue, scope e tier quando applicabile. La collection è derivata e
 può essere cancellata e ricostruita senza perdita dei rank.
 
-Gli indici della pagina sono gestiti operativamente fuori dal runtime. Non
-includono `_id`.
-
-Pagine all-ranks (`rank` omesso): sort MMR senza filtro divisione.
-
-```javascript
-{"ranks.RANKED_SOLO_5X5.mmr": -1}
-{"region": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
-{"ranks.RANKED_FLEX_SR.mmr": -1}
-{"region": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
-```
-
-Pagine tier-scoped (`rank=SILVER`, ecc.): filtro su `ranks.<QUEUE>.rank` e sort
-MMR. Creazione manuale in [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
-
-```javascript
-{"ranks.RANKED_SOLO_5X5.rank": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
-{"region": 1, "ranks.RANKED_SOLO_5X5.rank": 1, "ranks.RANKED_SOLO_5X5.mmr": -1}
-{"ranks.RANKED_FLEX_SR.rank": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
-{"region": 1, "ranks.RANKED_FLEX_SR.rank": 1, "ranks.RANKED_FLEX_SR.mmr": -1}
-```
-
-Ogni indice rank usa `partialFilterExpression` su `ranks.<QUEUE>.mmr`.
+Gli indici sono gestiti operativamente fuori dal runtime. Gli indici richiesti
+su `competitive` e il cleanup degli indici MMR legacy sono in
+[`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
 
 ## Collection derivate e aggregate
 

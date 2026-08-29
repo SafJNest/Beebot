@@ -13,6 +13,7 @@ import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;

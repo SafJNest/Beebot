@@ -26,13 +26,15 @@ public class LeaderboardController {
             @RequestParam(value = "rank", required = false) String rankValue,
             @RequestParam(value = "region", required = false) String regionValue,
             @RequestParam(value = "queue", required = false) String queueValue,
+            @RequestParam(value = "role", required = false) String roleValue,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "50") int limit
     ) {
+        var queue = LolApiParameters.queue(queueValue);
+        var role = LolApiParameters.role(roleValue);
+        LolApiParameters.validateRole(queue, role);
         ApiResult<LeaderboardPage> result = leaderboardService.getLeaderboard(
-                LolApiParameters.rank(rankValue),
-                LolApiParameters.queue(queueValue),
-                LolApiParameters.region(regionValue),
+                LolApiParameters.rank(rankValue), queue, LolApiParameters.region(regionValue), role,
                 LolApiParameters.page(page),
                 LolApiParameters.limit(limit)
             );

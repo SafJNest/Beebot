@@ -52,3 +52,53 @@ db.summoner.countDocuments({ranks: {$type: "array"}})
 
 The expected result is `0`. Indexes are intentionally outside this migration and
 are managed separately by the database operator.
+
+## Remove embedded MMR
+
+After `!test competitive` has populated the `competitive` index, remove the
+obsolete MMR field from every queue dynamically. This update pipeline is also
+compatible with MongoDB 4.2:
+
+```javascript
+db.summoner.updateMany(
+  {"ranks": {$type: "object"}},
+  [
+    {
+      $set: {
+        ranks: {
+          $arrayToObject: {
+            $map: {
+              input: {$objectToArray: "$ranks"},
+              as: "queue",
+              in: {
+                k: "$$queue.k",
+                v: {
+                  $arrayToObject: {
+                    $filter: {
+                      input: {$objectToArray: "$$queue.v"},
+                      as: "field",
+                      cond: {$ne: ["$$field.k", "mmr"]}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+)
+```
+
+Verify that no embedded MMR remains, then drop the obsolete indexes documented
+in [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md):
+
+```javascript
+db.summoner.countDocuments({
+  $or: [
+    {"ranks.RANKED_SOLO_5X5.mmr": {$exists: true}},
+    {"ranks.RANKED_FLEX_SR.mmr": {$exists: true}}
+  ]
+})
+```

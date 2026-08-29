@@ -114,8 +114,8 @@ solo i campi applicabili (`page`, `pageSize`, `limit`, `offset`, `total`,
 | `q`, `puuid`, `gameId`, `gameName`, `tagLine`, `champion` | string | Non vuota; i segmenti path devono essere URL-encoded quando contengono caratteri riservati. |
 
 `region` omesso significa aggregato globale interno; il valore pubblico non è
-`GLOBAL`. `role` è disponibile solo per champion e viene rifiutato se la queue
-non supporta una lane.
+`GLOBAL`. `role` è disponibile per champion e leaderboard e viene rifiutato se
+la queue non supporta una lane.
 
 ## Source of truth
 

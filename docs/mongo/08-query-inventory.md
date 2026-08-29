@@ -7,7 +7,7 @@ La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection
 | search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` ordinato per `_id`; mappa a `Summoner` canonico (`region` come `LeagueShard`) | 1 | UserData / Discord |
 | profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfileService |
-| leaderboard | `find` su `ranks.<QUEUE>.mmr` con filtro queue/tier/regione, sort MMR e projection limitata; total separato Redis → aggregate → `countDocuments` | 1 per pagina + count solo su cache miss | LeaderboardService |
+| leaderboard | `find` su `competitive` con filtro queue/tier/regione/ruolo, sort MMR e PUUID limitati; un `$in` su `summoner._id` carica la pagina; total separato Redis → aggregate → `countDocuments` | 2 per pagina + count solo su cache miss | LeaderboardService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | history | participant filter in un unico `$elemMatch`, projection/paging limitati; `countDocuments` diretto | 1 + eventi batch | LeagueMessage |
 | match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
@@ -45,7 +45,7 @@ migration. Devono seguire le query effettive:
 | `summoner` | `summoner_riot_id` | fallback exact/case-insensitive di `findPuuid` |
 | `summoner` | `summoner_user_accounts` | account Discord per `userId`, ordinati per `_id` |
 | `summoner` | `summoner_tracking_true` | tracker e account con `tracking=true` |
-| `summoner` | MMR Solo/Flex globali e composti per regione | `find` leaderboard su `ranks.<QUEUE>.mmr` (all-ranks) o `ranks.<QUEUE>.rank + mmr` (tier-scoped), sort MMR discendente |
+| `competitive` | queue/region/role/MMR con PUUID | pagina leaderboard, sort `mmr DESC`; indice specifico per scope |
 | `match` | `match_participant_time` | history, profilo, OPGG, match recenti e dati LP |
 | `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | query temporali, region/patchMajor, bans e champion wins |
 | `match` | `match_champion_filter` | batch champion con filtro equality-first e participant/lane |
@@ -82,23 +82,23 @@ db.match.aggregate([
   {$group: {_id: {region: "$region", puuid: "$participants.puuid"}}},
   {$sort: {"_id.region": 1, "_id.puuid": 1}}
 ], {allowDiskUse: true}).explain("executionStats")
+db.competitive.find(
+  {queue: "RANKED_SOLO_5X5", region: "EUW1", mmr: {$gte: 800, $lt: 1200}},
+  {_id: 0, puuid: 1}
+).sort({mmr: -1}).skip(50).limit(50).explain("executionStats")
+db.competitive.find(
+  {queue: "RANKED_SOLO_5X5", region: "EUW1", primary: "UTILITY", mmr: {$gte: 30000}},
+  {_id: 0, puuid: 1}
+).sort({mmr: -1}).limit(50).explain("executionStats")
 db.summoner.find(
-  {region: "EUW1", "ranks.RANKED_SOLO_5X5.mmr": {$exists: true}},
-  {_id: 1, riotId: 1, region: 1, level: 1, icon: 1, "ranks.RANKED_SOLO_5X5": 1, masteries: 1}
-).sort({"ranks.RANKED_SOLO_5X5.mmr": -1}).limit(50).explain("executionStats")
-db.summoner.find(
-  {
-    region: "EUW1",
-    "ranks.RANKED_SOLO_5X5.mmr": {$exists: true},
-    "ranks.RANKED_SOLO_5X5.rank": {$in: ["SILVER_IV", "SILVER_III", "SILVER_II", "SILVER_I"]}
-  },
-  {_id: 1, riotId: 1, region: 1, level: 1, icon: 1, "ranks.RANKED_SOLO_5X5": 1, masteries: 1}
-).sort({"ranks.RANKED_SOLO_5X5.mmr": -1}).skip(50).limit(50).explain("executionStats")
+  {_id: {$in: ["<page-puuid-1>", "<page-puuid-2>"]}},
+  {_id: 1, riotId: 1, region: 1, level: 1, icon: 1, ranks: 1, masteries: 1}
+).explain("executionStats")
 ```
 
 Gli explain devono verificare `executionTimeMillis`, `totalKeysExamined`,
 `totalDocsExamined`, `nReturned`, `winningPlan`, `indexName` e l'assenza di
 `COLLSCAN` e l'assenza di un `SORT` bloccante. Confrontare la baseline prima/dopo con `collStats` e
-`indexSizes`. La leaderboard all-ranks usa `ranks.<QUEUE>.mmr`; le pagine
-tier-scoped usano gli indici composti `rank + mmr` descritti in
+`indexSizes`. La leaderboard usa `competitive` per MMR/range/ruolo e poi un
+`$in` sul primary key di `summoner`; gli indici richiesti sono descritti in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).

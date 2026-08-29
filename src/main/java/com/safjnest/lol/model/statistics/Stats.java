@@ -5,11 +5,17 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+
 public class Stats<T> {
     @JsonIgnore
     public T reference;
     public long games;
     public long wins;
+    public long blueGames;
+    public long blueWins;
+    public long redGames;
+    public long redWins;
     public long kills;
     public long deaths;
     public long assists;
@@ -97,7 +103,7 @@ public class Stats<T> {
     private void add(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills,
                      boolean arena, boolean calculate) {
         if (participant == null) return;
-        addValues(participant.win, kda(participant.kda), participant.damage, participant.damageBuilding,
+        addValues(participant.win, participant.team, kda(participant.kda), participant.damage, participant.damageBuilding,
             participant.damageTaken, participant.healing, participant.visionScore, participant.ward,
             participant.wardKilled, participant.cs, participant.goldEarned, participant.rankProgress == null || participant.rankProgress.gain == null ? 0 : participant.rankProgress.gain,
             participant.championLevel, participant.doubles, participant.triples, participant.quadruples,
@@ -108,6 +114,10 @@ public class Stats<T> {
     public void merge(Stats<?> other) {
         games += other.games;
         wins += other.wins;
+        blueGames += other.blueGames;
+        blueWins += other.blueWins;
+        redGames += other.redGames;
+        redWins += other.redWins;
         kills += other.kills;
         deaths += other.deaths;
         assists += other.assists;
@@ -209,6 +219,7 @@ public class Stats<T> {
 
     private void addValues(
         boolean win,
+        TeamType team,
         int[] kdaValues,
         int damage,
         int damageBuilding,
@@ -241,6 +252,13 @@ public class Stats<T> {
     ) {
         games++;
         if (win) wins++;
+        if (team == TeamType.BLUE) {
+            blueGames++;
+            if (win) blueWins++;
+        } else if (team == TeamType.RED) {
+            redGames++;
+            if (win) redWins++;
+        }
         kills += kdaValues[0];
         deaths += kdaValues[1];
         assists += kdaValues[2];

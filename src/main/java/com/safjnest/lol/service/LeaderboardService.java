@@ -28,6 +28,7 @@ import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class LeaderboardService {
@@ -46,7 +47,7 @@ public class LeaderboardService {
     private final ProfileService profileService = new ProfileService();
 
     public ApiResult<LeaderboardPage> getLeaderboard(
-        TierType rank, GameQueueType queue, LeagueShard region, int page, int limit
+        TierType rank, GameQueueType queue, LeagueShard region, LaneType role, int page, int limit
     ) {
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
         if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
@@ -54,18 +55,19 @@ public class LeaderboardService {
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
         String selectedRegion = defaultRegion(region);
         String rankKey = rank == null ? ALL_RANKS : rank.name();
+        String roleKey = role == null ? "ALL" : role.name();
         long version = cacheVersion();
         String key = RedisKey.LEADERBOARD_PAGE.of(
-            version, rankKey, selectedQueue.name(), selectedRegion, page, limit
+            version, rankKey, selectedQueue.name(), selectedRegion, roleKey, page, limit
         );
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
         if (cached != null) return ApiResult.ready(cached);
 
         long offset = (long) (page - 1) * limit;
         List<Summoner> summoners = MongoDB.findLeaderboardPage(
-            rank, selectedQueue, selectedRegion, offset, limit
+            rank, selectedQueue, selectedRegion, role, offset, limit
         );
-        long total = findLeaderboardCount(version, rank, selectedQueue, selectedRegion);
+        long total = findLeaderboardCount(version, rank, selectedQueue, selectedRegion, role);
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         Filter filter = Filter.canonical();
@@ -101,7 +103,7 @@ public class LeaderboardService {
         if (statisticsBySummoner.size() == summoners.size()) RedisClient.set(
             RedisKey.LEADERBOARD_PAGE,
             response,
-            version, rankKey, selectedQueue.name(), selectedRegion, page, limit
+            version, rankKey, selectedQueue.name(), selectedRegion, roleKey, page, limit
         );
         return ApiResult.ready(response);
     }
@@ -191,9 +193,10 @@ public class LeaderboardService {
         return version == null ? 0 : version;
     }
 
-    private static long findLeaderboardCount(long version, TierType rank, GameQueueType queue, String region) {
+    private static long findLeaderboardCount(long version, TierType rank, GameQueueType queue, String region, LaneType role) {
         String rankKey = rank == null ? ALL_RANKS : rank.name();
-        String cacheKey = RedisKey.LEADERBOARD_COUNT.of(version, queue.name(), region, rankKey);
+        String roleKey = role == null ? "ALL" : role.name();
+        String cacheKey = RedisKey.LEADERBOARD_COUNT.of(version, queue.name(), region, rankKey, roleKey);
         Long cached = RedisClient.getLong(cacheKey);
         if (cached != null && cached >= 0) return cached;
 
@@ -202,14 +205,14 @@ public class LeaderboardService {
             cached = RedisClient.getLong(cacheKey);
             if (cached != null && cached >= 0) return cached;
 
-            boolean claimed = RedisClient.claim(RedisKey.LEADERBOARD_COUNT_LOCK, "1", version, queue.name(), region, rankKey);
+            boolean claimed = RedisClient.claim(RedisKey.LEADERBOARD_COUNT_LOCK, "1", version, queue.name(), region, rankKey, roleKey);
             try {
-                Long aggregate = MongoDB.findLeaderboardAggregateCount(rank, queue, region);
-                long total = aggregate == null ? MongoDB.findLeaderboardCount(rank, queue, region) : aggregate;
+                Long aggregate = role == null ? MongoDB.findLeaderboardAggregateCount(rank, queue, region) : null;
+                long total = aggregate == null ? MongoDB.findLeaderboardCount(rank, queue, region, role) : aggregate;
                 RedisClient.setCached(cacheKey, Long.toString(total), RedisKey.LEADERBOARD_COUNT.ttlSeconds());
                 return total;
             } finally {
-                if (claimed) RedisClient.delete(RedisKey.LEADERBOARD_COUNT_LOCK.of(version, queue.name(), region, rankKey));
+                if (claimed) RedisClient.delete(RedisKey.LEADERBOARD_COUNT_LOCK.of(version, queue.name(), region, rankKey, roleKey));
             }
         }
     }

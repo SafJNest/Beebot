@@ -52,6 +52,10 @@ public class ProfileStatisticsTest {
         assertEquals(Long.valueOf(18), leaf.championLevelTotal);
         assertNull(leaf.damageTaken);
         assertEquals(1, leaf.games);
+        assertEquals(1, leaf.blueGames);
+        assertEquals(1, leaf.blueWins);
+        assertEquals(0, leaf.redGames);
+        assertEquals(0, leaf.redWins);
         assertFalse(new ObjectMapper().writeValueAsString(statistics).contains("damageTaken"));
     }
 

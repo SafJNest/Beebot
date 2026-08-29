@@ -186,7 +186,15 @@ La collection è `profile_statistics`. Il documento target è flat e conserva so
   "champions": {
     "157": {
       "RANKED_SOLO": {
-        "TOP": { "games": 42, "wins": 24, "championLevelTotal": 756 }
+        "TOP": {
+          "games": 42,
+          "wins": 24,
+          "blueGames": 20,
+          "blueWins": 13,
+          "redGames": 22,
+          "redWins": 11,
+          "championLevelTotal": 756
+        }
       }
     }
   },
@@ -198,8 +206,12 @@ La collection è `profile_statistics`. Il documento target è flat e conserva so
 
 Non deve esistere il campo root `statistics` per i nuovi documenti.
 `champions` è la sola source of truth delle statistiche principali, alla
-granularità `champion × CanonicalQueue × position`. Ogni game entra in una
-foglia; una posizione assente o non applicabile usa sempre `UNKNOWN`.
+granularità `champion × CanonicalQueue × position`.
+Ogni foglia conserva anche i contatori base per side (`blueGames`, `blueWins`,
+`redGames`, `redWins`); winrate per queue, lane o side resta derivato da questi
+contatori e non viene materializzato come campo separato.
+Ogni game entra in una foglia; una posizione assente o non applicabile usa
+sempre `UNKNOWN`.
 
 Le queue Riot vengono normalizzate all'ingestion in `CanonicalQueue`
 (`RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA`, ecc.). Non
