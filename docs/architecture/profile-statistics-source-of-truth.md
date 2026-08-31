@@ -1,155 +1,159 @@
-# Profile statistics: unica fonte di verità
+# Profile statistics: single source of truth
 
-- Stato: implementato staticamente; verifica runtime Mongo ed explain ancora pendenti
-- Ultimo aggiornamento: 2026-08-20
-- Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, profilo HTTP e statistiche Mongo LoL
-- Owner di cache, persistenza e composizione: `ProfileService`
-- Owner del calcolo puro: `ProfileAnalyzer`
-- Owner del refresh asincrono: `lol.queue.DatabaseTracker`
+- State: implemented — see `docs/HANDBOOK.md` §5.9/§5.10 for changes; `explain` IXSCAN verification still in `TODO.md P1` gate
+- Last updated: 2026-08-31
+- Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, HTTP profile and LoL Mongo statistics
+- Cache, persistence and composition owner: `ProfileService`
+- Pure computation owner: `ProfileAnalyzer`
+- Asynchronous refresh owner: `lol.queue.ComputeScheduler` (`QueueHandler` → `ComputeScheduler` `PROFILE`) — former `DatabaseTracker` (ADR-0014)
 
-Questo documento è il riferimento operativo per il flusso delle statistiche profilo. In caso di nuovo lavoro cercare questi termini: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `DatabaseTracker.startProfileStatistics`, `DatabaseTracker.startProfileMatchups`.
+This document is the operational reference for the profile statistics flow. When starting new work search for these terms: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `ComputeScheduler.startProfileStatistics`, `ComputeScheduler.startProfileMatchups`.
 
-## Regola principale
+## Primary rule
 
-Per uno stesso account, tutte le statistiche filtrate sono identificate dalla coppia:
+For the same account, all filtered statistics are identified by the pair:
 
 ```text
-PUUID + Filter completo
+PUUID + complete Filter
 ```
 
-Il PUUID identifica l'account Riot. Il `Filter` identifica esattamente il dataset da aggregare. Non esistono più una statistica “profile”, una statistica “overview” e una statistica “champion” calcolate separatamente per lo stesso caso: overview, profile e comando generico leggono lo stesso `ProfileStatistics`.
+The PUUID identifies the Riot account. The `Filter` identifies exactly the dataset to aggregate. There is no longer a separate “profile” statistic, an “overview” statistic and a “champion” statistic computed separately for the same case: overview, profile and the generic command read the same `ProfileStatistics`.
 
-`recentMatches` non fa parte dell'aggregato. È una proiezione leggera caricata separatamente usando lo stesso PUUID e lo stesso filtro.
+`recentMatches` is not part of the aggregate. It is a lightweight projection loaded separately using the same PUUID and the same filter.
 
 ## Profile records
 
-I record sono una proiezione distinta in `profile_records`, con identità
-`puuid + filterKey + metric`. `ProfileRecordService` è owner della lettura e
-del calcolo; `ProfileRecordAnalyzer` è puro; `ComputeScheduler` esegue il job
-deduplicato `profile-records:<puuid>:<filterKey>` sul worker PROFILE. Il
-calcolo usa lo stesso filtro completo delle statistiche, ma legge
-`match_events` soltanto nel proprio pass batchato: il refresh normale delle
-statistiche non materializza timeline.
+Records are a distinct projection in `profile_records`, with identity
+`puuid + filterKey + metric`. `ProfileRecordService` owns reading and
+computation; `ProfileRecordAnalyzer` is pure; `ComputeScheduler` executes the deduplicated job
+`profile-records:<puuid>:<filterKey>` on the PROFILE worker. The
+computation uses the same complete filter as statistics, but reads
+`match_events` in batches of 250 only in its own pass. At the end of each
+consumer `MatchMemoryUtils` recursively frees matches, events, documents and
+nested collections; merely assigning `null` to the match does not replace this
+release. Normal statistics refresh does not materialize timelines.
 
-I record finali usano i campi flat del participant. I record timeline usano
-`champion_kills` e `monster_events`. L'assenza di eventi esclude solo quelle
-metriche e non produce valori zero. I record TEAM/MATCH conservano una riga
-per ogni partecipante pertinente e `gameShared=true`; i record PARTICIPANT
-omettono il campo. Il rank/LP/MMR è lo snapshot del participant nel match, mai
-il rank corrente del summoner.
+Final records use the flat participant fields. Timeline records use
+`champion_kills` and `monster_events`: `FIRST_KILL_TIME` is the participant's first kill,
+while `FIRST_BLOOD_TIME` explicitly requires the Riot first-blood.
+Absence of events excludes only those metrics and does not produce
+zero values. TEAM/MATCH records keep one row
+per relevant participant and `gameShared=true`; PARTICIPANT
+records omit the field. MMR is the snapshot derived from the participant in the match, never
+the summoner's current MMR.
 
-## Refresh esplicito del profilo
+## Explicit profile refresh
 
-`POST /api/lol/{shard}/profile/{puuid}/refresh` aggiorna prima Account,
-summoner, rank e mastery con `R4JQueue` e persiste ogni componente. Solo dopo
-la verifica riuscita aggiorna il campo interno Mongo `summoner.lastSeenAt` e
-accoda un unico `IMMEDIATE profile-refresh:<puuid>` su `DatabaseTracker`.
+`POST /api/lol/{shard}/profile/{puuid}/refresh` first refreshes Account,
+summoner, rank and mastery via `RiotScheduler` (`QueueHandler.immediate(RiotScheduler.class, shard, ...)`) and persists each component. Only after
+successful verification does it update the internal Mongo field `summoner.lastSeenAt` and
+enqueue a single `IMMEDIATE profile-refresh:<puuid>` on `ComputeScheduler` (`QueueHandler.immediate(ComputeScheduler.class, PROFILE, ...)`).
 
-Il batch legge tutti i match del PUUID/shard una sola volta, in ordine
-`timeStart`, con cursor Mongo senza materializzare `List<Match>`, e rigenera
-da zero soltanto le tre varianti canoniche: statistics e
-matchups e activity sul filtro canonical della season corrente, senza
-patch/queue/lane/champion. I filtri derivati restano on-demand. Il breakdown champion del profilo è incluso in
-`ProfileStatistics`; il refresh non avvia statistiche globali champion e non
-richiede né modifica la matchlist.
+The batch reads all matches for the PUUID/shard only once, in
+`timeStart` order, with a Mongo cursor without materializing `List<Match>`, and regenerates
+from scratch only the three canonical variants: statistics and
+matchups and activity on the canonical filter of the current season, without
+patch/queue/lane/champion. Derived filters remain on-demand. The profile champion breakdown is included in
+`ProfileStatistics`; the refresh does not start global champion statistics and does not
+require or modify the matchlist.
 
-## Activity profile
+## Profile activity
 
-L'endpoint `GET /api/lol/{shard}/profile/{puuid}/activity` usa soltanto i
-parametri `start`, `end`, `queue` e `champion`. Il controller costruisce un
-`Filter.canonical()` quando `start` e `end` sono entrambi omessi; con un bound
-esplicito usa `Filter.summoner(start, end)`. Normalizza `queue=ALL` a queue
-nulla e usa `0` come valore neutro per champion.
+The `GET /api/lol/{shard}/profile/{puuid}/activity` endpoint uses only the
+`start`, `end`, `queue` and `champion` parameters. The controller builds a
+`Filter.canonical()` when both `start` and `end` are omitted; with an explicit bound
+it uses `Filter.summoner(start, end)`. It normalizes `queue=ALL` to a null queue
+and uses `0` as the neutral value for champion.
 
-Il servizio legge i match con `MongoDB.findProfileStatisticsMatches`, quindi
-riusa lo stesso `buildMatchFilter` e la stessa verifica completa del filtro
-usata dalle statistiche profilo. `ProfileActivity.from(...)` percorre il
-risultato una sola volta e aggiorna nello stesso passaggio totale, celle
-`7x24`, aggregati giornalieri/orari, queue, sessioni e finestre temporali.
+The service reads matches with `MongoDB.findProfileStatisticsMatches`, then
+reuses the same `buildMatchFilter` and the same complete filter verification
+used by profile statistics. `ProfileActivity.from(...)` traverses the
+result only once and updates in the same pass the total, `7x24` cells,
+daily/hourly aggregates, queue, sessions and time windows.
 
-La response è una proiezione dedicata e non modifica `SummonerView` o
-`overview.recentMatches`. `recentSessions` contiene tutte le sessioni del
-periodo in una sola response, senza cursor. Le celle della heatmap sono
-ordinate per `day * 24 + hour`, con Monday `0` e Sunday `6`.
+The response is a dedicated projection and does not modify `SummonerView` or
+`overview.recentMatches`. `recentSessions` contains all sessions of the
+period in a single response, without a cursor. Heatmap cells are
+ordered by `day * 24 + hour`, with Monday `0` and Sunday `6`.
 
-La persistenza segue lo stesso read-through delle statistiche, ma su una
-collection derivata dedicata: `Redis SUMMONER_ACTIVITY(PUUID, filterKey)`, poi
-Mongo `profile_activity` con `{ puuid, filterKey }`. Un valore assente restituisce `202
-profile_activity_pending` e viene accodato `NORMAL`. Un valore stale resta
-un `200` con il payload persistito e `metadata.refresh=true`, poi accoda solo
-l'activity in `BACKGROUND`; non viene calcolato nella request.
-Il valore `filter` della response è il `Filter` canonico, non un record
-parallelo.
+Persistence follows the same read-through as statistics, but on a
+dedicated derived collection: `Redis SUMMONER_ACTIVITY(PUUID, filterKey)`, then
+Mongo `profile_activity` with `{ puuid, filterKey }`. A missing value returns `202
+profile_activity_pending` and enqueues `NORMAL`. A stale value remains
+a `200` with the persisted payload and `metadata.refresh=true`, then enqueues only
+the activity in `BACKGROUND`; it is not computed in the request.
+The response `filter` value is the canonical `Filter`, not a parallel
+record.
 
 ## Profile matchups
 
-`GET /api/lol/{shard}/profile/{puuid}/matchups` usa `ActivityFilter`, che
-estende `Filter` con `minGames`. `queue` omessa o `ALL` significa tutte le
-queue, `role` omesso significa tutti i ruoli. Se `start` è presente senza
-`end`, la fine viene impostata alle `23:59:59.999` della giornata corrente nel
-timezone del server, così la chiave resta stabile durante la giornata; se viene
-passato solo `end`, resta il limite inferiore aperto. Quando almeno uno dei due bound è
-presente, definisce il periodo e prevale su `patch`; se mancano entrambi,
-`patch` è il fallback mentre il periodo resta quello della season canonical.
-`minGames` ha default 5 e filtra solo le righe matchup della response; non
-partecipa a `Filter.toSummonerKey()`.
+`GET /api/lol/{shard}/profile/{puuid}/matchups` uses `ActivityFilter`, which
+extends `Filter` with `minGames`. Omitted `queue` or `ALL` means all
+queues, omitted `role` means all roles. If `start` is present without
+`end`, the end is set to `23:59:59.999` of the current day in
+the server timezone, so the key remains stable during the day; if only
+`end` is passed, the lower bound remains open. When at least one of the two bounds is
+present, it defines the period and takes precedence over `patch`; if both are missing,
+`patch` is the fallback while the period remains that of the canonical season.
+`minGames` defaults to 5 and filters only the matchup rows in the response; it does not
+participate in `Filter.toSummonerKey()`.
 
-`ProfileMatchups` ha un contratto separato da `ProfileStatistics`: salva solo
-le foglie `champions.<championId>.<CanonicalQueue>.<position>`. Ogni foglia
-contiene gli accumulatori base e `matchups.<opponentChampionId>` per gli
-avversari incontrati nella stessa posizione. Non salva aggregate per champion,
-queue o lane, né `reference`, `winrate`, `kda` o `avg*`; questi valori vengono
-calcolati dal consumer. `UNKNOWN` conserva le partite senza posizione valida e
-le queue Riot vengono canonicalizzate all'ingestion.
+`ProfileMatchups` has a separate contract from `ProfileStatistics`: it saves only
+the leaves `champions.<championId>.<CanonicalQueue>.<position>`. Each leaf
+contains the base accumulators and `matchups.<opponentChampionId>` for
+opponents encountered in the same position. It does not save aggregates per champion,
+queue or lane, nor `reference`, `winrate`, `kda` or `avg*`; these values are
+computed by the consumer. `UNKNOWN` keeps games without a valid position and
+Riot queues are canonicalized at ingestion.
 
-`ProfileMatchups` è l'unica sorgente persistita dei matchup. Un consumer che
-serve una vista globale la ricostruisce sommando le foglie; `ProfileStatistics`
-non conserva `matchups` né `duoStats`. `ProfileMatchups` ha un proprio
-read-through Redis/Mongo:
+`ProfileMatchups` is the only persisted source for matchups. A consumer
+serving a global view rebuilds it by summing the leaves; `ProfileStatistics`
+does not store `matchups` nor `duoStats`. `ProfileMatchups` has its own
+Redis/Mongo read-through:
 
 ```text
 Redis SUMMONER_MATCHUPS(PUUID, filterKey)
   -> Mongo profile_matchups { puuid, filterKey }
-  -> DatabaseTracker profile-matchups:<puuid>:<filterKey>
+  -> ComputeScheduler profile-matchups:<puuid>:<filterKey> (PROFILE lane)
   -> Mongo.findProfileStatisticsMatches(..., Filter, 0, 0)
   -> ProfileAnalyzer.matchups(...)
-  -> Mongo upsert e Redis cache
+  -> Mongo upsert and Redis cache
 ```
 
-Il calcolo non avviene durante la request. Un miss restituisce `202`; un
-aggregato stale resta `200` con `metadata.refresh=true` e accoda soltanto il
-refresh matchup in bassa priorità. Il refresh viene eseguito dal worker database generale, condiviso con gli altri
-refresh non-build; il worker build resta dedicato ai soli calcoli build.
-Il JSON del profilo esistente non cambia.
+Computation does not happen during the request. A miss returns `202`; a
+stale aggregate remains `200` with `metadata.refresh=true` and enqueues only the
+matchup refresh at low priority. The refresh is executed by the general database worker, shared with the other
+non-build refreshes; the build worker remains dedicated to build calculations only.
+The existing profile JSON does not change.
 
-## Freshness stale
+## Stale freshness
 
-Un aggregato profile è stale oltre `30 giorni + jitter deterministico 0-14
-giorni`, derivato dal PUUID. La GET accoda il backstop `BACKGROUND` solo se
-`lastSeenAt` è negli ultimi 60 giorni; il campo resta interno al documento
-`summoner`, non appartiene a `Summoner` né al JSON/API. Lo stale non accoda mai
-il refresh completo: overview accoda solo statistics, activity solo activity e
-matchups solo matchups.
+A profile aggregate is stale after `30 days + deterministic jitter 0-14
+days`, derived from the PUUID. The GET enqueues the `BACKGROUND` backstop only if
+`lastSeenAt` is within the last 60 days; the field remains internal to the
+`summoner` document, it does not belong to `Summoner` nor to the JSON/API. Stale never enqueues
+the full refresh: overview enqueues only statistics, activity only activity and
+matchups only matchups.
 
-## Il filtro canonico
+## The canonical filter
 
-`Filter` è l'oggetto che deve essere passato senza perdere campi tra UI, servizio, query Mongo, cache e persistenza. I campi che partecipano al filtro sono:
+`Filter` is the object that must be passed without losing fields between UI, service, Mongo query, cache and persistence. The fields that participate in the filter are:
 
-| Campo | Significato |
+| Field | Meaning |
 |---|---|
-| `champion` | Champion del summoner; `0` significa tutti |
-| `lane` | Lane del participant |
-| `queue` | Queue della partita |
-| `rank` | Tier richiesto |
-| `rankBehavior` | `EXACT` oppure `GREATER_OR_EQUAL` |
-| `patch` | Patch major; il match può avere anche il suffisso di versione |
-| `region` | Shard League richiesto |
-| `opponent` | Champion avversario richiesto |
-| `duo` | Champion del duo richiesto |
-| `timeStart` | Inizio del periodo, `0` senza limite |
-| `timeEnd` | Fine del periodo, `0` senza limite |
+| `champion` | Summoner champion; `0` means all |
+| `lane` | Participant lane |
+| `queue` | Match queue |
+| `rank` | Required tier |
+| `rankBehavior` | `EXACT` or `GREATER_OR_EQUAL` |
+| `patch` | Major patch; the match may also have the version suffix |
+| `region` | Required League shard |
+| `opponent` | Required opponent champion |
+| `duo` | Required duo champion |
+| `timeStart` | Period start, `0` means no limit |
+| `timeEnd` | Period end, `0` means no limit |
 
-Il profilo base, la leaderboard e le API senza filtri usano `Filter.canonical()`:
+The base profile, the leaderboard and APIs without filters use `Filter.canonical()`:
 
 ```text
 champion = 0
@@ -163,20 +167,20 @@ duo = 0
 period = current season
 ```
 
-I filtri espliciti modificano il periodo dello stesso oggetto. Queue, lane, champion e gli altri selettori producono un aggregato distinto.
+Explicit filters modify the period of the same object. Queue, lane, champion and the other selectors produce a distinct aggregate.
 
-### `toKey()` e `toSummonerKey()` non sono intercambiabili
+### `toKey()` and `toSummonerKey()` are not interchangeable
 
-- `Filter.toKey()` resta la chiave storica degli aggregate champion/build e non contiene il periodo completo del profilo.
-- `Filter.toSummonerKey()` è la chiave dedicata a `profile_statistics`, Redis e DatabaseTracker.
+- `Filter.toKey()` remains the historical key for champion/build aggregates and does not contain the full profile period.
+- `Filter.toSummonerKey()` is the dedicated key for `profile_statistics`, Redis and `ComputeScheduler`.
 
-`toSummonerKey()` costruisce questa stringa logica:
+`toSummonerKey()` builds this logical string:
 
 ```text
 champion|lane|queue|rank|rankBehavior|patch|region|opponent|duo|timeStart|timeEnd
 ```
 
-I valori null o neutri vengono rappresentati con `*`. La stringa viene codificata con Base64 URL-safe senza padding. La forma effettiva è quindi:
+Null or neutral values are represented with `*`. The string is encoded with URL-safe Base64 without padding. The effective form is therefore:
 
 ```java
 Base64.getUrlEncoder()
@@ -184,15 +188,15 @@ Base64.getUrlEncoder()
     .encodeToString(rawFilter.getBytes(StandardCharsets.UTF_8));
 ```
 
-Il valore completo, non solo il periodo o la queue, deve essere usato per la lettura. Se anche un solo campo cambia, il risultato è un altro aggregato e deve avere un altro documento.
+The complete value, not just the period or the queue, must be used for reading. If even a single field changes, the result is another aggregate and must have another document.
 
-## Documento Mongo
+## Mongo document
 
-La collection è `profile_statistics`. Il documento target è flat e conserva soltanto le foglie aggregabili:
+The collection is `profile_statistics`. The target document is flat and stores only the aggregatable leaves:
 
 ```json
 {
-  "_id": "ObjectId casuale stabile",
+  "_id": "random stable ObjectId",
   "puuid": "Riot PUUID",
   "filterKey": "Filter.toSummonerKey()",
   "timeStart": 1710000000000,
@@ -221,45 +225,45 @@ La collection è `profile_statistics`. Il documento target è flat e conserva so
 }
 ```
 
-Non deve esistere il campo root `statistics` per i nuovi documenti.
-`champions` è la sola source of truth delle statistiche principali, alla
-granularità `champion × CanonicalQueue × position`.
-Ogni foglia conserva anche i contatori base per side (`blueGames`, `blueWins`,
-`redGames`, `redWins`); winrate per queue, lane o side resta derivato da questi
-contatori e non viene materializzato come campo separato.
-Ogni game entra in una foglia; una posizione assente o non applicabile usa
-sempre `UNKNOWN`.
+The root field `statistics` must not exist for new documents.
+`champions` is the sole source of truth for main statistics, at
+granularity `champion × CanonicalQueue × position`.
+Each leaf also stores the base counters per side (`blueGames`, `blueWins`,
+`redGames`, `redWins`); winrate per queue, lane or side remains derived from these
+counters and is not materialized as a separate field.
+Each game goes into one leaf; a missing or non-applicable position always uses
+`UNKNOWN`.
 
-Le queue Riot vengono normalizzate all'ingestion in `CanonicalQueue`
-(`RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA`, ecc.). Non
-vengono persistiti `total`, `queueStats`, `laneStats`, champion totals,
-`context`, `reference`, `winrate`, `kda` o campi `avg*`. Discord può ricreare
-queste viste in memoria, ma Mongo, Redis e HTTP espongono soltanto le foglie.
-`pings`, `spellOne` e `spellTwo` restano strutture dedicate perché non
-richiedono la stessa granularità. I matchup vivono soltanto in
-`profile_matchups`; non esistono aggregate matchup o duo nel documento
-principale.
+Riot queues are normalized at ingestion into `CanonicalQueue`
+(`RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA`, etc.).
+`total`, `queueStats`, `laneStats`, champion totals,
+`context`, `reference`, `winrate`, `kda` or `avg*` fields are not persisted. Discord can recreate
+these views in memory, but Mongo, Redis and HTTP expose only the leaves.
+`pings`, `spellOne` and `spellTwo` remain dedicated structures because they do not
+require the same granularity. Matchups live only in
+`profile_matchups`; there are no matchup or duo aggregates in the main
+document.
 
-`championLevelTotal` è la somma dei soli `MatchParticipant.getChampionLevel()`.
-Un campo metrico assente significa raw storico non disponibile; `0` presente
-è un valore raccolto. Le medie sono del consumer. I campi Arena esistono solo
-nella foglia `ARENA → UNKNOWN`: `avgArenaPlacement` è
-`arenaPlacementSum / games` di quella foglia.
+`championLevelTotal` is the sum of `MatchParticipant.getChampionLevel()` only.
+A missing metric field means historical raw data not available; a present `0`
+is a collected value. Averages belong to the consumer. Arena fields exist only
+in the `ARENA → UNKNOWN` leaf: `avgArenaPlacement` is
+`arenaPlacementSum / games` of that leaf.
 
-`timeStart` e `timeEnd` nel payload descrivono l'intervallo/progresso dei dati aggregati. L'identità completa del filtro, inclusa la fine del periodo richiesto, è `filterKey`.
+`timeStart` and `timeEnd` in the payload describe the interval/progress of the aggregated data. The complete filter identity, including the end of the requested period, is `filterKey`.
 
-`lastUpdate` viene assegnato soltanto dopo aver terminato la scansione e il calcolo dei match. È il timestamp che Discord e API mostrano per indicare quando l'aggregato è stato calcolato.
+`lastUpdate` is assigned only after finishing the scan and computation of matches. It is the timestamp that Discord and API show to indicate when the aggregate was computed.
 
-## Identità Mongo: spiegazione operativa
+## Mongo identity: operational explanation
 
-Il runtime possiede l'indice unique `profile_statistics_identity` su `{ puuid,
-filterKey }`. La chiave logica resta la coppia, mentre `_id` è l'identità
-fisica del documento. Il bootstrap è create-only: prima di creare l'indice
-verifica identità mancanti e duplicati e interrompe l'avvio senza cleanup.
+The runtime owns the unique index `profile_statistics_identity` on `{ puuid,
+filterKey }`. The logical key remains the pair, while `_id` is the physical
+identity of the document. Bootstrap is create-only: before creating the index
+it checks for missing and duplicate identities and aborts startup without cleanup.
 
-### Perché queste due chiavi
+### Why these two keys
 
-La query applicativa è sempre:
+The application query is always:
 
 ```javascript
 db.profile_statistics.findOne({
@@ -268,25 +272,25 @@ db.profile_statistics.findOne({
 })
 ```
 
-Il PUUID da solo non basta: lo stesso summoner può avere statistiche per current split, previous split, all time, queue, lane, champion o matchup diversi. `filterKey` da solo non basta: lo stesso filtro viene calcolato per molti account. La coppia è la chiave logica unica del risultato.
+PUUID alone is not enough: the same summoner can have statistics for current split, previous split, all time, queue, lane, champion or different matchups. `filterKey` alone is not enough: the same filter is computed for many accounts. The pair is the unique logical key of the result.
 
-### Perché la coppia è unica
+### Why the pair is unique
 
-Il flusso applicativo tratta come invariante:
+The application flow treats as invariant:
 
 ```text
-un solo ProfileStatistics per PUUID e filtro completo
+a single ProfileStatistics per PUUID and complete filter
 ```
 
-un solo `ProfileStatistics` per PUUID e filtro completo. L'indice unique Mongo
-protegge l'invariante anche quando due refresh concorrenti eseguono l'upsert.
-Il lookup resta comunque esatto sulla coppia completa.
+a single `ProfileStatistics` per PUUID and complete filter. The Mongo unique index
+protects the invariant even when two concurrent refreshes execute the upsert.
+The lookup remains exact on the complete pair.
 
-### Perché `_id` non è la chiave di lookup
+### Why `_id` is not the lookup key
 
-`_id` è casuale (`ObjectId`) e viene generato solo al primo inserimento. Non contiene PUUID, periodo o filtro. La coppia `puuid + filterKey` è la chiave business; `_id` è soltanto l'identità fisica stabile del documento Mongo.
+`_id` is random (`ObjectId`) and is generated only on first insertion. It contains no PUUID, period or filter. The pair `puuid + filterKey` is the business key; `_id` is only the stable physical identity of the Mongo document.
 
-Il write path usa un upsert atomico:
+The write path uses an atomic upsert:
 
 ```javascript
 db.profile_statistics.updateOne(
@@ -305,20 +309,20 @@ db.profile_statistics.updateOne(
 )
 ```
 
-Conseguenze:
+Consequences:
 
-1. se la coppia non esiste, Mongo crea un documento con `_id` casuale;
-2. se la coppia esiste, Mongo aggiorna lo stesso documento;
-3. `_id` non viene riscritto perché è presente solo in `$setOnInsert`;
-4. la coppia applicativa resta stabile anche durante refresh concorrenti;
-5. non usare `replace` con un `_id` derivato da PUUID o stagione;
-6. non cercare più per `{ puuid, seasonStart }`.
+1. if the pair does not exist, Mongo creates a document with a random `_id`;
+2. if the pair exists, Mongo updates the same document;
+3. `_id` is not overwritten because it is present only in `$setOnInsert`;
+4. the application pair remains stable even during concurrent refreshes;
+5. do not use `replace` with an `_id` derived from PUUID or season;
+6. do not search anymore by `{ puuid, seasonStart }`.
 
-### Classificazione OTP
+### OTP classification
 
-Per ogni CanonicalQueue esiste al massimo un champion OTP. I game del champion
-sono sommati su tutte le posizioni giocabili della queue; con N game, p1 e p2
-come share dei primi due champion, il primo è OTP quando:
+For each CanonicalQueue there is at most one OTP champion. The champion's games
+are summed across all playable positions of the queue; with N games, p1 and p2
+as share of the top two champions, the first is OTP when:
 
 ```text
 N >= 20
@@ -326,20 +330,18 @@ p1 >= 0.50 + 0.30 * exp(-N / 250)
 p1 - p2 >= 0.15
 ```
 
-La flag `isOtp: true` è salvata in ogni foglia giocabile del champion
-vincente nella stessa queue; per ogni altro champion il campo è omesso. È una
-classificazione derivata, non un contatore: ogni `finish()` la azzera e la
-ricostruisce. UNKNOWN e le lane non giocabili non possono produrre un OTP.
+The `isOtp: true` flag is saved in every playable leaf of the winning champion
+in the same queue; for every other champion the field is omitted. It is a
+derived classification, not a counter: each `finish()` clears and rebuilds it. UNKNOWN and non-playable lanes cannot produce an OTP.
 
-### Bootstrap Mongo
+### Mongo bootstrap
 
-Il bootstrap crea solo le collection e gli indici mancanti e non modifica o
-rimuove indici secondari. `profile_statistics_identity` viene preceduto dal
-preflight delle identità mancanti o duplicate; i documenti legacy devono essere
-gestiti dalla migrazione/rigenerazione separata e non bisogna riutilizzare un
-documento con un filtro diverso solo perché appartiene allo stesso PUUID.
+Bootstrap creates only missing collections and indexes and does not modify or
+remove secondary indexes. `profile_statistics_identity` is preceded by the
+preflight for missing or duplicate identities; legacy documents must be
+handled by separate migration/regeneration and a document with a different filter must not be reused just because it belongs to the same PUUID.
 
-Per diagnosticare un mismatch in Mongo:
+To diagnose a mismatch in Mongo:
 
 ```javascript
 db.profile_statistics.getIndexes()
@@ -353,108 +355,107 @@ db.profile_statistics.find({ puuid: "<PUUID>" }, {
 })
 ```
 
-La `filterKey` del documento deve essere confrontata byte per byte con `Filter.toSummonerKey()` generato dal comando. Non confrontare soltanto `timeStart`.
+The document's `filterKey` must be compared byte-for-byte with `Filter.toSummonerKey()` generated by the command. Do not compare only `timeStart`.
 
-## Flusso di lettura e refresh
+## Read and refresh flow
 
 ```text
 Discord/API request
-  -> risolve Summoner e PUUID
-  -> costruisce un Filter completo
+  -> resolves Summoner and PUUID
+  -> builds a complete Filter
   -> ProfileService.get(PUUID, Filter)
        -> Redis SUMMONER_STATISTICS(PUUID, filterKey)
        -> Mongo {puuid, filterKey}
-  -> hit: usa ProfileStatistics
-  -> miss: DatabaseTracker.startProfileStatistics(Summoner, Filter)
-       -> risposta parziale/pending, nessun calcolo sincrono
-       -> coda PROFILE-logical (canale più scarico all’inserimento)
-            -> Mongo match projection con lo stesso Filter
+   -> hit: uses ProfileStatistics
+   -> miss: ComputeScheduler.startProfileStatistics(Summoner, Filter)
+        -> partial/pending response, no synchronous computation
+        -> PROFILE queue (insert-time least-loaded between PROFILE/CHAMPION)
+            -> Mongo match projection with the same Filter
             -> ProfileStatistics.accumulate(match, puuid, filter)
-            -> set lastUpdate dopo il calcolo
-            -> upsert atomico {puuid, filterKey}
+            -> set lastUpdate after computation
+            -> atomic upsert {puuid, filterKey}
             -> cache ProfileStatistics
-            -> invalida recent matches e profile page
+            -> invalidate recent matches and profile page
 ```
 
-Il case owner `test highstats` esegue un rebuild esplicito delle statistiche
-profilo per Challenger, Grandmaster e `tracking=true`, considerando tutte le
-regioni attive e le due queue ranked per l'alta elo. Usa lo stesso
-`Filter.canonical()` del frontend, forza `rebuild=true` anche quando l'aggregato
-esiste già, deduplica i PUUID e processa una pagina alla volta attendendo il
-completamento prima della pagina successiva. In questo modo la mole di lavoro
-non riempie la FIFO né mantiene in memoria l'intero elenco high elo.
+The owner case `test highstats` executes an explicit rebuild of profile statistics
+for Challenger, Grandmaster and `tracking=true`, considering all
+active regions and the two ranked queues for high elo. It uses the same
+`Filter.canonical()` as the frontend, forces `rebuild=true` even when the aggregate
+already exists, deduplicates PUUIDs and processes one page at a time waiting for
+completion before the next page. This way the workload
+does not fill the FIFO nor keep the entire high-elo list in memory.
 
-Il job rank entries, avviato da `pushhighelo` o `getallrank`, salva ogni
-`LeagueEntry` nella sola queue a cui appartiene. High elo (Master+) e all
-entries (sotto Master) condividono lo stesso job e non possono sovrapporsi;
-una richiesta concorrente aggiunge la fascia complementare alla stessa
-esecuzione. Per un summoner già persistito non esegue chiamate identity Riot e aggiorna
-atomically soltanto il path `summoner.ranks.<QUEUE>`. Per un PUUID assente
-risolve prima Summoner e, se il Riot ID non è già disponibile, Account, poi
-persiste l'identità prima del rank. Il tracker avvia un worker per shard; il
-rate limiting outbound resta di proprietà di `R4JQueue` per shard.
+The rank entries job, started by `pushhighelo` or `getallrank`, saves each
+`LeagueEntry` only in the queue it belongs to. High elo (Master+) and all
+entries (below Master) share the same job and cannot overlap;
+a concurrent request adds the complementary tier to the same
+execution. For an already persisted summoner it does not perform Riot identity calls and
+atomically updates only the path `summoner.ranks.<QUEUE>`. For a missing PUUID
+it first resolves Summoner and, if the Riot ID is not already available, Account, then
+persists the identity before the rank. The tracker starts one worker per shard; the
+outbound rate limiting remains owned by `RiotScheduler` per shard.
 
-Il comando owner `tracker` legge on demand lo stato degli scheduler, dei game
-in coda e dei due worker `DatabaseTracker`, senza aggiungere logging nel
-percorso caldo dei refresh.
+The owner command `tracker` reads on demand the state of schedulers and `Job`s via `QueueHandler`/`Registry`, without adding logging on
+the hot path of refreshes.
 
-Per activity il flusso sincrono è invece:
+For activity the synchronous flow is instead:
 
 ```text
 API request
-  -> costruisce Filter completo
+  -> builds complete Filter
   -> Redis SUMMONER_ACTIVITY(PUUID, filterKey)
   -> Mongo profile_activity {puuid, filterKey}
   -> Mongo findProfileStatisticsMatches(..., Filter, 0, 0)
-  -> ProfileActivity.from(...): una scansione, stats e accumulator condivisi
+  -> ProfileActivity.from(...): single scan, shared stats and accumulators
   -> Mongo upsertProfileActivity(PUUID, Filter, activity)
   -> Redis SUMMONER_ACTIVITY(PUUID, filterKey)
 ```
 
-La deduplicazione del lavoro asincrono usa la stessa identità logica:
+Asynchronous work deduplication uses the same logical identity:
 
 ```text
 in-flight key = profile-statistics:puuid:filter.toSummonerKey()
 ```
 
-Due richieste per lo stesso PUUID e lo stesso filtro condividono il Future mentre il job è in coda o in esecuzione. Due filtri diversi possono essere accodati separatamente; il worker generale esegue un solo refresh non-build alla volta e può lavorare in parallelo con il worker build. Il marker viene rimosso sia dopo successo sia dopo errore, così una richiesta successiva può ritentare.
+Two requests for the same PUUID and the same filter share the Future while the job is queued or executing. Two different filters can be enqueued separately; the general worker executes only one non-build refresh at a time and can work in parallel with the build worker. The marker is removed both after success and after error, so a subsequent request can retry.
 
-## Calcolo e filtri
+## Computation and filters
 
-`ProfileService` è l'unico owner di cache, query e persistenza; `ProfileAnalyzer` è l'unico owner del calcolo puro. `MongoDB.findProfileStatisticsMatches` usa il filtro completo e una projection dei match/participant necessari. `ProfileStatistics.matchesFilter` viene applicato anche dopo la lettura per garantire che i filtri relazionali non vengano soddisfatti da participant errati.
+`ProfileService` is the sole owner of cache, query and persistence; `ProfileAnalyzer` is the sole owner of pure computation. `MongoDB.findProfileStatisticsMatches` uses the complete filter and a projection of the necessary matches/participants. `ProfileStatistics.matchesFilter` is also applied after reading to ensure that relational filters are not satisfied by the wrong participants.
 
-Devono essere rispettati tutti questi campi:
+All these fields must be respected:
 
 - queue;
 - region/shard;
-- champion del summoner;
-- lane del summoner;
-- patch major;
-- rank e comportamento del rank;
-- opponent sulla lane avversaria;
-- duo sul team alleato;
-- periodo `timeStart/timeEnd`.
+- summoner champion;
+- summoner lane;
+- major patch;
+- rank and rank behavior;
+- opponent on the opposing lane;
+- duo on the allied team;
+- period `timeStart/timeEnd`.
 
-Durante l'aggregazione vengono prodotti nello stesso passaggio totale, queue, lane, champion, matchup, duo, ping e spell. Non introdurre un servizio separato per pings, matchup o champion overview.
+During aggregation total, queue, lane, champion, matchup, duo, ping and spell are produced in the same pass. Do not introduce a separate service for pings, matchup or champion overview.
 
-## `recentMatches` e dati raw
+## `recentMatches` and raw data
 
-`recentMatches` è una responsabilità separata:
+`recentMatches` is a separate responsibility:
 
-- cache Redis: `SUMMONER_RECENT_MATCHES` con PUUID e `filterKey`;
-- query Mongo separata con projection `MatchResult`;
-- invalidazione dopo un refresh riuscito delle statistiche;
-- nessun campo `recentMatches` dentro `ProfileStatistics` o nel documento `profile_statistics`.
+- Redis cache: `SUMMONER_RECENT_MATCHES` with PUUID and `filterKey`;
+- separate Mongo query with `MatchResult` projection;
+- invalidation after a successful statistics refresh;
+- no `recentMatches` field inside `ProfileStatistics` or in the `profile_statistics` document.
 
-Le viste che richiedono eventi o match completi, come timeline e dettagli OP.GG, continuano a leggere i match raw e gli eventi dalla loro collection. Non devono usare l'aggregato per ricostruire eventi.
+Views that require events or complete matches, such as timeline and OP.GG details, continue to read raw matches and events from their collection. They must not use the aggregate to reconstruct events.
 
-## Composizione applicativa
+## Application composition
 
-### SummonerOverview, SummonerProfile e `!summoner`
+### SummonerOverview, SummonerProfile and `!summoner`
 
-Tutti usano lo stesso `ProfileStatistics` per il PUUID e il filtro corrente come fonte dati. La composizione e la presentazione restano però separate: un cambiamento al modello o alla sorgente non autorizza una modifica dell'embed esistente.
+All use the same `ProfileStatistics` for the PUUID and current filter as data source. Composition and presentation however remain separate: a change to the model or source does not authorize a change to the existing embed.
 
-`SummonerOverview.from(...)` compone:
+`SummonerOverview.from(...)` composes:
 
 ```text
 ProfileStatistics + ranks + masteries + recentMatches
@@ -462,82 +463,81 @@ ProfileStatistics + ranks + masteries + recentMatches
   -> SummonerView
 ```
 
-Il comando generico `!summoner` non usa più un percorso statistico separato: legge lo stesso aggregato dell'overview, ma mantiene il precedente formato dell'embed. Mostra quindi i campi già presenti nella vista generica, alimentati dal nuovo `ProfileStatistics`, più `lastUpdate`; non deve mostrare automaticamente ogni nuovo campo aggiunto all'aggregato.
+The generic `!summoner` command no longer uses a separate statistics path: it reads the same aggregate as the overview, but keeps the previous embed format. It therefore shows the fields already present in the generic view, fed by the new `ProfileStatistics`, plus `lastUpdate`; it must not automatically show every new field added to the aggregate.
 
-L'overview base mantiene il proprio formato storico e include i ping nel blocco già esistente. Matchup e lista completa dei champion restano nelle rispettive viste dedicate, usando lo stesso `ProfileStatistics`. `recentMatches` è composto separatamente dal profilo HTTP e non viene caricato da `LeagueMessage.getSummonerEmbed`.
+The base overview keeps its historical format and includes pings in the already existing block. Matchup and the full champion list remain in their respective dedicated views, using the same `ProfileStatistics`. `recentMatches` is composed separately from the HTTP profile and is not loaded by `LeagueMessage.getSummonerEmbed`.
 
-`lastUpdate` viene formattato nel layer Discord come data/ora leggibile e timestamp Discord relativo. Il valore persistito resta sempre un timestamp numerico in millisecondi.
+`lastUpdate` is formatted in the Discord layer as a readable date/time and relative Discord timestamp. The persisted value always remains a numeric timestamp in milliseconds.
 
-### Menu Discord
+### Discord menu
 
-`OVERVIEW_PING` e `OVERVIEW_OBJECTIVES` non sono più flussi attivi. I ping sono già dentro l'overview base. Gli objectives non vengono più calcolati né persistiti. I valori legacy possono restare nell'enum solo per normalizzare vecchi component/button state, ma non devono essere esposti da menu, pulsanti o dispatcher.
+`OVERVIEW_PING` and `OVERVIEW_OBJECTIVES` are no longer active flows. Pings are already inside the base overview. Objectives are no longer computed nor persisted. Legacy values may remain in the enum only to normalize old component/button state, but must not be exposed by menus, buttons or dispatchers.
 
-## Cache e invalidazione
+## Cache and invalidation
 
-Le chiavi Redis sono separate per namespace: `beebot:lol:r4j:*` identifica i
-payload Riot4J, mentre `beebot:lol:ls:*` identifica le proiezioni e le code
-League OS. Le chiavi applicative legate a un account mettono i valori reali
-prima della risorsa: `beebot:lol:ls:<region>:<shard>:<puuid>:summoner` oppure
-`beebot:lol:ls:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>`, così la scansione per
-PUUID ritrova le proiezioni del summoner senza un token letterale `puuid`.
+Redis keys are separated by namespace: `beebot:lol:r4j:*` identifies
+Riot4J payloads, while `beebot:lol:ls:*` identifies League OS projections and queues.
+Application keys tied to an account put real values
+before the resource: `beebot:lol:ls:<region>:<shard>:<puuid>:summoner` or
+`beebot:lol:ls:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>`, so scanning by
+PUUID finds the summoner's projections without a literal `puuid` token.
 
-| Dato | Chiave | TTL | Owner | Invalidazione |
+| Data | Key | TTL | Owner | Invalidation |
 |---|---|---:|---|---|
-| summoner base | `SUMMONER(region, shard, PUUID)` | 6h | `SummonerService` | dopo refresh del componente o `SummonerService.invalidate` |
-| rank summoner | `SUMMONER_RANKS(region, shard, PUUID)` | 6h | `RankService` | dopo refresh del componente o `SummonerService.invalidate` |
-| mastery summoner | `SUMMONER_MASTERIES(region, shard, PUUID)` | 6h | `MasteryService` | dopo refresh del componente o `SummonerService.invalidate` |
-| statistiche aggregate | `SUMMONER_STATISTICS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
-| activity aggregate | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
-| summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | aggiornamento dopo upsert |
-| recent matches | `SUMMONER_RECENT_MATCHES(region, shard, PUUID, filterKey)` | 1h | `ProfileService` | dopo refresh statistiche |
-| overview summoner | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | dopo refresh statistiche o componenti summoner; non contiene `recentMatches` |
-| match raw | chiavi match esistenti | secondo `RedisKey` | `MatchService`/`Tracker` | secondo il flusso match |
+| summoner base | `SUMMONER(region, shard, PUUID)` | 6h | `SummonerService` | after component refresh or `SummonerService.invalidate` |
+| summoner rank | `SUMMONER_RANKS(region, shard, PUUID)` | 6h | `RankService` | after component refresh or `SummonerService.invalidate` |
+| summoner mastery | `SUMMONER_MASTERIES(region, shard, PUUID)` | 6h | `MasteryService` | after component refresh or `SummonerService.invalidate` |
+| aggregated statistics | `SUMMONER_STATISTICS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
+| aggregated activity | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
+| summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
+| recent matches | `SUMMONER_RECENT_MATCHES(region, shard, PUUID, filterKey)` | 1h | `ProfileService` | after statistics refresh |
+| summoner overview | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | after statistics or summoner component refresh; does not contain `recentMatches` |
+| raw match | existing match keys | per `RedisKey` | `MatchService`/`Tracker` | per match flow |
 
-Un aggregato Mongo privo di `champions` viene trattato come obsoleto e
-rigenerato da `ComputeScheduler`. I TTL delle chiavi Redis restano
-definiti esclusivamente da `RedisKey`; la scadenza riduce la permanenza delle
-proiezioni, ma non sostituisce l’invalidazione esplicita dopo un refresh
-riuscito.
+A Mongo aggregate without `champions` is treated as obsolete and
+regenerated by `ComputeScheduler`. Redis key TTLs remain
+defined exclusively by `RedisKey`; expiration reduces projection retention,
+but does not replace explicit invalidation after a successful refresh.
 
-Non usare la cache della profile page come fonte di verità per le statistiche. La fonte è sempre `ProfileStatistics` letto con il filtro completo; la pagina è una composizione derivata.
+Do not use the profile page cache as source of truth for statistics. The source is always `ProfileStatistics` read with the complete filter; the page is a derived composition.
 
-## API e stati
+## API and states
 
-L'API continua a restituire i modelli canonici `SummonerView` e `SummonerOverview`. Nel JSON pubblico:
+The API continues to return the canonical models `SummonerView` and `SummonerOverview`. In the public JSON:
 
-- `overview.statistics` contiene le foglie filtrate in `champions`;
-- `overview.statistics.champions[championId][canonicalQueue][position]` distingue champion, queue e lane;
-- `overview.recentMatches` contiene la lista leggera separata;
-- `overview.statistics.lastUpdate` indica il completamento del calcolo;
-- `Match` completo resta riservato a dettagli e timeline.
+- `overview.statistics` contains the filtered leaves in `champions`;
+- `overview.statistics.champions[championId][canonicalQueue][position]` distinguishes champion, queue and lane;
+- `overview.recentMatches` contains the separate lightweight list;
+- `overview.statistics.lastUpdate` indicates computation completion;
+- complete `Match` remains reserved for details and timeline.
 
-Se identity, rank e mastery sono pronti ma manca `ProfileStatistics`, il profilo HTTP restituisce subito il profilo disponibile come `PARTIAL` con `recentMatches` vuoti e accoda il refresh; la query dei recent match parte soltanto quando l'aggregato è disponibile. Se mancano componenti base, mantiene il comportamento `202 profile_pending`. Discord mostra il messaggio di preparazione soltanto finché la coppia esatta PUUID/filtro non è disponibile.
+If identity, rank and mastery are ready but `ProfileStatistics` is missing, the HTTP profile immediately returns the available profile as `PARTIAL` with empty `recentMatches` and enqueues the refresh; the recent-match query starts only when the aggregate is available. If base components are missing, it keeps the `202 profile_pending` behavior. Discord shows the preparation message only until the exact PUUID/filter pair is available.
 
-## Checklist per un futuro intervento
+## Checklist for future work
 
-Prima di modificare questo flusso verificare:
+Before modifying this flow verify:
 
-1. il nuovo campo appartiene a `Filter`, a `ProfileStatistics` o ai match raw;
-2. il campo è incluso in `toSummonerKey()` se modifica il dataset;
-3. Redis e Mongo usano la stessa chiave;
-4. `MongoDB` legge e scrive `{puuid, filterKey}`;
-5. la coppia `{ puuid, filterKey }` resta l'identità applicativa;
-6. il calcolo passa da `ProfileAnalyzer` tramite `ProfileService`, non da Discord/API/controller;
-7. `recentMatches` resta separato;
-8. activity usa lo stesso `Filter` e la query match condivisa, senza creare una seconda semantica per queue o periodo;
-9. `lastUpdate` viene scritto solo dopo il calcolo;
-10. overview, profile e `!summoner` leggono lo stesso oggetto;
-11. la presentazione esistente resta invariata salvo richiesta esplicita di refactor dello style;
-12. API docs, audit, documentazione Mongo e regole operative restano sincronizzati.
+1. the new field belongs to `Filter`, to `ProfileStatistics` or to raw matches;
+2. the field is included in `toSummonerKey()` if it changes the dataset;
+3. Redis and Mongo use the same key;
+4. `MongoDB` reads and writes `{puuid, filterKey}`;
+5. the pair `{ puuid, filterKey }` remains the application identity;
+6. computation goes through `ProfileAnalyzer` via `ProfileService`, not via Discord/API/controller;
+7. `recentMatches` remains separate;
+8. activity uses the same `Filter` and the shared match query, without creating a second semantics for queue or period;
+9. `lastUpdate` is written only after computation;
+10. overview, profile and `!summoner` read the same object;
+11. existing presentation remains unchanged unless an explicit style refactor is requested;
+12. API docs, audit, Mongo documentation and operational rules remain synchronized.
 
-### File canonici da aprire per recuperare il contesto
+### Canonical files to open to recover context
 
 - `src/main/java/com/safjnest/lol/model/Filter.java`
 - `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
 - `src/main/java/com/safjnest/lol/service/ProfileService.java`
 - `src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java`
-- `src/main/java/com/safjnest/lol/queue/DatabaseTracker.java`
+- `src/main/java/com/safjnest/lol/queue/QueueHandler.java` + `lol/queue/scheduler/ComputeScheduler.java`
 - `src/main/java/com/safjnest/lol/tracker/Tracker.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessage.java`

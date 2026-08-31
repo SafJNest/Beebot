@@ -70,9 +70,9 @@ collections and slowest operations.
 | `hottestRecent` | last 10s | collection with highest average ops/sec; decays after spikes |
 | `recentWindowSeconds` | constant 10 | |
 | `slowWindowSeconds` | constant 300 | |
-| `avgMsByCommand` | fino a 5 min di attività | average round-trip ms per wire command; **svuotato dopo 10s idle** |
-| `collections` | fino a 5 min di attività | per-collection count, avgMs, maxMs; **svuotato dopo 10s idle** |
-| `slowest` | **ultimi 10s** | top 10 per durata; ogni riga include `query` (comando Mongo JSON) |
+| `avgMsByCommand` | up to 5 min of activity | average round-trip ms per wire command; **cleared after 10s idle** |
+| `collections` | up to 5 min of activity | per-collection count, avgMs, maxMs; **cleared after 10s idle** |
+| `slowest` | **last 10s** | top 10 by duration; each row includes `query` (Mongo command JSON) |
 
 `hottestNow` captures instant spikes (e.g. champion analysis hammering `match`).
 `hottestRecent` stays elevated for up to 10 seconds after the spike, then

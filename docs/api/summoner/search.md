@@ -8,24 +8,24 @@
 curl --get 'http://localhost:8080/api/lol/EUW1/search' --data-urlencode 'q=Player#EUW'
 ```
 
-| Nome | Posizione | Tipo | Obbligatorio | Descrizione |
+| Name | Position | Type | Required | Description |
 |---|---|---|---:|---|
-| `shard` | path | `LeagueShard` | sì | Shard della prefix search. `UNKNOWN` è rifiutato. |
-| `q` | query | string | sì | Riot ID o prefisso; `#` va URL-encoded. |
+| `shard` | path | `LeagueShard` | yes | Shard for prefix search. `UNKNOWN` is rejected. |
+| `q` | query | string | yes | Riot ID or prefix; `#` must be URL-encoded. |
 
-La risposta è una lista fino a 25 `SummonerView`. Per la search `overview` è
-una proiezione leggera: `statistics` può essere vuoto, ma quando presente usa
-le foglie `champions`, mai aggregate
-precalcolati o campi derivati. Il dettaglio completo è in
+The response is a list of up to 25 `SummonerView`. For search, `overview` is
+a lightweight projection: `statistics` may be empty, but when present it uses
+`champions` leaves, never precomputed
+aggregates or derived fields. Full detail is in
 [Profile by PUUID](profile-by-puuid.md).
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Lista, anche vuota. |
-| `400` | `invalid_request` | Shard non valido o query vuota. |
-| `404` | `not_found` | Endpoint non trovato. |
+| `200` | — | List, including empty. |
+| `400` | `invalid_request` | Invalid shard or empty query. |
+| `404` | `not_found` | Endpoint not found. |
 
 ## Owner
 

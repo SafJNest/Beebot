@@ -7,7 +7,7 @@
 
 ## Amendment 2026-07-27
 
-Il documento `match` usa il full Riot match ID direttamente in `_id` e `region` come unico campo di shard. `fullGameId`, `gameId`, `game_id` e `leagueShard` sono residui di mapping e non vengono persistiti. `patch` conserva la versione completa, mentre `patchMajor` conserva i primi due segmenti, per esempio `14.2`, ed è il campo usato dai filtri Mongo. La migration `raw-v6-match-schema` normalizza anche i match già presenti senza riscrivere participant o eventi. Il contratto HTTP resta invariato: `Match` continua a essere il modello canonico della response.
+The `match` document uses the full Riot match ID directly in `_id` and `region` as the sole shard field. `fullGameId`, `gameId`, `game_id` and `leagueShard` are mapping residues and are not persisted. `patch` keeps the full version, while `patchMajor` keeps the first two segments, for example `14.2`, and is the field used by Mongo filters. The `raw-v6-match-schema` migration also normalizes already present matches without rewriting participants or events. The HTTP contract remains unchanged: `Match` continues to be the canonical response model.
 
 ## Amendment 2026-08-27
 
@@ -51,116 +51,117 @@ need match scans.
 `profile_records` is a rebuildable profile projection with one document per
 `{ puuid, filterKey, metric }`. It never replaces canonical `match`,
 `match_events`, participant snapshots or profile statistics. The row stores the
-winning match reference, value and derived score, historical rank/LP/MMR when
-the participant snapshot is available, and the event actor/team only where the
+winning match reference, value and derived score, historical MMR when the
+participant snapshot is available, and the event actor/team only where the
 metric requires it. A `gameShared` field is present only for TEAM and MATCH
 metrics: TEAM records are written for the five participants of the team and
 MATCH records for all ten participants.
 
-The global Records page reads `profile_records` directly with a filterKey,
-metric and score sort. Positions are not persisted. Timeline metrics are
-rebuilt from `match_events` in bounded batches; matches without events simply
-do not produce timeline records. The operator owns the unique identity and
+The global Records overview reads the indexed top five rows for every metric; the
+nested metric ladder reads `profile_records` directly with a filterKey, metric
+and score sort. Positions are not persisted. Timeline metrics are rebuilt from
+`match_events` in bounded batches; matches without events simply do not
+produce timeline records. The operator owns the unique identity and
 global/regional indexes documented in `docs/mongo/12-profile-record-indexes.md`.
 
 ## Amendment 2026-07-26
 
-La leaderboard mantiene `summoner.ranks` come unica sorgente canonica dei rank e non salva righe duplicate o pagine materializzate. Mongo può però mantenere la collection derivata `leaderboard_aggregates` per rank distribution, top-region e count della leaderboard: ogni documento contiene solo il risultato aggregato e il filtro della chiave, ed è sempre ricostruibile dai summoner. Gli snapshot materializzati vengono ricostruiti ogni 12 ore; i nuovi filtri vengono costruiti lazy alla prima lettura. La pagina usa una `find()` limitata e ordinata sul path MMR della queue; il totale segue Redis, aggregate Mongo e solo infine `countDocuments()`. Redis viene invalidato insieme al rebuild. Il contratto HTTP di `LeaderboardPage`, `SummonerLeaderboard`, distribuzione, top-region e status `202` resta invariato.
+The leaderboard keeps `summoner.ranks` as the sole canonical source of ranks and does not save duplicate rows or materialized pages. Mongo may however keep the derived collection `leaderboard_aggregates` for rank distribution, top-region and leaderboard count: each document contains only the aggregated result and the key filter, and is always rebuildable from summoners. Materialized snapshots are rebuilt every 12 hours; new filters are built lazily on first read. The page uses a limited and ordered `find()` on the queue's MMR path; the total follows Redis, Mongo aggregates and only finally `countDocuments()`. Redis is invalidated together with the rebuild. The HTTP contract of `LeaderboardPage`, `SummonerLeaderboard`, distribution, top-region and `202` status remains unchanged.
 
-Gli indici secondari sono gestiti operativamente fuori dal runtime e dalla
-migration. `MongoDB` crea soltanto le collection mancanti e non crea, verifica,
-modifica o rimuove indici.
+Secondary indexes are managed operationally outside the runtime and the
+migration. `MongoDB` creates only missing collections and does not create, verify,
+modify or remove indexes.
 
 ## Context
 
-La persistenza LoL storica è concentrata in `LeagueDB`, una classe statica che contiene query SQL e mapping per summoner, rank, mastery, match e participant. Il runtime deve essere separato dal backfill MariaDB.
+Historical LoL persistence is concentrated in `LeagueDB`, a static class that contains SQL queries and mapping for summoner, rank, mastery, match and participant. The runtime must be separated from the MariaDB backfill.
 
-Il repository contiene già modelli canonici LoL, Redis come cache e servizi che usano il flusso `Redis -> database -> Riot`. La migrazione deve introdurre Mongo senza creare un secondo contratto HTTP o perdere dati durante il passaggio.
+The repository already contains canonical LoL models, Redis as cache and services that use the `Redis -> database -> Riot` flow. The migration must introduce Mongo without creating a second HTTP contract or losing data during the transition.
 
-## Decisione
+## Decision
 
-La prima migrazione copre solo `league_of_legends`. Gli altri domini MariaDB verranno trattati in ADR separati dopo il cutover LoL.
+The first migration covers only `league_of_legends`. Other MariaDB domains will be handled in separate ADRs after the LoL cutover.
 
-La strategia operativa è:
+The operational strategy is:
 
-1. `MongoMigration` legge MariaDB con checkpoint e high-water mark;
-2. il runtime LoL legge e scrive esclusivamente MongoDB;
-3. Redis resta solo cache;
-4. Riot API resta sorgente esterna per fallback e refresh;
-5. `LeagueDB` resta un adapter SQL usato esclusivamente da `MongoMigration`.
+1. `MongoMigration` reads MariaDB with checkpoint and high-water mark;
+2. the LoL runtime reads and writes exclusively to MongoDB;
+3. Redis remains cache only;
+4. Riot API remains external source for fallback and refresh;
+5. `LeagueDB` remains a SQL adapter used exclusively by `MongoMigration`.
 
-Non esistono query MariaDB, mirror, fallback SQL, outbox o proxy dual-write nel runtime LoL.
+There are no MariaDB queries, mirror, SQL fallback, outbox or dual-write proxy in the LoL runtime.
 
-Mongo userà:
+Mongo will use:
 
-- `puuid` come `_id` di `summoner`;
-- Riot match ID completo come `_id` di `match`;
-- rank e mastery incorporate nel summoner;
-- champion statistics e build in collection aggregate separate;
-- participant incorporati nel match;
-- collection separate solo per dati derivati che richiedono un access pattern autonomo; la leaderboard usa direttamente `summoner.ranks` per le righe e mantiene soltanto gli snapshot aggregati in `leaderboard_aggregates`;
-- nessun identificativo numerico MariaDB viene scritto nei documenti Mongo; le chiavi canoniche sono PUUID, full Riot match ID, queue e championId.
-- gli eventi match sono separati in `match_events` e compressi da WiredTiger con Zstandard; match e masteries restano BSON normale.
+- `puuid` as `_id` for `summoner`;
+- full Riot match ID as `_id` for `match`;
+- rank and mastery embedded in summoner;
+- champion statistics and build in separate aggregate collections;
+- participants embedded in match;
+- separate collections only for derived data that requires an autonomous access pattern; the leaderboard uses `summoner.ranks` directly for rows and keeps only aggregated snapshots in `leaderboard_aggregates`;
+- no numeric MariaDB identifier is written into Mongo documents; canonical keys are PUUID, full Riot match ID, queue and championId.
+- match events are separated into `match_events` and compressed by WiredTiger with Zstandard; match and masteries remain normal BSON.
 
 ## Boundary
 
 `SummonerService`, `RankService`, `MasteryService`, `MatchService` and
 `ProfileService` are the LoL cache-aware runtime boundaries (ADR-0011 / ADR-0012).
-La persistenza runtime Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` è confinato al percorso di lettura della migration.
+Runtime Mongo persistence is exposed directly via `MongoDB`; `LeagueDB` is confined to the migration read path.
 
-Spring continua a possedere solo controller, configurazione HTTP ed error model. `QueryRecord` è il contenitore comune delle projection; gli oggetti complessi usano i modelli LoL già esistenti.
+Spring continues to own only controllers, HTTP configuration and error models. `QueryRecord` is the common projection container; complex objects use the already existing LoL models.
 
-## Regole di serializzazione
+## Serialization rules
 
-- gli enum R4J vengono salvati come stringhe prodotte da `name()`;
-- i ban usano `BLUE` e `RED`, mai ordinali numerici;
-- i participant non hanno un mega-oggetto `build` annidato;
-- gli eventi JSON vengono serializzati in `match_events` con `uncompressedBytes`, `checksum` e `encoding`; la compressione è nativa WiredTiger con livello server 9;
-- il reader carica gli eventi separatamente e la history usa una query batch, senza N+1;
-- `null` e `[]` mantengono semantiche distinte.
+- R4J enums are saved as strings produced by `name()`;
+- bans use `BLUE` and `RED`, never numeric ordinals;
+- participants have no nested mega `build` object;
+- JSON events are serialized into `match_events` with `uncompressedBytes`, `checksum` and `encoding`; compression is native WiredTiger with server level 9;
+- the reader loads events separately and history uses a batch query, without N+1;
+- `null` and `[]` keep distinct semantics.
 
 ## Write path
 
-Ogni mutazione LoL runtime passa direttamente da `MongoDB` con un'operazione idempotente. Gli aggiornamenti rank non invalidano gli snapshot; il task periodico ricostruisce gli aggregati Mongo e incrementa la versione Redis ogni 12 ore. Le query SQL sono ammesse solo nel percorso di lettura di `MongoMigration`; nessun consumer runtime può mantenere una `INSERT`, `UPDATE` o `DELETE` LoL.
+Every LoL runtime mutation goes directly through `MongoDB` with an idempotent operation. Rank updates do not invalidate snapshots; the periodic task rebuilds Mongo aggregates and increments the Redis version every 12 hours. SQL queries are allowed only in the `MongoMigration` read path; no runtime consumer may keep a LoL `INSERT`, `UPDATE` or `DELETE`.
 
-## Configurazione
+## Configuration
 
-La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di connessione. Il database applicativo viene scelto dal codice:
+Mongo configuration is read from `rsc/settings.json` as a connection URI string. The application database is chosen by code:
 
 ```json
 "mongo": "mongodb://<user>:<password>@safjnest.com:27017/"
 ```
 
-`App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
+`App.isTesting() == false` uses `beebot`; `App.isTesting() == true` uses `beebot_test`. Collections use the same names as MariaDB tables, without `lol_` prefix, in both databases.
 
-Il codice possiede il bootstrap delle collection e degli indici secondari dichiarati. Il bootstrap è idempotente e non esegue drop automatici; gli indici esistenti compatibili vengono riutilizzati, mentre quelli in conflitto richiedono una migrazione operativa esplicita. Il nuovo flusso non richiede cleanup automatici generali; la migration di schema del match normalizza soltanto i residui identificati da questa ADR. L'operatore rimuove manualmente gli altri payload obsoleti o duplicati prima della rigenerazione.
+The code owns bootstrap of collections and declared secondary indexes. Bootstrap is idempotent and does not perform automatic drops; compatible existing indexes are reused, while conflicting ones require an explicit operational migration. The new flow does not require general automatic cleanups; the match schema migration normalizes only the residues identified by this ADR. The operator manually removes other obsolete or duplicate payloads before regeneration.
 
-## Compatibilità API
+## API compatibility
 
-Questa migrazione non modifica implicitamente il contratto HTTP. I modelli canonici restano quelli di `lol.model`.
+This migration does not implicitly change the HTTP contract. Canonical models remain those in `lol.model`.
 
-L'amendment sugli snapshot `leaderboard_aggregates` è interno: non richiede modifiche a controller, modelli canonici o reference API.
+The `leaderboard_aggregates` snapshot amendment is internal: it does not require changes to controllers, canonical models or API reference.
 
-I campi numerici dei modelli pubblici restano compatibili con il modello storico, ma non sono persistiti nei documenti Mongo e non sono chiavi di lookup.
+Numeric fields of public models remain compatible with the historical model, but are not persisted in Mongo documents and are not lookup keys.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- profile e match detail eliminano join caldi;
-- participant e dati di profile possono essere letti con access pattern naturali;
-- le projection locali possono usare `QueryRecord` e `List<QueryRecord>`, anche annidate;
-- gli oggetti complessi riusano i modelli canonici, senza DTO Mongo duplicati;
-- MariaDB resta disponibile per il backfill e per gli altri domini;
-- la stessa infrastruttura Mongo potrà essere riusata dagli altri domini.
+- profile and match detail eliminate hot joins;
+- participant and profile data can be read with natural access patterns;
+- local projections can use `QueryRecord` and `List<QueryRecord>`, even nested;
+- complex objects reuse canonical models, without duplicate Mongo DTOs;
+- MariaDB remains available for backfill and for other domains;
+- the same Mongo infrastructure can be reused by other domains.
 
 ### Negative
 
-- il runtime non può usare MariaDB come fallback se Mongo è indisponibile;
-- la leaderboard richiede una proiezione derivata e indici MMR per queue/scope; la pagina legge prima `competitive`, poi i summoner della sola pagina, mentre il totale usa Redis e gli aggregate Mongo prima del fallback `countDocuments()`; distribuzione, top-region e count vengono persistiti in `leaderboard_aggregates`, ricostruiti ogni 12 ore e cacheati in Redis;
-- il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
-- il backfill e il runtime devono essere verificati separatamente.
+- the runtime cannot use MariaDB as fallback if Mongo is unavailable;
+- the leaderboard requires a derived projection and MMR indexes per queue/scope; the page first reads `competitive`, then the summoners of only that page, while the total uses Redis and Mongo aggregates before the `countDocuments()` fallback; distribution, top-region and count are persisted in `leaderboard_aggregates`, rebuilt every 12 hours and cached in Redis;
+- the backfill requires checkpoint, high-water mark and corrupted payload handling;
+- the backfill and the runtime must be verified separately.
 
 ## Gate
 
-Questa ADR è approvata per l'implementazione Java. Ogni conflitto con gli ADR LoL esistenti deve essere segnalato e non risolto implicitamente dal macro-task. Il vecchio `summoner.metrics` e le custom builds legacy restano fuori dal target corrente.
+This ADR is approved for Java implementation. Any conflict with existing LoL ADRs must be reported and not implicitly resolved by the macro-task. The old `summoner.metrics` and legacy custom builds remain out of the current target.

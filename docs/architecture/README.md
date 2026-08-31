@@ -121,22 +121,26 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0001: Canonical LoL model boundaries](adr/0001-canonical-lol-model-boundaries.md)
 - [ADR-0002: Summoner view and leaderboard contract](adr/0002-summoner-view-and-leaderboard-contract.md)
 - [ADR-0003: Match and match result models](adr/0003-match-and-match-result-models.md)
-- [ADR-0004: Profile statistics asynchronous generation](adr/0004-profile-statistics-refresh-queue.md)
+- [ADR-0004: Profile statistics asynchronous generation](adr/0004-profile-statistics-refresh-queue.md) — superseded by ADR-0010
 - [ADR-0005: LoL API JSON contract](adr/0005-lol-api-json-contract.md)
 - [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
 - [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
 - [ADR-0008: Component caches and asynchronous match lookups](adr/0008-endpoint-cache-and-async-lookups.md)
 - [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
-- [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md)
-- [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md)
-- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md)
+- [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md) — terminology superseded by ADR-0014
+- [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md) — terminology superseded by ADR-0014
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
+- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — **current queue contract** (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+
+## Developer handbook
+
+Operational guide for adding command / endpoint / service / model / queue / Mongo / Redis: [`docs/HANDBOOK.md`](../HANDBOOK.md).
 
 ## MongoDB migration
 
-La documentazione operativa della migrazione LoL è in [`docs/mongo/`](../mongo/README.md). L'ADR-0009 è accettata; i gate Guardian restano obbligatori per ogni capability.
+The operational documentation for the LoL migration is in [`docs/mongo/`](../mongo/README.md). ADR-0009 is accepted; Guardian gates remain mandatory for every capability.
 
 ## Macro-task index
 
-Implementation order and gates are maintained in [`docs/agents/`](../agents/README.md).
+Archived in [`docs/agents/_archive/`](../agents/_archive/) — completed: `0000`, `0001`, `0003`, `0004`, `0007`; under review: `0002`, `0005`, `0006`, `0008` (see `HANDBOOK.md` for status). Current order and gates in [`docs/agents/README.md`](../agents/README.md).

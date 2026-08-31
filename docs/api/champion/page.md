@@ -15,24 +15,24 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
   --data-urlencode 'role=UTILITY'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `champion` | path | string | sì | — | Nome champion, case-insensitive; la ricerca usa la normalizzazione statica del champion. |
-| `patch` | query | string `major.minor` | no | patch corrente | Patch del dataset. Il valore deve mantenere entrambe le componenti, ad esempio `14.10`. |
-| `rank` | query | enum `TierType` | no | nessun filtro | Tier minimo del dataset; `EMERALD` include Emerald e tier superiori secondo il filtro. |
-| `region` | query | enum `LeagueShard` | no | aggregato `GLOBAL` interno | Shard da aggregare. Non inviare `GLOBAL` o `UNKNOWN`. |
-| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue del dataset. |
-| `role` | query | enum `LaneType` | no | nessun filtro | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`; richiede una queue con lane. |
+| `champion` | path | string | yes | — | Champion name, case-insensitive; search uses static champion normalization. |
+| `patch` | query | string `major.minor` | no | current patch | Dataset patch. The value must keep both components, e.g. `14.10`. |
+| `rank` | query | enum `TierType` | no | no filter | Minimum tier of the dataset; `EMERALD` includes Emerald and higher tiers according to the filter. |
+| `region` | query | enum `LeagueShard` | no | internal `GLOBAL` aggregate | Shard to aggregate. Do not send `GLOBAL` or `UNKNOWN`. |
+| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Dataset queue. |
+| `role` | query | enum `LaneType` | no | no filter | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`; requires a queue with lanes. |
 
-## Risposta `200`
+## `200` response
 
-`ChampionView`. Il campo interno `filter` non fa parte del JSON HTTP.
+`ChampionView`. The internal `filter` field is not part of the HTTP JSON.
 
-Se il refresh è terminato ma il filtro non contiene giochi/build validi, la
-stessa risposta `200` contiene overview a zero e liste vuote. Il frontend deve
-renderizzare lo stato senza dati; non viene mantenuto un `202` indefinito.
+If the refresh has completed but the filter contains no valid games/builds, the
+same `200` response contains a zeroed overview and empty lists. The frontend must
+render the no-data state; no indefinite `202` is kept.
 
 ```json
 {
@@ -244,35 +244,35 @@ renderizzare lo stato senza dati; non viene mantenuto un `202` indefinito.
 }
 ```
 
-Le liste build sono categorie indipendenti e ogni categoria contiene al
-massimo tre opzioni. `coreBuilds`, `coreItems` e `slots` includono solo item
-validi di depth 3 presenti nell'inventario finale; i pezzi intermedi vengono
-esclusi.
+Build lists are independent categories and each category contains at most
+three options. `coreBuilds`, `coreItems` and `slots` include only valid depth-3 items
+present in the final inventory; intermediate pieces are
+excluded.
 
-Le opzioni in `skillOrders` sono sequenze al livello massimo osservato: 18
-quando disponibile, altrimenti la massima lunghezza disponibile. `matches` e
-`wins` includono ogni game il cui ordine osservato è un prefisso della
-sequenza, quindi anche i game conclusi prima di quel livello contribuiscono
-alla combinazione compatibile.
-starter, boots, support items, consumabili, trinket, prismatics e augment
-mantengono le categorie e le esclusioni esistenti. `matchups` è una mappa con
-chiavi serializzate come
-`MatchupKey[champion=championId, lane=ROLE]`; le metriche non disponibili sono
-`null`. Il frontend converte questa mappa in un array per la presentation layer.
+Options in `skillOrders` are sequences at the maximum observed level: 18
+when available, otherwise the maximum available length. `matches` and
+`wins` include every game whose observed order is a prefix of the
+sequence, so games that ended before that level also contribute
+to the compatible combination.
+starter, boots, support items, consumables, trinket, prismatics and augment
+keep existing categories and exclusions. `matchups` is a map with
+keys serialized as
+`MatchupKey[champion=championId, lane=ROLE]`; unavailable metrics are
+`null`. The frontend converts this map into an array for the presentation layer.
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `202` | `champion_data_pending` | Statistiche o build non sono ancora state generate; il refresh viene accodato in background. Un refresh completato senza dati produce `200` con aggregate vuoti. |
-| `400` | `invalid_request` | Rank, region, queue o role non validi, oppure role incompatibile con la queue. |
-| `404` | `not_found` | Champion sconosciuto. |
+| `202` | `champion_data_pending` | Statistics or build have not yet been generated; refresh is queued in the background. A completed refresh with no data produces `200` with empty aggregates. |
+| `400` | `invalid_request` | Invalid rank, region, queue or role, or role incompatible with queue. |
+| `404` | `not_found` | Unknown champion. |
 
-La variante richiesta è stale quando il timestamp Mongo top-level di statistics
-o build manca/è più vecchio di una settimana. In tal caso mantiene il `202
-champion_data_pending` e accoda solo la componente stale. `metadata` espone il
-filtro completo richiesto, `refresh` e il più vecchio tra i timestamp di build
-e statistics; tutte le varianti globali restano disponibili.
+The requested variant is stale when the top-level Mongo timestamp for statistics
+or build is missing/more than a week old. In that case it keeps `202
+champion_data_pending` and queues only the stale component. `metadata` exposes the
+full requested filter, `refresh` and the oldest of the build
+and statistics timestamps; all global variants remain available.
 
 ```json
 {

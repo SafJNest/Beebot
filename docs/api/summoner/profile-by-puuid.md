@@ -4,14 +4,13 @@
 
 `GET /api/lol/{shard}/profile/{puuid}`
 
-`shard` è un `LeagueShard` e `puuid` è il PUUID Riot canonico del summoner.
+`shard` is a `LeagueShard` and `puuid` is the canonical Riot PUUID of the summoner.
 
-## Risposta `200`
+## `200` response
 
-Restituisce `SummonerView`. `overview.statistics` è un dataset di foglie
-aggregabili, non una pagina già precalcolata: il consumer costruisce totale,
-queue, posizione e medie dai dati ricevuti. `overview.masteries`,
-`overview.champions` e `overview.recentMatches` restano parte della response.
+Returns `SummonerView`. `overview.statistics` is an aggregatable leaf dataset, not an already precomputed page: the consumer builds total,
+queue, position and averages from the received data. `overview.masteries`,
+`overview.champions` and `overview.recentMatches` remain part of the response.
 
 ```json
 {
@@ -52,24 +51,25 @@ queue, posizione e medie dai dati ricevuti. `overview.masteries`,
 }
 ```
 
-Non vengono restituiti né salvati `total`, `queueStats`, `laneStats`,
-`championStats`, `reference`, `context`, `winrate`, `kda` o campi `avg*`.
-Una foglia può includere `isOtp: true` solo per l'unico champion OTP della
-stessa queue; il caso non OTP è omesso.
+Neither `total`, `queueStats`, `laneStats`,
+`championStats`, `reference`, `context`, `winrate`, `kda` nor `avg*` fields are
+returned or stored.
+A leaf may include `isOtp: true` only for the single OTP champion of the
+same queue; the non-OTP case is omitted.
 
-Le queue del dataset sono `CanonicalQueue`, non enum Riot: per esempio
-`RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA` e `SWIFTPLAY`.
-Una posizione assente o non applicabile è sempre `UNKNOWN`.
+Dataset queues are `CanonicalQueue`, not Riot enums: for example
+`RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA` and `SWIFTPLAY`.
+A missing or non-applicable position is always `UNKNOWN`.
 
-Un campo metrico omesso significa che il dato non era disponibile nel raw
-storico; uno `0` presente è un valore raccolto e realmente nullo. Il livello
-è esclusivamente `championLevelTotal`, cioè la somma dei champion level finali.
+An omitted metric field means the data was not available in the historical raw
+data; a present `0` is a collected value that is genuinely zero. Level
+is exclusively `championLevelTotal`, i.e. the sum of final champion levels.
 
-Le medie sono derivate dal consumer: `avgKills = kills / games`,
-`avgChampionLevel = championLevelTotal / games`, e il placement Arena usa
-`arenaPlacementSum / games` della sola foglia `ARENA → UNKNOWN`. I campi
-Arena non sono presenti nelle foglie delle altre queue.
+Averages are derived by the consumer: `avgKills = kills / games`,
+`avgChampionLevel = championLevelTotal / games`, and Arena placement uses
+`arenaPlacementSum / games` of the `ARENA → UNKNOWN` leaf only. Arena
+fields are not present in leaves of other queues.
 
-Se rank/mastery o statistics non sono pronti, la response mantiene gli stati
-`PARTIAL`/`202` documentati dal contratto `ApiResult`; nessuna GET effettua
-una chiamata Riot sincrona.
+If rank/mastery or statistics are not ready, the response keeps the `PARTIAL`/`202` states
+documented by the `ApiResult` contract; no GET performs
+a synchronous Riot call.

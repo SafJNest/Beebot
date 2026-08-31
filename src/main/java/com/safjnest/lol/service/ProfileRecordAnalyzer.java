@@ -46,6 +46,7 @@ public final class ProfileRecordAnalyzer {
 
             List<Map<String, Object>> kills = events(match, "champion_kills");
             List<Map<String, Object>> monsters = events(match, "monster_events");
+            addFirstKill(match, player, kills);
             addFirstBlood(match, player, kills);
             addObjectiveKills(match, player, monsters);
             addTeamObjectives(match, player, monsters);
@@ -64,6 +65,14 @@ public final class ProfileRecordAnalyzer {
                 if (!"first_blood".equals(string(event, "kill_type"))) continue;
                 if (number(event, "killer") != playerId) continue;
                 add(match, player, RecordMetric.FIRST_BLOOD_TIME, number(event, "timestamp"), null, null);
+            }
+        }
+
+        private void addFirstKill(Match match, Participant player, List<Map<String, Object>> kills) {
+            int playerId = participantId(match, player);
+            for (Map<String, Object> event : kills) {
+                if (number(event, "killer") != playerId) continue;
+                add(match, player, RecordMetric.FIRST_KILL_TIME, number(event, "timestamp"), null, null);
             }
         }
 

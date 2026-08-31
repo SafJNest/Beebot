@@ -4,6 +4,7 @@ public enum RecordMetric {
     KILLS(RecordOwner.PARTICIPANT, RecordOrder.HIGHEST, false),
     DEATHS(RecordOwner.PARTICIPANT, RecordOrder.HIGHEST, false),
     ASSISTS(RecordOwner.PARTICIPANT, RecordOrder.HIGHEST, false),
+    FIRST_KILL_TIME(RecordOwner.PARTICIPANT, RecordOrder.LOWEST, true),
     FIRST_BLOOD_TIME(RecordOwner.PARTICIPANT, RecordOrder.LOWEST, true),
     PENTAKILLS(RecordOwner.PARTICIPANT, RecordOrder.HIGHEST, false),
     CS(RecordOwner.PARTICIPANT, RecordOrder.HIGHEST, false),

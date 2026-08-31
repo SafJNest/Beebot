@@ -1,6 +1,6 @@
 # SQL structure
 
-Gli script SQL del repository sono organizzati per database in [`database/`](../../database/). Ogni file nella cartella principale di un database descrive una tabella; le modifiche a database già esistenti sono raccolte nelle cartelle `migrations/`.
+Repository SQL scripts are organized by database in [`database/`](../../database/). Each file in a database's top-level folder describes one table; changes to existing databases are collected in `migrations/` folders.
 
 ## Index
 
@@ -19,10 +19,10 @@ Gli script SQL del repository sono organizzati per database in [`database/`](../
 | `participant` | [`participant.sql`](../../database/league_of_legends/participant.sql) | `id` | `match_id` → `match.id`; `summoner_id` → `summoner.id` |
 | `profile_statistics` | [`profile_statistics.sql`](../../database/league_of_legends/profile_statistics.sql) | `key` | `summoner_id` → `summoner.id` |
 | `rank` | [`rank.sql`](../../database/league_of_legends/rank.sql) | `id` | `summoner_id` → `summoner.id`; unique per `summoner_id`, `queue` |
-| `summoner` | [`summoner.sql`](../../database/league_of_legends/summoner.sql) | `id` | Identità LoL e regione; `riot_search` è generata |
+| `summoner` | [`summoner.sql`](../../database/league_of_legends/summoner.sql) | `id` | LoL identity and region; `riot_search` is generated |
 | `summoner_metric` | [`summoner_metric.sql`](../../database/league_of_legends/summoner_metric.sql) | `id` | `summoner_id` → `summoner.id`; unique per campione |
 
-### Relazioni principali
+### Main relationships
 
 ```text
 summoner
@@ -38,7 +38,7 @@ champion
 └── summoner_metric.champion
 ```
 
-Le colonne che rappresentano un campione o una regione restano valori applicativi e non hanno foreign key verso `champion` o una tabella regioni. Questo mantiene compatibilità con gli import Riot esistenti.
+Columns representing a champion or a region remain application values and have no foreign key to `champion` or a region table. This keeps compatibility with existing Riot imports.
 
 ### Berbit
 
@@ -84,16 +84,16 @@ Le colonne che rappresentano un campione o una regione restano valori applicativ
 
 ## Leaderboard
 
-`leaderboard_distribution` è una tabella storica derivata del database SQL. Il runtime LoL Mongo non la legge né la aggiorna: la leaderboard e le distribuzioni vengono calcolate direttamente da `summoner.ranks{}` in Mongo. La definizione resta documentata per installazioni SQL e per il contesto storico della migration.
+`leaderboard_distribution` is a historical derived table in the SQL database. The LoL Mongo runtime neither reads nor updates it: leaderboard and distributions are computed directly from `summoner.ranks{}` in Mongo. The definition is kept for SQL installations and historical migration context.
 
-Non è presente una migration dedicata a `leaderboard_distribution` nel repository: per installazioni SQL esistenti si usa la definizione base [`leaderboard_distribution.sql`](../../database/league_of_legends/leaderboard_distribution.sql), mentre le migration successive riguardano gli indici e la normalizzazione di `rank`.
+There is no dedicated migration for `leaderboard_distribution` in the repository: for existing SQL installations use the base definition [`leaderboard_distribution.sql`](../../database/league_of_legends/leaderboard_distribution.sql), while later migrations concern `rank` indexes and normalization.
 
-Le query paginated della leaderboard usano `rank.mmr` per l'ordinamento, senza tie-breaker aggiuntivi. La migration [`0002-rank-leaderboard-filter.sql`](../../database/league_of_legends/migrations/0002-rank-leaderboard-filter.sql) contiene l'indice precedente su rank e LP; [`0003-rank-mmr-filter.sql`](../../database/league_of_legends/migrations/0003-rank-mmr-filter.sql) lo sostituisce con l'indice basato su MMR. La migration [`0001-rank-mmr.sql`](../../database/league_of_legends/migrations/0001-rank-mmr.sql) aggiunge la colonna e gli indici globali/regionali. La migration [`0004-rank-canonical-mmr.sql`](../../database/league_of_legends/migrations/0004-rank-canonical-mmr.sql) normalizza la queue solo a `RANKED_SOLO_5X5`, rimuove i duplicati legacy e crea gli indici minimi per ogni combinazione di filtro.
+Paginated leaderboard queries order by `rank.mmr` without additional tie-breakers. Migration [`0002-rank-leaderboard-filter.sql`](../../database/league_of_legends/migrations/0002-rank-leaderboard-filter.sql) contains the previous rank/LP index; [`0003-rank-mmr-filter.sql`](../../database/league_of_legends/migrations/0003-rank-mmr-filter.sql) replaces it with the MMR-based index. Migration [`0001-rank-mmr.sql`](../../database/league_of_legends/migrations/0001-rank-mmr.sql) adds the column and global/regional indexes. Migration [`0004-rank-canonical-mmr.sql`](../../database/league_of_legends/migrations/0004-rank-canonical-mmr.sql) normalizes queue to `RANKED_SOLO_5X5` only, removes legacy duplicates and creates minimal indexes for each filter combination.
 
-## Regole operative
+## Operational rules
 
-- Le definizioni base sono allineate al dump `SHOW CREATE TABLE` di riferimento.
-- Non aggiungere DML o rebuild nelle definizioni delle tabelle.
-- Le migration devono essere versionate e separate dagli script base.
-- Dopo modifiche a una tabella, aggiornare questo indice e verificare PK, unique key, indici e foreign key.
-- `rank` e `match` sono identificatori SQL da quotare nelle query applicative.
+- Base definitions are aligned with the reference `SHOW CREATE TABLE` dump.
+- Do not add DML or rebuilds in table definitions.
+- Migrations must be versioned and separate from base scripts.
+- After changing a table, update this index and verify PK, unique key, indexes and foreign keys.
+- `rank` and `match` are SQL identifiers to quote in application queries.

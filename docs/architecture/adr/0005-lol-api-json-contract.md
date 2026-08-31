@@ -12,24 +12,24 @@ The current API serializes similar data through profile DTOs, leaderboard DTOs a
 
 ### Amendment 2026-08-27: profile-statistics leaf contract
 
-`overview.statistics` serializza soltanto le foglie
-`champions.<championId>.<canonicalQueue>.<position>`. Le queue sono
-canonicalizzate all'ingestion e ogni partita raggiunge una posizione, usando
-`UNKNOWN` quando lane/position manca o non ha significato. `total`, aggregati
-per champion/queue/lane, `context`, `reference`, `winrate`, `kda` e tutti i
-campi `avg*` non fanno parte del payload persistito o HTTP; eventuali viste
-legacy sono ricostruite solo in memoria. I valori opzionali assenti sono omessi,
-non trasformati in zero. I campi Arena sono presenti soltanto nella foglia
-`ARENA → UNKNOWN`; `avgArenaPlacement` usa `arenaPlacementSum / games` di
-quella foglia. Questo emendamento sostituisce i paragrafi
-successivi incompatibili relativi alle champion rows.
+`overview.statistics` serializes only the leaves
+`champions.<championId>.<canonicalQueue>.<position>`. Queues are
+canonicalized at ingestion and every game reaches a position, using
+`UNKNOWN` when lane/position is missing or has no meaning. `total`, aggregates
+per champion/queue/lane, `context`, `reference`, `winrate`, `kda` and all
+`avg*` fields are not part of the persisted or HTTP payload; any legacy
+views are rebuilt only in memory. Missing optional values are omitted,
+not turned into zero. Arena fields are present only in the
+`ARENA → UNKNOWN` leaf; `avgArenaPlacement` uses `arenaPlacementSum / games` from
+that leaf. This amendment replaces the subsequent incompatible paragraphs
+regarding champion rows.
 
-`GET /profile/{puuid}/matchups` usa la collection distinta `profile_matchups`
-e serializza le sole foglie
+`GET /profile/{puuid}/matchups` uses the distinct `profile_matchups`
+collection and serializes only the leaves
 `champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`.
-Anche questo payload non contiene aggregate che rimuovono queue/position, né
-`reference`, `winrate`, `kda` o `avg*`; il consumer compone le proprie viste.
-`ProfileStatistics` non conserva un aggregate root `matchups` o `duoStats`.
+This payload also contains no aggregates that remove queue/position, nor
+`reference`, `winrate`, `kda` or `avg*`; the consumer composes its own views.
+`ProfileStatistics` does not store a root aggregate `matchups` or `duoStats`.
 
 Success payloads use canonical models from `lol.model`. Spring retains only HTTP error models.
 
@@ -53,25 +53,33 @@ summoners[]
 
 Rank distribution and top-regions remain non-paginated and continue using their persistent aggregate/cache flow.
 
+## Amendment 2026-08-31: Records routes
+
+`GET /api/lol/records` is the global Records overview. It returns the top five
+rows for every available `RecordMetric`; `region` is optional and limits every
+overview row to that League shard. `GET
+/api/lol/records/{metric}` is the nested metric ladder and accepts the
+same optional `region` plus `limit` and `offset` pagination. Both routes read
+the canonical current-season record filter; only profile-record reads can
+return 202 while their per-PUUID projection is generated.
+
 HTTP controllers unwrap the domain-level `ApiResult<T>` through one shared
 `LolApiResponses` mapper. `READY` and `PARTIAL` are successful JSON payloads;
 `PENDING` is returned as the standard `LolApiError` envelope with HTTP 202.
 
-Le response root oggetto e paginate aggiungono `metadata` allo stesso livello
-del payload, senza envelope `data`. `ResponseMetadata` contiene sempre
-`pagination`, `lastUpdate`, `refresh` e `filter`, con `null` per i campi non
-applicabili. I `202` riportano lo stesso oggetto dentro `LolApiError`; search,
-indexables e le altre liste pure restano array invariati.
+Object-root and paginated responses add `metadata` at the same level
+as the payload, without a `data` envelope. `ResponseMetadata` always contains
+`pagination`, `lastUpdate`, `refresh` and `filter`, with `null` for non-applicable fields. `202`s report the same object inside `LolApiError`; search,
+indexables and other pure lists remain unchanged arrays.
 
-`LiveGame` è l'eccezione object-root: il suo stato assente usa `notInGame` sul
-payload canonico e non `ResponseMetadata`, così una partita non attiva resta un
-successo HTTP `200` con campi game null e participants vuoti.
+`LiveGame` is the object-root exception: its absent state uses `notInGame` on
+the canonical payload and not `ResponseMetadata`, so an inactive game remains an
+HTTP `200` success with null game fields and empty participants.
 
-`BotStatus` (`GET /api/status`) è un'altra eccezione object-root: espone metriche
-operative del processo senza `ResponseMetadata` e senza envelope LoL. Oltre a
-`league`, `process`, `system` e `redis`, include `tracker` (job del
-`TrackerScheduler` con progresso in memoria), `workers` (snapshot live dei
-due worker `DatabaseTracker`) e `riot` (snapshot completo di `R4JQueue` per shard).
+`BotStatus` (`GET /api/status`) is another object-root exception: it exposes operational
+process metrics without `ResponseMetadata` and without a LoL envelope. Besides
+`league`, `process`, `system` and `redis`, it includes `tracker` (`TrackerScheduler` jobs with in-memory progress),
+`workers` (live snapshot of the two `DatabaseTracker` workers) and `riot` (full snapshot of `R4JQueue` per shard).
 
 `ChampionStatistics.filter` remains part of the canonical object used by Redis
 and the shared JSON codec, but the Spring mapper ignores it through a Jackson mixin because it
@@ -87,8 +95,9 @@ inside `SummonerView`, `SummonerLeaderboard` and `LeaderboardPage`. The former `
 
 `GET /profile/{puuid}/records` returns the canonical `ProfileRecordPage` for
 the canonical filter. A missing projection returns the standard `202`
-envelope and schedules asynchronous generation. `GET /records/{metric}`
-returns paginated canonical `RecordPage` rows, optionally narrowed by region.
+envelope and schedules asynchronous generation. `GET /api/lol/records` returns
+the global overview; `GET /api/lol/records/{metric}` returns paginated
+canonical `RecordPage` rows, optionally narrowed by region.
 `ProfileRecord` is the success model in both responses; Spring owns no record
 DTO. `gameShared` is omitted for individual records, rather than serialized as
 `false`.

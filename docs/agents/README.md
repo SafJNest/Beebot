@@ -1,51 +1,28 @@
-# Agent workflow
+# Agent workflow (current)
 
-This directory contains execution rules for the architecture planner, main agent and macro-task agents.
+> Canonical in `.agents/agents/` — this file is only a historical index. To add new content see `docs/HANDBOOK.md`.
 
-## Reading order
+## Global agents (2) — use
 
-1. repository [`AGENTS.md`](../../AGENTS.md);
-2. architecture index [`docs/architecture/README.md`](../architecture/README.md);
-3. accepted ADRs relevant to the task;
-4. the assigned macro-task plan;
-5. current code and tests.
+| Agent | Location | When to use |
+|---|---|---|
+| `beebot-guardian` | `.agents/agents/guardian.md` → shimmed `.cursor/.claude/.codex/.opencode` | before every LoL change: `AGENTS.md` + ADR + `HANDBOOK.md` + `codegraph explore/impact` for owner/blast radius, blocks on second owner |
+| `beebot-builder` | `.agents/agents/builder.md` + skill `beebot-handbook` | "new command/endpoint/service/model/queue/mongo/cache" → `codegraph` mandatory → `HANDBOOK.md` §5 template |
 
-## Roles
+Skill: `beebot-handbook` (`.agents/skills/beebot-handbook/SKILL.md`) — dispatch §5.1-5.12 + checklist §7 + reference §6.
 
-- `source-of-truth-agent.md`: analyzes architecture and maintains proposed decisions and task plans.
-- `main-agent.md`: assigns work, reviews diffs and approves transitions.
-- macro-task agents: implement one bounded task and follow its handoff contract.
+## Reading order (for both)
 
-Only the main agent approves changes that alter an accepted ADR or cross task ownership.
+1. `AGENTS.md`
+2. `docs/architecture/README.md`
+3. Relevant ADRs
+4. `docs/HANDBOOK.md` §5-§7
+5. `codegraph status` → `codegraph explore <area>` + `codegraph impact <symbol>`
 
-## Execution order
+## Archive
 
-```text
-0000 -> 0001 -> 0002 -> 0003 -> 0004 -> 0005 -> 0006 -> 0007
-```
+- Macro-task `0000-0008` → `docs/agents/_archive/` (0000/0001/0003/0004/0007 `Implemented`, 0002/0005/0006/0008 implemented, see `HANDBOOK.md` §6)
+- Proposal `rusted-java.md` + `champion-matchup-event-payload.md` → `docs/proposals/`
+- Template → `docs/agents/macro-task-template.md` (kept for new plans, but use `HANDBOOK.md` for operational)
 
-The main agent may run independent read-only analysis in parallel, but implementation tasks with overlapping owners are sequential.
-
-## MongoDB LoL migration
-
-La strategia specifica per la migrazione Mongo è in [`docs/mongo/07-agent-strategy.md`](../mongo/07-agent-strategy.md).
-
-Il workflow Mongo aggiunge:
-
-- un audit read-only di tutte le query e scritture `LeagueDB` prima dell'implementazione;
-- agenti query separati per profile, match, statistiche/champion e leaderboard;
-- un agent per schema/index e uno per mapping verso i modelli esistenti;
-- una verifica esplicita dell'assenza di dual-write e outbox nel runtime;
-- un agent dedicato a backfill e uno a riconciliazione/cutover;
-- un guardian indipendente che approva i gate e un verifier finale.
-
-Gli agenti Mongo seguono lo stesso handoff del [`macro-task-template.md`](macro-task-template.md). Nessun implementatore può approvare il proprio lavoro o modificare l'ADR per sbloccare il proprio task.
-
-## Champion statistics
-
-La guida operativa per analizzare e ridurre l'uso di memoria della pipeline
-Champion Statistics, senza cambiare contratti o risultati, e in
-[`rusted-java.md`](rusted-java.md).
-
-La proposta per le metriche di lane e timing oggetti dei matchup e in
-[`champion-matchup-event-payload.md`](champion-matchup-event-payload.md).
+Historical detail of Mongo/guardian/verifier workflow: `docs/mongo/07-agent-strategy.md` (not active).

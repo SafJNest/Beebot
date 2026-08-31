@@ -10,21 +10,21 @@
 curl 'http://localhost:8080/api/lol/EUW1/match/EUW1_6789012345'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `shard` | path | enum `LeagueShard` | sì | — | Shard usato per la lookup. |
-| `gameId` | path | string | sì | — | ID Riot completo, per esempio `EUW1_6789012345`. |
+| `shard` | path | enum `LeagueShard` | yes | — | Shard used for the lookup. |
+| `gameId` | path | string | yes | — | Full Riot ID, for example `EUW1_6789012345`. |
 
-Il prefisso prima di `_` viene rimosso per la lookup SQL; lo shard del path
-resta la regione di riferimento. Una miss segue `Redis → DB → Tracker → Riot`
-e non esegue una fetch Riot sincrona nella request HTTP.
+The prefix before `_` is stripped for the SQL lookup; the path shard
+remains the reference region. A miss follows `Redis → DB → Tracker → Riot`
+and does not perform a synchronous Riot fetch in the HTTP request.
 
-## Risposta `200`
+## `200` response
 
-`Match` completo. L'esempio contiene due partecipanti rappresentativi; la
-risposta reale contiene tutti i partecipanti disponibili del match.
+Complete `Match`. The example contains two representative participants; the
+actual response contains all available participants for the match.
 
 ```json
 {
@@ -182,18 +182,18 @@ risposta reale contiene tutti i partecipanti disponibili del match.
 }
 ```
 
-`participant.rankProgress` è l'unico contratto rank del participant. Contiene
-lo snapshot corrente (`rank`, `lp`), il gain opzionale e lo snapshot precedente
-opzionale. I precedenti campi top-level `rank`, `lp` e `gain` del participant
-sono stati rimossi intenzionalmente dal JSON pubblico.
+`participant.rankProgress` is the only rank contract for the participant. It contains
+the current snapshot (`rank`, `lp`), the optional gain and the optional previous snapshot.
+The former top-level `rank`, `lp` and `gain` participant fields
+have been intentionally removed from the public JSON.
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `202` | `match_pending` | Il match non è ancora persistito o analizzato; il lavoro è stato accodato. |
-| `400` | `invalid_request` | `shard` o `gameId` mancanti/non validi. |
-| `404` | `not_found` | Match cercato e marcato come non trovato. |
+| `202` | `match_pending` | Match not yet persisted or analyzed; work has been queued. |
+| `400` | `invalid_request` | Missing/invalid `shard` or `gameId`. |
+| `404` | `not_found` | Match searched and marked as not found. |
 
 ```json
 {
@@ -203,8 +203,8 @@ sono stati rimossi intenzionalmente dal JSON pubblico.
 }
 ```
 
-La response `200` aggiunge `metadata` root con `lastUpdate` del match e
-`refresh=false`; pagination e filter sono `null`.
+The `200` response adds root `metadata` with the match `lastUpdate` and
+`refresh=false`; pagination and filter are `null`.
 
 ## Owner
 

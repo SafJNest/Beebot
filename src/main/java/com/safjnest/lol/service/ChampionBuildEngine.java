@@ -7,6 +7,7 @@ import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 
@@ -79,7 +80,7 @@ final class ChampionBuildEngine {
             try {
                 for (QueryRecord record : batch) accept(accumulator, record);
             } finally {
-                batch.clear();
+                MatchMemoryUtils.release(batch);
             }
         });
         return finish(accumulator);

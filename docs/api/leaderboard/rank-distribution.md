@@ -12,21 +12,21 @@ curl --get 'http://localhost:8080/api/lol/leaderboard/rank-distribution' \
   --data-urlencode 'queue=TEAM_BUILDER_RANKED_SOLO'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `region` | query | enum `LeagueShard` | no | tutti gli shard | Shard da aggregare; omesso significa aggregato globale. |
-| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue da aggregare. |
+| `region` | query | enum `LeagueShard` | no | all shards | Shard to aggregate; omitted means global aggregate. |
+| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue to aggregate. |
 
-## Risposta `200`
+## `200` response
 
-`LeaderboardDistribution`. La distribuzione contiene i tier competitivi da
-`CHALLENGER` a `IRON`; `UNRANKED` non è incluso. Le entry a zero possono essere
-presenti quando la combinazione è stata seminata dal rebuild.
+`LeaderboardDistribution`. The distribution contains competitive tiers from
+`CHALLENGER` to `IRON`; `UNRANKED` is not included. Zero entries may be
+present when the combination was seeded by the rebuild.
 
-Il payload HTTP non cambia; internamente il risultato può essere letto dallo
-snapshot Mongo `leaderboard_aggregates` oppure rigenerato da `competitive`.
+The HTTP payload does not change; internally the result may be read from the
+Mongo snapshot `leaderboard_aggregates` or regenerated from `competitive`.
 
 ```json
 {
@@ -45,13 +45,13 @@ snapshot Mongo `leaderboard_aggregates` oppure rigenerato da `competitive`.
 }
 ```
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Distribuzione disponibile, anche con entry a zero. |
-| `400` | `invalid_request` | `region` o `queue` non validi. |
-| `404` | `not_found` | Endpoint non trovato. |
+| `200` | — | Distribution available, including with zero entries. |
+| `400` | `invalid_request` | Invalid `region` or `queue`. |
+| `404` | `not_found` | Endpoint not found. |
 
 ## Owner
 

@@ -14,19 +14,19 @@ curl --get 'http://localhost:8080/api/lol/champions/tier-list' \
   --data-urlencode 'queue=TEAM_BUILDER_RANKED_SOLO'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---:|---:|---|---|
-| `patch` | query | string `major.minor` | no | patch corrente | Patch del dataset. |
-| `rank` | query | enum `TierType` | no | nessun filtro | Tier minimo del dataset; `CHALLENGER` contiene solo Challenger. |
-| `region` | query | enum `LeagueShard` | no | aggregato `GLOBAL` interno | Shard da aggregare. Non inviare `GLOBAL` o `UNKNOWN`. |
-| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue del dataset. |
+| `patch` | query | string `major.minor` | no | current patch | Dataset patch. |
+| `rank` | query | enum `TierType` | no | no filter | Minimum tier of the dataset; `CHALLENGER` contains only Challenger. |
+| `region` | query | enum `LeagueShard` | no | internal `GLOBAL` aggregate | Shard to aggregate. Do not send `GLOBAL` or `UNKNOWN`. |
+| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Dataset queue. |
 
-## Risposta `200`
+## `200` response
 
-Le queue con lane restituiscono sempre TOP, JUNGLE, MID, BOT e UTILITY. Una
-queue senza lane restituisce una sola entry con `role: null`.
+Queues with lanes always return TOP, JUNGLE, MID, BOT and UTILITY. A
+lane-less queue returns a single entry with `role: null`.
 
 ```json
 {
@@ -84,60 +84,60 @@ queue senza lane restituisce una sola entry con `role: null`.
 }
 ```
 
-La tier list espone solo champion con `eligibleForRole: true`. L'eligibility è
-calcolata congiuntamente sui bucket di ruolo della response. Per ogni coppia
-champion-ruolo si calcola `roleShare = picksInRole / totalPicksAcrossRoles`,
-quindi un clustering a due gruppi usa `x = log1p(picksInRole)` e
-`y = logit(roleShare)`. Il cluster con il centroide alto su entrambe le
-dimensioni identifica i ruoli realmente giocati; uno stesso champion può
-quindi risultare eligible in più ruoli. Non viene applicata alcuna soglia
-assoluta di game, pick o pick rate. Per le queue senza lane il singolo bucket
-non richiede classificazione tra ruoli e mantiene tutti i champion con pick.
-Quando `roleShare` è esattamente `1`, il limite finito del logit usa come
-risoluzione il minimo volume off-role positivo osservato nello stesso dataset:
-in questo modo pochi pick concentrati in un solo ruolo non diventano un valore
-infinito e non vengono confusi con un ruolo realmente consolidato.
+The tier list exposes only champions with `eligibleForRole: true`. Eligibility is
+computed jointly across the role buckets of the response. For each
+champion-role pair, `roleShare = picksInRole / totalPicksAcrossRoles` is computed,
+then a two-group clustering uses `x = log1p(picksInRole)` and
+`y = logit(roleShare)`. The cluster with the high centroid on both
+dimensions identifies roles actually played; the same champion can
+therefore be eligible in multiple roles. No absolute
+threshold on games, picks or pick rate is applied. For lane-less queues the single bucket
+does not require inter-role classification and keeps all champions with picks.
+When `roleShare` is exactly `1`, the finite limit of the logit uses as
+resolution the smallest positive off-role volume observed in the same dataset:
+this way a few picks concentrated in a single role do not become an
+infinite value and are not mistaken for a truly established role.
 
-Il `tierScore` combina gli Z-score della sola population eligible: 50% adjusted
-win rate, 45% pick rate e 5% ban rate. L'adjusted win rate conserva il
-`winrate` raw nella response, ma usa il win rate complessivo del ruolo come
+`tierScore` combines Z-scores of the eligible-only population: 50% adjusted
+win rate, 45% pick rate and 5% ban rate. The adjusted win rate keeps the
+raw `winrate` in the response, but uses the overall role win rate as a
 prior: `(wins + priorStrength * roleAverageWinrate) / (picks + priorStrength)`,
-dove `priorStrength` è la mediana dei pick eligible. La deviazione dello
-Z-score include inoltre la varianza posteriore, per non trasformare un 1/1 in
-un outlier di tier. I bucket sono `S+ >= 2`, `S >= 1`, `A >= 0.25`,
-`B >= -0.25`, `C >= -1` e `D < -1`.
+where `priorStrength` is the median of eligible picks. The Z-score deviation
+also includes posterior variance, so a 1/1 does not become
+a tier outlier. Buckets are `S+ >= 2`, `S >= 1`, `A >= 0.25`,
+`B >= -0.25`, `C >= -1` and `D < -1`.
 
-`counters` e `strongAgainst` contengono al massimo tre matchup. Il loro ordine
-usa `weightedDelta = adjustedMatchupWinRate - adjustedChampionWinRate`.
-Prima della mediana, entrambi gli elenchi rimuovono gli opponent che non sono
-`eligibleForRole` nello stesso ruolo della response.
-Il `matchupPriorStrength` è la mediana dei game dei matchup disponibili per il
-singolo champion e vale anche come soglia relativa: entra nelle liste soltanto
-un matchup con `matchupGames >= matchupPriorStrength`. Il matchup eleggibile
-viene quindi corretto con `(matchupWins + matchupPriorStrength *
-adjustedChampionWinRate) / (matchupGames + matchupPriorStrength)` prima di
-calcolare il delta. Non esiste una soglia matchup globale.
+`counters` and `strongAgainst` contain at most three matchups. Their ordering
+uses `weightedDelta = adjustedMatchupWinRate - adjustedChampionWinRate`.
+Before the median, both lists remove opponents that are not
+`eligibleForRole` in the same role as the response.
+`matchupPriorStrength` is the median of matchup games available for the
+individual champion and also acts as a relative threshold: only
+a matchup with `matchupGames >= matchupPriorStrength` enters the lists. The eligible
+matchup is then corrected with `(matchupWins + matchupPriorStrength *
+adjustedChampionWinRate) / (matchupGames + matchupPriorStrength)` before
+computing the delta. There is no global matchup threshold.
 
-## Stato parziale
+## Partial state
 
-Se uno o più ruoli non sono pronti o sono stale, l’endpoint risponde comunque
-`200` con i soli ruoli pronti, `metadata.refresh=true` e avvia la matrice stats
-deduplicata per patch e queue. La response parziale non viene messa in cache.
+If one or more roles are not ready or are stale, the endpoint still responds with
+`200` containing only the ready roles, `metadata.refresh=true` and starts the deduplicated stats matrix
+for patch and queue. The partial response is not cached.
 
-## Storage e cache
+## Storage and cache
 
-`champion_stats` resta l’unica fonte persistita. Mongo restituisce una
-projection stretta di overview e matchup; score, tier e liste counter/strong
-sono calcolati in Java. La response completa è cacheata in Redis e viene
-invalidata quando il refresh stats sostituisce uno dei bucket sorgente. La
-chiave cache è versionata insieme all'algoritmo, così una formula nuova non può
-riutilizzare payload prodotti dalla versione precedente. Non esiste una
-collection Mongo tier-list.
+`champion_stats` remains the only persisted source. Mongo returns a
+narrow projection of overview and matchup; score, tier and counter/strong
+lists are computed in Java. The complete response is cached in Redis and is
+invalidated when the stats refresh replaces one of the source buckets. The
+cache key is versioned together with the algorithm, so a new formula cannot
+reuse payloads produced by the previous version. There is no
+Mongo tier-list collection.
 
 ## Owner
 
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
-- Service e cache: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
+- Service and cache: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Analyzer: [`ChampionTierAnalyzer`](../../../src/main/java/com/safjnest/lol/service/ChampionTierAnalyzer.java)
 - Source projection: [`MongoDB`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
 - Success model: [`ChampionTierList`](../../../src/main/java/com/safjnest/lol/model/ChampionTierList.java)

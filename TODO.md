@@ -1,6 +1,8 @@
 # TODO
 
-Indice operativo del lavoro aperto. I dettagli architetturali e le procedure restano nei documenti collegati.
+> Per **come fare** un nuovo comando / endpoint / service / model / queue / mongo / cache: vedi [`docs/HANDBOOK.md`](docs/HANDBOOK.md).
+
+Indice operativo del lavoro aperto dopo il cutover Mongo-first (2026-08-31). I dettagli architetturali restano negli ADR e in `docs/HANDBOOK.md` §6-§7.
 
 ## P0 — Chiusura migrazione Mongo LoL
 

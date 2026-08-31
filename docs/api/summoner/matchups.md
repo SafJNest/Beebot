@@ -14,25 +14,25 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ma
   --data-urlencode 'minGames=5'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `shard` | path | enum `LeagueShard` | sì | — | Shard del profilo. |
-| `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
-| `start` | query | epoch millis | no | `0` | Inizio del periodo; se `end` manca, viene usata la fine della giornata corrente (`23:59:59.999`). Se presente, prevale su `patch`. |
-| `end` | query | epoch millis | no | `0` | Fine del periodo; può essere usato da solo e deve essere maggiore o uguale a `start` quando `start` è presente. |
-| `queue` | query | enum `GameQueueType` oppure `ALL` | no | `ALL` | Queue da filtrare; omissione e `ALL` aggregano tutte le queue. |
-| `patch` | query | `major.minor` | no | nessun filtro | Fallback quando `start` e `end` sono entrambi assenti; se il periodo è presente viene ignorata. |
-| `role` | query | enum `LaneType` | no | tutti i ruoli | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`. Non è valido con queue senza lane. |
-| `minGames` | query | integer `>= 1` | no | `5` | Soglia applicata solo alle mappe matchup nelle singole foglie. |
+| `shard` | path | enum `LeagueShard` | yes | — | Shard of the profile. |
+| `puuid` | path | string | yes | — | Canonical Riot PUUID of the summoner. |
+| `start` | query | epoch millis | no | `0` | Period start; if `end` is missing, the end of the current day is used (`23:59:59.999`). When present, it takes precedence over `patch`. |
+| `end` | query | epoch millis | no | `0` | Period end; can be used alone and must be greater than or equal to `start` when `start` is present. |
+| `queue` | query | enum `GameQueueType` or `ALL` | no | `ALL` | Queue to filter; omitting it and `ALL` aggregate all queues. |
+| `patch` | query | `major.minor` | no | no filter | Fallback when both `start` and `end` are absent; if the period is present it is ignored. |
+| `role` | query | enum `LaneType` | no | all roles | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`. Not valid with lane-less queues. |
+| `minGames` | query | integer `>= 1` | no | `5` | Threshold applied only to matchup maps in individual leaves. |
 
-## Risposta `200`
+## `200` response
 
-La source of truth è una foglia `champion × CanonicalQueue × position`.
-Ogni foglia conserva i suoi accumulatori base e, sotto `matchups`, soltanto gli
-avversari incontrati nella stessa posizione. Non sono salvati aggregate per
-champion, queue o posizione, né `reference`, `winrate`, `kda` o campi `avg*`.
+The source of truth is a `champion × CanonicalQueue × position` leaf.
+Each leaf keeps its base accumulators and, under `matchups`, only the
+opponents encountered in the same position. No aggregates for
+champion, queue or position are stored, nor `reference`, `winrate`, `kda` or `avg*` fields.
 
 ```json
 {
@@ -87,38 +87,37 @@ champion, queue o posizione, né `reference`, `winrate`, `kda` o campi `avg*`.
 }
 ```
 
-Champion e avversario sono chiavi numeriche dell'object. Il consumer risolve
-nome e immagine dai dati statici e calcola i totali/medie richiesti sommando le
-foglie. Una posizione assente o non applicabile è `UNKNOWN`; le queue Riot sono
-normalizzate in `CanonicalQueue` durante l'ingestion.
+Champion and opponent are numeric object keys. The consumer resolves
+name and image from static data and computes required totals/averages by summing the
+leaves. A missing or non-applicable position is `UNKNOWN`; Riot queues are
+normalized to `CanonicalQueue` during ingestion.
 
-Se viene passato `start` senza `end`, la fine del periodo è la fine della
-giornata corrente (`23:59:59.999`, timezone del server), così il `filterKey`
-resta stabile durante la giornata.
-Se viene passato solo `end`, non viene applicato un limite inferiore. Quando
-almeno uno tra `start` e `end` è presente, il periodo prevale e `patch` non
-viene applicata; se mancano entrambi, `patch` filtra la patch mantenendo il
-periodo della season canonical.
+If `start` is passed without `end`, the period end is the end of the
+current day (`23:59:59.999`, server timezone), so the `filterKey`
+remains stable throughout the day.
+If only `end` is passed, no lower bound is applied. When
+at least one of `start` and `end` is present, the period takes precedence and `patch` is not
+applied; if both are missing, `patch` filters by patch while keeping the
+canonical season period.
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Aggregato pronto. |
-| `202` | `profile_matchups_pending` | Aggregato assente; il refresh on-demand è stato avviato in background. |
-| `400` | `invalid_request` | Periodo start/end, queue, patch, role o `minGames` non validi. |
-| `404` | — | Profilo non trovato. |
+| `200` | — | Aggregate ready. |
+| `202` | `profile_matchups_pending` | Aggregate missing; on-demand refresh has been started in the background. |
+| `400` | `invalid_request` | Invalid start/end period, queue, patch, role or `minGames`. |
+| `404` | — | Profile not found. |
 
-`metadata` è root sia nel `200` sia nell'errore `202`: include il filtro di
-aggregazione richiesto, `lastUpdate` e `refresh`. Uno stale resta `200` con il
-payload persistito e `refresh=true`, poi accoda soltanto il job matchup in
-bassa priorità.
+`metadata` is root in both the `200` and the `202` error: it includes the requested aggregation
+filter, `lastUpdate` and `refresh`. A stale entry remains `200` with the
+persisted payload and `refresh=true`, then queues only the low-priority matchup job.
 
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Parametri: [`LolApiParameters`](../../../src/main/java/com/safjnest/spring/controller/LolApiParameters.java)
+- Parameters: [`LolApiParameters`](../../../src/main/java/com/safjnest/spring/controller/LolApiParameters.java)
 - Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
-- Modello: [`ProfileMatchups`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileMatchups.java)
-- Redis: `SUMMONER_MATCHUPS(puuid, filterKey)`, TTL 6 ore
-- Mongo: collection `profile_matchups`, identità `{ puuid, filterKey }`
+- Model: [`ProfileMatchups`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileMatchups.java)
+- Redis: `SUMMONER_MATCHUPS(puuid, filterKey)`, TTL 6 hours
+- Mongo: collection `profile_matchups`, identity `{ puuid, filterKey }`

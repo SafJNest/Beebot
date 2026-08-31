@@ -35,10 +35,10 @@ to the same overload with `allowCompute=true`; API orchestration uses the
 overload with `allowCompute=false`. No public read/lazy aliases or automatic
 build ranking selectors are introduced.
 
-La freshness HTTP di profile e champion è una settimana: i componenti stale
-non sono calcolati nella request. Il profile overview disponibile rimane `200`
-con `metadata.refresh=true` e header `X-Profile-Refresh: true`; activity e
-matchups stale usano `202` con metadata del filtro richiesto.
+HTTP freshness for profile and champion is one week: stale components
+are not computed in the request. The available profile overview remains `200`
+with `metadata.refresh=true` and header `X-Profile-Refresh: true`; stale activity and
+matchups use `202` with metadata for the requested filter.
 
 ## Ownership and invariants
 

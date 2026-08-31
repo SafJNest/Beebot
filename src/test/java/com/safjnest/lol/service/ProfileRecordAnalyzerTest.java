@@ -43,7 +43,10 @@ public class ProfileRecordAnalyzerTest {
     public void derivesSharedTeamAndIndividualTimelineRecords() {
         Match match = match("events", 1_000, 3_000, 5);
         match.eventData = Map.of(
-            "champion_kills", List.of(Map.of("timestamp", 320L, "killer", 1, "kill_type", "first_blood")),
+            "champion_kills", List.of(
+                Map.of("timestamp", 120L, "killer", 1),
+                Map.of("timestamp", 320L, "killer", 1, "kill_type", "first_blood")
+            ),
             "monster_events", List.of(
                 Map.of("timestamp", 700L, "monster", "DRAGON", "subtype", "INFERNAL_DRAGON", "killer", 1, "killer_team", "BLUE"),
                 Map.of("timestamp", 1_200L, "monster", "BARON_NASHOR", "subtype", "", "killer", 1, "killer_team", "BLUE"),
@@ -55,6 +58,7 @@ public class ProfileRecordAnalyzerTest {
         accumulator.accept(match);
         List<ProfileRecord> records = accumulator.finish();
 
+        assertEquals(120, record(records, RecordMetric.FIRST_KILL_TIME).value);
         assertEquals(320, record(records, RecordMetric.FIRST_BLOOD_TIME).value);
         assertEquals(1, record(records, RecordMetric.BARON_KILLS).value);
         assertEquals(700, record(records, RecordMetric.FIRST_DRAKE_TIME).value);
@@ -75,6 +79,7 @@ public class ProfileRecordAnalyzerTest {
         ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", Filter.canonical());
         accumulator.accept(match);
 
+        assertEquals(320, record(accumulator.finish(), RecordMetric.FIRST_KILL_TIME).value);
         assertEquals(320, record(accumulator.finish(), RecordMetric.FIRST_BLOOD_TIME).value);
     }
 

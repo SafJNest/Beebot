@@ -8,33 +8,33 @@
 curl 'http://localhost:8080/api/lol/EUW1/profile-by-name/Player/EUW'
 ```
 
-| Nome | Posizione | Tipo | Obbligatorio | Descrizione |
+| Name | Position | Type | Required | Description |
 |---|---|---|---:|---|
-| `shard` | path | `LeagueShard` | sì | Shard in cui risolvere il Riot ID. |
-| `gameName` | path | string | sì | Parte prima di `#`. |
-| `tagLine` | path | string | sì | Parte dopo `#`. |
+| `shard` | path | `LeagueShard` | yes | Shard in which to resolve the Riot ID. |
+| `gameName` | path | string | yes | Part before `#`. |
+| `tagLine` | path | string | yes | Part after `#`. |
 
-I segmenti path devono essere URL-encoded quando necessario. Dopo la
-risoluzione, la response è lo stesso `SummonerView` di
-[Profile by PUUID](profile-by-puuid.md), incluso il contratto leaf-only
+Path segments must be URL-encoded when necessary. After
+resolution, the response is the same `SummonerView` as
+[Profile by PUUID](profile-by-puuid.md), including the leaf-only contract
 `overview.statistics.champions.<championId>.<CanonicalQueue>.<position>`.
 
-Il consumer ricava totale, medie, winrate, KDA e breakdown queue/lane dalle
-foglie. Non esistono `total`, `queueStats`, `laneStats`, `championStats`,
-`reference`, `context`, `winrate`, `kda` o campi `avg*` nel payload delle
-statistics. La sola classificazione derivata ammessa nella foglia è
-`isOtp: true`, omessa per tutti gli altri champion della stessa queue. Rank e mastery restano
-letture Redis/Mongo; la GET non esegue
-chiamate Riot sincrone.
+The consumer derives total, averages, winrate, KDA and queue/lane breakdowns from the
+leaves. There are no `total`, `queueStats`, `laneStats`, `championStats`,
+`reference`, `context`, `winrate`, `kda` or `avg*` fields in the
+statistics payload. The only derived classification allowed in the leaf is
+`isOtp: true`, omitted for all other champions in the same queue. Rank and mastery remain
+Redis/Mongo reads; the GET does not perform
+synchronous Riot calls.
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Profilo disponibile; può essere stale con `metadata.refresh=true`. |
-| `202` | `profile_pending` | Risoluzione Riot ID o profilo base in corso. |
-| `400` | `invalid_request` | Parametri path mancanti/non validi. |
-| `404` | `not_found` | Riot ID o profilo non trovati. |
+| `200` | — | Profile available; may be stale with `metadata.refresh=true`. |
+| `202` | `profile_pending` | Riot ID resolution or base profile in progress. |
+| `400` | `invalid_request` | Missing/invalid path parameters. |
+| `404` | `not_found` | Riot ID or profile not found. |
 
 ## Owner
 

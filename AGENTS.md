@@ -102,8 +102,14 @@ Read these files before changing LoL architecture:
 1. this file;
 2. `docs/architecture/README.md`;
 3. the relevant accepted ADR;
-4. the relevant macro-task plan under `docs/agents/macro-tasks/`.
+4. `docs/HANDBOOK.md` §5-§7 for operational steps (command/endpoint/service/model/queue/mongo/cache);
+5. the relevant macro-task plan under `docs/agents/macro-tasks/` (archived, see `docs/HANDBOOK.md`);
+6. **CodeGraph** — `codegraph status` → if stale `codegraph sync` → `codegraph explore <symbol>` + `codegraph impact <symbol>` for blast radius before touching code.
 
 The source-of-truth agent proposes and maintains architecture decisions. Macro-task agents implement only their assigned scope. The main agent reviews ownership, boundaries, tests and the handoff before approving the next task.
+
+Global agents (Cursor / Claude Code / Codex / Opencode) live in `.agents/agents/` (canonical) and are shimmed to `.cursor/rules/`, `.claude/agents/`, `.codex/agents/`, `.opencode/agent/`. Skills live in `.agents/skills/beebot-handbook/`. Never edit the shim — edit `.agents/agents/*.md`.
+
+CodeGraph is mandatory: no LoL change without up-to-date `explore`/`impact`. If `codegraph status` reports a stale or missing index, the agent must sync before proceeding.
 
 Agents must stop and report a conflict instead of silently changing an ADR, another macro-task, or an unrelated owner.

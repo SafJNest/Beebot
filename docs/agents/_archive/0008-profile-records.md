@@ -23,7 +23,7 @@ existing endpoints.
 ## Invariants
 
 - identity is `{ puuid, filterKey, metric }`, with ObjectId as storage-only `_id`;
-- `Rank` remains Riot-owned; record rank/LP/MMR is a historical participant snapshot;
+- `Rank` remains Riot-owned; a record stores only its derived historical MMR snapshot;
 - positions are never stored;
 - individual records omit `gameShared`; TEAM and MATCH records set it to true;
 - timeline absence omits only timeline metrics, never invents zero;
@@ -31,7 +31,7 @@ existing endpoints.
 
 ## Initial metrics
 
-`KILLS`, `DEATHS`, `ASSISTS`, `FIRST_BLOOD_TIME`, `PENTAKILLS`, `CS`,
+`KILLS`, `DEATHS`, `ASSISTS`, `FIRST_KILL_TIME`, `FIRST_BLOOD_TIME`, `PENTAKILLS`, `CS`,
 `DAMAGE_DEALT`, `DAMAGE_TAKEN`, `BARON_KILLS`, `ELDER_KILLS` are participant
 metrics. `FIRST_DRAKE_TIME`, `FIRST_BARON_TIME`, `FIRST_ELDER_TIME`,
 `BARONS_TAKEN`, `ELDERS_TAKEN` are TEAM metrics. `LONGEST_GAME` is a MATCH
@@ -41,6 +41,9 @@ timeline timestamp wins.
 ## Acceptance criteria
 
 - metrics are covered by focused analyzer tests;
-- match event reads are batched and no N+1 event lookup exists;
+- match event reads are batched, no N+1 event lookup exists, and the consumed
+  match/event tree is deep-released before the next batch;
 - API uses canonical models and standard 202 handling;
+- `GET /records` exposes the top five global rows per available metric,
+  optionally narrowed by region, while `GET /records/{metric}` is the paginated ladder;
 - indexes, Mongo collection and API contract are documented.

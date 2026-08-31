@@ -5,8 +5,8 @@
 - `GET /api/lol/{shard}/livegame/{puuid}`
 - `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
 
-La seconda rotta risolve il Riot ID in PUUID e usa lo stesso flusso spectator
-della prima.
+The second route resolves the Riot ID to PUUID and uses the same spectator flow
+as the first.
 
 ## Fetch
 
@@ -15,32 +15,32 @@ curl 'http://localhost:8080/api/lol/EUW1/livegame/Qx7m2vW8-example-puuid'
 curl 'http://localhost:8080/api/lol/EUW1/livegame-by-name/Player/EUW'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Descrizione |
+| Name | Position | Type | Required | Description |
 |---|---|---|---:|---|
-| `shard` | path | enum `LeagueShard` | sì | Shard Riot del summoner. |
-| `puuid` | path | string | prima rotta | PUUID Riot canonico. |
-| `gameName` | path | string | seconda rotta | Parte prima di `#` nel Riot ID. |
-| `tagLine` | path | string | seconda rotta | Parte dopo `#` nel Riot ID. |
+| `shard` | path | enum `LeagueShard` | yes | Riot shard of the summoner. |
+| `puuid` | path | string | first route | Canonical Riot PUUID. |
+| `gameName` | path | string | second route | Part before `#` in the Riot ID. |
+| `tagLine` | path | string | second route | Part after `#` in the Riot ID. |
 
-I segmenti path devono essere URL-encoded quando contengono caratteri riservati.
+Path segments must be URL-encoded when they contain reserved characters.
 
-## Risposta `200`
+## `200` response
 
-`LiveGame` espone solo dati spectator necessari: identificativo e inizio della
-partita, queue/mode/type/map, ban per team e participants. I tempi sono Unix
-epoch milliseconds. Ogni participant include champion, team, spell, rune e un
-`profileOverview` opzionale. Quest'ultimo esiste solo per profili già presenti
-in Redis/Mongo e contiene `summoner`, `ranks`, le `masteries` e tre
-`championStats`: il champion in partita più i due più giocati distinti. La
-lettura passa dallo stesso punto della pagina profilo: una statistica stale
-resta nella risposta e accoda il suo refresh; nessun fetch Riot viene eseguito
-per gli altri participant.
+`LiveGame` exposes only required spectator data: game identifier and start time,
+queue/mode/type/map, bans per team and participants. Timestamps are Unix
+epoch milliseconds. Each participant includes champion, team, spell, rune and an
+optional `profileOverview`. The latter exists only for profiles already present
+in Redis/Mongo and contains `summoner`, `ranks`, `masteries` and three
+`championStats`: the champion in the current game plus the two most-played distinct champions. The
+read goes through the same profile-page entry point: a stale statistic
+remains in the response and queues its refresh; no Riot fetch is performed
+for the other participants.
 
-In spectator mode, un participant senza PUUID resta nel roster con `championId`
-e `riotId` uguale al nome del champion, oltre a `team`; tutti gli altri campi
-participant sono `null`.
+In spectator mode, a participant without a PUUID remains in the roster with `championId`
+and `riotId` equal to the champion name, plus `team`; all other participant
+fields are `null`.
 
 ```json
 {
@@ -86,7 +86,7 @@ participant sono `null`.
 }
 ```
 
-Quando il summoner esiste ma non è in una partita, la risposta resta `200`:
+When the summoner exists but is not in a game, the response remains `200`:
 
 ```json
 {
@@ -104,29 +104,28 @@ Quando il summoner esiste ma non è in una partita, la risposta resta `200`:
 }
 ```
 
-## Cache e refresh
+## Cache and refresh
 
-Il risultato spectator attivo è memorizzato per 60 secondi nella chiave
-`SPECTATOR_CURRENT`; il passaggio a cinque minuti resta pianificato. Il caso
-`notInGame` non viene memorizzato. `POST /profile/{puuid}/refresh` invalida sia
-la cache Redis sia quella R4J spectator; la successiva GET livegame rifà la
-richiesta a Riot.
+The active spectator result is stored for 60 seconds in the
+`SPECTATOR_CURRENT` key; extending it to five minutes remains planned. The
+`notInGame` case is not cached. `POST /profile/{puuid}/refresh` invalidates both
+the Redis and R4J spectator caches; the next livegame GET
+re-requests it from Riot.
 
-Ogni roster spectator accoda subito una scrittura Mongo con PUUID, Riot ID,
-shard e icon. Per tutti i participant viene inoltre accodata una lettura R4J
-Summoner: la risposta HTTP non attende nessuna delle due operazioni e non
-richiama Account API, perché il Riot ID è già contenuto nella response
-spectator. Al completamento della coda il profilo Mongo viene aggiornato con
-level e gli altri dati canonici del Summoner.
+Each spectator roster immediately queues a Mongo write with PUUID, Riot ID,
+shard and icon. An R4J Summoner read is also queued for every participant: the HTTP response does not wait for either operation and does not
+call Account API, because the Riot ID is already contained in the spectator
+response. Once the queue completes, the Mongo profile is updated with
+level and other canonical Summoner data.
 
-## Errori
+## Errors
 
-| HTTP | Descrizione |
+| HTTP | Description |
 |---:|---|
-| `400` | Shard, PUUID, game name o tag line non validi. |
-| `404` | Il summoner non esiste. |
+| `400` | Invalid shard, PUUID, game name or tag line. |
+| `404` | Summoner does not exist. |
 
 ## Owner
 
-`LolController`, `SummonerService`, `lol.queue.R4JQueue`, `RedisKey.SPECTATOR_CURRENT`
-e `LiveGame`.
+`LolController`, `SummonerService`, `lol.queue.scheduler.RiotScheduler` (via `QueueHandler`), `RedisKey.SPECTATOR_CURRENT`
+and `LiveGame`.

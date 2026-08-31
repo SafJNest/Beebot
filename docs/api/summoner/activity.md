@@ -14,31 +14,31 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ac
   --data-urlencode 'champion=0'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `shard` | path | enum `LeagueShard` | sì | — | Shard del profilo. |
-| `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
-| `start` | query | epoch millis | no | `0` | Inizio esplicito del periodo; se `start` e `end` sono entrambi `0`, si usa la season canonical. |
-| `end` | query | epoch millis | no | `0` | Fine esplicita del periodo; se presente da solo lascia il limite inferiore aperto. |
-| `queue` | query | enum `GameQueueType` oppure `ALL` | no | `ALL` | Queue da filtrare; `ALL` viene normalizzato a nessun filtro queue. |
-| `champion` | query | integer | no | `0` | Champion del summoner; `0` significa tutti. |
+| `shard` | path | enum `LeagueShard` | yes | — | Shard of the profile. |
+| `puuid` | path | string | yes | — | Canonical Riot PUUID of the summoner. |
+| `start` | query | epoch millis | no | `0` | Explicit period start; if both `start` and `end` are `0`, the canonical season is used. |
+| `end` | query | epoch millis | no | `0` | Explicit period end; if present alone it leaves the lower bound open. |
+| `queue` | query | enum `GameQueueType` or `ALL` | no | `ALL` | Queue to filter; `ALL` is normalized to no queue filter. |
+| `champion` | query | integer | no | `0` | Summoner champion; `0` means all. |
 
-`start` e `end` devono essere positivi o `0`; quando sono entrambi presenti,
-`end` non può precedere `start`. Senza bound temporali il filtro interno usa
-`Filter.canonical()`; con almeno un bound usa `Filter.summoner(start, end)` e
-aggiunge soltanto queue e champion.
+`start` and `end` must be positive or `0`; when both are present,
+`end` must not be before `start`. Without time bounds the internal filter uses
+`Filter.canonical()`; with at least one bound it uses `Filter.summoner(start, end)` and
+adds only queue and champion.
 
-La response contiene tutte le sessioni del periodo in un unico payload. Non
-usa cursor, limit, offset o timezone nel contratto HTTP.
+The response contains all sessions for the period in a single payload. It does not
+use cursor, limit, offset or timezone in the HTTP contract.
 
-## Risposta `200`
+## `200` response
 
-`ProfileActivity`. I timestamp sono epoch Unix in millisecondi. `heatmap.cells`
-contiene sempre 168 celle in ordine `day * 24 + hour`: `day=0` è Monday,
-`day=6` è Sunday, mentre `hour` va da `0` a `23`. Le celle senza partite hanno
-`games=0` e `winrate=null`.
+`ProfileActivity`. Timestamps are Unix epoch in milliseconds. `heatmap.cells`
+always contains 168 cells in `day * 24 + hour` order: `day=0` is Monday,
+`day=6` is Sunday, while `hour` ranges from `0` to `23`. Cells without matches have
+`games=0` and `winrate=null`.
 
 ```json
 {
@@ -159,23 +159,23 @@ contiene sempre 168 celle in ordine `day * 24 + hour`: `day=0` è Monday,
 }
 ```
 
-Le sessioni sono raggruppate in un'unica scansione ordinata dei match: una
-nuova sessione inizia quando il distacco tra la fine del match precedente e
-l'inizio del successivo supera 90 minuti. `recentSessions` è ordinato dalla
-sessione più recente alla più vecchia.
+Sessions are grouped in a single ordered scan of matches: a
+new session starts when the gap between the end of the previous match and
+the start of the next exceeds 90 minutes. `recentSessions` is ordered from the
+most recent session to the oldest.
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Response activity calcolata; può contenere liste vuote se non esistono match. |
-| `202` | `profile_activity_pending` | Activity assente; il job on-demand è accodato. |
-| `400` | `invalid_request` | Parametro temporale, queue o champion non valido. |
+| `200` | — | Computed activity response; may contain empty lists if no matches exist. |
+| `202` | `profile_activity_pending` | Activity missing; on-demand job has been queued. |
+| `400` | `invalid_request` | Invalid time, queue or champion parameter. |
 
-Ogni `200` include `metadata` root con il filtro richiesto e `lastUpdate` preso
-da `coverage.calculatedAt`. Se il valore è stale, la risposta resta `200` con
-`refresh=true` e viene accodato solo il refresh activity in bassa priorità. Il
-`202` usa lo stesso oggetto nel `LolApiError`, con `refresh=true`.
+Every `200` includes root `metadata` with the requested filter and `lastUpdate` taken
+from `coverage.calculatedAt`. If the value is stale, the response remains `200` with
+`refresh=true` and only the low-priority activity refresh is queued. The
+`202` uses the same object in the `LolApiError`, with `refresh=true`.
 
 ## Owner
 
@@ -183,4 +183,4 @@ da `coverage.calculatedAt`. Se il valore è stale, la risposta resta `200` con
 - Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
 - Success model: [`ProfileActivity`](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileActivity.java)
 - Match query: [`MongoDB.findProfileStatisticsMatches`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
-- Persistence: Redis `SUMMONER_ACTIVITY(puuid, filterKey)` e collection Mongo `profile_activity` con la stessa identità `{ puuid, filterKey }`.
+- Persistence: Redis `SUMMONER_ACTIVITY(puuid, filterKey)` and Mongo collection `profile_activity` with the same `{ puuid, filterKey }` identity.

@@ -1,6 +1,8 @@
 # Roadmap
 
-Roadmap operativa del perimetro LoL. Il dettaglio delle decisioni resta negli ADR e nei documenti di `docs/mongo` e `docs/audit`.
+> Guida operativa per nuove feature: [`docs/HANDBOOK.md`](docs/HANDBOOK.md) (§5 TOC + §6 reference indici/peso/RAM + §7 checklist).
+
+Roadmap operativa del perimetro LoL (stato 2026-08-31: runtime Mongo-only, code `QueueHandler`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler` via ADR-0014). Il dettaglio delle decisioni resta negli ADR e in `docs/mongo` / `docs/audit`.
 
 ## Posizione attuale
 
@@ -8,10 +10,10 @@ Il branch `lol-api` ha definito il perimetro API LoL. Il branch `lol-api-mongo` 
 
 ## Fase 1 — chiudere il cutover LoL Mongo
 
-- [ ] Portare tutti i consumer LoL sul boundary unico `LeagueService` → MongoDB/Riot.
+- [x] Portare tutti i consumer LoL su boundary `SummonerService`/`RankService`/`MasteryService`/`ProfileService`/`MatchService` → MongoDB/Riot (ex `LeagueService`, rimosso via ADR-0011/0014).
 - [ ] Mantenere `LeagueDB` confinato alle query utilizzate da `MongoMigration`.
 - [ ] Completare le scritture runtime con upsert tipizzati e invalidazione delle cache correlate.
-- [ ] Uniformare account, tracking, profile, leaderboard, match, participant, rank, mastery e champion aggregate.
+- [x] Uniformare account, tracking, profile, leaderboard, match, participant, rank, mastery e champion aggregate (verifica `explain` ancora P1).
 - [ ] Consolidare la gestione degli errori Mongo senza trasformare gli errori in dati vuoti.
 
 Riferimenti: [ADR-0009](docs/architecture/adr/0009-mongo-persistence-and-migration.md), [write path](docs/mongo/04-write-path-and-refactor.md).

@@ -10,23 +10,23 @@
 curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/rank-history?queue=RANKED_SOLO_5X5&season=2025&timeStart=1760000000000&sort=timeStart:asc'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `shard` | path | enum `LeagueShard` | sì | — | Shard Riot del profilo. |
-| `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
-| `queue` | query | enum `GameQueueType` | no | `RANKED_SOLO_5X5` | Solo/Duo (`RANKED_SOLO_5X5` o alias `TEAM_BUILDER_RANKED_SOLO`) oppure `RANKED_FLEX_SR`. |
-| `view` | query | string | no | — | Per ora accetta solo `profile`: gli ultimi 10 giorni, inclusi eventuali confini tra season. |
-| `season` | query | integer | no | season corrente | Anno della season: ad esempio `2024`, `2025` o `2026`. |
-| `patch` | query | string | no | — | Patch esatta `major.minor`, ad esempio `14.10`. |
-| `timeStart` | query | long | no | `0` | Unix epoch ms inclusivo. Con `season`, la data iniziale viene troncata all'inizio della season e la fine resta quella della season. Senza `season`, usa la season corrente. |
-| `timeEnd` | query | long | no | `0` | Unix epoch ms inclusivo; senza altri selettori, limita la fine della season corrente. |
-| `sort` | query | string | no | `timeStart:desc` | `timeStart:asc` o `timeStart:desc`. |
+| `shard` | path | enum `LeagueShard` | yes | — | Riot shard of the profile. |
+| `puuid` | path | string | yes | — | Canonical Riot PUUID of the summoner. |
+| `queue` | query | enum `GameQueueType` | no | `RANKED_SOLO_5X5` | Solo/Duo (`RANKED_SOLO_5X5` or alias `TEAM_BUILDER_RANKED_SOLO`) or `RANKED_FLEX_SR`. |
+| `view` | query | string | no | — | For now only accepts `profile`: the last 10 days, including possible season boundaries. |
+| `season` | query | integer | no | current season | Season year: e.g. `2024`, `2025` or `2026`. |
+| `patch` | query | string | no | — | Exact patch `major.minor`, e.g. `14.10`. |
+| `timeStart` | query | long | no | `0` | Unix epoch ms inclusive. With `season`, the start date is truncated to the beginning of the season and the end remains that of the season. Without `season`, it uses the current season. |
+| `timeEnd` | query | long | no | `0` | Unix epoch ms inclusive; without other selectors, it limits to the end of the current season. |
+| `sort` | query | string | no | `timeStart:desc` | `timeStart:asc` or `timeStart:desc`. |
 
-La risposta non è paginata. Senza selettori restituisce tutti i match persistiti della season corrente nella queue selezionata. Senza `queue` restituisce esclusivamente Solo/Duo. I selettori `view`, `patch` e `season` sono mutuamente esclusivi; anche `timeStart` e `timeEnd` non possono essere usati insieme. L'unica combinazione ammessa è `season + timeStart`: il periodo è l'intersezione tra `timeStart` e la season selezionata. Per esempio, `season=2025&timeStart=10-ott-2025` restituisce ottobre--dicembre 2025, anche se la data richiesta supera il confine della season.
+The response is not paginated. Without selectors it returns all persisted matches of the current season in the selected queue. Without `queue` it returns Solo/Duo only. Selectors `view`, `patch` and `season` are mutually exclusive; `timeStart` and `timeEnd` also cannot be used together. The only allowed combination is `season + timeStart`: the period is the intersection between `timeStart` and the selected season. For example, `season=2025&timeStart=Oct-10-2025` returns October–December 2025, even if the requested date exceeds the season boundary.
 
-## Risposta `200`
+## `200` response
 
 ```json
 {
@@ -72,17 +72,17 @@ La risposta non è paginata. Senza selettori restituisce tutti i match persistit
 }
 ```
 
-`enemyChampion` e `enemyPuuid` identificano l'avversario nella stessa lane. Per `BOT` e `UTILITY`, `duoChampion`/`duoPuuid` identificano l'alleato nella lane complementare e `duoEnemyChampion`/`duoEnemyPuuid` il suo avversario. Negli altri casi i campi duo sono `null`.
+`enemyChampion` and `enemyPuuid` identify the opponent in the same lane. For `BOT` and `UTILITY`, `duoChampion`/`duoPuuid` identify the ally in the complementary lane and `duoEnemyChampion`/`duoEnemyPuuid` the ally's opponent. Otherwise duo fields are `null`.
 
-`metadata` riporta sempre il selettore richiesto e il `filter` effettivo: quindi il frontend sa quando `timeStart` è stato troncato al confine della season. La cache Redis contiene la projection completa di ogni season per `region`, `shard`, `puuid` e season, dura un giorno ed è invalidata nella season del match quando un match viene persistito o quando il suo `rankProgress` viene aggiornato.
+`metadata` always reports the requested selector and the effective `filter`: so the frontend knows when `timeStart` was truncated to the season boundary. The Redis cache contains the full projection of each season for `region`, `shard`, `puuid` and season, lasts one day and is invalidated in the season of the match when a match is persisted or when its `rankProgress` is updated.
 
-## Errori
+## Errors
 
-| HTTP | Descrizione |
+| HTTP | Description |
 |---:|---|
-| `400` | Ogni errore identifica il parametro e spiega il vincolo: queue consentite, formato patch, season disponibili, view supportate o combinazione incompatibile. |
-| `500` | Il range della season corrente non è disponibile. |
+| `400` | Each error identifies the parameter and explains the constraint: allowed queues, patch format, available seasons, supported views or incompatible combination. |
+| `500` | Current season range not available. |
 
 ## Owner
 
-`MatchService.getRankHistory`, `MongoDB.findRankHistoryMatches` e `RankHistoryMatch`.
+`MatchService.getRankHistory`, `MongoDB.findRankHistoryMatches` and `RankHistoryMatch`.

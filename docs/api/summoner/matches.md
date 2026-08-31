@@ -10,23 +10,23 @@
 curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?queue=RANKED_SOLO_5X5&limit=20&offset=0&sort=timeStart:desc'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `shard` | path | enum `LeagueShard` | sì | — | Shard Riot del profilo. |
-| `puuid` | path | string | sì | — | PUUID Riot canonico del summoner. |
-| `queue` | query | enum `GameQueueType` | no | tutte | Filtra la queue. |
-| `limit` | query | integer | no | `20` | Da `1` a `100`. |
-| `offset` | query | integer | no | `0` | Offset zero-based, `>= 0`. |
-| `timeStart` | query | long | no | `0` | Unix epoch ms inclusivo. |
-| `timeEnd` | query | long | no | `0` | Unix epoch ms inclusivo. |
-| `sort` | query | string | no | `timeStart:desc` | Solo `timeStart:asc` o `timeStart:desc`. |
+| `shard` | path | enum `LeagueShard` | yes | — | Riot shard of the profile. |
+| `puuid` | path | string | yes | — | Canonical Riot PUUID of the summoner. |
+| `queue` | query | enum `GameQueueType` | no | all | Filter by queue. |
+| `limit` | query | integer | no | `20` | From `1` to `100`. |
+| `offset` | query | integer | no | `0` | Zero-based offset, `>= 0`. |
+| `timeStart` | query | long | no | `0` | Unix epoch ms inclusive. |
+| `timeEnd` | query | long | no | `0` | Unix epoch ms inclusive. |
+| `sort` | query | string | no | `timeStart:desc` | Only `timeStart:asc` or `timeStart:desc`. |
 
-## Risposta `200`
+## `200` response
 
-La lista legge esclusivamente i match già persistiti in Mongo: non avvia
-chiamate Riot, lookup o rigenerazioni statistiche.
+The list reads exclusively from matches already persisted in Mongo: it does not start
+Riot calls, lookups or statistic regenerations.
 
 ```json
 {
@@ -63,30 +63,30 @@ chiamate Riot, lookup o rigenerazioni statistiche.
 }
 ```
 
-L'ordinamento usa sempre `timeStart` e `_id` come tie-breaker tecnico, così
-offset e pagine restano stabili.
+Sorting always uses `timeStart` and `_id` as a technical tie-breaker, so
+offset and pages remain stable.
 
-`total` è il numero di match persistiti che soddisfano gli stessi filtri di
-`items` (`shard`, `queue`, `timeStart` e `timeEnd`), prima di applicare
-`limit` e `offset`.
+`total` is the number of persisted matches that satisfy the same filters as
+`items` (`shard`, `queue`, `timeStart` and `timeEnd`), before applying
+`limit` and `offset`.
 
-Ogni risultato espone le rune del summoner richiesto: la prima voce di
-`primaryRunes` e `secondaryRunes` è l'albero, le altre sono le rune scelte;
-`statsRunes` contiene i tre shard statistici. I partecipanti restano una
-projection leggera e non includono queste configurazioni; quando disponibile,
-ognuno include il `rankProgress` già persistito. Non esistono più campi
-participant top-level `rank`, `lp` o `gain`.
+Each result exposes the requested summoner's runes: the first entry of
+`primaryRunes` and `secondaryRunes` is the tree, the others are the chosen runes;
+`statsRunes` contains the three stat shards. Participants remain a
+lightweight projection and do not include these configurations; when available,
+each includes the already-persisted `rankProgress`. Top-level participant
+fields `rank`, `lp` or `gain` no longer exist.
 
-La pagina mantiene i campi esistenti e aggiunge `metadata` root con
-`pagination` (`limit`, `offset`, `total`, `hasMore`), il filtro richiesto e
-`refresh=false`; `lastUpdate` è `null`.
+The page keeps existing fields and adds root `metadata` with
+`pagination` (`limit`, `offset`, `total`, `hasMore`), the requested filter and
+`refresh=false`; `lastUpdate` is `null`.
 
-## Errori
+## Errors
 
-| HTTP | Descrizione |
+| HTTP | Description |
 |---:|---|
-| `400` | Parametro, intervallo temporale, limit, offset o sort non validi. |
+| `400` | Invalid parameter, time range, limit, offset or sort. |
 
 ## Owner
 
-`MatchService.getPage` e `MongoDB.findMatchResults`.
+`MatchService.getPage` and `MongoDB.findMatchResults`.

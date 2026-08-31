@@ -1,17 +1,17 @@
 # LoL HTTP API
 
-Indice della documentazione HTTP pubblica LoL. La documentazione è organizzata
-per scope e ogni endpoint ha un file dedicato con lo stesso template:
+Index of the public LoL HTTP documentation. The documentation is organized
+by scope and each endpoint has a dedicated file with the same template:
 
-1. endpoint e fetch `curl`;
-2. parametri con posizione, tipo, obbligatorietà e default;
-3. risposta `200` con JSON completo della struttura;
-4. stati alternativi ed errori;
-5. owner nel codice.
+1. endpoint and `curl` fetch;
+2. parameters with position, type, required flag and default;
+3. `200` response with complete JSON structure;
+4. alternative states and errors;
+5. owner in the code.
 
-Gli esempi usano `http://localhost:8080` come base URL.
+Examples use `http://localhost:8080` as the base URL.
 
-## Indice per scope
+## Index by scope
 
 ### Summoner
 
@@ -19,7 +19,7 @@ Gli esempi usano `http://localhost:8080` come base URL.
 - [Profile by PUUID](summoner/profile-by-puuid.md) — `GET /api/lol/{shard}/profile/{puuid}`
 - [Profile refresh](summoner/profile-refresh.md) — `POST /api/lol/{shard}/profile/{puuid}/refresh`
 - [Profile by Riot ID](summoner/profile-by-name.md) — `GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}`
-- [Live game](summoner/livegame.md) — `GET /api/lol/{shard}/livegame/{puuid}` e `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
+- [Live game](summoner/livegame.md) — `GET /api/lol/{shard}/livegame/{puuid}` and `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
 - [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`
 - [Rank history](summoner/rank-history.md) — `GET /api/lol/{shard}/profile/{puuid}/rank-history`
 - [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`
@@ -46,20 +46,20 @@ Gli esempi usano `http://localhost:8080` come base URL.
 
 - [Bot status](status.md) — `GET /api/status`
 
-## Contratto comune
+## Common contract
 
-- Gli endpoint sono `GET`, salvo il refresh esplicito del profilo che usa `POST`.
-- Enum e valori testuali sono case-insensitive e vengono sottoposti a `trim()`.
-- I success payload usano i modelli canonici in `com.safjnest.lol.model`.
-- Le response root oggetto o paginate espongono `metadata` sullo stesso root,
-  senza envelope `data`. Le quattro chiavi sono sempre presenti: `pagination`,
-  `lastUpdate`, `refresh` e `filter`; i valori non applicabili sono `null`.
-  `LiveGame` fa eccezione: usa il root booleano `notInGame` e non espone
-  metadata. `BotStatus` (`GET /api/status`) è un'altra eccezione object-root:
-  non è una risorsa LoL shard-scoped, non espone metadata e include `league`,
-  `dispatchers`, `process`, `system`, `redis` e `mongo`. Le liste pure,
-  search e indexables restano array invariati.
-- Gli errori usano sempre questo envelope:
+- Endpoints are `GET`, except for explicit profile refresh which uses `POST`.
+- Enum and textual values are case-insensitive and are trimmed with `trim()`.
+- Success payloads use canonical models in `com.safjnest.lol.model`.
+- Object-root or paginated responses expose `metadata` on the same root,
+  without a `data` envelope. The four keys are always present: `pagination`,
+  `lastUpdate`, `refresh` and `filter`; non-applicable values are `null`.
+  `LiveGame` is an exception: it uses the boolean root `notInGame` and does not expose
+  metadata. `BotStatus` (`GET /api/status`) is another object-root exception:
+  it is not a shard-scoped LoL resource, does not expose metadata and includes `league`,
+  `dispatchers`, `process`, `system`, `redis` and `mongo`. Pure lists,
+  search and indexables remain unchanged arrays.
+- Errors always use this envelope:
 
 ```json
 {
@@ -69,18 +69,18 @@ Gli esempi usano `http://localhost:8080` come base URL.
 }
 ```
 
-| HTTP | Significato |
+| HTTP | Meaning |
 |---:|---|
-| `200` | Risposta pronta. Include anche i payload `PARTIAL` del profilo e della tier list champion. |
-| `202` | Il dato manca, il refresh è stato accodato in background e la richiesta va ripetuta. |
-| `400` | Parametro mancante, tipo non valido, enum sconosciuto o combinazione non supportata. |
-| `404` | Risorsa o endpoint inesistente. |
-| `204` | Refresh completato, oppure ignorato dal cooldown. |
-| `405` | Metodo HTTP non supportato. |
-| `500` | Errore inatteso del server. |
+| `200` | Response ready. Also includes `PARTIAL` payloads for profile and champion tier list. |
+| `202` | Data missing, refresh has been queued in the background and the request should be retried. |
+| `400` | Missing parameter, invalid type, unknown enum or unsupported combination. |
+| `404` | Resource or endpoint not found. |
+| `204` | Refresh completed, or ignored due to cooldown. |
+| `405` | HTTP method not supported. |
+| `500` | Unexpected server error. |
 
-I `202` usano sempre lo stesso formato, con codice e messaggio specifici dello
-scope. Per esempio:
+`202` responses always use the same format, with scope-specific code
+and message. For example:
 
 ```json
 {
@@ -96,33 +96,33 @@ scope. Per esempio:
 }
 ```
 
-`refresh=true` significa che il job deduplicato è stato accodato. Una response
-pronta usa `refresh=false`. `lastUpdate` è epoch millis, `pagination` contiene
-solo i campi applicabili (`page`, `pageSize`, `limit`, `offset`, `total`,
+`refresh=true` means the deduplicated job has been queued. A ready response
+uses `refresh=false`. `lastUpdate` is epoch millis, `pagination` contains
+only applicable fields (`page`, `pageSize`, `limit`, `offset`, `total`,
 `pages`, `hasMore`).
 
-## Tipi condivisi dei parametri
+## Shared parameter types
 
-| Parametro | Tipo | Valori o vincoli |
+| Parameter | Type | Values or constraints |
 |---|---|---|
-| `shard` / `region` | enum `LeagueShard` | `BR1`, `EUN1`, `EUW1`, `JP1`, `KR`, `LA1`, `LA2`, `NA1`, `OC1`, `TR1`, `RU`, `PBE1`, `SG2`, `PH2`, `ID1`, `VN2`, `TH2`, `TW2`, `ME1`. `UNKNOWN` è rifiutato. |
+| `shard` / `region` | enum `LeagueShard` | `BR1`, `EUN1`, `EUW1`, `JP1`, `KR`, `LA1`, `LA2`, `NA1`, `OC1`, `TR1`, `RU`, `PBE1`, `SG2`, `PH2`, `ID1`, `VN2`, `TH2`, `TW2`, `ME1`. `UNKNOWN` is rejected. |
 | `rank` | enum `TierType` | `CHALLENGER`, `GRANDMASTER`, `MASTER`, `DIAMOND`, `EMERALD`, `PLATINUM`, `GOLD`, `SILVER`, `BRONZE`, `IRON`, `UNRANKED`. |
-| `queue` | enum `GameQueueType` | Usa il nome della costante R4J; il default pubblico è `TEAM_BUILDER_RANKED_SOLO`, normalizzato internamente a `RANKED_SOLO_5X5` dove richiesto. |
+| `queue` | enum `GameQueueType` | Use the R4J constant name; the public default is `TEAM_BUILDER_RANKED_SOLO`, normalized internally to `RANKED_SOLO_5X5` where required. |
 | `role` | enum `LaneType` | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`. |
 | `page` | integer | 1-based, `>= 1`. Default `1`. |
-| `limit` | integer | Default e massimo dipendono dallo scope: leaderboard `1`-`50` (default `50`), match list `1`-`100` (default `20`). |
-| `q`, `puuid`, `gameId`, `gameName`, `tagLine`, `champion` | string | Non vuota; i segmenti path devono essere URL-encoded quando contengono caratteri riservati. |
+| `limit` | integer | Default and maximum depend on scope: leaderboard `1`-`50` (default `50`), match list `1`-`100` (default `20`). |
+| `q`, `puuid`, `gameId`, `gameName`, `tagLine`, `champion` | string | Non-empty; path segments must be URL-encoded when they contain reserved characters. |
 
-`region` omesso significa aggregato globale interno; il valore pubblico non è
-`GLOBAL`. `role` è disponibile per champion e leaderboard e viene rifiutato se
-la queue non supporta una lane.
+If `region` is omitted it means internal global aggregate; the public value is not
+`GLOBAL`. `role` is available for champion and leaderboard and is rejected if
+the queue does not support a lane.
 
 ## Source of truth
 
-- [AGENTS.md](../../AGENTS.md) — regole di sincronizzazione API e documentazione;
-- [LoL architecture](../architecture/README.md) — ownership e ADR;
-- [ADR-0005](../architecture/adr/0005-lol-api-json-contract.md) — JSON canonico;
+- [AGENTS.md](../../AGENTS.md) — API and documentation synchronization rules;
+- [LoL architecture](../architecture/README.md) — ownership and ADRs;
+- [ADR-0005](../architecture/adr/0005-lol-api-json-contract.md) — canonical JSON;
 - [ADR-0006](../architecture/adr/0006-champion-api-contract.md) — champion page;
 - [ADR-0013](../architecture/adr/0013-champion-tier-list.md) — champion tier list;
-- [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parametri e status;
-- [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache e flussi asincroni.
+- [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parameters and status;
+- [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache and async flows.

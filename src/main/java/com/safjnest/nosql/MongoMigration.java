@@ -12,6 +12,7 @@ import org.bson.Document;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
@@ -322,11 +323,11 @@ public final class MongoMigration {
                     } catch (RuntimeException exception) {
                         throw migrationFailure("matches", identity, exception);
                     } finally {
-                        releaseMatch(match);
+                        MatchMemoryUtils.release(match);
                     }
                 }
             } finally {
-                matches.clear();
+                MatchMemoryUtils.release(matches);
             }
             if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
                 requestCollection();
@@ -351,7 +352,7 @@ public final class MongoMigration {
                     }
                 }
             } finally {
-                rows.clear();
+                MatchMemoryUtils.release(rows);
             }
             if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
                 requestCollection();
@@ -546,13 +547,6 @@ public final class MongoMigration {
             }
         }
         values.add(value);
-    }
-
-    private static void releaseMatch(Match match) {
-        match.events = null;
-        match.eventData = null;
-        match.participants = null;
-        match.bans = null;
     }
 
     private static Document convertSummoner(QueryRecord row) {

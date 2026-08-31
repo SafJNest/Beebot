@@ -10,15 +10,14 @@
 curl 'http://localhost:8080/api/lol/profile/indexables'
 ```
 
-L’endpoint non accetta parametri e legge la proiezione già persistita. La
-proiezione include i summoner con
-`tracking=true` oppure con un rank `MASTER_I`, `GRANDMASTER_I` o
-`CHALLENGER_I` in una delle queue salvate.
+The endpoint accepts no parameters and reads the already-persisted projection. The
+projection includes summoners with
+`tracking=true` or with a `MASTER_I`, `GRANDMASTER_I` or
+`CHALLENGER_I` rank in one of the stored queues.
 
-## Risposta `200`
+## `200` response
 
-La risposta contiene soltanto i campi necessari per costruire l’URL del
-profilo:
+The response contains only the fields required to build the profile URL:
 
 ```json
 [
@@ -29,11 +28,11 @@ profilo:
 ]
 ```
 
-Il refresh viene lanciato dal case owner `test profileindexables`. La collection
-interna `profiles_indexable` usa il PUUID come identità e imposta `lastUpdate`
-soltanto quando un profilo viene aggiunto; il cambio di `riotId` o `region` non
-aggiorna il timestamp. Un profilo rimosso dalla condizione viene eliminato e
-riceve un nuovo timestamp se viene aggiunto nuovamente.
+The refresh is triggered by the owner case `test profileindexables`. The internal
+collection `profiles_indexable` uses PUUID as identity and sets `lastUpdate`
+only when a profile is added; a change to `riotId` or `region` does not
+update the timestamp. A profile removed from the condition is deleted and
+receives a new timestamp if added again.
 
 ## Owner
 

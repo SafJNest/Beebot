@@ -1,8 +1,8 @@
 # Profile record indexes
 
-`profile_records` è una proiezione ricostruibile dai documenti canonici
-`match` e `match_events`. Ogni documento ha `_id` ObjectId generato una sola
-volta, ma la business identity è `{ puuid, filterKey, metric }`.
+`profile_records` is a projection rebuildable from the canonical
+`match` and `match_events` documents. Each document has an `_id` ObjectId generated once,
+but the business identity is `{ puuid, filterKey, metric }`.
 
 ```javascript
 db.profile_records.createIndex(
@@ -21,10 +21,11 @@ db.profile_records.createIndex(
 )
 ```
 
-Gli indici sono applicati dall'operatore. Il runtime crea soltanto la
-collection mancante e non crea, modifica o rimuove indici.
+Indexes are applied by the operator. The runtime only creates the
+missing collection and does not create, modify, or remove indexes.
 
-La lista globale usa `filterKey + metric`, sort `score DESC, occurredAt ASC,
-puuid ASC`; quella regionale aggiunge `region`. La posizione non è persistita.
-La cache di eventuali rank Redis è una proiezione eliminabile e non fa parte
-del contratto Mongo iniziale.
+The global list uses `filterKey + metric`, sort `score DESC, occurredAt ASC,
+puuid ASC`; the regional one adds `region`. The `/records` overview performs
+a limited read of the leader for each metric on the same index. Position
+is not persisted. Any Redis rank cache is a discardable projection
+and is not part of the initial Mongo contract.

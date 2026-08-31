@@ -12,20 +12,20 @@ curl --get 'http://localhost:8080/api/lol/leaderboard/top-regions' \
   --data-urlencode 'queue=TEAM_BUILDER_RANKED_SOLO'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Default | Descrizione |
+| Name | Position | Type | Required | Default | Description |
 |---|---|---|---:|---|---|
-| `rank` | query | enum `TierType` | sì | — | Tier esatto da aggregare. |
-| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue da aggregare. |
+| `rank` | query | enum `TierType` | yes | — | Exact tier to aggregate. |
+| `queue` | query | enum `GameQueueType` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue to aggregate. |
 
-## Risposta `200`
+## `200` response
 
-`LeaderboardDistribution`. `entries[].key` è lo shard e le entry sono ordinate
-per numero di player decrescente, poi per nome.
+`LeaderboardDistribution`. `entries[].key` is the shard and entries are ordered
+by descending player count, then by name.
 
-Il payload HTTP non cambia; internamente il risultato può essere letto dallo
-snapshot Mongo `leaderboard_aggregates` oppure rigenerato da `competitive`.
+The HTTP payload does not change; internally the result may be read from the
+Mongo snapshot `leaderboard_aggregates` or regenerated from `competitive`.
 
 ```json
 {
@@ -39,13 +39,13 @@ snapshot Mongo `leaderboard_aggregates` oppure rigenerato da `competitive`.
 }
 ```
 
-## Stati ed errori
+## States and errors
 
-| HTTP | `code` | Quando |
+| HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Distribuzione per regione disponibile. |
-| `400` | `invalid_request` | `rank` mancante/non valido o `queue` non valida. |
-| `404` | `not_found` | Endpoint non trovato. |
+| `200` | — | Distribution by region available. |
+| `400` | `invalid_request` | Missing/invalid `rank` or invalid `queue`. |
+| `404` | `not_found` | Endpoint not found. |
 
 ## Owner
 

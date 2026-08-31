@@ -10,14 +10,14 @@
 curl 'http://localhost:8080/api/lol/champion/indexables'
 ```
 
-L’endpoint non accetta parametri e legge la proiezione della major patch
-corrente. Se la proiezione non è stata ancora generata, la risposta è una
-lista vuota; il refresh viene lanciato dal case owner `test championindexables`.
+The endpoint accepts no parameters and reads the projection for the current
+major patch. If the projection has not yet been generated, the response is an
+empty list; refresh is triggered by the owner case `test championindexables`.
 
-## Risposta `200`
+## `200` response
 
-La risposta è una lista di `ChampionIndexable`, ordinata per champion e, per
-ogni champion, per importanza del ruolo in base al numero di game.
+The response is a list of `ChampionIndexable`, ordered by champion and, for
+each champion, by role importance based on game count.
 
 ```json
 [
@@ -45,17 +45,17 @@ ogni champion, per importanza del ruolo in base al numero di game.
 ]
 ```
 
-Un ruolo è `indexable=true` quando rappresenta almeno il 10% dei game del
-champion nella major patch corrente. `lastUpdate` cambia soltanto quando
-`indexable` passa da `false` a `true` o da `true` a `false`; un cambiamento di
-`games` non aggiorna il timestamp.
+A role is `indexable=true` when it represents at least 10% of the champion's games
+in the current major patch. `lastUpdate` changes only when
+`indexable` switches from `false` to `true` or from `true` to `false`; a change in
+`games` does not update the timestamp.
 
 ## Storage
 
-La collection derivata è `champions_indexable`. Ogni documento rappresenta una
-coppia champion/ruolo e contiene anche `patchMajor`, usato per la lettura della
-patch corrente. I ruoli non giocabili, incluso `NONE`/unknown, non vengono
-salvati.
+The derived collection is `champions_indexable`. Each document represents a
+champion/role pair and also contains `patchMajor`, used for reading the
+current patch. Non-playable roles, including `NONE`/unknown, are not
+saved.
 
 ## Owner
 

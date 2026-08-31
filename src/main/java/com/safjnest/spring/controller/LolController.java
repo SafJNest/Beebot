@@ -24,8 +24,6 @@ import com.safjnest.lol.model.match.RankHistory;
 import com.safjnest.lol.model.match.RankHistoryQuery;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.record.RecordMetric;
-import com.safjnest.lol.model.record.RecordPage;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfileRecordService;
@@ -222,23 +220,6 @@ public class LolController {
             "profile_records_pending",
             "Profile records are being prepared",
             "Profile not found"
-        );
-    }
-
-    @GetMapping("/records/{metric}")
-    public RecordPage globalRecords(
-            @PathVariable("metric") String metricValue,
-            @RequestParam(name = "region", required = false) String regionValue,
-            @RequestParam(name = "limit", defaultValue = "20") int limit,
-            @RequestParam(name = "offset", defaultValue = "0") int offset
-    ) {
-        RecordMetric metric = LolApiParameters.recordMetric(metricValue);
-        return profileRecordService.getGlobal(
-            Filter.canonical(),
-            metric,
-            LolApiParameters.region(regionValue),
-            LolApiParameters.matchLimit(limit),
-            LolApiParameters.matchOffset(offset)
         );
     }
 

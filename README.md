@@ -26,13 +26,13 @@ The bot also provides several server stats tracking features, such as server sta
 ### **League of Legends Commands**
 Finally, the bot includes several commands related to the popular game League of Legends. You can use these commands to get information about summoner stats, match history, item builds, and more.
 
-LoL asynchronous work uses `com.safjnest.lol.queue.AbstractQueueScheduler`,
-with separate Riot (`R4JQueue`) and database (`DatabaseTracker`) registries.
-Operational process metrics are exposed at `GET /api/status` for the League-OS
-dashboard, including tracker scheduler progress and database worker snapshots.
+LoL asynchronous work uses `com.safjnest.lol.queue.QueueHandler` with a single `Registry`/`Router` and three dispatchers: `RiotScheduler` (one queue per `LeagueShard`), `ComputeScheduler` (`PROFILE`/`CHAMPION`) and `SyncScheduler` (tracking/rank/match).
+Operational process metrics are exposed at `GET /api/status` for the League-OS dashboard.
+
+Developer docs: [`docs/HANDBOOK.md`](docs/HANDBOOK.md) — how to add a new command, endpoint, service, model, queue job, Mongo collection or Redis cache.
 
 ## ***Build with***
-- Java version 17
+- Java 25, Spring 7.0.8, Tomcat 11 — `mvn package` → `jar-with-dependencies` (`com.safjnest.App`)
 
 ## ***Contacts***
 ### Lorenzo Sanseverino 

@@ -1,93 +1,87 @@
 # MongoDB LoL migration
 
-Questa directory descrive l'implementazione lineare della migrazione MariaDB → MongoDB per LoL.
+This directory describes the linear implementation of the MariaDB → MongoDB migration for LoL.
 
-## Stato operativo
+## Operational state
 
-- MongoDB è l'unico storage runtime LoL.
-- MariaDB viene letto esclusivamente da MongoMigration per il backfill.
-- Le letture applicative LoL passano da MongoDB; non esiste fallback MariaDB.
-- Un errore Mongo è esplicito nel runtime e non attiva fallback MariaDB.
-- App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
-- Custom builds e summoner.metrics sono fuori scope.
-- Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks{}` e `masteries[]` nello stesso batch, poi `match` con participant.
-- `profile_statistics`, `profile_activity`, `profile_matchups`, build e `leaderboard_aggregates` vengono costruiti successivamente dall'applicazione; gli ultimi contengono solo snapshot ricostruibili di distribuzione e top-region.
-- Il flusso completo di `profile_statistics`, inclusa la chiave applicativa `puuid + filterKey`, è documentato in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
-- Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, ecc.) senza prefisso `lol_`.
-- Le projection derivate `champions_indexable` e `profiles_indexable` vengono ricostruite dai dati Mongo runtime.
-- Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
-- Il documento `match` usa `_id` come full Riot match ID e `region` come unico campo di shard; `fullGameId`, `gameId`, `game_id` e `leagueShard` non vengono scritti. `patch` mantiene la versione completa e `patchMajor` i primi due segmenti per i filtri.
-- La migration normalizza i residui del documento `match`; gli altri documenti legacy e i vecchi payload Kryo restano fuori dal cleanup automatico e vengono rimossi manualmente prima della rigenerazione.
-- I reader usano `_id` come fallback solo per compatibilità difensiva con documenti esterni alla migrazione pulita.
-- Gli eventi non sono nel documento `match`: vivono in `match_events` come JSON e la collection usa WiredTiger Zstandard nativo.
+- MongoDB is the sole LoL runtime storage.
+- MariaDB is read exclusively by MongoMigration for the backfill.
+- LoL application reads go through MongoDB; there is no MariaDB fallback.
+- A Mongo error is explicit in the runtime and does not trigger a MariaDB fallback.
+- App.isTesting() selects beebot_test; otherwise beebot is used.
+- Custom builds and summoner.metrics are out of scope.
+- The initial backfill migrates only raw data: first `summoner` with `ranks{}` and `masteries[]` in the same batch, then `match` with participants.
+- `profile_statistics`, `profile_activity`, `profile_matchups`, build and `leaderboard_aggregates` are built subsequently by the application; the latter contain only rebuildable snapshots of distribution and top-region.
+- The complete `profile_statistics` flow, including the application key `puuid + filterKey`, is documented in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
+- Collections use table names (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, etc.) without `lol_` prefix.
+- Derived projections `champions_indexable` and `profiles_indexable` are rebuilt from runtime Mongo data.
+- The `summoner` document uses `_id = puuid`; numeric MariaDB identifiers and the duplicate `puuid` field are not written.
+- The `match` document uses `_id` as the full Riot match ID and `region` as the sole shard field; `fullGameId`, `gameId`, `game_id` and `leagueShard` are not written. `patch` keeps the full version and `patchMajor` the first two segments for filters.
+- The migration normalizes `match` document residues; other legacy documents and old Kryo payloads remain outside automatic cleanup and are removed manually before regeneration.
+- Readers use `_id` as fallback only for defensive compatibility with documents outside the clean migration.
+- Events are not in the `match` document: they live in `match_events` as JSON and the collection uses native WiredTiger Zstandard.
 
-## Struttura del codice
+## Code structure
 
-La persistenza Mongo/NoSQL LoL vive nel package `com.safjnest.nosql` e ha questi file principali:
+LoL Mongo/NoSQL persistence lives in package `com.safjnest.nosql` and has these main files:
 
-- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, collection, query, mapping e write runtime;
-- `src/main/java/com/safjnest/nosql/MongoMigration.java`: backfill batchabile MariaDB → Mongo;
-- `src/main/java/com/safjnest/nosql/AbstractEntity.java` e `NoSqlEntityExecutor.java`: infrastruttura comune per le entity persistite in NoSQL.
+- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, collection, query, mapping and runtime writes;
+- `src/main/java/com/safjnest/nosql/MongoMigration.java`: batchable MariaDB → Mongo backfill;
+- `src/main/java/com/safjnest/nosql/AbstractEntity.java` and `NoSqlEntityExecutor.java`: common infrastructure for entities persisted in NoSQL.
 
-Gli adapter SQL usati esclusivamente dal backfill restano separati nel package `com.safjnest.sql`:
+SQL adapters used exclusively by the backfill remain separate in package `com.safjnest.sql`:
 
-- `src/main/java/com/safjnest/sql/QueryRecordParser.java`: parser detached comune per righe MariaDB e documenti Mongo;
-- `src/main/java/com/safjnest/sql/database/LeagueDB.java`: adapter SQL ridotto alle query necessarie a `MongoMigration`.
+- `src/main/java/com/safjnest/sql/QueryRecordParser.java`: common detached parser for MariaDB rows and Mongo documents;
+- `src/main/java/com/safjnest/sql/database/LeagueDB.java`: SQL adapter reduced to the queries needed by `MongoMigration`.
 
-Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni, outbox, proxy dual-write o classi *Document.
+Do not introduce LeagueStore, store or infrastructure packages, external codec/mapper, outbox, dual-write proxy or *Document classes.
 
-## Ordine di lettura
+## Reading order
 
-1. 01-db-structure.md
-2. 02-document-dtos.md
-3. 03-query-migration.md
-4. 04-write-path-and-refactor.md
-5. 05-data-migration-and-cutover.md
-6. 06-result-policy.md
-7. 07-agent-strategy.md
-8. 08-query-inventory.md
-9. 09-space-optimization.md
-10. 10-ranks-object-migration.md
-11. 11-leaderboard-rank-indexes.md
-12. 12-profile-record-indexes.md
-13. ADR-0009
+Operational: `docs/HANDBOOK.md` §6 + this README + `08-query-inventory.md` + `12-profile-record-indexes.md` + ADR-0009.
+Historical archived in `_archive/` (01-06, 09-11): see `_archive/` for step-by-step migration — not needed for new features.
 
-## Regole BSON
+1. 07-agent-strategy.md (historical Mongo agent workflow)
+2. 08-query-inventory.md — **operational**, indexed query inventory
+3. 12-profile-record-indexes.md — **operational**, `profile_records` indexes
+4. ADR-0009
+
+## BSON rules
 
 - Summoner: _id = puuid.
-- Match: _id = Riot match ID completo, per esempio EUW1_123.
-- Match: `region` è l'unico campo di shard; `patchMajor` è derivato da `patch` e usato nei filtri.
-- Enum R4J: name().
-- Ban: bans.BLUE e bans.RED, sempre presenti anche se vuoti.
-- Participant: campi flat; nessun campo build mega-nested.
-- Eventi: collection `match_events`, payload JSON con checksum e dimensione originale; la collection viene creata con `block_compressor=zstd`.
-- Build e statistiche: `build` è BSON strutturato; `profile_statistics` è un documento flat con gli aggregati direttamente a root, mai una stringa opaca e mai `legacyPayload`.
-- Activity: `profile_activity` salva il payload `ProfileActivity` strutturato con identità `{ puuid, filterKey }`, separata da `profile_statistics`.
-- Matchups: `profile_matchups` salva il payload `ProfileMatchups` strutturato con identità `{ puuid, filterKey }`, separata da `profile_statistics`.
-- MariaDB mantiene i dati storici letti dalla migration; il runtime LoL non li interroga.
-- Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
+- Match: _id = full Riot match ID, for example EUW1_123.
+- Match: `region` is the sole shard field; `patchMajor` is derived from `patch` and used in filters.
+- R4J enum: name().
+- Ban: bans.BLUE and bans.RED, always present even if empty.
+- Participant: flat fields; no mega-nested build field.
+- Events: `match_events` collection, JSON payload with checksum and original size; the collection is created with `block_compressor=zstd`.
+- Build and statistics: `build` is structured BSON; `profile_statistics` is a flat document with aggregates directly at root, never an opaque string and never `legacyPayload`.
+- Activity: `profile_activity` saves the structured `ProfileActivity` payload with identity `{ puuid, filterKey }`, separate from `profile_statistics`.
+- Matchups: `profile_matchups` saves the structured `ProfileMatchups` payload with identity `{ puuid, filterKey }`, separate from `profile_statistics`.
+- MariaDB retains historical data read by the migration; the LoL runtime does not query it.
+- Redis: uses the same shared Jackson codec and remains cache, without data migration.
 
-Per `profile_statistics`, `profile_activity` e `profile_matchups`, `_id` non è una chiave business: il lookup e l'upsert usano sempre `{ puuid, filterKey }`. `$setOnInsert` genera un ObjectId casuale solo alla prima scrittura e gli aggiornamenti successivi mantengono lo stesso `_id`; i rispettivi indici unique proteggono l'unicità della coppia.
+For `profile_statistics`, `profile_activity` and `profile_matchups`, `_id` is not a business key: lookup and upsert always use `{ puuid, filterKey }`. `$setOnInsert` generates a random ObjectId only on first write and subsequent updates keep the same `_id`; the respective unique indexes protect the uniqueness of the pair.
 
-## Indici e spazio
+## Indexes and space
 
-Durante il backfill le collection vengono create; l'avvio ordinario e il job
-RankProgress non creano indici. `match_rank_progress_history` e
-`match_rank_progress_subjects` devono quindi essere applicati prima della
-ricostruzione. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB
-vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti
-di match già presenti richiedono solo la colonna `events`. I summoner vengono
-inviati con bulk unordered da 20.000 documenti; i match restano in sotto-batch
-da 1.000.
+During backfill collections are created; normal startup and the
+RankProgress job do not create indexes. `match_rank_progress_history` and
+`match_rank_progress_subjects` must therefore be applied before
+rebuilding. Each page first runs a preflight of Mongo `_id`s: full MariaDB data
+is read only for missing summoners and matches, while missing events
+for already present matches require only the `events` column. Summoners are
+sent with unordered bulk of 20,000 documents; matches remain in sub-batches
+of 1,000.
 
-L'inizializzazione è create-only e idempotente: crea gli indici mancanti, riusa quelli compatibili e interrompe il bootstrap su conflitti di nome, key pattern o opzioni. Non esegue `dropIndex` e il preflight dell'indice unique `profile_statistics_identity` interrompe l'avvio su identità mancanti o duplicate senza modificare i dati. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
+Initialization is create-only and idempotent: it creates missing indexes, reuses compatible ones and aborts bootstrap on name, key pattern or option conflicts. It does not run `dropIndex` and the preflight of the unique index `profile_statistics_identity` aborts startup on missing or duplicate identities without modifying data. `MongoDB.spaceAudit(sampleSize)` collects `collStats`, `indexSizes`, sampled average/maximum BSON, presence of `userId`, tracking and regions.
 
-La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner, masteries, build e statistiche restano documenti BSON strutturati e vengono compressi dal server.
+Application compression is disabled: `match_events` uses native WiredTiger compression. The Mongo server must use `zstdCompressionLevel: 9`; match, summoner, masteries, build and statistics remain structured BSON documents and are compressed by the server.
 
-## Configurazione
+## Configuration
 
-rsc/settings.json contiene una URI server-level. La URI non deve contenere il database applicativo. MongoDB crea collection e indici mancanti in modo idempotente durante l'inizializzazione lazy; gli indici esistenti incompatibili richiedono una migrazione operativa esplicita. Credenziali e URI reali non devono comparire nei log, test o commit.
+rsc/settings.json contains a server-level URI. The URI must not contain the application database. MongoDB creates missing collections and indexes idempotently during lazy initialization; existing incompatible indexes require an explicit operational migration. Real credentials and URIs must not appear in logs, tests or commits.
 
 ## Gate
 
-Prima del completamento verificare letture e scritture LoL Mongo-only, nessuna importazione runtime di LeagueDB, nessun mirror/outbox/proxy dual-write e test per database test, registry/idempotenza/preflight degli indici, bans, enum, participant flat, conversioni e migrazione resume/high-water mark.
+Before completion verify LoL Mongo-only reads and writes, no runtime import of LeagueDB, no mirror/outbox/dual-write proxy and tests for test database, registry/idempotency/preflight of indexes, bans, enum, flat participant, conversions and migration resume/high-water mark.

@@ -1,75 +1,72 @@
-# Inventario query LoL
+# LoL query inventory
 
-La controparte runtime vive in `MongoDB.java`; i percorsi caldi usano projection tipizzate o `QueryRecord` detached.
+The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections or detached `QueryRecord`.
 
-| Area | Query Mongo target | Budget applicativo | Consumer |
+| Area | Target Mongo query | Application budget | Consumer |
 |---|---|---:|---|
-| search/autocomplete | una `find` su `summoner` con prefix `region + riotSearch`, projection base + `ranks`, rank Solo incluso | 1 | SummonerService |
-| linked accounts by userId | `find({userId})` ordinato per `_id`; mappa a `Summoner` canonico (`region` come `LeagueShard`) | 1 | UserData / Discord |
-| profile | una `find` su `summoner` con projection `Summoner + ranks + masteries`; statistiche Redis prima, Mongo dopo | 2 | ProfileService |
-| leaderboard | `find` su `competitive` con filtro queue/tier/regione/ruolo/OTP, sort MMR e PUUID limitati; un `$in` su `summoner._id` carica la pagina; total separato Redis → aggregate → `countDocuments` | 2 per pagina + count solo su cache miss | LeaderboardService |
+| search/autocomplete | one `find` on `summoner` with `region + riotSearch` prefix, base projection + `ranks`, Solo rank included | 1 | SummonerService |
+| linked accounts by userId | `find({userId})` sorted by `_id`; maps to canonical `Summoner` (`region` as `LeagueShard`) | 1 | UserData / Discord |
+| profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
+| leaderboard | `find` on `competitive` with queue/tier/region/role/OTP filter, MMR sort and limited PUUIDs; one `$in` on `summoner._id` loads the page; separate total Redis → aggregate → `countDocuments` | 2 per page + count only on cache miss | LeaderboardService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
-| history | participant filter in un unico `$elemMatch`, projection/paging limitati; `countDocuments` diretto | 1 + eventi batch | LeagueMessage |
-| match results | projection dei soli campi necessari ai `MatchResult` e partecipanti | 1 | profile/tracker |
-| match events | `_id: {$in: [...]}` su `match_events` | 1 | match detail/history |
-| champion | match id con projection; build e statistiche leggono solo participant richiesti; batch raw senza `Match -> Participant` completo | 2 per batch (+ count/trend) | Champion services |
-| leaderboard aggregates | snapshot Mongo `leaderboard_aggregates` per filtro; rebuild ogni 12 ore e `$match` + `$group` sul path `summoner.ranks.<QUEUE>` per nuovo filtro | 1 | LeaderboardService |
-| writes | update atomici, pipeline participant, bulk unordered per build/statistiche/summoner; unique `{puuid, filterKey}` | 1 per update/batch | MongoDB/tracker |
+| history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |
+| match results | projection of only the fields needed for `MatchResult` and participants | 1 | profile/tracker |
+| match events | `_id: {$in: [...]}` on `match_events` | 1 | match detail/history |
+| champion | match id with projection; builds and statistics read only the required participants; raw batch without full `Match -> Participant` | 2 per batch (+ count/trend) | Champion services |
+| leaderboard aggregates | Mongo snapshot `leaderboard_aggregates` per filter; rebuild every 12 hours and `$match` + `$group` on `summoner.ranks.<QUEUE>` path for new filters | 1 | LeaderboardService |
+| writes | atomic updates, participant pipeline, unordered bulk for builds/statistics/summoners; unique `{puuid, filterKey}` | 1 per update/batch | MongoDB/tracker |
 
-## Projection e filtri
+## Projections and filters
 
-La search restituisce direttamente il payload che serve a search e autocomplete: `Summoner` e rank `RANKED_SOLO_5X5` sono letti nella stessa projection. Non esiste più il ciclo `findRank` per PUUID.
+Search returns directly the payload needed for search and autocomplete: `Summoner` and `RANKED_SOLO_5X5` rank are read in the same projection. The `findRank` loop per PUUID no longer exists.
 
-Profilo e leaderboard usano campi BSON strutturati. I filtri champion e lane vengono applicati allo stesso elemento di `participants` tramite un unico `$elemMatch`; non possono più soddisfare champion e lane su due partecipanti diversi.
+Profile and leaderboard use structured BSON fields. Champion and lane filters are applied to the same `participants` element via a single `$elemMatch`; they can no longer match champion and lane on two different participants.
 
-Le query paginated sono limitate a 100 match, 50 summoner leaderboard, 25 risultati search, 500.000 chiavi summoner per pagina e 50.000 chiavi match per pagina. I dati completi dei summoner vengono letti e scritti in sotto-batch da 20.000; i match e gli eventi restano in sotto-batch da 1.000. I cursori dei batch lunghi devono essere chiusi esplicitamente.
+Paginated queries are limited to 100 matches, 50 leaderboard summoners, 25 search results, 500,000 summoner keys per page and 50,000 match keys per page. Full summoner data is read and written in sub-batches of 20,000; matches and events remain in sub-batches of 1,000. Long-batch cursors must be closed explicitly.
 
-## Invarianti
+## Invariants
 
-PUUID è l'identità summoner e `_id` del documento; il Riot match ID completo è l'identità match; enum R4J usa `name()`; bans usa BLUE e RED; participant resta flat; upsert/update/delete sono idempotenti; letture e scritture applicative Mongo-only; errori di lettura Mongo espliciti.
+PUUID is the summoner identity and the document `_id`; the full Riot match ID is the match identity; R4J enums use `name()`; bans use BLUE and RED; participant stays flat; upsert/update/delete are idempotent; application reads and writes are Mongo-only; Mongo read errors are explicit.
 
-MariaDB conserva JSON UTF-8 in `champion_builds.data`, `champion_stats.data` e `profile_statistics.data`. Mongo conserva `build` come BSON strutturato; `profile_statistics` salva direttamente i timestamp e le sole foglie `champions.<championId>.<canonicalQueue>.<position>`, oltre a `pings`, `spellOne` e `spellTwo`, mai sotto un campo `statistics`. I matchup vivono soltanto nella collection `profile_matchups`; non esistono `matchups` o `duoStats` root. Non vengono letti o convertiti payload Kryo e non viene creato alcun `legacyPayload`; i documenti legacy vengono rigenerati con il nuovo `puuid + filterKey`.
+MariaDB stores UTF-8 JSON in `champion_builds.data`, `champion_stats.data`, and `profile_statistics.data`. Mongo stores `build` as structured BSON; `profile_statistics` stores timestamps directly and only the leaf nodes `champions.<championId>.<canonicalQueue>.<position>`, plus `pings`, `spellOne`, and `spellTwo`, never under a `statistics` field. Matchups live only in the `profile_matchups` collection; there are no root `matchups` or `duoStats`. No Kryo payloads are read or converted and no `legacyPayload` is created; legacy documents are regenerated with the new `puuid + filterKey`.
 
-`profile_matchups` è una collection separata: il suo payload `matchups` conserva esclusivamente `champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`. Non salva righe aggregate per champion o matchup fuori dalla foglia.
+`profile_matchups` is a separate collection: its `matchups` payload stores exclusively `champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`. It does not store aggregate rows per champion or matchup outside the leaf.
 
-Il dettaglio del formato di `filterKey`, del motivo dell'indice composto e della differenza tra aggregato e `recentMatches` è in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
+Details on the `filterKey` format, the reason for the compound index, and the difference between aggregate and `recentMatches` are in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
-## Policy degli indici
+## Index policy
 
-Gli indici sono gestiti dall'operatore del database, non dal runtime né dalla
-migration. Devono seguire le query effettive:
+Indexes are managed by the database operator, not by the runtime or the migration. They must follow the actual queries:
 
-| Collection | Indice | Query coperta |
+| Collection | Index | Covered query |
 |---|---|---|
-| `summoner` | `summoner_search_prefix` | search/autocomplete per regione e prefix, con sort `riotId` |
-| `summoner` | `summoner_riot_id` | fallback exact/case-insensitive di `findPuuid` |
-| `summoner` | `summoner_user_accounts` | account Discord per `userId`, ordinati per `_id` |
-| `summoner` | `summoner_tracking_true` | tracker e account con `tracking=true` |
-| `competitive` | queue/region/role/OTP/MMR con PUUID | pagina leaderboard, sort `mmr DESC`; indice specifico per scope |
-| `match` | `match_participant_time` | history, profilo, OPGG, match recenti e dati LP |
-| `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | query temporali, region/patchMajor, bans e champion wins |
-| `match` | `match_champion_filter` | batch champion con filtro equality-first e participant/lane |
-| `match` | `match_champion_keyset` | `findChampionMatchIds` con paging keyset su `_id` |
-| `profile_statistics` | `profile_statistics_identity` | lookup/upsert/delete/batch per `{puuid, filterKey}`, `unique` |
-| `profile_statistics` | `profile_statistics_period` | projection su intervalli `timeStart`/`timeEnd` |
-| `profile_activity` | `profile_activity_identity` | lookup/upsert per `{puuid, filterKey}`, `unique` |
-| `profile_matchups` | `profile_matchups_identity` | lookup/upsert per `{puuid, filterKey}`, `unique` |
-| `champion_builds` | `champion_builds_filter` | build aggregate per `filterKey` |
-| `champion_stats` | `champion_stats_filter` | mega-aggregato per `filterKey`; projection `statistics.<championId>` |
-| `champion_stats` | `champion_stats_filter_champion` | lettura compatibile dei vecchi documenti per `filterKey` e `championId` |
+| `summoner` | `summoner_search_prefix` | search/autocomplete by region and prefix, with `riotId` sort |
+| `summoner` | `summoner_riot_id` | exact/case-insensitive fallback for `findPuuid` |
+| `summoner` | `summoner_user_accounts` | Discord accounts by `userId`, sorted by `_id` |
+| `summoner` | `summoner_tracking_true` | tracker and accounts with `tracking=true` |
+| `competitive` | queue/region/role/OTP/MMR with PUUID | leaderboard page, `mmr DESC` sort; scope-specific index |
+| `match` | `match_participant_time` | history, profile, OPGG, recent matches and LP data |
+| `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | temporal queries, region/patchMajor, bans and champion wins |
+| `match` | `match_champion_filter` | champion batch with equality-first filter and participant/lane |
+| `match` | `match_champion_keyset` | `findChampionMatchIds` with keyset paging on `_id` |
+| `profile_statistics` | `profile_statistics_identity` | lookup/upsert/delete/batch for `{puuid, filterKey}`, `unique` |
+| `profile_statistics` | `profile_statistics_period` | projection over `timeStart`/`timeEnd` ranges |
+| `profile_activity` | `profile_activity_identity` | lookup/upsert for `{puuid, filterKey}`, `unique` |
+| `profile_matchups` | `profile_matchups_identity` | lookup/upsert for `{puuid, filterKey}`, `unique` |
+| `champion_builds` | `champion_builds_filter` | aggregate builds per `filterKey` |
+| `champion_stats` | `champion_stats_filter` | mega-aggregate per `filterKey`; `statistics.<championId>` projection |
+| `champion_stats` | `champion_stats_filter_champion` | compatibility read of legacy documents by `filterKey` and `championId` |
 
-`match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` e i
-lookup diretti di match/summoner restano coperti da `_id`. Non vengono creati
-indici su `masteries`, metriche participant o ogni combinazione possibile di
-`Filter`; `opponent` e `duo` restano filtri relazionali applicati in Java.
+`match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` and
+direct match/summoner lookups remain covered by `_id`. No indexes are created
+on `masteries`, participant metrics, or every possible `Filter` combination;
+`opponent` and `duo` remain relational filters applied in Java.
 
-L'unicità di `{puuid, filterKey}` richiede un controllo operativo di identità
-mancanti e duplicati prima di applicare il relativo indice unique; il cleanup
-resta manuale.
+Uniqueness of `{puuid, filterKey}` requires an operational check for missing and duplicate identities before applying the corresponding unique index; cleanup remains manual.
 
-## Explain richiesti
+## Required explains
 
-Prima dell'accettazione eseguire su un database con dati rappresentativi:
+Before acceptance, run on a database with representative data:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}, {riotId: 1, ranks: 1}).sort({riotId: 1}).limit(25).explain("executionStats")
@@ -96,9 +93,9 @@ db.summoner.find(
 ).explain("executionStats")
 ```
 
-Gli explain devono verificare `executionTimeMillis`, `totalKeysExamined`,
-`totalDocsExamined`, `nReturned`, `winningPlan`, `indexName` e l'assenza di
-`COLLSCAN` e l'assenza di un `SORT` bloccante. Confrontare la baseline prima/dopo con `collStats` e
-`indexSizes`. La leaderboard usa `competitive` per MMR/range/ruolo e poi un
-`$in` sul primary key di `summoner`; gli indici richiesti sono descritti in
+Explains must verify `executionTimeMillis`, `totalKeysExamined`,
+`totalDocsExamined`, `nReturned`, `winningPlan`, `indexName` and the absence of
+`COLLSCAN` and of a blocking `SORT`. Compare the before/after baseline with `collStats` and
+`indexSizes`. The leaderboard uses `competitive` for MMR/range/role and then a
+`$in` on the `summoner` primary key; the required indexes are described in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).

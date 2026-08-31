@@ -10,55 +10,54 @@
 curl -X POST 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/refresh'
 ```
 
-## Parametri
+## Parameters
 
-| Nome | Posizione | Tipo | Obbligatorio | Descrizione |
+| Name | Position | Type | Required | Description |
 |---|---|---|---:|---|
-| `shard` | path | enum `LeagueShard` | sì | Shard Riot del profilo. |
-| `puuid` | path | string | sì | PUUID Riot canonico del summoner. |
+| `shard` | path | enum `LeagueShard` | yes | Riot shard of the profile. |
+| `puuid` | path | string | yes | Canonical Riot PUUID of the summoner. |
 
-## Comportamento
+## Behavior
 
-Il refresh pulisce prima e in modo centralizzato le cache R4J e Redis di Riot
-Account, summoner, rank, mastery e spectator, senza toccare la matchlist. Quindi
-aggiorna in ordine Riot Account, summoner, rank e mastery tramite `R4JQueue`.
-Ogni componente viene persistito in Mongo e le cache Redis appena ricostruite
-rimangono disponibili.
+The refresh first clears in a centralized way the R4J and Redis caches for Riot
+Account, summoner, rank, mastery and spectator, without touching the matchlist. It then
+updates in order Riot Account, summoner, rank and mastery via `RiotScheduler` (`QueueHandler.immediate(RiotScheduler.class, shard, ...)`).
+Each component is persisted to Mongo and the freshly rebuilt Redis caches
+remain available.
 
-Le GET profile non avviano il fetch Riot di rank o mastery quando i componenti
-sono assenti; questo POST è l'unico flusso profilo che li aggiorna.
+Profile GETs do not trigger Riot fetching of rank or mastery when the components
+are missing; this POST is the only profile flow that updates them.
 
-Dopo la verifica del profilo, la POST aggiorna internamente
-`summoner.lastSeenAt`. `DatabaseTracker` riceve un unico job manuale ad alta
-priorità, deduplicato `profile-refresh:<puuid>`, che rigenera da zero
-statistics, activity, matchups e contesto champion del profilo canonico. I filtri canonici sono:
-overview, matchups e activity sulla season canonical senza patch, queue, lane
-o champion. Il job legge i match una volta tramite
-cursor Mongo e salva i tre documenti solo dopo il completamento dei tre
-accumulatori.
+After profile verification, the POST internally updates
+`summoner.lastSeenAt`. `ComputeScheduler` receives a single deduplicated `IMMEDIATE` job `profile-refresh:<puuid>` (`QueueHandler.immediate(ComputeScheduler.class, PROFILE, ...)`), which regenerates from scratch
+statistics, activity, matchups and the canonical profile champion context. The canonical filters are:
+overview, matchups and activity on the canonical season without patch, queue, lane
+or champion. The job reads matches once via
+Mongo cursor and saves the three documents only after all three
+accumulators have completed.
 
-Una chiave Redis atomica `SUMMONER_REFRESH_COOLDOWN` applica un cooldown di due
-minuti per coppia `{shard, puuid}`. Una richiesta durante il cooldown non avvia
-altre chiamate Riot e viene trattata come completata.
+An atomic Redis key `SUMMONER_REFRESH_COOLDOWN` enforces a two-minute
+cooldown per `{shard, puuid}` pair. A request during cooldown does not start
+additional Riot calls and is treated as completed.
 
-Il refresh non richiede, accoda o invalida la matchlist. Invalida spectator ma
-non lo rifetchia nella POST: la successiva GET livegame lo recupera da Riot. Il
-recupero delle partite recenti resta responsabilità di un endpoint dedicato.
+The refresh does not request, queue or invalidate the matchlist. It invalidates spectator but
+does not refetch it in the POST: the next livegame GET fetches it from Riot. The
+fetching of recent matches remains the responsibility of a dedicated endpoint.
 
-## Risposta `204`
+## `204` response
 
-Il refresh è completato o è stato ignorato dal cooldown. Dopo la risposta il
-client può richiedere di nuovo `GET /profile/{puuid}`.
+Refresh completed or ignored due to cooldown. After the response the
+client can request `GET /profile/{puuid}` again.
 
-## Errori
+## Errors
 
-| HTTP | Descrizione |
+| HTTP | Description |
 |---:|---|
-| `400` | Shard o PUUID non validi. |
-| `404` | Il profilo non è presente in Mongo. |
+| `400` | Invalid shard or PUUID. |
+| `404` | Profile not present in Mongo. |
 
 ## Owner
 
 `SummonerService.refreshAsync`, `SummonerService.refresh`,
-`lol.queue.R4JQueue`, `ProfileService` e `lol.queue.DatabaseTracker`. Il
-refactor del package queue non modifica endpoint, payload o presentazione.
+`lol.queue.scheduler.RiotScheduler`, `ProfileService` and `lol.queue.scheduler.ComputeScheduler` (via `QueueHandler`). The
+queue package refactor does not change endpoint, payload or presentation.

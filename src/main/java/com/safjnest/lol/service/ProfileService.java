@@ -23,6 +23,7 @@ import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -207,8 +208,13 @@ public class ProfileService {
         ProfileStatistics statistics = rebuild ? null : getStatistics(puuid, shard, filter);
         long afterTime = rebuild || statistics == null || statistics.timeEnd == filter.timeStart() ? 0 : statistics.timeEnd + 1;
         ProfileStatistics result = statistics == null ? new ProfileStatistics(filter.timeStart()) : statistics;
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, afterTime, currentEnd(filter),
-            match -> result.accumulate(match, puuid, filter));
+        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, afterTime, currentEnd(filter), match -> {
+            try {
+                result.accumulate(match, puuid, filter);
+            } finally {
+                MatchMemoryUtils.release(match);
+            }
+        });
         result.finish();
         statistics = result;
         statistics.lastUpdate = System.currentTimeMillis();
@@ -227,7 +233,13 @@ public class ProfileService {
     public boolean generateMatchups(String puuid, LeagueShard shard, Filter filter) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null) return false;
         ProfileAnalyzer.MatchupsAccumulator accumulator = ProfileAnalyzer.matchupsAccumulator(puuid, filter);
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, accumulator::accept);
+        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, match -> {
+            try {
+                accumulator.accept(match);
+            } finally {
+                MatchMemoryUtils.release(match);
+            }
+        });
         ProfileMatchups matchups = accumulator.finish();
         boolean saved = MongoDB.upsertProfileMatchups(puuid, filter, matchups);
         if (saved) cacheMatchups(puuid, shard, filter, matchups);
@@ -238,7 +250,13 @@ public class ProfileService {
         if (shard == null || puuid == null || puuid.isBlank() || filter == null)
             return false;
         ProfileActivity.Accumulator accumulator = ProfileActivity.accumulator(puuid, filter);
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, accumulator::accept);
+        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, match -> {
+            try {
+                accumulator.accept(match);
+            } finally {
+                MatchMemoryUtils.release(match);
+            }
+        });
         ProfileActivity activity = accumulator.finish();
         boolean saved = MongoDB.upsertProfileActivity(puuid, filter, activity);
         if (saved) cacheActivity(puuid, shard, filter, activity);
@@ -250,7 +268,13 @@ public class ProfileService {
         Filter filter = Filter.canonical();
         ProfileAnalyzer.ProfileRefreshAccumulator accumulator = ProfileAnalyzer.refreshAccumulator(
             puuid, filter, filter, filter);
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, accumulator::accept);
+        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, match -> {
+            try {
+                accumulator.accept(match);
+            } finally {
+                MatchMemoryUtils.release(match);
+            }
+        });
         ProfileAnalyzer.ProfileRefresh refresh = accumulator.finish();
         refresh.statistics().lastUpdate = System.currentTimeMillis();
         boolean statisticsSaved = MongoDB.upsertProfileStatistics(puuid, filter, refresh.statistics());

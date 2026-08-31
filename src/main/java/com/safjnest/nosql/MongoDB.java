@@ -69,6 +69,7 @@ import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -92,6 +93,7 @@ public final class MongoDB {
     private static final int RANK_PROGRESS_SCHEMA_PAGE_SIZE = 10_000;
     private static final int RANK_PROGRESS_HISTORY_BULK_SIZE = 1_000;
     private static final int COMPETITIVE_REBUILD_BATCH_SIZE = 250;
+    private static final int PROFILE_RECORD_MATCH_BATCH_SIZE = 250;
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final String LEADERBOARD_AGGREGATES_COLLECTION = "leaderboard_aggregates";
     private static final String COMPETITIVE_COLLECTION = "competitive";
@@ -495,22 +497,30 @@ public final class MongoDB {
                 "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",
                 "participants.secondaryRunes", "participants.statsRunes")).batchSize(batchSize);
         List<QueryRecord> batch = new ArrayList<>(batchSize);
-        try (MongoCursor<Document> cursor = query.iterator()) {
-            while (cursor.hasNext()) {
-                Document match = cursor.next();
-                for (Document participant : documents(match.get("participants"))) {
-                    if (!matchesChampionFilter(participant, filter)) continue;
-                    batch.add(championBuildRecord(match, participant));
-                    if (batch.size() == batchSize) {
-                        consumer.accept(batch);
-                        batch.clear();
+        try {
+            try (MongoCursor<Document> cursor = query.iterator()) {
+                while (cursor.hasNext()) {
+                    Document match = cursor.next();
+                    try {
+                        for (Document participant : documents(match.get("participants"))) {
+                            if (!matchesChampionFilter(participant, filter)) continue;
+                            batch.add(championBuildRecord(match, participant));
+                            if (batch.size() == batchSize) {
+                                consumer.accept(batch);
+                                batch.clear();
+                            }
+                        }
+                    } finally {
+                        MatchMemoryUtils.release(match);
                     }
                 }
             }
-        }
-        if (!batch.isEmpty()) {
-            consumer.accept(batch);
-            batch.clear();
+            if (!batch.isEmpty()) {
+                consumer.accept(batch);
+                batch.clear();
+            }
+        } finally {
+            MatchMemoryUtils.release(batch);
         }
     }
 
@@ -655,6 +665,27 @@ public final class MongoDB {
         Bson filter = shard == null ? Filters.eq("_id", puuid) : Filters.and(Filters.eq("_id", puuid), Filters.eq("region", shard.name()));
         Document document = summoners().find(filter).first();
         return document == null ? null : summoner(document);
+    }
+
+    public static Map<String, Summoner> findSummonersByPuuids(List<String> puuids) {
+        Map<String, Summoner> result = new HashMap<>();
+        if (puuids == null || puuids.isEmpty()) return result;
+        Set<String> distinct = new java.util.LinkedHashSet<>();
+        for (String puuid : puuids) if (puuid != null && !puuid.isBlank()) distinct.add(puuid);
+        if (distinct.isEmpty()) return result;
+        List<String> all = new ArrayList<>(distinct);
+        traceRead("summoner.findByPuuids", "size=" + all.size());
+        for (int start = 0; start < all.size(); start += MAX_BATCH_IDS) {
+            int end = Math.min(all.size(), start + MAX_BATCH_IDS);
+            List<String> ids = all.subList(start, end);
+            for (Document document : summoners().find(Filters.in("_id", ids))
+                    .projection(Projections.include("_id", "puuid", "riotId", "region", "level", "icon"))
+                    .limit(ids.size())) {
+                Summoner summoner = summoner(document);
+                result.put(summoner.puuid(), summoner);
+            }
+        }
+        return result;
     }
 
     public static List<Summoner> findSummonersByRiotId(String normalizedQuery, LeagueShard shard, int limit) {
@@ -901,7 +932,7 @@ public final class MongoDB {
         Consumer<Match> consumer
     ) {
         if (puuid == null || puuid.isBlank() || filter == null || consumer == null) return;
-        List<Match> batch = new ArrayList<>(100);
+        List<Match> batch = new ArrayList<>(PROFILE_RECORD_MATCH_BATCH_SIZE);
         try (MongoCursor<Document> cursor = matches().find(buildMatchFilter(puuid, shard, filter, 0, 0))
                 .projection(profileStatisticsMatchProjection())
                 .sort(Sorts.ascending("timeStart", "_id"))
@@ -910,7 +941,7 @@ public final class MongoDB {
                 Match match = read(matchRecord(cursor.next()), Match.class);
                 if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
                 batch.add(match);
-                if (batch.size() == 100) flushProfileRecordMatches(batch, consumer);
+                if (batch.size() == PROFILE_RECORD_MATCH_BATCH_SIZE) flushProfileRecordMatches(batch, consumer);
             }
         }
         flushProfileRecordMatches(batch, consumer);
@@ -1136,7 +1167,8 @@ public final class MongoDB {
         for (Document document : profileRecords().find(Filters.and(
                 Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey())))
                 .sort(Sorts.ascending("metric"))) {
-            result.add(readStructured(document, ProfileRecord.class));
+            ProfileRecord record = readProfileRecord(document);
+            if (record != null) result.add(record);
         }
         return result;
     }
@@ -1157,7 +1189,8 @@ public final class MongoDB {
         for (Document document : profileRecords().find(Filters.and(filters))
                 .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
                 .skip(Math.max(0, offset)).limit(Math.min(100, limit))) {
-            result.add(readStructured(document, ProfileRecord.class));
+            ProfileRecord record = readProfileRecord(document);
+            if (record != null) result.add(record);
         }
         return result;
     }
@@ -1471,7 +1504,7 @@ public final class MongoDB {
                 try {
                     consumer.accept(new ChampionRawMatch(document, System.nanoTime() - started, 0));
                 } finally {
-                    document.clear();
+                    MatchMemoryUtils.release(document);
                 }
             }
         }
@@ -1488,7 +1521,7 @@ public final class MongoDB {
                 try {
                     consumer.accept(new ChampionRawMatch(document, System.nanoTime() - started, 0));
                 } finally {
-                    document.clear();
+                    MatchMemoryUtils.release(document);
                 }
             }
         }
@@ -1509,13 +1542,13 @@ public final class MongoDB {
                         if (matchId != null) batch.add(matchId);
                         if (batch.size() == batchSize) processChampionRawMatchEventBatch(batch, batchSize, consumer);
                     } finally {
-                        document.clear();
+                        MatchMemoryUtils.release(document);
                     }
                 }
                 if (!batch.isEmpty()) processChampionRawMatchEventBatch(batch, batchSize, consumer);
             }
         } finally {
-            batch.clear();
+            MatchMemoryUtils.release(batch);
         }
     }
 
@@ -1530,7 +1563,7 @@ public final class MongoDB {
                     Document match = cursor.next();
                     String matchId = match.getString("_id");
                     if (matchId != null) matchesById.put(matchId, match);
-                    else match.clear();
+                    else MatchMemoryUtils.release(match);
                 }
             }
             try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", batch)).batchSize(batchSize).iterator()) {
@@ -1543,15 +1576,14 @@ public final class MongoDB {
                         match.put("events", decodeMatchEventsJson(event));
                         consumer.accept(new ChampionRawMatch(match, 0, System.nanoTime() - eventStarted));
                     } finally {
-                        event.clear();
-                        if (match != null) match.clear();
+                        MatchMemoryUtils.release(event);
+                        if (match != null) MatchMemoryUtils.release(match);
                     }
                 }
             }
         } finally {
-            for (Document match : matchesById.values()) match.clear();
-            matchesById.clear();
-            batch.clear();
+            MatchMemoryUtils.release(matchesById);
+            MatchMemoryUtils.release(batch);
         }
     }
 
@@ -2483,12 +2515,15 @@ public final class MongoDB {
             updates.add(Updates.set("puuid", puuid));
             updates.add(Updates.set("filterKey", filterKey));
             for (Map.Entry<String, Object> entry : document.entrySet()) {
-                if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())) continue;
+                if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())
+                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())) continue;
                 if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
                 else updates.add(Updates.set(entry.getKey(), entry.getValue()));
             }
-            for (String optional : List.of("rank", "lp", "mmr", "team", "actorPuuid", "gameShared"))
+            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared"))
                 if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
+            updates.add(Updates.unset("riotId"));
+            updates.add(Updates.unset("icon"));
             updates.add(Updates.setOnInsert("_id", new ObjectId()));
             operations.add(new UpdateOneModel<>(Filters.and(
                     Filters.eq("puuid", puuid),
@@ -3016,9 +3051,18 @@ public final class MongoDB {
 
     private static void flushProfileRecordMatches(List<Match> matches, Consumer<Match> consumer) {
         if (matches.isEmpty()) return;
-        attachEvents(matches);
-        for (Match match : matches) consumer.accept(match);
-        matches.clear();
+        try {
+            attachEvents(matches);
+            for (Match match : matches) {
+                try {
+                    consumer.accept(match);
+                } finally {
+                    MatchMemoryUtils.release(match);
+                }
+            }
+        } finally {
+            MatchMemoryUtils.release(matches);
+        }
     }
 
     private static Map<String, Object> decodeMatchEvents(Document document) {
@@ -3565,6 +3609,13 @@ public final class MongoDB {
 
     private static ProfileMatchups readProfileMatchups(Document document) {
         return readStructured(document.get("matchups"), ProfileMatchups.class);
+    }
+
+    private static ProfileRecord readProfileRecord(Document document) {
+        if (document == null) return null;
+        Document values = new Document(document);
+        values.remove("_id");
+        return readStructured(values, ProfileRecord.class);
     }
 
     private static Build readBuild(Document document) {

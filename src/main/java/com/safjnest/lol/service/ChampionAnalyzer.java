@@ -12,6 +12,7 @@ import com.safjnest.lol.model.ChampionStatistics.PowerCurvePoint;
 import com.safjnest.lol.model.ChampionStatistics.Trend;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -195,7 +196,7 @@ public final class ChampionAnalyzer {
                 raw.addBase(game, rawMatch.metadata());
                 metrics.baseAggregationNanos += System.nanoTime() - aggregationStarted;
             } finally {
-                release(rawMatch);
+                MatchMemoryUtils.release(rawMatch);
             }
         }, read -> {
             ChampionStatsData.RawMatch rawMatch = read.match();
@@ -209,7 +210,7 @@ public final class ChampionAnalyzer {
                 raw.addEvents(game, rawMatch.metadata());
                 metrics.eventAggregationNanos += System.nanoTime() - aggregationStarted;
             } finally {
-                release(rawMatch);
+                MatchMemoryUtils.release(rawMatch);
             }
         });
 
@@ -280,7 +281,7 @@ public final class ChampionAnalyzer {
                 if (game == null) return;
                 raw.addBase(game, rawMatch.metadata());
             } finally {
-                release(rawMatch);
+                MatchMemoryUtils.release(rawMatch);
             }
         }, read -> {
             ChampionStatsData.RawMatch rawMatch = read.match();
@@ -289,7 +290,7 @@ public final class ChampionAnalyzer {
                 if (game == null) return;
                 raw.addEvents(game, rawMatch.metadata());
             } finally {
-                release(rawMatch);
+                MatchMemoryUtils.release(rawMatch);
             }
         });
         RawProjection projection = raw.project(filter);
@@ -509,13 +510,6 @@ public final class ChampionAnalyzer {
         return result;
     }
 
-    private static void release(ChampionStatsData.RawMatch rawMatch) {
-        if (rawMatch == null) return;
-        if (rawMatch.participants() != null) rawMatch.participants().clear();
-        if (rawMatch.metadata() != null && rawMatch.metadata().bans() != null
-                && !rawMatch.metadata().bans().isEmpty()) rawMatch.metadata().bans().clear();
-    }
-
     private static void release(RawProjection projection) {
         projection.pickWin().clear();
         projection.banCount().clear();
@@ -569,7 +563,7 @@ public final class ChampionAnalyzer {
                     ChampionStatsData.Game game = parse(rawMatch);
                     if (game != null) previous.addBase(game, rawMatch.metadata());
                 } finally {
-                    release(rawMatch);
+                    MatchMemoryUtils.release(rawMatch);
                 }
             });
             for (Map.Entry<String, Filter> entry : filters.entrySet()) {

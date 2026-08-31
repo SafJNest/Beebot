@@ -7,12 +7,13 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProfileRecord {
 
     public String puuid;
+    public String riotId;
+    public Integer icon;
     public String filterKey;
     public RecordMetric metric;
     public long value;
@@ -21,8 +22,6 @@ public class ProfileRecord {
     public long occurredAt;
     public int championId;
     public LeagueShard region;
-    public TierDivisionType rank;
-    public Integer lp;
     public Integer mmr;
     public TeamType team;
     public String actorPuuid;
@@ -54,16 +53,14 @@ public class ProfileRecord {
         record.team = team;
         record.actorPuuid = actorPuuid;
         record.gameShared = metric.gameShared() ? Boolean.TRUE : null;
-        applyRank(record, participant == null ? null : participant.rankProgress);
+        applyMmr(record, participant == null ? null : participant.rankProgress);
         return record;
     }
 
-    private static void applyRank(ProfileRecord record, RankProgress progress) {
+    private static void applyMmr(ProfileRecord record, RankProgress progress) {
         if (progress == null || progress.rank == null || progress.lp == null) return;
         int value = TierDivisionUtils.getMmr(progress.rank, progress.lp);
         if (value < 0) return;
-        record.rank = progress.rank;
-        record.lp = progress.lp;
         record.mmr = value;
     }
 }
