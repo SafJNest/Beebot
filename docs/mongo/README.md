@@ -49,7 +49,8 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 9. 09-space-optimization.md
 10. 10-ranks-object-migration.md
 11. 11-leaderboard-rank-indexes.md
-12. ADR-0009
+12. 12-profile-record-indexes.md
+13. ADR-0009
 
 ## Regole BSON
 

@@ -278,7 +278,10 @@ public class Tracker {
         Participant participant = new Participant();
         participant.id = source.getParticipantId();
         participant.win = source.didWin();
-        participant.kda = source.getKills() + "/" + source.getDeaths() + "/" + source.getAssists();
+        participant.kills = source.getKills();
+        participant.deaths = source.getDeaths();
+        participant.assists = source.getAssists();
+        participant.kda = participant.kills + "/" + participant.deaths + "/" + participant.assists;
         participant.champion = source.getChampionId();
         participant.lane = source.getChampionSelectLane() != null ? source.getChampionSelectLane() : source.getLane();
         participant.team = source.getTeam();

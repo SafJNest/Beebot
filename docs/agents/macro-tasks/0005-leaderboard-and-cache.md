@@ -62,7 +62,8 @@ Report query count behavior, cache keys, page edge cases, removed helpers and ve
 
 ## Test command
 
-`%test leaderboard-aggregates` removes and regenerates every known leaderboard
-aggregate scope: rank distribution and all-ranks count for Solo/Flex globally
-and for every active shard, plus top-regions for every tier. It increments the
-leaderboard Redis version once after the regeneration.
+`!test stats otp` removes and regenerates every known leaderboard aggregate
+scope after rebuilding the competitive projection. `!test stats all` first
+creates missing canonical profile statistics, then executes the same OTP,
+competitive and aggregate refresh. Both increment the leaderboard Redis version
+once after the regeneration.

@@ -58,6 +58,8 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
+import com.safjnest.lol.model.record.ProfileRecord;
+import com.safjnest.lol.model.record.RecordMetric;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -99,6 +101,7 @@ public final class MongoDB {
     private static final String TOP_REGIONS_AGGREGATE = "top-regions";
     private static final String CHAMPION_INDEXABLES_COLLECTION = "champions_indexable";
     private static final String PROFILE_INDEXABLES_COLLECTION = "profiles_indexable";
+    private static final String PROFILE_RECORDS_COLLECTION = "profile_records";
     private static final List<String> INDEXABLE_PROFILE_RANKS = List.of(
             TierDivisionType.MASTER_I.name(),
             TierDivisionType.GRANDMASTER_I.name(),
@@ -108,7 +111,7 @@ public final class MongoDB {
             GameQueueType.RANKED_FLEX_SR);
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
-            "champion_builds", "champion_stats", "profile_activity", "profile_matchups", LEADERBOARD_AGGREGATES_COLLECTION,
+            "champion_builds", "champion_stats", "profile_activity", "profile_matchups", PROFILE_RECORDS_COLLECTION, LEADERBOARD_AGGREGATES_COLLECTION,
             COMPETITIVE_COLLECTION,
             CHAMPION_INDEXABLES_COLLECTION, PROFILE_INDEXABLES_COLLECTION, "migration_runs");
     private static void ensureCollections(MongoDatabase database) {
@@ -891,6 +894,28 @@ public final class MongoDB {
         }
     }
 
+    public static void forEachProfileRecordMatch(
+        String puuid,
+        LeagueShard shard,
+        Filter filter,
+        Consumer<Match> consumer
+    ) {
+        if (puuid == null || puuid.isBlank() || filter == null || consumer == null) return;
+        List<Match> batch = new ArrayList<>(100);
+        try (MongoCursor<Document> cursor = matches().find(buildMatchFilter(puuid, shard, filter, 0, 0))
+                .projection(profileStatisticsMatchProjection())
+                .sort(Sorts.ascending("timeStart", "_id"))
+                .iterator()) {
+            while (cursor.hasNext()) {
+                Match match = read(matchRecord(cursor.next()), Match.class);
+                if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
+                batch.add(match);
+                if (batch.size() == 100) flushProfileRecordMatches(batch, consumer);
+            }
+        }
+        flushProfileRecordMatches(batch, consumer);
+    }
+
     public static List<MatchResult> findProfileRecentMatches(
             String puuid,
             LeagueShard shard,
@@ -1103,6 +1128,47 @@ public final class MongoDB {
         Document document = profileMatchups().find(Filters.and(
                 Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()))).first();
         return document == null ? null : readProfileMatchups(document);
+    }
+
+    public static List<ProfileRecord> findProfileRecords(String puuid, Filter filter) {
+        if (puuid == null || puuid.isBlank() || filter == null) return List.of();
+        List<ProfileRecord> result = new ArrayList<>();
+        for (Document document : profileRecords().find(Filters.and(
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey())))
+                .sort(Sorts.ascending("metric"))) {
+            result.add(readStructured(document, ProfileRecord.class));
+        }
+        return result;
+    }
+
+    public static List<ProfileRecord> findGlobalProfileRecords(
+        Filter filter,
+        RecordMetric metric,
+        LeagueShard region,
+        int limit,
+        int offset
+    ) {
+        if (filter == null || metric == null || limit <= 0) return List.of();
+        List<Bson> filters = new ArrayList<>();
+        filters.add(Filters.eq("filterKey", filter.toSummonerKey()));
+        filters.add(Filters.eq("metric", metric.name()));
+        if (region != null) filters.add(Filters.eq("region", region.name()));
+        List<ProfileRecord> result = new ArrayList<>();
+        for (Document document : profileRecords().find(Filters.and(filters))
+                .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
+                .skip(Math.max(0, offset)).limit(Math.min(100, limit))) {
+            result.add(readStructured(document, ProfileRecord.class));
+        }
+        return result;
+    }
+
+    public static long countGlobalProfileRecords(Filter filter, RecordMetric metric, LeagueShard region) {
+        if (filter == null || metric == null) return 0;
+        List<Bson> filters = new ArrayList<>();
+        filters.add(Filters.eq("filterKey", filter.toSummonerKey()));
+        filters.add(Filters.eq("metric", metric.name()));
+        if (region != null) filters.add(Filters.eq("region", region.name()));
+        return profileRecords().countDocuments(Filters.and(filters));
     }
 
     public static List<Filter> findProfileRefreshFilters(String puuid) {
@@ -2403,6 +2469,38 @@ public final class MongoDB {
         return result.wasAcknowledged();
     }
 
+    public static boolean upsertProfileRecords(String puuid, Filter filter, List<ProfileRecord> records) {
+        if (puuid == null || puuid.isBlank() || filter == null) return false;
+        String filterKey = filter.toSummonerKey();
+        List<ProfileRecord> values = records == null ? List.of() : records;
+        List<String> metrics = new ArrayList<>(values.size());
+        List<WriteModel<Document>> operations = new ArrayList<>(values.size());
+        for (ProfileRecord record : values) {
+            if (record == null || record.metric == null) continue;
+            metrics.add(record.metric.name());
+            Document document = JsonCodec.toDocument(record);
+            List<Bson> updates = new ArrayList<>(document.size() + 3);
+            updates.add(Updates.set("puuid", puuid));
+            updates.add(Updates.set("filterKey", filterKey));
+            for (Map.Entry<String, Object> entry : document.entrySet()) {
+                if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())) continue;
+                if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
+                else updates.add(Updates.set(entry.getKey(), entry.getValue()));
+            }
+            for (String optional : List.of("rank", "lp", "mmr", "team", "actorPuuid", "gameShared"))
+                if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
+            updates.add(Updates.setOnInsert("_id", new ObjectId()));
+            operations.add(new UpdateOneModel<>(Filters.and(
+                    Filters.eq("puuid", puuid),
+                    Filters.eq("filterKey", filterKey),
+                    Filters.eq("metric", record.metric.name())), Updates.combine(updates), new UpdateOptions().upsert(true)));
+        }
+        if (!operations.isEmpty()) bulkWrite(profileRecords(), operations);
+        Bson identity = Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey));
+        profileRecords().deleteMany(metrics.isEmpty() ? identity : Filters.and(identity, Filters.nin("metric", metrics)));
+        return true;
+    }
+
     public static boolean upsertProfileStatistics(String puuid, long seasonStart, ProfileStatistics statistics) {
         return upsertProfileStatistics(puuid, Filter.summoner(seasonStart, 0), statistics);
     }
@@ -2612,8 +2710,11 @@ public final class MongoDB {
 
     private static Participant readParticipant(QueryRecord record) {
         Participant participant = new Participant();
-        participant.win = record.getAsBoolean("win");
-        participant.kda = record.getAsString("kda"); participant.champion = record.getAsInt("champion");
+        participant.id = record.getAsInt("id"); participant.win = record.getAsBoolean("win");
+        participant.kda = record.getAsString("kda"); participant.kills = record.containsKey("kills") ? record.getAsInt("kills") : kdaValue(participant.kda, 0);
+        participant.deaths = record.containsKey("deaths") ? record.getAsInt("deaths") : kdaValue(participant.kda, 1);
+        participant.assists = record.containsKey("assists") ? record.getAsInt("assists") : kdaValue(participant.kda, 2);
+        participant.champion = record.getAsInt("champion");
         participant.lane = record.getAsEnum("lane", no.stelar7.api.r4j.basic.constants.types.lol.LaneType.class);
         participant.team = record.getAsEnum("team", no.stelar7.api.r4j.basic.constants.types.lol.TeamType.class);
         participant.roleQuestId = record.getAsInt("roleQuestId"); participant.rankProgress = readRankProgress(record.getAsRecord("rankProgress"));
@@ -2705,7 +2806,7 @@ public final class MongoDB {
 
     private static Document participantDocument(Participant value) {
         if (value == null || value.puuid == null || value.puuid.isBlank()) throw new IllegalArgumentException("Participant.puuid is required for Mongo persistence");
-        Document document = new Document("win", value.win).append("champion", value.champion).append("roleQuestId", value.roleQuestId)
+        Document document = new Document("id", value.id).append("win", value.win).append("kills", value.kills).append("deaths", value.deaths).append("assists", value.assists).append("champion", value.champion).append("roleQuestId", value.roleQuestId)
                 .append("damage", value.damage).append("damageBuilding", value.damageBuilding).append("healing", value.healing).append("cs", value.cs).append("goldEarned", value.goldEarned).append("ward", value.ward).append("wardKilled", value.wardKilled).append("visionScore", value.visionScore).append("pings", integerMapDocument(value.pings))
                 .append("subTeam", value.subTeam).append("subTeamPlacement", value.subTeamPlacement).append("doubles", value.doubles).append("triples", value.triples).append("quadruples", value.quadruples).append("pentas", value.pentas)
                 .append("item0", value.item0).append("item1", value.item1).append("item2", value.item2).append("item3", value.item3).append("item4", value.item4).append("item5", value.item5).append("item6", value.item6).append("turretKills", value.turretKills).append("q", value.q).append("w", value.w).append("e", value.e).append("r", value.r).append("d", value.d).append("f", value.f).append("summonerSpell1", value.summonerSpell1).append("summonerSpell2", value.summonerSpell2)
@@ -2869,6 +2970,14 @@ public final class MongoDB {
         return "{}";
     }
 
+    private static int kdaValue(String kda, int index) {
+        if (kda == null || kda.isBlank()) return 0;
+        String[] values = kda.split("/");
+        if (index < 0 || index >= values.length) return 0;
+        try { return Integer.parseInt(values[index]); }
+        catch (NumberFormatException ignored) { return 0; }
+    }
+
     private static Map<String, Object> readEventMap(Object value) {
         if (value instanceof Document document) return new LinkedHashMap<>(document);
         if (value instanceof String json) {
@@ -2903,6 +3012,13 @@ public final class MongoDB {
                 match.restoreEvents();
             }
         }
+    }
+
+    private static void flushProfileRecordMatches(List<Match> matches, Consumer<Match> consumer) {
+        if (matches.isEmpty()) return;
+        attachEvents(matches);
+        for (Match match : matches) consumer.accept(match);
+        matches.clear();
     }
 
     private static Map<String, Object> decodeMatchEvents(Document document) {
@@ -3034,6 +3150,10 @@ public final class MongoDB {
 
     private static MongoCollection<Document> profileMatchups() {
         return database().getCollection("profile_matchups");
+    }
+
+    private static MongoCollection<Document> profileRecords() {
+        return database().getCollection(PROFILE_RECORDS_COLLECTION);
     }
 
     private static MongoCollection<Document> builds() {

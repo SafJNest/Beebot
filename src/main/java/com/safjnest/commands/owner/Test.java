@@ -143,8 +143,8 @@ public class Test extends Command{
         switch (args[0].toLowerCase()){
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
-                    + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | competitive [stats] | otp | leaderboard-aggregates | tracking | log | migrate | migrate-tracked | rankprogress | gc");
+                    + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer"
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | stats [stats|otp|all] | tracking | log | migrate | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -323,15 +323,34 @@ public class Test extends Command{
                 e.reply("```json\n" + sss + "```");
                 break;
             case "stats":
-                query = "SELECT guild_id, room_id FROM room WHERE has_command_stats = 0";
-                res = BotDB.get().query(query);
-                for(QueryRecord row : res){
-                    for (String bot : bots) {
-                        query = "INSERT INTO channel(guild_id, channel_id, bot_id, stats_enabled) VALUES (" + row.get("guild_id") + ", "+ row.get("room_id") +", " + bot + ", 0)";
-                        BotDB.get().query(query);
-                    }
+                String statsOperation = args.length > 1 ? args[1].trim().toLowerCase() : "";
+                if (!List.of("stats", "otp", "all").contains(statsOperation)) {
+                    e.reply("Usage: !test stats <stats|otp|all>");
+                    break;
                 }
-                e.reply("Done");
+                ChronoTask refreshStatistics = () -> {
+                    CompetitiveService.StatisticsBuild statistics = null;
+                    com.safjnest.nosql.MongoDB.OtpRefresh otp = null;
+                    com.safjnest.nosql.MongoDB.CompetitiveRebuild competitive = null;
+                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild aggregates = null;
+                    if ("stats".equals(statsOperation) || "all".equals(statsOperation))
+                        statistics = CompetitiveService.buildMissingStatistics();
+                    if ("otp".equals(statsOperation) || "all".equals(statsOperation)) {
+                        otp = com.safjnest.nosql.MongoDB.refreshCanonicalProfileOtp();
+                        competitive = CompetitiveService.rebuild();
+                        aggregates = LeaderboardService.rebuildAllAggregates();
+                    }
+                    System.out.println("[Stats] operation=" + statsOperation
+                            + (statistics == null ? "" : " statsRanked=" + statistics.ranked()
+                                + " statsScheduled=" + statistics.scheduled()
+                                + " statsCompleted=" + statistics.completed())
+                            + (otp == null ? "" : " otpScanned=" + otp.scanned() + " otpSaved=" + otp.saved())
+                            + (competitive == null ? "" : " competitiveEntries=" + competitive.entries()
+                                + " competitiveRemoved=" + competitive.removed())
+                            + (aggregates == null ? "" : " aggregates=" + aggregates.total()));
+                };
+                refreshStatistics.queue();
+                e.reply("Statistics " + statsOperation + " refresh queued.");
                 break;
             case "insertepriainblacklist":
                 query = "SELECT id FROM guilds";
@@ -893,44 +912,16 @@ public class Test extends Command{
                 ChronoTask rebuildHighEloStats = () -> new LeaderboardService().rebuildHighEloAndTrackedProfileStatistics();
                 rebuildHighEloStats.queue();
             break;
-            case "competitive":
-                boolean buildStatistics = args.length > 1 && "stats".equalsIgnoreCase(args[1].trim());
-                ChronoTask rebuildCompetitive = () -> {
-                    com.safjnest.nosql.MongoDB.CompetitiveRebuild report = CompetitiveService.rebuild();
-                    CompetitiveService.StatisticsBuild statistics = buildStatistics
-                        ? CompetitiveService.buildMissingStatistics()
-                        : null;
-                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
-                    System.out.println("[Competitive] candidates=" + report.candidates()
-                            + " entries=" + report.entries() + " removed=" + report.removed()
-                            + " aggregates=" + aggregates.total()
-                            + (statistics == null ? "" : " statsRanked=" + statistics.ranked()
-                                + " statsScheduled=" + statistics.scheduled()
-                                + " statsCompleted=" + statistics.completed()));
+            case "records":
+                ChronoTask rebuildRecords = () -> {
+                    ProfileService profileRecords = new ProfileService();
+                    int refreshed = 0;
+                    for (LeagueShard shard : LeagueShardUtils.getActives())
+                        refreshed += profileRecords.refreshAllRecords(shard);
+                    System.out.println("[Records] refreshed=" + refreshed);
                 };
-                rebuildCompetitive.queue();
-                e.reply(buildStatistics ? "Competitive rebuild and statistics backfill queued." : "Competitive rebuild queued.");
-            break;
-            case "otp":
-                ChronoTask refreshOtp = () -> {
-                    com.safjnest.nosql.MongoDB.OtpRefresh otp = com.safjnest.nosql.MongoDB.refreshCanonicalProfileOtp();
-                    com.safjnest.nosql.MongoDB.CompetitiveRebuild competitive = CompetitiveService.rebuild();
-                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
-                    System.out.println("[Otp] statsScanned=" + otp.scanned() + " statsSaved=" + otp.saved()
-                            + " competitiveEntries=" + competitive.entries() + " aggregates=" + aggregates.total());
-                };
-                refreshOtp.queue();
-                e.reply("OTP refresh queued.");
-            break;
-            case "leaderboard-aggregates":
-                ChronoTask rebuildLeaderboardAggregates = () -> {
-                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild report = LeaderboardService.rebuildAllAggregates();
-                    System.out.println("[LeaderboardAggregates] Generated " + report.total()
-                            + " snapshots: distributions=" + report.rankDistributions()
-                            + " counts=" + report.counts() + " topRegions=" + report.topRegions());
-                };
-                rebuildLeaderboardAggregates.queue();
-                e.reply("Leaderboard aggregate rebuild queued.");
+                rebuildRecords.queue();
+                e.reply("Profile record rebuild queued.");
             break;
             case "sleep":
                 try {

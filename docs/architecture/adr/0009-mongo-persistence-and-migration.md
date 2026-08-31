@@ -33,18 +33,35 @@ leaderboard page.
 
 The same projection may contain optional `otpChampionId`, copied from the
 single canonical queue-level OTP classification; it is independent from the
-primary lane and non-OTP rows omit it. `!test otp` recomputes this
+primary lane and non-OTP rows omit it. `!test stats otp` recomputes this
 classification from existing canonical statistics, then rebuilds
 `competitive` and leaderboard aggregates.
 
 Leaderboard reads filter/sort/page `competitive` first (MMR range, optional
 region, primary lane and OTP champion ID), then fetch the limited PUUID list from `summoner` by
 `_id: {$in: [...]}`. Rank refresh and canonical profile-statistics refresh both
-upsert or remove the affected competitive rows. `!test competitive` rebuilds
+upsert or remove the affected competitive rows. `!test stats otp` rebuilds
 the projection for the initial population or repair. Side-specific base
 counters (`blueGames`, `blueWins`, `redGames`, `redWins`) are persisted in the
 same profile-statistics leaves, so future side/queue/lane aggregates do not
 need match scans.
+
+## Amendment 2026-08-30: profile records
+
+`profile_records` is a rebuildable profile projection with one document per
+`{ puuid, filterKey, metric }`. It never replaces canonical `match`,
+`match_events`, participant snapshots or profile statistics. The row stores the
+winning match reference, value and derived score, historical rank/LP/MMR when
+the participant snapshot is available, and the event actor/team only where the
+metric requires it. A `gameShared` field is present only for TEAM and MATCH
+metrics: TEAM records are written for the five participants of the team and
+MATCH records for all ten participants.
+
+The global Records page reads `profile_records` directly with a filterKey,
+metric and score sort. Positions are not persisted. Timeline metrics are
+rebuilt from `match_events` in bounded batches; matches without events simply
+do not produce timeline records. The operator owns the unique identity and
+global/regional indexes documented in `docs/mongo/12-profile-record-indexes.md`.
 
 ## Amendment 2026-07-26
 

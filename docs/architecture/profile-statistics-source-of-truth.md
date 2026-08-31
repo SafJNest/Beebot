@@ -21,6 +21,23 @@ Il PUUID identifica l'account Riot. Il `Filter` identifica esattamente il datase
 
 `recentMatches` non fa parte dell'aggregato. È una proiezione leggera caricata separatamente usando lo stesso PUUID e lo stesso filtro.
 
+## Profile records
+
+I record sono una proiezione distinta in `profile_records`, con identità
+`puuid + filterKey + metric`. `ProfileRecordService` è owner della lettura e
+del calcolo; `ProfileRecordAnalyzer` è puro; `ComputeScheduler` esegue il job
+deduplicato `profile-records:<puuid>:<filterKey>` sul worker PROFILE. Il
+calcolo usa lo stesso filtro completo delle statistiche, ma legge
+`match_events` soltanto nel proprio pass batchato: il refresh normale delle
+statistiche non materializza timeline.
+
+I record finali usano i campi flat del participant. I record timeline usano
+`champion_kills` e `monster_events`. L'assenza di eventi esclude solo quelle
+metriche e non produce valori zero. I record TEAM/MATCH conservano una riga
+per ogni partecipante pertinente e `gameShared=true`; i record PARTICIPANT
+omettono il campo. Il rank/LP/MMR è lo snapshot del participant nel match, mai
+il rank corrente del summoner.
+
 ## Refresh esplicito del profilo
 
 `POST /api/lol/{shard}/profile/{puuid}/refresh` aggiorna prima Account,

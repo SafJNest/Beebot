@@ -13,6 +13,9 @@ public class Participant {
     public int matchId;
     public boolean win;
     public String kda;
+    public int kills;
+    public int deaths;
+    public int assists;
     public int champion;
     public LaneType lane;
     public TeamType team;

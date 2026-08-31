@@ -83,6 +83,16 @@ inside `SummonerView`, `SummonerLeaderboard` and `LeaderboardPage`. The former `
 
 ## Compatibility
 
+### Amendment 2026-08-30: records contract
+
+`GET /profile/{puuid}/records` returns the canonical `ProfileRecordPage` for
+the canonical filter. A missing projection returns the standard `202`
+envelope and schedules asynchronous generation. `GET /records/{metric}`
+returns paginated canonical `RecordPage` rows, optionally narrowed by region.
+`ProfileRecord` is the success model in both responses; Spring owns no record
+DTO. `gameShared` is omitted for individual records, rather than serialized as
+`false`.
+
 This is an intentional public JSON change. No compatibility aliases for old DTO class names are introduced. Consumers must migrate to the canonical field structure.
 
 ## Acceptance criteria

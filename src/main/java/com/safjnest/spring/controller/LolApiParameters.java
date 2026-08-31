@@ -13,6 +13,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.RankHistoryQuery;
 import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.MatchOrder;
+import com.safjnest.lol.model.record.RecordMetric;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
@@ -186,6 +187,11 @@ public final class LolApiParameters {
         } catch (NumberFormatException ignored) {
         }
         throw invalid("otp", "must be a champion ID greater than 0");
+    }
+
+    public static RecordMetric recordMetric(String value) {
+        if (value == null || value.isBlank()) throw invalid("metric", "is required");
+        return parseEnum(value, RecordMetric.class, "metric");
     }
 
     public static int page(int page) {

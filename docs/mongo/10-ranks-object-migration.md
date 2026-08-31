@@ -55,7 +55,7 @@ are managed separately by the database operator.
 
 ## Remove embedded MMR
 
-After `!test competitive` has populated the `competitive` index, remove the
+After `!test stats otp` or `!test stats all` has populated the `competitive` index, remove the
 obsolete MMR field from every queue dynamically. This update pipeline is also
 compatible with MongoDB 4.2:
 

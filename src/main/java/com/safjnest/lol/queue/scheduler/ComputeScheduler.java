@@ -14,6 +14,7 @@ import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
+import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.utils.log.BotLogger;
 
@@ -25,6 +26,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     private static final ComputeScheduler INSTANCE = new ComputeScheduler();
     private static final ConcurrentMap<String, ChampionMatrixRequest> CHAMPION_MATRICES = new ConcurrentHashMap<>();
     private static final ProfileService PROFILE_SERVICE = new ProfileService();
+    private static final ProfileRecordService PROFILE_RECORD_SERVICE = new ProfileRecordService();
     private static final ChampionService CHAMPION_SERVICE = new ChampionService();
     private static final CompletableFuture<Void> VOID = CompletableFuture.completedFuture(null);
     private static final CompletableFuture<Boolean> NOT_SCHEDULED = CompletableFuture.completedFuture(false);
@@ -52,6 +54,20 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     public static CompletableFuture<Boolean> startStaleProfileStatistics(Summoner summoner, Filter filter) {
         return startProfileStatistics(summoner, filter, false, JobPriority.BACKGROUND);
+    }
+
+    public static CompletableFuture<Boolean> startProfileRecords(
+        String puuid,
+        LeagueShard shard,
+        Filter filter,
+        boolean rebuild
+    ) {
+        if (puuid == null || puuid.isBlank() || shard == null || filter == null) return NOT_SCHEDULED;
+        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        String key = "profile-records:" + puuid + ":" + requestFilter.toSummonerKey();
+        String name = "profile records " + (rebuild ? "rebuild " : "") + "puuid=" + puuid;
+        return submit(DatabaseWorkerType.PROFILE, JobPriority.NORMAL, key, name,
+            ignored -> generateProfileRecords(puuid, shard, requestFilter));
     }
 
     public static CompletableFuture<Boolean> startProfileMatchups(
@@ -338,6 +354,20 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
             return true;
         } catch (Exception exception) {
             BotLogger.error("Profile statistics refresh failed for summoner=" + puuid
+                + " message=" + exception.getMessage());
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private static boolean generateProfileRecords(String puuid, LeagueShard shard, Filter filter) {
+        try {
+            if (!PROFILE_RECORD_SERVICE.generate(puuid, shard, filter)) {
+                BotLogger.error("Profile records refresh failed for summoner=" + puuid);
+                return false;
+            }
+            return true;
+        } catch (Exception exception) {
+            BotLogger.error("Profile records refresh failed for summoner=" + puuid
                 + " message=" + exception.getMessage());
             throw new IllegalStateException(exception);
         }

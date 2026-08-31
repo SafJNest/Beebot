@@ -26,15 +26,11 @@ per i non-OTP il campo è omesso. La leaderboard ottiene i PUUID ordinati e
 paginati da `competitive`, poi carica i soli summoner della pagina con `_id:
 {$in: [...]}`.
 
-`!test competitive` svuota e ricostruisce la proiezione, rigenera gli snapshot
-leaderboard e invalida la loro versione Redis. `!test competitive stats` fa lo
-stesso e, per ogni summoner ranked senza statistiche canoniche, esegue un task
-background `profile-statistics` alla volta: non crea una coda con l'intera base
-utenti in memoria.
-
-`!test otp` ricalcola la classificazione OTP per tutte le profile statistics
-canoniche, ricostruisce `competitive` (quindi `otpChampionId`) e rigenera gli
-aggregate/cache leaderboard. Non scarica match né crea nuovi profile refresh.
+`!test stats stats` genera solo le profile statistics canoniche mancanti, un
+task background alla volta. `!test stats otp` ricalcola OTP dalle statistiche
+esistenti, ricostruisce `competitive` e rigenera aggregate/cache leaderboard.
+`!test stats all` esegue prima il backfill delle statistiche, poi il flusso
+OTP completo. Non scarica match durante il solo refresh OTP.
 
 Gli indici sono gestiti manualmente dall'operatore: il runtime non crea, cambia
 o rimuove indici.
@@ -85,7 +81,7 @@ db.competitive.createIndex(
 
 ## Cleanup di `summoner.ranks`
 
-Dopo che `!test competitive` ha popolato l'indice, rimuovere i vecchi campi
+Dopo che `!test stats otp` o `!test stats all` ha popolato l'indice, rimuovere i vecchi campi
 MMR embedded e gli indici `summoner_leaderboard_*` / `ranks.*.mmr`. La query di
 cleanup è in [`10-ranks-object-migration.md`](10-ranks-object-migration.md).
 

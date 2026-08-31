@@ -40,6 +40,7 @@ public class ProfileService {
     private static final long STALE_BASE_MILLIS = TimeConstant.DAY * 30L;
     private static final long STALE_JITTER_DAYS = 14;
     private static final long STALE_LAST_SEEN_MILLIS = TimeConstant.DAY * 60L;
+    private final ProfileRecordService profileRecordService = new ProfileRecordService();
 
     public ApiResult<SummonerView> get(LeagueShard shard, String puuid) {
         Filter filter = Filter.canonical();
@@ -215,8 +216,10 @@ public class ProfileService {
         if (saved) {
             cacheStatistics(puuid, shard, filter, statistics);
             RedisClient.delete(recentMatchesKey(puuid, shard, filter));
-            if (Filter.canonical().toSummonerKey().equals(filter.toSummonerKey()))
+            if (Filter.canonical().toSummonerKey().equals(filter.toSummonerKey())) {
                 CompetitiveService.refreshFromStatistics(puuid, shard, statistics);
+                saved = profileRecordService.generate(puuid, shard, filter);
+            }
         }
         return saved;
     }
@@ -253,7 +256,8 @@ public class ProfileService {
         boolean statisticsSaved = MongoDB.upsertProfileStatistics(puuid, filter, refresh.statistics());
         boolean activitySaved = MongoDB.upsertProfileActivity(puuid, filter, refresh.activity());
         boolean matchupsSaved = MongoDB.upsertProfileMatchups(puuid, filter, refresh.matchups());
-        if (!statisticsSaved || !activitySaved || !matchupsSaved) return false;
+        boolean recordsSaved = profileRecordService.generate(puuid, shard, filter);
+        if (!statisticsSaved || !activitySaved || !matchupsSaved || !recordsSaved) return false;
         cacheStatistics(puuid, shard, filter, refresh.statistics());
         cacheActivity(puuid, shard, filter, refresh.activity());
         cacheMatchups(puuid, shard, filter, refresh.matchups());
@@ -280,6 +284,16 @@ public class ProfileService {
         } finally {
             ALL_PROFILE_STATS_REFRESH_RUNNING.set(false);
         }
+    }
+
+    public int refreshAllRecords(LeagueShard shard) {
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        if (shard == null || season == null) return 0;
+        int refreshed = 0;
+        Filter filter = Filter.canonical();
+        for (String puuid : MatchService.getSeasonPuuids(shard, season.start(), season.end()))
+            if (profileRecordService.generate(puuid, shard, filter)) refreshed++;
+        return refreshed;
     }
 
     public static void invalidate(String puuid, LeagueShard shard) {
