@@ -94,6 +94,7 @@ public final class MongoDB {
     private static final int RANK_PROGRESS_HISTORY_BULK_SIZE = 1_000;
     private static final int COMPETITIVE_REBUILD_BATCH_SIZE = 250;
     private static final int PROFILE_RECORD_MATCH_BATCH_SIZE = 250;
+    private static final int AI_TRAINING_CURSOR_BATCH_SIZE = 10_000;
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final String LEADERBOARD_AGGREGATES_COLLECTION = "leaderboard_aggregates";
     private static final String COMPETITIVE_COLLECTION = "competitive";
@@ -111,6 +112,14 @@ public final class MongoDB {
     private static final List<GameQueueType> LEADERBOARD_QUEUES = List.of(
             GameQueueType.RANKED_SOLO_5X5,
             GameQueueType.RANKED_FLEX_SR);
+    private static final List<String> AI_TRAINING_QUEUES = List.of(
+            GameQueueType.RANKED_SOLO_5X5.name(),
+            GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(),
+            GameQueueType.JADE_RANKED_SOLO_5X5.name(),
+            GameQueueType.RANKED_FLEX_SR.name(),
+            GameQueueType.TEAM_BUILDER_DRAFT_RANKED_5X5.name(),
+            GameQueueType.NORMAL_5X5_DRAFT.name(),
+            GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5.name());
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", "profile_statistics", "champion",
             "champion_builds", "champion_stats", "profile_activity", "profile_matchups", PROFILE_RECORDS_COLLECTION, LEADERBOARD_AGGREGATES_COLLECTION,
@@ -982,6 +991,27 @@ public final class MongoDB {
         }
         attachEvents(result);
         return result;
+    }
+
+    public static void forEachAiTrainingSample(Consumer<Map<String, Object>> consumer) {
+        if (consumer == null) return;
+        Bson filter = Filters.and(
+            Filters.eq("patchMajor", patchMajor(PatchUtils.getPatch())),
+            Filters.in("queue", AI_TRAINING_QUEUES)
+        );
+        try (MongoCursor<Document> cursor = matches().find(filter)
+                .projection(Projections.include("_id", "patch", "participants.champion", "participants.lane", "participants.team"))
+                .batchSize(AI_TRAINING_CURSOR_BATCH_SIZE)
+                .iterator()) {
+            while (cursor.hasNext()) {
+                Document match = cursor.next();
+                List<Map<String, Object>> blue = aiTrainingParticipants(match, "BLUE");
+                List<Map<String, Object>> red = aiTrainingParticipants(match, "RED");
+                if (blue == null || red == null) continue;
+                consumer.accept(aiTrainingSample(match, "BLUE", blue));
+                consumer.accept(aiTrainingSample(match, "RED", red));
+            }
+        }
     }
 
         public static long countMatches(String puuid, LeagueShard shard, long timeStart, long timeEnd, GameQueueType queue) {
@@ -3218,6 +3248,49 @@ public final class MongoDB {
 
     private static QueryRecord matchRecord(Document document) {
         return QueryRecordParser.fromDocument(document);
+    }
+
+    private static Map<String, Object> aiTrainingSample(Document match, String side, List<Map<String, Object>> participants) {
+        Map<String, Object> sample = new LinkedHashMap<>();
+        sample.put("gameId", match.getString("_id"));
+        sample.put("patch", match.getString("patch"));
+        sample.put("side", side);
+        sample.put("participants", participants);
+        return sample;
+    }
+
+    private static List<Map<String, Object>> aiTrainingParticipants(Document match, String side) {
+        Map<String, Integer> champions = new LinkedHashMap<>();
+        for (Document participant : documents(match.get("participants"))) {
+            if (!side.equals(participant.getString("team"))) continue;
+            String role = aiTrainingRole(participant.getString("lane"));
+            Integer championId = participant.getInteger("champion");
+            if (role == null || championId == null || championId <= 0 || champions.putIfAbsent(role, championId) != null) return null;
+        }
+        if (champions.size() != 5) return null;
+
+        List<Map<String, Object>> participants = new ArrayList<>();
+        for (String role : List.of("TOP", "JUNGLE", "MID", "ADC", "SUPPORT")) {
+            Integer championId = champions.get(role);
+            if (championId == null) return null;
+            Map<String, Object> participant = new LinkedHashMap<>();
+            participant.put("championId", championId);
+            participant.put("role", role);
+            participants.add(participant);
+        }
+        return participants;
+    }
+
+    private static String aiTrainingRole(String lane) {
+        if (lane == null) return null;
+        return switch (lane) {
+            case "TOP" -> "TOP";
+            case "JUNGLE" -> "JUNGLE";
+            case "MID" -> "MID";
+            case "BOT" -> "ADC";
+            case "UTILITY" -> "SUPPORT";
+            default -> null;
+        };
     }
 
     private static QueryRecord profileRecord(Document document) {

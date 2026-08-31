@@ -30,6 +30,10 @@ Examples use `http://localhost:8080` as the base URL.
 
 - [Match detail](match/detail.md) — `GET /api/lol/{shard}/match/{gameId}`
 
+### AI
+
+- [Training dataset](ai/training.md) — `GET /api/lol/ai/training`
+
 ### Champion
 
 - [Champion page](champion/page.md) — `GET /api/lol/champion/{champion}`
