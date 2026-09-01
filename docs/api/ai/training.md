@@ -41,6 +41,7 @@ from missing data.
     {
       "gameId": "EUW1_123456",
       "patch": "16.17",
+      "queue": "RANKED_SOLO_5X5",
       "side": "BLUE",
       "participants": [
         {"championId": 266, "role": "TOP"},
@@ -56,6 +57,8 @@ from missing data.
 
 `samples` can contain fewer than two entries per stored match because
 incomplete or unsupported matches are intentionally skipped.
+
+`queue` is the persisted `GameQueueType` value of the source match.
 
 ## Owner
 
