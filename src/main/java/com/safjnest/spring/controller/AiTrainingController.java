@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -20,14 +21,15 @@ import com.safjnest.utils.JsonCodec;
 public class AiTrainingController {
 
     @GetMapping(value = "/training", produces = MediaType.APPLICATION_JSON_VALUE)
-    public StreamingResponseBody training() {
+    public StreamingResponseBody training(@RequestParam(name = "patch", required = false) String patchValue) {
+        String patch = LolApiParameters.patch(patchValue);
         return output -> {
             try (JsonGenerator json = new JsonFactory().createGenerator(output)) {
                 json.writeStartObject();
                 json.writeStringField("source", "mongo");
                 json.writeArrayFieldStart("samples");
                 json.flush();
-                MongoDB.forEachAiTrainingSample(sample -> write(json, sample));
+                MongoDB.forEachAiTrainingSample(patch, sample -> write(json, sample));
                 json.writeEndArray();
                 json.writeEndObject();
             } catch (UncheckedIOException exception) {

@@ -993,14 +993,15 @@ public final class MongoDB {
         return result;
     }
 
-    public static void forEachAiTrainingSample(Consumer<Map<String, Object>> consumer) {
+    public static void forEachAiTrainingSample(String patch, Consumer<Map<String, Object>> consumer) {
         if (consumer == null) return;
+        String patchMajor = patch == null ? patchMajor(PatchUtils.getPatch()) : patch;
         Bson filter = Filters.and(
-            Filters.eq("patchMajor", patchMajor(PatchUtils.getPatch())),
+            Filters.eq("patchMajor", patchMajor),
             Filters.in("queue", AI_TRAINING_QUEUES)
         );
         try (MongoCursor<Document> cursor = matches().find(filter)
-                .projection(Projections.include("_id", "patch", "participants.champion", "participants.lane", "participants.team"))
+                .projection(Projections.include("_id", "patch", "queue", "participants.champion", "participants.lane", "participants.team"))
                 .batchSize(AI_TRAINING_CURSOR_BATCH_SIZE)
                 .iterator()) {
             while (cursor.hasNext()) {
@@ -3254,6 +3255,7 @@ public final class MongoDB {
         Map<String, Object> sample = new LinkedHashMap<>();
         sample.put("gameId", match.getString("_id"));
         sample.put("patch", match.getString("patch"));
+        sample.put("queue", match.getString("queue"));
         sample.put("side", side);
         sample.put("participants", participants);
         return sample;
