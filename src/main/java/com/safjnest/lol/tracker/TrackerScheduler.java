@@ -32,13 +32,7 @@ public final class TrackerScheduler {
         track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
 
         ChronoTask retrieveHighEloEntries = TrackerScheduler::retrieveHighEloEntries;
-        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
-
-        ChronoTask refreshChampionData = TrackerScheduler::refreshChampionData;
-        refreshChampionData.scheduleAtFixedTime(3, 0, 0);
-
-        ChronoTask rebuildLeaderboard = LeaderboardService::rebuild;
-        rebuildLeaderboard.scheduleAtFixedRate(0, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
+        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
     }
 
     public static void retrieveSummoners() {
