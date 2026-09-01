@@ -993,10 +993,11 @@ public final class MongoDB {
         return result;
     }
 
-    public static void forEachAiTrainingSample(Consumer<Map<String, Object>> consumer) {
+    public static void forEachAiTrainingSample(String patch, Consumer<Map<String, Object>> consumer) {
         if (consumer == null) return;
+        String patchMajor = patch == null ? patchMajor(PatchUtils.getPatch()) : patch;
         Bson filter = Filters.and(
-            Filters.eq("patchMajor", patchMajor(PatchUtils.getPatch())),
+            Filters.eq("patchMajor", patchMajor),
             Filters.in("queue", AI_TRAINING_QUEUES)
         );
         try (MongoCursor<Document> cursor = matches().find(filter)

@@ -10,14 +10,27 @@
 curl 'http://localhost:8080/api/lol/ai/training'
 ```
 
-The source is Mongo only. The export reads every match of the current patch
-from canonical Solo/Duo, Ranked Flex and Normal Draft queues, including their
-persisted queue aliases. Mongo reads the compact projection in cursor batches
-of 10,000 and never reads `match_events`. The JSON body is streamed while the
-cursor is read, rather than buffered in memory. Each eligible match emits its
-BLUE sample followed by its RED sample. A match is omitted if either side does
-not have one valid champion for each of `TOP`, `JUNGLE`, `MID`, `ADC` and
-`SUPPORT`; no role is inferred from missing data.
+To export a specific patch:
+
+```bash
+curl 'http://localhost:8080/api/lol/ai/training?patch=16.15'
+```
+
+## Parameters
+
+| Name | Position | Type | Required | Default | Description |
+|---|---|---|---:|---|---|
+| `patch` | query | string `major.minor` | no | Current patch | Exact `patchMajor` filter, for example `16.14` or `16.15`. |
+
+The source is Mongo only. The export reads every match of the requested patch,
+or of the current patch when `patch` is omitted, from canonical Solo/Duo,
+Ranked Flex and Normal Draft queues, including their persisted queue aliases.
+Mongo reads the compact projection in cursor batches of 10,000 and never reads
+`match_events`. The JSON body is streamed while the cursor is read, rather than
+buffered in memory. Each eligible match emits its BLUE sample followed by its
+RED sample. A match is omitted if either side does not have one valid champion
+for each of `TOP`, `JUNGLE`, `MID`, `ADC` and `SUPPORT`; no role is inferred
+from missing data.
 
 ## `200` response
 
@@ -46,4 +59,4 @@ incomplete or unsupported matches are intentionally skipped.
 
 ## Owner
 
-`AiTrainingController` → `MongoDB.forEachAiTrainingSample`.
+`AiTrainingController` → `LolApiParameters.patch` → `MongoDB.forEachAiTrainingSample`.
