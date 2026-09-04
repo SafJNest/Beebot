@@ -11,7 +11,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -27,12 +26,29 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.model.Augment;
+import com.safjnest.lol.model.rune.PageRunes;
+import com.safjnest.lol.model.rune.Rune;
+import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.service.MasteryService;
+import com.safjnest.lol.service.RankService;
+import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueMessageUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 
@@ -44,26 +60,10 @@ import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
-
-import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.model.Augment;
-import com.safjnest.lol.model.rune.PageRunes;
-import com.safjnest.lol.model.rune.Rune;
-import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.tracker.TrackerScheduler;
-import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.LeagueMessageUtils;
-import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.PatchUtils;
 
 
 /**
@@ -91,7 +91,6 @@ import com.safjnest.lol.utils.PatchUtils;
 
         loadRunes();
         loadAugments();
-        new TrackerScheduler();
     }
 
     public static HashMap<String, PageRunes> getRunesHandler() {
@@ -251,9 +250,18 @@ import com.safjnest.lol.utils.PatchUtils;
 
 
     public static String getFormattedSummonerName(Summoner s) {
-        String dbName = LeagueDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
+        if (s.riotId() != null && !s.riotId().isBlank()) return s.riotId();
+        String dbName = MongoDB.getSummonerNameById(s.puuid(), s.region());
         if (dbName != null) return dbName;
-        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
+        RiotAccount account = SummonerService.getRiotAccount(s.puuid(), s.region());
+        if (account == null) return "";
+        return account.getName() + "#" + account.getTag();
+    }
+
+    public static String getFormattedSummonerName(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s) {
+        String dbName = MongoDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
+        if (dbName != null) return dbName;
+        RiotAccount account = SummonerService.getRiotAccountFromSummoner(s);
         if (account == null) return "";
         return account.getName() + "#" + account.getTag();
     }
@@ -264,13 +272,10 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static Summoner getSummonerByUserData(UserData user){
         try {
-            HashMap<String, String> accounts = user.getRiotAccounts();
-            if (accounts == null || accounts.size() == 0) return null;
+            Map<String, Summoner> accounts = user.getRiotAccounts();
+            if (accounts == null || accounts.isEmpty()) return null;
 
-            String firstAccount = accounts.keySet().stream().findFirst().get();
-            LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
-
-            return LeagueService.getSummonerByPuuid(firstAccount, shard);
+            return accounts.values().iterator().next();
         } catch (Exception e) {return null;}
     }
 
@@ -307,7 +312,9 @@ import com.safjnest.lol.utils.PatchUtils;
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
         }
-        return LeagueService.getSummonerByName(name, tag, guild.getLeagueShard(event.getChannel().getId()));
+        LeagueShard shard = guild.getLeagueShard(event.getChannel().getId());
+        String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
+        return puuid == null ? null : SummonerService.get(puuid, shard);
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
@@ -330,7 +337,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
-            s = LeagueService.getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
+            s = SummonerService.get(event.getOption("summoner").getAsString(), shard);
         }
 
         if (s != null) return s;
@@ -339,19 +346,13 @@ import com.safjnest.lol.utils.PatchUtils;
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShardUtils.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
-        return LeagueService.getSummonerByName(name, tag, shard);
+        String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
+        return puuid == null ? null : SummonerService.get(puuid, shard);
     }
 
-    public static int updateSummonerDB(Summoner summoner) {
-        return LeagueDB.addLOLAccount(summoner);
-    }
-
-    public static void updateSummonerDB(SpectatorGameInfo game) {
-        LeagueDB.addLOLAccount(game);
-    }
-
-    public static void updateSummonerDB(LOLMatch match) {
-        LeagueDB.addLOLAccountFromMatch(match);
+    public static boolean updateSummonerMongo(Summoner summoner) {
+        if (summoner == null) return false;
+        return MongoDB.upsertSummoner(summoner, null);
     }
 
 //     ▄███████▄  ▄█   ▄████████
@@ -365,7 +366,7 @@ import com.safjnest.lol.utils.PatchUtils;
 //
 
     public static String getSummonerProfilePic(Summoner s){
-        return "https://ddragon.leagueoflegends.com/cdn/"+patch+"/img/profileicon/"+s.getProfileIconId()+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+patch+"/img/profileicon/"+s.icon()+".png";
     }
 
     public static String getSummonerProfilePic(int id){
@@ -386,41 +387,42 @@ import com.safjnest.lol.utils.PatchUtils;
     private static final String QUEUE_COMMON_FLEX = "5v5 Ranked Flex Queue";
 
     public static String getSoloQStats(Summoner s) {
-        LeagueEntry entry = LeagueService.getLeagueEntry(s.getPUUID(), s.getPlatform(), QUEUE_COMMON_SOLO);
-        String stats = entry != null ? formatStatsByEntry(entry) : "";
+        Rank rank = RankService.getByQueue(s.puuid(), s.region(), GameQueueType.RANKED_SOLO_5X5);
+        String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
             : stats;
     }
 
     public static String getFlexStats(Summoner s) {
-        LeagueEntry entry = LeagueService.getLeagueEntry(s.getPUUID(), s.getPlatform(), QUEUE_COMMON_FLEX);
-        String stats = entry != null ? formatStatsByEntry(entry) : "";
+        Rank rank = RankService.getByQueue(s.puuid(), s.region(), GameQueueType.RANKED_FLEX_SR);
+        String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
             : stats;
     }
 
-    private static String formatStatsByEntry(LeagueEntry entry) {
-        int wins = entry.getWins();
-        int losses = entry.getLosses();
+    private static String formatStatsByRank(Rank rank) {
+        if (rank.tier() == no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType.UNRANKED) return "";
+        int wins = rank.wins();
+        int losses = rank.losses();
         int games = wins + losses;
         long wrPercent = games > 0 ? (long) Math.ceil((wins * 100.0) / games) : 0;
-        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()
-            + " " + entry.getLeaguePoints() + " LP\n"
+        return CustomEmojiHandler.getFormattedEmoji(rank.tier().getTier()) + " "
+            + TierDivisionUtils.getFormattedRank(rank.tier(), false) + " " + rank.lp() + " LP\n"
             + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 
     public static LeagueEntry getRankEntry(String puuid, LeagueShard shard) {
-        return LeagueService.getLeagueEntry(puuid, shard, QUEUE_COMMON_SOLO);
+        return RankService.getEntry(puuid, shard, QUEUE_COMMON_SOLO);
     }
 
     public static LeagueEntry getRankEntry(Summoner s) {
-        return getRankEntry(s.getPUUID(), s.getPlatform());
+        return getRankEntry(s.puuid(), s.region());
     }
 
     public static LeagueEntry getFlexEntry(String puuid, LeagueShard shard) {
-        return LeagueService.getLeagueEntry(puuid, shard, QUEUE_COMMON_FLEX);
+        return RankService.getEntry(puuid, shard, QUEUE_COMMON_FLEX);
     }
 
     public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
@@ -428,7 +430,7 @@ import com.safjnest.lol.utils.PatchUtils;
             type = GameQueueType.RANKED_SOLO_5X5;
         }
         LeagueEntry def = null;
-        for (LeagueEntry entry : LeagueService.getLeagueEntries(puuid, shard)) {
+        for (LeagueEntry entry : RankService.getEntries(puuid, shard)) {
             if (entry.getQueueType().equals(type)) {
                 return entry;
             }
@@ -445,36 +447,37 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static String getMastery(Summoner s, int nChamp) {
-        List<ChampionMastery> list = LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform());
+        List<Mastery> list = MasteryService.get(s.puuid(), s.region());
         if (nChamp < 1 || nChamp > list.size()) {
             return "";
         }
-        ChampionMastery mastery = list.get(nChamp - 1);
+        Mastery mastery = list.get(nChamp - 1);
         DecimalFormat df = new DecimalFormat("#,##0", new DecimalFormatSymbols(Locale.US));
         try {
-            int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+            int level = mastery.level() >= 10 ? 10 : mastery.level();
             return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
-                + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
-                + " **[" + mastery.getChampionLevel() + "]** "
-                + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()
-                + " " + df.format(mastery.getChampionPoints())
+                + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.championId()).getName())
+                + " **[" + mastery.level() + "]** "
+                + riotApi.getDDragonAPI().getChampion(mastery.championId()).getName()
+                + " " + df.format(mastery.points())
                 + " points";
         } catch (Exception e) {
             return "";
         }
     }
 
-    public static HashMap<Integer, ChampionMastery> getMastery(Summoner s) {
-        HashMap<Integer, ChampionMastery> masteries = new HashMap<>();
-        for (ChampionMastery mastery : LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform())) {
-            masteries.put(mastery.getChampionId(), mastery);
+    public static HashMap<Integer, Mastery> getMastery(Summoner s) {
+        HashMap<Integer, Mastery> masteries = new HashMap<>();
+        for (Mastery mastery : MasteryService.get(s.puuid(), s.region())) {
+            masteries.put(mastery.championId(), mastery);
         }
         return masteries;
     }
 
     public static String getMasteryByChamp(Summoner s, int champId) {
-        for (ChampionMastery mastery : LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform())) {
-            if (mastery.getChampionId() == champId) {
+        if (s == null) return "";
+        for (Mastery mastery : MasteryService.get(s.puuid(), s.region())) {
+            if (mastery.championId() == champId) {
                 try {
                     return formatMasteryLine(mastery);
                 } catch (Exception e) {
@@ -482,39 +485,37 @@ import com.safjnest.lol.utils.PatchUtils;
                 }
             }
         }
-        ChampionMastery direct = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(s.getPlatform(), s.getPUUID(), champId);
-        return direct != null ? formatMasteryLine(direct) : "";
+        return "";
     }
 
     public static String getMasteryByPuuid(String puuid, LeagueShard shard, int champion) {
-        for (ChampionMastery mastery : LeagueService.getChampionMasteries(puuid, shard)) {
-            if (mastery.getChampionId() == champion) {
+        for (Mastery mastery : MasteryService.get(puuid, shard)) {
+            if (mastery.championId() == champion) {
                 return formatMasteryLine(mastery);
             }
         }
-        ChampionMastery mastery = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(shard, puuid, champion);
-        return mastery != null ? formatMasteryLine(mastery) : "";
+        return "";
     }
 
-    private static String formatMasteryLine(ChampionMastery mastery) {
-        int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+    private static String formatMasteryLine(Mastery mastery) {
+        int level = mastery.level() >= 10 ? 10 : mastery.level();
         return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
-            + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
-            + " **[" + mastery.getChampionLevel() + "]** ";
+            + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.championId()).getName())
+            + " **[" + mastery.level() + "]** ";
     }
 
     public static String getActivity(Summoner s) {
         try {
-            SpectatorGameInfo game = LeagueService.getSpectatorGame(s.getPUUID(), s.getPlatform());
+            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.puuid(), s.region());
             if (game == null) {
                 return "Not in a game";
             }
-            for (SpectatorParticipant partecipant : game.getParticipants()) {
-                if (partecipant.getPuuid().equals(s.getPUUID())) {
+            for (SpectatorParticipant participant : game.getParticipants()) {
+                if (participant.getPuuid().equals(s.puuid())) {
                     String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
                     return "Playing a " + gameName + " as "
-                        + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " "
-                        + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
+                        + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName()) + " "
+                        + riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName();
                 }
             }
         } catch (Exception e) {
@@ -525,15 +526,15 @@ import com.safjnest.lol.utils.PatchUtils;
 
     public static EmbedBuilder getActivity(EmbedBuilder eb, Summoner s) {
         try {
-            SpectatorGameInfo game = LeagueService.getSpectatorGame(s.getPUUID(), s.getPlatform());
+            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.puuid(), s.region());
             if (game == null) {
                 return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
             }
-            for (SpectatorParticipant partecipant : game.getParticipants()) {
-                if (partecipant.getPuuid().equals(s.getPUUID())) {
+            for (SpectatorParticipant participant : game.getParticipants()) {
+                if (participant.getPuuid().equals(s.puuid())) {
                     String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
                     return eb.setFooter("Playing a " + gameName,
-                        CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()).getImageUrl());
+                        CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName()).getImageUrl());
                 }
             }
         } catch (Exception e) {
@@ -664,7 +665,7 @@ import com.safjnest.lol.utils.PatchUtils;
         DataCall.getCacheProvider().clear(endpoint, data);
     }
 
-    public static void clearCache(URLEndpoint endpoint, Summoner summoner, GameQueueType queueType) {
+    public static void clearCache(URLEndpoint endpoint, no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, GameQueueType queueType) {
         Map<String, Object> data = new LinkedHashMap<>();
 
         switch (endpoint) {
@@ -693,7 +694,7 @@ import com.safjnest.lol.utils.PatchUtils;
             case V4_LEAGUE_ENTRY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
                 data.put("id", summoner.getPUUID());
-                RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(summoner.getPlatform().name(), summoner.getPUUID()));
+                RedisClient.delete(RedisKey.R4J_LEAGUE_ENTRIES.of(summoner.getPlatform().name(), summoner.getPUUID()));
                 break;
             case V4_MASTERY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
@@ -707,13 +708,42 @@ import com.safjnest.lol.utils.PatchUtils;
         DataCall.getCacheProvider().clear(endpoint, data);
     }
 
-    public static void clearSummonerCache(Summoner summoner) {
+    public static void clearSummonerCache(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner) {
         clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
         clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, summoner, null);
-        LeagueService.invalidateSummoner(summoner.getPUUID(), summoner.getPlatform());
+        SummonerService.invalidate(summoner.getPUUID(), summoner.getPlatform());
+    }
+
+    public static void clearRiotProfileRefreshCache(LeagueShard shard, String puuid) {
+        if (shard == null || puuid == null || puuid.isBlank()) return;
+
+        Map<String, Object> summoner = new LinkedHashMap<>();
+        summoner.put("platform", shard);
+        summoner.put("puuid", puuid);
+        clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
+
+        Map<String, Object> account = new LinkedHashMap<>();
+        account.put("platform", LeagueShardUtils.getAccountRegion(shard));
+        account.put("puuid", puuid);
+        clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, account);
+
+        Map<String, Object> ranks = new LinkedHashMap<>();
+        ranks.put("platform", shard);
+        ranks.put("id", puuid);
+        clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, ranks);
+
+        Map<String, Object> masteries = new LinkedHashMap<>();
+        masteries.put("platform", shard);
+        masteries.put("puuid", puuid);
+        clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, masteries);
+
+        Map<String, Object> spectator = new LinkedHashMap<>();
+        spectator.put("platform", shard);
+        spectator.put("summoner", puuid);
+        clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, spectator);
     }
 
     public static boolean isMatchLocallyCached(String gameId, LeagueShard shard) {
@@ -725,7 +755,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static boolean isMatchDBCached(String gameId) {
-        return LeagueDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
+        return MongoDB.hasMatch(gameId);
     }
 
     public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {
@@ -750,140 +780,5 @@ import com.safjnest.lol.utils.PatchUtils;
 //   ▄████████▀   ▄████▀      █████▄▄██ █▀      ▄████▀
 //                            ▀
 
-    public static long[] getCurrentSplitRange() {
-        long[] range = new long[2];
-        long now = System.currentTimeMillis();
-
-        try {
-            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json");
-            JSONParser parser = new JSONParser();
-            JSONObject file = (JSONObject) parser.parse(reader);
-            JSONArray seasons = (JSONArray) file.get("seasons");
-
-            for (int seasonIndex = seasons.size() - 1; seasonIndex >= 0; seasonIndex--) {
-                JSONObject current = (JSONObject) seasons.get(seasonIndex);
-                JSONArray splits = (JSONArray) current.get("splits");
-
-                for (int i = 0; i < splits.size(); i++) {
-                    JSONObject split = (JSONObject) splits.get(i);
-                    String start = split.get("start_date").toString();
-                    String end = split.get("end_date").toString();
-
-                    long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
-                    long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
-
-                    if (now >= startMillis && now <= endMillis) {
-                        range[0] = startMillis;
-                        range[1] = endMillis;
-                        return range;
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        return range;
-    }
-
-    public static long[] getPreviousSplitRange() {
-        long[] range = new long[2];
-        long now = System.currentTimeMillis();
-    
-        try {
-            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json");
-            JSONParser parser = new JSONParser();
-            JSONObject file = (JSONObject) parser.parse(reader);
-            JSONArray seasons = (JSONArray) file.get("seasons");
-    
-            List<long[]> allSplits = new ArrayList<>();
-    
-            for (int seasonIndex = 0; seasonIndex < seasons.size(); seasonIndex++) {
-                JSONObject current = (JSONObject) seasons.get(seasonIndex);
-                JSONArray splits = (JSONArray) current.get("splits");
-    
-                for (int i = 0; i < splits.size(); i++) {
-                    JSONObject split = (JSONObject) splits.get(i);
-                    String start = split.get("start_date").toString();
-                    String end = split.get("end_date").toString();
-    
-                    long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
-                    long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
-    
-                    allSplits.add(new long[]{startMillis, endMillis});
-                }
-            }
-    
-            long[] currentSplit = null;
-    
-            for (long[] split : allSplits) {
-                if (now >= split[0] && now <= split[1]) {
-                    currentSplit = split;
-                    break;
-                }
-            }
-    
-            if (currentSplit != null) {
-                for (int i = allSplits.size() - 1; i >= 0; i--) {
-                    if (allSplits.get(i)[1] < currentSplit[0]) {
-                        range[0] = allSplits.get(i)[0];
-                        range[1] = allSplits.get(i)[1];
-                        return range;
-                    }
-                }
-            }
-    
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    
-        return null; // Nessuno split precedente trovato
-    }
-
-    public static String getCurrentSplitFormatted() {
-        long now = System.currentTimeMillis();
-
-        try {
-            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json");
-            JSONParser parser = new JSONParser();
-            JSONObject file = (JSONObject) parser.parse(reader);
-            JSONArray seasons = (JSONArray) file.get("seasons");
-
-            for (int seasonIndex = seasons.size() - 1; seasonIndex >= 0; seasonIndex--) {
-                System.out.println(seasonIndex);
-                JSONObject current = (JSONObject) seasons.get(seasonIndex);
-                JSONArray splits = (JSONArray) current.get("splits");
-
-                for (int i = 0; i < splits.size(); i++) {
-                    JSONObject split = (JSONObject) splits.get(i);
-                    String start = split.get("start_date").toString();
-                    String end = split.get("end_date").toString();
-
-                    long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
-                    long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
-
-                    System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime() + "-" + now + "-" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime());
-
-                    if (now >= startMillis && now <= endMillis && split.get("is_current") != null) {
-                        return "Season " + current.get("season").toString() + " split " + split.get("split").toString();
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Error occurred: " + e.getMessage();
-        }
-
-        return "No current split found";
-    }
-
-    public static boolean isCurrentSplit(long time) {
-        long[] range = getCurrentSplitRange();
-        return time >= range[0] && time <= range[1];
-    }
 
 }
