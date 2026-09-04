@@ -1,8 +1,11 @@
 ---
 name: beebot-guardian
 description: Beebot Guardian — verifies source of truth + owner via CodeGraph before every LoL change
-tools: [read, grep, glob, bash]
-model: inherit
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
 ---
 
 # Beebot Guardian (global)

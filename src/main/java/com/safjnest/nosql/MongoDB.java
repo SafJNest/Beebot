@@ -1001,7 +1001,7 @@ public final class MongoDB {
             Filters.in("queue", AI_TRAINING_QUEUES)
         );
         try (MongoCursor<Document> cursor = matches().find(filter)
-                .projection(Projections.include("_id", "patch", "queue", "participants.champion", "participants.lane", "participants.team"))
+                .projection(Projections.include("_id", "patch", "queue", "participants.champion", "participants.lane", "participants.team", "participants.win"))
                 .batchSize(AI_TRAINING_CURSOR_BATCH_SIZE)
                 .iterator()) {
             while (cursor.hasNext()) {
@@ -3257,8 +3257,15 @@ public final class MongoDB {
         sample.put("patch", match.getString("patch"));
         sample.put("queue", match.getString("queue"));
         sample.put("side", side);
+        sample.put("win", aiTrainingWin(match, side));
         sample.put("participants", participants);
         return sample;
+    }
+
+    private static boolean aiTrainingWin(Document match, String side) {
+        for (Document participant : documents(match.get("participants")))
+            if (side.equals(participant.getString("team"))) return participant.getBoolean("win", false);
+        return false;
     }
 
     private static List<Map<String, Object>> aiTrainingParticipants(Document match, String side) {

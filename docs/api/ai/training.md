@@ -43,6 +43,7 @@ from missing data.
       "patch": "16.17",
       "queue": "RANKED_SOLO_5X5",
       "side": "BLUE",
+      "win": true,
       "participants": [
         {"championId": 266, "role": "TOP"},
         {"championId": 64, "role": "JUNGLE"},
@@ -59,6 +60,7 @@ from missing data.
 incomplete or unsupported matches are intentionally skipped.
 
 `queue` is the persisted `GameQueueType` value of the source match.
+`win` is the persisted result for the exported `side`.
 
 ## Owner
 

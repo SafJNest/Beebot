@@ -11,6 +11,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - App.isTesting() selects beebot_test; otherwise beebot is used.
 - Custom builds and summoner.metrics are out of scope.
 - The initial backfill migrates only raw data: first `summoner` with `ranks{}` and `masteries[]` in the same batch, then `match` with participants.
+- MariaDB's historical participant KDA string is split into the flat `kills`, `deaths` and `assists` fields before the raw match is written to Mongo.
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build and `leaderboard_aggregates` are built subsequently by the application; the latter contain only rebuildable snapshots of distribution and top-region.
 - The complete `profile_statistics` flow, including the application key `puuid + filterKey`, is documented in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Collections use table names (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, etc.) without `lol_` prefix.
