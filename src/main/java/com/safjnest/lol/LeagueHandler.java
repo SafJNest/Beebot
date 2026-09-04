@@ -90,7 +90,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
         loadRunes();
-        loadAguments();
+        loadAugments();
         new TrackerScheduler();
     }
 
@@ -212,7 +212,7 @@ import com.safjnest.lol.utils.PatchUtils;
         }
     }
 
-    private static void loadAguments() {
+    private static void loadAugments() {
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
