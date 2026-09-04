@@ -42,6 +42,7 @@ from missing data.
       "gameId": "EUW1_123456",
       "patch": "16.17",
       "queue": "RANKED_SOLO_5X5",
+      "startedAt": 1756928400000,
       "side": "BLUE",
       "win": true,
       "participants": [
@@ -60,6 +61,7 @@ from missing data.
 incomplete or unsupported matches are intentionally skipped.
 
 `queue` is the persisted `GameQueueType` value of the source match.
+`startedAt` is the source match start time as Unix milliseconds.
 `win` is the persisted result for the exported `side`.
 
 ## Owner
