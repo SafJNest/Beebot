@@ -1691,10 +1691,10 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static HashMap<Integer, int[]> toLegacyMatchups(Map<Integer, ? extends Stats<?>> values) {
-        HashMap<Integer, int[]> result = new HashMap<>();
+    private static HashMap<Integer, long[]> toLegacyMatchups(Map<Integer, ? extends Stats<?>> values) {
+        HashMap<Integer, long[]> result = new HashMap<>();
         if (values == null) return result;
-        for (Map.Entry<Integer, ? extends Stats<?>> stat : values.entrySet()) result.put(stat.getKey(), new int[] {(int) stat.getValue().wins, (int) stat.getValue().losses()});
+        for (Map.Entry<Integer, ? extends Stats<?>> stat : values.entrySet()) result.put(stat.getKey(), new long[] {stat.getValue().wins, stat.getValue().losses()});
         return result;
     }
 

@@ -152,7 +152,38 @@ public class ChampionService {
         if (cached != null) return ApiResult.ready(cached, cached.metadata());
 
         List<Filter> filters = tierFilters(base);
-        Map<String, ChampionTierSource> sources = MongoDB.findChampionTierSources(filters);
+        // New shape: 1 doc per scope, lanes inside. Build sources per lane from that doc.
+        Map<String, ChampionTierSource> sources = new java.util.LinkedHashMap<>();
+        // Try new doc first
+        com.safjnest.lol.model.statistics.shared.ChampionStatsScope baseScope = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(base);
+        com.safjnest.lol.model.statistics.ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(baseScope);
+        if (doc != null && doc.ready) {
+            for (Filter filter : filters) {
+                com.safjnest.lol.model.statistics.shared.ChampionNode nodeForLane = null;
+                Map<Integer, com.safjnest.lol.model.statistics.shared.ChampionLeafStats> laneStats = new java.util.LinkedHashMap<>();
+                for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.ChampionNode> e : doc.champions.entrySet()) {
+                    com.safjnest.lol.model.statistics.shared.ChampionLeafStats leaf = e.getValue().lanes.get(filter.lane() == null ? null : filter.lane().name());
+                    if (leaf != null && leaf.games > 0) laneStats.put(e.getKey(), leaf);
+                }
+                // Build minimal ChampionTierSource from laneStats
+                Map<Integer, com.safjnest.lol.model.ChampionTierSource.Champion> champions = new java.util.LinkedHashMap<>();
+                for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.ChampionLeafStats> e : laneStats.entrySet()) {
+                    com.safjnest.lol.model.statistics.shared.ChampionLeafStats leaf = e.getValue();
+                    com.safjnest.lol.model.statistics.shared.ChampionNode node = doc.champions.get(e.getKey());
+                    long bans = node == null ? 0 : node.bans;
+                    double winrate = leaf.winrate();
+                    double pickrate = doc.games == 0 ? 0 : (double) leaf.games / doc.games;
+                    Double banrate = doc.banGames == 0 ? null : (double) bans / doc.banGames;
+                    champions.put(e.getKey(), new com.safjnest.lol.model.ChampionTierSource.Champion(
+                        new com.safjnest.lol.model.ChampionTierList.Statistics((int)doc.games, (int)leaf.games, (int)bans, (int)leaf.wins, winrate, pickrate, banrate),
+                        java.util.List.of()
+                    ));
+                }
+                sources.put(filter.genericKey(), new com.safjnest.lol.model.ChampionTierSource(true, doc.updatedAt, champions));
+            }
+        } else {
+            sources = MongoDB.findChampionTierSources(filters);
+        }
         List<Filter> ready = new ArrayList<>();
         long lastUpdate = 0;
         boolean refresh = false;
@@ -188,7 +219,7 @@ public class ChampionService {
                 readyKeys.add(filter.genericKey());
             }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
-        ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrix(missing, buildFilters);
+        ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrixCoalesced(missing, buildFilters);
         invalidateTierLists(missing);
         if (missing.isEmpty()) for (Filter filter : buildFilters) refreshBuild(filter);
         for (Filter filter : buildFilters) invalidate(filter);
@@ -242,11 +273,8 @@ public class ChampionService {
         List<TierType> ranks = new ArrayList<>();
         ranks.add(null);
         ranks.addAll(TierDivisionUtils.getHigherTiers(TierType.IRON));
-        List<LaneType> lanes = new ArrayList<>();
-        lanes.add(null);
-        if (GameQueueTypeUtils.hasLane(queue)) lanes.addAll(LaneTypeUtils.playables());
-        for (LeagueShard region : regions) for (TierType rank : ranks) for (LaneType lane : lanes)
-            filters.add(new Filter().setChampion(0).setLane(lane).setQueue(queue).setRank(rank)
+        for (LeagueShard region : regions) for (TierType rank : ranks)
+            filters.add(new Filter().setChampion(0).setLane(null).setQueue(queue).setRank(rank)
                 .setPatch(patch).setRegion(region));
         return filters;
     }

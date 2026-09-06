@@ -29,22 +29,19 @@ public class ChampionServiceMatrixTest {
 
         assertEquals(
             (LeagueShardUtils.getActives().size() + 1)
-                * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1)
-                * (LaneTypeUtils.playables().size() + 1),
+                * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1),
             filters.size());
         boolean hasGlobal = false;
-        boolean hasTop = false;
         for (Filter filter : filters) {
             assertEquals("15.14", filter.patch());
             assertEquals(GameQueueType.TEAM_BUILDER_RANKED_SOLO, filter.queue());
             assertEquals(0, filter.champion());
             hasGlobal |= filter.rank() == null && filter.region() == null && filter.lane() == null;
-            hasTop |= filter.lane() != null;
+            assertNull(filter.lane());
             keys.add(filter.genericKey());
         }
         assertEquals(filters.size(), keys.size());
         assertTrue(hasGlobal);
-        assertTrue(hasTop);
     }
 
     @Test

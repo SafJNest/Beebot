@@ -4,23 +4,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.shared.LeafStats;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
-public class Stats<T> {
+public class Stats<T> extends LeafStats {
     @JsonIgnore
     public T reference;
-    public long games;
-    public long wins;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean isOtp;
     public long blueGames;
     public long blueWins;
     public long redGames;
     public long redWins;
-    public long kills;
-    public long deaths;
-    public long assists;
     public long damage;
     public long damageBuilding;
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -113,16 +109,14 @@ public class Stats<T> {
             participant.f, participant.subTeamPlacement, timeStart, timeEnd, teamKills, enemyTeamKills, arena, calculate);
     }
 
-    public void merge(Stats<?> other) {
-        games += other.games;
-        wins += other.wins;
-        blueGames += other.blueGames;
-        blueWins += other.blueWins;
-        redGames += other.redGames;
-        redWins += other.redWins;
-        kills += other.kills;
-        deaths += other.deaths;
-        assists += other.assists;
+    @Override
+    public void merge(LeafStats other) {
+        super.merge(other);
+        if (!(other instanceof Stats<?> o)) return;
+        blueGames += o.blueGames;
+        blueWins += o.blueWins;
+        redGames += o.redGames;
+        redWins += o.redWins;
         damage += other.damage;
         damageBuilding += other.damageBuilding;
         damageTaken = sum(damageTaken, other.damageTaken);
@@ -165,19 +159,14 @@ public class Stats<T> {
         avgArenaPlacement = avgArenaPlacement(); avgKillParticipation = avgKillParticipation(); avgDeathShare = avgDeathShare();
     }
 
-    @JsonIgnore
-    public long losses() {
-        return games - wins;
-    }
-
-    @JsonIgnore
+    @Override
     public double winrate() {
-        return percent(wins, games);
+        return super.winrate();
     }
 
-    @JsonIgnore
+    @Override
     public double kda() {
-        return deaths > 0 ? rounded((double) (kills + assists) / deaths) : kills + assists;
+        return super.kda();
     }
 
     @JsonIgnore

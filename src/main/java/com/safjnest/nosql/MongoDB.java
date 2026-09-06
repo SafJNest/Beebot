@@ -2647,6 +2647,67 @@ public final class MongoDB {
         return true;
     }
 
+    // New shape: 1 doc per scope (queue|rank|patch|region) with lanes inside
+    public static boolean upsertChampionStatsDocument(com.safjnest.lol.model.statistics.ChampionStatsDocument doc) {
+        if (doc == null || doc.scope == null) return false;
+        doc._id = doc.scope.toKey();
+        doc.updatedAt = System.currentTimeMillis();
+        doc.ready = true;
+        Document document = new Document("_id", doc._id)
+            .append("scope", new Document("queue", doc.scope.queue() == null ? null : doc.scope.queue().name())
+                .append("rank", doc.scope.rank() == null ? null : doc.scope.rank().name())
+                .append("rankBehavior", doc.scope.rankBehavior().name())
+                .append("patch", doc.scope.patch())
+                .append("region", doc.scope.region() == null ? null : doc.scope.region().name())
+                .append("timeStart", doc.scope.timeStart())
+                .append("timeEnd", doc.scope.timeEnd()))
+            .append("games", doc.games)
+            .append("banGames", doc.banGames)
+            .append("previousPatch", doc.previousPatch)
+            .append("ready", true)
+            .append("updatedAt", doc.updatedAt)
+            .append("champions", write(doc.champions));
+        replace(championStats(), document);
+        return true;
+    }
+
+    public static com.safjnest.lol.model.statistics.ChampionStatsDocument findChampionStatsDocument(com.safjnest.lol.model.statistics.shared.ChampionStatsScope scope) {
+        if (scope == null) return null;
+        Document doc = championStats().find(Filters.eq("_id", scope.toKey())).first();
+        if (doc == null) return null;
+        return readChampionStatsDocument(doc);
+    }
+
+    private static com.safjnest.lol.model.statistics.ChampionStatsDocument readChampionStatsDocument(Document doc) {
+        if (doc == null) return null;
+        com.safjnest.lol.model.statistics.ChampionStatsDocument result = new com.safjnest.lol.model.statistics.ChampionStatsDocument();
+        result._id = doc.getString("_id");
+        Document scopeDoc = doc.get("scope", Document.class);
+        if (scopeDoc != null) {
+            try {
+                result.scope = new com.safjnest.lol.model.statistics.shared.ChampionStatsScope(
+                    scopeDoc.getString("queue") == null ? null : no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType.valueOf(scopeDoc.getString("queue")),
+                    scopeDoc.getString("rank") == null ? null : no.stelar7.api.r4j.basic.constants.types.lol.TierType.valueOf(scopeDoc.getString("rank")),
+                    com.safjnest.lol.model.Filter.RankBehavior.valueOf(scopeDoc.getString("rankBehavior")),
+                    scopeDoc.getString("patch"),
+                    scopeDoc.getString("region") == null ? null : no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.valueOf(scopeDoc.getString("region")),
+                    scopeDoc.getLong("timeStart") == null ? 0 : scopeDoc.getLong("timeStart"),
+                    scopeDoc.getLong("timeEnd") == null ? 0 : scopeDoc.getLong("timeEnd")
+                );
+            } catch (Exception ignored) {}
+        }
+        result.games = doc.getLong("games") == null ? 0 : doc.getLong("games");
+        result.banGames = doc.getLong("banGames") == null ? 0 : doc.getLong("banGames");
+        result.previousPatch = doc.getString("previousPatch");
+        result.ready = doc.getBoolean("ready", false);
+        result.updatedAt = doc.getLong("updatedAt") == null ? 0 : doc.getLong("updatedAt");
+        Object champions = doc.get("champions");
+        if (champions != null) {
+            try { result.champions = readStructured(champions, Map.class) != null ? (Map) readStructured(champions, Map.class) : new java.util.LinkedHashMap<>(); } catch (Exception ignored) { result.champions = new java.util.LinkedHashMap<>(); }
+        }
+        return result;
+    }
+
     public static void upsertChampionIndexables(String patch, List<ChampionIndexable> values) {
         String majorPatch = patchMajor(patch);
         if (majorPatch == null || majorPatch.isBlank() || values == null) return;

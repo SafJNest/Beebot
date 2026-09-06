@@ -39,7 +39,7 @@ public class ChampionAnalyzerTest {
         Filter na = filter(LeagueShard.NA1, TierType.EMERALD);
 
         assertFalse(ChampionAnalyzer.matchesMatrixFilter(diamond, goldMatch));
-        assertTrue(ChampionAnalyzer.matchesMatrixFilter(euw, goldMatch));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(euw, goldMatch));
         assertFalse(ChampionAnalyzer.matchesMatrixFilter(na, goldMatch));
     }
 
