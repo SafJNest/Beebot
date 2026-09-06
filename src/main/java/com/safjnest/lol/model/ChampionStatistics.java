@@ -19,9 +19,7 @@ public record ChampionStatistics(
     Filter filter,
     Overview overview,
     List<LaneStat> laneStats,
-    @JsonSerialize(keyUsing = MatchupKeySerializer.class)
-    @JsonDeserialize(keyUsing = MatchupKeyDeserializer.class)
-    Map<MatchupKey, Matchup> matchups,
+    Map<Integer, Matchup> matchups,
     List<LaneSynergy> laneSynergies,
     List<PowerCurvePoint> powerCurve,
     Trend trend
@@ -146,7 +144,7 @@ public record ChampionStatistics(
         double pickrate,
         double banrate,
         List<LaneStat> laneStats,
-        Map<MatchupKey, Matchup> matchups
+        Map<Integer, Matchup> matchups
     ) {
         this(
             filter,
@@ -172,7 +170,7 @@ public record ChampionStatistics(
                     || statistics.matchups() == null || statistics.laneSynergies() == null
                     || statistics.powerCurve() == null) return null;
             for (LaneStat lane : statistics.laneStats()) if (lane == null) return null;
-            for (Map.Entry<MatchupKey, Matchup> entry : statistics.matchups().entrySet()) {
+            for (Map.Entry<Integer, Matchup> entry : statistics.matchups().entrySet()) {
                 if (entry.getKey() == null || entry.getValue() == null) return null;
             }
             return statistics;
@@ -210,14 +208,11 @@ public record ChampionStatistics(
     }
 
     public Matchup getOpponentMatchup(int opponent, LaneType lane) {
-        return matchups().get(new MatchupKey(opponent, lane));
+        return matchups().get(opponent);
     }
 
     private List<Matchup> getMatchups(LaneType lane) {
-        return matchups().entrySet().stream()
-            .filter(entry -> lane == null || entry.getKey().lane() == lane)
-            .map(Map.Entry::getValue)
-            .toList();
+        return new java.util.ArrayList<>(matchups().values());
     }
 
     public List<Matchup> weakAgainst(LaneType lane) {

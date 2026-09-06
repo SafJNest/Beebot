@@ -308,8 +308,8 @@ public class LeagueMessage {
 
         int matches = 0;
         double wins = 0;
-        for (Map.Entry<ChampionStatistics.MatchupKey, Matchup> entry : stats.matchups().entrySet()) {
-            if (entry.getKey().champion() != opponent) continue;
+        for (Map.Entry<Integer, Matchup> entry : stats.matchups().entrySet()) {
+            if (entry.getKey() != opponent) continue;
             matches += entry.getValue().matches();
             wins += entry.getValue().matches() * entry.getValue().winrate();
         }

@@ -156,14 +156,13 @@ public final class ChampionAnalyzer {
         double winrate = leaf.winrate();
         double pickrate = totalGames == 0 ? 0 : (double) picks / totalGames;
         Double banrate = banGames == 0 ? null : (double) bans / banGames;
-        // Convert matchups: leaf.matchups is opp -> MatchupStats, need to map to ChampionStatistics.Matchup with lane from filter lane
-        Map<ChampionStatistics.MatchupKey, ChampionStatistics.Matchup> matchups = new java.util.LinkedHashMap<>();
+        // Convert matchups: leaf.matchups is opp -> MatchupStats, key is opponent champion id
+        Map<Integer, ChampionStatistics.Matchup> matchups = new java.util.LinkedHashMap<>();
         for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.MatchupStats> e : leaf.matchups.entrySet()) {
             com.safjnest.lol.model.statistics.shared.MatchupStats m = e.getValue();
             LaneType lane = filter.lane();
-            ChampionStatistics.MatchupKey key = new ChampionStatistics.MatchupKey(e.getKey(), lane);
             double mWinrate = m.winrate();
-            matchups.put(key, new ChampionStatistics.Matchup(e.getKey(), lane, (int)m.games, (int)m.wins, mWinrate, mWinrate - winrate, m.goldDiffAt15() == null ? null : m.goldDiffAt15().intValue(), m.csDiffAt15(), m.soloKillRate(), m.killParticipation(), banrate, (int)m.metricGames));
+            matchups.put(e.getKey(), new ChampionStatistics.Matchup(e.getKey(), lane, (int)m.games, (int)m.wins, mWinrate, mWinrate - winrate, m.goldDiffAt15() == null ? null : m.goldDiffAt15().intValue(), m.csDiffAt15(), m.soloKillRate(), m.killParticipation(), banrate, (int)m.metricGames));
         }
         // laneStats: single entry for requested lane or all lanes if lane==null
         java.util.List<ChampionStatistics.LaneStat> laneStats = new java.util.ArrayList<>();
@@ -322,41 +321,7 @@ public final class ChampionAnalyzer {
             : metadata.rank().ordinal() <= filter.rank().ordinal();
     }
 
-    private static Map<Integer, ChampionStatistics> compute(Filter filter, boolean save) {
-        RawMatrix raw = new RawMatrix();
-        try {
-        ChampionStatsProvider.forEachMatch(filter, read -> {
-            ChampionStatsData.RawMatch rawMatch = read.match();
-            try {
-                ChampionStatsData.Game game = parse(rawMatch);
-                if (game == null) return;
-                raw.addBase(game, rawMatch.metadata());
-            } finally {
-                MatchMemoryUtils.release(rawMatch);
-            }
-        }, read -> {
-            ChampionStatsData.RawMatch rawMatch = read.match();
-            try {
-                ChampionStatsData.Game game = parse(rawMatch);
-                if (game == null) return;
-                raw.addEvents(game, rawMatch.metadata());
-            } finally {
-                MatchMemoryUtils.release(rawMatch);
-            }
-        });
-        RawProjection projection = raw.project(filter);
-        String filterKey = filter.genericKey();
-        Map<Integer, Trend> trends = loadMatrixTrends(Map.of(filterKey, filter),
-            Map.of(filterKey, projection)).getOrDefault(filterKey, Map.of());
-        Map<Integer, ChampionStatistics> stats = assemble(projection, trends);
-        if (save && !stats.isEmpty()) {
-            save(stats);
-        }
-        return stats;
-        } finally {
-            raw.clear();
-        }
-    }
+    // compute removed — new flow uses recomputeMatrixCoalesced
 
     private static ChampionStatsData.Game parse(ChampionStatsData.RawMatch rawMatch) {
         if (rawMatch == null || rawMatch.metadata() == null || rawMatch.participants() == null
@@ -527,39 +492,7 @@ public final class ChampionAnalyzer {
         return result;
     }
 
-    private static Map<Integer, ChampionStatistics> assemble(
-            Filter filter, int totalGames, int banGames, Map<Integer, int[]> pickWin,
-            Map<Integer, int[]> banCount, Map<Integer, List<LaneStat>> laneStats,
-            Map<Integer, Map<MatchupKey, Matchup>> matchups,
-            Map<Integer, List<LaneSynergy>> synergies,
-            Map<Integer, ChampionStatsData.MetricValues> metrics,
-            Map<Integer, List<PowerCurvePoint>> powerCurve,
-            Map<Integer, Trend> trends) {
-        Map<Integer, ChampionStatistics> result = new LinkedHashMap<>();
-        for (Map.Entry<Integer, int[]> entry : pickWin.entrySet()) {
-            int champion = entry.getKey();
-            int picks = entry.getValue()[0];
-            int wins = entry.getValue()[1];
-            int bans = banCount.getOrDefault(champion, new int[1])[0];
-            double winrate = rate(wins, picks);
-            ChampionStatsData.MetricValues metric = metrics.getOrDefault(champion,
-                new ChampionStatsData.MetricValues(null, null, null));
-            Filter championFilter = new Filter().setChampion(champion).setLane(filter.lane()).setPatch(filter.patch())
-                .setQueue(filter.queue()).setRank(filter.rank()).setRegion(filter.region());
-            result.put(champion, new ChampionStatistics(
-                championFilter,
-                new Overview(totalGames, picks, bans, wins, winrate, rate(picks, totalGames),
-                    banGames > 0 ? (double) bans / banGames : null,
-                    metric.kda(), metric.csPerMinute(), metric.goldPerMinute(), null),
-                laneStats.getOrDefault(champion, List.of()),
-                matchups.getOrDefault(champion, Map.of()),
-                synergies.getOrDefault(champion, List.of()),
-                powerCurve.getOrDefault(champion, List.of()),
-                trends.get(champion)
-            ));
-        }
-        return result;
-    }
+    // old assemble removed — new flow uses direct Leaf population
 
     private static void release(RawProjection projection) {
         projection.pickWin().clear();
@@ -739,11 +672,7 @@ public final class ChampionAnalyzer {
         return denominator > 0 ? (double) numerator / denominator : 0;
     }
 
-    private static Map<Integer, ChampionStatistics> assemble(RawProjection projection, Map<Integer, Trend> trends) {
-        return assemble(projection.filter(), projection.totalGames(), projection.banGames(), projection.pickWin(),
-            projection.banCount(), projection.laneStats(), projection.matchups(), projection.synergies(),
-            projection.metrics(), projection.powerCurve(), trends);
-    }
+    // assemble(RawProjection) removed — new flow uses direct Leaf
 
     record RawProjection(
         Filter filter,
