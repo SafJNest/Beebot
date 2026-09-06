@@ -19,27 +19,19 @@ public class ChampionStatisticsTest {
     public void persistsMatchupsWithJson() {
         ChampionStatistics source = new ChampionStatistics(
             null,
-            100,
-            20,
-            5,
-            11,
-            0.55,
-            0.2,
-            0.05,
+            new ChampionStatistics.Overview(100, 20, 5, 11, 0.55, 0.2, 0.05, null, null, null, null),
             List.of(new ChampionStatistics.LaneStat(LaneType.UTILITY, 20, 0.55)),
-            Map.of(
-                new ChampionStatistics.MatchupKey(THRESH_CHAMPION_ID, LaneType.UTILITY),
-                new ChampionStatistics.Matchup(THRESH_CHAMPION_ID, 20, 0.55)
-            )
+            Map.of(THRESH_CHAMPION_ID, new ChampionStatistics.Matchup(20, 0.55)),
+            List.of(),
+            List.of(),
+            null
         );
 
         String json = source.toJson();
         ChampionStatistics decoded = ChampionStatistics.fromJson(json);
 
-        assertTrue(json.contains("\"MatchupKey[champion=412, lane=UTILITY]\""));
+        assertTrue(json.contains("\"412\""));
         assertEquals(source, decoded);
-        assertEquals(source, ChampionStatistics.fromJson(json.replace(
-            "MatchupKey[champion=412, lane=UTILITY]", "412|UTILITY")));
         assertNull(ChampionStatistics.fromJson("not-json"));
     }
 }

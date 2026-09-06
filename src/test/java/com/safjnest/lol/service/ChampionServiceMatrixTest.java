@@ -29,22 +29,19 @@ public class ChampionServiceMatrixTest {
 
         assertEquals(
             (LeagueShardUtils.getActives().size() + 1)
-                * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1)
-                * (LaneTypeUtils.playables().size() + 1),
+                * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1),
             filters.size());
         boolean hasGlobal = false;
-        boolean hasTop = false;
         for (Filter filter : filters) {
             assertEquals("15.14", filter.patch());
             assertEquals(GameQueueType.TEAM_BUILDER_RANKED_SOLO, filter.queue());
             assertEquals(0, filter.champion());
             hasGlobal |= filter.rank() == null && filter.region() == null && filter.lane() == null;
-            hasTop |= filter.lane() != null;
+            assertNull(filter.lane());
             keys.add(filter.genericKey());
         }
         assertEquals(filters.size(), keys.size());
         assertTrue(hasGlobal);
-        assertTrue(hasTop);
     }
 
     @Test
@@ -62,13 +59,35 @@ public class ChampionServiceMatrixTest {
     public void matrixSkipsReadyFilterKeys() {
         List<Filter> combinations = ChampionService.matrixFilters(
             "15.14", GameQueueType.TEAM_BUILDER_RANKED_SOLO).subList(0, 3);
-        Set<String> ready = Set.of(combinations.get(1).genericKey());
+        String readyKey = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(combinations.get(1)).toKey();
+        Set<String> ready = Set.of(readyKey);
 
         List<Filter> missing = ChampionService.missingMatrixFilters(combinations, ready);
 
         assertEquals(2, missing.size());
         boolean skipped = false;
-        for (Filter filter : missing) if (filter.genericKey().equals(combinations.get(1).genericKey())) skipped = true;
+        for (Filter filter : missing) if (com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter).toKey().equals(readyKey)) skipped = true;
         assertFalse(skipped);
+    }
+
+    @Test
+    public void statisticsFilterAndCachesPreserveTheFullScope() {
+        Filter filter = new Filter().setChampion(10).setPatch("15.14").setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+            .setRank(TierType.EMERALD).setRankBehavior(Filter.RankBehavior.EXACT).setPeriod(100, 200);
+
+        Filter statistics = ChampionService.statisticsFilter(filter);
+        List<Filter> cached = ChampionService.statisticsCacheFilters(filter);
+
+        assertEquals(Filter.RankBehavior.EXACT, statistics.rankBehavior());
+        assertEquals(100, statistics.timeStart());
+        assertEquals(200, statistics.timeEnd());
+        assertEquals(7, cached.size());
+        assertTrue(cached.stream().anyMatch(value -> value.lane() == null));
+        assertTrue(cached.stream().anyMatch(value -> value.lane() == no.stelar7.api.r4j.basic.constants.types.lol.LaneType.NONE));
+        for (Filter value : cached) {
+            assertEquals(Filter.RankBehavior.EXACT, value.rankBehavior());
+            assertEquals(100, value.timeStart());
+            assertEquals(200, value.timeEnd());
+        }
     }
 }

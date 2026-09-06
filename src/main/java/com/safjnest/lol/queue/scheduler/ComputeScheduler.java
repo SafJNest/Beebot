@@ -166,7 +166,11 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         List<String> patches = PatchUtils.getRecentPatches(3);
         if (patches.isEmpty()) return VOID;
         List<CompletableFuture<ChampionService.MatrixRefreshResult>> futures = new ArrayList<>();
-        for (String patch : patches) futures.add(enqueueChampionStatsMatrix(patch, queue));
+        for (int index = 0; index < patches.size(); index++) {
+            CompletableFuture<ChampionService.MatrixRefreshResult> future = enqueueChampionStatsMatrix(patches.get(index), queue);
+            if (index + 1 < patches.size()) future.thenRun(System::gc);
+            futures.add(future);
+        }
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 

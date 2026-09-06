@@ -10,8 +10,13 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.safjnest.lol.champion.ChampionStatsData;
-import com.safjnest.lol.model.ChampionStatistics.MatchupKey;
+import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.statistics.ChampionStatsDocument;
+import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
+import com.safjnest.lol.model.statistics.shared.ChampionNode;
+import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
+import com.safjnest.lol.model.statistics.shared.MatchupStats;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -39,7 +44,7 @@ public class ChampionAnalyzerTest {
         Filter na = filter(LeagueShard.NA1, TierType.EMERALD);
 
         assertFalse(ChampionAnalyzer.matchesMatrixFilter(diamond, goldMatch));
-        assertTrue(ChampionAnalyzer.matchesMatrixFilter(euw, goldMatch));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(euw, goldMatch));
         assertFalse(ChampionAnalyzer.matchesMatrixFilter(na, goldMatch));
     }
 
@@ -69,9 +74,9 @@ public class ChampionAnalyzerTest {
         assertEquals(2, euwGold.pickWin().get(10)[0]);
         assertEquals(1, euwDiamond.totalGames());
         assertEquals(1, euwDiamond.pickWin().get(10)[0]);
-        assertTrue(globalGold.matchups().get(10).containsKey(new MatchupKey(999_999, LaneType.TOP)));
-        assertTrue(globalGold.synergies().get(20).stream()
-            .anyMatch(value -> value.allyChampion() == 30 && value.allyLane() == LaneType.UTILITY));
+        assertTrue(globalGold.matchupRaw().get(10).containsKey(999_999));
+        assertTrue(globalGold.synergyRaw().get(20).keySet().stream()
+            .anyMatch(value -> value.champion() == 30 && value.lane() == LaneType.UTILITY));
     }
 
     @Test
@@ -92,6 +97,27 @@ public class ChampionAnalyzerTest {
         assertEquals(1, allLanes.pickWin().get(777_777)[0]);
         assertFalse(top.pickWin().containsKey(777_777));
         assertEquals(1, top.pickWin().get(10)[0]);
+    }
+
+    @Test
+    public void matchupUsesTheOpponentBanRate() {
+        Filter filter = filter(LeagueShard.EUW1, TierType.EMERALD).setChampion(10).setLane(LaneType.TOP);
+        ChampionStatsDocument document = new ChampionStatsDocument(ChampionStatsScope.from(filter), 100, 10, null);
+        ChampionNode champion = new ChampionNode(1);
+        ChampionLeafStats leaf = new ChampionLeafStats();
+        leaf.games = 20;
+        leaf.wins = 12;
+        MatchupStats matchup = new MatchupStats();
+        matchup.games = 8;
+        matchup.wins = 5;
+        leaf.matchups.put(20, matchup);
+        champion.lanes.put(LaneType.TOP.name(), leaf);
+        document.champions.put(10, champion);
+        document.champions.put(20, new ChampionNode(7));
+
+        ChampionStatistics statistics = ChampionAnalyzer.toChampionStatistics(filter, document, champion, leaf);
+
+        assertEquals(0.7, statistics.matchups().get(20).opponentBanRate(), 0.001);
     }
 
     private static Filter filter(LeagueShard region, TierType rank) {

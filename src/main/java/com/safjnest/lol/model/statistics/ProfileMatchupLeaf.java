@@ -3,6 +3,8 @@ package com.safjnest.lol.model.statistics;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class ProfileMatchupLeaf extends Stats<Void> {
-    public Map<Integer, Stats<Void>> matchups = new LinkedHashMap<>();
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
+
+public class ProfileMatchupLeaf extends ProfileLeafStats {
+    public Map<Integer, ProfileLeafStats> matchups = new LinkedHashMap<>();
 }

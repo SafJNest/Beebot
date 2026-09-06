@@ -33,9 +33,9 @@ public class LolApiConfigTest {
         ObjectMapper mapper = apiMapper();
 
         ChampionStatistics stats = new ChampionStatistics(
-            null, 10, 5, 1, 3, 0.6, 0.5, 0.1,
+            null, new ChampionStatistics.Overview(10, 5, 1, 3, 0.6, 0.5, 0.1, null, null, null, null),
             List.of(new ChampionStatistics.LaneStat(LaneType.UTILITY, 5, 0.6)),
-            java.util.Map.of()
+            java.util.Map.of(), List.of(), List.of(), null
         );
         Build build = new Build(
             null,

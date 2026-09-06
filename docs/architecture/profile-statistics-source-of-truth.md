@@ -239,6 +239,7 @@ Riot queues are normalized at ingestion into `CanonicalQueue`
 `total`, `queueStats`, `laneStats`, champion totals,
 `context`, `reference`, `winrate`, `kda` or `avg*` fields are not persisted. Discord can recreate
 these views in memory, but Mongo, Redis and HTTP expose only the leaves.
+`isOtp` is likewise derived from the leaves for a consumer and is never serialized or persisted.
 `pings`, `spellOne` and `spellTwo` remain dedicated structures because they do not
 require the same granularity. Matchups live only in
 `profile_matchups`; there are no matchup or duo aggregates in the main

@@ -21,9 +21,9 @@ import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -235,7 +235,7 @@ public class LeagueMessage {
                     return;
                 }
 
-                Matchup matchup = opponent != 0 ? getOpponentMatchup(s, opponent, lane) : null;
+                Matchup matchup = opponent != 0 ? getOpponentMatchup(s, opponent) : null;
                 LaneStat ls = lane != null ? s.getLaneStat(lane) : null;
         
                 desc.append(CustomEmojiHandler.getFormattedEmoji(champion.getName()))
@@ -281,40 +281,28 @@ public class LeagueMessage {
 
     private static boolean canShowChampion(ChampionStatistics stats, LaneType lane, int opponent) {
         if (opponent != 0)
-            return getOpponentMatchup(stats, opponent, lane) != null;
+            return getOpponentMatchup(stats, opponent) != null;
         if (lane != null)
             return stats.getLaneStat(lane) != null;
         return stats.picks() > 0;
     }
 
     private static double getChampionWinrate(ChampionStatistics stats, LaneType lane, int opponent) {
-        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent, lane) : null;
+        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent) : null;
         if (matchup != null) return matchup.winrate();
         LaneStat laneStat = lane != null ? stats.getLaneStat(lane) : null;
         return laneStat != null ? laneStat.winrate() : stats.winrate();
     }
 
     private static double getChampionPickrate(ChampionStatistics stats, LaneType lane, int opponent) {
-        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent, lane) : null;
+        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent) : null;
         if (matchup != null) return matchup.matches();
         LaneStat laneStat = lane != null ? stats.getLaneStat(lane) : null;
         return laneStat != null ? laneStat.getPickrate(stats.games()) : stats.pickrate();
     }
 
-    private static Matchup getOpponentMatchup(ChampionStatistics stats, int opponent, LaneType lane) {
-        if (opponent == 0) return null;
-        Matchup matchup = stats.getOpponentMatchup(opponent, lane);
-        if (matchup != null || lane != null) return matchup;
-
-        int matches = 0;
-        double wins = 0;
-        for (Map.Entry<ChampionStatistics.MatchupKey, Matchup> entry : stats.matchups().entrySet()) {
-            if (entry.getKey().champion() != opponent) continue;
-            matches += entry.getValue().matches();
-            wins += entry.getValue().matches() * entry.getValue().winrate();
-        }
-        if (matches == 0) return null;
-        return new Matchup(opponent, matches, wins / matches);
+    private static Matchup getOpponentMatchup(ChampionStatistics stats, int opponent) {
+        return opponent == 0 ? null : stats.getOpponentMatchup(opponent);
     }
 
     private static List<Match> getOpggMatches(Summoner summoner, LeagueMessageParameter parameter) {
@@ -1446,46 +1434,48 @@ public class LeagueMessage {
             builder.addField("Games", laneString, false);
         }
 
-        List<Stats<Integer>> champions = sortedStats(statistics.championStats);
+        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
         Map<Integer, Mastery> masteries = LeagueHandler.getMastery(summoner);
         StringBuilder championString = new StringBuilder();
         for (int index = 0; index < Math.min(6, champions.size()); index++) {
-            championString.append(formatLegacyChampionStat(champions.get(index), masteries.get(champions.get(index).reference)));
+            championString.append(formatLegacyChampionStat(champions.get(index), masteries.get((Integer)champions.get(index).reference)));
         }
         builder.addField("Champions", championString.toString(), false);
         return builder;
     }
 
-    private static String formatLegacyLaneStats(List<Stats<LaneType>> values) {
+    private static String formatLegacyLaneStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
         StringBuilder result = new StringBuilder();
-        for (Stats<LaneType> stat : sortedStats(values)) {
+        for (com.safjnest.lol.model.statistics.shared.ProfileLeafStats stat : sortedProfileStats(values)) {
             if (stat.reference == null || stat.reference == LaneType.NONE) continue;
-            result.append(LaneTypeUtils.getLaneTypeEmoji(stat.reference)).append(" ")
-                .append(LaneTypeUtils.getPrettyName(stat.reference)).append(" ")
+            LaneType lane = (LaneType) stat.reference;
+            result.append(LaneTypeUtils.getLaneTypeEmoji(lane)).append(" ")
+                .append(LaneTypeUtils.getPrettyName(lane)).append(" ")
                 .append(stat.games).append(" games\n`(")
                 .append(stat.wins).append("W/").append(stat.losses()).append("L) - ")
-                .append(String.format("%.2f", stat.winrate)).append("% WR`\n");
+                .append(String.format("%.2f", stat.winratePercent())).append("% WR`\n");
         }
         return result.toString();
     }
 
-    private static String formatLegacyQueueStats(List<Stats<GameQueueType>> values) {
+    private static String formatLegacyQueueStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
         StringBuilder result = new StringBuilder();
-        List<Stats<GameQueueType>> sorted = sortedStats(values);
+        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sorted = sortedProfileStats(values);
         long otherWins = 0;
         long otherLosses = 0;
         for (int index = 0; index < sorted.size(); index++) {
-            Stats<GameQueueType> stat = sorted.get(index);
+            com.safjnest.lol.model.statistics.shared.ProfileLeafStats stat = sorted.get(index);
             if (index >= 4) {
                 otherWins += stat.wins;
                 otherLosses += stat.losses();
                 continue;
             }
-            result.append(GameQueueTypeUtils.getMapEmoji(stat.reference)).append(" ")
-                .append(GameQueueTypeUtils.prettyName(stat.reference)).append(" ")
+            GameQueueType q = displayQueue((CanonicalQueue) stat.reference);
+            result.append(GameQueueTypeUtils.getMapEmoji(q)).append(" ")
+                .append(GameQueueTypeUtils.prettyName(q)).append(" ")
                 .append(stat.games).append(" games\n`(")
                 .append(stat.wins).append("W/").append(stat.losses()).append("L) - ")
-                .append(String.format("%.2f", stat.winrate)).append("% WR`\n");
+                .append(String.format("%.2f", stat.winratePercent())).append("% WR`\n");
         }
         if (otherWins > 0 || otherLosses > 0) {
             long otherGames = otherWins + otherLosses;
@@ -1497,25 +1487,43 @@ public class LeagueMessage {
         return result.toString();
     }
 
-    private static <T> List<Stats<T>> sortedStats(List<Stats<T>> values) {
-        List<Stats<T>> sorted = values == null ? new ArrayList<>() : new ArrayList<>(values);
+    private static GameQueueType displayQueue(CanonicalQueue queue) {
+        return switch (queue) {
+            case RANKED_SOLO -> GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+            case RANKED_FLEX -> GameQueueType.RANKED_FLEX_SR;
+            case NORMAL_DRAFT -> GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5;
+            case NORMAL_BLIND -> GameQueueType.NORMAL_5V5_BLIND_PICK;
+            case ARAM -> GameQueueType.ARAM;
+            case ARENA -> GameQueueType.CHERRY;
+            case SWIFTPLAY -> GameQueueType.SWIFTPLAY;
+            case URF -> GameQueueType.URF;
+            case ULTBOOK -> GameQueueType.ULTBOOK;
+            case NEXUS_BLITZ -> GameQueueType.NEXUS_BLITZ;
+            case SWARM -> GameQueueType.STRAWBERRY;
+            case SPECIAL -> GameQueueType.ONEFORALL_5X5;
+            case OTHER -> GameQueueType.CUSTOM;
+        };
+    }
+
+    private static List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sortedProfileStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
+        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sorted = values == null ? new ArrayList<>() : new ArrayList<>(values);
         sorted.sort((left, right) -> {
             int games = Long.compare(right.games, left.games);
-            return games != 0 ? games : Double.compare(right.winrate, left.winrate);
+            return games != 0 ? games : Double.compare(right.winrate(), left.winrate());
         });
         return sorted;
     }
 
-    private static String formatLegacyChampionStat(Stats<Integer> stat, Mastery mastery) {
-        StaticChampion champion = ChampionUtils.getChampion(stat.reference);
+    private static String formatLegacyChampionStat(com.safjnest.lol.model.statistics.shared.ProfileLeafStats stat, Mastery mastery) {
+        StaticChampion champion = ChampionUtils.getChampion((Integer) stat.reference);
         if (champion == null) return stat.reference + "\n";
         int level = mastery == null ? 0 : Math.min(10, mastery.level());
         return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
             + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **["
             + (mastery == null ? 0 : mastery.level()) + "]** " + champion.getName() + ": "
             + stat.games + " games (" + stat.wins + "W/" + stat.losses() + "L) | " + stat.lpGain + "LP\n"
-            + "`Avg. KDA " + String.format("%.2f", stat.avgKills) + "/"
-            + String.format("%.2f", stat.avgDeaths) + "/" + String.format("%.2f", stat.avgAssists) + "`\n";
+            + "`Avg. KDA " + String.format("%.2f", stat.avgKills()) + "/"
+            + String.format("%.2f", stat.avgDeaths()) + "/" + String.format("%.2f", stat.avgAssists()) + "`\n";
     }
 
     private static EmbedBuilder getGenericStats(
@@ -1524,7 +1532,7 @@ public class LeagueMessage {
         Summoner summoner,
         LeagueMessageParameter parameter
     ) {
-        Stats<Void> total = statistics.total;
+        com.safjnest.lol.model.statistics.shared.ProfileLeafStats total = statistics.total;
         if (total == null || total.games == 0) {
             eb.setDescription("Not enough games");
             eb.addField("Last update", formatLastUpdate(statistics.lastUpdate), false);
@@ -1551,7 +1559,7 @@ public class LeagueMessage {
         }
 
         if (!parameter.isShowChampion()) {
-            List<Stats<Integer>> champions = sortedStats(statistics.championStats);
+        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
             Map<Integer, Mastery> masteries = LeagueHandler.getMastery(summoner);
             String championStats = champions.stream()
                 .limit(6)
@@ -1560,20 +1568,20 @@ public class LeagueMessage {
             eb.addField("Champions", championStats, false);
         }
 
-        String kda = String.format("%.2f", total.avgKills) + "/" + String.format("%.2f", total.avgDeaths)
-            + "/" + String.format("%.2f", total.avgAssists);
-        String visionScore = String.format("%.2f", total.avgVision) + " VS ("
-            + String.format("%.2f", total.avgWard) + " placed / " + String.format("%.2f", total.avgWardKilled) + " destroyed)";
+        String kda = String.format("%.2f", total.avgKills()) + "/" + String.format("%.2f", total.avgDeaths())
+            + "/" + String.format("%.2f", total.avgAssists());
+        String visionScore = String.format("%.2f", total.avgVision()) + " VS ("
+            + String.format("%.2f", total.avgWard()) + " placed / " + String.format("%.2f", total.avgWardKilled()) + " destroyed)";
         double csPerMinute = total.playtime == 0 ? 0 : total.cs * 60000.0 / total.playtime;
-        String cs = String.format("%.2f", total.avgCs) + " (" + String.format("%.2f", csPerMinute) + " / min)";
-        String damage = String.format("%.2f", total.avgDamage) + " to champ / "
-            + String.format("%.2f", total.avgDamageBuilding) + " to buildings";
+        String cs = String.format("%.2f", total.avgCs()) + " (" + String.format("%.2f", csPerMinute) + " / min)";
+        String damage = String.format("%.2f", total.avgDamage()) + " to champ / "
+            + String.format("%.2f", total.avgDamageBuilding()) + " to buildings";
         String arenaPlacement = "";
         if (arena) {
             arenaPlacement = "1. " + total.arenaFirst + " times\n"
                 + "2. " + total.arenaSecond + " times\n"
                 + "3. " + total.arenaThird + " times\n"
-                + "avg. " + String.format("%.2f", total.avgArenaPlacement) + " placement";
+                + "avg. " + String.format("%.2f", total.avgArenaPlacement()) + " placement";
         }
 
         StringBuilder streak = new StringBuilder();
@@ -1583,12 +1591,12 @@ public class LeagueMessage {
         if (total.doubles > 0) streak.append("Doublekills: ").append(total.doubles).append("\n");
         String streakString = streak.toString().trim();
         String performance = (arena ? "**Placement**\n`" + arenaPlacement + "`\n" : "")
-            + "**KDA**\n`" + kda + " (" + String.format("%.2f", value(total.avgKillParticipation)) + "% kp & "
-            + String.format("%.2f", value(total.avgDeathShare)) + "% dp)\n"
+            + "**KDA**\n`" + kda + " (" + String.format("%.2f", value(total.avgKillParticipation())) + "% kp & "
+            + String.format("%.2f", value(total.avgDeathShare())) + "% dp)\n"
             + (!streakString.isEmpty() ? streakString + "`\n" : "`")
             + (!arena ? "**Vision Score**\n`" + visionScore + "`\n**CS**\n`" + cs + "`\n" : "")
             + "**Damage**\n`" + damage + "`\n"
-            + (!arena ? "**Gold Earned**\n`" + String.format("%.2f", total.avgGold) + "`\n" : "");
+            + (!arena ? "**Gold Earned**\n`" + String.format("%.2f", total.avgGold()) + "`\n" : "");
         eb.addField("Average Performance", performance, false);
         eb.addField("Spell Performance", legacyAbilityStats(total), true);
         eb.addField(" ", legacySpellStats(statistics.spellOne, "d_", "Spell 1"), true);
@@ -1606,7 +1614,7 @@ public class LeagueMessage {
         return statistics.newestMatchAt == 0 ? System.currentTimeMillis() : statistics.newestMatchAt;
     }
 
-    private static String legacyAbilityStats(Stats<Void> total) {
+    private static String legacyAbilityStats(com.safjnest.lol.model.statistics.shared.ProfileLeafStats total) {
         return CustomEmojiHandler.getFormattedEmoji("q_") + " Ability 1\n`" + total.q + " times`\n"
             + CustomEmojiHandler.getFormattedEmoji("w_") + " Ability 2\n`" + total.w + " times`\n"
             + CustomEmojiHandler.getFormattedEmoji("e_") + " Ability 3\n`" + total.e + " times`\n"
@@ -1676,13 +1684,13 @@ public class LeagueMessage {
             eb.setDescription("Not enough games");
             return eb;
         }
-        List<Stats<Integer>> champions = sortedStats(statistics.championStats);
+        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
         int offset = Math.min(Math.max(0, parameter.getOffset()), champions.size());
         Map<Integer, Mastery> masteries = LeagueHandler.getMastery(summoner);
         String championString = champions.stream()
             .skip(offset)
             .limit(10)
-            .map(stat -> formatLegacyChampionStat(stat, masteries.get(stat.reference)).trim())
+            .map(stat -> formatLegacyChampionStat(stat, masteries.get((Integer) stat.reference)).trim())
             .collect(Collectors.joining("\n"));
         eb.setDescription("Summoner has played **" + statistics.total.games + "** games with "
             + champions.size() + " different champions\n\n" + championString);
@@ -1691,10 +1699,10 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static HashMap<Integer, int[]> toLegacyMatchups(Map<Integer, ? extends Stats<?>> values) {
-        HashMap<Integer, int[]> result = new HashMap<>();
+    private static HashMap<Integer, long[]> toLegacyMatchups(Map<Integer, ? extends com.safjnest.lol.model.statistics.shared.LeafStats> values) {
+        HashMap<Integer, long[]> result = new HashMap<>();
         if (values == null) return result;
-        for (Map.Entry<Integer, ? extends Stats<?>> stat : values.entrySet()) result.put(stat.getKey(), new int[] {(int) stat.getValue().wins, (int) stat.getValue().losses()});
+        for (Map.Entry<Integer, ? extends com.safjnest.lol.model.statistics.shared.LeafStats> stat : values.entrySet()) result.put(stat.getKey(), new long[] {stat.getValue().wins, stat.getValue().losses()});
         return result;
     }
 

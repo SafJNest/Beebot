@@ -130,42 +130,42 @@ public class LeagueMessageUtils {
     }
 
 
-    public static EmbedBuilder buildMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, int[]> data) {  
-        List<Map.Entry<Integer, int[]>> worstMatchups = data.entrySet().stream()
+    public static EmbedBuilder buildMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, long[]> data) {  
+        List<Map.Entry<Integer, long[]>> worstMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
             .sorted((a, b) -> {
                 double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
                 double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
+                long gamesA = a.getValue()[0] + a.getValue()[1];
+                long gamesB = b.getValue()[0] + b.getValue()[1];
                 int cmp = Double.compare(winrateA, winrateB);
-                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+                return cmp == 0 ? Long.compare(gamesB, gamesA) : cmp;
             })
             .collect(Collectors.toList());
         
-        List<Map.Entry<Integer, int[]>> bestMatchups = data.entrySet().stream()
+        List<Map.Entry<Integer, long[]>> bestMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
             .sorted((a, b) -> {
                 double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
                 double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
+                long gamesA = a.getValue()[0] + a.getValue()[1];
+                long gamesB = b.getValue()[0] + b.getValue()[1];
                 int cmp = Double.compare(winrateB, winrateA);
-                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+                return cmp == 0 ? Long.compare(gamesB, gamesA) : cmp;
             })
             .collect(Collectors.toList());
         
-        List<Map.Entry<Integer, int[]>> popularMatchups = data.entrySet().stream()
+        List<Map.Entry<Integer, long[]>> popularMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
             .sorted((a, b) -> {
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
+                long gamesA = a.getValue()[0] + a.getValue()[1];
+                long gamesB = b.getValue()[0] + b.getValue()[1];
                 if (gamesA == gamesB) {
                     double winrateA = (double) a.getValue()[0] / (gamesA);
                     double winrateB = (double) b.getValue()[0] / (gamesB);
                     return Double.compare(winrateB, winrateA);
                 }
-                return Integer.compare(gamesB, gamesA);
+                return Long.compare(gamesB, gamesA);
             })
             .collect(Collectors.toList());
         
@@ -175,15 +175,15 @@ public class LeagueMessageUtils {
         return eb;
     }
 
-    public static String getWinrateLabel(List<Entry<Integer, int[]>> data) {
+    public static String getWinrateLabel(List<Entry<Integer, long[]>> data) {
         String label = "";
         int limit = 10;
-        for (Map.Entry<Integer, int[]> entry : data) {
+        for (Map.Entry<Integer, long[]> entry : data) {
             if (limit-- == 0) break;
             StaticChampion champ = ChampionUtils.getChampion(entry.getKey());
             if (champ == null) continue;
-            int[] val = entry.getValue();
-            int totalGames = val[0] + val[1];
+            long[] val = entry.getValue();
+            long totalGames = val[0] + val[1];
             double winrate = (double) val[0] / totalGames * 100.0;
             label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "W/" + val[1] + "L (" + String.format("%.1f%%", winrate) + ")`\n";
         }

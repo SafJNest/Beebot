@@ -248,7 +248,7 @@ public class Filter {
 
     public String pageKey() {
         String raw = val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region);
+                + rankBehavior + "|" + val(patch) + "|" + val(region) + "|" + timeStart + "|" + timeEnd;
         if (opponent != 0 || duo != 0)
             raw += "|" + val(opponent) + "|" + val(duo);
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
@@ -270,7 +270,8 @@ public class Filter {
 
     public String genericKey() {
         String raw = val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region) + "|" + val(lane);
+                + rankBehavior + "|" + val(patch) + "|" + val(region) + "|" + val(lane)
+                + "|" + timeStart + "|" + timeEnd;
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 

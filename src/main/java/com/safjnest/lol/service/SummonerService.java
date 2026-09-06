@@ -18,7 +18,7 @@ import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.statistics.Stats;
+
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
@@ -417,19 +417,19 @@ public final class SummonerService {
 
             Map<GameQueueType, com.safjnest.lol.model.summoner.Rank> ranks = RankService.find(puuid, shard);
             List<Mastery> masteries = MasteryService.find(puuid, shard);
-            Map<Integer, Stats<Void>> championStats = championStats(
+            Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> championStats = championStats(
                 profileService.getStatistics(summoner, shard, Filter.canonical()), entry.getValue());
             result.put(puuid, new LiveGame.ProfileOverview(summoner, ranks, masteries, championStats));
         }
         return result;
     }
 
-    private static Map<Integer, Stats<Void>> championStats(ProfileStatistics statistics, Integer championId) {
+    private static Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> championStats(ProfileStatistics statistics, Integer championId) {
         if (statistics == null) return Map.of();
-        Map<Integer, Stats<Void>> available = statistics.championStats();
+        Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> available = statistics.championStats();
         List<Integer> ids = new ArrayList<>(available.keySet());
         ids.sort(Comparator.comparingLong((Integer id) -> available.get(id).games).reversed().thenComparingInt(Integer::intValue));
-        Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
+        Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> result = new LinkedHashMap<>();
         if (championId != null && available.containsKey(championId)) result.put(championId, available.get(championId));
         for (Integer id : ids) {
             if (result.size() == 3) break;

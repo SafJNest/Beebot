@@ -117,6 +117,20 @@ public class ChampionBuildEngineTest {
         assertEquals(second, result.get(1).order());
     }
 
+    @Test
+    public void clearsRuneAndSkillOrderAccumulators() {
+        ChampionBuildEngine.RuneOptionAccumulator runes = new ChampionBuildEngine.RuneOptionAccumulator();
+        runes.add(runeSignature(List.of(5008, 5008, 5011)), true);
+        runes.clear();
+
+        ChampionBuildEngine.SkillOrderTrie orders = new ChampionBuildEngine.SkillOrderTrie();
+        orders.add(List.of(1, 2, 3), true);
+        orders.clear();
+
+        assertEquals(0, runes.toOptions(1).size());
+        assertEquals(0, orders.toOptions(1).size());
+    }
+
     private static List<Integer> sequence(int length, int... pattern) {
         List<Integer> result = new ArrayList<>();
         for (int index = 0; index < length; index++) result.add(pattern[index % pattern.length]);

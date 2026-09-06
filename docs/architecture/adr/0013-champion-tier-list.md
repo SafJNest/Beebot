@@ -13,7 +13,8 @@ contains the five role lists; queues without lanes expose one list with a null
 role.
 
 `champion_stats` remains the sole persistence owner. Mongo reads the selected
-ready filter documents with a narrow projection of overview and matchup data.
+ready `ChampionStatsDocument` for the scope and derives every role from each
+champion's raw `lanes.<lane>` leaf; no overview or tier-list projection is persisted.
 `ChampionTierAnalyzer` calculates the score in Java after clustering every
 champion-role pair from the requested lane buckets. The two standardized
 features are `log1p(picksInRole)` and `logit(picksInRole /

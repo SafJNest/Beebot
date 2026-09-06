@@ -11,6 +11,7 @@ import org.junit.Test;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
+import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.sql.QueryRecord;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -61,6 +62,15 @@ public class LeagueMessageOpggTitleTest {
 
         assertTrue(title.endsWith("0 LP"));
         assertTrue(!title.contains("? LP"));
+    }
+
+    @Test
+    public void mapsCanonicalProfileQueuesForDisplay() throws Exception {
+        Method method = LeagueMessage.class.getDeclaredMethod("displayQueue", CanonicalQueue.class);
+        method.setAccessible(true);
+
+        assertEquals(GameQueueType.TEAM_BUILDER_RANKED_SOLO, method.invoke(null, CanonicalQueue.RANKED_SOLO));
+        assertEquals(GameQueueType.CHERRY, method.invoke(null, CanonicalQueue.ARENA));
     }
 
     private static String title(boolean win, RankProgress progress, List<QueryRecord> rows) throws Exception {

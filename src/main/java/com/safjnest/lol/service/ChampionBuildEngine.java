@@ -169,6 +169,23 @@ final class ChampionBuildEngine {
         Filter filter() {
             return filter;
         }
+
+        void clear() {
+            MatchMemoryUtils.release(coreBuilds);
+            MatchMemoryUtils.release(coreBuildItems);
+            MatchMemoryUtils.release(coreItems);
+            MatchMemoryUtils.release(starters);
+            MatchMemoryUtils.release(boots);
+            MatchMemoryUtils.release(supportItems);
+            MatchMemoryUtils.release(slots);
+            runes.clear();
+            MatchMemoryUtils.release(summonerSpells);
+            skillOrders.clear();
+            MatchMemoryUtils.release(prismatics);
+            MatchMemoryUtils.release(augments);
+            games = 0;
+            wins = 0;
+        }
     }
 
     static final class RuneOptionAccumulator {
@@ -221,6 +238,12 @@ final class ChampionBuildEngine {
             if (winrate != 0) return winrate > 0;
             if (candidateStats[0] != currentStats[0]) return candidateStats[0] > currentStats[0];
             return candidate.getKey().statShardsKey().compareTo(current.statShardsKey()) < 0;
+        }
+
+        void clear() {
+            MatchMemoryUtils.release(values);
+            MatchMemoryUtils.release(configurations);
+            MatchMemoryUtils.release(completeShardVariants);
         }
     }
 
@@ -405,6 +428,10 @@ final class ChampionBuildEngine {
             return result;
         }
 
+        void clear() {
+            root.clear();
+        }
+
         private static int deepestObservedDepth(SkillOrderNode node, int depth) {
             int result = node.matches > 0 ? depth : 0;
             for (SkillOrderNode child : node.children.values())
@@ -436,6 +463,13 @@ final class ChampionBuildEngine {
         private final Map<Integer, SkillOrderNode> children = new LinkedHashMap<>();
         private int matches;
         private int wins;
+
+        private void clear() {
+            for (SkillOrderNode child : children.values()) child.clear();
+            children.clear();
+            matches = 0;
+            wins = 0;
+        }
     }
 
     private record SkillOrderCandidate(String id, List<Integer> order, int matches, int wins, int exactMatches) {}

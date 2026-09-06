@@ -7,6 +7,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -45,15 +46,15 @@ public record ProfileMatchups(
         return champions != null;
     }
 
-    public Map<Integer, Stats<Void>> aggregateMatchups() {
-        Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
+    public Map<Integer, ProfileLeafStats> aggregateMatchups() {
+        Map<Integer, ProfileLeafStats> result = new LinkedHashMap<>();
         if (champions == null) return result;
         for (Map<CanonicalQueue, Map<String, ProfileMatchupLeaf>> queues : champions.values())
             if (queues != null) for (Map<String, ProfileMatchupLeaf> positions : queues.values())
                 if (positions != null) for (ProfileMatchupLeaf leaf : positions.values())
-                    if (leaf != null && leaf.matchups != null) for (Map.Entry<Integer, Stats<Void>> matchup : leaf.matchups.entrySet())
+                    if (leaf != null && leaf.matchups != null) for (Map.Entry<Integer, ProfileLeafStats> matchup : leaf.matchups.entrySet())
                         if (matchup.getKey() != null && matchup.getValue() != null)
-                            result.computeIfAbsent(matchup.getKey(), ignored -> new Stats<>()).merge(matchup.getValue());
+                            result.computeIfAbsent(matchup.getKey(), ignored -> new ProfileLeafStats()).merge(matchup.getValue());
         return result;
     }
 
@@ -109,7 +110,7 @@ public record ProfileMatchups(
                 for (Participant opponent : match.participants)
                     if (opponent != null && opponent != player && opponent.champion != 0
                         && opponent.team != player.team && opponent.lane == player.lane)
-                        leaf.matchups.computeIfAbsent(opponent.champion, ignored -> new Stats<>())
+                        leaf.matchups.computeIfAbsent(opponent.champion, ignored -> new ProfileLeafStats())
                             .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
             oldestMatchAt = oldestMatchAt == 0 ? match.timeStart : Math.min(oldestMatchAt, match.timeStart);
             newestMatchAt = Math.max(newestMatchAt, match.timeEnd);
@@ -131,9 +132,9 @@ public record ProfileMatchups(
     private static ProfileMatchupLeaf copyLeaf(ProfileMatchupLeaf source, int minGames) {
         ProfileMatchupLeaf copy = new ProfileMatchupLeaf();
         copy.merge(source);
-        if (source.matchups != null) for (Map.Entry<Integer, Stats<Void>> entry : source.matchups.entrySet())
+        if (source.matchups != null) for (Map.Entry<Integer, ProfileLeafStats> entry : source.matchups.entrySet())
             if (entry.getValue() != null && entry.getValue().games >= minGames) {
-                Stats<Void> matchup = new Stats<>();
+                ProfileLeafStats matchup = new ProfileLeafStats();
                 matchup.merge(entry.getValue());
                 copy.matchups.put(entry.getKey(), matchup);
             }

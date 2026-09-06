@@ -9,7 +9,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.competitive.CompetitiveEntry;
 import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
@@ -132,24 +132,24 @@ public final class CompetitiveService {
 
     private static LaneType primary(ProfileStatistics statistics, CanonicalQueue queue) {
         if (statistics == null || statistics.champions == null) return null;
-        Map<LaneType, Stats<Void>> lanes = new LinkedHashMap<>();
-        for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : statistics.champions.values()) {
+        Map<LaneType, ProfileLeafStats> lanes = new LinkedHashMap<>();
+        for (Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues : statistics.champions.values()) {
             if (queues == null) continue;
-            Map<String, Stats<Void>> values = queues.get(queue);
+            Map<String, ProfileLeafStats> values = queues.get(queue);
             if (values == null) continue;
-            for (Map.Entry<String, Stats<Void>> entry : values.entrySet()) {
+            for (Map.Entry<String, ProfileLeafStats> entry : values.entrySet()) {
                 LaneType lane;
                 try { lane = LaneType.valueOf(entry.getKey()); }
                 catch (RuntimeException ignored) { continue; }
                 if (!LaneTypeUtils.playables().contains(lane) || entry.getValue() == null) continue;
-                lanes.computeIfAbsent(lane, ignored -> new Stats<>()).merge(entry.getValue());
+                lanes.computeIfAbsent(lane, ignored -> new ProfileLeafStats()).merge(entry.getValue());
             }
         }
 
         LaneType result = null;
         long games = 0;
         for (LaneType lane : LaneTypeUtils.playables()) {
-            Stats<Void> statisticsForLane = lanes.get(lane);
+            ProfileLeafStats statisticsForLane = lanes.get(lane);
             long current = statisticsForLane == null ? 0 : statisticsForLane.games;
             if (current > games) {
                 result = lane;
@@ -161,12 +161,12 @@ public final class CompetitiveService {
 
     private static Integer otpChampion(ProfileStatistics statistics, CanonicalQueue queue) {
         if (statistics == null || statistics.champions == null) return null;
-        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champion : statistics.champions.entrySet()) {
-            Map<CanonicalQueue, Map<String, Stats<Void>>> queues = champion.getValue();
+        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, ProfileLeafStats>>> champion : statistics.champions.entrySet()) {
+            Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues = champion.getValue();
             if (queues == null) continue;
-            Map<String, Stats<Void>> lanes = queues.get(queue);
+            Map<String, ProfileLeafStats> lanes = queues.get(queue);
             if (lanes == null) continue;
-            for (Stats<Void> values : lanes.values())
+            for (ProfileLeafStats values : lanes.values())
                 if (values != null && Boolean.TRUE.equals(values.isOtp)) return champion.getKey();
         }
         return null;
