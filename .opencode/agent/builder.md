@@ -1,8 +1,15 @@
 ---
 name: beebot-builder
 description: Beebot Builder — executes "new command/endpoint/service/model/queue/mongo/cache" following HANDBOOK.md §5 + beebot-handbook skill
-tools: [read, grep, glob, bash, write, edit, todowrite, task]
-model: inherit
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  write: true
+  edit: true
+  todowrite: true
+  task: true
 ---
 
 # Beebot Builder (global)

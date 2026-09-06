@@ -1001,7 +1001,7 @@ public final class MongoDB {
             Filters.in("queue", AI_TRAINING_QUEUES)
         );
         try (MongoCursor<Document> cursor = matches().find(filter)
-                .projection(Projections.include("_id", "patch", "queue", "participants.champion", "participants.lane", "participants.team"))
+                .projection(Projections.include("_id", "patch", "queue", "timeStart", "participants.champion", "participants.lane", "participants.team", "participants.win"))
                 .batchSize(AI_TRAINING_CURSOR_BATCH_SIZE)
                 .iterator()) {
             while (cursor.hasNext()) {
@@ -1032,9 +1032,8 @@ public final class MongoDB {
                         Filters.ne("participants.puuid", null),
                         Filters.ne("participants.puuid", ""))),
                 new Document("$group", new Document("_id", "$participants.puuid")),
-                new Document("$sort", new Document("_id", 1)),
-                new Document("$limit", MAX_BATCH_IDS)
-        ))) {
+                new Document("$sort", new Document("_id", 1))
+        )).allowDiskUse(true).batchSize(MAX_BATCH_IDS)) {
             String puuid = document.getString("_id");
             if (puuid != null) result.add(puuid);
         }
@@ -3256,9 +3255,17 @@ public final class MongoDB {
         sample.put("gameId", match.getString("_id"));
         sample.put("patch", match.getString("patch"));
         sample.put("queue", match.getString("queue"));
+        sample.put("startedAt", match.getLong("timeStart"));
         sample.put("side", side);
+        sample.put("win", aiTrainingWin(match, side));
         sample.put("participants", participants);
         return sample;
+    }
+
+    private static boolean aiTrainingWin(Document match, String side) {
+        for (Document participant : documents(match.get("participants")))
+            if (side.equals(participant.getString("team"))) return participant.getBoolean("win", false);
+        return false;
     }
 
     private static List<Map<String, Object>> aiTrainingParticipants(Document match, String side) {

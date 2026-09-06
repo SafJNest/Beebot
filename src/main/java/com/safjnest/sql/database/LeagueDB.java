@@ -158,6 +158,9 @@ public final class LeagueDB extends AbstractDB {
         participant.matchId = result.getInt("match_id");
         participant.win = result.getBoolean("win");
         participant.kda = result.getString("kda");
+        participant.kills = kdaValue(participant.kda, 0);
+        participant.deaths = kdaValue(participant.kda, 1);
+        participant.assists = kdaValue(participant.kda, 2);
         participant.champion = result.getInt("champion");
         participant.team = enumValue(TeamType.class, result.getString("team"));
         participant.lane = enumValue(LaneType.class, result.getString("lane"));
@@ -202,6 +205,17 @@ public final class LeagueDB extends AbstractDB {
     private static long timestamp(ResultSet result, String column) throws SQLException {
         Timestamp value = result.getTimestamp(column);
         return value == null ? 0 : value.getTime();
+    }
+
+    static int kdaValue(String kda, int index) {
+        if (kda == null || index < 0 || index > 2) return 0;
+        String[] values = kda.split("/", -1);
+        if (values.length != 3) return 0;
+        try {
+            return Integer.parseInt(values[index]);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
     private static JSONObject jsonObject(String value) {
