@@ -9,6 +9,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.OPTUtils;
 
@@ -22,14 +23,14 @@ public class ProfileStatistics {
     public long lastUpdate;
     public long oldestMatchAt;
     public long newestMatchAt;
-    public Map<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champions = new LinkedHashMap<>();
+    public Map<Integer, Map<CanonicalQueue, Map<String, ProfileLeafStats>>> champions = new LinkedHashMap<>();
     public Map<String, Long> pings = new LinkedHashMap<>();
     public Map<Integer, Long> spellOne = new LinkedHashMap<>();
     public Map<Integer, Long> spellTwo = new LinkedHashMap<>();
-    @JsonIgnore public Stats<Void> total = new Stats<>();
-    @JsonIgnore public java.util.List<Stats<GameQueueType>> queueStats = new java.util.ArrayList<>();
-    @JsonIgnore public java.util.List<Stats<LaneType>> laneStats = new java.util.ArrayList<>();
-    @JsonIgnore public java.util.List<Stats<Integer>> championStats = new java.util.ArrayList<>();
+    @JsonIgnore public ProfileLeafStats total = new ProfileLeafStats();
+    @JsonIgnore public java.util.List<ProfileLeafStats> queueStats = new java.util.ArrayList<>();
+    @JsonIgnore public java.util.List<ProfileLeafStats> laneStats = new java.util.ArrayList<>();
+    @JsonIgnore public java.util.List<ProfileLeafStats> championStats = new java.util.ArrayList<>();
 
     public ProfileStatistics() {}
 
@@ -55,8 +56,18 @@ public class ProfileStatistics {
         participant.visionScore = match.vision();
         participant.cs = match.cs();
         participant.goldEarned = match.gold();
-        leaf(participant.champion, CanonicalQueue.from(queue), lane).add(participant,
-            match.timeStart(), match.timeEnd(), match.teamKills(), 0, false);
+        ProfileLeafStats leaf = leaf(participant.champion, CanonicalQueue.from(queue), lane);
+        leaf.games++;
+        if (participant.win) leaf.wins++;
+        int[] kda = kda(participant.kda);
+        leaf.kills += kda[0]; leaf.deaths += kda[1]; leaf.assists += kda[2];
+        leaf.damage += participant.damage;
+        leaf.cs += participant.cs;
+        leaf.gold += participant.goldEarned;
+        leaf.vision += participant.visionScore;
+        leaf.playtime += Math.max(0, match.timeEnd() - match.timeStart());
+        leaf.lastPlayedAt = Math.max(leaf.lastPlayedAt, match.timeStart());
+        if (match.teamKills() > 0) leaf.killParticipationSum += ((double)(kda[0]+kda[2])/match.teamKills())*100;
         updateTime(match.timeStart(), match.timeEnd());
         finish();
     }
@@ -77,41 +88,35 @@ public class ProfileStatistics {
         OPTUtils.refresh(champions);
         total = total();
         queueStats = new java.util.ArrayList<>();
-        for (Map.Entry<CanonicalQueue, Stats<Void>> entry : queueStats().entrySet()) {
-            Stats<GameQueueType> stat = new Stats<>(legacyQueue(entry.getKey()));
-            stat.merge(entry.getValue());
-            queueStats.add(stat);
+        for (Map.Entry<CanonicalQueue, ProfileLeafStats> e : queueStats().entrySet()) {
+            e.getValue().reference = e.getKey();
+            queueStats.add(e.getValue());
         }
         laneStats = new java.util.ArrayList<>();
-        for (Map.Entry<String, Stats<Void>> entry : laneStats().entrySet()) {
-            LaneType lane;
-            try { lane = LaneType.valueOf(entry.getKey()); }
-            catch (IllegalArgumentException ignored) { lane = LaneType.NONE; }
-            Stats<LaneType> stat = new Stats<>(lane);
-            stat.merge(entry.getValue());
-            laneStats.add(stat);
+        for (Map.Entry<String, ProfileLeafStats> e : laneStats().entrySet()) {
+            try { e.getValue().reference = LaneType.valueOf(e.getKey()); } catch (Exception ex) { e.getValue().reference = LaneType.NONE; }
+            laneStats.add(e.getValue());
         }
         championStats = new java.util.ArrayList<>();
-        for (Map.Entry<Integer, Stats<Void>> entry : championStats().entrySet()) {
-            Stats<Integer> stat = new Stats<>(entry.getKey());
-            stat.merge(entry.getValue());
-            championStats.add(stat);
+        for (Map.Entry<Integer, ProfileLeafStats> e : championStats().entrySet()) {
+            e.getValue().reference = e.getKey();
+            championStats.add(e.getValue());
         }
     }
 
     @JsonIgnore
-    public Stats<Void> total() {
-        Stats<Void> total = new Stats<>();
+    public ProfileLeafStats total() {
+        ProfileLeafStats total = new ProfileLeafStats();
         forEachLeaf(total::merge);
         return total;
     }
 
     @JsonIgnore
-    public Map<Integer, Stats<Void>> championStats() {
-        Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
+    public Map<Integer, ProfileLeafStats> championStats() {
+        Map<Integer, ProfileLeafStats> result = new LinkedHashMap<>();
         if (champions == null) return result;
-        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champion : champions.entrySet()) {
-            Stats<Void> total = new Stats<>();
+        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, ProfileLeafStats>>> champion : champions.entrySet()) {
+            ProfileLeafStats total = new ProfileLeafStats();
             forEachQueueLeaf(champion.getValue(), total::merge);
             result.put(champion.getKey(), total);
         }
@@ -119,25 +124,25 @@ public class ProfileStatistics {
     }
 
     @JsonIgnore
-    public Map<CanonicalQueue, Stats<Void>> queueStats() {
-        Map<CanonicalQueue, Stats<Void>> result = new LinkedHashMap<>();
+    public Map<CanonicalQueue, ProfileLeafStats> queueStats() {
+        Map<CanonicalQueue, ProfileLeafStats> result = new LinkedHashMap<>();
         if (champions == null) return result;
-        for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : champions.values()) if (queues != null)
-            for (Map.Entry<CanonicalQueue, Map<String, Stats<Void>>> queue : queues.entrySet()) {
-                Stats<Void> total = result.computeIfAbsent(queue.getKey(), ignored -> new Stats<>());
+        for (Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues : champions.values()) if (queues != null)
+            for (Map.Entry<CanonicalQueue, Map<String, ProfileLeafStats>> queue : queues.entrySet()) {
+                ProfileLeafStats total = result.computeIfAbsent(queue.getKey(), ignored -> new ProfileLeafStats());
                 forEachLeaf(queue.getValue(), total::merge);
             }
         return result;
     }
 
     @JsonIgnore
-    public Map<String, Stats<Void>> laneStats() {
-        Map<String, Stats<Void>> result = new LinkedHashMap<>();
+    public Map<String, ProfileLeafStats> laneStats() {
+        Map<String, ProfileLeafStats> result = new LinkedHashMap<>();
         if (champions == null) return result;
-        for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : champions.values()) if (queues != null)
-            for (Map<String, Stats<Void>> lanes : queues.values()) if (lanes != null)
-                for (Map.Entry<String, Stats<Void>> lane : lanes.entrySet())
-                    result.computeIfAbsent(lane.getKey(), ignored -> new Stats<>()).merge(lane.getValue());
+        for (Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues : champions.values()) if (queues != null)
+            for (Map<String, ProfileLeafStats> lanes : queues.values()) if (lanes != null)
+                for (Map.Entry<String, ProfileLeafStats> lane : lanes.entrySet())
+                    result.computeIfAbsent(lane.getKey(), ignored -> new ProfileLeafStats()).merge(lane.getValue());
         return result;
     }
 
@@ -150,9 +155,26 @@ public class ProfileStatistics {
     }
 
     private void add(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena, boolean calculate) {
-        Stats<Void> leaf = leaf(player.champion, CanonicalQueue.from(match.queue), player.lane);
-        if (calculate) leaf.add(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
-        else leaf.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+        ProfileLeafStats leaf = leaf(player.champion, CanonicalQueue.from(match.queue), player.lane);
+        leaf.games++;
+        if (player.win) leaf.wins++;
+        if (player.team == no.stelar7.api.r4j.basic.constants.types.lol.TeamType.BLUE) { leaf.blueGames++; if (player.win) leaf.blueWins++; }
+        else if (player.team == no.stelar7.api.r4j.basic.constants.types.lol.TeamType.RED) { leaf.redGames++; if (player.win) leaf.redWins++; }
+        int[] kda = kda(player.kda);
+        leaf.kills += kda[0]; leaf.deaths += kda[1]; leaf.assists += kda[2];
+        leaf.damage += player.damage; leaf.damageBuilding += player.damageBuilding;
+        if (player.damageTaken != null) leaf.damageTaken = leaf.damageTaken == null ? (long)player.damageTaken : leaf.damageTaken + player.damageTaken;
+        leaf.healing += player.healing; leaf.vision += player.visionScore; leaf.ward += player.ward; leaf.wardKilled += player.wardKilled;
+        leaf.cs += player.cs; leaf.gold += player.goldEarned;
+        if (player.rankProgress != null && player.rankProgress.gain != null) leaf.lpGain += player.rankProgress.gain;
+        if (player.championLevel != null) leaf.championLevelTotal = leaf.championLevelTotal == null ? (long)player.championLevel : leaf.championLevelTotal + player.championLevel;
+        leaf.doubles += player.doubles; leaf.triples += player.triples; leaf.quadruples += player.quadruples; leaf.pentas += player.pentas;
+        leaf.q += player.q; leaf.w += player.w; leaf.e += player.e; leaf.r += player.r; leaf.d += player.d; leaf.f += player.f;
+        if (arena) { if (player.subTeamPlacement==1) leaf.arenaFirst++; else if (player.subTeamPlacement==2) leaf.arenaSecond++; else if (player.subTeamPlacement==3) leaf.arenaThird++; leaf.arenaPlacementSum += player.subTeamPlacement; }
+        leaf.playtime += Math.max(0, match.timeEnd - match.timeStart);
+        leaf.lastPlayedAt = Math.max(leaf.lastPlayedAt, match.timeStart);
+        if (teamKills>0) leaf.killParticipationSum += ((double)(kda[0]+kda[2])/teamKills)*100;
+        if (enemyTeamKills>0) leaf.deathShareSum += ((double)kda[1]/enemyTeamKills)*100;
         if (player.pings != null) for (Map.Entry<String, Integer> entry : player.pings.entrySet())
             if (entry.getKey() != null && entry.getValue() != null) pings.merge(entry.getKey(), entry.getValue().longValue(), Long::sum);
         if (player.summonerSpell1 != 0) spellOne.merge(player.summonerSpell1, 1L, Long::sum);
@@ -160,10 +182,20 @@ public class ProfileStatistics {
         updateTime(match.timeStart, match.timeEnd);
     }
 
-    private Stats<Void> leaf(int champion, CanonicalQueue queue, LaneType lane) {
+    private ProfileLeafStats leaf(int champion, CanonicalQueue queue, LaneType lane) {
         return champions.computeIfAbsent(champion, ignored -> new LinkedHashMap<>())
             .computeIfAbsent(queue, ignored -> new LinkedHashMap<>())
-            .computeIfAbsent(laneKey(lane), ignored -> new Stats<>());
+            .computeIfAbsent(laneKey(lane), ignored -> new ProfileLeafStats());
+    }
+
+    private static int[] kda(String v) {
+        String[] a = v == null ? new String[0] : v.split("/");
+        if (a.length != 3) return new int[3];
+        return new int[]{ integer(a[0]), integer(a[1]), integer(a[2]) };
+    }
+
+    private static int integer(String v) {
+        try { return Integer.parseInt(v); } catch (Exception ignored) { return 0; }
     }
 
     private static GameQueueType legacyQueue(CanonicalQueue queue) {
@@ -194,16 +226,16 @@ public class ProfileStatistics {
         newestMatchAt = Math.max(newestMatchAt, start);
     }
 
-    private void forEachLeaf(Consumer<Stats<?>> consumer) {
-        if (champions != null) for (Map<CanonicalQueue, Map<String, Stats<Void>>> queues : champions.values()) forEachQueueLeaf(queues, consumer);
+    private void forEachLeaf(Consumer<ProfileLeafStats> consumer) {
+        if (champions != null) for (Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues : champions.values()) forEachQueueLeaf(queues, consumer);
     }
 
-    private static void forEachQueueLeaf(Map<CanonicalQueue, Map<String, Stats<Void>>> queues, Consumer<Stats<?>> consumer) {
-        if (queues != null) for (Map<String, Stats<Void>> lanes : queues.values()) forEachLeaf(lanes, consumer);
+    private static void forEachQueueLeaf(Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues, Consumer<ProfileLeafStats> consumer) {
+        if (queues != null) for (Map<String, ProfileLeafStats> lanes : queues.values()) forEachLeaf(lanes, consumer);
     }
 
-    private static void forEachLeaf(Map<String, Stats<Void>> lanes, Consumer<Stats<?>> consumer) {
-        if (lanes != null) for (Stats<Void> stats : lanes.values()) if (stats != null) consumer.accept(stats);
+    private static void forEachLeaf(Map<String, ProfileLeafStats> lanes, Consumer<ProfileLeafStats> consumer) {
+        if (lanes != null) for (ProfileLeafStats stats : lanes.values()) if (stats != null) consumer.accept(stats);
     }
 
     private static Participant participant(Match match, String puuid) {

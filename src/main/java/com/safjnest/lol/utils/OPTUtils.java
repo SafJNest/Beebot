@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -19,16 +19,16 @@ public final class OPTUtils {
 
     private OPTUtils() {}
 
-    public static void refresh(Map<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champions) {
+    public static void refresh(Map<Integer, Map<CanonicalQueue, Map<String, ProfileLeafStats>>> champions) {
         if (champions == null) return;
         Map<CanonicalQueue, Map<Integer, ChampionScope>> scopes = new LinkedHashMap<>();
-        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, Stats<Void>>>> champion : champions.entrySet()) {
-            Map<CanonicalQueue, Map<String, Stats<Void>>> queues = champion.getValue();
+        for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, ProfileLeafStats>>> champion : champions.entrySet()) {
+            Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues = champion.getValue();
             if (queues == null) continue;
-            for (Map.Entry<CanonicalQueue, Map<String, Stats<Void>>> queue : queues.entrySet()) {
+            for (Map.Entry<CanonicalQueue, Map<String, ProfileLeafStats>> queue : queues.entrySet()) {
                 if (queue.getValue() == null) continue;
-                for (Map.Entry<String, Stats<Void>> lane : queue.getValue().entrySet()) {
-                    Stats<Void> statistics = lane.getValue();
+                for (Map.Entry<String, ProfileLeafStats> lane : queue.getValue().entrySet()) {
+                    ProfileLeafStats statistics = lane.getValue();
                     if (statistics == null) continue;
                     statistics.isOtp = null;
                     if (!playableLane(lane.getKey())) continue;
@@ -68,7 +68,7 @@ public final class OPTUtils {
             }
         }
         if (top != null && isOtp(totalGames, topGames, secondGames))
-            for (Stats<Void> leaf : top.leaves) leaf.isOtp = Boolean.TRUE;
+            for (ProfileLeafStats leaf : top.leaves) leaf.isOtp = Boolean.TRUE;
     }
 
     private static boolean playableLane(String value) {
@@ -77,10 +77,10 @@ public final class OPTUtils {
     }
 
     private static class ChampionScope {
-        private final List<Stats<Void>> leaves = new ArrayList<>();
+        private final List<ProfileLeafStats> leaves = new ArrayList<>();
         private long games;
 
-        private void add(Stats<Void> value) {
+        private void add(ProfileLeafStats value) {
             games += value.games;
             leaves.add(value);
         }

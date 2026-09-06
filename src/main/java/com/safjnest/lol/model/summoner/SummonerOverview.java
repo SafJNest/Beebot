@@ -40,7 +40,7 @@ public record SummonerOverview(
         List<MatchResult> matches = recentMatches != null ? List.copyOf(recentMatches) : List.of();
         Map<Integer, Champion> championMap = new HashMap<>();
         if (champions != null) championMap.putAll(champions);
-        Map<Integer, com.safjnest.lol.model.statistics.Stats<Void>> championStats = aggregate.championStats();
+        Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> championStats = aggregate.championStats();
         for (Integer championId : championStats.keySet()) championMap.putIfAbsent(championId, champion(championId));
         for (MatchResult match : matches) championMap.putIfAbsent(match.championId(), champion(match.championId()));
         StringBuilder form = new StringBuilder();
@@ -48,7 +48,7 @@ public record SummonerOverview(
 
         Champion mostPlayed = null;
         Integer best = null;
-        for (Map.Entry<Integer, com.safjnest.lol.model.statistics.Stats<Void>> entry : championStats.entrySet()) {
+        for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> entry : championStats.entrySet()) {
             if (best == null || entry.getValue().games > championStats.get(best).games
                 || entry.getValue().games == championStats.get(best).games && entry.getKey() < best) best = entry.getKey();
         }

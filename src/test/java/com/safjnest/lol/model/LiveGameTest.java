@@ -12,7 +12,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.safjnest.lol.model.match.LiveGame;
-import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -64,11 +64,14 @@ public class LiveGameTest {
               }]
             }
             """, SpectatorGameInfo.class);
-        Stats<Integer> playedChampionStats = new Stats<>(157);
+        ProfileLeafStats playedChampionStats = new ProfileLeafStats();
+        playedChampionStats.reference = 157;
         playedChampionStats.games = 12;
-        Stats<Integer> secondChampionStats = new Stats<>(238);
+        ProfileLeafStats secondChampionStats = new ProfileLeafStats();
+        secondChampionStats.reference = 238;
         secondChampionStats.games = 10;
-        Stats<Integer> thirdChampionStats = new Stats<>(64);
+        ProfileLeafStats thirdChampionStats = new ProfileLeafStats();
+        thirdChampionStats.reference = 64;
         thirdChampionStats.games = 8;
         LiveGame.ProfileOverview overview = new LiveGame.ProfileOverview(
             new Summoner("puuid-1", "Player#EUW", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 100, 29),

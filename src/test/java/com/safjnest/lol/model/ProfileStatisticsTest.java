@@ -14,7 +14,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -48,7 +48,7 @@ public class ProfileStatisticsTest {
         statistics.add(match(GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP, 18, null), "puuid", null);
         statistics.finish();
 
-        Stats<Void> leaf = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
+        ProfileLeafStats leaf = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
         assertEquals(Long.valueOf(18), leaf.championLevelTotal);
         assertNull(leaf.damageTaken);
         assertEquals(1, leaf.games);
@@ -74,9 +74,9 @@ public class ProfileStatisticsTest {
         statistics.add(arenaMatch(GameQueueType.CHERRY, LaneType.NONE, 18, 100, 3), "puuid", null);
         statistics.finish();
 
-        Stats<Void> ranked = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
-        Stats<Void> arena = statistics.champions.get(1).get(CanonicalQueue.ARENA).get("UNKNOWN");
-        assertEquals(Double.valueOf(3), arena.avgArenaPlacement());
+        ProfileLeafStats ranked = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
+        ProfileLeafStats arena = statistics.champions.get(1).get(CanonicalQueue.ARENA).get("UNKNOWN");
+        assertEquals(3.0, arena.avgArenaPlacement(), 0.001);
         assertEquals(3, arena.arenaPlacementSum);
         assertFalse(new ObjectMapper().writeValueAsString(ranked).contains("arena"));
         assertFalse(new ObjectMapper().writeValueAsString(statistics).contains("arenaGames"));

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.safjnest.lol.champion.RuneSignature;
-import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -52,13 +52,13 @@ public record LiveGame(
         Summoner summoner,
         Map<GameQueueType, Rank> ranks,
         List<Mastery> masteries,
-        Map<Integer, Stats<Void>> championStats
+        Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> championStats
     ) {
         public ProfileOverview(
             Summoner summoner,
             Map<GameQueueType, Rank> ranks,
             List<Mastery> masteries,
-            List<Stats<Integer>> championStats
+            List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> championStats
         ) {
             this(summoner, ranks, masteries, indexedChampionStats(championStats));
         }
@@ -69,13 +69,13 @@ public record LiveGame(
             championStats = championStats != null ? Map.copyOf(championStats) : Map.of();
         }
 
-        private static Map<Integer, Stats<Void>> indexedChampionStats(List<Stats<Integer>> values) {
-            Map<Integer, Stats<Void>> result = new LinkedHashMap<>();
-            if (values != null) for (Stats<Integer> value : values)
+        private static Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> indexedChampionStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
+            Map<Integer, com.safjnest.lol.model.statistics.shared.ProfileLeafStats> result = new LinkedHashMap<>();
+            if (values != null) for (com.safjnest.lol.model.statistics.shared.ProfileLeafStats value : values)
                 if (value != null && value.reference != null) {
-                    Stats<Void> copy = new Stats<>();
+                    com.safjnest.lol.model.statistics.shared.ProfileLeafStats copy = new com.safjnest.lol.model.statistics.shared.ProfileLeafStats();
                     copy.merge(value);
-                    result.put(value.reference, copy);
+                    result.put((Integer) value.reference, copy);
                 }
             return result;
         }
