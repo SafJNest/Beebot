@@ -19,15 +19,12 @@ public class ChampionStatisticsTest {
     public void persistsMatchupsWithJson() {
         ChampionStatistics source = new ChampionStatistics(
             null,
-            100,
-            20,
-            5,
-            11,
-            0.55,
-            0.2,
-            0.05,
+            new ChampionStatistics.Overview(100, 20, 5, 11, 0.55, 0.2, 0.05, null, null, null, null),
             List.of(new ChampionStatistics.LaneStat(LaneType.UTILITY, 20, 0.55)),
-            Map.of(THRESH_CHAMPION_ID, new ChampionStatistics.Matchup(20, 0.55))
+            Map.of(THRESH_CHAMPION_ID, new ChampionStatistics.Matchup(20, 0.55)),
+            List.of(),
+            List.of(),
+            null
         );
 
         String json = source.toJson();

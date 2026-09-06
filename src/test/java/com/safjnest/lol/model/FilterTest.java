@@ -1,6 +1,7 @@
 package com.safjnest.lol.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -10,6 +11,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 
 public class FilterTest {
 
@@ -43,5 +45,17 @@ public class FilterTest {
         assertEquals(0, filter.champion());
         assertEquals(null, filter.queue());
         assertEquals(null, filter.patch());
+    }
+
+    @Test
+    public void championScopeAndCacheKeysIncludeRankBehaviorAndPeriod() {
+        Filter base = new Filter().setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD)
+            .setPatch("15.14").setPeriod(100, 200);
+        Filter exact = new Filter().setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD)
+            .setRankBehavior(Filter.RankBehavior.EXACT).setPatch("15.14").setPeriod(100, 201);
+
+        assertTrue(!ChampionStatsScope.from(base).toKey().equals(ChampionStatsScope.from(exact).toKey()));
+        assertTrue(!base.genericKey().equals(exact.genericKey()));
+        assertTrue(!base.pageKey().equals(exact.pageKey()));
     }
 }

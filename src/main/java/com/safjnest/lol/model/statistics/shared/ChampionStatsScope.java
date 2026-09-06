@@ -34,7 +34,8 @@ public record ChampionStatsScope(
     }
 
     public String toKey() {
-        String raw = val(queue) + "|" + rankBehavior + "|" + val(rank) + "|" + val(patch) + "|" + val(region);
+        String raw = val(queue) + "|" + rankBehavior + "|" + val(rank) + "|" + val(patch) + "|" + val(region)
+            + "|" + timeStart + "|" + timeEnd;
         return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -46,7 +47,8 @@ public record ChampionStatsScope(
         TierType rank = parts[2].equals("*") ? null : TierType.valueOf(parts[2]);
         String patch = parts[3].equals("*") ? null : parts[3];
         LeagueShard region = parts[4].equals("*") ? null : LeagueShard.valueOf(parts[4]);
-        return new ChampionStatsScope(queue, rank, behavior, patch, region, 0, 0);
+        return new ChampionStatsScope(queue, rank, behavior, patch, region,
+            Long.parseLong(parts[5]), Long.parseLong(parts[6]));
     }
 
     public Filter toFilter() {

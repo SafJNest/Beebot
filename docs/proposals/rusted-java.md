@@ -208,7 +208,10 @@ Dopo `upsert`/`replaceOne` acknowledged, in questo ordine:
 
 Prima di liberare un valore, usare CodeGraph per verificare che nessuna lambda,
 future, serializer o callback asincrona lo usi dopo il write. Non usare
-`System.gc()` come prova di rilascio.
+`System.gc()` come prova di rilascio. Per le sole ultime tre matrix eseguite in
+ordine cronologico, il scheduler richiede una raccolta dopo ogni matrix non
+finale: è un confine operativo per restituire RAM prima della patch seguente,
+non sostituisce la verifica dell'assenza di riferimenti.
 
 ### Step 6 - Mappe ordinate, FastUtil e chiavi compatte
 

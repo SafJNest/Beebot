@@ -93,30 +93,6 @@ public record ChampionStatistics(
 
     public record Trend(String previousPatch, Integer games, Double winrate, Double deltaWinrate) {}
 
-    /** Compatibility constructor for existing non-HTTP consumers. */
-    public ChampionStatistics(
-        Filter filter,
-        int games,
-        int picks,
-        int bans,
-        int wins,
-        double winrate,
-        double pickrate,
-        double banrate,
-        List<LaneStat> laneStats,
-        Map<Integer, Matchup> matchups
-    ) {
-        this(
-            filter,
-            new Overview(games, picks, bans, wins, winrate, pickrate, banrate, null, null, null, null),
-            laneStats,
-            matchups,
-            List.of(),
-            List.of(),
-            null
-        );
-    }
-
     public String toJson() {
         return JsonCodec.toJson(this);
     }

@@ -123,9 +123,10 @@ public class ChampionService {
 
     public Map<Integer, ChampionStatistics> refreshStatistics(Filter filter) {
         if (filter == null || filter.patch() == null || filter.queue() == null) return Map.of();
-        Map<Integer, ChampionStatistics> statistics = ChampionAnalyzer.recomputeAll(statisticsFilter(filter));
-        invalidateTierList(filter);
-        for (Integer champion : statistics.keySet()) invalidate(statisticsFilter(filter).setChampion(champion));
+        Filter statisticsFilter = statisticsFilter(filter);
+        Map<Integer, ChampionStatistics> statistics = ChampionAnalyzer.recomputeAll(statisticsFilter);
+        invalidateTierList(statisticsFilter);
+        invalidateStatisticsScope(statisticsFilter);
         return statistics;
     }
 
@@ -221,6 +222,7 @@ public class ChampionService {
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
         ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrixCoalesced(missing, buildFilters);
         invalidateTierLists(missing);
+        for (Filter filter : missing) invalidateStatisticsScope(filter);
         if (missing.isEmpty()) for (Filter filter : buildFilters) refreshBuild(filter);
         for (Filter filter : buildFilters) invalidate(filter);
         return new MatrixRefreshResult(combinations.size(), combinations.size() - missing.size(),
@@ -340,9 +342,36 @@ public class ChampionService {
         filters.put(filter.toKey(), filter);
     }
 
-    private static Filter statisticsFilter(Filter filter) {
+    static Filter statisticsFilter(Filter filter) {
         return new Filter().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
-            .setRegion(filter.region()).setLane(filter.lane());
+            .setRankBehavior(filter.rankBehavior()).setRegion(filter.region()).setLane(filter.lane())
+            .setPeriod(filter.timeStart(), filter.timeEnd());
+    }
+
+    static List<Filter> statisticsCacheFilters(Filter filter) {
+        if (filter == null || filter.champion() == 0) return List.of();
+        List<LaneType> lanes = new ArrayList<>();
+        lanes.add(null);
+        if (filter.queue() != null && GameQueueTypeUtils.hasLane(filter.queue())) lanes.addAll(LaneTypeUtils.playables());
+        lanes.add(LaneType.NONE);
+        List<Filter> result = new ArrayList<>(lanes.size());
+        for (LaneType lane : lanes) result.add(statisticsFilter(filter).setChampion(filter.champion()).setLane(lane));
+        return result;
+    }
+
+    private static void invalidateStatisticsScope(Filter filter) {
+        if (filter == null) return;
+        com.safjnest.lol.model.statistics.ChampionStatsDocument document = MongoDB.findChampionStatsDocument(
+            com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter));
+        if (document == null) return;
+        for (Integer champion : document.champions.keySet()) invalidateStatistics(statisticsFilter(filter).setChampion(champion));
+    }
+
+    private static void invalidateStatistics(Filter filter) {
+        for (Filter cached : statisticsCacheFilters(filter)) {
+            RedisClient.delete(RedisKey.CHAMPION_STATS.of(cached.champion(), cached.genericKey()));
+            RedisClient.delete(RedisKey.CHAMPION_PAGE.of(cached.champion(), cached.pageKey()));
+        }
     }
 
     private static List<Filter> tierFilters(Filter base) {
