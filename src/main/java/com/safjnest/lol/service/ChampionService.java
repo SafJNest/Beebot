@@ -120,16 +120,7 @@ public class ChampionService {
     }
 
     public Map<Integer, ChampionStatistics> refreshStatistics(Filter filter) {
-        if (filter == null) return Map.of();
-        Map<Integer, ChampionStatistics> statistics = new LinkedHashMap<>(
-            ChampionAnalyzer.recomputeAll(statisticsFilter(filter)));
-        if (filter.champion() != 0 && !statistics.containsKey(filter.champion())) {
-            ChampionStatistics empty = ChampionAnalyzer.empty(filter);
-            MongoDB.upsertChampionStatistics(empty);
-            statistics.put(filter.champion(), empty);
-        }
-        invalidateTierList(filter);
-        return statistics;
+        return Map.of();
     }
 
     public ApiResult<ChampionTierList> getTierList(

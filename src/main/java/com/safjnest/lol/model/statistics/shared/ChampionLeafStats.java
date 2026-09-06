@@ -45,7 +45,7 @@ public class ChampionLeafStats extends LeafStats {
             gpm += o.gpm;
             gpmGames += o.gpmGames;
             if (o.trend != null) {
-                if (trend == null) trend = new TrendStats(o.trend.previousPatch, 0, 0);
+                if (trend == null) trend = new TrendStats(0, 0);
                 trend.games += o.trend.games;
                 trend.wins += o.trend.wins;
             }

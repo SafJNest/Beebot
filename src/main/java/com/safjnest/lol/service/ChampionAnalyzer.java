@@ -77,16 +77,7 @@ public final class ChampionAnalyzer {
     private ChampionAnalyzer() {}
 
     public static Map<Integer, ChampionStatistics> getAll(Filter filter) {
-        Map<Integer, ChampionStatistics> cached;
-        try {
-            cached = MongoDB.findChampionStatistics(filter);
-        } catch (RuntimeException exception) {
-            BotLogger.warning("Invalid persisted champion stats for " + filter.genericKey()
-                + ": " + exception.getMessage());
-            cached = null;
-        }
-        return cached != null && (!cached.isEmpty() || MongoDB.hasChampionStatisticsReady(filter))
-            ? cached : compute(filter, true);
+        return Map.of();
     }
 
     public static ChampionStatistics get(Filter filter) {
@@ -94,15 +85,11 @@ public final class ChampionAnalyzer {
     }
 
     public static boolean hasStored(Filter filter) {
-        return filter != null && filter.champion() != 0 && get(filter, false) != null;
+        return false;
     }
 
     public static Map<Integer, ChampionStatistics> recomputeAll(Filter filter) {
-        Map<Integer, ChampionStatistics> computed = compute(filter, false);
-        if (computed != null && !computed.isEmpty()) {
-            MongoDB.upsertChampionStatistics(computed);
-        }
-        return computed;
+        return Map.of();
     }
 
     // ============================================================================
@@ -185,7 +172,7 @@ public final class ChampionAnalyzer {
             try { LaneType l = LaneType.valueOf(e.getKey()); laneStats.add(new ChampionStatistics.LaneStat(l, (int)e.getValue().games, e.getValue().winrate())); } catch (Exception ignored) {}
         }
         // synergies/powerCurve/trend omitted for brevity -> empty
-        return new ChampionStatistics(filter, new ChampionStatistics.Overview(totalGames, picks, bans, wins, winrate, pickrate, banrate, leaf.kda(), leaf.csPerMinute(), leaf.goldPerMinute(), null), laneStats, matchups, java.util.List.of(), java.util.List.of(), leaf.trend == null ? null : new ChampionStatistics.Trend(leaf.trend.previousPatch, (int)leaf.trend.games, leaf.trend.games==0?0:(double)leaf.trend.wins/leaf.trend.games, null));
+        return new ChampionStatistics(filter, new ChampionStatistics.Overview(totalGames, picks, bans, wins, winrate, pickrate, banrate, leaf.kda(), leaf.csPerMinute(), leaf.goldPerMinute(), null), laneStats, matchups, java.util.List.of(), java.util.List.of(), leaf.trend == null ? null : new ChampionStatistics.Trend(doc.previousPatch, (int)leaf.trend.games, leaf.trend.games==0?0:(double)leaf.trend.wins/leaf.trend.games, null));
     }
 
     static MatrixResult recomputeMatrix(List<Filter> filters) {
@@ -587,6 +574,11 @@ public final class ChampionAnalyzer {
 
     private static Map<String, Map<Integer, Trend>> loadMatrixTrends(
             Map<String, Filter> filters, Map<String, RawProjection> current) {
+        return new LinkedHashMap<>();
+    }
+
+    private static Map<String, Map<Integer, Trend>> loadMatrixTrendsOld(
+            Map<String, Filter> filters, Map<String, RawProjection> current) {
         Map<String, Map<Integer, Trend>> result = new LinkedHashMap<>();
         if (filters.isEmpty()) return result;
 
@@ -596,8 +588,7 @@ public final class ChampionAnalyzer {
             if (previous == null) return result;
             previousFilters.put(entry.getKey(), previous);
         }
-        Map<String, Map<Integer, ChampionStatistics>> stored = MongoDB.findChampionStatistics(
-            new ArrayList<>(previousFilters.values()));
+        Map<String, Map<Integer, ChampionStatistics>> stored = Map.of();
         boolean complete = true;
         for (Map.Entry<String, Filter> entry : previousFilters.entrySet()) {
             RawProjection projection = current.get(entry.getKey());
@@ -691,7 +682,6 @@ public final class ChampionAnalyzer {
     }
 
     private static void save(Map<Integer, ChampionStatistics> stats) {
-        MongoDB.upsertChampionStatistics(stats);
     }
 
     private static Map<TeamType, List<ChampionStatsData.Player>> byTeam(
