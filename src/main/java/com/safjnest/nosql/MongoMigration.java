@@ -12,10 +12,17 @@ import org.bson.Document;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.service.CompetitiveService;
+import com.safjnest.lol.service.LeaderboardService;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public final class MongoMigration {
 
@@ -65,6 +72,61 @@ public final class MongoMigration {
         } finally {
             requestCollection();
         }
+    }
+
+    public static MigrationReport migrateRanks() {
+        MigrationReport report = new MigrationReport(false);
+        long highWaterMark = 0;
+        long scanned = 0;
+        long missing = 0;
+        BotLogger.info("[RankMigration] Starting MariaDB rank recovery");
+        try {
+            while (true) {
+                List<QueryRecord> rows = querySummonerKeyPage(highWaterMark, SUMMONER_WRITE_BATCH_SIZE);
+                if (rows.isEmpty()) break;
+
+                List<Long> sourceIds = new ArrayList<>(rows.size());
+                long batchHighWaterMark = highWaterMark;
+                try {
+                    for (QueryRecord row : rows) {
+                        long id = row.getAsLong("id");
+                        if (id <= highWaterMark) continue;
+                        sourceIds.add(id);
+                        batchHighWaterMark = id;
+                    }
+                    Map<String, Map<GameQueueType, Rank>> ranksByPuuid = migrateRanks(sourceIds);
+                    int candidates = ranksByPuuid.size();
+                    Set<String> existing = MongoDB.findExistingIds("summoner", new ArrayList<>(ranksByPuuid.keySet()));
+                    ranksByPuuid.entrySet().removeIf(entry -> !existing.contains(entry.getKey()));
+                    missing += candidates - ranksByPuuid.size();
+                    int migrated = MongoDB.bulkUpsertRanks(ranksByPuuid);
+                    for (String puuid : ranksByPuuid.keySet()) report.accept("ranks", puuid);
+                    scanned += sourceIds.size();
+                    highWaterMark = batchHighWaterMark;
+                    BotLogger.info("[RankMigration] Scanned=" + scanned + " migrated=" + report.processed().getOrDefault("ranks", 0)
+                            + " missingMongo=" + missing + " rankWrites=" + migrated);
+                } finally {
+                    rows.clear();
+                    sourceIds.clear();
+                    requestCollection();
+                }
+            }
+        } catch (RuntimeException exception) {
+            BotLogger.error("[RankMigration] Failed scanned=" + scanned + " error="
+                    + exception.getClass().getSimpleName() + ": " + exception.getMessage());
+            throw exception;
+        } finally {
+            requestCollection();
+        }
+        BotLogger.info("[RankMigration] Completed scanned=" + scanned + " migrated="
+                + report.processed().getOrDefault("ranks", 0) + " missingMongo=" + missing);
+        if (report.processed().getOrDefault("ranks", 0) > 0) {
+            MongoDB.CompetitiveRebuild competitive = CompetitiveService.rebuild();
+            MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
+            BotLogger.info("[RankMigration] Rebuilt competitiveEntries=" + competitive.entries()
+                    + " aggregates=" + aggregates.total());
+        }
+        return report;
     }
 
     public static MigrationReport migrateTrackedRankProgress() {
@@ -442,6 +504,36 @@ public final class MongoMigration {
                 batchesSinceCollection = 0;
             }
         }
+    }
+
+    private static Map<String, Map<GameQueueType, Rank>> migrateRanks(List<Long> summonerIds) {
+        Map<String, Map<GameQueueType, Rank>> result = new LinkedHashMap<>();
+        long afterId = 0;
+        while (true) {
+            List<QueryRecord> rows = queryEmbeddedPage("ranks", summonerIds, afterId);
+            if (rows.isEmpty()) return result;
+            try {
+                for (QueryRecord row : rows) {
+                    long id = row.getAsLong("id");
+                    if (id <= afterId) throw new IllegalStateException("Rank migration page did not advance id=" + id);
+                    afterId = id;
+                    mergeRank(result, row);
+                }
+            } finally {
+                rows.clear();
+            }
+        }
+    }
+
+    private static void mergeRank(Map<String, Map<GameQueueType, Rank>> ranksByPuuid, QueryRecord row) {
+        String puuid = required(row, "puuid");
+        GameQueueType queue = row.getAsEnum("queue", GameQueueType.class);
+        TierDivisionType tier = row.getAsEnum("rank", TierDivisionType.class);
+        if (queue == null || tier == null) throw new IllegalArgumentException("Migrated rank queue and tier are required puuid=" + puuid);
+        ranksByPuuid.computeIfAbsent(puuid, ignored -> new LinkedHashMap<>()).put(
+            GameQueueTypeUtils.canonicalQueue(queue),
+            new Rank(tier, row.getAsInt("lp"), row.getAsInt("wins"), row.getAsInt("losses"))
+        );
     }
 
     private static List<QueryRecord> querySummonerKeyPage(long highWaterMark, int pageSize) {

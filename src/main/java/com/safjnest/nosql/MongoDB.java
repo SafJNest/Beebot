@@ -1923,6 +1923,21 @@ public final class MongoDB {
         return update.getMatchedCount() > 0;
     }
 
+    public static int bulkUpsertRanks(Map<String, Map<GameQueueType, Rank>> ranksByPuuid) {
+        if (ranksByPuuid == null || ranksByPuuid.isEmpty()) return 0;
+        List<WriteModel<Document>> operations = new ArrayList<>(ranksByPuuid.size());
+        for (Map.Entry<String, Map<GameQueueType, Rank>> entry : ranksByPuuid.entrySet()) {
+            String puuid = entry.getKey();
+            if (puuid == null || puuid.isBlank() || entry.getValue() == null || entry.getValue().isEmpty()) continue;
+            for (Map.Entry<GameQueueType, Rank> rank : entry.getValue().entrySet()) {
+                if (rank.getKey() == null || rank.getValue() == null) continue;
+                operations.add(new UpdateOneModel<>(Filters.eq("_id", puuid), Updates.set(rankPath(rank.getKey()), write(rank.getValue()))));
+            }
+        }
+        if (!operations.isEmpty()) bulkWrite(summoners(), operations);
+        return operations.size();
+    }
+
     public static boolean upsertRank(String puuid, LeagueShard shard, GameQueueType queue, Rank rank) {
         if (rank == null || queue == null) return false;
 
