@@ -174,15 +174,18 @@ public class ChampionService {
                     double winrate = leaf.winrate();
                     double pickrate = doc.games == 0 ? 0 : (double) leaf.games / doc.games;
                     Double banrate = doc.banGames == 0 ? null : (double) bans / doc.banGames;
+                    java.util.List<com.safjnest.lol.model.ChampionTierSource.Matchup> tierMatchups = new java.util.ArrayList<>();
+                    for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.MatchupStats> me : leaf.matchups.entrySet()) {
+                        com.safjnest.lol.model.statistics.shared.MatchupStats ms = me.getValue();
+                        tierMatchups.add(new com.safjnest.lol.model.ChampionTierSource.Matchup(me.getKey(), (int)ms.games, (int)ms.wins));
+                    }
                     champions.put(e.getKey(), new com.safjnest.lol.model.ChampionTierSource.Champion(
                         new com.safjnest.lol.model.ChampionTierList.Statistics((int)doc.games, (int)leaf.games, (int)bans, (int)leaf.wins, winrate, pickrate, banrate),
-                        java.util.List.of()
+                        tierMatchups
                     ));
                 }
                 sources.put(filter.genericKey(), new com.safjnest.lol.model.ChampionTierSource(true, doc.updatedAt, champions));
             }
-        } else {
-            sources = MongoDB.findChampionTierSources(filters);
         }
         List<Filter> ready = new ArrayList<>();
         long lastUpdate = 0;
@@ -213,11 +216,11 @@ public class ChampionService {
     public MatrixRefreshResult refreshStatisticsMatrix(String patch, GameQueueType queue, List<Filter> buildFilters) {
         List<Filter> combinations = matrixFilters(patch, queue);
         Set<String> readyKeys = new HashSet<>();
-        for (Filter filter : combinations)
-            if (MongoDB.hasChampionStatisticsReady(filter)
-                    && !isStale(MongoDB.findChampionStatisticsLastUpdate(filter))) {
-                readyKeys.add(filter.genericKey());
-            }
+        for (Filter filter : combinations) {
+            com.safjnest.lol.model.statistics.shared.ChampionStatsScope scope = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter);
+            com.safjnest.lol.model.statistics.ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(scope);
+            if (doc != null && doc.ready && !isStale(doc.updatedAt)) readyKeys.add(scope.toKey());
+        }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
         ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrixCoalesced(missing, buildFilters);
         invalidateTierLists(missing);
@@ -282,8 +285,10 @@ public class ChampionService {
     public static List<Filter> missingMatrixFilters(List<Filter> combinations, Set<String> readyKeys) {
         if (combinations == null || combinations.isEmpty()) return List.of();
         List<Filter> missing = new ArrayList<>();
-        for (Filter filter : combinations)
-            if (filter != null && (readyKeys == null || !readyKeys.contains(filter.genericKey()))) missing.add(filter);
+        for (Filter filter : combinations) {
+            String key = filter == null ? null : com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter).toKey();
+            if (filter != null && (readyKeys == null || !readyKeys.contains(key))) missing.add(filter);
+        }
         return missing;
     }
 

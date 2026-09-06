@@ -161,12 +161,16 @@ public class Stats<T> extends LeafStats {
 
     @Override
     public double winrate() {
-        return super.winrate();
+        return percent(wins, games);
     }
 
     @Override
     public double kda() {
         return super.kda();
+    }
+
+    public double winrateRatio() {
+        return super.winrate();
     }
 
     @JsonIgnore
