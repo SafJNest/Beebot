@@ -198,24 +198,6 @@ public class ProfileStatistics {
         try { return Integer.parseInt(v); } catch (Exception ignored) { return 0; }
     }
 
-    private static GameQueueType legacyQueue(CanonicalQueue queue) {
-        return switch (queue) {
-            case RANKED_SOLO -> GameQueueType.RANKED_SOLO_5X5;
-            case RANKED_FLEX -> GameQueueType.RANKED_FLEX_SR;
-            case NORMAL_DRAFT -> GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5;
-            case NORMAL_BLIND -> GameQueueType.NORMAL_5V5_BLIND_PICK;
-            case ARAM -> GameQueueType.ARAM;
-            case ARENA -> GameQueueType.CHERRY;
-            case SWIFTPLAY -> GameQueueType.SWIFTPLAY;
-            case URF -> GameQueueType.URF;
-            case ULTBOOK -> GameQueueType.ULTBOOK;
-            case NEXUS_BLITZ -> GameQueueType.NEXUS_BLITZ;
-            case SWARM -> GameQueueType.STRAWBERRY;
-            case SPECIAL -> GameQueueType.ONEFORALL_5X5;
-            case OTHER -> GameQueueType.CUSTOM;
-        };
-    }
-
     private static String laneKey(LaneType lane) {
         return lane == null || lane == LaneType.NONE ? "UNKNOWN" : lane.name();
     }

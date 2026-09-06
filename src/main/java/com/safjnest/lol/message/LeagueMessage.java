@@ -21,6 +21,7 @@ import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.summoner.Mastery;
@@ -1469,7 +1470,7 @@ public class LeagueMessage {
                 otherLosses += stat.losses();
                 continue;
             }
-            GameQueueType q = (GameQueueType) stat.reference;
+            GameQueueType q = displayQueue((CanonicalQueue) stat.reference);
             result.append(GameQueueTypeUtils.getMapEmoji(q)).append(" ")
                 .append(GameQueueTypeUtils.prettyName(q)).append(" ")
                 .append(stat.games).append(" games\n`(")
@@ -1484,6 +1485,24 @@ public class LeagueMessage {
                 .append(String.format("%.2f", (double) otherWins * 100 / otherGames)).append("% WR`\n");
         }
         return result.toString();
+    }
+
+    private static GameQueueType displayQueue(CanonicalQueue queue) {
+        return switch (queue) {
+            case RANKED_SOLO -> GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+            case RANKED_FLEX -> GameQueueType.RANKED_FLEX_SR;
+            case NORMAL_DRAFT -> GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5;
+            case NORMAL_BLIND -> GameQueueType.NORMAL_5V5_BLIND_PICK;
+            case ARAM -> GameQueueType.ARAM;
+            case ARENA -> GameQueueType.CHERRY;
+            case SWIFTPLAY -> GameQueueType.SWIFTPLAY;
+            case URF -> GameQueueType.URF;
+            case ULTBOOK -> GameQueueType.ULTBOOK;
+            case NEXUS_BLITZ -> GameQueueType.NEXUS_BLITZ;
+            case SWARM -> GameQueueType.STRAWBERRY;
+            case SPECIAL -> GameQueueType.ONEFORALL_5X5;
+            case OTHER -> GameQueueType.CUSTOM;
+        };
     }
 
     private static List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sortedProfileStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
