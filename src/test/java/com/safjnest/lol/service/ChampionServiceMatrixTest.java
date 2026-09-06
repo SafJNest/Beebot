@@ -59,13 +59,14 @@ public class ChampionServiceMatrixTest {
     public void matrixSkipsReadyFilterKeys() {
         List<Filter> combinations = ChampionService.matrixFilters(
             "15.14", GameQueueType.TEAM_BUILDER_RANKED_SOLO).subList(0, 3);
-        Set<String> ready = Set.of(combinations.get(1).genericKey());
+        String readyKey = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(combinations.get(1)).toKey();
+        Set<String> ready = Set.of(readyKey);
 
         List<Filter> missing = ChampionService.missingMatrixFilters(combinations, ready);
 
         assertEquals(2, missing.size());
         boolean skipped = false;
-        for (Filter filter : missing) if (filter.genericKey().equals(combinations.get(1).genericKey())) skipped = true;
+        for (Filter filter : missing) if (com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter).toKey().equals(readyKey)) skipped = true;
         assertFalse(skipped);
     }
 }

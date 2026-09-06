@@ -217,15 +217,18 @@ public final class ChampionAnalyzer {
             try { java.util.List<String> patches = PatchUtils.getPatches(); int idx = patches.indexOf(first.patch()); if (idx >=0 && idx+1 < patches.size()) previousPatch = patches.get(idx+1); } catch (Exception ignored) {}
             for (ChampionStatsScope scope : scopes.values()) {
                 ChampionStatsDocument doc = new ChampionStatsDocument(scope, 0, 0, previousPatch);
-                boolean hasData = false;
+                // global totals
+                RawProjection global = raw.project(scope.toFilter().setLane(null));
+                doc.games = global.totalGames();
+                doc.banGames = global.banGames();
+                for (Map.Entry<Integer, int[]> e : global.banCount().entrySet()) {
+                    ChampionNode node = doc.champions.computeIfAbsent(e.getKey(), k -> new ChampionNode());
+                    node.bans = e.getValue()[0];
+                }
                 for (LaneType lane : LaneTypeUtils.playables()) {
                     Filter laneFilter = scope.toFilter().setLane(lane);
                     RawProjection proj = raw.project(laneFilter);
-                    if (proj.pickWin().isEmpty() && proj.banCount().isEmpty()) continue;
-                    hasData = true;
-                    // doc totals from first non-empty lane projection (global total is same for all lanes, but we take max)
-                    doc.games = Math.max(doc.games, proj.totalGames());
-                    doc.banGames = Math.max(doc.banGames, proj.banGames());
+                    if (proj.pickWin().isEmpty() && proj.banCount().isEmpty() && proj.metricsRaw().isEmpty()) continue;
                     for (Map.Entry<Integer, int[]> e : proj.pickWin().entrySet()) {
                         int champ = e.getKey();
                         ChampionNode node = doc.champions.computeIfAbsent(champ, k -> new ChampionNode());
@@ -233,39 +236,42 @@ public final class ChampionAnalyzer {
                         leaf.games = e.getValue()[0];
                         leaf.wins = e.getValue()[1];
                     }
-                    for (Map.Entry<Integer, int[]> e : proj.banCount().entrySet()) {
-                        ChampionNode node = doc.champions.computeIfAbsent(e.getKey(), k -> new ChampionNode());
-                        node.bans = e.getValue()[0];
+                    for (Map.Entry<Integer, double[]> e : proj.metricsRaw().entrySet()) {
+                        int champ = e.getKey();
+                        double[] v = e.getValue();
+                        ChampionNode node = doc.champions.get(champ);
+                        if (node == null) continue;
+                        ChampionLeafStats leaf = node.lanes.get(lane.name());
+                        if (leaf == null) leaf = node.lanes.computeIfAbsent(lane.name(), k -> new ChampionLeafStats());
+                        leaf.kills = (long) v[KDA_KILLS];
+                        leaf.deaths = (long) v[KDA_DEATHS];
+                        leaf.assists = (long) v[KDA_ASSISTS];
+                        leaf.csm = v[CS_PER_MINUTE_SUM];
+                        leaf.csmGames = (long) v[CS_PER_MINUTE_GAMES];
+                        leaf.gpm = v[GOLD_PER_MINUTE_SUM];
+                        leaf.gpmGames = (long) v[GOLD_PER_MINUTE_GAMES];
                     }
-                    for (Map.Entry<Integer, ChampionStatsData.MetricValues> e : proj.metrics().entrySet()) {
-                        ChampionNode node = doc.champions.get(e.getKey());
+                    for (Map.Entry<Integer, Map<ChampionStatistics.MatchupKey, double[]>> e : proj.matchupRaw().entrySet()) {
+                        int champ = e.getKey();
+                        ChampionNode node = doc.champions.get(champ);
                         if (node == null) continue;
                         ChampionLeafStats leaf = node.lanes.get(lane.name());
                         if (leaf == null) continue;
-                        ChampionStatsData.MetricValues mv = e.getValue();
-                        if (mv != null) {
-                            // keep raw sums where possible, store derived as well for now
-                            // kda raw not available in MetricValues, keep derived
-                            if (mv.kda() != null) { /* kda derived */ }
-                            if (mv.csPerMinute() != null) { leaf.csm = mv.csPerMinute() * 10; leaf.csmGames = 10; } // placeholder: keep avg
-                            if (mv.goldPerMinute() != null) { leaf.gpm = mv.goldPerMinute() * 10; leaf.gpmGames = 10; }
-                        }
-                    }
-                    for (Map.Entry<Integer, Map<ChampionStatistics.MatchupKey, ChampionStatistics.Matchup>> e : proj.matchups().entrySet()) {
-                        ChampionNode node = doc.champions.get(e.getKey());
-                        if (node == null) continue;
-                        ChampionLeafStats leaf = node.lanes.get(lane.name());
-                        if (leaf == null) continue;
-                        for (Map.Entry<ChampionStatistics.MatchupKey, ChampionStatistics.Matchup> me : e.getValue().entrySet()) {
+                        for (Map.Entry<ChampionStatistics.MatchupKey, double[]> me : e.getValue().entrySet()) {
                             int opp = me.getKey().champion();
-                            ChampionStatistics.Matchup m = me.getValue();
+                            double[] v = me.getValue();
                             MatchupStats ms = leaf.matchups.computeIfAbsent(opp, k -> new MatchupStats());
-                            ms.games = m.matches();
-                            ms.wins = m.wins();
-                            if (m.goldDiffAt15() != null) { ms.goldDiff = m.goldDiffAt15(); ms.goldDiffGames = 1; }
-                            if (m.csDiffAt15() != null) { ms.csDiff = m.csDiffAt15().longValue(); ms.csDiffGames = 1; }
-                            if (m.soloKillRate() != null) { ms.soloKills = 1; ms.kills = 1; }
-                            ms.metricGames = m.metricGames() == null ? 0 : m.metricGames();
+                            ms.games = (long) v[MATCHES];
+                            ms.wins = (long) v[WINS];
+                            ms.goldDiff = (long) v[GOLD_DIFF_SUM];
+                            ms.goldDiffGames = (long) v[GOLD_DIFF_GAMES];
+                            ms.csDiff = (long) v[CS_DIFF_SUM];
+                            ms.csDiffGames = (long) v[CS_DIFF_GAMES];
+                            ms.soloKills = (long) v[SOLO_KILLS];
+                            ms.kills = (long) v[KILLS];
+                            ms.kp = v[KILL_PARTICIPATION_SUM];
+                            ms.kpGames = (long) v[KILL_PARTICIPATION_GAMES];
+                            ms.metricGames = (long) v[METRIC_GAMES];
                         }
                     }
                     for (Map.Entry<Integer, java.util.List<ChampionStatistics.LaneSynergy>> e : proj.synergies().entrySet()) {
@@ -292,16 +298,9 @@ public final class ChampionAnalyzer {
                         }
                     }
                 }
-                // also handle global lane (for doc.games total) via lane=null projection
-                RawProjection global = raw.project(scope.toFilter().setLane(null));
-                doc.games = global.totalGames();
-                doc.banGames = global.banGames();
-                // ensure all champs from global are present (for bans)
-                for (Map.Entry<Integer, int[]> e : global.banCount().entrySet()) {
-                    ChampionNode node = doc.champions.computeIfAbsent(e.getKey(), k -> new ChampionNode());
-                    if (node.bans == 0) node.bans = e.getValue()[0];
-                }
-                if (hasData || !doc.champions.isEmpty()) MongoDB.upsertChampionStatsDocument(doc);
+                // trend: previous games/wins per champ per lane (from previousPatch)
+                // for now keep empty, will be filled via separate trend load if needed
+                if (!doc.champions.isEmpty()) MongoDB.upsertChampionStatsDocument(doc);
             }
             for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) {
                 java.util.List<com.safjnest.lol.model.Build> res = ChampionBuildEngine.finish(acc);
@@ -756,7 +755,9 @@ public final class ChampionAnalyzer {
         Map<Integer, Map<MatchupKey, Matchup>> matchups,
         Map<Integer, List<LaneSynergy>> synergies,
         Map<Integer, ChampionStatsData.MetricValues> metrics,
-        Map<Integer, List<PowerCurvePoint>> powerCurve
+        Map<Integer, List<PowerCurvePoint>> powerCurve,
+        Map<Integer, double[]> metricsRaw,
+        Map<Integer, Map<MatchupKey, double[]>> matchupRaw
     ) {}
 
     private static final class MatrixMetrics {
@@ -916,7 +917,7 @@ public final class ChampionAnalyzer {
                 powerCurve.put(champion, powerCurveOptions(powerCurveAccum, champion));
             }
             return new RawProjection(filter, rollup.totalGames, rollup.banGames, pickWin,
-                banCount, laneStats, matchups, synergies, metrics, powerCurve);
+                banCount, laneStats, matchups, synergies, metrics, powerCurve, metricAccum, matchupAccum);
         }
 
         private void addMatchups(RawBucket bucket, List<ChampionStatsData.Player> team,
