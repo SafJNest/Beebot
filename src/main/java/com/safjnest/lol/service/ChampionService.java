@@ -55,7 +55,9 @@ public class ChampionService {
             .setQueue(selectedQueue).setLane(role);
         if (patch != null) filter.setPatch(patch);
         String key = RedisKey.CHAMPION_PAGE.of(filter.champion(), filter.pageKey());
-        long statsLastUpdate = MongoDB.findChampionStatisticsLastUpdate(filter);
+        com.safjnest.lol.model.statistics.shared.ChampionStatsScope scope = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter);
+        com.safjnest.lol.model.statistics.ChampionStatsDocument statsDoc = MongoDB.findChampionStatsDocument(scope);
+        long statsLastUpdate = statsDoc == null ? 0 : statsDoc.updatedAt;
         long buildLastUpdate = MongoDB.findChampionBuildLastUpdate(filter);
         if (isStale(statsLastUpdate) || isStale(buildLastUpdate)) {
             RedisClient.delete(key);
