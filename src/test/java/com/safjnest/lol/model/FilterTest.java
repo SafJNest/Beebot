@@ -48,14 +48,30 @@ public class FilterTest {
     }
 
     @Test
-    public void championScopeAndCacheKeysIncludeRankBehaviorAndPeriod() {
+    public void championScopeIncludesRankBehaviorButNotPeriod() {
         Filter base = new Filter().setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD)
             .setPatch("15.14").setPeriod(100, 200);
         Filter exact = new Filter().setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD)
             .setRankBehavior(Filter.RankBehavior.EXACT).setPatch("15.14").setPeriod(100, 201);
+        Filter later = new Filter().setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD)
+            .setPatch("15.14").setPeriod(300, 400);
 
         assertTrue(!ChampionStatsScope.from(base).toKey().equals(ChampionStatsScope.from(exact).toKey()));
+        assertEquals(ChampionStatsScope.from(base).toKey(), ChampionStatsScope.from(later).toKey());
+        assertEquals(ChampionStatsScope.from(exact), ChampionStatsScope.fromKey(ChampionStatsScope.from(exact).toKey()));
         assertTrue(!base.genericKey().equals(exact.genericKey()));
         assertTrue(!base.pageKey().equals(exact.pageKey()));
+    }
+
+    @Test
+    public void buildKeyIncludesRankBehavior() {
+        Filter greaterOrEqual = new Filter().setChampion(412).setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.UTILITY)
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD).setPatch("15.14");
+        Filter exact = new Filter().setChampion(412).setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.UTILITY)
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).setRank(TierType.EMERALD)
+            .setRankBehavior(Filter.RankBehavior.EXACT).setPatch("15.14");
+
+        assertTrue(!greaterOrEqual.toKey().equals(exact.toKey()));
+        assertEquals(Filter.RankBehavior.EXACT, Filter.fromKey(exact.toKey()).rankBehavior());
     }
 }

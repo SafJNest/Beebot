@@ -22,7 +22,7 @@ public class MongoChampionStatisticsDocumentTest {
     @Test
     public void bsonRoundTripStoresOneScopeDocumentWithRawLeavesOnly() {
         ChampionStatsScope scope = new ChampionStatsScope(GameQueueType.TEAM_BUILDER_RANKED_SOLO,
-            null, Filter.RankBehavior.GREATER_OR_EQUAL, "15.14", null, 0, 0);
+            null, Filter.RankBehavior.GREATER_OR_EQUAL, "15.14", null);
         ChampionStatsDocument source = new ChampionStatsDocument(scope, 10, 8, "15.13");
         ChampionNode champion = new ChampionNode(3);
         ChampionLeafStats leaf = new ChampionLeafStats();
@@ -40,6 +40,8 @@ public class MongoChampionStatisticsDocumentTest {
         assertEquals(scope.toKey(), bson.getString("_id"));
         assertTrue(bson.containsKey("scope"));
         assertTrue(bson.containsKey("champions"));
+        assertFalse(bson.get("scope", Document.class).containsKey("timeStart"));
+        assertFalse(bson.get("scope", Document.class).containsKey("timeEnd"));
         assertFalse(bson.containsKey("statistics"));
         assertFalse(bson.containsKey("overview"));
         assertFalse(bson.containsKey("filter"));

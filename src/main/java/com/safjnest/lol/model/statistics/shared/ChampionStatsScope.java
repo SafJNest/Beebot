@@ -15,27 +15,22 @@ public record ChampionStatsScope(
     TierType rank,
     Filter.RankBehavior rankBehavior,
     String patch,
-    LeagueShard region,
-    long timeStart,
-    long timeEnd
+    LeagueShard region
 ) {
 
     public static ChampionStatsScope from(Filter filter) {
-        if (filter == null) return new ChampionStatsScope(null, null, Filter.RankBehavior.GREATER_OR_EQUAL, PatchUtils.getPatch(), null, 0, 0);
+        if (filter == null) return new ChampionStatsScope(null, null, Filter.RankBehavior.GREATER_OR_EQUAL, PatchUtils.getPatch(), null);
         return new ChampionStatsScope(
             filter.queue(),
             filter.rank(),
             filter.rankBehavior(),
             filter.patch(),
-            filter.region(),
-            filter.timeStart(),
-            filter.timeEnd()
+            filter.region()
         );
     }
 
     public String toKey() {
-        String raw = val(queue) + "|" + rankBehavior + "|" + val(rank) + "|" + val(patch) + "|" + val(region)
-            + "|" + timeStart + "|" + timeEnd;
+        String raw = val(queue) + "|" + rankBehavior + "|" + val(rank) + "|" + val(patch) + "|" + val(region);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -47,8 +42,7 @@ public record ChampionStatsScope(
         TierType rank = parts[2].equals("*") ? null : TierType.valueOf(parts[2]);
         String patch = parts[3].equals("*") ? null : parts[3];
         LeagueShard region = parts[4].equals("*") ? null : LeagueShard.valueOf(parts[4]);
-        return new ChampionStatsScope(queue, rank, behavior, patch, region,
-            Long.parseLong(parts[5]), Long.parseLong(parts[6]));
+        return new ChampionStatsScope(queue, rank, behavior, patch, region);
     }
 
     public Filter toFilter() {
@@ -57,8 +51,7 @@ public record ChampionStatsScope(
             .setRank(rank)
             .setRankBehavior(rankBehavior)
             .setPatch(patch)
-            .setRegion(region)
-            .setPeriod(timeStart, timeEnd);
+            .setRegion(region);
     }
 
     private static String val(Object o) {

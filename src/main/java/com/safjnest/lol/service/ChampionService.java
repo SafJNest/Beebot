@@ -344,8 +344,7 @@ public class ChampionService {
 
     static Filter statisticsFilter(Filter filter) {
         return new Filter().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
-            .setRankBehavior(filter.rankBehavior()).setRegion(filter.region()).setLane(filter.lane())
-            .setPeriod(filter.timeStart(), filter.timeEnd());
+            .setRankBehavior(filter.rankBehavior()).setRegion(filter.region()).setLane(filter.lane());
     }
 
     static List<Filter> statisticsCacheFilters(Filter filter) {

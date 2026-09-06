@@ -75,12 +75,13 @@ public class Filter {
         .setLane(parts[1].equals("*") ? null : LaneType.valueOf(parts[1]))
         .setQueue(parts[2].equals("*") ? null : GameQueueType.valueOf(parts[2]))
         .setRank(parts[3].equals("*") ? null : TierType.valueOf(parts[3]))
-        .setPatch(parts[4].equals("*") ? null : parts[4])
-        .setRegion(parts[5].equals("*") ? null : LeagueShard.valueOf(parts[5]));
-      if (parts.length > 6 && !parts[6].equals("*"))
-        filter.setOpponent(Integer.parseInt(parts[6]));
+        .setRankBehavior(RankBehavior.valueOf(parts[4]))
+        .setPatch(parts[5].equals("*") ? null : parts[5])
+        .setRegion(parts[6].equals("*") ? null : LeagueShard.valueOf(parts[6]));
       if (parts.length > 7 && !parts[7].equals("*"))
-        filter.setDuo(Integer.parseInt(parts[7]));
+        filter.setOpponent(Integer.parseInt(parts[7]));
+      if (parts.length > 8 && !parts[8].equals("*"))
+        filter.setDuo(Integer.parseInt(parts[8]));
       return filter;
     }
 
@@ -240,7 +241,7 @@ public class Filter {
 
     public String toKey() {
         String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region);
+                + rankBehavior + "|" + val(patch) + "|" + val(region);
         if (opponent != 0 || duo != 0)
             raw += "|" + val(opponent) + "|" + val(duo);
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));

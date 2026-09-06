@@ -234,8 +234,7 @@ public final class ChampionAnalyzer {
         if (buildFilters != null) for (Filter f : buildFilters) if (f != null && f.champion() != 0 && f.patch() != null && f.queue() != null) builds.putIfAbsent(f.toKey(), ChampionBuildEngine.newAccumulator(f));
         Filter first = filters.get(0);
         Filter source = new Filter().setChampion(0).setLane(null).setQueue(first.queue()).setRank(null)
-            .setRankBehavior(first.rankBehavior()).setPatch(first.patch()).setRegion(null)
-            .setPeriod(first.timeStart(), first.timeEnd());
+            .setRankBehavior(first.rankBehavior()).setPatch(first.patch()).setRegion(null);
         RawMatrix raw = new RawMatrix();
         int persistedChampions = 0;
         try {
@@ -396,7 +395,7 @@ public final class ChampionAnalyzer {
         if (document.scope == null || document.previousPatch == null || document.previousPatch.isBlank()) return;
         ChampionStatsScope scope = document.scope;
         ChampionStatsScope previousScope = new ChampionStatsScope(scope.queue(), scope.rank(), scope.rankBehavior(),
-            document.previousPatch, scope.region(), scope.timeStart(), scope.timeEnd());
+            document.previousPatch, scope.region());
         ChampionStatsDocument previous = MongoDB.findChampionStatsDocument(previousScope);
         if (previous == null || !previous.ready) return;
         for (Map.Entry<Integer, ChampionNode> champion : document.champions.entrySet()) {

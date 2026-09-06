@@ -2450,7 +2450,7 @@ public final class MongoDB {
         return true;
     }
 
-    // New shape: 1 doc per scope (queue|rank|patch|region) with lanes inside
+    // New shape: 1 doc per scope (queue|rankBehavior|rank|patch|region) with lanes inside
     public static boolean upsertChampionStatsDocument(com.safjnest.lol.model.statistics.ChampionStatsDocument doc) {
         if (doc == null || doc.scope == null) return false;
         doc._id = doc.scope.toKey();
@@ -2461,9 +2461,7 @@ public final class MongoDB {
                 .append("rank", doc.scope.rank() == null ? null : doc.scope.rank().name())
                 .append("rankBehavior", doc.scope.rankBehavior().name())
                 .append("patch", doc.scope.patch())
-                .append("region", doc.scope.region() == null ? null : doc.scope.region().name())
-                .append("timeStart", doc.scope.timeStart())
-                .append("timeEnd", doc.scope.timeEnd()))
+                .append("region", doc.scope.region() == null ? null : doc.scope.region().name()))
             .append("games", doc.games)
             .append("banGames", doc.banGames)
             .append("previousPatch", doc.previousPatch)
