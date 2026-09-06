@@ -11,6 +11,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - App.isTesting() selects beebot_test; otherwise beebot is used.
 - Custom builds and summoner.metrics are out of scope.
 - The initial backfill migrates only raw data: first `summoner` with `ranks{}` and `masteries[]` in the same batch, then `match` with participants.
+- `!test migrate-ranks` is a recovery-only operation: it reads MariaDB rank rows and upserts only the current `summoner.ranks.<queue>` values on existing Mongo summoners. It does not write identity, masteries, matches or absent rank queues; after a successful copy it rebuilds `competitive` and leaderboard aggregates.
 - MariaDB's historical participant KDA string is split into the flat `kills`, `deaths` and `assists` fields before the raw match is written to Mongo.
 - Global profile-record rebuilds scan all season PUUIDs through a Mongo cursor in batches of 2,000; the batch size does not cap the total population.
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build and `leaderboard_aggregates` are built subsequently by the application; the latter contain only rebuildable snapshots of distribution and top-region.

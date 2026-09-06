@@ -144,7 +144,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | stats [stats|otp|all] | tracking | log | migrate | migrate-tracked | rankprogress | gc");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | stats [stats|otp|all] | tracking | log | migrate | migrate-ranks | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -990,6 +990,11 @@ public class Test extends Command{
                     MongoMigration.migrateAll();
                 };
                 migrate.queue();
+                break;
+            case "migrate-ranks":
+                ChronoTask migrateRanks = MongoMigration::migrateRanks;
+                migrateRanks.queue();
+                e.reply("Rank migration queued.");
                 break;
             case "migrate-tracked":
                 ChronoTask migrateTracked = MongoMigration::migrateTrackedRankProgress;
