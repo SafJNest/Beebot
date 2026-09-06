@@ -23,7 +23,6 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -235,7 +234,7 @@ public class LeagueMessage {
                     return;
                 }
 
-                Matchup matchup = opponent != 0 ? getOpponentMatchup(s, opponent, lane) : null;
+                Matchup matchup = opponent != 0 ? getOpponentMatchup(s, opponent) : null;
                 LaneStat ls = lane != null ? s.getLaneStat(lane) : null;
         
                 desc.append(CustomEmojiHandler.getFormattedEmoji(champion.getName()))
@@ -281,40 +280,28 @@ public class LeagueMessage {
 
     private static boolean canShowChampion(ChampionStatistics stats, LaneType lane, int opponent) {
         if (opponent != 0)
-            return getOpponentMatchup(stats, opponent, lane) != null;
+            return getOpponentMatchup(stats, opponent) != null;
         if (lane != null)
             return stats.getLaneStat(lane) != null;
         return stats.picks() > 0;
     }
 
     private static double getChampionWinrate(ChampionStatistics stats, LaneType lane, int opponent) {
-        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent, lane) : null;
+        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent) : null;
         if (matchup != null) return matchup.winrate();
         LaneStat laneStat = lane != null ? stats.getLaneStat(lane) : null;
         return laneStat != null ? laneStat.winrate() : stats.winrate();
     }
 
     private static double getChampionPickrate(ChampionStatistics stats, LaneType lane, int opponent) {
-        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent, lane) : null;
+        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent) : null;
         if (matchup != null) return matchup.matches();
         LaneStat laneStat = lane != null ? stats.getLaneStat(lane) : null;
         return laneStat != null ? laneStat.getPickrate(stats.games()) : stats.pickrate();
     }
 
-    private static Matchup getOpponentMatchup(ChampionStatistics stats, int opponent, LaneType lane) {
-        if (opponent == 0) return null;
-        Matchup matchup = stats.getOpponentMatchup(opponent, lane);
-        if (matchup != null || lane != null) return matchup;
-
-        int matches = 0;
-        double wins = 0;
-        for (Map.Entry<Integer, Matchup> entry : stats.matchups().entrySet()) {
-            if (entry.getKey() != opponent) continue;
-            matches += entry.getValue().matches();
-            wins += entry.getValue().matches() * entry.getValue().winrate();
-        }
-        if (matches == 0) return null;
-        return new Matchup(opponent, matches, wins / matches);
+    private static Matchup getOpponentMatchup(ChampionStatistics stats, int opponent) {
+        return opponent == 0 ? null : stats.getOpponentMatchup(opponent);
     }
 
     private static List<Match> getOpggMatches(Summoner summoner, LeagueMessageParameter parameter) {
@@ -1497,15 +1484,6 @@ public class LeagueMessage {
                 .append(String.format("%.2f", (double) otherWins * 100 / otherGames)).append("% WR`\n");
         }
         return result.toString();
-    }
-
-    private static <T> List<Stats<T>> sortedStats(List<Stats<T>> values) {
-        List<Stats<T>> sorted = values == null ? new ArrayList<>() : new ArrayList<>(values);
-        sorted.sort((left, right) -> {
-            int games = Long.compare(right.games, left.games);
-            return games != 0 ? games : Double.compare(right.winrate, left.winrate);
-        });
-        return sorted;
     }
 
     private static List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sortedProfileStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {

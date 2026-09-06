@@ -122,7 +122,11 @@ public class ChampionService {
     }
 
     public Map<Integer, ChampionStatistics> refreshStatistics(Filter filter) {
-        return Map.of();
+        if (filter == null || filter.patch() == null || filter.queue() == null) return Map.of();
+        Map<Integer, ChampionStatistics> statistics = ChampionAnalyzer.recomputeAll(statisticsFilter(filter));
+        invalidateTierList(filter);
+        for (Integer champion : statistics.keySet()) invalidate(statisticsFilter(filter).setChampion(champion));
+        return statistics;
     }
 
     public ApiResult<ChampionTierList> getTierList(
@@ -152,10 +156,10 @@ public class ChampionService {
         com.safjnest.lol.model.statistics.ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(baseScope);
         if (doc != null && doc.ready) {
             for (Filter filter : filters) {
-                com.safjnest.lol.model.statistics.shared.ChampionNode nodeForLane = null;
                 Map<Integer, com.safjnest.lol.model.statistics.shared.ChampionLeafStats> laneStats = new java.util.LinkedHashMap<>();
                 for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.ChampionNode> e : doc.champions.entrySet()) {
-                    com.safjnest.lol.model.statistics.shared.ChampionLeafStats leaf = e.getValue().lanes.get(filter.lane() == null ? null : filter.lane().name());
+                    com.safjnest.lol.model.statistics.shared.ChampionLeafStats leaf = filter.lane() == null
+                        ? e.getValue().overall() : e.getValue().lanes.get(filter.lane().name());
                     if (leaf != null && leaf.games > 0) laneStats.put(e.getKey(), leaf);
                 }
                 // Build minimal ChampionTierSource from laneStats
@@ -325,7 +329,7 @@ public class ChampionService {
 
     private Set<GameQueueType> getStatQueues(String patch) {
         Set<GameQueueType> queues = new LinkedHashSet<>();
-        for (Filter filter : MongoDB.findChampionStatisticsRefreshFilters(patch))
+        for (Filter filter : MongoDB.findChampionStatsRefreshFilters(patch))
             if (filter.queue() != null) queues.add(filter.queue());
         return queues;
     }

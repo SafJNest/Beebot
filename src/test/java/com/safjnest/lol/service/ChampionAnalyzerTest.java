@@ -10,7 +10,6 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.safjnest.lol.champion.ChampionStatsData;
-import com.safjnest.lol.model.ChampionStatistics.MatchupKey;
 import com.safjnest.lol.model.Filter;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -69,9 +68,9 @@ public class ChampionAnalyzerTest {
         assertEquals(2, euwGold.pickWin().get(10)[0]);
         assertEquals(1, euwDiamond.totalGames());
         assertEquals(1, euwDiamond.pickWin().get(10)[0]);
-        assertTrue(globalGold.matchups().get(10).containsKey(new MatchupKey(999_999, LaneType.TOP)));
-        assertTrue(globalGold.synergies().get(20).stream()
-            .anyMatch(value -> value.allyChampion() == 30 && value.allyLane() == LaneType.UTILITY));
+        assertTrue(globalGold.matchupRaw().get(10).containsKey(999_999));
+        assertTrue(globalGold.synergyRaw().get(20).keySet().stream()
+            .anyMatch(value -> value.champion() == 30 && value.lane() == LaneType.UTILITY));
     }
 
     @Test

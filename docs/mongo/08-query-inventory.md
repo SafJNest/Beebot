@@ -28,7 +28,7 @@ Paginated queries are limited to 100 matches, 50 leaderboard summoners, 25 searc
 
 PUUID is the summoner identity and the document `_id`; the full Riot match ID is the match identity; R4J enums use `name()`; bans use BLUE and RED; participant stays flat; upsert/update/delete are idempotent; application reads and writes are Mongo-only; Mongo read errors are explicit.
 
-MariaDB stores UTF-8 JSON in `champion_builds.data`, `champion_stats.data`, and `profile_statistics.data`. Mongo stores `build` as structured BSON; `profile_statistics` stores timestamps directly and only the leaf nodes `champions.<championId>.<canonicalQueue>.<position>`, plus `pings`, `spellOne`, and `spellTwo`, never under a `statistics` field. Matchups live only in the `profile_matchups` collection; there are no root `matchups` or `duoStats`. No Kryo payloads are read or converted and no `legacyPayload` is created; legacy documents are regenerated with the new `puuid + filterKey`.
+MariaDB stores UTF-8 JSON in `champion_builds.data`, `champion_stats.data`, and `profile_statistics.data`. Mongo stores `build` as structured BSON; `profile_statistics` stores timestamps directly and only the leaf nodes `champions.<championId>.<canonicalQueue>.<position>`, plus `pings`, `spellOne`, and `spellTwo`, never under a `statistics` field. `isOtp`, totals and queue/lane/champion aggregates are runtime-only. `champion_stats` stores exactly one raw `ChampionStatsDocument` per scope under `_id = scope.toKey()`: root scope/games/banGames/previousPatch/ready/updatedAt plus `champions.<championId>.bans` and lane leaves. It never stores `statistics`, `overview`, `filter`, `laneStats`, or any calculated rate. Matchups live only in raw leaves keyed directly by opponent champion ID. No Kryo payloads, compatibility reads or `legacyPayload` are used.
 
 `profile_matchups` is a separate collection: its `matchups` payload stores exclusively `champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`. It does not store aggregate rows per champion or matchup outside the leaf.
 
@@ -54,8 +54,7 @@ Indexes are managed by the database operator, not by the runtime or the migratio
 | `profile_activity` | `profile_activity_identity` | lookup/upsert for `{puuid, filterKey}`, `unique` |
 | `profile_matchups` | `profile_matchups_identity` | lookup/upsert for `{puuid, filterKey}`, `unique` |
 | `champion_builds` | `champion_builds_filter` | aggregate builds per `filterKey` |
-| `champion_stats` | `champion_stats_filter` | mega-aggregate per `filterKey`; `statistics.<championId>` projection |
-| `champion_stats` | `champion_stats_filter_champion` | compatibility read of legacy documents by `filterKey` and `championId` |
+| `champion_stats` | `_id` | one raw scope document, direct lookup by `scope.toKey()` |
 
 `match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` and
 direct match/summoner lookups remain covered by `_id`. No indexes are created

@@ -40,6 +40,7 @@ public class ProfileStatisticsTest {
         assertFalse(json.contains("\"schemaVersion\""));
         assertFalse(json.contains("\"matchups\""));
         assertFalse(json.contains("\"duoStats\""));
+        assertFalse(json.contains("\"isOtp\""));
     }
 
     @Test

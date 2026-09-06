@@ -27,19 +27,14 @@ public class ChampionStatisticsTest {
             0.2,
             0.05,
             List.of(new ChampionStatistics.LaneStat(LaneType.UTILITY, 20, 0.55)),
-            Map.of(
-                new ChampionStatistics.MatchupKey(THRESH_CHAMPION_ID, LaneType.UTILITY),
-                new ChampionStatistics.Matchup(THRESH_CHAMPION_ID, 20, 0.55)
-            )
+            Map.of(THRESH_CHAMPION_ID, new ChampionStatistics.Matchup(20, 0.55))
         );
 
         String json = source.toJson();
         ChampionStatistics decoded = ChampionStatistics.fromJson(json);
 
-        assertTrue(json.contains("\"MatchupKey[champion=412, lane=UTILITY]\""));
+        assertTrue(json.contains("\"412\""));
         assertEquals(source, decoded);
-        assertEquals(source, ChampionStatistics.fromJson(json.replace(
-            "MatchupKey[champion=412, lane=UTILITY]", "412|UTILITY")));
         assertNull(ChampionStatistics.fromJson("not-json"));
     }
 }

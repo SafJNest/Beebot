@@ -37,7 +37,10 @@ lol/model/leaderboard/
 lol/model/statistics/
   ProfileStatistics
   ProfileActivity
-  Stats
+  shared/LeafStats
+  shared/ProfileLeafStats
+  shared/ChampionLeafStats
+  ChampionStatsDocument
   ProfileStatisticsRow
 
 lol/model/

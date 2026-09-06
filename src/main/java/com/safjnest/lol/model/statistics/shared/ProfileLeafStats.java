@@ -2,6 +2,9 @@ package com.safjnest.lol.model.statistics.shared;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.safjnest.lol.model.match.Participant;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 public class ProfileLeafStats extends LeafStats {
 
@@ -55,9 +58,43 @@ public class ProfileLeafStats extends LeafStats {
     public double killParticipationSum;
     public double deathShareSum;
 
+    @JsonIgnore
     public Boolean isOtp;
 
     public ProfileLeafStats() {}
+
+    public void accumulate(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
+        if (participant == null) return;
+        int[] values = kda(participant.kda);
+        games++;
+        if (participant.win) wins++;
+        if (participant.team == TeamType.BLUE) {
+            blueGames++;
+            if (participant.win) blueWins++;
+        } else if (participant.team == TeamType.RED) {
+            redGames++;
+            if (participant.win) redWins++;
+        }
+        kills += values[0]; deaths += values[1]; assists += values[2];
+        damage += participant.damage; damageBuilding += participant.damageBuilding;
+        damageTaken = sum(damageTaken, participant.damageTaken == null ? null : participant.damageTaken.longValue());
+        healing += participant.healing; vision += participant.visionScore; ward += participant.ward; wardKilled += participant.wardKilled;
+        cs += participant.cs; gold += participant.goldEarned;
+        lpGain += participant.rankProgress == null || participant.rankProgress.gain == null ? 0 : participant.rankProgress.gain;
+        championLevelTotal = sum(championLevelTotal, participant.championLevel == null ? null : participant.championLevel.longValue());
+        doubles += participant.doubles; triples += participant.triples; quadruples += participant.quadruples; pentas += participant.pentas;
+        q += participant.q; w += participant.w; e += participant.e; r += participant.r; d += participant.d; f += participant.f;
+        if (arena) {
+            arenaFirst += participant.subTeamPlacement == 1 ? 1 : 0;
+            arenaSecond += participant.subTeamPlacement == 2 ? 1 : 0;
+            arenaThird += participant.subTeamPlacement == 3 ? 1 : 0;
+            arenaPlacementSum += participant.subTeamPlacement;
+        }
+        playtime += Math.max(0, timeEnd - timeStart);
+        lastPlayedAt = Math.max(lastPlayedAt, timeStart);
+        if (teamKills > 0) killParticipationSum += (double) (values[0] + values[2]) / teamKills * 100;
+        if (enemyTeamKills > 0) deathShareSum += (double) values[1] / enemyTeamKills * 100;
+    }
 
     public double winratePercent() {
         return games == 0 ? 0 : (double) wins / games * 100;
@@ -127,5 +164,16 @@ public class ProfileLeafStats extends LeafStats {
         if (b == null) return a;
         if (a == null) return b;
         return a + b;
+    }
+
+    private static int[] kda(String value) {
+        String[] values = value == null ? new String[0] : value.split("/");
+        if (values.length != 3) return new int[3];
+        return new int[]{integer(values[0]), integer(values[1]), integer(values[2])};
+    }
+
+    private static int integer(String value) {
+        try { return Integer.parseInt(value); }
+        catch (NumberFormatException ignored) { return 0; }
     }
 }

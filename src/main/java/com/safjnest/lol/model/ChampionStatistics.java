@@ -1,12 +1,5 @@
 package com.safjnest.lol.model;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.KeyDeserializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.safjnest.utils.JsonCodec;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -61,40 +54,7 @@ public record ChampionStatistics(
         }
     }
 
-    public record MatchupKey(int champion, LaneType lane) {}
-
-    public static final class MatchupKeySerializer extends JsonSerializer<MatchupKey> {
-        @Override
-        public void serialize(MatchupKey value, JsonGenerator generator, SerializerProvider provider) throws java.io.IOException {
-            generator.writeFieldName("MatchupKey[champion=" + value.champion()
-                + ", lane=" + (value.lane() == null ? "null" : value.lane().name()) + "]");
-        }
-    }
-
-    public static final class MatchupKeyDeserializer extends KeyDeserializer {
-        @Override
-        public Object deserializeKey(String key, DeserializationContext context) {
-            if (key != null && key.startsWith("MatchupKey[champion=") && key.endsWith("]")) {
-                String prefix = "MatchupKey[champion=";
-                String lanePrefix = ", lane=";
-                int laneStart = key.indexOf(lanePrefix, prefix.length());
-                if (laneStart < 0) throw new IllegalArgumentException("Invalid matchup key " + key);
-                int champion = Integer.parseInt(key.substring(prefix.length(), laneStart));
-                String laneValue = key.substring(laneStart + lanePrefix.length(), key.length() - 1);
-                LaneType lane = laneValue.isBlank() || "null".equals(laneValue) ? null : LaneType.valueOf(laneValue);
-                return new MatchupKey(champion, lane);
-            }
-
-            String[] values = key == null ? new String[0] : key.split("\\|", -1);
-            if (values.length != 2) throw new IllegalArgumentException("Invalid matchup key " + key);
-            LaneType lane = values[1].isBlank() ? null : LaneType.valueOf(values[1]);
-            return new MatchupKey(Integer.parseInt(values[0]), lane);
-        }
-    }
-
     public record Matchup(
-        int champion,
-        LaneType lane,
         int matches,
         int wins,
         double winrate,
@@ -106,8 +66,8 @@ public record ChampionStatistics(
         Double opponentBanRate,
         Integer metricGames
     ) {
-        public Matchup(int champion, int matches, double winrate) {
-            this(champion, null, matches, (int) Math.round(matches * winrate), winrate,
+        public Matchup(int matches, double winrate) {
+            this(matches, (int) Math.round(matches * winrate), winrate,
                 null, null, null, null, null, null, null);
         }
 
@@ -207,31 +167,33 @@ public record ChampionStatistics(
         return overview.banrate() == null ? 0 : overview.banrate();
     }
 
-    public Matchup getOpponentMatchup(int opponent, LaneType lane) {
+    public Matchup getOpponentMatchup(int opponent) {
         return matchups().get(opponent);
     }
 
-    private List<Matchup> getMatchups(LaneType lane) {
-        return new java.util.ArrayList<>(matchups().values());
+    private List<Map.Entry<Integer, Matchup>> matchupEntries() {
+        return new java.util.ArrayList<>(matchups().entrySet());
     }
 
-    public List<Matchup> weakAgainst(LaneType lane) {
-        List<Matchup> sameLane = getMatchups(lane);
-        double avgGames = sameLane.stream().mapToInt(Matchup::matches).average().orElse(0);
-        return sameLane.stream().filter(e -> e.matches() > avgGames)
-            .sorted(Comparator.comparingDouble(Matchup::winrate)).limit(EMBED_LIMIT).toList();
+    public List<Map.Entry<Integer, Matchup>> weakAgainst() {
+        List<Map.Entry<Integer, Matchup>> values = matchupEntries();
+        double avgGames = values.stream().mapToInt(entry -> entry.getValue().matches()).average().orElse(0);
+        return values.stream().filter(entry -> entry.getValue().matches() > avgGames)
+            .sorted(Comparator.comparingDouble(entry -> entry.getValue().winrate())).limit(EMBED_LIMIT).toList();
     }
 
-    public List<Matchup> strongAgainst(LaneType lane) {
-        List<Matchup> sameLane = getMatchups(lane);
-        double avgGames = sameLane.stream().mapToInt(Matchup::matches).average().orElse(0);
-        return sameLane.stream().filter(e -> e.matches() > avgGames)
-            .sorted(Comparator.comparingDouble(Matchup::winrate).reversed()).limit(EMBED_LIMIT).toList();
+    public List<Map.Entry<Integer, Matchup>> strongAgainst() {
+        List<Map.Entry<Integer, Matchup>> values = matchupEntries();
+        double avgGames = values.stream().mapToInt(entry -> entry.getValue().matches()).average().orElse(0);
+        return values.stream().filter(entry -> entry.getValue().matches() > avgGames)
+            .sorted(Comparator.comparingDouble((Map.Entry<Integer, Matchup> entry) -> entry.getValue().winrate()).reversed())
+            .limit(EMBED_LIMIT).toList();
     }
 
-    public List<Matchup> popularMatchups(LaneType lane) {
-        return getMatchups(lane).stream()
-            .sorted(Comparator.comparingInt(Matchup::matches).reversed()).limit(EMBED_LIMIT).toList();
+    public List<Map.Entry<Integer, Matchup>> popularMatchups() {
+        return matchupEntries().stream()
+            .sorted(Comparator.comparingInt((Map.Entry<Integer, Matchup> entry) -> entry.getValue().matches()).reversed())
+            .limit(EMBED_LIMIT).toList();
     }
 
     public LaneStat getLaneStat(LaneType lane) {

@@ -1316,21 +1316,7 @@ public final class MongoDB {
         return document == null ? 0 : number(document, "lastUpdate");
     }
 
-    public static long findChampionStatisticsLastUpdate(Filter filter) {
-        if (filter == null) return 0;
-        Document aggregate = championStats().find(Filters.eq("_id", filter.genericKey()))
-            .projection(Projections.include("lastUpdate")).first();
-        if (aggregate != null) return number(aggregate, "lastUpdate");
-        Document legacy = championStats().find(Filters.eq("filterKey", filter.genericKey()))
-            .projection(Projections.include("lastUpdate")).first();
-        return legacy == null ? 0 : number(legacy, "lastUpdate");
-    }
-
-        public static List<Filter> findStoredChampionStatisticsFilters() {
-        return readFilters(championStats(), true);
-    }
-
-    public static List<Filter> findChampionStatisticsRefreshFilters(String patch) {
+    public static List<Filter> findChampionStatsRefreshFilters(String patch) {
         return findChampionSourceFilters(patch, false);
     }
 
@@ -2477,49 +2463,7 @@ public final class MongoDB {
         if (scope == null) return null;
         Document doc = championStats().find(Filters.eq("_id", scope.toKey())).first();
         if (doc == null) return null;
-        try {
-            com.safjnest.lol.model.statistics.ChampionStatsDocument result = readStructured(doc, com.safjnest.lol.model.statistics.ChampionStatsDocument.class);
-            if (result != null) return result;
-        } catch (Exception ignored) {}
-        return readChampionStatsDocumentLegacy(doc);
-    }
-
-    private static com.safjnest.lol.model.statistics.ChampionStatsDocument readChampionStatsDocumentLegacy(Document doc) {
-        if (doc == null) return null;
-        com.safjnest.lol.model.statistics.ChampionStatsDocument result = new com.safjnest.lol.model.statistics.ChampionStatsDocument();
-        result._id = doc.getString("_id");
-        Document scopeDoc = doc.get("scope", Document.class);
-        if (scopeDoc != null) {
-            try {
-                result.scope = new com.safjnest.lol.model.statistics.shared.ChampionStatsScope(
-                    scopeDoc.getString("queue") == null ? null : no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType.valueOf(scopeDoc.getString("queue")),
-                    scopeDoc.getString("rank") == null ? null : no.stelar7.api.r4j.basic.constants.types.lol.TierType.valueOf(scopeDoc.getString("rank")),
-                    com.safjnest.lol.model.Filter.RankBehavior.valueOf(scopeDoc.getString("rankBehavior")),
-                    scopeDoc.getString("patch"),
-                    scopeDoc.getString("region") == null ? null : no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.valueOf(scopeDoc.getString("region")),
-                    scopeDoc.getLong("timeStart") == null ? 0 : scopeDoc.getLong("timeStart"),
-                    scopeDoc.getLong("timeEnd") == null ? 0 : scopeDoc.getLong("timeEnd")
-                );
-            } catch (Exception ignored) {}
-        }
-        result.games = doc.getLong("games") == null ? 0 : doc.getLong("games");
-        result.banGames = doc.getLong("banGames") == null ? 0 : doc.getLong("banGames");
-        result.previousPatch = doc.getString("previousPatch");
-        result.ready = doc.getBoolean("ready", false);
-        result.updatedAt = doc.getLong("updatedAt") == null ? 0 : doc.getLong("updatedAt");
-        Object champions = doc.get("champions");
-        if (champions instanceof Document championsDoc) {
-            Map<Integer, com.safjnest.lol.model.statistics.shared.ChampionNode> map = new java.util.LinkedHashMap<>();
-            for (Map.Entry<String, Object> e : championsDoc.entrySet()) {
-                try {
-                    int champId = Integer.parseInt(e.getKey());
-                    com.safjnest.lol.model.statistics.shared.ChampionNode node = readStructured(e.getValue(), com.safjnest.lol.model.statistics.shared.ChampionNode.class);
-                    if (node != null) map.put(champId, node);
-                } catch (Exception ignored) {}
-            }
-            result.champions = map;
-        }
-        return result;
+        return readStructured(doc, com.safjnest.lol.model.statistics.ChampionStatsDocument.class);
     }
 
     public static void upsertChampionIndexables(String patch, List<ChampionIndexable> values) {
@@ -2571,7 +2515,6 @@ public final class MongoDB {
                 case "com.safjnest.lol.model.match.MatchResult" -> readMatchResult(record);
                 case "com.safjnest.lol.model.statistics.ProfileStatistics" -> readProfileStatistics(QueryRecordParser.toDocument(record));
                 case "com.safjnest.lol.model.Build" -> readBuild(QueryRecordParser.toDocument(record));
-                case "com.safjnest.lol.model.ChampionStatistics" -> readChampionStatistics(QueryRecordParser.toDocument(record));
                 default -> readStructured(QueryRecordParser.toDocument(record), type);
             };
             return type.cast(value);
@@ -3579,16 +3522,6 @@ public final class MongoDB {
         return readStructured(document.get("build"), Build.class);
     }
 
-    private static ChampionStatistics readChampionStatistics(Document document) {
-        return readStructured(document.get("statistics"), ChampionStatistics.class);
-    }
-
-    private static ChampionStatistics readAggregatedChampionStatistics(Document document, int championId) {
-        Document statistics = document.get("statistics", Document.class);
-        if (statistics == null) return null;
-        return readStructured(statistics.get(String.valueOf(championId)), ChampionStatistics.class);
-    }
-
     private static <T> T readStructured(Object value, Class<T> type) {
         return JsonCodec.fromDocument(value, type);
     }
@@ -3623,8 +3556,6 @@ public final class MongoDB {
                 .append("lastUpdate", System.currentTimeMillis())
                 .append("build", JsonCodec.toDocument(build));
     }
-
-    // Old championStatisticsDocument removed — new flow uses ChampionStatsDocument only
 
     private static Bson entityUpdateStage(Map<String, Object> operation) {
         String type = String.valueOf(operation.get("type"));
