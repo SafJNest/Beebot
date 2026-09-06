@@ -1032,9 +1032,8 @@ public final class MongoDB {
                         Filters.ne("participants.puuid", null),
                         Filters.ne("participants.puuid", ""))),
                 new Document("$group", new Document("_id", "$participants.puuid")),
-                new Document("$sort", new Document("_id", 1)),
-                new Document("$limit", MAX_BATCH_IDS)
-        ))) {
+                new Document("$sort", new Document("_id", 1))
+        )).allowDiskUse(true).batchSize(MAX_BATCH_IDS)) {
             String puuid = document.getString("_id");
             if (puuid != null) result.add(puuid);
         }
