@@ -29,6 +29,7 @@ import com.safjnest.utils.log.BotLogger;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class LeaderboardService {
@@ -237,6 +238,27 @@ public class LeaderboardService {
                 return total;
             } finally {
                 if (claimed) RedisClient.delete(RedisKey.LEADERBOARD_COUNT_LOCK.of(version, queue.name(), region, rankKey, roleKey, otpKey));
+            }
+        }
+    }
+
+    private static long findDivisionCount(long version, TierDivisionType division, GameQueueType queue, String region) {
+        String divisionKey = division == null ? ALL_RANKS : division.name();
+        String cacheKey = RedisKey.LEADERBOARD_COUNT.of(version, queue.name(), region, divisionKey, "ALL", "ALL");
+        Long cached = RedisClient.getLong(cacheKey);
+        if (cached != null && cached >= 0) return cached;
+        Object lock = LEADERBOARD_COUNT_LOCKS.computeIfAbsent(cacheKey, ignored -> new Object());
+        synchronized (lock) {
+            cached = RedisClient.getLong(cacheKey);
+            if (cached != null && cached >= 0) return cached;
+            boolean claimed = RedisClient.claim(RedisKey.LEADERBOARD_COUNT_LOCK, "1", version, queue.name(), region, divisionKey, "ALL", "ALL");
+            try {
+                Long aggregate = MongoDB.findDivisionAggregateCount(division, queue, region);
+                long total = aggregate == null ? MongoDB.findDivisionCount(division, queue, region) : aggregate;
+                RedisClient.setCached(cacheKey, Long.toString(total), RedisKey.LEADERBOARD_COUNT.ttlSeconds());
+                return total;
+            } finally {
+                if (claimed) RedisClient.delete(RedisKey.LEADERBOARD_COUNT_LOCK.of(version, queue.name(), region, divisionKey, "ALL", "ALL"));
             }
         }
     }

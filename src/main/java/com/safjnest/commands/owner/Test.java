@@ -144,7 +144,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | stats [stats|otp|all] | tracking | log | migrate | migrate-ranks | migrate-tracked | rankprogress | gc");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | championIndexables | profileIndexables | highstats | stats [stats|otp|all] | aggregates | tracking | log | migrate | migrate-ranks | migrate-tracked | rankprogress | gc");
             break;
             case "gc":
                 System.gc();
@@ -351,6 +351,18 @@ public class Test extends Command{
                 };
                 refreshStatistics.queue();
                 e.reply("Statistics " + statsOperation + " refresh queued.");
+                break;
+            case "aggregates":
+                ChronoTask refreshAggregates = () -> {
+                    com.safjnest.nosql.MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
+                    System.out.println("[Aggregates] rankDistributions=" + aggregates.rankDistributions()
+                            + " counts=" + aggregates.counts()
+                            + " topRegions=" + aggregates.topRegions()
+                            + " divisionCounts=" + aggregates.divisionCounts()
+                            + " total=" + aggregates.total());
+                };
+                refreshAggregates.queue();
+                e.reply("Leaderboard aggregates rebuild queued (upsert only).");
                 break;
             case "ranking":
                 com.safjnest.lol.service.RankingService.RankingSnapshot ranking =

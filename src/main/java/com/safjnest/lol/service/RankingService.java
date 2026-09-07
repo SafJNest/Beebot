@@ -264,9 +264,12 @@ public final class RankingService {
                 touch(entry.getKey(), permanent(request.tier()));
                 continue;
             }
-            build(entry.getKey(), permanent(request.tier()), values -> MongoDB.forEachCompetitiveRankingSegment(
+            String key = entry.getKey();
+            boolean permanentFlag = permanent(request.tier());
+            // background build, do not block response
+            java.util.concurrent.CompletableFuture.runAsync(() -> build(key, permanentFlag, values -> MongoDB.forEachCompetitiveRankingSegment(
                 request.queue(), request.tier(), request.region(), competitive ->
-                values.accept(new RedisClient.SortedSetEntry(leaderboardMember(competitive.puuid(), request.queue()), competitive.mmr()))));
+                values.accept(new RedisClient.SortedSetEntry(leaderboardMember(competitive.puuid(), request.queue()), competitive.mmr())))));
         }
     }
 
@@ -279,9 +282,10 @@ public final class RankingService {
                 touch(entry.getKey(), false);
                 continue;
             }
-            build(entry.getKey(), false, values -> MongoDB.forEachProfileRecordRankingSegment(
+            String key = entry.getKey();
+            java.util.concurrent.CompletableFuture.runAsync(() -> build(key, false, values -> MongoDB.forEachProfileRecordRankingSegment(
                 request.filterKey(), request.metric(), request.region(), record ->
-                values.accept(new RedisClient.SortedSetEntry(recordMember(record), record.score))));
+                values.accept(new RedisClient.SortedSetEntry(recordMember(record), record.score)))));
         }
     }
 
@@ -325,11 +329,14 @@ public final class RankingService {
         String key = countsKey(queue, region);
         Map<String, Long> stored = rebuild ? Map.of() : RedisClient.getHashLongs(key);
         if (!stored.isEmpty()) return toRanks(stored);
-        Map<TierDivisionType, Long> rebuilt = MongoDB.findCompetitiveRankCounts(queue, region);
-        Map<String, Long> encoded = new HashMap<>();
-        for (Map.Entry<TierDivisionType, Long> entry : rebuilt.entrySet()) encoded.put(entry.getKey().name(), entry.getValue());
-        RedisClient.replaceHash(key, encoded);
-        return rebuilt;
+        // missing -> background rebuild, do not block ranking
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            Map<TierDivisionType, Long> rebuilt = MongoDB.findCompetitiveRankCounts(queue, region);
+            Map<String, Long> encoded = new HashMap<>();
+            for (Map.Entry<TierDivisionType, Long> entry : rebuilt.entrySet()) encoded.put(entry.getKey().name(), entry.getValue());
+            RedisClient.replaceHash(key, encoded);
+        });
+        return Map.of();
     }
 
     private static Map<TierDivisionType, Long> toRanks(Map<String, Long> values) {

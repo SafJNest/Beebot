@@ -41,7 +41,6 @@ public final class CompetitiveService {
     }
 
     public static MongoDB.CompetitiveRebuild rebuild() {
-        long removed = MongoDB.clearCompetitive();
         long now = System.currentTimeMillis();
         long[] counts = new long[2];
         Filter filter = Filter.canonical();
@@ -62,7 +61,7 @@ public final class CompetitiveService {
             }
         });
         RankingService.rebuildLeaderboard();
-        return new MongoDB.CompetitiveRebuild(counts[0], counts[1], removed);
+        return new MongoDB.CompetitiveRebuild(counts[0], counts[1], 0);
     }
 
     public static StatisticsBuild buildMissingStatistics() {
