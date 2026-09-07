@@ -80,13 +80,12 @@ public class MongoLeaderboardTest {
     @Test
     public void rankDocumentsDoNotPersistMmr() {
         Document document = MongoDB.toDocument(new Rank(
-                TierDivisionType.DIAMOND_I,
-                90,
-                100,
-                80));
+                TierDivisionType.DIAMOND_I, 90, 100, 80, 123L, 45L));
 
         assertEquals("DIAMOND_I", document.getString("rank"));
         assertFalse(document.containsKey("mmr"));
+        assertFalse(document.containsKey("globalRanking"));
+        assertFalse(document.containsKey("regionRanking"));
     }
 
     @Test

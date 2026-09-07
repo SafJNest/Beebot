@@ -135,6 +135,7 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
 - [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — **current queue contract** (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+- [ADR-0015: Contextual ranking projections](adr/0015-contextual-ranking.md) — **current ranking contract** (`RankingService`/Redis ZSET segments)
 
 ## Developer handbook
 

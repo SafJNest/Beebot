@@ -38,6 +38,11 @@ public enum RedisKey {
     LEADERBOARD_COUNT_LOCK("los:leaderboard:count-lock:%s:%s:%s:%s:%s:%s", Duration.ofMinutes(1)),
     LEADERBOARD_RANK_DISTRIBUTION("los:leaderboard:rank-distribution:%s:%s:%s", Duration.ofSeconds(60)), // Original: 12 hours.
     LEADERBOARD_TOP_REGIONS("los:leaderboard:top-regions:%s:%s:%s", Duration.ofSeconds(60)), // Original: 12 hours.
+    CONTEXTUAL_LEADERBOARD_SEGMENT("los:ranking:leaderboard:%s:%s:%s", Duration.ZERO),
+    CONTEXTUAL_LEADERBOARD_COUNTS("los:ranking:leaderboard:counts:%s:%s", Duration.ZERO),
+    CONTEXTUAL_RECORD_SEGMENT("los:ranking:records:%s:%s:%s", Duration.ZERO),
+    CONTEXTUAL_RANKING_SEGMENTS("los:ranking:segments", Duration.ZERO),
+    CONTEXTUAL_RANKING_ACCESS("los:ranking:access", Duration.ZERO),
     CHAMPION_STATS("los:champion:%s:stats:%s", Duration.ofSeconds(60)), // Original: 12 hours.
     CHAMPION_PAGE("los:champion:%s:page:%s", Duration.ofSeconds(60)), // Original: 1 hour.
     CHAMPION_TIER_LIST("los:champion:tier-list:%s", Duration.ofSeconds(60)), // Original: 1 day.

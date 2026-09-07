@@ -61,6 +61,7 @@ public final class CompetitiveService {
                 }
             }
         });
+        RankingService.rebuildLeaderboard();
         return new MongoDB.CompetitiveRebuild(counts[0], counts[1], removed);
     }
 
@@ -98,9 +99,11 @@ public final class CompetitiveService {
         if (puuid == null || puuid.isBlank() || shard == null) return;
         long now = System.currentTimeMillis();
         for (GameQueueType queue : QUEUES) {
+            CompetitiveEntry previous = MongoDB.findCompetitive(puuid, queue);
             CompetitiveEntry entry = entry(puuid, shard, ranks, statistics, queue, now);
             if (entry == null) MongoDB.deleteCompetitive(puuid, queue);
             else MongoDB.upsertCompetitive(entry);
+            RankingService.refreshLeaderboard(previous, entry);
         }
     }
 
@@ -119,7 +122,7 @@ public final class CompetitiveService {
         if (rank == null || rank.tier() == null) return null;
         long mmr = TierDivisionUtils.getMmr(rank.tier(), rank.lp());
         if (mmr < 0) return null;
-        return new CompetitiveEntry(puuid, shard, canonicalQueue, mmr, primary, otpChampionId, now);
+        return new CompetitiveEntry(puuid, shard, canonicalQueue, rank.tier(), mmr, primary, otpChampionId, now);
     }
 
     private static boolean hasRank(Map<GameQueueType, Rank> ranks) {

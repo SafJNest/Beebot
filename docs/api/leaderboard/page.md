@@ -47,6 +47,12 @@ If statistics are not available, the row keeps summoner and rank with
 an empty overview and the refresh is queued; the page does not become a cache for
 a separate aggregate.
 
+Every classified `Rank` inside the nested `summoner.ranks` may additionally
+expose nullable `globalRanking` and `regionRanking`. They are one-based
+positions for that rank's queue among all regions and its own region,
+respectively. They do not replace row `position`: `position` remains the
+position for the requested rank/region/role/OTP filters and pagination.
+
 Internally the page reads `competitive` for MMR/tier/role/OTP filtering, sorting and
 pagination of PUUIDs; then it reads only the summoners of the page with an `$in`
 on `_id`. `total` is resolved from Redis, then (without role) from

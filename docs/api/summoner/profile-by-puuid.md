@@ -73,3 +73,8 @@ fields are not present in leaves of other queues.
 If rank/mastery or statistics are not ready, the response keeps the `PARTIAL`/`202` states
 documented by the `ApiResult` contract; no GET performs
 a synchronous Riot call.
+
+Each classified entry in `ranks` may include nullable `globalRanking` and
+`regionRanking`. These are one-based contextual positions for the queue across
+all players and within the summoner's `region`; unranked or unavailable entries
+omit both fields.

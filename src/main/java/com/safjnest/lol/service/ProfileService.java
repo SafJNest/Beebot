@@ -50,7 +50,8 @@ public class ProfileService {
         if (cached != null && isReady(cached)) {
             ProfileStatistics statistics = getStatistics(cached.summoner(), shard, filter);
             boolean refresh = isStale(puuid, statistics == null ? 0 : statistics.lastUpdate);
-            SummonerView page = SummonerView.from(cached.summoner(), cached.ranks(), statistics,
+            SummonerView page = SummonerView.from(cached.summoner(), RankingService.enrichRanks(
+                cached.summoner().puuid(), shard, cached.ranks()), statistics,
                 cached.overview().masteries(), cached.overview().champions(),
                 getRecentMatches(puuid, shard, filter)).withMetadata(
                 metadata(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
@@ -71,7 +72,7 @@ public class ProfileService {
             || statistics == null || isStale(profile.puuid(), statistics.lastUpdate);
 
         List<MatchResult> recentMatches = statistics == null ? List.of() : getRecentMatches(profile.puuid(), shard, filter);
-        SummonerView page = SummonerView.from(profile, ranks, statistics, masteries, recentMatches)
+        SummonerView page = SummonerView.from(profile, RankingService.enrichRanks(profile.puuid(), shard, ranks), statistics, masteries, recentMatches)
             .withMetadata(metadata(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
         if (statistics != null && !refresh) {
             RedisClient.set(RedisKey.SUMMONER_OVERVIEW, withoutRecentMatches(page), LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);

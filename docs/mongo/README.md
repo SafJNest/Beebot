@@ -42,13 +42,14 @@ Do not introduce LeagueStore, store or infrastructure packages, external codec/m
 
 ## Reading order
 
-Operational: `docs/HANDBOOK.md` §6 + this README + `08-query-inventory.md` + `12-profile-record-indexes.md` + ADR-0009.
+Operational: `docs/HANDBOOK.md` §6 + this README + `08-query-inventory.md` + `12-profile-record-indexes.md` + `13-contextual-ranking.md` + ADR-0009.
 Historical archived in `_archive/` (01-06, 09-11): see `_archive/` for step-by-step migration — not needed for new features.
 
 1. 07-agent-strategy.md (historical Mongo agent workflow)
 2. 08-query-inventory.md — **operational**, indexed query inventory
 3. 12-profile-record-indexes.md — **operational**, `profile_records` indexes
-4. ADR-0009
+4. 13-contextual-ranking.md — **operational**, exact-rank counts and Redis ZSET segments
+5. ADR-0009
 
 ## BSON rules
 

@@ -33,6 +33,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.CreateCollectionOptions;
+import com.mongodb.client.model.Accumulators;
+import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -1230,6 +1232,27 @@ public final class MongoDB {
         return result;
     }
 
+    public static void forEachProfileRecordRankingSegment(
+        String filterKey,
+        RecordMetric metric,
+        LeagueShard region,
+        Consumer<ProfileRecord> consumer
+    ) {
+        if (filterKey == null || filterKey.isBlank() || metric == null || consumer == null) return;
+        List<Bson> filters = new ArrayList<>();
+        filters.add(Filters.eq("filterKey", filterKey));
+        filters.add(Filters.eq("metric", metric.name()));
+        if (region != null) filters.add(Filters.eq("region", region.name()));
+        try (MongoCursor<Document> cursor = profileRecords().find(Filters.and(filters))
+                .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
+                .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
+            while (cursor.hasNext()) {
+                ProfileRecord record = readProfileRecord(cursor.next());
+                if (record != null) consumer.accept(record);
+            }
+        }
+    }
+
     public static long countGlobalProfileRecords(Filter filter, RecordMetric metric, LeagueShard region) {
         if (filter == null || metric == null) return 0;
         List<Bson> filters = new ArrayList<>();
@@ -1534,7 +1557,7 @@ public final class MongoDB {
         List<String> puuids = new ArrayList<>(boundedLimit);
         for (Document document : competitive().find(competitiveFilter(rank, queue, region, role, otpChampionId))
                 .projection(Projections.include("puuid"))
-                .sort(Sorts.descending("mmr"))
+                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("_id")))
                 .skip(boundedOffset)
                 .limit(boundedLimit)) {
             String puuid = document.getString("puuid");
@@ -1554,6 +1577,60 @@ public final class MongoDB {
             if (summoner != null) page.add(summoner);
         }
         return page;
+    }
+
+    public static CompetitiveEntry findCompetitive(String puuid, GameQueueType queue) {
+        if (puuid == null || puuid.isBlank() || queue == null) return null;
+        String canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue).name();
+        return competitiveEntry(competitive().find(Filters.eq("_id", competitiveId(puuid, canonicalQueue))).first());
+    }
+
+    public static void forEachCompetitiveRankingSegment(
+        GameQueueType queue,
+        TierDivisionType tier,
+        LeagueShard region,
+        Consumer<CompetitiveEntry> consumer
+    ) {
+        if (queue == null || tier == null || tier == TierDivisionType.UNRANKED || consumer == null) return;
+        List<Bson> filters = new ArrayList<>();
+        filters.add(Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()));
+        filters.add(Filters.eq("tier", tier.name()));
+        if (region != null) filters.add(Filters.eq("region", region.name()));
+        try (MongoCursor<Document> cursor = competitive().find(Filters.and(filters))
+                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("_id")))
+                .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
+            while (cursor.hasNext()) {
+                CompetitiveEntry entry = competitiveEntry(cursor.next());
+                if (entry != null) consumer.accept(entry);
+            }
+        }
+    }
+
+    public static Map<TierDivisionType, Long> findCompetitiveRankCounts(GameQueueType queue, LeagueShard region) {
+        Map<TierDivisionType, Long> result = new LinkedHashMap<>();
+        if (queue == null) return result;
+        List<Bson> filters = new ArrayList<>();
+        filters.add(Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()));
+        if (region != null) filters.add(Filters.eq("region", region.name()));
+        List<Bson> pipeline = List.of(
+            Aggregates.match(Filters.and(filters)),
+            Aggregates.group("$tier", Accumulators.sum("count", 1))
+        );
+        for (Document document : competitive().aggregate(pipeline)) {
+            TierDivisionType tier = division(document.getString("_id"));
+            if (tier != null && tier != TierDivisionType.UNRANKED) result.put(tier, number(document, "count"));
+        }
+        return result;
+    }
+
+    public static List<LeagueShard> findCompetitiveRankingRegions(GameQueueType queue) {
+        if (queue == null) return List.of();
+        List<LeagueShard> result = new ArrayList<>();
+        for (String region : competitive().distinct("region", Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()), String.class)) {
+            LeagueShard shard = parseShard(region);
+            if (shard != LeagueShard.UNKNOWN) result.add(shard);
+        }
+        return result;
     }
 
     public static Long findLeaderboardAggregateCount(TierType rank, GameQueueType queue, String region) {
@@ -1961,6 +2038,7 @@ public final class MongoDB {
                 .append("puuid", entry.puuid())
                 .append("region", entry.region().name())
                 .append("queue", queue)
+                .append("tier", entry.tier().name())
                 .append("mmr", entry.mmr())
                 .append("lastUpdate", entry.lastUpdate());
         if (entry.primary() != null) value.append("primary", entry.primary().name());
@@ -2405,11 +2483,12 @@ public final class MongoDB {
             updates.add(Updates.set("filterKey", filterKey));
             for (Map.Entry<String, Object> entry : document.entrySet()) {
                 if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())
-                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())) continue;
+                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())
+                        || "globalRanking".equals(entry.getKey()) || "regionRanking".equals(entry.getKey())) continue;
                 if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
                 else updates.add(Updates.set(entry.getKey(), entry.getValue()));
             }
-            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared"))
+            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared", "globalRanking", "regionRanking"))
                 if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
             updates.add(Updates.unset("riotId"));
             updates.add(Updates.unset("icon"));
@@ -2968,7 +3047,7 @@ public final class MongoDB {
         }
     }
 
-    static Binary competitiveId(String puuid, String queue) {
+    public static Binary competitiveId(String puuid, String queue) {
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256")
                     .digest((puuid + ':' + queue).getBytes(StandardCharsets.UTF_8));
@@ -3531,6 +3610,22 @@ public final class MongoDB {
 
     private static ProfileMatchups readProfileMatchups(Document document) {
         return readStructured(document.get("matchups"), ProfileMatchups.class);
+    }
+
+    private static CompetitiveEntry competitiveEntry(Document document) {
+        if (document == null) return null;
+        String puuid = document.getString("puuid");
+        LeagueShard region = parseShard(document.getString("region"));
+        GameQueueType queue = queue(document.getString("queue"));
+        TierDivisionType tier = division(document.getString("tier"));
+        LaneType primary = null;
+        try { primary = LaneType.valueOf(document.getString("primary")); }
+        catch (RuntimeException ignored) {}
+        if (puuid == null || puuid.isBlank() || region == LeagueShard.UNKNOWN || queue == null || tier == null
+                || tier == TierDivisionType.UNRANKED) return null;
+        return new CompetitiveEntry(puuid, region, queue, tier, number(document, "mmr"), primary,
+            document.containsKey("otpChampionId") ? document.getInteger("otpChampionId") : null,
+            number(document, "lastUpdate"));
     }
 
     private static ProfileRecord readProfileRecord(Document document) {

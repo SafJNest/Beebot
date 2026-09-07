@@ -352,6 +352,20 @@ public class Test extends Command{
                 refreshStatistics.queue();
                 e.reply("Statistics " + statsOperation + " refresh queued.");
                 break;
+            case "ranking":
+                com.safjnest.lol.service.RankingService.RankingSnapshot ranking =
+                    com.safjnest.lol.service.RankingService.snapshot();
+                StringBuilder rankingOutput = new StringBuilder("[Ranking] leaderboardSegments=")
+                    .append(ranking.leaderboardSegments()).append(" recordSegments=").append(ranking.recordSegments())
+                    .append(" memoryBytes=").append(ranking.memoryBytes());
+                for (com.safjnest.lol.service.RankingService.Segment segment : ranking.segments())
+                    rankingOutput.append("\n[Ranking] kind=").append(segment.kind()).append(" key=").append(segment.key())
+                        .append(" cardinality=").append(segment.cardinality()).append(" memoryBytes=").append(segment.memoryBytes())
+                        .append(" permanent=").append(segment.permanent()).append(" ttl=").append(segment.ttlSeconds())
+                        .append(" lastAccess=").append(segment.lastAccess()).append(" rebuilding=").append(segment.rebuilding());
+                System.out.println(rankingOutput);
+                e.reply("Contextual ranking snapshot printed to console.");
+                break;
             case "insertepriainblacklist":
                 query = "SELECT id FROM guilds";
                 res = BotDB.get().query(query);;

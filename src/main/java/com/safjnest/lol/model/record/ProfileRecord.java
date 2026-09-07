@@ -26,6 +26,8 @@ public class ProfileRecord {
     public TeamType team;
     public String actorPuuid;
     public Boolean gameShared;
+    public Long globalRanking;
+    public Long regionRanking;
     public long lastUpdate;
 
     public static ProfileRecord from(

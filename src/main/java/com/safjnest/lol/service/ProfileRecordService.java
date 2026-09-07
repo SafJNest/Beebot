@@ -28,6 +28,7 @@ public final class ProfileRecordService {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null) return ApiResult.notFound();
         List<ProfileRecord> records = MongoDB.findProfileRecords(puuid, filter);
         if (!records.isEmpty()) {
+            RankingService.enrichRecords(records);
             long lastUpdate = lastUpdate(records);
             ProfileRecordPage page = ProfileRecordPage.of(records, lastUpdate, ResponseMetadata.ready(lastUpdate, filter));
             return ApiResult.ready(page, page.metadata());
@@ -41,6 +42,7 @@ public final class ProfileRecordService {
         for (RecordMetric metric : RecordMetric.values()) {
             records.addAll(MongoDB.findGlobalProfileRecords(filter, metric, region, GLOBAL_OVERVIEW_PER_METRIC, 0));
         }
+        RankingService.enrichRecords(records);
         enrich(records);
         long lastUpdate = lastUpdate(records);
         return RecordsOverview.of(records, ResponseMetadata.ready(lastUpdate, filter));
@@ -48,6 +50,7 @@ public final class ProfileRecordService {
 
     public RecordPage getGlobalPage(Filter filter, RecordMetric metric, LeagueShard region, int limit, int offset) {
         List<ProfileRecord> records = MongoDB.findGlobalProfileRecords(filter, metric, region, limit, offset);
+        RankingService.enrichRecords(records);
         enrich(records);
         long total = MongoDB.countGlobalProfileRecords(filter, metric, region);
         long lastUpdate = lastUpdate(records);
@@ -59,9 +62,13 @@ public final class ProfileRecordService {
 
     public boolean generate(String puuid, LeagueShard shard, Filter filter) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null) return false;
+        List<ProfileRecord> previous = MongoDB.findProfileRecords(puuid, filter);
         ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator(puuid, filter);
         MongoDB.forEachProfileRecordMatch(puuid, shard, filter, accumulator::accept);
-        return MongoDB.upsertProfileRecords(puuid, filter, accumulator.finish());
+        List<ProfileRecord> records = accumulator.finish();
+        boolean saved = MongoDB.upsertProfileRecords(puuid, filter, records);
+        if (saved) RankingService.refreshRecords(previous, records);
+        return saved;
     }
 
     // ============================================================================

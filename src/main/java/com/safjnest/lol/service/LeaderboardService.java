@@ -91,15 +91,25 @@ public class LeaderboardService {
             ComputeScheduler.startProfileStatistics(summoner, filter);
         }
 
+        List<RankingService.RankSubject> rankingSubjects = new ArrayList<>(summoners.size());
+        for (Summoner summoner : summoners) {
+            Rank rankValue = summoner.ranks().get(selectedQueue);
+            if (rankValue == null) rankValue = Rank.unranked();
+            rankingSubjects.add(new RankingService.RankSubject(
+                summoner.puuid(), summoner.region(), Map.of(selectedQueue, rankValue)));
+        }
+        Map<String, Map<GameQueueType, Rank>> rankings = RankingService.enrichRanks(rankingSubjects);
+
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
         for (int index = 0; index < summoners.size(); index++) {
             Summoner summoner = summoners.get(index);
             Rank rankValue = summoner.ranks().get(selectedQueue);
             if (rankValue == null) rankValue = Rank.unranked();
+            Map<GameQueueType, Rank> ranks = rankings.getOrDefault(summoner.puuid(), Map.of(selectedQueue, rankValue));
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
             SummonerView view = SummonerView.from(
                 summoner,
-                Map.of(selectedQueue, rankValue),
+                ranks,
                 statistics,
                 statistics == null ? List.of() : summoner.masteries()
             );
@@ -184,11 +194,13 @@ public class LeaderboardService {
 
     public static void rebuild() {
         MongoDB.rebuildLeaderboardAggregates();
+        RankingService.rebuildLeaderboard();
         RedisClient.increment(RedisKey.LEADERBOARD_VERSION.of());
     }
 
     public static MongoDB.LeaderboardAggregateRebuild rebuildAllAggregates() {
         MongoDB.LeaderboardAggregateRebuild report = MongoDB.rebuildAllLeaderboardAggregates();
+        RankingService.rebuildLeaderboard();
         RedisClient.increment(RedisKey.LEADERBOARD_VERSION.of());
         return report;
     }

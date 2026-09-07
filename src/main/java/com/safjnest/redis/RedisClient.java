@@ -7,6 +7,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,10 +15,13 @@ import java.util.Map;
 import java.util.Set;
 
 import redis.clients.jedis.Response;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.params.SetParams;
 
 public class RedisClient {
+
+    public record SortedSetEntry(byte[] member, double score) {}
 
     private static final int CONNECTION_TIMEOUT_MS = 500;
     private static final int TEMPORARY_TTL_SECONDS = 60;
@@ -282,6 +286,27 @@ public class RedisClient {
         }
     }
 
+    public static void expire(String key, int seconds) {
+        if (key == null || seconds <= 0 || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.expire(key, seconds);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void addPersistentMember(String key, String member) {
+        if (key == null || member == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.sadd(key, member);
+            jedis.persist(key);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
     public static void setPersistent(String key, long value) {
         if (key == null || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
@@ -313,6 +338,188 @@ public class RedisClient {
         } catch (Exception ignored) {
             markUnavailable();
             return null;
+        }
+    }
+
+    public static boolean sortedSetExists(String key) {
+        if (key == null || !canUseRedis()) return false;
+        try (Jedis jedis = pool.getResource()) {
+            boolean result = jedis.exists(key);
+            markAvailable();
+            return result;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return false;
+        }
+    }
+
+    public static Set<String> existingSortedSets(List<String> keys) {
+        Set<String> result = new java.util.HashSet<>();
+        if (keys == null || keys.isEmpty() || !canUseRedis()) return result;
+        try (Jedis jedis = pool.getResource()) {
+            Pipeline pipeline = jedis.pipelined();
+            List<Response<Boolean>> responses = new ArrayList<>(keys.size());
+            for (String key : keys) responses.add(pipeline.exists(key));
+            pipeline.sync();
+            for (int index = 0; index < keys.size(); index++) if (Boolean.TRUE.equals(responses.get(index).get())) result.add(keys.get(index));
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+        return result;
+    }
+
+    public static void addSortedSet(String key, List<SortedSetEntry> entries) {
+        if (key == null || entries == null || entries.isEmpty() || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            Pipeline pipeline = jedis.pipelined();
+            byte[] encodedKey = key.getBytes(StandardCharsets.UTF_8);
+            for (SortedSetEntry entry : entries)
+                if (entry != null && entry.member() != null) pipeline.zadd(encodedKey, entry.score(), entry.member());
+            pipeline.sync();
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void removeSortedSetMember(String key, byte[] member) {
+        if (key == null || member == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.zrem(key.getBytes(StandardCharsets.UTF_8), member);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void publishSortedSet(String temporaryKey, String key, int ttlSeconds) {
+        if (temporaryKey == null || key == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.rename(temporaryKey, key);
+            if (ttlSeconds > 0) jedis.expire(key, ttlSeconds);
+            else jedis.persist(key);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static List<Long> reverseRanks(List<String> keys, List<byte[]> members) {
+        List<Long> result = new ArrayList<>();
+        if (keys == null || members == null || keys.size() != members.size() || !canUseRedis()) return result;
+        try (Jedis jedis = pool.getResource()) {
+            Pipeline pipeline = jedis.pipelined();
+            List<Response<Long>> responses = new ArrayList<>(keys.size());
+            for (int index = 0; index < keys.size(); index++)
+                responses.add(pipeline.zrevrank(keys.get(index).getBytes(StandardCharsets.UTF_8), members.get(index)));
+            pipeline.sync();
+            for (Response<Long> response : responses) result.add(response.get());
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+        return result;
+    }
+
+    public static List<Long> countsAbove(List<String> keys, List<Double> scores) {
+        List<Long> result = new ArrayList<>();
+        if (keys == null || scores == null || keys.size() != scores.size() || !canUseRedis()) return result;
+        try (Jedis jedis = pool.getResource()) {
+            Pipeline pipeline = jedis.pipelined();
+            List<Response<Long>> responses = new ArrayList<>(keys.size());
+            for (int index = 0; index < keys.size(); index++)
+                responses.add(pipeline.zcount(keys.get(index).getBytes(StandardCharsets.UTF_8), Math.nextUp(scores.get(index)), Double.POSITIVE_INFINITY));
+            pipeline.sync();
+            for (Response<Long> response : responses) result.add(response.get());
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+        return result;
+    }
+
+    public static long sortedSetCardinality(String key) {
+        if (key == null || !canUseRedis()) return 0;
+        try (Jedis jedis = pool.getResource()) {
+            long result = jedis.zcard(key);
+            markAvailable();
+            return result;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return 0;
+        }
+    }
+
+    public static Long memoryUsage(String key) {
+        if (key == null || !canUseRedis()) return null;
+        try (Jedis jedis = pool.getResource()) {
+            Long result = jedis.memoryUsage(key);
+            markAvailable();
+            return result;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return null;
+        }
+    }
+
+    public static Map<String, Long> getHashLongs(String key) {
+        Map<String, Long> result = new HashMap<>();
+        if (key == null || !canUseRedis()) return result;
+        try (Jedis jedis = pool.getResource()) {
+            for (Map.Entry<String, String> entry : jedis.hgetAll(key).entrySet()) {
+                try { result.put(entry.getKey(), Long.parseLong(entry.getValue())); }
+                catch (NumberFormatException ignored) {}
+            }
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+        return result;
+    }
+
+    public static void replaceHash(String key, Map<String, Long> values) {
+        if (key == null || values == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.del(key);
+            Map<String, String> encoded = new HashMap<>();
+            for (Map.Entry<String, Long> entry : values.entrySet()) encoded.put(entry.getKey(), Long.toString(entry.getValue()));
+            if (!encoded.isEmpty()) jedis.hset(key, encoded);
+            jedis.persist(key);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void incrementHashIfPresent(String key, String field, long amount) {
+        if (key == null || field == null || amount == 0 || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            if (jedis.exists(key)) jedis.hincrBy(key, field, amount);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void setHashLong(String key, String field, long value) {
+        if (key == null || field == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.hset(key, field, Long.toString(value));
+            jedis.persist(key);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
+    }
+
+    public static void removeHashField(String key, String field) {
+        if (key == null || field == null || !canUseRedis()) return;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.hdel(key, field);
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
         }
     }
 

@@ -28,4 +28,7 @@ The global list uses `filterKey + metric`, sort `score DESC, occurredAt ASC,
 puuid ASC`; the regional one adds `region`. The `/records` overview performs
 a limited read of the leader for each metric on the same index. Position
 is not persisted. Any Redis rank cache is a discardable projection
-and is not part of the initial Mongo contract.
+and is not part of the Mongo source-of-truth contract. Contextual record
+ranking derives lazy Redis ZSETs from exactly `filterKey + metric` (global) or
+`filterKey + metric + region`; it does not add a champion, queue, lane or
+kill-type index dimension.
