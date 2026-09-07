@@ -17,6 +17,11 @@ import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.statistics.ChampionStatsDocument;
+import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
+import com.safjnest.lol.model.statistics.shared.ChampionNode;
+import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
+import com.safjnest.lol.model.statistics.shared.MatchupStats;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -55,8 +60,8 @@ public class ChampionService {
             .setQueue(selectedQueue).setLane(role);
         if (patch != null) filter.setPatch(patch);
         String key = RedisKey.CHAMPION_PAGE.of(filter.champion(), filter.pageKey());
-        com.safjnest.lol.model.statistics.shared.ChampionStatsScope scope = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter);
-        com.safjnest.lol.model.statistics.ChampionStatsDocument statsDoc = MongoDB.findChampionStatsDocument(scope);
+        ChampionStatsScope scope = ChampionStatsScope.from(filter);
+        ChampionStatsDocument statsDoc = MongoDB.findChampionStatsDocument(scope);
         long statsLastUpdate = statsDoc == null ? 0 : statsDoc.updatedAt;
         long buildLastUpdate = MongoDB.findChampionBuildLastUpdate(filter);
         if (isStale(statsLastUpdate) || isStale(buildLastUpdate)) {
@@ -78,15 +83,60 @@ public class ChampionService {
     }
 
     public ChampionStatistics getStatistics(Filter filter) {
-        return ChampionAnalyzer.get(filter);
+        return getStatistics(filter, true);
     }
 
     public ChampionStatistics getStatistics(Filter filter, boolean allowCompute) {
-        return ChampionAnalyzer.get(filter, allowCompute);
+        if (filter == null) return null;
+        String key = RedisKey.CHAMPION_STATS.of(filter.champion(), filter.genericKey());
+        ChampionStatistics stats;
+        try {
+            stats = RedisClient.get(key, ChampionStatistics.class);
+        } catch (RuntimeException exception) {
+            RedisClient.delete(key);
+            stats = null;
+        }
+        if (stats != null) return stats;
+        try {
+            ChampionStatsScope scope = ChampionStatsScope.from(filter);
+            ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(scope);
+            if (doc != null && doc.ready) {
+                ChampionNode node = doc.champions.get(filter.champion());
+                if (node != null) {
+                    ChampionLeafStats leaf = node.lanes.get(filter.lane() == null ? null : filter.lane().name());
+                    if (leaf == null && filter.lane() == null) leaf = node.overall();
+                    if (leaf != null && leaf.games > 0) {
+                        stats = ChampionAnalyzer.toChampionStatistics(filter, doc, node, leaf);
+                        RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
+                        return stats;
+                    }
+                }
+                if (doc.champions.containsKey(filter.champion())) {
+                    stats = ChampionAnalyzer.empty(filter);
+                    RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
+                    return stats;
+                }
+            }
+        } catch (RuntimeException ignored) {}
+        if (!allowCompute || filter.patch() == null || filter.queue() == null) return null;
+        ChampionAnalyzer.recomputeScope(ChampionStatsScope.from(filter));
+        return getStatistics(filter, false);
     }
 
     public Map<Integer, ChampionStatistics> getStatisticsAll(Filter filter) {
-        return ChampionAnalyzer.getAll(filter);
+        if (filter == null) return Map.of();
+        ChampionStatsDocument document = MongoDB.findChampionStatsDocument(ChampionStatsScope.from(filter));
+        if (document == null || !document.ready) return Map.of();
+        Map<Integer, ChampionStatistics> result = new LinkedHashMap<>();
+        for (Map.Entry<Integer, ChampionNode> entry : document.champions.entrySet()) {
+            ChampionLeafStats leaf = entry.getValue().lanes.get(filter.lane() == null ? null : filter.lane().name());
+            if (leaf == null && filter.lane() == null) leaf = entry.getValue().overall();
+            if (leaf != null && leaf.games > 0) {
+                Filter championFilter = new Filter().setChampion(entry.getKey()).setLane(filter.lane()).setQueue(filter.queue()).setRank(filter.rank()).setRankBehavior(filter.rankBehavior()).setPatch(filter.patch()).setRegion(filter.region()).setPeriod(filter.timeStart(), filter.timeEnd());
+                result.put(entry.getKey(), ChampionAnalyzer.toChampionStatistics(championFilter, document, entry.getValue(), leaf));
+            }
+        }
+        return result;
     }
 
     public Build getBuild(Filter filter) {
@@ -124,7 +174,8 @@ public class ChampionService {
     public Map<Integer, ChampionStatistics> refreshStatistics(Filter filter) {
         if (filter == null || filter.patch() == null || filter.queue() == null) return Map.of();
         Filter statisticsFilter = statisticsFilter(filter);
-        Map<Integer, ChampionStatistics> statistics = ChampionAnalyzer.recomputeAll(statisticsFilter);
+        ChampionAnalyzer.recomputeScope(ChampionStatsScope.from(statisticsFilter));
+        Map<Integer, ChampionStatistics> statistics = getStatisticsAll(statisticsFilter);
         invalidateTierList(statisticsFilter);
         invalidateStatisticsScope(statisticsFilter);
         return statistics;
@@ -150,39 +201,36 @@ public class ChampionService {
         if (cached != null) return ApiResult.ready(cached, cached.metadata());
 
         List<Filter> filters = tierFilters(base);
-        // New shape: 1 doc per scope, lanes inside. Build sources per lane from that doc.
-        Map<String, ChampionTierSource> sources = new java.util.LinkedHashMap<>();
-        // Try new doc first
-        com.safjnest.lol.model.statistics.shared.ChampionStatsScope baseScope = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(base);
-        com.safjnest.lol.model.statistics.ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(baseScope);
+        Map<String, ChampionTierSource> sources = new LinkedHashMap<>();
+        ChampionStatsScope baseScope = ChampionStatsScope.from(base);
+        ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(baseScope);
         if (doc != null && doc.ready) {
             for (Filter filter : filters) {
-                Map<Integer, com.safjnest.lol.model.statistics.shared.ChampionLeafStats> laneStats = new java.util.LinkedHashMap<>();
-                for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.ChampionNode> e : doc.champions.entrySet()) {
-                    com.safjnest.lol.model.statistics.shared.ChampionLeafStats leaf = filter.lane() == null
+                Map<Integer, ChampionLeafStats> laneStats = new LinkedHashMap<>();
+                for (Map.Entry<Integer, ChampionNode> e : doc.champions.entrySet()) {
+                    ChampionLeafStats leaf = filter.lane() == null
                         ? e.getValue().overall() : e.getValue().lanes.get(filter.lane().name());
                     if (leaf != null && leaf.games > 0) laneStats.put(e.getKey(), leaf);
                 }
-                // Build minimal ChampionTierSource from laneStats
-                Map<Integer, com.safjnest.lol.model.ChampionTierSource.Champion> champions = new java.util.LinkedHashMap<>();
-                for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.ChampionLeafStats> e : laneStats.entrySet()) {
-                    com.safjnest.lol.model.statistics.shared.ChampionLeafStats leaf = e.getValue();
-                    com.safjnest.lol.model.statistics.shared.ChampionNode node = doc.champions.get(e.getKey());
+                Map<Integer, ChampionTierSource.Champion> champions = new LinkedHashMap<>();
+                for (Map.Entry<Integer, ChampionLeafStats> e : laneStats.entrySet()) {
+                    ChampionLeafStats leaf = e.getValue();
+                    ChampionNode node = doc.champions.get(e.getKey());
                     long bans = node == null ? 0 : node.bans;
                     double winrate = leaf.winrate();
                     double pickrate = doc.games == 0 ? 0 : (double) leaf.games / doc.games;
                     Double banrate = doc.banGames == 0 ? null : (double) bans / doc.banGames;
-                    java.util.List<com.safjnest.lol.model.ChampionTierSource.Matchup> tierMatchups = new java.util.ArrayList<>();
-                    for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.MatchupStats> me : leaf.matchups.entrySet()) {
-                        com.safjnest.lol.model.statistics.shared.MatchupStats ms = me.getValue();
-                        tierMatchups.add(new com.safjnest.lol.model.ChampionTierSource.Matchup(me.getKey(), (int)ms.games, (int)ms.wins));
+                    List<ChampionTierSource.Matchup> tierMatchups = new ArrayList<>();
+                    for (Map.Entry<Integer, MatchupStats> me : leaf.matchups.entrySet()) {
+                        MatchupStats ms = me.getValue();
+                        tierMatchups.add(new ChampionTierSource.Matchup(me.getKey(), (int)ms.games, (int)ms.wins));
                     }
-                    champions.put(e.getKey(), new com.safjnest.lol.model.ChampionTierSource.Champion(
-                        new com.safjnest.lol.model.ChampionTierList.Statistics((int)doc.games, (int)leaf.games, (int)bans, (int)leaf.wins, winrate, pickrate, banrate),
+                    champions.put(e.getKey(), new ChampionTierSource.Champion(
+                        new ChampionTierList.Statistics((int)doc.games, (int)leaf.games, (int)bans, (int)leaf.wins, winrate, pickrate, banrate),
                         tierMatchups
                     ));
                 }
-                sources.put(filter.genericKey(), new com.safjnest.lol.model.ChampionTierSource(true, doc.updatedAt, champions));
+                sources.put(filter.genericKey(), new ChampionTierSource(true, doc.updatedAt, champions));
             }
         }
         List<Filter> ready = new ArrayList<>();
@@ -215,8 +263,8 @@ public class ChampionService {
         List<Filter> combinations = matrixFilters(patch, queue);
         Set<String> readyKeys = new HashSet<>();
         for (Filter filter : combinations) {
-            com.safjnest.lol.model.statistics.shared.ChampionStatsScope scope = com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter);
-            com.safjnest.lol.model.statistics.ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(scope);
+            ChampionStatsScope scope = ChampionStatsScope.from(filter);
+            ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(scope);
             if (doc != null && doc.ready && !isStale(doc.updatedAt)) readyKeys.add(scope.toKey());
         }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
@@ -285,7 +333,7 @@ public class ChampionService {
         if (combinations == null || combinations.isEmpty()) return List.of();
         List<Filter> missing = new ArrayList<>();
         for (Filter filter : combinations) {
-            String key = filter == null ? null : com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter).toKey();
+            String key = filter == null ? null : ChampionStatsScope.from(filter).toKey();
             if (filter != null && (readyKeys == null || !readyKeys.contains(key))) missing.add(filter);
         }
         return missing;
@@ -344,8 +392,7 @@ public class ChampionService {
 
     static Filter statisticsFilter(Filter filter) {
         return new Filter().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
-            .setRankBehavior(filter.rankBehavior()).setRegion(filter.region()).setLane(filter.lane())
-            .setPeriod(filter.timeStart(), filter.timeEnd());
+            .setRankBehavior(filter.rankBehavior()).setRegion(filter.region()).setLane(filter.lane());
     }
 
     static List<Filter> statisticsCacheFilters(Filter filter) {
@@ -361,8 +408,8 @@ public class ChampionService {
 
     private static void invalidateStatisticsScope(Filter filter) {
         if (filter == null) return;
-        com.safjnest.lol.model.statistics.ChampionStatsDocument document = MongoDB.findChampionStatsDocument(
-            com.safjnest.lol.model.statistics.shared.ChampionStatsScope.from(filter));
+        ChampionStatsDocument document = MongoDB.findChampionStatsDocument(
+            ChampionStatsScope.from(filter));
         if (document == null) return;
         for (Integer champion : document.champions.keySet()) invalidateStatistics(statisticsFilter(filter).setChampion(champion));
     }

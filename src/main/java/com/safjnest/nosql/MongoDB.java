@@ -67,6 +67,9 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.KdaUtils;
+import com.safjnest.lol.utils.NumberUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
@@ -2450,7 +2453,7 @@ public final class MongoDB {
         return true;
     }
 
-    // New shape: 1 doc per scope (queue|rank|patch|region) with lanes inside
+    // New shape: 1 doc per scope (queue|rankBehavior|rank|patch|region) with lanes inside
     public static boolean upsertChampionStatsDocument(com.safjnest.lol.model.statistics.ChampionStatsDocument doc) {
         if (doc == null || doc.scope == null) return false;
         doc._id = doc.scope.toKey();
@@ -2461,9 +2464,7 @@ public final class MongoDB {
                 .append("rank", doc.scope.rank() == null ? null : doc.scope.rank().name())
                 .append("rankBehavior", doc.scope.rankBehavior().name())
                 .append("patch", doc.scope.patch())
-                .append("region", doc.scope.region() == null ? null : doc.scope.region().name())
-                .append("timeStart", doc.scope.timeStart())
-                .append("timeEnd", doc.scope.timeEnd()))
+                .append("region", doc.scope.region() == null ? null : doc.scope.region().name()))
             .append("games", doc.games)
             .append("banGames", doc.banGames)
             .append("previousPatch", doc.previousPatch)
@@ -2740,12 +2741,7 @@ public final class MongoDB {
     }
 
     private static String patchMajor(String patch) {
-        String value = patch == null ? null : patch.trim();
-        if (value == null || value.isBlank()) return null;
-        int firstSeparator = value.indexOf('.');
-        if (firstSeparator < 0) return value;
-        int secondSeparator = value.indexOf('.', firstSeparator + 1);
-        return secondSeparator < 0 ? value : value.substring(0, secondSeparator);
+        return PatchUtils.patchMajor(patch);
     }
 
     private static String regionFromMatchId(String fullGameId) {
@@ -2986,8 +2982,7 @@ public final class MongoDB {
     }
 
     private static int kills(String kda) {
-        if (kda == null || kda.isBlank()) return 0;
-        try { return Integer.parseInt(kda.split("/", 2)[0]); } catch (RuntimeException ignored) { return 0; }
+        return KdaUtils.getKills(kda);
     }
 
     private static void traceRead(String operation, String details) {
@@ -3484,10 +3479,7 @@ public final class MongoDB {
     }
 
     private static int integer(Object value) {
-        if (value instanceof Number number) return number.intValue();
-        if (!(value instanceof String string)) return 0;
-        try { return Integer.parseInt(string); }
-        catch (NumberFormatException ignored) { return 0; }
+        return NumberUtils.parseInt(value);
     }
 
     private static double decimal(Object value) {

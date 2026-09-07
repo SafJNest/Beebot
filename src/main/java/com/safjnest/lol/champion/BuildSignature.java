@@ -1,5 +1,7 @@
 package com.safjnest.lol.champion;
 
+import com.safjnest.lol.utils.NumberUtils;
+
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -114,8 +116,8 @@ public record BuildSignature(
         for (int i = 0; i < 18; i++) defaultSpell.add(0);
         return new BuildSignature(
                 p.length > 0 ? BuildUtils.parseDashList(p[0]) : List.of(),
-                safeIntSeg(p, 1),
-                safeIntSeg(p, 2),
+                NumberUtils.parseInt(p[1]),
+                NumberUtils.parseInt(p[2]),
                 p.length > 3 ? BuildUtils.parseDashList(p[3]) : List.of(),
                 p.length > 4 ? BuildUtils.parseDashList(p[4]) : List.of(),
                 p.length > 5 ? decodeSpellOrderSegment(p[5]) : defaultSpell,
@@ -124,10 +126,6 @@ public record BuildSignature(
                 p.length > 8 ? BuildUtils.parseDashList(p[8]) : List.of());
     }
 
-    private static int safeIntSeg(String[] p, int i) {
-        if (i >= p.length || p[i] == null || p[i].isBlank()) return 0;
-        try { return Integer.parseInt(p[i].trim()); } catch (NumberFormatException e) { return 0; }
-    }
 
     /** Supports dash-separated ints or legacy 18-digit string without separators. */
     private static List<Integer> decodeSpellOrderSegment(String s) {

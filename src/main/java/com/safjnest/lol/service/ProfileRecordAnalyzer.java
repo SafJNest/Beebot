@@ -191,7 +191,9 @@ public final class ProfileRecordAnalyzer {
             return result;
         }
 
-        private static Participant participant(Match match, String puuid) {
+        // ============================================================================
+
+    private static Participant participant(Match match, String puuid) {
             if (match == null || match.participants == null || puuid == null) return null;
             for (Participant participant : match.participants)
                 if (participant != null && puuid.equals(participant.puuid)) return participant;

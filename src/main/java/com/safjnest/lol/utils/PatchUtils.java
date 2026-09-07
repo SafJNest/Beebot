@@ -45,10 +45,19 @@ public class PatchUtils {
 	public static OptionData getAsOptions() {
 		List<Choice> choices = new ArrayList<>();
 		for (String version : patches.subList(0, Math.min(3, patches.size()))) {
-			String patch = version.split("\\.")[0] + "." + version.split("\\.")[1];
-			choices.add(new Choice(patch, patch));
+			String patch = patchMajor(version);
+			if (patch != null) choices.add(new Choice(patch, patch));
 		}
 		return new OptionData(OptionType.STRING, "patch", "Patch you want to get the data from", false).addChoices(choices);
+	}
+
+	public static String patchMajor(String patch) {
+		String value = patch == null ? null : patch.trim();
+		if (value == null || value.isBlank()) return null;
+		int firstSeparator = value.indexOf('.');
+		if (firstSeparator < 0) return value;
+		int secondSeparator = value.indexOf('.', firstSeparator + 1);
+		return secondSeparator < 0 ? value : value.substring(0, secondSeparator);
 	}
 
 	private static List<String> fetchPatches() {
@@ -58,9 +67,8 @@ public class PatchUtils {
 			JSONArray file = (JSONArray) new JSONParser().parse(json);
 			List<String> result = new ArrayList<>();
 			for (Object v : file) {
-        String patch = (String) v;
-        patch = patch.split("\\.")[0] + "." + patch.split("\\.")[1];
-				result.add(patch);
+				String patch = patchMajor((String) v);
+				if (patch != null) result.add(patch);
 			}
 			return result;
 		} catch (Exception e) {

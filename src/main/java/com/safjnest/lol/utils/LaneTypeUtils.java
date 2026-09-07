@@ -78,4 +78,13 @@ public class LaneTypeUtils {
         default        -> lane;
     };
   }
+
+  public static boolean isDuo(LaneType primary, LaneType ally) {
+    return primary == LaneType.BOT && ally == LaneType.UTILITY
+        || primary == LaneType.UTILITY && ally == LaneType.BOT;
+  }
+
+  public static boolean isDuoLane(LaneType lane) {
+    return lane == LaneType.BOT || lane == LaneType.UTILITY;
+  }
 }

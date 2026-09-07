@@ -9,6 +9,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.KdaUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -152,14 +153,8 @@ public record ProfileMatchups(
             if (participant == null) continue;
             boolean selected = sameArenaTeam ? participant.subTeam == player.subTeam
                 : enemyTeam ? participant.team != player.team : participant.team == player.team;
-            if (selected) result += kills(participant.kda);
+            if (selected) result += KdaUtils.getKills(participant.kda);
         }
         return result;
-    }
-
-    private static int kills(String kda) {
-        if (kda == null || kda.isBlank()) return 0;
-        try { return Integer.parseInt(kda.split("/", 2)[0]); }
-        catch (RuntimeException ignored) { return 0; }
     }
 }

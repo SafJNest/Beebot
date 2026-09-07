@@ -4,6 +4,7 @@ import java.util.List;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import com.safjnest.lol.utils.LaneTypeUtils;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 public record RankHistoryMatch(
@@ -59,12 +60,7 @@ public record RankHistoryMatch(
     }
 
     private static LaneType duoLane(LaneType lane) {
-        if (lane == null) return null;
-        return switch (lane) {
-            case BOT -> LaneType.UTILITY;
-            case UTILITY -> LaneType.BOT;
-            default -> null;
-        };
+        return LaneTypeUtils.oppositeLane(lane) == lane ? null : LaneTypeUtils.oppositeLane(lane);
     }
 
     private static Integer champion(Participant participant) {

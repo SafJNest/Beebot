@@ -1,5 +1,7 @@
 package com.safjnest.lol.champion;
 
+import com.safjnest.lol.utils.NumberUtils;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -53,17 +55,13 @@ public record RuneSignature(
     public static RuneSignature decode(String key) {
         String[] p = BuildUtils.fromBase64(key).split("\\|", -1);
         return new RuneSignature(
-                safeInt(p, 0),
-                safeInt(p, 1),
+                NumberUtils.parseInt(p[0]),
+                NumberUtils.parseInt(p[1]),
                 p.length > 2 ? BuildUtils.parseDashList(p[2]) : List.of(),
-                safeInt(p, 3),
+                NumberUtils.parseInt(p[3]),
                 p.length > 4 ? BuildUtils.parseDashList(p[4]) : List.of(),
                 p.length > 5 ? BuildUtils.parseDashList(p[5]) : List.of());
     }
 
-    private static int safeInt(String[] p, int i) {
-        if (i >= p.length || p[i] == null || p[i].isBlank()) return 0;
-        try { return Integer.parseInt(p[i].trim()); } catch (NumberFormatException e) { return 0; }
-    }
 
 }

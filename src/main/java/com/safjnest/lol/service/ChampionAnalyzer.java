@@ -17,14 +17,12 @@ import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.lol.model.statistics.shared.MatchupStats;
 import com.safjnest.lol.model.statistics.shared.TrendStats;
 import com.safjnest.lol.model.statistics.shared.WinLossStats;
+import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -76,37 +74,6 @@ public final class ChampionAnalyzer {
 
     private ChampionAnalyzer() {}
 
-    public static Map<Integer, ChampionStatistics> getAll(Filter filter) {
-        if (filter == null) return Map.of();
-        ChampionStatsDocument document = MongoDB.findChampionStatsDocument(ChampionStatsScope.from(filter));
-        if (document == null || !document.ready) return Map.of();
-        Map<Integer, ChampionStatistics> result = new LinkedHashMap<>();
-        for (Map.Entry<Integer, ChampionNode> entry : document.champions.entrySet()) {
-            ChampionLeafStats leaf = leaf(entry.getValue(), filter.lane());
-            if (leaf != null && leaf.games > 0) {
-                Filter championFilter = copyFilter(filter, entry.getKey());
-                result.put(entry.getKey(), toChampionStatistics(championFilter, document, entry.getValue(), leaf));
-            }
-        }
-        return result;
-    }
-
-    public static ChampionStatistics get(Filter filter) {
-        return get(filter, true);
-    }
-
-    public static boolean hasStored(Filter filter) {
-        if (filter == null) return false;
-        ChampionStatsDocument document = MongoDB.findChampionStatsDocument(ChampionStatsScope.from(filter));
-        return document != null && document.ready;
-    }
-
-    public static Map<Integer, ChampionStatistics> recomputeAll(Filter filter) {
-        if (filter == null || filter.patch() == null || filter.queue() == null) return Map.of();
-        recomputeScope(ChampionStatsScope.from(filter));
-        return getAll(filter);
-    }
-
     // ============================================================================
 
     static ChampionStatistics empty(Filter filter) {
@@ -119,47 +86,6 @@ public final class ChampionAnalyzer {
             List.of(),
             null
         );
-    }
-
-    static ChampionStatistics get(Filter filter, boolean allowCompute) {
-        if (filter == null) return null;
-
-        String key = RedisKey.CHAMPION_STATS.of(filter.champion(), filter.genericKey());
-        ChampionStatistics stats;
-        try {
-            stats = RedisClient.get(key, ChampionStatistics.class);
-        } catch (RuntimeException exception) {
-            RedisClient.delete(key);
-            stats = null;
-        }
-        if (stats != null) return stats;
-
-        // New doc shape: 1 doc per scope, lanes inside
-        try {
-            ChampionStatsScope scope = ChampionStatsScope.from(filter);
-            com.safjnest.lol.model.statistics.ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(scope);
-            if (doc != null && doc.ready) {
-                com.safjnest.lol.model.statistics.shared.ChampionNode node = doc.champions.get(filter.champion());
-                if (node != null) {
-                ChampionLeafStats leaf = leaf(node, filter.lane());
-                    if (leaf != null && leaf.games > 0) {
-                        stats = toChampionStatistics(filter, doc, node, leaf);
-                        RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
-                        return stats;
-                    }
-                }
-                if (doc.champions.containsKey(filter.champion())) {
-                    // champion exists but no games for this lane -> empty
-                    stats = empty(filter);
-                    RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
-                    return stats;
-                }
-            }
-        } catch (RuntimeException ignored) {}
-
-        if (!allowCompute || filter.patch() == null || filter.queue() == null) return null;
-        recomputeScope(ChampionStatsScope.from(filter));
-        return get(filter, false);
     }
 
     static ChampionStatistics toChampionStatistics(Filter filter, com.safjnest.lol.model.statistics.ChampionStatsDocument doc, com.safjnest.lol.model.statistics.shared.ChampionNode node, ChampionLeafStats leaf) {
@@ -234,8 +160,7 @@ public final class ChampionAnalyzer {
         if (buildFilters != null) for (Filter f : buildFilters) if (f != null && f.champion() != 0 && f.patch() != null && f.queue() != null) builds.putIfAbsent(f.toKey(), ChampionBuildEngine.newAccumulator(f));
         Filter first = filters.get(0);
         Filter source = new Filter().setChampion(0).setLane(null).setQueue(first.queue()).setRank(null)
-            .setRankBehavior(first.rankBehavior()).setPatch(first.patch()).setRegion(null)
-            .setPeriod(first.timeStart(), first.timeEnd());
+            .setRankBehavior(first.rankBehavior()).setPatch(first.patch()).setRegion(null);
         RawMatrix raw = new RawMatrix();
         int persistedChampions = 0;
         try {
@@ -396,7 +321,7 @@ public final class ChampionAnalyzer {
         if (document.scope == null || document.previousPatch == null || document.previousPatch.isBlank()) return;
         ChampionStatsScope scope = document.scope;
         ChampionStatsScope previousScope = new ChampionStatsScope(scope.queue(), scope.rank(), scope.rankBehavior(),
-            document.previousPatch, scope.region(), scope.timeStart(), scope.timeEnd());
+            document.previousPatch, scope.region());
         ChampionStatsDocument previous = MongoDB.findChampionStatsDocument(previousScope);
         if (previous == null || !previous.ready) return;
         for (Map.Entry<Integer, ChampionNode> champion : document.champions.entrySet()) {
@@ -526,37 +451,14 @@ public final class ChampionAnalyzer {
         return result;
     }
 
-    private static boolean compatible(LaneType primary, LaneType ally) {
-        return (primary == LaneType.BOT && ally == LaneType.UTILITY)
-            || (primary == LaneType.UTILITY && ally == LaneType.BOT);
-    }
 
-    private static Double soloKillRate(double[] value) {
-        if (value[KILLS] > 0) return value[SOLO_KILLS] / value[KILLS];
-        if (value[METRIC_GAMES] > 0) return 0d;
-        return null;
-    }
-
-    private static Double killParticipation(double[] value) {
-        return value[KILL_PARTICIPATION_GAMES] > 0
-            ? value[KILL_PARTICIPATION_SUM] / value[KILL_PARTICIPATION_GAMES] : null;
-    }
 
     private static double durationMinutes(ChampionStatsData.Player player) {
         long duration = player.timeEnd() - player.timeStart();
         return duration > 0 ? duration / 60000d : 0;
     }
 
-    private static int[] parseKda(String raw) {
-        String[] values = raw.split("/");
-        if (values.length != 3) return new int[3];
-        return new int[]{integer(values[0]), integer(values[1]), integer(values[2])};
-    }
 
-    private static int integer(String value) {
-        try { return Integer.parseInt(value); }
-        catch (Exception ignored) { return 0; }
-    }
 
     private static ChampionStatsData.Player resolve(Object value, JSONObject refs,
                                                     Map<String, ChampionStatsData.Player> byPuuid) {
@@ -570,9 +472,6 @@ public final class ChampionAnalyzer {
         return object.has(key) && !object.isNull(key) ? object.optInt(key) : null;
     }
 
-    private static double rate(int numerator, int denominator) {
-        return denominator > 0 ? (double) numerator / denominator : 0;
-    }
 
     // assemble(RawProjection) removed — new flow uses direct Leaf
 
@@ -781,7 +680,7 @@ public final class ChampionAnalyzer {
                 int playerIndex = index(player.champion());
                 int playerLane = laneCode(player.lane());
                 for (ChampionStatsData.Player ally : teams.getOrDefault(player.team(), List.of())) {
-                    if (ally == player || !compatible(player.lane(), ally.lane()) || player.champion() == ally.champion()) continue;
+                    if (ally == player || !LaneTypeUtils.isDuo(player.lane(), ally.lane()) || player.champion() == ally.champion()) continue;
                     long key = synergyKey(playerIndex, playerLane, index(ally.champion()), laneCode(ally.lane()));
                     int[] value = ints(bucket.synergies, key, 2);
                     value[0]++;
@@ -795,7 +694,7 @@ public final class ChampionAnalyzer {
             double[] value = doubles(bucket.metrics, key, METRIC_VALUE_SIZE);
             if (!events) {
                 if (player.kda() != null) {
-                    int[] kda = parseKda(player.kda());
+                    int[] kda = KdaUtils.parse(player.kda());
                     value[KDA_KILLS] += kda[0]; value[KDA_DEATHS] += kda[1]; value[KDA_ASSISTS] += kda[2]; value[KDA_GAMES]++;
                 }
                 double minutes = durationMinutes(player);

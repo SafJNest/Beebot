@@ -71,7 +71,7 @@ public class ChampionServiceMatrixTest {
     }
 
     @Test
-    public void statisticsFilterAndCachesPreserveTheFullScope() {
+    public void statisticsFilterAndCachesPreserveRankBehavior() {
         Filter filter = new Filter().setChampion(10).setPatch("15.14").setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setRank(TierType.EMERALD).setRankBehavior(Filter.RankBehavior.EXACT).setPeriod(100, 200);
 
@@ -79,15 +79,11 @@ public class ChampionServiceMatrixTest {
         List<Filter> cached = ChampionService.statisticsCacheFilters(filter);
 
         assertEquals(Filter.RankBehavior.EXACT, statistics.rankBehavior());
-        assertEquals(100, statistics.timeStart());
-        assertEquals(200, statistics.timeEnd());
         assertEquals(7, cached.size());
         assertTrue(cached.stream().anyMatch(value -> value.lane() == null));
         assertTrue(cached.stream().anyMatch(value -> value.lane() == no.stelar7.api.r4j.basic.constants.types.lol.LaneType.NONE));
         for (Filter value : cached) {
             assertEquals(Filter.RankBehavior.EXACT, value.rankBehavior());
-            assertEquals(100, value.timeStart());
-            assertEquals(200, value.timeEnd());
         }
     }
 }

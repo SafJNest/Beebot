@@ -9,6 +9,7 @@ import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.KdaUtils;
 
 public final class ProfileAnalyzer {
 
@@ -122,6 +123,8 @@ public final class ProfileAnalyzer {
         }
     }
 
+    // ============================================================================
+
     private static Participant participant(Match match, String puuid) {
         if (match == null || match.participants == null || puuid == null) return null;
         for (Participant participant : match.participants)
@@ -137,14 +140,8 @@ public final class ProfileAnalyzer {
             boolean selected = sameArenaTeam
                 ? participant.subTeam == player.subTeam
                 : enemyTeam ? participant.team != player.team : participant.team == player.team;
-            if (selected) result += kills(participant.kda);
+            if (selected) result += KdaUtils.getKills(participant.kda);
         }
         return result;
-    }
-
-    private static int kills(String kda) {
-        if (kda == null || kda.isBlank()) return 0;
-        try { return Integer.parseInt(kda.split("/", 2)[0]); }
-        catch (RuntimeException ignored) { return 0; }
     }
 }

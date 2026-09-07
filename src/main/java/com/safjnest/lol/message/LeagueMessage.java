@@ -24,9 +24,12 @@ import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.safjnest.lol.model.statistics.shared.LeafStats;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
@@ -65,8 +68,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.match.RankProgress;
+import com.safjnest.lol.model.summoner.Summoner;
 
 public class LeagueMessage {
 
@@ -692,7 +695,7 @@ public class LeagueMessage {
 
                     TeamType currentTeam = me.subTeam == mt.subTeam ? TeamType.BLUE : TeamType.RED;
                     HashMap<String, String> currentStats = teamStats.get(currentTeam);
-                    currentStats.put("kills", String.valueOf(getKdaValue(mt.kda, 0) + getTeamValue(currentStats, "kills")));
+                    currentStats.put("kills", String.valueOf(KdaUtils.value(mt.kda, 0) + getTeamValue(currentStats, "kills")));
                     currentStats.put("damageDealt", String.valueOf(mt.damage + getTeamValue(currentStats, "damageDealt")));
                     if (mt.damageTaken != null)
                         currentStats.put("damageTaken", String.valueOf(mt.damageTaken + getTeamValue(currentStats, "damageTaken")));
@@ -712,7 +715,7 @@ public class LeagueMessage {
                 }
                 HashMap<String, String> arenaPersonalStats = totalStats.get(me);
                 int arenaTeamKills = Math.max(1, getTeamValue(teamStats.get(TeamType.BLUE), "kills"));
-                String arenaKillParticipation = String.format("%.1f", (double) (getKdaValue(me.kda, 0) + getKdaValue(me.kda, 2)) / arenaTeamKills * 100);
+                String arenaKillParticipation = String.format("%.1f", (double) (KdaUtils.value(me.kda, 0) + KdaUtils.value(me.kda, 2)) / arenaTeamKills * 100);
                 String arenaPersonalStatsText = "**KDA**: " + me.kda + " (" + arenaKillParticipation + "% kill participation)\n"
                         + "**Damage Dealt to champion**: " + LeagueMessageUtils.formatNumber(arenaPersonalStats.get("damageDealt")) + " (" + LeagueMessageUtils.getPosition(totalStats, arenaPersonalStats, "damageDealt") + "th in the game)\n"
                         + "**Damage Taken**: " + (arenaPersonalStats.containsKey("damageTaken")
@@ -744,7 +747,7 @@ public class LeagueMessage {
                     if (!teamStats.containsKey(participant.team)) continue;
 
                     HashMap<String, String> currentStats = teamStats.get(participant.team);
-                    currentStats.put("kills", String.valueOf(getKdaValue(participant.kda, 0) + getTeamValue(currentStats, "kills")));
+                    currentStats.put("kills", String.valueOf(KdaUtils.value(participant.kda, 0) + getTeamValue(currentStats, "kills")));
                     currentStats.put("towers", String.valueOf(participant.turretKills + getTeamValue(currentStats, "towers")));
                     currentStats.put("gold", String.valueOf(participant.goldEarned + getTeamValue(currentStats, "gold")));
 
@@ -793,7 +796,7 @@ public class LeagueMessage {
                 }
                 int totalCreeps = me.cs;
                 int defaultTeamKills = Math.max(1, getTeamValue(teamStats.get(me.team), "kills"));
-                String killParticipation = String.format("%.1f", (double) (getKdaValue(me.kda, 0) + getKdaValue(me.kda, 2)) / defaultTeamKills * 100);
+                String killParticipation = String.format("%.1f", (double) (KdaUtils.value(me.kda, 0) + KdaUtils.value(me.kda, 2)) / defaultTeamKills * 100);
                 String personalStatsText = "**KDA**: " + me.kda + " (" + killParticipation + "% kill participation)\n"
                         + "**CS**: " + totalCreeps + " (" + String.format("%.1f", totalCreeps / Math.max(1.0, match.getDuration() / 60000.0)) + " CS/min)\n"
                         + "**Vision Score**: " + me.visionScore + " (" + me.ward + " wards placed)\n"
@@ -958,17 +961,6 @@ public class LeagueMessage {
             return TierDivisionUtils.getFormattedRank(participant.rankProgress.rank, true);
         if (participant.puuid == null || match.leagueShard == null) return CustomEmojiHandler.getFormattedEmoji("unranked");
         return LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(participant.puuid, match.leagueShard));
-    }
-
-    private static int getKdaValue(String kda, int index) {
-        if (kda == null) return 0;
-        String[] values = kda.split("/");
-        if (index < 0 || index >= values.length) return 0;
-        try {
-            return Integer.parseInt(values[index]);
-        } catch (NumberFormatException ignored) {
-            return 0;
-        }
     }
 
     private static int getTeamValue(Map<String, String> values, String key) {
@@ -1412,7 +1404,7 @@ public class LeagueMessage {
         Filter filter = parameter.toFilter();
         ProfileStatistics statistics = PROFILE_SERVICE.getStatistics(summoner.puuid(), summoner.region(), filter);
         if (statistics == null) {
-            com.safjnest.lol.model.summoner.Summoner saved = SummonerService.find(summoner.puuid(), summoner.region());
+            Summoner saved = SummonerService.find(summoner.puuid(), summoner.region());
             if (saved != null) ComputeScheduler.startProfileStatistics(saved, filter);
         }
         return statistics;
@@ -1434,7 +1426,7 @@ public class LeagueMessage {
             builder.addField("Games", laneString, false);
         }
 
-        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
+        List<ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
         Map<Integer, Mastery> masteries = LeagueHandler.getMastery(summoner);
         StringBuilder championString = new StringBuilder();
         for (int index = 0; index < Math.min(6, champions.size()); index++) {
@@ -1444,9 +1436,9 @@ public class LeagueMessage {
         return builder;
     }
 
-    private static String formatLegacyLaneStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
+    private static String formatLegacyLaneStats(List<ProfileLeafStats> values) {
         StringBuilder result = new StringBuilder();
-        for (com.safjnest.lol.model.statistics.shared.ProfileLeafStats stat : sortedProfileStats(values)) {
+        for (ProfileLeafStats stat : sortedProfileStats(values)) {
             if (stat.reference == null || stat.reference == LaneType.NONE) continue;
             LaneType lane = (LaneType) stat.reference;
             result.append(LaneTypeUtils.getLaneTypeEmoji(lane)).append(" ")
@@ -1458,13 +1450,13 @@ public class LeagueMessage {
         return result.toString();
     }
 
-    private static String formatLegacyQueueStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
+    private static String formatLegacyQueueStats(List<ProfileLeafStats> values) {
         StringBuilder result = new StringBuilder();
-        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sorted = sortedProfileStats(values);
+        List<ProfileLeafStats> sorted = sortedProfileStats(values);
         long otherWins = 0;
         long otherLosses = 0;
         for (int index = 0; index < sorted.size(); index++) {
-            com.safjnest.lol.model.statistics.shared.ProfileLeafStats stat = sorted.get(index);
+            ProfileLeafStats stat = sorted.get(index);
             if (index >= 4) {
                 otherWins += stat.wins;
                 otherLosses += stat.losses();
@@ -1505,8 +1497,8 @@ public class LeagueMessage {
         };
     }
 
-    private static List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sortedProfileStats(List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> values) {
-        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> sorted = values == null ? new ArrayList<>() : new ArrayList<>(values);
+    private static List<ProfileLeafStats> sortedProfileStats(List<ProfileLeafStats> values) {
+        List<ProfileLeafStats> sorted = values == null ? new ArrayList<>() : new ArrayList<>(values);
         sorted.sort((left, right) -> {
             int games = Long.compare(right.games, left.games);
             return games != 0 ? games : Double.compare(right.winrate(), left.winrate());
@@ -1514,7 +1506,7 @@ public class LeagueMessage {
         return sorted;
     }
 
-    private static String formatLegacyChampionStat(com.safjnest.lol.model.statistics.shared.ProfileLeafStats stat, Mastery mastery) {
+    private static String formatLegacyChampionStat(ProfileLeafStats stat, Mastery mastery) {
         StaticChampion champion = ChampionUtils.getChampion((Integer) stat.reference);
         if (champion == null) return stat.reference + "\n";
         int level = mastery == null ? 0 : Math.min(10, mastery.level());
@@ -1532,7 +1524,7 @@ public class LeagueMessage {
         Summoner summoner,
         LeagueMessageParameter parameter
     ) {
-        com.safjnest.lol.model.statistics.shared.ProfileLeafStats total = statistics.total;
+        ProfileLeafStats total = statistics.total;
         if (total == null || total.games == 0) {
             eb.setDescription("Not enough games");
             eb.addField("Last update", formatLastUpdate(statistics.lastUpdate), false);
@@ -1559,7 +1551,7 @@ public class LeagueMessage {
         }
 
         if (!parameter.isShowChampion()) {
-        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
+        List<ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
             Map<Integer, Mastery> masteries = LeagueHandler.getMastery(summoner);
             String championStats = champions.stream()
                 .limit(6)
@@ -1614,7 +1606,7 @@ public class LeagueMessage {
         return statistics.newestMatchAt == 0 ? System.currentTimeMillis() : statistics.newestMatchAt;
     }
 
-    private static String legacyAbilityStats(com.safjnest.lol.model.statistics.shared.ProfileLeafStats total) {
+    private static String legacyAbilityStats(ProfileLeafStats total) {
         return CustomEmojiHandler.getFormattedEmoji("q_") + " Ability 1\n`" + total.q + " times`\n"
             + CustomEmojiHandler.getFormattedEmoji("w_") + " Ability 2\n`" + total.w + " times`\n"
             + CustomEmojiHandler.getFormattedEmoji("e_") + " Ability 3\n`" + total.e + " times`\n"
@@ -1684,7 +1676,7 @@ public class LeagueMessage {
             eb.setDescription("Not enough games");
             return eb;
         }
-        List<com.safjnest.lol.model.statistics.shared.ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
+        List<ProfileLeafStats> champions = sortedProfileStats(statistics.championStats);
         int offset = Math.min(Math.max(0, parameter.getOffset()), champions.size());
         Map<Integer, Mastery> masteries = LeagueHandler.getMastery(summoner);
         String championString = champions.stream()
@@ -1699,10 +1691,10 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static HashMap<Integer, long[]> toLegacyMatchups(Map<Integer, ? extends com.safjnest.lol.model.statistics.shared.LeafStats> values) {
+    private static HashMap<Integer, long[]> toLegacyMatchups(Map<Integer, ? extends LeafStats> values) {
         HashMap<Integer, long[]> result = new HashMap<>();
         if (values == null) return result;
-        for (Map.Entry<Integer, ? extends com.safjnest.lol.model.statistics.shared.LeafStats> stat : values.entrySet()) result.put(stat.getKey(), new long[] {stat.getValue().wins, stat.getValue().losses()});
+        for (Map.Entry<Integer, ? extends LeafStats> stat : values.entrySet()) result.put(stat.getKey(), new long[] {stat.getValue().wins, stat.getValue().losses()});
         return result;
     }
 

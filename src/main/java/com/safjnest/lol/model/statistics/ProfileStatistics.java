@@ -11,6 +11,7 @@ import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.OPTUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -59,7 +60,7 @@ public class ProfileStatistics {
         ProfileLeafStats leaf = leaf(participant.champion, CanonicalQueue.from(queue), lane);
         leaf.games++;
         if (participant.win) leaf.wins++;
-        int[] kda = kda(participant.kda);
+        int[] kda = KdaUtils.parse(participant.kda);
         leaf.kills += kda[0]; leaf.deaths += kda[1]; leaf.assists += kda[2];
         leaf.damage += participant.damage;
         leaf.cs += participant.cs;
@@ -160,7 +161,7 @@ public class ProfileStatistics {
         if (player.win) leaf.wins++;
         if (player.team == no.stelar7.api.r4j.basic.constants.types.lol.TeamType.BLUE) { leaf.blueGames++; if (player.win) leaf.blueWins++; }
         else if (player.team == no.stelar7.api.r4j.basic.constants.types.lol.TeamType.RED) { leaf.redGames++; if (player.win) leaf.redWins++; }
-        int[] kda = kda(player.kda);
+        int[] kda = KdaUtils.parse(player.kda);
         leaf.kills += kda[0]; leaf.deaths += kda[1]; leaf.assists += kda[2];
         leaf.damage += player.damage; leaf.damageBuilding += player.damageBuilding;
         if (player.damageTaken != null) leaf.damageTaken = leaf.damageTaken == null ? (long)player.damageTaken : leaf.damageTaken + player.damageTaken;
@@ -186,16 +187,6 @@ public class ProfileStatistics {
         return champions.computeIfAbsent(champion, ignored -> new LinkedHashMap<>())
             .computeIfAbsent(queue, ignored -> new LinkedHashMap<>())
             .computeIfAbsent(laneKey(lane), ignored -> new ProfileLeafStats());
-    }
-
-    private static int[] kda(String v) {
-        String[] a = v == null ? new String[0] : v.split("/");
-        if (a.length != 3) return new int[3];
-        return new int[]{ integer(a[0]), integer(a[1]), integer(a[2]) };
-    }
-
-    private static int integer(String v) {
-        try { return Integer.parseInt(v); } catch (Exception ignored) { return 0; }
     }
 
     private static String laneKey(LaneType lane) {
@@ -231,7 +222,7 @@ public class ProfileStatistics {
             if (participant == null) continue;
             boolean selected = sameArenaTeam ? participant.subTeam == player.subTeam
                 : enemyTeam ? participant.team != player.team : participant.team == player.team;
-            if (selected) result += kills(participant.kda);
+            if (selected) result += KdaUtils.getKills(participant.kda);
         }
         return result;
     }
@@ -282,9 +273,4 @@ public class ProfileStatistics {
         return false;
     }
 
-    private static int kills(String kda) {
-        if (kda == null || kda.isBlank()) return 0;
-        try { return Integer.parseInt(kda.split("/", 2)[0]); }
-        catch (RuntimeException ignored) { return 0; }
-    }
 }

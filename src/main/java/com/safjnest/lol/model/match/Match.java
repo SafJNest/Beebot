@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.nosql.AbstractEntity;
 import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.utils.NumberUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.model.ResponseMetadata;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -70,7 +72,7 @@ public class Match extends AbstractEntity<Match> {
         this.patch = patch;
         setValue("patch", patch);
         if (patch == null || patch.isBlank()) unsetValue("patchMajor");
-        else setValue("patchMajor", patchMajor(patch));
+        else setValue("patchMajor", PatchUtils.patchMajor(patch));
         return this;
     }
 
@@ -151,19 +153,11 @@ public class Match extends AbstractEntity<Match> {
         if (rank != null) values.put("rank", rank);
         if (patch != null) {
             values.put("patch", patch);
-            values.put("patchMajor", patchMajor(patch));
+            values.put("patchMajor", PatchUtils.patchMajor(patch));
         }
         return values;
     }
 
-    private static String patchMajor(String patch) {
-        String value = patch == null ? null : patch.trim();
-        if (value == null || value.isBlank()) return null;
-        int firstSeparator = value.indexOf('.');
-        if (firstSeparator < 0) return value;
-        int secondSeparator = value.indexOf('.', firstSeparator + 1);
-        return secondSeparator < 0 ? value : value.substring(0, secondSeparator);
-    }
 
     private Participant findParticipant(String puuid) {
         if (participants == null || puuid == null) return null;
@@ -175,19 +169,16 @@ public class Match extends AbstractEntity<Match> {
         switch (field) {
             case "win" -> participant.win = booleanValue(value);
             case "kda" -> participant.kda = stringValue(value);
-            case "champion" -> participant.champion = intValue(value);
+            case "champion" -> participant.champion = NumberUtils.parseInt(value);
             case "rankProgress" -> participant.rankProgress = rankProgressValue(value);
-            case "damage" -> participant.damage = intValue(value);
-            case "cs" -> participant.cs = intValue(value);
-            case "goldEarned" -> participant.goldEarned = intValue(value);
-            case "visionScore" -> participant.visionScore = intValue(value);
+            case "damage" -> participant.damage = NumberUtils.parseInt(value);
+            case "cs" -> participant.cs = NumberUtils.parseInt(value);
+            case "goldEarned" -> participant.goldEarned = NumberUtils.parseInt(value);
+            case "visionScore" -> participant.visionScore = NumberUtils.parseInt(value);
             default -> throw new IllegalArgumentException("Unsupported participant field=" + field);
         }
     }
 
-    private static int intValue(Object value) {
-        return value instanceof Number number ? number.intValue() : Integer.parseInt(String.valueOf(value));
-    }
 
     private static boolean booleanValue(Object value) {
         return value instanceof Boolean bool ? bool : Boolean.parseBoolean(String.valueOf(value));
@@ -207,12 +198,12 @@ public class Match extends AbstractEntity<Match> {
         if (value instanceof RankProgress progress) return progress;
         if (!(value instanceof Map<?, ?> values)) return null;
         TierDivisionType rank = enumValue(values.get("rank"), TierDivisionType.class);
-        Integer lp = values.get("lp") == null ? null : intValue(values.get("lp"));
+        Integer lp = values.get("lp") == null ? null : NumberUtils.parseInt(values.get("lp"));
         if (rank == null || lp == null) return null;
         RankProgress progress = new RankProgress(rank, lp,
-                values.get("gain") == null ? null : intValue(values.get("gain")),
+                values.get("gain") == null ? null : NumberUtils.parseInt(values.get("gain")),
                 enumValue(values.get("previousRank"), TierDivisionType.class),
-                values.get("previousLp") == null ? null : intValue(values.get("previousLp")));
+                values.get("previousLp") == null ? null : NumberUtils.parseInt(values.get("previousLp")));
         return progress;
     }
 }

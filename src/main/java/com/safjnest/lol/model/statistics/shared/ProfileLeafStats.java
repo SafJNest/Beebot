@@ -3,6 +3,7 @@ package com.safjnest.lol.model.statistics.shared;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.utils.KdaUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
@@ -65,7 +66,7 @@ public class ProfileLeafStats extends LeafStats {
 
     public void accumulate(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
         if (participant == null) return;
-        int[] values = kda(participant.kda);
+        int[] values = KdaUtils.parse(participant.kda);
         games++;
         if (participant.win) wins++;
         if (participant.team == TeamType.BLUE) {
@@ -164,16 +165,5 @@ public class ProfileLeafStats extends LeafStats {
         if (b == null) return a;
         if (a == null) return b;
         return a + b;
-    }
-
-    private static int[] kda(String value) {
-        String[] values = value == null ? new String[0] : value.split("/");
-        if (values.length != 3) return new int[3];
-        return new int[]{integer(values[0]), integer(values[1]), integer(values[2])};
-    }
-
-    private static int integer(String value) {
-        try { return Integer.parseInt(value); }
-        catch (NumberFormatException ignored) { return 0; }
     }
 }
