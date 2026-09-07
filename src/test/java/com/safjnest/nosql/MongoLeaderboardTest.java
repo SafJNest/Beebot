@@ -1,10 +1,12 @@
 package com.safjnest.nosql;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.bson.Document;
+import org.bson.types.Binary;
 import org.junit.Test;
 
 import com.safjnest.lol.model.summoner.Rank;
@@ -16,6 +18,18 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class MongoLeaderboardTest {
+
+    @Test
+    public void competitiveIdUsesTheFirstSixteenSha256BytesOfTheCanonicalKey() {
+        Binary id = MongoDB.competitiveId("puuid", "RANKED_SOLO_5X5");
+
+        assertArrayEquals(new byte[] {
+            (byte) 0xbb, (byte) 0x90, (byte) 0x9d, (byte) 0x82,
+            (byte) 0x13, (byte) 0x4b, (byte) 0xa3, (byte) 0x3d,
+            (byte) 0x42, (byte) 0xef, (byte) 0x1f, (byte) 0x29,
+            (byte) 0x9c, (byte) 0x10, (byte) 0x38, (byte) 0xe7
+        }, id.getData());
+    }
 
     @Test
     public void competitiveFilterUsesQueueRegionRoleAndMmrRange() {

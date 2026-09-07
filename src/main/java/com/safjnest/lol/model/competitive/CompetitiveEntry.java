@@ -13,8 +13,4 @@ public record CompetitiveEntry(
     Integer otpChampionId,
     long lastUpdate
 ) {
-
-    public String id() {
-        return puuid + ':' + queue.name();
-    }
 }

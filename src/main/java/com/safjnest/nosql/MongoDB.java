@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import org.bson.conversions.Bson;
 import org.json.JSONArray;
@@ -96,6 +97,7 @@ public final class MongoDB {
     private static final int RANK_PROGRESS_SCHEMA_PAGE_SIZE = 10_000;
     private static final int RANK_PROGRESS_HISTORY_BULK_SIZE = 1_000;
     private static final int COMPETITIVE_REBUILD_BATCH_SIZE = 250;
+    private static final int COMPETITIVE_ID_BYTES = 16;
     private static final int PROFILE_RECORD_MATCH_BATCH_SIZE = 250;
     private static final int AI_TRAINING_CURSOR_BATCH_SIZE = 10_000;
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
@@ -1953,22 +1955,25 @@ public final class MongoDB {
     public static boolean upsertCompetitive(CompetitiveEntry entry) {
         if (entry == null || entry.puuid() == null || entry.puuid().isBlank() || entry.region() == null
                 || entry.queue() == null) return false;
-        Document value = new Document("_id", entry.id())
+        String queue = GameQueueTypeUtils.canonicalQueue(entry.queue()).name();
+        Binary id = competitiveId(entry.puuid(), queue);
+        Document value = new Document("_id", id)
                 .append("puuid", entry.puuid())
                 .append("region", entry.region().name())
-                .append("queue", GameQueueTypeUtils.canonicalQueue(entry.queue()).name())
+                .append("queue", queue)
                 .append("mmr", entry.mmr())
                 .append("lastUpdate", entry.lastUpdate());
         if (entry.primary() != null) value.append("primary", entry.primary().name());
         if (entry.otpChampionId() != null) value.append("otpChampionId", entry.otpChampionId());
-        UpdateResult update = competitive().replaceOne(Filters.eq("_id", entry.id()), value, new ReplaceOptions().upsert(true));
+        UpdateResult update = competitive().replaceOne(Filters.eq("_id", id), value, new ReplaceOptions().upsert(true));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo competitive update was not acknowledged");
         return true;
     }
 
     public static boolean deleteCompetitive(String puuid, GameQueueType queue) {
         if (puuid == null || puuid.isBlank() || queue == null) return false;
-        return competitive().deleteOne(Filters.eq("_id", puuid + ':' + GameQueueTypeUtils.canonicalQueue(queue).name()))
+        String canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue).name();
+        return competitive().deleteOne(Filters.eq("_id", competitiveId(puuid, canonicalQueue)))
                 .getDeletedCount() > 0;
     }
 
@@ -2958,6 +2963,16 @@ public final class MongoDB {
     private static String sha256(byte[] value) {
         try {
             return hex(MessageDigest.getInstance("SHA-256").digest(value));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is not available", exception);
+        }
+    }
+
+    static Binary competitiveId(String puuid, String queue) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest((puuid + ':' + queue).getBytes(StandardCharsets.UTF_8));
+            return new Binary(Arrays.copyOf(hash, COMPETITIVE_ID_BYTES));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is not available", exception);
         }

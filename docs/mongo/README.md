@@ -12,6 +12,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - Custom builds and summoner.metrics are out of scope.
 - The initial backfill migrates only raw data: first `summoner` with `ranks{}` and `masteries[]` in the same batch, then `match` with participants.
 - `!test migrate-ranks` is a recovery-only operation: it reads MariaDB rank rows and upserts only the current `summoner.ranks.<queue>` values on existing Mongo summoners. It does not write identity, masteries, matches or absent rank queues; after a successful copy it rebuilds `competitive` and leaderboard aggregates.
+- `competitive` is rebuilt with `!test stats otp` (or `!test stats all`): this clears and reinserts the projection, which is required after a change to its immutable `_id`.
 - MariaDB's historical participant KDA string is split into the flat `kills`, `deaths` and `assists` fields before the raw match is written to Mongo.
 - Global profile-record rebuilds scan all season PUUIDs through a Mongo cursor in batches of 2,000; the batch size does not cap the total population.
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build and `leaderboard_aggregates` are built subsequently by the application; the latter contain only rebuildable snapshots of distribution and top-region.
@@ -53,6 +54,7 @@ Historical archived in `_archive/` (01-06, 09-11): see `_archive/` for step-by-s
 
 - Summoner: _id = puuid.
 - Match: _id = full Riot match ID, for example EUW1_123.
+- Competitive: `_id` is BSON `Binary` with the first 16 SHA-256 bytes of the UTF-8 canonical key `puuid:queue`; `puuid` and `queue` remain ordinary fields.
 - Match: `region` is the sole shard field; `patchMajor` is derived from `patch` and used in filters.
 - R4J enum: name().
 - Ban: bans.BLUE and bans.RED, always present even if empty.

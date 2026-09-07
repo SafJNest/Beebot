@@ -31,6 +31,12 @@ for that queue exists; the primary lane is absent until canonical profile
 statistics are available. There is no `filterKey` and no materialized
 leaderboard page.
 
+Its `_id` is BSON `Binary` containing the first 16 bytes of SHA-256 over the
+UTF-8 canonical key `puuid + ":" + queue`. It is an internal immutable lookup
+key, not an API field; `puuid` and `queue` remain persisted for leaderboard
+queries and document readability. Rebuilding `competitive` is required when
+changing this identifier because MongoDB does not permit `_id` updates.
+
 The same projection may contain optional `otpChampionId`, copied from the
 single canonical queue-level OTP classification; it is independent from the
 primary lane and non-OTP rows omit it. `!test stats otp` recomputes this

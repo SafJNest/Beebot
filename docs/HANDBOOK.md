@@ -618,7 +618,7 @@ class MongoDBTest {
 | `profile_activity` | `{puuid,filterKey}` | unique | — |
 | `profile_matchups` | `{puuid,filterKey}` | unique | — |
 | `profile_records` | `{puuid,filterKey,metric}` | unique | ObjectId `_id` |
-| `competitive` | `{puuid,queue}` | unique | MMR/OTP derived |
+| `competitive` | `_id` | unique | BSON Binary: first 16 SHA-256 bytes of `puuid:queue`; MMR/OTP derived |
 | `champion_statistics` | `{filterKey}` / `patch+queue` | compound | matrix |
 
 Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` → `IXSCAN`, `nReturned ≈ totalDocsExamined`.
