@@ -33,7 +33,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     private ComputeScheduler() {
         super("compute", "Compute request cancelled during shutdown");
-        registerRoutes(List.of(DatabaseWorkerType.PROFILE, DatabaseWorkerType.CHAMPION));
+        registerRoutes(List.of(DatabaseWorkerType.PROFILE, DatabaseWorkerType.PROFILE_2, DatabaseWorkerType.CHAMPION, DatabaseWorkerType.MONGO));
     }
 
     public static AbstractScheduler<DatabaseWorkerType> scheduler() {
@@ -186,12 +186,22 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     @Override
     protected String routeName(DatabaseWorkerType route) {
-        return route == DatabaseWorkerType.PROFILE ? "profile" : "champion";
+        return switch (route) {
+            case PROFILE -> "profile";
+            case PROFILE_2 -> "profile-2";
+            case CHAMPION -> "champion";
+            case MONGO -> "mongo";
+        };
     }
 
     @Override
     protected String workerThreadName(DatabaseWorkerType route) {
-        return route == DatabaseWorkerType.PROFILE ? "lol-db-profile-worker-" : "lol-db-champion-worker-";
+        return switch (route) {
+            case PROFILE -> "lol-db-profile-worker-";
+            case PROFILE_2 -> "lol-db-profile-2-worker-";
+            case CHAMPION -> "lol-db-champion-worker-";
+            case MONGO -> "lol-db-mongo-worker-";
+        };
     }
 
     @Override
@@ -202,8 +212,16 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     @Override
     protected DatabaseWorkerType queueFor(DatabaseWorkerType route) {
-        if (route != DatabaseWorkerType.PROFILE) return DatabaseWorkerType.CHAMPION;
-        return profileQueue(load(DatabaseWorkerType.PROFILE), load(DatabaseWorkerType.CHAMPION), championReserved());
+        if (route == DatabaseWorkerType.CHAMPION) return DatabaseWorkerType.CHAMPION;
+        if (route == DatabaseWorkerType.MONGO) return DatabaseWorkerType.MONGO;
+        if (route == DatabaseWorkerType.PROFILE_2) return DatabaseWorkerType.PROFILE_2;
+        return profileQueue(
+            load(DatabaseWorkerType.PROFILE),
+            load(DatabaseWorkerType.PROFILE_2),
+            load(DatabaseWorkerType.CHAMPION),
+            load(DatabaseWorkerType.MONGO),
+            championReserved()
+        );
     }
 
     @Override
@@ -305,9 +323,19 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         return "profile-refresh:" + puuid;
     }
 
+    static DatabaseWorkerType profileQueue(int profileLoad, int profile2Load, int championLoad, int mongoLoad, boolean championReserved) {
+        if (championReserved) {
+            return profile2Load < profileLoad ? DatabaseWorkerType.PROFILE_2 : DatabaseWorkerType.PROFILE;
+        }
+        int minProfile = Math.min(profileLoad, profile2Load);
+        int minAll = Math.min(Math.min(minProfile, championLoad), mongoLoad);
+        if (minAll == mongoLoad) return DatabaseWorkerType.MONGO;
+        if (minAll == championLoad) return DatabaseWorkerType.CHAMPION;
+        return profile2Load < profileLoad ? DatabaseWorkerType.PROFILE_2 : DatabaseWorkerType.PROFILE;
+    }
+
     static DatabaseWorkerType profileQueue(int profileLoad, int championLoad, boolean championReserved) {
-        if (championReserved) return DatabaseWorkerType.PROFILE;
-        return championLoad < profileLoad ? DatabaseWorkerType.CHAMPION : DatabaseWorkerType.PROFILE;
+        return profileQueue(profileLoad, 0, championLoad, 0, championReserved);
     }
 
     static boolean isHeavyChampionTaskKey(String key) {

@@ -12,6 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -266,10 +271,12 @@ public final class RankingService {
             }
             String key = entry.getKey();
             boolean permanentFlag = permanent(request.tier());
-            // background build, do not block response
-            java.util.concurrent.CompletableFuture.runAsync(() -> build(key, permanentFlag, values -> MongoDB.forEachCompetitiveRankingSegment(
-                request.queue(), request.tier(), request.region(), competitive ->
-                values.accept(new RedisClient.SortedSetEntry(leaderboardMember(competitive.puuid(), request.queue()), competitive.mmr())))));
+            QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "ranking:leaderboard:" + key, "ranking leaderboard " + key, job -> {
+                build(key, permanentFlag, values -> MongoDB.forEachCompetitiveRankingSegment(
+                    request.queue(), request.tier(), request.region(), competitive ->
+                    values.accept(new RedisClient.SortedSetEntry(leaderboardMember(competitive.puuid(), request.queue()), competitive.mmr()))));
+                return null;
+            });
         }
     }
 
@@ -283,9 +290,12 @@ public final class RankingService {
                 continue;
             }
             String key = entry.getKey();
-            java.util.concurrent.CompletableFuture.runAsync(() -> build(key, false, values -> MongoDB.forEachProfileRecordRankingSegment(
-                request.filterKey(), request.metric(), request.region(), record ->
-                values.accept(new RedisClient.SortedSetEntry(recordMember(record), record.score)))));
+            QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "ranking:records:" + key, "ranking records " + key, job -> {
+                build(key, false, values -> MongoDB.forEachProfileRecordRankingSegment(
+                    request.filterKey(), request.metric(), request.region(), record ->
+                    values.accept(new RedisClient.SortedSetEntry(recordMember(record), record.score))));
+                return null;
+            });
         }
     }
 
@@ -329,12 +339,12 @@ public final class RankingService {
         String key = countsKey(queue, region);
         Map<String, Long> stored = rebuild ? Map.of() : RedisClient.getHashLongs(key);
         if (!stored.isEmpty()) return toRanks(stored);
-        // missing -> background rebuild, do not block ranking
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "ranking:counts:" + key, "ranking counts " + key, job -> {
             Map<TierDivisionType, Long> rebuilt = MongoDB.findCompetitiveRankCounts(queue, region);
             Map<String, Long> encoded = new HashMap<>();
             for (Map.Entry<TierDivisionType, Long> entry : rebuilt.entrySet()) encoded.put(entry.getKey().name(), entry.getValue());
             RedisClient.replaceHash(key, encoded);
+            return null;
         });
         return Map.of();
     }
