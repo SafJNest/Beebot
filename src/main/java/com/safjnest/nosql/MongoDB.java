@@ -1558,7 +1558,7 @@ public final class MongoDB {
         List<String> puuids = new ArrayList<>(boundedLimit);
         for (Document document : competitive().find(competitiveFilter(rank, queue, region, role, otpChampionId))
                 .projection(Projections.include("puuid"))
-                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("_id")))
+                .sort(Sorts.descending("mmr"))
                 .skip(boundedOffset)
                 .limit(boundedLimit)) {
             String puuid = document.getString("puuid");
@@ -1621,7 +1621,7 @@ public final class MongoDB {
         filters.add(Filters.eq("tier", tier.name()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
         try (MongoCursor<Document> cursor = competitive().find(Filters.and(filters))
-                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("_id")))
+                .sort(Sorts.descending("mmr"))
                 .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
             while (cursor.hasNext()) {
                 CompetitiveEntry entry = competitiveEntry(cursor.next());

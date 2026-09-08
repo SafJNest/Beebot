@@ -419,8 +419,8 @@ public class LeaderboardService {
         try {
             int ttl = TierDivisionUtils.isHighElo(segment.tier()) ? 0 : RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.ttlSeconds();
             boolean built = RedisClient.buildSortedSet(
-                RedisKey.CONTEXTUAL_RANKING_BUILD.of(java.util.UUID.randomUUID()), key, ttl,
-                RedisKey.CONTEXTUAL_RANKING_BUILD.ttlSeconds(), entries -> MongoDB.forEachCompetitiveRankingSegment(
+                RedisKey.CONTEXTUAL_LEADERBOARD_BUILD.of(java.util.UUID.randomUUID()), key, ttl,
+                RedisKey.CONTEXTUAL_LEADERBOARD_BUILD.ttlSeconds(), entries -> MongoDB.forEachCompetitiveRankingSegment(
                     segment.queue(), segment.tier(), segment.region(), entry ->
                     entries.accept(new RedisClient.SortedSetEntry(member(entry.puuid(), segment.queue()), entry.mmr()))));
             if (built) {

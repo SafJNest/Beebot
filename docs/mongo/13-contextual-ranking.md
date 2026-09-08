@@ -12,9 +12,15 @@ before contextual ranking is enabled.
 Redis keys are derived only:
 
 ```text
-beebot:lol:los:ranking:leaderboard:<queue>:GLOBAL|<region>:<exact-tier>
-beebot:lol:los:ranking:leaderboard:counts:<queue>:GLOBAL|<region>
-beebot:lol:los:ranking:records:<filterKey>:<metric>:GLOBAL|<region>
+beebot:lol:los:leaderboard:<queue>:GLOBAL|<region>:<exact-tier>
+beebot:lol:los:leaderboard:counts:<queue>:GLOBAL|<region>
+beebot:lol:los:leaderboard:segments
+beebot:lol:los:leaderboard:access
+beebot:lol:los:leaderboard:building:<build-id>
+beebot:lol:los:ranking:<filterKey>:<metric>:GLOBAL|<region>
+beebot:lol:los:ranking:segments
+beebot:lol:los:ranking:access
+beebot:lol:los:ranking:building:<build-id>
 ```
 
 Leaderboard ZSET score is `competitive.mmr`; record ZSET score is
@@ -23,17 +29,16 @@ and regional exact-rank count hashes are rebuildable from `competitive.tier`.
 The segment registry and access hash are Redis-only observability metadata.
 
 Apply these operator-managed indexes after checking existing names and running
-the corresponding `explain("executionStats")` commands. `_id` is included as
-the deterministic tie-break used by both Mongo and Redis.
+the corresponding `explain("executionStats")` commands.
 
 ```javascript
 db.competitive.createIndex(
-  {queue: 1, tier: 1, mmr: -1, _id: -1},
+  {queue: 1, tier: 1, mmr: -1},
   {name: "competitive_contextual_global"}
 )
 
 db.competitive.createIndex(
-  {queue: 1, tier: 1, region: 1, mmr: -1, _id: -1},
+  {queue: 1, tier: 1, region: 1, mmr: -1},
   {name: "competitive_contextual_regional"}
 )
 ```
