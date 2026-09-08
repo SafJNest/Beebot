@@ -3,6 +3,7 @@ package com.safjnest.lol.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -15,9 +16,21 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 public class TierDivisionUtils {
 
   public record MmrRange(int minimum, Integer maximum) {}
+  private static final List<TierType> PROFILE_REBUILD_TIERS = List.of(TierType.GRANDMASTER, TierType.CHALLENGER);
 
   public static boolean isHighElo(TierDivisionType division) {
     return Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I).contains(division);
+  }
+
+  public static List<TierDivisionType> descendingRankedDivisions() {
+    return Arrays.stream(TierDivisionType.values())
+      .filter(division -> division != TierDivisionType.UNRANKED)
+      .sorted(Comparator.comparingInt((TierDivisionType division) -> getMmr(division, 0)).reversed())
+      .toList();
+  }
+
+  public static List<TierType> profileRebuildTiers() {
+    return PROFILE_REBUILD_TIERS;
   }
 
   public static String getFormattedRank(TierDivisionType rank, boolean withEmoji) {

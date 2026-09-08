@@ -34,7 +34,6 @@ import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
 
@@ -55,7 +54,6 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineParticipantFrame;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class Tracker {
 

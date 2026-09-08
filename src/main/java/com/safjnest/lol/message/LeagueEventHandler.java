@@ -10,6 +10,7 @@ import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.core.cache.managers.UserCache;
@@ -199,7 +200,7 @@ public class LeagueEventHandler extends EventButtonHandler {
                 parameter.setOffset(0);
             }
             case "tier" -> {
-                parameter.setRank(value == null || value.equals("ALL") ? null : TierType.valueOf(value.toUpperCase()));
+                parameter.setRank(value == null || value.equals(LeagueConstants.ALL) ? null : TierType.valueOf(value.toUpperCase()));
                 parameter.setOffset(0);
             }
             case "opggselect" -> parameter.setSelectedMatchId(value == null ? null : value.split("#", 2)[0]);

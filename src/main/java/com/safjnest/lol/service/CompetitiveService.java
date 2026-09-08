@@ -24,44 +24,40 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public final class CompetitiveService {
 
-    private static final List<GameQueueType> QUEUES = List.of(
-        GameQueueType.RANKED_SOLO_5X5,
-        GameQueueType.RANKED_FLEX_SR
-    );
-
     private CompetitiveService() {}
 
-    public static void refreshFromRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
-        ProfileStatistics statistics = MongoDB.findProfileStatistics(puuid, Filter.canonical());
-        refresh(puuid, shard, ranks, statistics);
+    public static boolean updateFromRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
+        return update(puuid, shard, ranks, MongoDB.findProfileStatistics(puuid, Filter.canonical()));
     }
 
-    public static void refreshFromStatistics(String puuid, LeagueShard shard, ProfileStatistics statistics) {
-        refresh(puuid, shard, MongoDB.findRanks(puuid, shard), statistics);
+    public static boolean updateFromStatistics(String puuid, LeagueShard shard, ProfileStatistics statistics) {
+        return update(puuid, shard, MongoDB.findRanks(puuid, shard), statistics);
     }
 
     public static MongoDB.CompetitiveRebuild rebuild() {
         long now = System.currentTimeMillis();
-        long[] counts = new long[2];
+        long[] counts = new long[3];
         Filter filter = Filter.canonical();
         MongoDB.forEachCompetitiveSummonerBatch(summoners -> {
             List<String> puuids = new ArrayList<>(summoners.size());
             for (Summoner summoner : summoners) puuids.add(summoner.puuid());
             Map<String, ProfileStatistics> statisticsByPuuid = MongoDB.findProfileStatistics(puuids, filter);
+            Map<String, Map<GameQueueType, CompetitiveEntry>> existing = MongoDB.findCompetitive(puuids);
             for (Summoner summoner : summoners) {
                 counts[0]++;
                 ProfileStatistics statistics = statisticsByPuuid.get(summoner.puuid());
-                for (GameQueueType queue : QUEUES) {
-                    CompetitiveEntry entry = entry(summoner.puuid(), summoner.region(), summoner.ranks(), statistics, queue, now);
-                    if (entry != null) {
-                        MongoDB.upsertCompetitive(entry);
-                        counts[1]++;
-                    }
+                Map<GameQueueType, CompetitiveEntry> current = existing.getOrDefault(summoner.puuid(), Map.of());
+                for (GameQueueType queue : GameQueueTypeUtils.leaderboardQueues()) {
+                    CompetitiveEntry previous = current.get(queue);
+                    CompetitiveEntry next = entry(summoner.puuid(), summoner.region(), summoner.ranks(), statistics, queue, now);
+                    if (previous == null && next == null) continue;
+                    if (!write(previous, next, false)) continue;
+                    if (next == null) counts[2]++;
+                    else counts[1]++;
                 }
             }
         });
-        RankingService.rebuildLeaderboard();
-        return new MongoDB.CompetitiveRebuild(counts[0], counts[1], 0);
+        return new MongoDB.CompetitiveRebuild(counts[0], counts[1], counts[2]);
     }
 
     public static StatisticsBuild buildMissingStatistics() {
@@ -89,21 +85,20 @@ public final class CompetitiveService {
 
     // ============================================================================
 
-    private static void refresh(
+    private static boolean update(
         String puuid,
         LeagueShard shard,
         Map<GameQueueType, Rank> ranks,
         ProfileStatistics statistics
     ) {
-        if (puuid == null || puuid.isBlank() || shard == null) return;
+        if (puuid == null || puuid.isBlank() || shard == null) return false;
         long now = System.currentTimeMillis();
-        for (GameQueueType queue : QUEUES) {
+        for (GameQueueType queue : GameQueueTypeUtils.leaderboardQueues()) {
             CompetitiveEntry previous = MongoDB.findCompetitive(puuid, queue);
-            CompetitiveEntry entry = entry(puuid, shard, ranks, statistics, queue, now);
-            if (entry == null) MongoDB.deleteCompetitive(puuid, queue);
-            else MongoDB.upsertCompetitive(entry);
-            RankingService.refreshLeaderboard(previous, entry);
+            CompetitiveEntry next = entry(puuid, shard, ranks, statistics, queue, now);
+            if (!write(previous, next, true)) return false;
         }
+        return true;
     }
 
     static CompetitiveEntry entry(
@@ -125,7 +120,7 @@ public final class CompetitiveService {
     }
 
     private static boolean hasRank(Map<GameQueueType, Rank> ranks) {
-        for (GameQueueType queue : QUEUES) {
+        for (GameQueueType queue : GameQueueTypeUtils.leaderboardQueues()) {
             Rank rank = ranks == null ? null : ranks.get(queue);
             if (rank != null && rank.tier() != null && TierDivisionUtils.getMmr(rank.tier(), rank.lp()) >= 0) return true;
         }
@@ -172,5 +167,24 @@ public final class CompetitiveService {
                 if (values != null && Boolean.TRUE.equals(values.isOtp)) return champion.getKey();
         }
         return null;
+    }
+
+    private static boolean write(CompetitiveEntry previous, CompetitiveEntry next, boolean updateIndex) {
+        CompetitiveEntry merged = merge(previous, next);
+        boolean saved;
+        if (merged == null) {
+            if (previous == null) return true;
+            saved = MongoDB.deleteCompetitive(previous.puuid(), previous.queue());
+        } else saved = MongoDB.upsertCompetitive(merged);
+        if (!saved) return false;
+        if (updateIndex) LeaderboardService.updateIndex(previous, merged);
+        return true;
+    }
+
+    static CompetitiveEntry merge(CompetitiveEntry previous, CompetitiveEntry next) {
+        if (next == null) return null;
+        LaneType primary = next.primary() == null && previous != null ? previous.primary() : next.primary();
+        Integer otpChampionId = next.otpChampionId() == null && previous != null ? previous.otpChampionId() : next.otpChampionId();
+        return new CompetitiveEntry(next.puuid(), next.region(), next.queue(), next.tier(), next.mmr(), primary, otpChampionId, next.lastUpdate());
     }
 }

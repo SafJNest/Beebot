@@ -10,6 +10,7 @@ import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
@@ -39,6 +40,7 @@ public class App {
         TwitchClient.init();
         SystemMetricsSampler.start();
         QueueHandler.start();
+        LeaderboardService.warmupIndexAsync();
         TrackerScheduler.start();
 
         bot = new Bot();

@@ -31,6 +31,7 @@ import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
@@ -145,7 +146,7 @@ public class LeagueMessage {
         if (parameter.getOffset() <= 0) left = left.asDisabled();
     
         List<SelectOption> tierOptions = new ArrayList<>();
-        tierOptions.add(SelectOption.of("All", "ALL").withDefault(parameter.getRank() == null));
+        tierOptions.add(SelectOption.of("All", LeagueConstants.ALL).withDefault(parameter.getRank() == null));
         for (TierType tier : TierType.values()) {
             tierOptions.add(SelectOption.of(tier.name(), tier.name())
                 .withEmoji(CustomEmojiHandler.getRichEmoji(tier.name()))

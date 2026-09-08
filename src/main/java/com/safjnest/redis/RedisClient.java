@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Pipeline;
@@ -23,6 +24,7 @@ public class RedisClient {
 
     public record SortedSetEntry(byte[] member, double score) {}
 
+    public static final int SORTED_SET_BATCH_SIZE = 250;
     private static final int CONNECTION_TIMEOUT_MS = 500;
     private static final int TEMPORARY_TTL_SECONDS = 60;
     private static final long RETRY_AFTER_FAILURE_MS = 30_000;
@@ -161,19 +163,6 @@ public class RedisClient {
             markAvailable();
         } catch (Exception ignored) {
             markUnavailable();
-        }
-    }
-
-    public static long increment(String key) {
-        if (!canUseRedis()) return 0;
-        try (Jedis jedis = pool.getResource()) {
-            long value = jedis.incr(key);
-            jedis.expire(key, TEMPORARY_TTL_SECONDS);
-            markAvailable();
-            return value;
-        } catch (Exception ignored) {
-            markUnavailable();
-            return 0;
         }
     }
 
@@ -402,6 +391,32 @@ public class RedisClient {
             markAvailable();
         } catch (Exception ignored) {
             markUnavailable();
+        }
+    }
+
+    public static boolean buildSortedSet(
+        String temporaryKey,
+        String key,
+        int ttlSeconds,
+        int temporaryTtlSeconds,
+        Consumer<Consumer<SortedSetEntry>> source
+    ) {
+        if (temporaryKey == null || key == null || source == null) return false;
+        List<SortedSetEntry> batch = new ArrayList<>(SORTED_SET_BATCH_SIZE);
+        try {
+            source.accept(entry -> {
+                batch.add(entry);
+                if (batch.size() < SORTED_SET_BATCH_SIZE) return;
+                addSortedSet(temporaryKey, batch);
+                batch.clear();
+            });
+            if (!batch.isEmpty()) addSortedSet(temporaryKey, batch);
+            expire(temporaryKey, temporaryTtlSeconds);
+            if (!sortedSetExists(temporaryKey)) return false;
+            publishSortedSet(temporaryKey, key, ttlSeconds);
+            return sortedSetExists(key);
+        } finally {
+            delete(temporaryKey);
         }
     }
 

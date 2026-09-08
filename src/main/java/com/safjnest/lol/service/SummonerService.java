@@ -337,6 +337,27 @@ public final class SummonerService {
 
     // ============================================================================
 
+    private static Summoner cache(String puuid, LeagueShard shard) {
+        return RedisClient.get(RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), Summoner.class);
+    }
+
+    private static no.stelar7.api.r4j.pojo.lol.summoner.Summoner cacheRiotSummoner(String puuid, LeagueShard shard) {
+        return RedisClient.get(RedisKey.R4J_SUMMONER.of(shard.name(), puuid), no.stelar7.api.r4j.pojo.lol.summoner.Summoner.class);
+    }
+
+    private static Summoner query(String puuid, LeagueShard shard) {
+        return MongoDB.findSummoner(puuid, shard);
+    }
+
+    private static String queryPuuid(String name, String tag, LeagueShard shard) {
+        if (!valid(name, tag, shard)) return null;
+        return MongoDB.findPuuid(name + "#" + tag, shard);
+    }
+
+    private static List<MongoDB.SummonerSearchResult> querySearch(String normalizedQuery, LeagueShard shard) {
+        return MongoDB.findSummonerSearch(normalizedQuery, shard, 25);
+    }
+
     private static CompletableFuture<RiotAccount> refreshRiotAccountAsync(String puuid, LeagueShard shard) {
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account-refresh:" + puuid,
             "account refresh puuid=" + puuid, ignored -> {
@@ -448,18 +469,6 @@ public final class SummonerService {
         }
     }
 
-    private static Summoner cache(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), Summoner.class);
-    }
-
-    private static Summoner query(String puuid, LeagueShard shard) {
-        return MongoDB.findSummoner(puuid, shard);
-    }
-
-    private static no.stelar7.api.r4j.pojo.lol.summoner.Summoner cacheRiotSummoner(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.R4J_SUMMONER.of(shard.name(), puuid), no.stelar7.api.r4j.pojo.lol.summoner.Summoner.class);
-    }
-
     private static CompletableFuture<Summoner> saveAsync(no.stelar7.api.r4j.pojo.lol.summoner.Summoner source) {
         String riotId = MongoDB.findSummonerName(source.getPUUID(), source.getPlatform());
         if (riotId != null && !riotId.isBlank()) return CompletableFuture.completedFuture(store(
@@ -488,15 +497,6 @@ public final class SummonerService {
     private static Summoner store(Summoner summoner, LeagueShard shard) {
         if (summoner != null) RedisClient.set(RedisKey.SUMMONER, summoner, LeagueShardUtils.cacheRegion(shard), shard.name(), summoner.puuid());
         return summoner;
-    }
-
-    private static String queryPuuid(String name, String tag, LeagueShard shard) {
-        if (!valid(name, tag, shard)) return null;
-        return MongoDB.findPuuid(name + "#" + tag, shard);
-    }
-
-    private static List<MongoDB.SummonerSearchResult> querySearch(String normalizedQuery, LeagueShard shard) {
-        return MongoDB.findSummonerSearch(normalizedQuery, shard, 25);
     }
 
     private static List<Choice> toChoices(List<SummonerAutocompleteChoice> autocompleteChoices) {

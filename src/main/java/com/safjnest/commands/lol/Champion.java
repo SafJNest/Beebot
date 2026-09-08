@@ -20,6 +20,7 @@ import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -121,7 +122,7 @@ public class Champion extends SlashCommand {
 
         if (event.getOption("rank") != null) {
             String rank = event.getOption("rank").getAsString();
-            filter.setRank(rank.equals("ALL") ? null : TierType.valueOf(rank));
+            filter.setRank(rank.equals(LeagueConstants.ALL) ? null : TierType.valueOf(rank));
         }
         if (event.getOption("region") != null)
             filter.setRegion(LeagueShard.valueOf(event.getOption("region").getAsString()));

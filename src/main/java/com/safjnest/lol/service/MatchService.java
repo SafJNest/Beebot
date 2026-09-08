@@ -100,6 +100,29 @@ public final class MatchService {
         }
     }
 
+    public static LOLMatch fetch(String gameId, LeagueShard shard) {
+        try {
+            return fetchAsync(gameId, shard).join();
+        } catch (CompletionException exception) {
+            return null;
+        }
+    }
+
+    public static CompletableFuture<LOLMatch> fetchAsync(String gameId, LeagueShard shard) {
+        if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
+
+        LOLMatch cached = getCachedR4JMatch(gameId, shard);
+        if (cached != null) return CompletableFuture.completedFuture(cached);
+
+        RegionShard region = shard.toRegionShard();
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
+            "match id=" + gameId, ignored -> {
+            LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
+            if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
+            return match;
+        });
+    }
+
     public static Match insert(LOLMatch source) {
         if (source == null || source.getPlatform() == null) return null;
         String fullGameId = MatchUtils.fullGameId(source);
@@ -160,29 +183,6 @@ public final class MatchService {
                 upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(soloRank(refreshed)), shard);
             });
         }
-    }
-
-    public static LOLMatch fetch(String gameId, LeagueShard shard) {
-        try {
-            return fetchAsync(gameId, shard).join();
-        } catch (CompletionException exception) {
-            return null;
-        }
-    }
-
-    public static CompletableFuture<LOLMatch> fetchAsync(String gameId, LeagueShard shard) {
-        if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
-
-        LOLMatch cached = getCachedR4JMatch(gameId, shard);
-        if (cached != null) return CompletableFuture.completedFuture(cached);
-
-        RegionShard region = shard.toRegionShard();
-        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
-            "match id=" + gameId, ignored -> {
-            LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
-            if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
-            return match;
-        });
     }
 
     public static void cacheR4JMatch(LOLMatch match) {

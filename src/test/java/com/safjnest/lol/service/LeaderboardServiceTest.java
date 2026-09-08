@@ -10,10 +10,11 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.utils.TierDivisionUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
-public class RankingServiceTest {
+public class LeaderboardServiceTest {
 
     @Test
     public void absoluteRankingAddsAllHigherExactRanksAndTheOneBasedSegmentPosition() {
@@ -27,25 +28,17 @@ public class RankingServiceTest {
             TierDivisionType.GOLD_IV, 17L
         );
 
-        assertEquals(Long.valueOf(42), RankingService.absoluteRanking(counts, TierDivisionType.GOLD_IV, 0L));
-        assertEquals(Long.valueOf(58), RankingService.absoluteRanking(counts, TierDivisionType.GOLD_IV, 16L));
-        assertNull(RankingService.absoluteRanking(counts, TierDivisionType.SILVER_IV, 0L));
-    }
-
-    @Test
-    public void recordCompetitionRankingDoesNotSplitEqualScores() {
-        assertEquals(Long.valueOf(1), RankingService.competitionRanking(0L, 0L));
-        assertEquals(Long.valueOf(1), RankingService.competitionRanking(1L, 0L));
-        assertEquals(Long.valueOf(3), RankingService.competitionRanking(2L, 2L));
-        assertNull(RankingService.competitionRanking(null, 2L));
+        assertEquals(Long.valueOf(42), LeaderboardService.absoluteRanking(counts, TierDivisionType.GOLD_IV, 0L));
+        assertEquals(Long.valueOf(58), LeaderboardService.absoluteRanking(counts, TierDivisionType.GOLD_IV, 16L));
+        assertNull(LeaderboardService.absoluteRanking(counts, TierDivisionType.SILVER_IV, 0L));
     }
 
     @Test
     public void onlyMasterAndAboveSegmentsArePermanent() {
-        assertTrue(RankingService.permanent(TierDivisionType.MASTER_I));
-        assertTrue(RankingService.permanent(TierDivisionType.GRANDMASTER_I));
-        assertTrue(RankingService.permanent(TierDivisionType.CHALLENGER_I));
-        assertFalse(RankingService.permanent(TierDivisionType.DIAMOND_I));
+        assertTrue(TierDivisionUtils.isHighElo(TierDivisionType.MASTER_I));
+        assertTrue(TierDivisionUtils.isHighElo(TierDivisionType.GRANDMASTER_I));
+        assertTrue(TierDivisionUtils.isHighElo(TierDivisionType.CHALLENGER_I));
+        assertFalse(TierDivisionUtils.isHighElo(TierDivisionType.DIAMOND_I));
     }
 
     @Test

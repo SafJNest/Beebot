@@ -10,6 +10,7 @@ import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -91,7 +92,7 @@ public class Champions extends SlashCommand {
 
         if (event.getOption("rank") != null) {
             String rank = event.getOption("rank").getAsString();
-            parameter.setRank(rank.equals("ALL") ? null : TierType.valueOf(rank));
+            parameter.setRank(rank.equals(LeagueConstants.ALL) ? null : TierType.valueOf(rank));
         }
 
         if (event.getOption("opponent") != null)

@@ -22,6 +22,10 @@ public class GameQueueTypeUtils {
     GameQueueType.NEXUS_BLITZ,
     GameQueueType.STRAWBERRY
   );
+  private static final List<GameQueueType> LEADERBOARD_QUEUES = List.of(
+    GameQueueType.RANKED_SOLO_5X5,
+    GameQueueType.RANKED_FLEX_SR
+  );
 
   public static boolean hasLane(GameQueueType queue) {
     return !QUEUES_WITHOUT_LANE.contains(queue);
@@ -37,8 +41,20 @@ public class GameQueueTypeUtils {
         : queue;
   }
 
+  public static GameQueueType defaultQueue(GameQueueType queue) {
+    return queue == null ? GameQueueType.RANKED_SOLO_5X5 : queue;
+  }
+
   public static boolean isRankedSolo(GameQueueType queue) {
     return canonicalQueue(queue) == GameQueueType.RANKED_SOLO_5X5;
+  }
+
+  public static List<GameQueueType> leaderboardQueues() {
+    return LEADERBOARD_QUEUES;
+  }
+
+  public static List<GameQueueType> profileRebuildQueues() {
+    return LEADERBOARD_QUEUES;
   }
 
   public static String prettyName(GameQueueType queue) {

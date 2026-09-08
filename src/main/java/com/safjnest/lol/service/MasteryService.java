@@ -55,12 +55,33 @@ public final class MasteryService {
         }
     }
 
+    public static Mastery getByChampion(String puuid, LeagueShard shard, int championId) {
+        for (Mastery mastery : get(puuid, shard)) {
+            if (mastery.championId() == championId) return mastery;
+        }
+        return null;
+    }
+
     public static CompletableFuture<List<Mastery>> refreshAsync(String puuid, LeagueShard shard) {
         return refreshAsync(puuid, shard, JobPriority.IMMEDIATE);
     }
 
     public static CompletableFuture<List<Mastery>> refreshBackgroundAsync(String puuid, LeagueShard shard) {
         return refreshAsync(puuid, shard, JobPriority.BACKGROUND);
+    }
+
+    // ============================================================================
+
+    private static List<Mastery> cache(String puuid, LeagueShard shard) {
+        return RedisClient.get(RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), MASTERIES_TYPE);
+    }
+
+    private static List<Mastery> query(String puuid, LeagueShard shard) {
+        return MongoDB.findMasteries(puuid, shard);
+    }
+
+    private static List<ChampionMastery> cacheRiotMasteries(String puuid, LeagueShard shard) {
+        return RedisClient.get(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid), RIOT_MASTERIES_TYPE);
     }
 
     private static CompletableFuture<List<Mastery>> refreshAsync(
@@ -75,15 +96,6 @@ public final class MasteryService {
             return masteries;
         });
     }
-
-    public static Mastery getByChampion(String puuid, LeagueShard shard, int championId) {
-        for (Mastery mastery : get(puuid, shard)) {
-            if (mastery.championId() == championId) return mastery;
-        }
-        return null;
-    }
-
-    // ============================================================================
 
     private static CompletableFuture<List<Mastery>> fetch(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
@@ -146,18 +158,6 @@ public final class MasteryService {
             if (masteries == null) throw new IllegalStateException("Riot returned no mastery result");
             RedisClient.set(RedisKey.R4J_CHAMPION_MASTERIES, masteries, shard.name(), puuid);
             return masteries;
-    }
-
-    private static List<Mastery> cache(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), MASTERIES_TYPE);
-    }
-
-    private static List<Mastery> query(String puuid, LeagueShard shard) {
-        return MongoDB.findMasteries(puuid, shard);
-    }
-
-    private static List<ChampionMastery> cacheRiotMasteries(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid), RIOT_MASTERIES_TYPE);
     }
 
     private static void save(String puuid, LeagueShard shard, List<Mastery> masteries, boolean invalidateProfile) {

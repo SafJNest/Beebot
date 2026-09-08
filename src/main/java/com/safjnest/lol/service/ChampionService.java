@@ -76,7 +76,7 @@ public class ChampionService {
             cached = null;
         }
         if (cached != null) {
-            ChampionView page = cached.withMetadata(metadata(statsLastUpdate, buildLastUpdate, false, filter));
+            ChampionView page = cached.withMetadata(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter));
             return ApiResult.ready(page, page.metadata());
         }
         return compose(champion, filter, statsLastUpdate, buildLastUpdate);
@@ -245,7 +245,7 @@ public class ChampionService {
             ready.add(filter);
             lastUpdate = oldest(lastUpdate, source.lastUpdate());
         }
-        ResponseMetadata metadata = new ResponseMetadata(null, lastUpdate > 0 ? lastUpdate : null, refresh, base);
+        ResponseMetadata metadata = ResponseMetadata.of(lastUpdate, refresh, base);
         ChampionTierList result = new ChampionTierList(ChampionTierAnalyzer.analyze(ready, sources), metadata);
         if (refresh) {
             ComputeScheduler.enqueueChampionStatsMatrix(base.patch(), base.queue());
@@ -361,11 +361,11 @@ public class ChampionService {
         boolean buildPending = build == null || isStale(buildLastUpdate);
         if (statisticsPending || buildPending) {
             ComputeScheduler.startChampionData(filter, statisticsPending, buildPending);
-            return ApiResult.pending(metadata(statsLastUpdate, buildLastUpdate, true, filter));
+            return ApiResult.pending(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), true, filter));
         }
         ChampionView page = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
             ChampionUtils.getChampionProfilePic(champion.getId())), stats, build)
-            .withMetadata(metadata(statsLastUpdate, buildLastUpdate, false, filter));
+            .withMetadata(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter));
         RedisClient.set(RedisKey.CHAMPION_PAGE, page.withMetadata(null), filter.champion(), filter.pageKey());
         return ApiResult.ready(page, page.metadata());
     }
@@ -450,11 +450,6 @@ public class ChampionService {
 
     private static boolean isStale(long lastUpdate) {
         return lastUpdate <= 0 || System.currentTimeMillis() - lastUpdate >= TimeConstant.WEEK;
-    }
-
-    private static ResponseMetadata metadata(long statsLastUpdate, long buildLastUpdate, boolean refresh, Filter filter) {
-        long lastUpdate = oldest(statsLastUpdate, buildLastUpdate);
-        return new ResponseMetadata(null, lastUpdate > 0 ? lastUpdate : null, refresh, filter);
     }
 
     private static long oldest(long first, long second) {

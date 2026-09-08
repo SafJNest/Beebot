@@ -365,18 +365,25 @@ public class Test extends Command{
                 e.reply("Leaderboard aggregates rebuild queued (upsert only).");
                 break;
             case "ranking":
-                com.safjnest.lol.service.RankingService.RankingSnapshot ranking =
-                    com.safjnest.lol.service.RankingService.snapshot();
-                StringBuilder rankingOutput = new StringBuilder("[Ranking] leaderboardSegments=")
-                    .append(ranking.leaderboardSegments()).append(" recordSegments=").append(ranking.recordSegments())
-                    .append(" memoryBytes=").append(ranking.memoryBytes());
-                for (com.safjnest.lol.service.RankingService.Segment segment : ranking.segments())
-                    rankingOutput.append("\n[Ranking] kind=").append(segment.kind()).append(" key=").append(segment.key())
+                LeaderboardService.IndexStatus leaderboardIndex = LeaderboardService.indexStatus();
+                com.safjnest.lol.service.ProfileRecordService.IndexStatus recordIndex =
+                    com.safjnest.lol.service.ProfileRecordService.indexStatus();
+                StringBuilder rankingOutput = new StringBuilder("[Leaderboard index] segments=")
+                    .append(leaderboardIndex.segments()).append(" memoryBytes=").append(leaderboardIndex.memoryBytes());
+                for (LeaderboardService.SegmentStatus segment : leaderboardIndex.values())
+                    rankingOutput.append("\n[Leaderboard index] key=").append(segment.key())
                         .append(" cardinality=").append(segment.cardinality()).append(" memoryBytes=").append(segment.memoryBytes())
                         .append(" permanent=").append(segment.permanent()).append(" ttl=").append(segment.ttlSeconds())
                         .append(" lastAccess=").append(segment.lastAccess()).append(" rebuilding=").append(segment.rebuilding());
+                rankingOutput.append("\n[Record index] segments=").append(recordIndex.segments())
+                    .append(" memoryBytes=").append(recordIndex.memoryBytes());
+                for (com.safjnest.lol.service.ProfileRecordService.SegmentStatus segment : recordIndex.values())
+                    rankingOutput.append("\n[Record index] key=").append(segment.key())
+                        .append(" cardinality=").append(segment.cardinality()).append(" memoryBytes=").append(segment.memoryBytes())
+                        .append(" ttl=").append(segment.ttlSeconds()).append(" lastAccess=").append(segment.lastAccess())
+                        .append(" rebuilding=").append(segment.rebuilding());
                 System.out.println(rankingOutput);
-                e.reply("Contextual ranking snapshot printed to console.");
+                e.reply("Leaderboard and record index status printed to console.");
                 break;
             case "insertepriainblacklist":
                 query = "SELECT id FROM guilds";

@@ -1,9 +1,13 @@
 # Contextual ranking operational notes
 
-`competitive` remains the Mongo source of truth for leaderboard ranking. It now
-stores the exact Riot `tier` (`TierDivisionType`) alongside the existing MMR
-projection. Existing rows must be regenerated with `!test stats otp` before
-contextual ranking is enabled.
+`competitive` remains the Mongo source of truth for leaderboard ranking. It
+stores the exact Riot `tier` (`TierDivisionType`) alongside the MMR projection.
+`RankService` persists `summoner.ranks`, `CompetitiveService` alone writes this
+projection, and `LeaderboardService` alone writes its Redis index. A valid rank
+always creates a competitive row; absent `primary` and `otpChampionId` fields
+are omitted and an existing known value is retained when a later refresh cannot
+derive a replacement. Existing rows must be regenerated with `!test stats otp`
+before contextual ranking is enabled.
 
 Redis keys are derived only:
 
@@ -35,11 +39,13 @@ db.competitive.createIndex(
 ```
 
 The existing `profile_records_global` and `profile_records_regional` indexes
-already cover record-segment rebuilds. Redis loss does not alter Mongo: rebuild
-permanent leaderboard segments through the competitive rebuild, and rebuild
-lazy leaderboard/record segments on the next matching request.
+already cover record-segment rebuilds. Redis loss does not alter Mongo:
+`LeaderboardService.warmupIndexAsync()` rebuilds permanent Master+ segments and
+all count hashes at startup, while lazy leaderboard and record segments rebuild
+on the next matching request.
 
-Run `!test ranking` to print the resident segment count, cardinality, Redis
-`MEMORY USAGE`, permanent/lazy state, idle TTL, last access and in-progress
-status. Use it after a real `!test stats otp` rebuild to record the required
-MASTER+, global/regional GOLD_IV and representative record measurements.
+Run `!test ranking` to print separate leaderboard and record index status:
+resident segment count, cardinality, Redis `MEMORY USAGE`, idle TTL, last access
+and in-progress state. Use it after a real `!test stats otp` rebuild to record
+the required MASTER+, global/regional GOLD_IV and representative record
+measurements.

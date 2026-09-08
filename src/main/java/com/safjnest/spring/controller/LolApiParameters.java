@@ -16,6 +16,7 @@ import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.record.RecordMetric;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.SeasonUtils;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -53,7 +54,7 @@ public final class LolApiParameters {
     }
 
     public static GameQueueType optionalQueue(String value) {
-        if (value == null || value.isBlank() || "ALL".equalsIgnoreCase(value.trim())) return null;
+        if (value == null || value.isBlank() || LeagueConstants.ALL.equalsIgnoreCase(value.trim())) return null;
         return parseEnum(value, GameQueueType.class, "queue");
     }
 
