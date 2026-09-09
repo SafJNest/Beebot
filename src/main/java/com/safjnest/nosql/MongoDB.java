@@ -196,7 +196,6 @@ public final class MongoDB {
             }
             client = MongoClients.create(MongoClientSettings.builder()
                     .applyConnectionString(connection)
-                    .addCommandListener(MongoCommandMonitor.listener())
                     .build());
         }
         return client;
@@ -340,12 +339,12 @@ public final class MongoDB {
         if (collection == null || collection.isBlank() || documents == null) return;
         if (batchSize < 1) throw new IllegalArgumentException("Mongo bulk batch size must be positive");
         MongoCollection<Document> target = database().getCollection(collection);
-        List<WriteModel<Document>> operations = new ArrayList<>(batchSize);
+        List<WriteModel<Document>> operations = new ArrayList<>(Math.min(batchSize, MAX_BATCH_IDS));
         for (Document document : documents) {
             if (document == null || document.get("_id") == null) throw new IllegalArgumentException("Mongo bulk document and _id are required");
             operations.add(new ReplaceOneModel<>(Filters.eq("_id", document.get("_id")), document,
                     new ReplaceOptions().upsert(true)));
-            if (operations.size() == batchSize) {
+            if (operations.size() == MAX_BATCH_IDS) {
                 bulkWrite(target, operations);
                 operations.clear();
             }
@@ -2087,17 +2086,50 @@ public final class MongoDB {
 
     public static int bulkUpsertRanks(Map<String, Map<GameQueueType, Rank>> ranksByPuuid) {
         if (ranksByPuuid == null || ranksByPuuid.isEmpty()) return 0;
-        List<WriteModel<Document>> operations = new ArrayList<>(ranksByPuuid.size());
+        int writes = 0;
+        List<WriteModel<Document>> operations = new ArrayList<>(MAX_BATCH_IDS);
         for (Map.Entry<String, Map<GameQueueType, Rank>> entry : ranksByPuuid.entrySet()) {
             String puuid = entry.getKey();
             if (puuid == null || puuid.isBlank() || entry.getValue() == null || entry.getValue().isEmpty()) continue;
             for (Map.Entry<GameQueueType, Rank> rank : entry.getValue().entrySet()) {
                 if (rank.getKey() == null || rank.getValue() == null) continue;
                 operations.add(new UpdateOneModel<>(Filters.eq("_id", puuid), Updates.set(rankPath(rank.getKey()), write(rank.getValue()))));
+                writes++;
+                if (operations.size() == MAX_BATCH_IDS) {
+                    bulkWrite(summoners(), operations);
+                    operations.clear();
+                }
             }
         }
         if (!operations.isEmpty()) bulkWrite(summoners(), operations);
-        return operations.size();
+        return writes;
+    }
+
+    public static int bulkUpsertMasteries(Map<String, List<Document>> masteriesByPuuid) {
+        if (masteriesByPuuid == null || masteriesByPuuid.isEmpty()) return 0;
+        int writes = 0;
+        List<WriteModel<Document>> operations = new ArrayList<>(MAX_BATCH_IDS);
+        for (Map.Entry<String, List<Document>> entry : masteriesByPuuid.entrySet()) {
+            String puuid = entry.getKey();
+            if (puuid == null || puuid.isBlank() || entry.getValue() == null) continue;
+            for (Document mastery : entry.getValue()) {
+                if (mastery == null || mastery.get("championId") == null) continue;
+                Object championId = mastery.get("championId");
+                operations.add(new UpdateOneModel<>(
+                        Filters.and(Filters.eq("_id", puuid), Filters.ne("masteries.championId", championId)),
+                        Updates.push("masteries", mastery)));
+                operations.add(new UpdateOneModel<>(
+                        Filters.and(Filters.eq("_id", puuid), Filters.eq("masteries.championId", championId)),
+                        Updates.set("masteries.$", mastery)));
+                writes++;
+                if (operations.size() == MAX_BATCH_IDS) {
+                    bulkWrite(summoners(), operations);
+                    operations.clear();
+                }
+            }
+        }
+        if (!operations.isEmpty()) bulkWrite(summoners(), operations);
+        return writes;
     }
 
     public static boolean upsertRank(String puuid, LeagueShard shard, GameQueueType queue, Rank rank) {

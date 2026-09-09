@@ -36,7 +36,6 @@ public final class MongoMigration {
     private static final int EMBEDDED_BATCH_SIZE = 10_000;
     private static final int SUMMONER_WRITE_BATCH_SIZE = 20_000;
     private static final int MATCH_READ_BATCH_SIZE = 1_000;
-    private static final int GC_INTERVAL_BATCHES = 10;
     private static final int MAX_REPORT_IDENTITIES = 100;
     private static final List<String> PHASES = List.of("summoners", "matches");
 
@@ -86,28 +85,29 @@ public final class MongoMigration {
                 if (rows.isEmpty()) break;
 
                 List<Long> sourceIds = new ArrayList<>(rows.size());
+                List<String> sourcePuuids = new ArrayList<>(rows.size());
+                Set<String> existing = new HashSet<>();
                 long batchHighWaterMark = highWaterMark;
                 try {
                     for (QueryRecord row : rows) {
                         long id = row.getAsLong("id");
                         if (id <= highWaterMark) continue;
                         sourceIds.add(id);
+                        sourcePuuids.add(required(row, "puuid"));
                         batchHighWaterMark = id;
                     }
-                    Map<String, Map<GameQueueType, Rank>> ranksByPuuid = migrateRanks(sourceIds);
-                    int candidates = ranksByPuuid.size();
-                    Set<String> existing = MongoDB.findExistingIds("summoner", new ArrayList<>(ranksByPuuid.keySet()));
-                    ranksByPuuid.entrySet().removeIf(entry -> !existing.contains(entry.getKey()));
-                    missing += candidates - ranksByPuuid.size();
-                    int migrated = MongoDB.bulkUpsertRanks(ranksByPuuid);
-                    for (String puuid : ranksByPuuid.keySet()) report.accept("ranks", puuid);
+                    existing.addAll(MongoDB.findExistingIds("summoner", sourcePuuids));
+                    RankMigrationBatch batch = migrateRanks(sourceIds, existing, report);
+                    missing += batch.candidates() - batch.migrated();
                     scanned += sourceIds.size();
                     highWaterMark = batchHighWaterMark;
                     BotLogger.info("[RankMigration] Scanned=" + scanned + " migrated=" + report.processed().getOrDefault("ranks", 0)
-                            + " missingMongo=" + missing + " rankWrites=" + migrated);
+                            + " missingMongo=" + missing + " rankWrites=" + batch.writes());
                 } finally {
-                    rows.clear();
+                    MatchMemoryUtils.release(rows);
                     sourceIds.clear();
+                    sourcePuuids.clear();
+                    existing.clear();
                     requestCollection();
                 }
             }
@@ -310,6 +310,12 @@ public final class MongoMigration {
             List<QueryRecord> keys = queryMatchKeyPage(highWaterMark, pageSize("matches", options.batchSize()));
             if (keys.isEmpty()) break;
             Map<Integer, String> identities = new LinkedHashMap<>();
+            List<String> identityValues = new ArrayList<>();
+            Set<String> existingMatches = new HashSet<>();
+            Set<String> existingEvents = new HashSet<>();
+            List<Integer> missingMatchIds = new ArrayList<>();
+            List<Integer> missingEventIds = new ArrayList<>();
+            Set<String> missingEventIdentities = new HashSet<>();
             long batchHighWaterMark = highWaterMark;
             boolean stopped = false;
             try {
@@ -324,19 +330,16 @@ public final class MongoMigration {
                     identities.put((int) rowHighWaterMark, matchIdentity(row));
                     batchHighWaterMark = rowHighWaterMark;
                 }
-                keys.clear();
+                MatchMemoryUtils.release(keys);
 
                 if (identities.isEmpty()) {
                     if (stopped) break;
                     continue;
                 }
 
-                List<String> identityValues = new ArrayList<>(identities.values());
-                Set<String> existingMatches = MongoDB.findExistingIds("match", identityValues);
-                Set<String> existingEvents = MongoDB.findExistingIds("match_events", identityValues);
-                List<Integer> missingMatchIds = new ArrayList<>();
-                List<Integer> missingEventIds = new ArrayList<>();
-                Set<String> missingEventIdentities = new HashSet<>();
+                identityValues.addAll(identities.values());
+                existingMatches.addAll(MongoDB.findExistingIds("match", identityValues));
+                existingEvents.addAll(MongoDB.findExistingIds("match_events", identityValues));
                 for (Map.Entry<Integer, String> entry : identities.entrySet()) {
                     String identity = entry.getValue();
                     if (!existingMatches.contains(identity)) missingMatchIds.add(entry.getKey());
@@ -349,20 +352,20 @@ public final class MongoMigration {
                 if (!options.dryRun()) MongoDB.normalizeMatchDocuments(identityValues);
                 migrateMissingMatches(options, missingMatchIds);
                 migrateMissingEvents(options, missingEventIds, missingEventIdentities);
-                existingMatches.clear();
-                existingEvents.clear();
-                identityValues.clear();
-                missingMatchIds.clear();
-                missingEventIds.clear();
-                missingEventIdentities.clear();
                 processed += identities.size();
                 highWaterMark = batchHighWaterMark;
                 for (String identity : identities.values()) report.accept("matches", identity);
                 if (!options.dryRun()) writeCheckpoint(options, "matches", highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
                 if (stopped) break;
             } finally {
-                keys.clear();
+                MatchMemoryUtils.release(keys);
                 identities.clear();
+                identityValues.clear();
+                existingMatches.clear();
+                existingEvents.clear();
+                missingMatchIds.clear();
+                missingEventIds.clear();
+                missingEventIdentities.clear();
                 requestCollection();
             }
         }
@@ -371,7 +374,6 @@ public final class MongoMigration {
     }
 
     private static void migrateMissingMatches(Options options, List<Integer> missingMatchIds) {
-        int batchesSinceCollection = 0;
         for (int start = 0; start < missingMatchIds.size(); start += MATCH_READ_BATCH_SIZE) {
             int end = Math.min(missingMatchIds.size(), start + MATCH_READ_BATCH_SIZE);
             List<Match> matches = LeagueDB.get().getMatchesByIds(missingMatchIds.subList(start, end));
@@ -390,16 +392,12 @@ public final class MongoMigration {
                 }
             } finally {
                 MatchMemoryUtils.release(matches);
-            }
-            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
                 requestCollection();
-                batchesSinceCollection = 0;
             }
         }
     }
 
     private static void migrateMissingEvents(Options options, List<Integer> missingEventIds, Set<String> missingEventIdentities) {
-        int batchesSinceCollection = 0;
         for (int start = 0; start < missingEventIds.size(); start += MATCH_READ_BATCH_SIZE) {
             int end = Math.min(missingEventIds.size(), start + MATCH_READ_BATCH_SIZE);
             List<QueryRecord> rows = queryMatchEventsByIds(missingEventIds.subList(start, end));
@@ -415,10 +413,7 @@ public final class MongoMigration {
                 }
             } finally {
                 MatchMemoryUtils.release(rows);
-            }
-            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
                 requestCollection();
-                batchesSinceCollection = 0;
             }
         }
     }
@@ -433,6 +428,8 @@ public final class MongoMigration {
             if (rows.isEmpty()) break;
             List<Long> sourceIds = new ArrayList<>();
             List<String> sourcePuuids = new ArrayList<>();
+            Set<String> existing = new HashSet<>();
+            List<Long> missingIds = new ArrayList<>();
             long batchHighWaterMark = highWaterMark;
             boolean stopped = false;
             try {
@@ -449,15 +446,14 @@ public final class MongoMigration {
                     batchHighWaterMark = rowHighWaterMark;
                 }
 
-                rows.clear();
+                MatchMemoryUtils.release(rows);
 
                 if (sourceIds.isEmpty()) {
                     if (stopped) break;
                     continue;
                 }
 
-                Set<String> existing = MongoDB.findExistingIds("summoner", sourcePuuids);
-                List<Long> missingIds = new ArrayList<>();
+                existing.addAll(MongoDB.findExistingIds("summoner", sourcePuuids));
                 for (int index = 0; index < sourceIds.size(); index++) {
                     if (!existing.contains(sourcePuuids.get(index))) missingIds.add(sourceIds.get(index));
                 }
@@ -469,9 +465,11 @@ public final class MongoMigration {
                 if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
                 if (stopped) break;
             } finally {
-                rows.clear();
+                MatchMemoryUtils.release(rows);
                 sourceIds.clear();
                 sourcePuuids.clear();
+                existing.clear();
+                missingIds.clear();
                 requestCollection();
             }
         }
@@ -480,10 +478,9 @@ public final class MongoMigration {
     }
 
     private static void migrateMissingSummoners(Options options, List<Long> missingIds, MigrationReport report) {
-        int batchesSinceCollection = 0;
         for (int start = 0; start < missingIds.size(); start += SUMMONER_WRITE_BATCH_SIZE) {
             int end = Math.min(missingIds.size(), start + SUMMONER_WRITE_BATCH_SIZE);
-            List<Long> batchIds = missingIds.subList(start, end);
+            List<Long> batchIds = new ArrayList<>(missingIds.subList(start, end));
             List<QueryRecord> rows = querySummonerRowsByIds(batchIds);
             Map<String, Document> documents = new LinkedHashMap<>();
             try {
@@ -491,36 +488,54 @@ public final class MongoMigration {
                     String puuid = required(row, "puuid");
                     documents.put(puuid, convertSummoner(row));
                 }
-                loadEmbeddedRows("ranks", batchIds, documents);
-                loadEmbeddedRows("masteries", batchIds, documents);
                 if (!options.dryRun()) MongoDB.bulkUpsertDocuments("summoner", documents.values(), SUMMONER_WRITE_BATCH_SIZE);
                 for (String puuid : documents.keySet()) report.accept("summoners", puuid);
             } finally {
-                rows.clear();
-                documents.clear();
-            }
-            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
+                MatchMemoryUtils.release(rows);
+                MatchMemoryUtils.release(documents);
                 requestCollection();
-                batchesSinceCollection = 0;
+            }
+            try {
+                migrateEmbeddedRows(options, "ranks", batchIds);
+                migrateEmbeddedRows(options, "masteries", batchIds);
+            } finally {
+                batchIds.clear();
+                requestCollection();
             }
         }
     }
 
-    private static Map<String, Map<GameQueueType, Rank>> migrateRanks(List<Long> summonerIds) {
-        Map<String, Map<GameQueueType, Rank>> result = new LinkedHashMap<>();
+    private static RankMigrationBatch migrateRanks(
+            List<Long> summonerIds,
+            Set<String> existing,
+            MigrationReport report) {
         long afterId = 0;
+        int candidates = 0;
+        int migrated = 0;
+        int writes = 0;
         while (true) {
             List<QueryRecord> rows = queryEmbeddedPage("ranks", summonerIds, afterId);
-            if (rows.isEmpty()) return result;
+            if (rows.isEmpty()) return new RankMigrationBatch(candidates, migrated, writes);
+            Map<String, Map<GameQueueType, Rank>> ranksByPuuid = new LinkedHashMap<>();
+            Set<String> candidatesInPage = new HashSet<>();
             try {
                 for (QueryRecord row : rows) {
                     long id = row.getAsLong("id");
                     if (id <= afterId) throw new IllegalStateException("Rank migration page did not advance id=" + id);
                     afterId = id;
-                    mergeRank(result, row);
+                    String puuid = required(row, "puuid");
+                    candidatesInPage.add(puuid);
+                    if (existing.contains(puuid)) mergeRank(ranksByPuuid, row);
                 }
+                candidates += candidatesInPage.size();
+                migrated += ranksByPuuid.size();
+                writes += MongoDB.bulkUpsertRanks(ranksByPuuid);
+                for (String puuid : ranksByPuuid.keySet()) report.accept("ranks", puuid);
             } finally {
-                rows.clear();
+                MatchMemoryUtils.release(rows);
+                MatchMemoryUtils.release(ranksByPuuid);
+                candidatesInPage.clear();
+                requestCollection();
             }
         }
     }
@@ -584,61 +599,36 @@ public final class MongoMigration {
         return result.append(")").toString();
     }
 
-    private static void loadEmbeddedRows(String phase, List<Long> summonerIds, Map<String, Document> summoners) {
+    private static void migrateEmbeddedRows(Options options, String phase, List<Long> summonerIds) {
         long afterId = 0;
-        int batchesSinceCollection = 0;
         while (true) {
             List<QueryRecord> rows = queryEmbeddedPage(phase, summonerIds, afterId);
             if (rows.isEmpty()) return;
+            Map<String, Map<GameQueueType, Rank>> ranksByPuuid = new LinkedHashMap<>();
+            Map<String, List<Document>> masteriesByPuuid = new LinkedHashMap<>();
             try {
                 for (QueryRecord row : rows) {
                     long rowId = row.getAsLong("id");
                     if (rowId <= afterId) throw new IllegalStateException("Embedded migration page did not advance phase=" + phase + " id=" + rowId);
                     afterId = rowId;
                     String puuid = required(row, "puuid");
-                    Document summoner = summoners.get(puuid);
-                    if (summoner == null) throw new IllegalStateException("Embedded row has no summoner in batch phase=" + phase + " puuid=" + puuid);
-                    appendEmbedded(summoner, phase, convertEmbedded(phase, row));
+                    if ("ranks".equals(phase)) {
+                        mergeRank(ranksByPuuid, row);
+                    } else {
+                        masteriesByPuuid.computeIfAbsent(puuid, ignored -> new ArrayList<>()).add(convertEmbedded(phase, row));
+                    }
+                }
+                if (!options.dryRun()) {
+                    if ("ranks".equals(phase)) MongoDB.bulkUpsertRanks(ranksByPuuid);
+                    else MongoDB.bulkUpsertMasteries(masteriesByPuuid);
                 }
             } finally {
-                rows.clear();
-            }
-            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
+                MatchMemoryUtils.release(rows);
+                MatchMemoryUtils.release(ranksByPuuid);
+                MatchMemoryUtils.release(masteriesByPuuid);
                 requestCollection();
-                batchesSinceCollection = 0;
             }
         }
-    }
-
-    private static void appendEmbedded(Document summoner, String phase, Document value) {
-        if ("ranks".equals(phase)) {
-            String queue = value.getString("queue");
-            if (queue == null || queue.isBlank()) throw new IllegalArgumentException("Migrated rank queue is required");
-            Document ranks = summoner.get("ranks", Document.class);
-            if (ranks == null) {
-                ranks = new Document();
-                summoner.put("ranks", ranks);
-            }
-            value.remove("queue");
-            ranks.put(queue, value);
-            return;
-        }
-        String field = "ranks".equals(phase) ? "ranks" : "masteries";
-        String identityField = "championId";
-        @SuppressWarnings("unchecked")
-        List<Document> values = (List<Document>) summoner.get(field);
-        if (values == null) {
-            values = new ArrayList<>();
-            summoner.put(field, values);
-        }
-        String identity = String.valueOf(value.get(identityField));
-        for (int index = 0; index < values.size(); index++) {
-            if (identity.equals(String.valueOf(values.get(index).get(identityField)))) {
-                values.set(index, value);
-                return;
-            }
-        }
-        values.add(value);
     }
 
     private static Document convertSummoner(QueryRecord row) {
@@ -802,6 +792,9 @@ public final class MongoMigration {
 
     private record Checkpoint(long highWaterMark, long processed) {
         private static Checkpoint empty() { return new Checkpoint(0, 0); }
+    }
+
+    private record RankMigrationBatch(int candidates, int migrated, int writes) {
     }
 
     private record RankProgressCheckpoint(String cursor, long processed, String status) {
