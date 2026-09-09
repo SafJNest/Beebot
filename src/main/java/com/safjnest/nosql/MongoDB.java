@@ -852,6 +852,7 @@ public final class MongoDB {
                 Filters.elemMatch("participants", Filters.eq("puuid", puuid)),
                 Filters.eq("region", shard.name()),
                 queueFilter,
+                Filters.ne("_id", beforeMatchId),
                 beforeFilter);
         Document document = matches().find(filter)
                 .projection(Projections.include("participants"))
@@ -2409,7 +2410,31 @@ public final class MongoDB {
         return matches().aggregate(pipeline).allowDiskUse(true).batchSize(RANK_PROGRESS_HISTORY_BULK_SIZE).iterator();
     }
 
+    public static Set<String> findRankProgressRegions(String puuid) {
+        if (puuid == null || puuid.isBlank()) return Set.of();
+        Bson filter = Filters.and(
+                Filters.elemMatch("participants", Filters.eq("puuid", puuid)),
+                Filters.in("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name()));
+        Set<String> regions = new HashSet<>();
+        for (String region : matches().distinct("region", filter, String.class)) {
+            if (region != null && !region.isBlank()) regions.add(region);
+        }
+        return regions;
+    }
+
     public static int rebuildRankProgressHistory(RankProgressSubject subject, boolean dryRun) {
+        return rebuildRankProgressHistory(subject, dryRun, false, false);
+    }
+
+    public static int repairRankProgressHistory(RankProgressSubject subject, boolean dryRun) {
+        return rebuildRankProgressHistory(subject, dryRun, true, true);
+    }
+
+    private static int rebuildRankProgressHistory(
+            RankProgressSubject subject,
+            boolean dryRun,
+            boolean recomputeProgress,
+            boolean markTracked) {
         if (subject == null || subject.puuid().isBlank() || subject.region().isBlank()) return 0;
         Document filter = new Document("participants.puuid", subject.puuid())
                 .append("region", subject.region())
@@ -2431,7 +2456,7 @@ public final class MongoDB {
             RankProgress current = progressDocument == null ? null : readRankProgress(matchRecord(progressDocument));
             if (newerMatch != null) {
                 WriteModel<Document> update = rankProgressHistoryUpdate(
-                        newerMatch, subject.puuid(), newerProgress, current);
+                        newerMatch, subject.puuid(), newerProgress, current, recomputeProgress, markTracked);
                 if (update != null) {
                     updates.add(update);
                     updated++;
@@ -2445,7 +2470,8 @@ public final class MongoDB {
             newerProgress = current;
         }
         if (newerMatch != null) {
-            WriteModel<Document> update = rankProgressHistoryUpdate(newerMatch, subject.puuid(), newerProgress, null);
+            WriteModel<Document> update = rankProgressHistoryUpdate(
+                    newerMatch, subject.puuid(), newerProgress, null, recomputeProgress, markTracked);
             if (update != null) {
                 updates.add(update);
                 updated++;
@@ -2460,22 +2486,52 @@ public final class MongoDB {
             String puuid,
             RankProgress current,
             RankProgress previous) {
-        if (!RankProgressUtils.hasCurrentSnapshot(current)) return null;
-        RankProgress rebuilt = new RankProgress(current.rank, current.lp, current.gain, null, null);
+        return rankProgressHistoryUpdate(match, puuid, current, previous, false);
+    }
+
+    private static WriteModel<Document> rankProgressHistoryUpdate(
+            Document match,
+            String puuid,
+            RankProgress current,
+            RankProgress previous,
+            boolean recomputeProgress) {
+        return rankProgressHistoryUpdate(match, puuid, current, previous, recomputeProgress, false);
+    }
+
+    private static WriteModel<Document> rankProgressHistoryUpdate(
+            Document match,
+            String puuid,
+            RankProgress current,
+            RankProgress previous,
+            boolean recomputeProgress,
+            boolean markTracked) {
+        boolean needsTrackedMarker = markTracked && !Boolean.TRUE.equals(match.getBoolean("tracked"));
+        if (!RankProgressUtils.hasCurrentSnapshot(current)) {
+            return needsTrackedMarker ? rankProgressTrackedUpdate(match, puuid) : null;
+        }
+        RankProgress rebuilt = new RankProgress(current.rank, current.lp, recomputeProgress ? null : current.gain, null, null);
         if (RankProgressUtils.hasCurrentSnapshot(previous)) {
             int expectedGain = RankProgressUtils.calculateGain(GameQueueType.RANKED_SOLO_5X5, rebuilt, previous);
             boolean tracked = Boolean.TRUE.equals(match.getBoolean("tracked"));
             boolean unrankedTransition = rebuilt.rank == TierDivisionType.UNRANKED || previous.rank == TierDivisionType.UNRANKED;
-            if (tracked || unrankedTransition || rebuilt.gain != null && rebuilt.gain == expectedGain) {
+            if (recomputeProgress || tracked || unrankedTransition || rebuilt.gain != null && rebuilt.gain == expectedGain) {
                 rebuilt.previousRank = previous.rank;
                 rebuilt.previousLp = previous.lp;
-                if (unrankedTransition) rebuilt.gain = expectedGain;
+                if (recomputeProgress || unrankedTransition) rebuilt.gain = expectedGain;
             }
         }
-        if (rankProgressEquals(current, rebuilt)) return null;
+        if (rankProgressEquals(current, rebuilt)) return needsTrackedMarker ? rankProgressTrackedUpdate(match, puuid) : null;
+        List<Bson> updates = new ArrayList<>();
+        updates.add(Updates.set("participants.$.rankProgress", rankProgressDocument(rebuilt)));
+        if (needsTrackedMarker) updates.add(Updates.set("tracked", true));
         return new UpdateOneModel<>(Filters.and(Filters.eq("_id", match.getString("_id")),
                 Filters.eq("participants.puuid", puuid)),
-                Updates.set("participants.$.rankProgress", rankProgressDocument(rebuilt)));
+                Updates.combine(updates));
+    }
+
+    private static WriteModel<Document> rankProgressTrackedUpdate(Document match, String puuid) {
+        return new UpdateOneModel<>(Filters.and(Filters.eq("_id", match.getString("_id")),
+                Filters.eq("participants.puuid", puuid)), Updates.set("tracked", true));
     }
 
         public static boolean upsertParticipant(String fullGameId, Participant participant) {
@@ -3768,8 +3824,11 @@ public final class MongoDB {
     private static Bson summonerUpdate(Summoner summoner, String userId) {
         Document fields = write(summoner);
         fields.remove("_id");
+        Object ranks = fields.remove("ranks");
         List<Bson> updates = new ArrayList<>(fields.size() + 2);
         for (Map.Entry<String, Object> field : fields.entrySet()) updates.add(Updates.set(field.getKey(), field.getValue()));
+        if (ranks instanceof Document rankValues && !rankValues.isEmpty()) updates.add(Updates.set("ranks", rankValues));
+        else if (ranks != null) updates.add(Updates.setOnInsert("ranks", ranks));
         String riotSearch = normalizedRiotId(summoner.riotId());
         if (!riotSearch.isBlank()) updates.add(Updates.set("riotSearch", riotSearch));
         if (userId != null) updates.add(Updates.set("userId", userId));

@@ -121,6 +121,7 @@ public final class MongoMigration {
         BotLogger.info("[RankMigration] Completed scanned=" + scanned + " migrated="
                 + report.processed().getOrDefault("ranks", 0) + " missingMongo=" + missing);
         if (report.processed().getOrDefault("ranks", 0) > 0) {
+            BotLogger.info("[RankMigration] Starting competitive rebuild");
             MongoDB.CompetitiveRebuild competitive = CompetitiveService.rebuild();
             MongoDB.LeaderboardAggregateRebuild aggregates = LeaderboardService.rebuildAllAggregates();
             BotLogger.info("[RankMigration] Rebuilt competitiveEntries=" + competitive.entries()
@@ -154,6 +155,37 @@ public final class MongoMigration {
             requestCollection();
         }
         BotLogger.info("[TrackedRankProgress] Completed summoners=" + summoners + " updates=" + report.processed());
+        return report;
+    }
+
+    public static MigrationReport rebuildTrackedRankProgress() {
+        MigrationReport report = new MigrationReport(false);
+        int summoners = 0;
+        BotLogger.info("[FixTracked] Starting Mongo RankProgress rebuild");
+        try (com.mongodb.client.MongoCursor<Document> cursor = MongoDB.trackedSummonerCursor()) {
+            while (cursor.hasNext()) {
+                String puuid = cursor.next().getString("_id");
+                if (puuid == null || puuid.isBlank()) continue;
+                for (String region : MongoDB.findRankProgressRegions(puuid)) {
+                    int updated = MongoDB.repairRankProgressHistory(
+                            new MongoDB.RankProgressSubject(region, puuid), false);
+                    for (int index = 0; index < updated; index++) report.accept("fix-tracked-matches", region + "|" + puuid);
+                }
+                report.accept("fix-tracked-summoners", puuid);
+                summoners++;
+                if (summoners % 100 == 0) {
+                    BotLogger.info("[FixTracked] Processed summoners=" + summoners + " updates=" + report.processed());
+                    requestCollection();
+                }
+            }
+        } catch (RuntimeException exception) {
+            BotLogger.error("[FixTracked] Failed summoners=" + summoners + " error="
+                    + exception.getClass().getSimpleName() + ": " + exception.getMessage());
+            throw exception;
+        } finally {
+            requestCollection();
+        }
+        BotLogger.info("[FixTracked] Completed summoners=" + summoners + " updates=" + report.processed());
         return report;
     }
 

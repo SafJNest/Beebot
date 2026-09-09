@@ -13,6 +13,7 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |
 | match results | projection of only the fields needed for `MatchResult` and participants | 1 | profile/tracker |
+| tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC, _id DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
 | match events | `_id: {$in: [...]}` on `match_events` | 1 | match detail/history |
 | champion | match id with projection; builds and statistics read only the required participants; raw batch without full `Match -> Participant` | 2 per batch (+ count/trend) | Champion services |
 | leaderboard aggregates | Mongo snapshot `leaderboard_aggregates` per filter; rebuild every 12 hours and `$match` + `$group` on `summoner.ranks.<QUEUE>` path for new filters | 1 | LeaderboardService |
@@ -23,6 +24,10 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 Search returns directly the payload needed for search and autocomplete: `Summoner` and `RANKED_SOLO_5X5` rank are read in the same projection. The `findRank` loop per PUUID no longer exists.
 
 Profile and leaderboard use structured BSON fields. Champion and lane filters are applied to the same `participants` element via a single `$elemMatch`; they can no longer match champion and lane on two different participants.
+
+Tracker predecessor lookup filters the participant PUUID, shard and canonical
+Solo/Duo queues, excludes the current full match ID, and reads the latest
+earlier `timeStart` with `{timeStart: -1, _id: -1}` ordering.
 
 Paginated queries are limited to 100 matches, 50 leaderboard summoners, 25 search results, 500,000 summoner keys per page and 50,000 match keys per page. Full summoner data is read and written in sub-batches of 20,000; matches and events remain in sub-batches of 1,000. Long-batch cursors must be closed explicitly.
 
@@ -72,7 +77,8 @@ Before acceptance, run on a database with representative data:
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}, {riotId: 1, ranks: 1}).sort({riotId: 1}).limit(25).explain("executionStats")
 db.match.find({participants: {$elemMatch: {puuid: "puuid", champion: 1}}, region: "EUW1", queue: "RANKED_SOLO_5X5", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
-db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}, timeStart: {$lt: 1714514400000}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
+db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}, _id: {$ne: "EUW1_123"}, timeStart: {$lt: 1714514400000}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
+db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
 db.match.distinct("participants.puuid", {region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}})
 db.match.aggregate([
   {$match: {queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}}},

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
@@ -120,6 +122,25 @@ public class MongoDBTest {
         Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(document), Summoner.class);
         assertEquals("puuid-42", decoded.puuid());
         assertEquals(LeagueShard.EUW1, decoded.region());
+    }
+
+    @Test
+    public void identityUpsertInitializesEmptyRanksWithoutOverwritingExistingRanks() throws Exception {
+        Method method = MongoDB.class.getDeclaredMethod("summonerUpdate", Summoner.class, String.class);
+        method.setAccessible(true);
+
+        Summoner identity = new Summoner("puuid-identity", "Name#TAG", LeagueShard.EUW1, 1, 1);
+        org.bson.BsonDocument identityUpdate = ((Bson) method.invoke(null, identity, null))
+                .toBsonDocument(Document.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry());
+        assertFalse(identityUpdate.getDocument("$set").containsKey("ranks"));
+        assertTrue(identityUpdate.getDocument("$setOnInsert").containsKey("ranks"));
+
+        Summoner ranked = Summoner.hydrated("puuid-ranked", "Name#TAG", LeagueShard.EUW1, 1, 1,
+                null, false, Map.of(GameQueueType.RANKED_SOLO_5X5,
+                        new Rank(TierDivisionType.GOLD_IV, 10, 1, 1)), List.of());
+        org.bson.BsonDocument rankedUpdate = ((Bson) method.invoke(null, ranked, null))
+                .toBsonDocument(Document.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry());
+        assertTrue(rankedUpdate.getDocument("$set").containsKey("ranks"));
     }
 
     @Test
@@ -237,6 +258,23 @@ public class MongoDBTest {
         WriteModel<?> skipped = (WriteModel<?>) method.invoke(null, rawMatch, "puuid", mismatchedRankedGain, previousRanked);
 
         assertNull(skipped);
+
+        Method recompute = MongoDB.class.getDeclaredMethod("rankProgressHistoryUpdate",
+                Document.class, String.class, RankProgress.class, RankProgress.class, boolean.class);
+        recompute.setAccessible(true);
+        RankProgress corrupted = new RankProgress(TierDivisionType.GOLD_IV, 0, 0, TierDivisionType.GOLD_IV, 0);
+        RankProgress expectedPrevious = new RankProgress(TierDivisionType.GOLD_IV, 10, -10, null, null);
+        WriteModel<?> recomputed = (WriteModel<?>) recompute.invoke(null, rawMatch, "puuid", corrupted, expectedPrevious, true);
+
+        assertNotNull(recomputed);
+
+        Method repair = MongoDB.class.getDeclaredMethod("rankProgressHistoryUpdate",
+                Document.class, String.class, RankProgress.class, RankProgress.class, boolean.class, boolean.class);
+        repair.setAccessible(true);
+        WriteModel<?> markedTracked = (WriteModel<?>) repair.invoke(null,
+                new Document("_id", "EUW1_2").append("tracked", false), "puuid", null, null, true, true);
+
+        assertNotNull(markedTracked);
     }
 
     @Test

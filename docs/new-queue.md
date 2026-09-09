@@ -58,8 +58,15 @@ rank. The complete match is then persisted with `tracked=true`. The marker is
 storage-only and does not alter the HTTP `Match` contract or Discord
 presentation.
 
+`%test fix-tracked` is a Mongo-only recovery operation for summoners with
+`tracking=true`: it rebuilds their stored Solo/Duo RankProgress history and
+marks every repaired ranked match `tracked=true`, so the scheduled tracker does
+not enqueue that recovered history again.
+
 The scheduled tracked-summoner flow waits for its latest ranked match to finish
 enrichment; its second Riot match is raw-persisted only as a history reference.
+The LP predecessor is selected from Mongo by PUUID, shard, Solo/Duo queue and
+the latest earlier `timeStart`, always excluding the current full match ID.
 OP.GG remains responsive: displayed cards are raw-persisted immediately, then a
 best-effort current `{ rank, lp }` snapshot is written for each participant.
 Missing snapshots start the same deduplicated background rank refresh used by
