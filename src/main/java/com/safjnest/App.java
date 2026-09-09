@@ -16,6 +16,7 @@ import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.nosql.MongoMigration;
 import com.safjnest.spring.SpringServer;
+import com.safjnest.status.SystemMetricsSampler;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
@@ -34,17 +35,17 @@ public class App {
         new BotLogger("Beebot", null);
 
         settings = SettingsLoader.getSettings();
-        MongoMigration.migrateAll();
-        //runSpring();
-        
-        // TwitchClient.init();
-        // SystemMetricsSampler.start();
-        // QueueHandler.start();
-        // LeaderboardService.warmupIndexAsync();
-        // TrackerScheduler.start();
 
-        // bot = new Bot();
-        // bot.il_risveglio_della_bestia();
+        runSpring();
+        
+        TwitchClient.init();
+        SystemMetricsSampler.start();
+        QueueHandler.start();
+        LeaderboardService.warmupIndexAsync();
+        TrackerScheduler.start();
+
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
