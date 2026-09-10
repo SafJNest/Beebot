@@ -3,7 +3,6 @@ package com.safjnest.lol.utils;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -36,10 +35,10 @@ public class PatchUtils {
 		for (String patch : patches) {
 			if (patch == null || patch.isBlank() || result.contains(patch)) continue;
 			result.add(patch);
-			if (result.size() == count) break;
 		}
-		Collections.reverse(result);
-		return result;
+		result.sort(PatchUtils::comparePatches);
+		if (result.size() <= count) return result;
+		return new ArrayList<>(result.subList(result.size() - count, result.size()));
 	}
 
 	public static OptionData getAsOptions() {
@@ -58,6 +57,26 @@ public class PatchUtils {
 		if (firstSeparator < 0) return value;
 		int secondSeparator = value.indexOf('.', firstSeparator + 1);
 		return secondSeparator < 0 ? value : value.substring(0, secondSeparator);
+	}
+
+	private static int comparePatches(String left, String right) {
+		String[] leftParts = left.split("\\.");
+		String[] rightParts = right.split("\\.");
+		int length = Math.max(leftParts.length, rightParts.length);
+		for (int index = 0; index < length; index++) {
+			int comparison = Integer.compare(patchPart(leftParts, index), patchPart(rightParts, index));
+			if (comparison != 0) return comparison;
+		}
+		return left.compareTo(right);
+	}
+
+	private static int patchPart(String[] parts, int index) {
+		if (index >= parts.length) return 0;
+		try {
+			return Integer.parseInt(parts[index]);
+		} catch (NumberFormatException ignored) {
+			return 0;
+		}
 	}
 
 	private static List<String> fetchPatches() {

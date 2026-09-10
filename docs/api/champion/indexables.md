@@ -12,7 +12,7 @@ curl 'http://localhost:8080/api/lol/champion/indexables'
 
 The endpoint accepts no parameters and reads the projection for the current
 major patch. If the projection has not yet been generated, the response is an
-empty list; refresh is triggered by the owner case `test championindexables`.
+empty list; refresh is triggered by `test regenerate indexables`.
 
 ## `200` response
 

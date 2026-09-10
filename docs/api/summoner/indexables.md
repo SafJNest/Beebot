@@ -28,7 +28,7 @@ The response contains only the fields required to build the profile URL:
 ]
 ```
 
-The refresh is triggered by the owner case `test profileindexables`. The internal
+The refresh is triggered by `test regenerate indexables`. The internal
 collection `profiles_indexable` uses PUUID as identity and sets `lastUpdate`
 only when a profile is added; a change to `riotId` or `region` does not
 update the timestamp. A profile removed from the condition is deleted and

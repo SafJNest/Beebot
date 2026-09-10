@@ -39,14 +39,14 @@ changing this identifier because MongoDB does not permit `_id` updates.
 
 The same projection may contain optional `otpChampionId`, copied from the
 single canonical queue-level OTP classification; it is independent from the
-primary lane and non-OTP rows omit it. `!test stats otp` recomputes this
-classification from existing canonical statistics, then rebuilds
+primary lane and non-OTP rows omit it. `!test regenerate competitive` rebuilds
+this classification from existing canonical statistics, then rebuilds
 `competitive` and leaderboard aggregates.
 
 Leaderboard reads filter/sort/page `competitive` first (MMR range, optional
 region, primary lane and OTP champion ID), then fetch the limited PUUID list from `summoner` by
 `_id: {$in: [...]}`. Rank refresh and canonical profile-statistics refresh both
-upsert or remove the affected competitive rows. `!test stats otp` rebuilds
+upsert or remove the affected competitive rows. `!test regenerate competitive` rebuilds
 the projection for the initial population or repair. Side-specific base
 counters (`blueGames`, `blueWins`, `redGames`, `redWins`) are persisted in the
 same profile-statistics leaves, so future side/queue/lane aggregates do not

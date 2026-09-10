@@ -6,7 +6,7 @@ stores the exact Riot `tier` (`TierDivisionType`) alongside the MMR projection.
 projection, and `LeaderboardService` alone writes its Redis index. A valid rank
 always creates a competitive row; absent `primary` and `otpChampionId` fields
 are omitted and an existing known value is retained when a later refresh cannot
-derive a replacement. Existing rows must be regenerated with `!test stats otp`
+derive a replacement. Existing rows must be regenerated with `!test regenerate competitive`
 before contextual ranking is enabled.
 
 Redis keys are derived only:
@@ -51,6 +51,6 @@ on the next matching request.
 
 Run `!test ranking` to print separate leaderboard and record index status:
 resident segment count, cardinality, Redis `MEMORY USAGE`, idle TTL, last access
-and in-progress state. Use it after a real `!test stats otp` rebuild to record
+and in-progress state. Use it after a real `!test regenerate competitive` rebuild to record
 the required MASTER+, global/regional GOLD_IV and representative record
 measurements.

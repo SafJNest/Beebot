@@ -24,7 +24,7 @@ Record segments are lazy and keyed by the real record context only: `filterKey +
 
 ## Operations
 
-After deploying the new `competitive.tier` field, run the existing competitive rebuild (`!test stats otp` or the corresponding owner operation) before serving contextual rankings. The operation then rebuilds leaderboard aggregates and warms the permanent leaderboard index. Redis may be flushed at any time: permanent leaderboard segments are rebuilt by startup warmup or the rebuild operation, while lazy leaderboard and record segments rebuild only on request.
+After deploying the new `competitive.tier` field, run `!test regenerate competitive` before serving contextual rankings. The operation then rebuilds leaderboard aggregates and warms the permanent leaderboard index. Redis may be flushed at any time: permanent leaderboard segments are rebuilt by startup warmup or the rebuild operation, while lazy leaderboard and record segments rebuild only on request.
 
 `LeaderboardService.indexStatus()` and `ProfileRecordService.indexStatus()` provide resident segment counts, per-key cardinality, `MEMORY USAGE`, TTL and in-progress build state. They contain no player-level logging and do not clean up Redis as a side effect.
 
