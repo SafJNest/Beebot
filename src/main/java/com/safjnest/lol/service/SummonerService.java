@@ -20,9 +20,11 @@ import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 
 import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -277,11 +279,12 @@ public final class SummonerService {
         List<SummonerView> cached = RedisClient.get(key, SUMMONER_SEARCH_TYPE);
         if (cached != null) return cached;
 
+        List<MongoDB.SummonerSearchResult> rows = new ArrayList<>(querySearch(normalizedQuery, shard));
+        sortSearchResults(rows);
+
         List<SummonerView> summoners = new ArrayList<>();
-        for (MongoDB.SummonerSearchResult row : querySearch(normalizedQuery, shard)) {
-            com.safjnest.lol.model.summoner.Rank rank = row.soloRank() != null
-                ? row.soloRank()
-                : com.safjnest.lol.model.summoner.Rank.unranked();
+        for (MongoDB.SummonerSearchResult row : rows) {
+            Rank rank = row.soloRank() != null ? row.soloRank() : Rank.unranked();
             summoners.add(SummonerView.from(row.summoner(), Map.of(GameQueueType.RANKED_SOLO_5X5, rank), new ProfileStatistics(), List.of()));
         }
         RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
@@ -356,6 +359,19 @@ public final class SummonerService {
 
     private static List<MongoDB.SummonerSearchResult> querySearch(String normalizedQuery, LeagueShard shard) {
         return MongoDB.findSummonerSearch(normalizedQuery, shard, 25);
+    }
+
+    static void sortSearchResults(List<MongoDB.SummonerSearchResult> rows) {
+        rows.sort(Comparator
+            .comparingInt(SummonerService::searchMmr)
+            .reversed()
+            .thenComparing(row -> row.summoner().riotId(), Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+            .thenComparing(row -> row.summoner().puuid()));
+    }
+
+    private static int searchMmr(MongoDB.SummonerSearchResult row) {
+        Rank rank = row.soloRank();
+        return rank == null ? -1 : TierDivisionUtils.getMmr(rank.tier(), rank.lp());
     }
 
     private static CompletableFuture<RiotAccount> refreshRiotAccountAsync(String puuid, LeagueShard shard) {
