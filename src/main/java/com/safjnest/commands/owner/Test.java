@@ -26,6 +26,7 @@ import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
+import com.safjnest.nosql.MongoMigration;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -40,6 +41,9 @@ public class Test extends Command {
 
     private static final List<String> REGENERATION_OPERATIONS = List.of(
         "profiles", "competitive", "records", "champions", "indexables", "all"
+    );
+    private static final List<String> MIGRATION_OPERATIONS = List.of(
+        "all", "tracked", "ranks", "fix-tracked", "rankprogress [runId]"
     );
 
     public Test() {
@@ -64,7 +68,8 @@ public class Test extends Command {
             case "list" -> event.reply("gc | tracking | log | ranking | regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
                 + " | pushsamplegame | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
-                + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats");
+                + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
+                + " | migrate [" + String.join(" | ", MIGRATION_OPERATIONS) + "]");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -92,8 +97,9 @@ public class Test extends Command {
             case "retrieveallgamesfast" -> queueMatchHistory(event, arguments, GameQueueType.values());
             case "highstats" -> queueHighEloStatistics(event);
             case "regenerate", "regen" -> queueRegeneration(event, arguments);
+            case "migrate" -> queueMigration(event, arguments);
             default -> event.reply("Usage: !test regenerate <"
-                + String.join("|", REGENERATION_OPERATIONS) + ">.");
+                + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
         }
     }
 
@@ -111,6 +117,43 @@ public class Test extends Command {
                 return null;
             });
         event.reply("Regeneration " + operation + " queued.");
+    }
+
+    private static void queueMigration(CommandEvent event, String[] arguments) {
+        String migrationInput = arguments.length < 2 ? "" : arguments[1].trim();
+        if (migrationInput.isBlank()) {
+            queueMigrationOperation(event, "all", "Full Mongo migration", MongoMigration::migrateAll);
+            return;
+        }
+        String[] migrationArguments = migrationInput.split("\\s+", 2);
+        String migration = migrationArguments[0].toLowerCase();
+        switch (migration) {
+            case "all" -> queueMigrationOperation(event, "all", "Full Mongo migration", MongoMigration::migrateAll);
+            case "tracked" -> queueMigrationOperation(event, "tracked", "Tracked RankProgress recovery", MongoMigration::migrateTrackedRankProgress);
+            case "ranks" -> queueMigrationOperation(event, "ranks", "Rank migration", MongoMigration::migrateRanks);
+            case "fix-tracked" -> queueMigrationOperation(event, "fix-tracked", "Tracked RankProgress rebuild", MongoMigration::rebuildTrackedRankProgress);
+            case "rankprogress" -> queueRankProgressMigration(event, migrationArguments);
+            default -> event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
+        }
+    }
+
+    private static void queueMigrationOperation(CommandEvent event, String operation, String label, Runnable migration) {
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-migration:" + operation, "owner migration " + operation, job -> {
+                migration.run();
+                return null;
+            });
+        event.reply(label + " queued.");
+    }
+
+    private static void queueRankProgressMigration(CommandEvent event, String[] arguments) {
+        String runId = arguments.length < 2 || arguments[1].isBlank() ? "rankprogress-v1" : arguments[1].trim();
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-migration:rankprogress:" + runId, "owner RankProgress migration " + runId, job -> {
+                MongoMigration.migrateRankProgress(new MongoMigration.Options(false, 500_000, runId, true, 0));
+                return null;
+            });
+        event.reply("RankProgress migration queued: run=" + runId + ".");
     }
 
     private static void printGuildCache(CommandEvent event) {
