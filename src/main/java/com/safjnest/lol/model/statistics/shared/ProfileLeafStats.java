@@ -59,7 +59,7 @@ public class ProfileLeafStats extends LeafStats {
     public double killParticipationSum;
     public double deathShareSum;
 
-    @JsonIgnore
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean isOtp;
 
     public ProfileLeafStats() {}

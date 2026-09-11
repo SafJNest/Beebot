@@ -84,7 +84,7 @@ public class ProfileStatisticsTest {
     }
 
     @Test
-    public void marksOnlyTheDominantChampionAsOtpForQueueAcrossRoles() {
+    public void marksOnlyTheDominantChampionAsOtpForQueueAcrossRoles() throws Exception {
         ProfileStatistics statistics = new ProfileStatistics();
         for (int index = 0; index < 40; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 1, 18, 100), "puuid", null);
         for (int index = 0; index < 31; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.JUNGLE, 1, 18, 100), "puuid", null);
@@ -96,6 +96,8 @@ public class ProfileStatisticsTest {
         assertEquals(Boolean.TRUE, statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("JUNGLE").isOtp);
         assertNull(statistics.champions.get(2).get(CanonicalQueue.RANKED_SOLO).get("TOP").isOtp);
         assertNull(statistics.champions.get(3).get(CanonicalQueue.RANKED_SOLO).get("TOP").isOtp);
+        String json = new ObjectMapper().writeValueAsString(statistics);
+        assertTrue(json.contains("\"isOtp\":true"));
     }
 
     private static Match match(GameQueueType queue, LaneType lane, int championLevel, Integer damageTaken) {
