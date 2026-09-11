@@ -1,7 +1,9 @@
 # Contextual ranking operational notes
 
 `competitive` remains the Mongo source of truth for leaderboard ranking. It
-stores the exact Riot `tier` (`TierDivisionType`) alongside the MMR projection.
+stores only the numeric MMR projection: the Riot `tier` is not persisted there.
+Every exact-division operation derives its MMR interval at the query boundary;
+for example, `GOLD_IV` is `[1200, 1300)`.
 `RankService` persists `summoner.ranks`, `CompetitiveService` alone writes this
 projection, and `LeaderboardService` alone writes its Redis index. A valid rank
 always creates a competitive row; absent `primary` and `otpChampionId` fields
@@ -25,7 +27,8 @@ beebot:lol:los:ranking:building:<build-id>
 
 Leaderboard ZSET score is `competitive.mmr`; record ZSET score is
 `profile_records.score`. Both use a binary 128-bit SHA-256 member. The global
-and regional exact-rank count hashes are rebuildable from `competitive.tier`.
+and regional exact-rank count hashes are rebuilt by assigning each
+`competitive.mmr` to its exact MMR interval.
 The segment registry and access hash are Redis-only observability metadata.
 
 Apply these operator-managed indexes after checking existing names and running
@@ -33,12 +36,12 @@ the corresponding `explain("executionStats")` commands.
 
 ```javascript
 db.competitive.createIndex(
-  {queue: 1, tier: 1, mmr: -1},
+  {queue: 1, mmr: -1},
   {name: "competitive_contextual_global"}
 )
 
 db.competitive.createIndex(
-  {queue: 1, tier: 1, region: 1, mmr: -1},
+  {queue: 1, region: 1, mmr: -1},
   {name: "competitive_contextual_regional"}
 )
 ```
@@ -52,5 +55,5 @@ on the next matching request.
 Run `!test ranking` to print separate leaderboard and record index status:
 resident segment count, cardinality, Redis `MEMORY USAGE`, idle TTL, last access
 and in-progress state. Use it after a real `!test regenerate competitive` rebuild to record
-the required MASTER+, global/regional GOLD_IV and representative record
+the required MASTER+, global/regional `[1200, 1300)` and representative record
 measurements.

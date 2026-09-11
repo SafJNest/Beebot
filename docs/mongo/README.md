@@ -13,14 +13,14 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - The initial backfill migrates only raw data: first `summoner` with `ranks{}` and `masteries[]` in the same batch, then `match` with participants.
 - Identity and participant upserts initialize `ranks{}` only when the summoner is new; existing ranks remain owned by the explicit rank writers and are never replaced by an identity refresh.
 - Owner-only migration commands enqueue their work on the Mongo database worker: `!test migrate` (or `!test migrate all`) runs the global backfill, `!test migrate tracked` recovers missing raw matches and RankProgress for `summoner.tracking=true`, and `!test migrate ranks` recovers canonical `summoner.ranks` then rebuilds its derived projections. The recovery commands are `!test migrate fix-tracked`, which repairs only stored tracked RankProgress, and `!test migrate rankprogress [runId]`, which runs the checkpointed Mongo RankProgress schema/history stages globally. MariaDB remains reachable only through `MongoMigration`.
-- `!test regenerate competitive` rebuilds `competitive`, leaderboard aggregates and permanent leaderboard indexes from canonical Mongo data. Use it after a projection change or Redis flush.
+- `!test regenerate competitive` rebuilds `competitive`, leaderboard aggregates and permanent leaderboard indexes from canonical Mongo data. It replaces every competitive row, so it removes retired projection fields such as `tier`. Use it after a projection change or Redis flush.
 - `!test regenerate profiles`, `records`, `champions` and `indexables` rebuild their respective Mongo-derived data; `!test regenerate all` runs the complete sequence on the Mongo scheduler.
 - MariaDB's historical participant KDA string is split into the flat `kills`, `deaths` and `assists` fields before the raw match is written to Mongo.
 - Global profile-record rebuilds scan all season PUUIDs through a Mongo cursor in batches of 2,000; the batch size does not cap the total population.
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build and `leaderboard_aggregates` are built subsequently by the application; the latter contain only rebuildable snapshots of distribution and top-region.
 - The complete `profile_statistics` flow, including the application key `puuid + filterKey`, is documented in [`docs/architecture/profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 - Collections use table names (`summoner`, `match`, `profile_statistics`, `profile_activity`, `profile_matchups`, etc.) without `lol_` prefix.
-- Derived projections `champions_indexable` and `profiles_indexable` are rebuilt from runtime Mongo data.
+- Derived projections `champions_indexable` and `profiles_indexable` are rebuilt from runtime Mongo data. Profile-indexable cleanup scans projection IDs and deletes stale documents in batches of 2,000, so the Mongo filter stays below the BSON document limit.
 - The `summoner` document uses `_id = puuid`; numeric MariaDB identifiers and the duplicate `puuid` field are not written.
 - The `match` document uses `_id` as the full Riot match ID and `region` as the sole shard field; `fullGameId`, `gameId`, `game_id` and `leagueShard` are not written. `patch` keeps the full version and `patchMajor` the first two segments for filters.
 - The migration normalizes `match` document residues; other legacy documents and old Kryo payloads remain outside automatic cleanup and are removed manually before regeneration.
@@ -57,7 +57,7 @@ Historical archived in `_archive/` (01-06, 09-11): see `_archive/` for step-by-s
 
 - Summoner: _id = puuid.
 - Match: _id = full Riot match ID, for example EUW1_123.
-- Competitive: `_id` is BSON `Binary` with the first 16 SHA-256 bytes of the UTF-8 canonical key `puuid:queue`; `puuid` and `queue` remain ordinary fields.
+- Competitive: `_id` is BSON `Binary` with the first 16 SHA-256 bytes of the UTF-8 canonical key `puuid:queue`; `puuid`, `queue`, `region`, `mmr`, `primary`, optional `otpChampionId` and `lastUpdate` are the projection fields. Riot tier is not persisted.
 - Match: `region` is the sole shard field; `patchMajor` is derived from `patch` and used in filters.
 - R4J enum: name().
 - Ban: bans.BLUE and bans.RED, always present even if empty.

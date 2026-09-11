@@ -1151,9 +1151,7 @@ public final class MongoDB {
                     new UpdateOptions().upsert(true)));
         }
         if (!operations.isEmpty()) bulkWrite(profileIndexables(), operations);
-        if (!profileIndexables().deleteMany(ids.isEmpty() ? new Document() : Filters.nin("_id", ids)).wasAcknowledged()) {
-            throw new IllegalStateException("Mongo profile indexable cleanup was not acknowledged");
-        }
+        deleteStaleProfileIndexables(ids);
 
         return findProfileIndexables();
     }
@@ -1618,7 +1616,9 @@ public final class MongoDB {
         if (queue == null || tier == null || tier == TierDivisionType.UNRANKED || consumer == null) return;
         List<Bson> filters = new ArrayList<>();
         filters.add(Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()));
-        filters.add(Filters.eq("tier", tier.name()));
+        TierDivisionUtils.MmrRange range = TierDivisionUtils.getMmrRange(tier);
+        filters.add(Filters.gte("mmr", range.minimum()));
+        if (range.maximum() != null) filters.add(Filters.lt("mmr", range.maximum()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
         try (MongoCursor<Document> cursor = competitive().find(Filters.and(filters))
                 .sort(Sorts.descending("mmr"))
@@ -1636,13 +1636,9 @@ public final class MongoDB {
         List<Bson> filters = new ArrayList<>();
         filters.add(Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
-        List<Bson> pipeline = List.of(
-            Aggregates.match(Filters.and(filters)),
-            Aggregates.group("$tier", Accumulators.sum("count", 1))
-        );
-        for (Document document : competitive().aggregate(pipeline)) {
-            TierDivisionType tier = division(document.getString("_id"));
-            if (tier != null && tier != TierDivisionType.UNRANKED) result.put(tier, number(document, "count"));
+        for (Document document : competitive().find(Filters.and(filters)).projection(Projections.include("mmr"))) {
+            TierDivisionType division = TierDivisionUtils.getDivisionFromMmr(number(document, "mmr"));
+            if (division != TierDivisionType.UNRANKED) result.merge(division, 1L, Long::sum);
         }
         return result;
     }
@@ -1906,7 +1902,11 @@ public final class MongoDB {
         List<Bson> filters = new ArrayList<>();
         if (queue != null) filters.add(Filters.eq("queue", queue.name()));
         if (region != null && !LeagueConstants.GLOBAL_REGION.equals(region)) filters.add(Filters.eq("region", region));
-        if (division != null) filters.add(Filters.eq("tier", division.name()));
+        if (division != null) {
+            TierDivisionUtils.MmrRange range = TierDivisionUtils.getMmrRange(division);
+            filters.add(Filters.gte("mmr", range.minimum()));
+            if (range.maximum() != null) filters.add(Filters.lt("mmr", range.maximum()));
+        }
         return filters.isEmpty() ? new Document() : Filters.and(filters);
     }
 
@@ -2151,7 +2151,6 @@ public final class MongoDB {
                 .append("puuid", entry.puuid())
                 .append("region", entry.region().name())
                 .append("queue", queue)
-                .append("tier", entry.tier().name())
                 .append("mmr", entry.mmr())
                 .append("lastUpdate", entry.lastUpdate());
         if (entry.primary() != null) value.append("primary", entry.primary().name());
@@ -3785,13 +3784,12 @@ public final class MongoDB {
         String puuid = document.getString("puuid");
         LeagueShard region = parseShard(document.getString("region"));
         GameQueueType queue = queue(document.getString("queue"));
-        TierDivisionType tier = division(document.getString("tier"));
+        long mmr = number(document, "mmr");
         LaneType primary = null;
         try { primary = LaneType.valueOf(document.getString("primary")); }
         catch (RuntimeException ignored) {}
-        if (puuid == null || puuid.isBlank() || region == LeagueShard.UNKNOWN || queue == null || tier == null
-                || tier == TierDivisionType.UNRANKED) return null;
-        return new CompetitiveEntry(puuid, region, queue, tier, number(document, "mmr"), primary,
+        if (puuid == null || puuid.isBlank() || region == LeagueShard.UNKNOWN || queue == null || mmr < 0) return null;
+        return new CompetitiveEntry(puuid, region, queue, mmr, primary,
             document.containsKey("otpChampionId") ? document.getInteger("otpChampionId") : null,
             number(document, "lastUpdate"));
     }
@@ -3967,6 +3965,26 @@ public final class MongoDB {
             if (!collection.bulkWrite(operations.subList(start, end), new BulkWriteOptions().ordered(false)).wasAcknowledged()) {
                 throw new IllegalStateException("Mongo bulk replace was not acknowledged for collection=" + collection.getNamespace().getCollectionName());
             }
+        }
+    }
+
+    private static void deleteStaleProfileIndexables(Set<String> ids) {
+        List<String> staleIds = new ArrayList<>(MAX_BATCH_IDS);
+        for (Document document : profileIndexables().find().projection(Projections.include("_id"))) {
+            String id = document.getString("_id");
+            if (id == null || ids.contains(id)) continue;
+            staleIds.add(id);
+            if (staleIds.size() == MAX_BATCH_IDS) {
+                deleteProfileIndexableBatch(staleIds);
+                staleIds.clear();
+            }
+        }
+        if (!staleIds.isEmpty()) deleteProfileIndexableBatch(staleIds);
+    }
+
+    private static void deleteProfileIndexableBatch(List<String> ids) {
+        if (!profileIndexables().deleteMany(Filters.in("_id", ids)).wasAcknowledged()) {
+            throw new IllegalStateException("Mongo profile indexable cleanup was not acknowledged");
         }
     }
 

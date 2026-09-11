@@ -7,8 +7,8 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | search/autocomplete | one `find` on `summoner` with `region + riotSearch` prefix, base projection + `ranks`, Solo rank included | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` sorted by `_id`; maps to canonical `Summoner` (`region` as `LeagueShard`) | 1 | UserData / Discord |
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
-| leaderboard | `find` on `competitive` with queue/tier/region/role/OTP filter, `mmr DESC, _id DESC` and limited PUUIDs; one `$in` on `summoner._id` loads the page; separate total Redis → aggregate → `countDocuments` | 2 per page + count only on cache miss | LeaderboardService |
-| contextual leaderboard ranking | Mongo cursor over `competitive {queue,tier,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | LeaderboardService |
+| leaderboard | `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC` and limited PUUIDs; one `$in` on `summoner._id` loads the page; separate total Redis → aggregate → `countDocuments` | 2 per page + count only on cache miss | LeaderboardService |
+| contextual leaderboard ranking | Mongo cursor over `competitive {queue,mmr range,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | LeaderboardService |
 | contextual record ranking | Mongo cursor over `profile_records {filterKey,metric,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |

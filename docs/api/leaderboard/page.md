@@ -53,7 +53,7 @@ positions for that rank's queue among all regions and its own region,
 respectively. They do not replace row `position`: `position` remains the
 position for the requested rank/region/role/OTP filters and pagination.
 
-Internally the page reads `competitive` for MMR/tier/role/OTP filtering, sorting and
+Internally the page reads `competitive` for MMR-range/role/OTP filtering, sorting and
 pagination of PUUIDs; then it reads only the summoners of the page with an `$in`
 on `_id`. `total` is resolved from Redis, then (without role) from
 `leaderboard_aggregates`, then with `countDocuments()` on `competitive`.

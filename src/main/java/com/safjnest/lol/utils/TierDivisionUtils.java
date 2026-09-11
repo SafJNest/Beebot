@@ -133,6 +133,31 @@ public class TierDivisionUtils {
     };
   }
 
+  public static MmrRange getMmrRange(TierDivisionType division) {
+    int minimum = getMmr(division, 0);
+    if (minimum < 0) return new MmrRange(-1, 0);
+
+    Integer maximum = null;
+    for (TierDivisionType candidate : TierDivisionType.values()) {
+      int candidateMinimum = getMmr(candidate, 0);
+      if (candidateMinimum <= minimum || (maximum != null && candidateMinimum >= maximum)) continue;
+      maximum = candidateMinimum;
+    }
+    return new MmrRange(minimum, maximum);
+  }
+
+  public static TierDivisionType getDivisionFromMmr(long mmr) {
+    TierDivisionType result = TierDivisionType.UNRANKED;
+    int resultMinimum = -1;
+    for (TierDivisionType division : TierDivisionType.values()) {
+      int minimum = getMmr(division, 0);
+      if (minimum <= resultMinimum || mmr < minimum) continue;
+      result = division;
+      resultMinimum = minimum;
+    }
+    return result;
+  }
+
   public static TierType getTierFromMmr(long mmr) {
     for (TierType tier : TierType.values()) {
       if (tier == TierType.UNRANKED) continue;

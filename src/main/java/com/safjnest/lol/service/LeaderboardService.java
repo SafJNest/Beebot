@@ -366,19 +366,21 @@ public class LeaderboardService {
     }
 
     private static void applyIndexChange(CompetitiveEntry entry, long delta) {
-        if (entry == null || entry.tier() == null || entry.tier() == TierDivisionType.UNRANKED) return;
+        if (entry == null) return;
+        TierDivisionType tier = TierDivisionUtils.getDivisionFromMmr(entry.mmr());
+        if (tier == TierDivisionType.UNRANKED) return;
         GameQueueType queue = GameQueueTypeUtils.canonicalQueue(entry.queue());
         List<String> scopes = new ArrayList<>(2);
         scopes.add(LeagueShardUtils.leaderboardScope(null));
         if (entry.region() != null) scopes.add(LeagueShardUtils.leaderboardScope(entry.region()));
         for (String scope : scopes) {
             RedisClient.incrementHashIfPresent(
-                RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(queue.name(), scope), entry.tier().name(), delta);
-            String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(queue.name(), scope, entry.tier().name());
+                RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(queue.name(), scope), tier.name(), delta);
+            String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(queue.name(), scope, tier.name());
             if (!RedisClient.sortedSetExists(key)) continue;
             if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(entry.puuid(), queue), entry.mmr())));
             else RedisClient.removeSortedSetMember(key, member(entry.puuid(), queue));
-            if (!TierDivisionUtils.isHighElo(entry.tier()))
+            if (!TierDivisionUtils.isHighElo(tier))
                 RedisClient.expire(key, RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.ttlSeconds());
             RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
         }
