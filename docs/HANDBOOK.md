@@ -157,7 +157,7 @@ record ResponseMetadata(Pagination pagination, Long lastUpdate, Boolean refresh,
 Redis SUMMONER_STATISTICS(region, shard, puuid, filterKey)  60s TTL (BE: 6h logico, invalidato su upsert)
   → Mongo {puuid, filterKey}   unique profile_statistics_identity
   → miss: ComputeScheduler.startProfileStatistics(...) → 202
-  hit:  Redis.set dopo Mongo + invalida overview/recentMatches su upsert riuscito
+  hit:  Redis.set dopo Mongo + invalida overview su upsert riuscito
 ```
 
 Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONER_RECENT_MATCHES` (5), `CHAMPION_PAGE`, `CHAMPION_TIER_LIST`. Job failure → exception, key removed, retry possible.
@@ -502,7 +502,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
      MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, acc::accept);
      MyAggregate agg = acc.finish(); agg.lastUpdate = System.currentTimeMillis();
      boolean ok = MongoDB.upsertMyAggregate(puuid, filter, agg);
-     if(ok){ RedisClient.set(RedisKey.MY, agg, ...); RedisClient.delete(recentMatchesKey); }
+     if(ok){ RedisClient.set(RedisKey.MY, agg, ...); }
      return ok;
    }
    ```

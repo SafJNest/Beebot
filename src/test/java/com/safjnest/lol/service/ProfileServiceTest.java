@@ -35,15 +35,14 @@ public class ProfileServiceTest {
             Map.of(GameQueueType.RANKED_FLEX_SR, new Rank(TierDivisionType.BRONZE_II, 15, 76, 131)),
             statistics,
             List.of(),
-            java.util.Map.of(1, new SummonerOverview.Champion("Annie", "image")),
-            List.of(match("recent", LaneType.TOP))
+            java.util.Map.of(1, new SummonerOverview.Champion("Annie", "image"))
         );
 
         assertEquals(1, page.overview().statistics().laneStats.get(0).games);
         assertEquals(LaneType.TOP, page.overview().statistics().laneStats.get(0).reference);
         assertEquals(TierDivisionType.BRONZE_II, page.ranks().get(GameQueueType.RANKED_FLEX_SR).tier());
         assertEquals(27, page.summoner().icon());
-        assertEquals("BLUE", page.overview().recentMatches().get(0).participants().get(0).team());
+        assertEquals("Annie", page.overview().champions().get(1).name());
     }
 
     @Test
@@ -63,4 +62,5 @@ public class ProfileServiceTest {
             List.of(), List.of(), List.of(Participant.forMatchResult(2, "puuid", "BLUE"))
         );
     }
+
 }

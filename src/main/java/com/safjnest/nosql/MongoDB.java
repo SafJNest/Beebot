@@ -964,28 +964,6 @@ public final class MongoDB {
         flushProfileRecordMatches(batch, consumer);
     }
 
-    public static List<MatchResult> findProfileRecentMatches(
-            String puuid,
-            LeagueShard shard,
-            Filter filter,
-            int limit) {
-        if (puuid == null || puuid.isBlank() || filter == null || limit <= 0) return List.of();
-        List<MatchResult> result = new ArrayList<>();
-        boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
-        FindIterable<Document> matches = matches().find(buildMatchFilter(puuid, shard, filter, 0, 0))
-                .projection(matchResultProjection())
-                .sort(Sorts.descending("timeStart"));
-        if (!relationalFilter) matches = matches.limit(Math.max(limit, Math.min(100, limit * 4)));
-        for (Document document : matches) {
-            Match match = read(matchRecord(document), Match.class);
-            if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
-            MatchResult value = toMatchResult(match, puuid);
-            if (value != null) result.add(value);
-            if (result.size() == limit) break;
-        }
-        return result;
-    }
-
         public static List<com.safjnest.lol.model.match.Match> findAnalysisMatches(
             String puuid,
             LeagueShard shard,

@@ -33,7 +33,6 @@ public class RedisKeyTest {
         assertEquals(60, RedisKey.SUMMONER_STATISTICS.ttlSeconds());
         assertEquals(60, RedisKey.SUMMONER_ACTIVITY.ttlSeconds());
         assertEquals(60, RedisKey.SUMMONER_MATCHUPS.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_RECENT_MATCHES.ttlSeconds());
         assertEquals(24 * 60 * 60, RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
         assertEquals(60, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
         assertEquals(60, RedisKey.LEADERBOARD_COUNT.ttlSeconds());
@@ -82,6 +81,5 @@ public class RedisKeyTest {
     public void separatesR4jAndLeagueOsNamespaces() {
         assertTrue(RedisKey.R4J_SUMMONER.of("EUW1", "id").contains(":r4j:"));
         assertTrue(RedisKey.MATCH_DETAIL.of("EUROPE", "EUW1", "EUW1_123").endsWith("los:EUROPE:EUW1:match:EUW1_123:detail"));
-        assertTrue(RedisKey.SUMMONER_RECENT_MATCHES.of("EUROPE", "EUW1", "puuid-1", "filter").contains(":los:EUROPE:EUW1:summoner:puuid-1:"));
     }
 }

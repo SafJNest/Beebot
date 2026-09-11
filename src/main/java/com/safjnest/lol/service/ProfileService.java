@@ -7,13 +7,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ProfileIndexable;
 import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -36,7 +34,6 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 public class ProfileService {
 
     private static final AtomicBoolean ALL_PROFILE_STATS_REFRESH_RUNNING = new AtomicBoolean(false);
-    private static final TypeReference<List<MatchResult>> RECENT_MATCHES_TYPE = new TypeReference<>() {};
     private static final int MIN_PROFILE_GAMES = 5;
     private static final long STALE_BASE_MILLIS = TimeConstant.DAY * 30L;
     private static final long STALE_JITTER_DAYS = 14;
@@ -52,8 +49,7 @@ public class ProfileService {
             boolean refresh = isStale(puuid, statistics == null ? 0 : statistics.lastUpdate);
             SummonerView page = SummonerView.from(cached.summoner(), LeaderboardService.resolveRankings(
                 cached.summoner().puuid(), shard, cached.ranks()), statistics,
-                cached.overview().masteries(), cached.overview().champions(),
-                getRecentMatches(puuid, shard, filter)).withMetadata(
+                cached.overview().masteries(), cached.overview().champions()).withMetadata(
                 ResponseMetadata.of(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
             return refresh ? ApiResult.partial(page, page.metadata()) : ApiResult.ready(page, page.metadata());
         }
@@ -71,11 +67,10 @@ public class ProfileService {
         boolean refresh = ranks == null || masteries == null
             || statistics == null || isStale(profile.puuid(), statistics.lastUpdate);
 
-        List<MatchResult> recentMatches = statistics == null ? List.of() : getRecentMatches(profile.puuid(), shard, filter);
-        SummonerView page = SummonerView.from(profile, LeaderboardService.resolveRankings(profile.puuid(), shard, ranks), statistics, masteries, recentMatches)
+        SummonerView page = SummonerView.from(profile, LeaderboardService.resolveRankings(profile.puuid(), shard, ranks), statistics, masteries)
             .withMetadata(ResponseMetadata.of(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
         if (statistics != null && !refresh) {
-            RedisClient.set(RedisKey.SUMMONER_OVERVIEW, withoutRecentMatches(page), LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+            RedisClient.set(RedisKey.SUMMONER_OVERVIEW, page, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
             return ApiResult.ready(page, page.metadata());
         }
         return ApiResult.partial(page, page.metadata());
@@ -130,16 +125,6 @@ public class ProfileService {
                 cacheStatistics(entry.getKey(), shard, filter, entry.getValue());
             }
         }
-        return result;
-    }
-
-    public List<MatchResult> getRecentMatches(String puuid, LeagueShard shard, Filter filter) {
-        if (puuid == null || filter == null) return List.of();
-        String key = recentMatchesKey(puuid, shard, filter);
-        List<MatchResult> cached = RedisClient.get(key, RECENT_MATCHES_TYPE);
-        if (cached != null) return cached;
-        List<MatchResult> result = MongoDB.findProfileRecentMatches(puuid, shard, filter, 5);
-        RedisClient.set(RedisKey.SUMMONER_RECENT_MATCHES, result, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
         return result;
     }
 
@@ -222,7 +207,6 @@ public class ProfileService {
         boolean saved = MongoDB.upsertProfileStatistics(puuid, filter, statistics);
         if (saved) {
             cacheStatistics(puuid, shard, filter, statistics);
-            RedisClient.delete(recentMatchesKey(puuid, shard, filter));
             if (Filter.canonical().toSummonerKey().equals(filter.toSummonerKey())) {
                 if (!CompetitiveService.updateFromStatistics(puuid, shard, statistics)) return false;
                 saved = profileRecordService.generate(puuid, shard, filter);
@@ -286,7 +270,6 @@ public class ProfileService {
         cacheStatistics(puuid, shard, filter, refresh.statistics());
         cacheActivity(puuid, shard, filter, refresh.activity());
         cacheMatchups(puuid, shard, filter, refresh.matchups());
-        RedisClient.delete(recentMatchesKey(puuid, shard, filter));
         if (!CompetitiveService.updateFromStatistics(puuid, shard, refresh.statistics())) return false;
         return true;
     }
@@ -377,10 +360,6 @@ public class ProfileService {
         return RedisKey.SUMMONER_STATISTICS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
     }
 
-    private static String recentMatchesKey(String puuid, LeagueShard shard, Filter filter) {
-        return RedisKey.SUMMONER_RECENT_MATCHES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
-    }
-
     private static String activityKey(String puuid, LeagueShard shard, Filter filter) {
         return RedisKey.SUMMONER_ACTIVITY.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
     }
@@ -396,11 +375,6 @@ public class ProfileService {
             && page.overview() != null
             && page.overview().statistics() != null
             && page.overview().statistics().total().games >= MIN_PROFILE_GAMES;
-    }
-
-    private static SummonerView withoutRecentMatches(SummonerView page) {
-        return SummonerView.from(page.summoner(), page.ranks(), page.overview().statistics(),
-            page.overview().masteries(), page.overview().champions(), List.of());
     }
 
     private static boolean isReadyFuture(CompletableFuture<?> future) {

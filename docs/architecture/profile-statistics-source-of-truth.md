@@ -7,7 +7,7 @@
 - Pure computation owner: `ProfileAnalyzer`
 - Asynchronous refresh owner: `lol.queue.ComputeScheduler` (`QueueHandler` → `ComputeScheduler` `PROFILE`) — former `DatabaseTracker` (ADR-0014)
 
-This document is the operational reference for the profile statistics flow. When starting new work search for these terms: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `recentMatches`, `lastUpdate`, `ComputeScheduler.startProfileStatistics`, `ComputeScheduler.startProfileMatchups`.
+This document is the operational reference for the profile statistics flow. When starting new work search for these terms: `ProfileStatistics`, `ProfileMatchups`, `Filter`, `ActivityFilter`, `toSummonerKey`, `puuid + filterKey`, `ProfileMatches`, `lastUpdate`, `ComputeScheduler.startProfileStatistics`, `ComputeScheduler.startProfileMatchups`.
 
 ## Primary rule
 
@@ -19,7 +19,7 @@ PUUID + complete Filter
 
 The PUUID identifies the Riot account. The `Filter` identifies exactly the dataset to aggregate. There is no longer a separate “profile” statistic, an “overview” statistic and a “champion” statistic computed separately for the same case: overview, profile and the generic command read the same `ProfileStatistics`.
 
-`recentMatches` is not part of the aggregate. It is a lightweight projection loaded separately using the same PUUID and the same filter.
+Recent-match lists are not part of the aggregate or `SummonerView`; the dedicated profile-matches endpoint owns their lightweight projection.
 
 ## Profile records
 
@@ -71,8 +71,8 @@ used by profile statistics. `ProfileActivity.from(...)` traverses the
 result only once and updates in the same pass the total, `7x24` cells,
 daily/hourly aggregates, queue, sessions and time windows.
 
-The response is a dedicated projection and does not modify `SummonerView` or
-`overview.recentMatches`. `recentSessions` contains all sessions of the
+The response is a dedicated projection and does not modify `SummonerView`.
+`recentSessions` contains all sessions of the
 period in a single response, without a cursor. Heatmap cells are
 ordered by `day * 24 + hour`, with Monday `0` and Sunday `6`.
 
@@ -376,7 +376,7 @@ Discord/API request
             -> set lastUpdate after computation
             -> atomic upsert {puuid, filterKey}
             -> cache ProfileStatistics
-            -> invalidate recent matches and profile page
+            -> invalidate profile page
 ```
 
 The owner case `test highstats` executes an explicit rebuild of profile statistics
@@ -439,14 +439,14 @@ All these fields must be respected:
 
 During aggregation total, queue, lane, champion, matchup, duo, ping and spell are produced in the same pass. Do not introduce a separate service for pings, matchup or champion overview.
 
-## `recentMatches` and raw data
+## Profile matches and raw data
 
-`recentMatches` is a separate responsibility:
+The paginated profile-matches endpoint is a separate responsibility:
 
-- Redis cache: `SUMMONER_RECENT_MATCHES` with PUUID and `filterKey`;
-- separate Mongo query with `MatchResult` projection;
-- invalidation after a successful statistics refresh;
-- no `recentMatches` field inside `ProfileStatistics` or in the `profile_statistics` document.
+- It reads a lightweight `MatchResult` projection with the requested PUUID,
+  filter and pagination;
+- it is not embedded in `SummonerView`, `ProfileStatistics` or the
+  `profile_statistics` document.
 
 Views that require events or complete matches, such as timeline and OP.GG details, continue to read raw matches and events from their collection. They must not use the aggregate to reconstruct events.
 
@@ -459,14 +459,14 @@ All use the same `ProfileStatistics` for the PUUID and current filter as data so
 `SummonerOverview.from(...)` composes:
 
 ```text
-ProfileStatistics + ranks + masteries + recentMatches
+ProfileStatistics + ranks + masteries + champions
   -> SummonerOverview
   -> SummonerView
 ```
 
 The generic `!summoner` command no longer uses a separate statistics path: it reads the same aggregate as the overview, but keeps the previous embed format. It therefore shows the fields already present in the generic view, fed by the new `ProfileStatistics`, plus `lastUpdate`; it must not automatically show every new field added to the aggregate.
 
-The base overview keeps its historical format and includes pings in the already existing block. Matchup and the full champion list remain in their respective dedicated views, using the same `ProfileStatistics`. `recentMatches` is composed separately from the HTTP profile and is not loaded by `LeagueMessage.getSummonerEmbed`.
+The base overview keeps its historical format and includes pings in the already existing block. Matchup and the full champion list remain in their respective dedicated views, using the same `ProfileStatistics`. The paginated profile-matches endpoint is separate from the HTTP profile and is not loaded by `LeagueMessage.getSummonerEmbed`.
 
 `lastUpdate` is formatted in the Discord layer as a readable date/time and relative Discord timestamp. The persisted value always remains a numeric timestamp in milliseconds.
 
@@ -491,8 +491,7 @@ PUUID finds the summoner's projections without a literal `puuid` token.
 | aggregated statistics | `SUMMONER_STATISTICS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
 | aggregated activity | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
 | summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
-| recent matches | `SUMMONER_RECENT_MATCHES(region, shard, PUUID, filterKey)` | 1h | `ProfileService` | after statistics refresh |
-| summoner overview | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | after statistics or summoner component refresh; does not contain `recentMatches` |
+| summoner overview | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | after statistics or summoner component refresh |
 | raw match | existing match keys | per `RedisKey` | `MatchService`/`Tracker` | per match flow |
 
 A Mongo aggregate without `champions` is treated as obsolete and
@@ -508,11 +507,10 @@ The API continues to return the canonical models `SummonerView` and `SummonerOve
 
 - `overview.statistics` contains the filtered leaves in `champions`;
 - `overview.statistics.champions[championId][canonicalQueue][position]` distinguishes champion, queue and lane;
-- `overview.recentMatches` contains the separate lightweight list;
 - `overview.statistics.lastUpdate` indicates computation completion;
 - complete `Match` remains reserved for details and timeline.
 
-If identity, rank and mastery are ready but `ProfileStatistics` is missing, the HTTP profile immediately returns the available profile as `PARTIAL` with empty `recentMatches` and enqueues the refresh; the recent-match query starts only when the aggregate is available. If base components are missing, it keeps the `202 profile_pending` behavior. Discord shows the preparation message only until the exact PUUID/filter pair is available.
+If identity, rank and mastery are ready but `ProfileStatistics` is missing, the HTTP profile immediately returns the available profile as `PARTIAL` and enqueues the refresh. If base components are missing, it keeps the `202 profile_pending` behavior. Discord shows the preparation message only until the exact PUUID/filter pair is available.
 
 ## Checklist for future work
 
@@ -524,7 +522,7 @@ Before modifying this flow verify:
 4. `MongoDB` reads and writes `{puuid, filterKey}`;
 5. the pair `{ puuid, filterKey }` remains the application identity;
 6. computation goes through `ProfileAnalyzer` via `ProfileService`, not via Discord/API/controller;
-7. `recentMatches` remains separate;
+7. profile matches remain separate from `SummonerView`;
 8. activity uses the same `Filter` and the shared match query, without creating a second semantics for queue or period;
 9. `lastUpdate` is written only after computation;
 10. overview, profile and `!summoner` read the same object;

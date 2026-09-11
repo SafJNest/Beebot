@@ -3,7 +3,6 @@ package com.safjnest.lol.model.summoner;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -20,12 +19,7 @@ public record SummonerView(
     public SummonerView(Summoner summoner, Map<GameQueueType, Rank> ranks, SummonerOverview overview) {
         this(summoner, ranks, overview, null);
     }
-    public static SummonerView from(
-        Summoner summoner,
-        Map<GameQueueType, Rank> ranks,
-        ProfileStatistics statistics,
-        List<Mastery> masteries
-    ) {
+    public static SummonerView from(Summoner summoner, Map<GameQueueType, Rank> ranks, ProfileStatistics statistics, List<Mastery> masteries) {
         return from(summoner, ranks, SummonerOverview.from(statistics, masteries));
     }
 
@@ -36,28 +30,7 @@ public record SummonerView(
         List<Mastery> masteries,
         Map<Integer, SummonerOverview.Champion> champions
     ) {
-        return from(summoner, ranks, statistics, masteries, champions, List.of());
-    }
-
-    public static SummonerView from(
-        Summoner summoner,
-        Map<GameQueueType, Rank> ranks,
-        ProfileStatistics statistics,
-        List<Mastery> masteries,
-        List<MatchResult> recentMatches
-    ) {
-        return from(summoner, ranks, statistics, masteries, null, recentMatches);
-    }
-
-    public static SummonerView from(
-        Summoner summoner,
-        Map<GameQueueType, Rank> ranks,
-        ProfileStatistics statistics,
-        List<Mastery> masteries,
-        Map<Integer, SummonerOverview.Champion> champions,
-        List<MatchResult> recentMatches
-    ) {
-        return from(summoner, ranks, SummonerOverview.from(statistics, masteries, champions, recentMatches));
+        return from(summoner, ranks, SummonerOverview.from(statistics, masteries, champions));
     }
 
     public static SummonerView from(Summoner summoner, Map<GameQueueType, Rank> ranks, SummonerOverview overview) {

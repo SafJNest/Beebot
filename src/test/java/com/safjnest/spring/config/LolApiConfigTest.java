@@ -75,6 +75,9 @@ public class LolApiConfigTest {
         assertTrue(viewJson.contains("\"summoner\":{"));
         assertTrue(viewJson.contains("\"region\":\"EUW1\""));
         assertTrue(viewJson.contains("\"ranks\":{}"));
+        assertFalse(viewJson.contains("\"form\""));
+        assertFalse(viewJson.contains("\"mostPlayed\""));
+        assertFalse(viewJson.contains("\"recentMatches\""));
         assertFalse(summonerJson.contains("\"dirty\""));
         assertFalse(viewJson.contains("\"dirty\""));
     }

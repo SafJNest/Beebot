@@ -39,7 +39,7 @@ MariaDB stores UTF-8 JSON in `champion_builds.data`, `champion_stats.data`, and 
 
 `profile_matchups` is a separate collection: its `matchups` payload stores exclusively `champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`. It does not store aggregate rows per champion or matchup outside the leaf.
 
-Details on the `filterKey` format, the reason for the compound index, and the difference between aggregate and `recentMatches` are in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
+Details on the `filterKey` format, the reason for the compound index, and profile-match ownership are in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
 ## Index policy
 

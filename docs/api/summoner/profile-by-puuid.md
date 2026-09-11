@@ -10,7 +10,8 @@
 
 Returns `SummonerView`. `overview.statistics` is an aggregatable leaf dataset, not an already precomputed page: the consumer builds total,
 queue, position and averages from the received data. `overview.masteries`,
-`overview.champions` and `overview.recentMatches` remain part of the response.
+and `overview.champions` remain part of the response. Recent matches are served
+only by the dedicated profile-matches endpoint.
 
 ```json
 {
