@@ -40,13 +40,14 @@ changing this identifier because MongoDB does not permit `_id` updates.
 The same projection may contain optional `otpChampionId`, copied from the
 single canonical queue-level OTP classification; it is independent from the
 primary lane and non-OTP rows omit it. `!test regenerate competitive` rebuilds
-this classification from existing canonical statistics, then rebuilds
-`competitive` and leaderboard aggregates.
+this classification from existing canonical statistics and only `competitive`.
+`!test regenerate aggregates` separately rebuilds leaderboard aggregates.
 
 Leaderboard reads filter/sort/page `competitive` first (MMR range, optional
 region, primary lane and OTP champion ID), then fetch the limited PUUID list from `summoner` by
-`_id: {$in: [...]}`. Rank refresh and canonical profile-statistics refresh both
-upsert or remove the affected competitive rows. `!test regenerate competitive` rebuilds
+`_id: {$in: [...]}`. Each acknowledged rank refresh upserts or removes the
+affected competitive rows; a rebuild incorporates newer profile statistics.
+`!test regenerate competitive` rebuilds
 the projection for the initial population or repair. Side-specific base
 counters (`blueGames`, `blueWins`, `redGames`, `redWins`) are persisted in the
 same profile-statistics leaves, so future side/queue/lane aggregates do not
@@ -55,8 +56,10 @@ need match scans.
 ## Amendment 2026-08-30: profile records
 
 `profile_records` is a rebuildable profile projection with one document per
-`{ puuid, filterKey, metric }`. It never replaces canonical `match`,
-`match_events`, participant snapshots or profile statistics. The row stores the
+`{ puuid, filterKey, metric }`; `HIGHEST_MASTERY` additionally keys rows by
+`championId` and is rebuilt from canonical `summoner.masteries`. It never
+replaces canonical `match`, `match_events`, participant snapshots, mastery or
+profile statistics. The row stores the
 winning match reference, value and derived score, historical MMR when the
 participant snapshot is available, and the event actor/team only where the
 metric requires it. A `gameShared` field is present only for TEAM and MATCH

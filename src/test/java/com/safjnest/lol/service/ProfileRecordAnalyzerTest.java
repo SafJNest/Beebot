@@ -15,6 +15,7 @@ import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.record.ProfileRecord;
 import com.safjnest.lol.model.record.RecordMetric;
+import com.safjnest.lol.model.summoner.Mastery;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -81,6 +82,18 @@ public class ProfileRecordAnalyzerTest {
 
         assertEquals(320, record(accumulator.finish(), RecordMetric.FIRST_KILL_TIME).value);
         assertEquals(320, record(accumulator.finish(), RecordMetric.FIRST_BLOOD_TIME).value);
+    }
+
+    @Test
+    public void createsChampionScopedMasteryRecord() {
+        ProfileRecord record = ProfileRecord.mastery("puuid", "canonical", new Mastery(412, 10, 2_000_000), LeagueShard.EUW1, 123L);
+
+        assertEquals(RecordMetric.HIGHEST_MASTERY, record.metric);
+        assertEquals(412, record.championId);
+        assertEquals(2_000_000, record.value);
+        assertEquals(2_000_000, record.score);
+        assertNull(record.matchId);
+        assertNull(record.gameShared);
     }
 
     private static ProfileRecord record(List<ProfileRecord> records, RecordMetric metric) {

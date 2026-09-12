@@ -40,7 +40,7 @@ public enum RedisKey {
     CONTEXTUAL_LEADERBOARD_COUNTS("los:leaderboard:counts:%s:%s", Duration.ZERO),
     CONTEXTUAL_LEADERBOARD_SEGMENTS("los:leaderboard:segments", Duration.ZERO),
     CONTEXTUAL_LEADERBOARD_ACCESS("los:leaderboard:access", Duration.ZERO),
-    CONTEXTUAL_RECORD_SEGMENT("los:ranking:%s:%s:%s", Duration.ofHours(6)),
+    CONTEXTUAL_RECORD_SEGMENT("los:ranking:%s:%s:%s:%s", Duration.ofHours(6)),
     CONTEXTUAL_RECORD_SEGMENTS("los:ranking:segments", Duration.ZERO),
     CONTEXTUAL_RECORD_ACCESS("los:ranking:access", Duration.ZERO),
     CONTEXTUAL_LEADERBOARD_BUILD("los:leaderboard:building:%s", Duration.ofMinutes(10)),

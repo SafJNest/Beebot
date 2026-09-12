@@ -3,6 +3,7 @@ package com.safjnest.lol.model.record;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.utils.TierDivisionUtils;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -56,6 +57,27 @@ public class ProfileRecord {
         record.actorPuuid = actorPuuid;
         record.gameShared = metric.gameShared() ? Boolean.TRUE : null;
         applyMmr(record, participant == null ? null : participant.rankProgress);
+        return record;
+    }
+
+    public static ProfileRecord mastery(
+        String puuid,
+        String filterKey,
+        Mastery mastery,
+        LeagueShard region,
+        long lastUpdate
+    ) {
+        if (mastery == null) throw new IllegalArgumentException("Mastery is required");
+        ProfileRecord record = new ProfileRecord();
+        record.puuid = puuid;
+        record.filterKey = filterKey;
+        record.metric = RecordMetric.HIGHEST_MASTERY;
+        record.value = mastery.points();
+        record.score = record.metric.order().score(record.value);
+        record.occurredAt = lastUpdate;
+        record.championId = mastery.championId();
+        record.region = region;
+        record.lastUpdate = lastUpdate;
         return record;
     }
 

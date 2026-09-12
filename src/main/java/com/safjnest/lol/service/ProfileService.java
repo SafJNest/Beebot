@@ -208,7 +208,6 @@ public class ProfileService {
         if (saved) {
             cacheStatistics(puuid, shard, filter, statistics);
             if (Filter.canonical().toSummonerKey().equals(filter.toSummonerKey())) {
-                if (!CompetitiveService.updateFromStatistics(puuid, shard, statistics)) return false;
                 saved = profileRecordService.generate(puuid, shard, filter);
             }
         }
@@ -270,7 +269,6 @@ public class ProfileService {
         cacheStatistics(puuid, shard, filter, refresh.statistics());
         cacheActivity(puuid, shard, filter, refresh.activity());
         cacheMatchups(puuid, shard, filter, refresh.matchups());
-        if (!CompetitiveService.updateFromStatistics(puuid, shard, refresh.statistics())) return false;
         return true;
     }
 

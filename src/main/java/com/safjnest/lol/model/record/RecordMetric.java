@@ -17,7 +17,8 @@ public enum RecordMetric {
     FIRST_ELDER_TIME(RecordOwner.TEAM, RecordOrder.LOWEST, true),
     BARONS_TAKEN(RecordOwner.TEAM, RecordOrder.HIGHEST, true),
     ELDERS_TAKEN(RecordOwner.TEAM, RecordOrder.HIGHEST, true),
-    LONGEST_GAME(RecordOwner.MATCH, RecordOrder.HIGHEST, false);
+    LONGEST_GAME(RecordOwner.MATCH, RecordOrder.HIGHEST, false),
+    HIGHEST_MASTERY(RecordOwner.SUMMONER, RecordOrder.HIGHEST, false);
 
     private final RecordOwner owner;
     private final RecordOrder order;
@@ -42,6 +43,10 @@ public enum RecordMetric {
     }
 
     public boolean gameShared() {
-        return owner != RecordOwner.PARTICIPANT;
+        return owner == RecordOwner.TEAM || owner == RecordOwner.MATCH;
+    }
+
+    public boolean championScoped() {
+        return this == HIGHEST_MASTERY;
     }
 }

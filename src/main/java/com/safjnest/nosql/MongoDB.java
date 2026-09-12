@@ -293,6 +293,34 @@ public final class MongoDB {
         return new Document("summoner", stats).append("sample", sample).append("indexSizes", stats.get("indexSizes", new Document()));
     }
 
+    public static Document masteryRecordsSpaceAudit() {
+        String filterKey = Filter.canonical().toSummonerKey();
+        Document projectedRecord = new Document("_id", new ObjectId())
+                .append("puuid", "$_id")
+                .append("filterKey", filterKey)
+                .append("metric", RecordMetric.HIGHEST_MASTERY.name())
+                .append("value", "$masteries.points")
+                .append("score", "$masteries.points")
+                .append("occurredAt", 0L)
+                .append("championId", "$masteries.championId")
+                .append("region", "$region")
+                .append("lastUpdate", 0L);
+        Document result = summoners().aggregate(List.of(
+                new Document("$project", new Document("region", 1)
+                    .append("masteries", new Document("$ifNull", List.of("$masteries", List.of())))),
+                new Document("$unwind", "$masteries"),
+                new Document("$project", new Document("bytes", new Document("$bsonSize", projectedRecord))),
+                new Document("$group", new Document("_id", null)
+                    .append("documents", new Document("$sum", 1))
+                    .append("totalBsonBytes", new Document("$sum", "$bytes"))
+                    .append("averageBsonBytes", new Document("$avg", "$bytes"))
+                    .append("maxBsonBytes", new Document("$max", "$bytes")))))
+                .first();
+        return new Document("summoner", collectionStats("summoner"))
+                .append("projectedMasteryRecords", result == null ? new Document("documents", 0) : result)
+                .append("profileRecords", collectionStats(PROFILE_RECORDS_COLLECTION));
+    }
+
     public static Document matchEventsSpaceAudit(int sampleSize) {
         int boundedSample = Math.max(1, Math.min(10_000, sampleSize));
         List<Document> samples = matchEvents().find().limit(boundedSample).into(new ArrayList<>());
@@ -1179,8 +1207,21 @@ public final class MongoDB {
         if (puuid == null || puuid.isBlank() || filter == null) return List.of();
         List<ProfileRecord> result = new ArrayList<>();
         for (Document document : profileRecords().find(Filters.and(
-                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey())))
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()),
+                Filters.ne("metric", RecordMetric.HIGHEST_MASTERY.name())))
                 .sort(Sorts.ascending("metric"))) {
+            ProfileRecord record = readProfileRecord(document);
+            if (record != null) result.add(record);
+        }
+        return result;
+    }
+
+    public static List<ProfileRecord> findProfileRecords(String puuid, Filter filter, RecordMetric metric) {
+        if (puuid == null || puuid.isBlank() || filter == null || metric == null) return List.of();
+        List<ProfileRecord> result = new ArrayList<>();
+        for (Document document : profileRecords().find(Filters.and(
+                Filters.eq("puuid", puuid), Filters.eq("filterKey", filter.toSummonerKey()), Filters.eq("metric", metric.name())))
+                .sort(Sorts.ascending("championId"))) {
             ProfileRecord record = readProfileRecord(document);
             if (record != null) result.add(record);
         }
@@ -1194,11 +1235,23 @@ public final class MongoDB {
         int limit,
         int offset
     ) {
+        return findGlobalProfileRecords(filter, metric, region, null, limit, offset);
+    }
+
+    public static List<ProfileRecord> findGlobalProfileRecords(
+        Filter filter,
+        RecordMetric metric,
+        LeagueShard region,
+        Integer championId,
+        int limit,
+        int offset
+    ) {
         if (filter == null || metric == null || limit <= 0) return List.of();
         List<Bson> filters = new ArrayList<>();
         filters.add(Filters.eq("filterKey", filter.toSummonerKey()));
         filters.add(Filters.eq("metric", metric.name()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
+        if (championId != null) filters.add(Filters.eq("championId", championId));
         List<ProfileRecord> result = new ArrayList<>();
         for (Document document : profileRecords().find(Filters.and(filters))
                 .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
@@ -1215,11 +1268,22 @@ public final class MongoDB {
         LeagueShard region,
         Consumer<ProfileRecord> consumer
     ) {
+        forEachProfileRecordRankingSegment(filterKey, metric, region, null, consumer);
+    }
+
+    public static void forEachProfileRecordRankingSegment(
+        String filterKey,
+        RecordMetric metric,
+        LeagueShard region,
+        Integer championId,
+        Consumer<ProfileRecord> consumer
+    ) {
         if (filterKey == null || filterKey.isBlank() || metric == null || consumer == null) return;
         List<Bson> filters = new ArrayList<>();
         filters.add(Filters.eq("filterKey", filterKey));
         filters.add(Filters.eq("metric", metric.name()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
+        if (championId != null) filters.add(Filters.eq("championId", championId));
         try (MongoCursor<Document> cursor = profileRecords().find(Filters.and(filters))
                 .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
                 .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
@@ -1231,11 +1295,16 @@ public final class MongoDB {
     }
 
     public static long countGlobalProfileRecords(Filter filter, RecordMetric metric, LeagueShard region) {
+        return countGlobalProfileRecords(filter, metric, region, null);
+    }
+
+    public static long countGlobalProfileRecords(Filter filter, RecordMetric metric, LeagueShard region, Integer championId) {
         if (filter == null || metric == null) return 0;
         List<Bson> filters = new ArrayList<>();
         filters.add(Filters.eq("filterKey", filter.toSummonerKey()));
         filters.add(Filters.eq("metric", metric.name()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
+        if (championId != null) filters.add(Filters.eq("championId", championId));
         return profileRecords().countDocuments(Filters.and(filters));
     }
 
@@ -2168,6 +2237,23 @@ public final class MongoDB {
         if (!batch.isEmpty()) consumer.accept(batch);
     }
 
+    public static void forEachMasterySummonerBatch(LeagueShard shard, Consumer<List<Summoner>> consumer) {
+        if (shard == null || consumer == null) return;
+        List<Summoner> batch = new ArrayList<>(COMPETITIVE_REBUILD_BATCH_SIZE);
+        try (MongoCursor<Document> cursor = summoners().find(Filters.eq("region", shard.name()))
+                .projection(Projections.include("_id", "region", "masteries"))
+                .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE)
+                .iterator()) {
+            while (cursor.hasNext()) {
+                batch.add(summoner(cursor.next()));
+                if (batch.size() < COMPETITIVE_REBUILD_BATCH_SIZE) continue;
+                consumer.accept(batch);
+                batch = new ArrayList<>(COMPETITIVE_REBUILD_BATCH_SIZE);
+            }
+        }
+        if (!batch.isEmpty()) consumer.accept(batch);
+    }
+
     public record CompetitiveRebuild(long candidates, long entries, long removed) {}
 
     public static OtpRefresh refreshCanonicalProfileOtp() {
@@ -2645,7 +2731,47 @@ public final class MongoDB {
         }
         if (!operations.isEmpty()) bulkWrite(profileRecords(), operations);
         Bson identity = Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey));
-        profileRecords().deleteMany(metrics.isEmpty() ? identity : Filters.and(identity, Filters.nin("metric", metrics)));
+        Bson mastery = Filters.ne("metric", RecordMetric.HIGHEST_MASTERY.name());
+        profileRecords().deleteMany(metrics.isEmpty() ? Filters.and(identity, mastery)
+            : Filters.and(identity, Filters.nin("metric", metrics), mastery));
+        return true;
+    }
+
+    public static boolean upsertProfileMasteryRecords(String puuid, Filter filter, List<ProfileRecord> records) {
+        if (puuid == null || puuid.isBlank() || filter == null) return false;
+        String filterKey = filter.toSummonerKey();
+        List<ProfileRecord> values = records == null ? List.of() : records;
+        List<Integer> championIds = new ArrayList<>(values.size());
+        List<WriteModel<Document>> operations = new ArrayList<>(values.size());
+        for (ProfileRecord record : values) {
+            if (record == null || record.metric != RecordMetric.HIGHEST_MASTERY || record.championId <= 0) continue;
+            championIds.add(record.championId);
+            Document document = JsonCodec.toDocument(record);
+            List<Bson> updates = new ArrayList<>(document.size() + 3);
+            updates.add(Updates.set("puuid", puuid));
+            updates.add(Updates.set("filterKey", filterKey));
+            for (Map.Entry<String, Object> entry : document.entrySet()) {
+                if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())
+                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())
+                        || "globalRanking".equals(entry.getKey()) || "regionRanking".equals(entry.getKey())) continue;
+                if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
+                else updates.add(Updates.set(entry.getKey(), entry.getValue()));
+            }
+            for (String optional : List.of("matchId", "mmr", "team", "actorPuuid", "gameShared", "globalRanking", "regionRanking"))
+                if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
+            updates.add(Updates.unset("riotId"));
+            updates.add(Updates.unset("icon"));
+            updates.add(Updates.setOnInsert("_id", new ObjectId()));
+            operations.add(new UpdateOneModel<>(Filters.and(
+                Filters.eq("puuid", puuid),
+                Filters.eq("filterKey", filterKey),
+                Filters.eq("metric", RecordMetric.HIGHEST_MASTERY.name()),
+                Filters.eq("championId", record.championId)), Updates.combine(updates), new UpdateOptions().upsert(true)));
+        }
+        if (!operations.isEmpty()) bulkWrite(profileRecords(), operations);
+        Bson identity = Filters.and(Filters.eq("puuid", puuid), Filters.eq("filterKey", filterKey),
+            Filters.eq("metric", RecordMetric.HIGHEST_MASTERY.name()));
+        profileRecords().deleteMany(championIds.isEmpty() ? identity : Filters.and(identity, Filters.nin("championId", championIds)));
         return true;
     }
 

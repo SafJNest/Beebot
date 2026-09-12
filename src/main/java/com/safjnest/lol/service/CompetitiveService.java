@@ -26,12 +26,8 @@ public final class CompetitiveService {
 
     private CompetitiveService() {}
 
-    public static boolean updateFromRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
+    static boolean updateFromRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
         return update(puuid, shard, ranks, MongoDB.findProfileStatistics(puuid, Filter.canonical()));
-    }
-
-    public static boolean updateFromStatistics(String puuid, LeagueShard shard, ProfileStatistics statistics) {
-        return update(puuid, shard, MongoDB.findRanks(puuid, shard), statistics);
     }
 
     public static MongoDB.CompetitiveRebuild rebuild() {

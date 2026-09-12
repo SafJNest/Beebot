@@ -24,7 +24,8 @@ Recent-match lists are not part of the aggregate or `SummonerView`; the dedicate
 ## Profile records
 
 Records are a distinct projection in `profile_records`, with identity
-`puuid + filterKey + metric`. `ProfileRecordService` owns reading and
+`puuid + filterKey + metric`; `HIGHEST_MASTERY` adds `championId` so every
+canonical mastery can be ranked independently. `ProfileRecordService` owns reading and
 computation; `ProfileRecordAnalyzer` is pure; `ComputeScheduler` executes the deduplicated job
 `profile-records:<puuid>:<filterKey>` on the PROFILE worker. The
 computation uses the same complete filter as statistics, but reads

@@ -14,6 +14,7 @@ import com.safjnest.lol.model.match.RankHistoryQuery;
 import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.record.RecordMetric;
+import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
@@ -23,6 +24,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public final class LolApiParameters {
 
@@ -193,6 +195,12 @@ public final class LolApiParameters {
     public static RecordMetric recordMetric(String value) {
         if (value == null || value.isBlank()) throw invalid("metric", "is required");
         return parseEnum(value, RecordMetric.class, "metric");
+    }
+
+    public static int champion(String value) {
+        StaticChampion champion = ChampionUtils.findChampion(value);
+        if (champion != null && champion.getId() > 0) return champion.getId();
+        throw invalid("champion", "must identify a known champion");
     }
 
     public static int page(int page) {

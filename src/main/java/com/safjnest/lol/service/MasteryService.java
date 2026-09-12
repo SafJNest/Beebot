@@ -27,6 +27,7 @@ public final class MasteryService {
         new TypeReference<List<ChampionMastery>>() {};
 
     private static final no.stelar7.api.r4j.impl.R4J RIOT_API = com.safjnest.lol.LeagueHandler.getRiotApi();
+    private static final ProfileRecordService PROFILE_RECORD_SERVICE = new ProfileRecordService();
 
     private MasteryService() {
     }
@@ -162,7 +163,10 @@ public final class MasteryService {
 
     private static void save(String puuid, LeagueShard shard, List<Mastery> masteries, boolean invalidateProfile) {
         if (!valid(puuid, shard) || masteries == null) return;
-        MongoDB.upsertMasteries(puuid, shard, masteries);
+        if (!MongoDB.upsertMasteries(puuid, shard, masteries)) return;
+        if (!PROFILE_RECORD_SERVICE.updateMasteries(puuid, shard, masteries)) {
+            throw new IllegalStateException("Mastery records could not be updated");
+        }
         RedisClient.set(RedisKey.SUMMONER_MASTERIES, masteries, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
     }

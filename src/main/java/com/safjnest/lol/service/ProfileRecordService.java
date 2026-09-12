@@ -19,6 +19,7 @@ import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.record.ProfileRecord;
 import com.safjnest.lol.model.record.ProfileRecordPage;
 import com.safjnest.lol.model.record.RecordMetric;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.record.RecordPage;
 import com.safjnest.lol.model.record.RecordsOverview;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -55,17 +56,28 @@ public final class ProfileRecordService {
         for (RecordMetric metric : RecordMetric.values()) {
             records.addAll(MongoDB.findGlobalProfileRecords(filter, metric, region, GLOBAL_OVERVIEW_PER_METRIC, 0));
         }
-        resolveRankings(records);
+        resolveRankings(records, null);
         enrich(records);
         long lastUpdate = lastUpdate(records);
         return RecordsOverview.of(records, ResponseMetadata.ready(lastUpdate, filter));
     }
 
     public RecordPage getGlobalPage(Filter filter, RecordMetric metric, LeagueShard region, int limit, int offset) {
-        List<ProfileRecord> records = MongoDB.findGlobalProfileRecords(filter, metric, region, limit, offset);
-        resolveRankings(records);
+        return getGlobalPage(filter, metric, region, null, limit, offset);
+    }
+
+    public RecordPage getGlobalPage(
+        Filter filter,
+        RecordMetric metric,
+        LeagueShard region,
+        Integer championId,
+        int limit,
+        int offset
+    ) {
+        List<ProfileRecord> records = MongoDB.findGlobalProfileRecords(filter, metric, region, championId, limit, offset);
+        resolveRankings(records, championId);
         enrich(records);
-        long total = MongoDB.countGlobalProfileRecords(filter, metric, region);
+        long total = MongoDB.countGlobalProfileRecords(filter, metric, region, championId);
         long lastUpdate = lastUpdate(records);
         ResponseMetadata.Pagination pagination = new ResponseMetadata.Pagination(
             null, null, limit, offset, total, null, offset + records.size() < total);
@@ -84,7 +96,36 @@ public final class ProfileRecordService {
         return saved;
     }
 
+    public boolean updateMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
+        if (puuid == null || puuid.isBlank() || shard == null) return false;
+        Filter filter = Filter.canonical();
+        List<ProfileRecord> previous = MongoDB.findProfileRecords(puuid, filter, RecordMetric.HIGHEST_MASTERY);
+        List<ProfileRecord> records = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        if (masteries != null) for (Mastery mastery : masteries) {
+            if (mastery == null || mastery.championId() <= 0 || mastery.points() < 0) continue;
+            records.add(ProfileRecord.mastery(puuid, filter.toSummonerKey(), mastery, shard, now));
+        }
+        boolean saved = MongoDB.upsertProfileMasteryRecords(puuid, filter, records);
+        if (saved) updateIndex(previous, records);
+        return saved;
+    }
+
+    public int regenerateMasteries(LeagueShard shard) {
+        if (shard == null) return 0;
+        int[] refreshed = new int[1];
+        MongoDB.forEachMasterySummonerBatch(shard, summoners -> {
+            for (com.safjnest.lol.model.summoner.Summoner summoner : summoners)
+                if (updateMasteries(summoner.puuid(), shard, summoner.masteries())) refreshed[0]++;
+        });
+        return refreshed[0];
+    }
+
     public static void resolveRankings(List<ProfileRecord> records) {
+        resolveRankings(records, null);
+    }
+
+    public static void resolveRankings(List<ProfileRecord> records, Integer championId) {
         if (records == null || records.isEmpty()) return;
         Set<RecordSegment> segments = new LinkedHashSet<>();
         List<String> keys = new ArrayList<>();
@@ -92,12 +133,13 @@ public final class ProfileRecordService {
         List<Double> scores = new ArrayList<>();
         for (ProfileRecord record : records) {
             if (!classifiable(record)) continue;
-            String globalKey = RedisKey.CONTEXTUAL_RECORD_SEGMENT.of(record.filterKey, record.metric.name(), LeagueShardUtils.leaderboardScope(null));
-            segments.add(new RecordSegment(record.filterKey, record.metric, null));
+            Integer recordChampionId = record.metric.championScoped() ? championId : null;
+            String globalKey = segmentKey(record.filterKey, record.metric, null, recordChampionId);
+            segments.add(new RecordSegment(record.filterKey, record.metric, null, recordChampionId));
             keys.add(globalKey); members.add(member(record)); scores.add((double) record.score);
             if (record.region == null) continue;
-            String regionalKey = RedisKey.CONTEXTUAL_RECORD_SEGMENT.of(record.filterKey, record.metric.name(), LeagueShardUtils.leaderboardScope(record.region));
-            segments.add(new RecordSegment(record.filterKey, record.metric, record.region));
+            String regionalKey = segmentKey(record.filterKey, record.metric, record.region, recordChampionId);
+            segments.add(new RecordSegment(record.filterKey, record.metric, record.region, recordChampionId));
             keys.add(regionalKey); members.add(member(record)); scores.add((double) record.score);
         }
         ensureIndexesAsync(segments);
@@ -169,24 +211,26 @@ public final class ProfileRecordService {
 
     private static void applyIndexChange(ProfileRecord record, int delta) {
         if (!classifiable(record)) return;
-        List<String> scopes = new ArrayList<>(2);
-        scopes.add(LeagueShardUtils.leaderboardScope(null));
-        if (record.region != null) scopes.add(LeagueShardUtils.leaderboardScope(record.region));
-        for (String scope : scopes) {
-            String key = RedisKey.CONTEXTUAL_RECORD_SEGMENT.of(record.filterKey, record.metric.name(), scope);
-            if (!RedisClient.sortedSetExists(key)) continue;
-            if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(record), record.score)));
-            else RedisClient.removeSortedSetMember(key, member(record));
-            RedisClient.expire(key, RedisKey.CONTEXTUAL_RECORD_SEGMENT.ttlSeconds());
-            RedisClient.setHashLong(RedisKey.CONTEXTUAL_RECORD_ACCESS.of(), key, System.currentTimeMillis());
+        for (Integer championId : championScopes(record)) {
+            List<LeagueShard> regions = new ArrayList<>(2);
+            regions.add(null);
+            if (record.region != null) regions.add(record.region);
+            for (LeagueShard region : regions) {
+                String key = segmentKey(record.filterKey, record.metric, region, championId);
+                if (!RedisClient.sortedSetExists(key)) continue;
+                if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(record), record.score)));
+                else RedisClient.removeSortedSetMember(key, member(record));
+                RedisClient.expire(key, RedisKey.CONTEXTUAL_RECORD_SEGMENT.ttlSeconds());
+                RedisClient.setHashLong(RedisKey.CONTEXTUAL_RECORD_ACCESS.of(), key, System.currentTimeMillis());
+            }
         }
     }
 
     private static void ensureIndexesAsync(Set<RecordSegment> segments) {
         if (segments.isEmpty()) return;
         Map<RecordSegment, String> keys = new LinkedHashMap<>();
-        for (RecordSegment segment : segments) keys.put(segment, RedisKey.CONTEXTUAL_RECORD_SEGMENT.of(
-            segment.filterKey(), segment.metric().name(), LeagueShardUtils.leaderboardScope(segment.region())));
+        for (RecordSegment segment : segments) keys.put(segment, segmentKey(
+            segment.filterKey(), segment.metric(), segment.region(), segment.championId()));
         Set<String> existing = RedisClient.existingSortedSets(new ArrayList<>(keys.values()));
         for (Map.Entry<RecordSegment, String> entry : keys.entrySet()) {
             RecordSegment segment = entry.getKey();
@@ -214,7 +258,7 @@ public final class ProfileRecordService {
             boolean built = RedisClient.buildSortedSet(
                 RedisKey.CONTEXTUAL_RANKING_BUILD.of(java.util.UUID.randomUUID()), key,
                 RedisKey.CONTEXTUAL_RECORD_SEGMENT.ttlSeconds(), RedisKey.CONTEXTUAL_RANKING_BUILD.ttlSeconds(),
-                entries -> MongoDB.forEachProfileRecordRankingSegment(segment.filterKey(), segment.metric(), segment.region(), record ->
+                entries -> MongoDB.forEachProfileRecordRankingSegment(segment.filterKey(), segment.metric(), segment.region(), segment.championId(), record ->
                     entries.accept(new RedisClient.SortedSetEntry(member(record), record.score))));
             if (built) {
                 RedisClient.addPersistentMember(RedisKey.CONTEXTUAL_RECORD_SEGMENTS.of(), key);
@@ -239,17 +283,32 @@ public final class ProfileRecordService {
 
     private static boolean classifiable(ProfileRecord record) {
         return record != null && record.puuid != null && !record.puuid.isBlank() && record.filterKey != null
-            && !record.filterKey.isBlank() && record.metric != null;
+            && !record.filterKey.isBlank() && record.metric != null
+            && (!record.metric.championScoped() || record.championId > 0);
     }
 
     private static byte[] member(ProfileRecord record) {
         try {
+            String championScope = record.metric.championScoped() ? ":" + record.championId : "";
             return java.util.Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(
-                (record.filterKey + ':' + record.metric.name() + ':' + record.puuid).getBytes(StandardCharsets.UTF_8)), 16);
+                (record.filterKey + ':' + record.metric.name() + championScope + ':' + record.puuid)
+                    .getBytes(StandardCharsets.UTF_8)), 16);
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is not available", exception);
         }
     }
 
-    private record RecordSegment(String filterKey, RecordMetric metric, LeagueShard region) {}
+    private static List<Integer> championScopes(ProfileRecord record) {
+        List<Integer> result = new ArrayList<>();
+        result.add(null);
+        if (record.metric.championScoped()) result.add(record.championId);
+        return result;
+    }
+
+    private static String segmentKey(String filterKey, RecordMetric metric, LeagueShard region, Integer championId) {
+        return RedisKey.CONTEXTUAL_RECORD_SEGMENT.of(filterKey, metric.name(),
+            LeagueShardUtils.leaderboardScope(region), championId == null ? "all" : championId);
+    }
+
+    private record RecordSegment(String filterKey, RecordMetric metric, LeagueShard region, Integer championId) {}
 }

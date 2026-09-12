@@ -393,7 +393,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 1. **Choose `_id`:**
    - `summoner` → `_id = puuid` (single field, no duplicate `puuid`).
    - `match` → `_id = fullGameId` (`EUW1_123`), `region` sole shard field, `patch` + `patchMajor`.
-   - `profile_*` / `champion_*` / `profile_records` → `_id = random ObjectId`, **always lookup `{puuid, filterKey}` or `{puuid, filterKey, metric}`** with `$setOnInsert` for `_id`.
+   - `profile_*` / `champion_*` / `profile_records` → `_id = random ObjectId`, **always lookup `{puuid, filterKey}` or `{puuid, filterKey, metric}`** with `$setOnInsert` for `_id`; `HIGHEST_MASTERY` additionally identifies a row by `championId`.
    - `match_events` → `_id = matchId`, payload JSON, WiredTiger `zstd`.
 2. **Create entity (if incremental mutation is needed):**
    ```java
@@ -599,9 +599,14 @@ class MongoDBTest {
 | Profile Aggregate | `ProfileStatistics` | `ProfileService` + `ProfileAnalyzer` | `profile_statistics` `{puuid,filterKey}` unique | `SUMMONER_STATISTICS` |
 | Activity | `ProfileActivity` | `ProfileService` | `profile_activity` | `SUMMONER_ACTIVITY` |
 | Matchup | `ProfileMatchups` | `ProfileService` | `profile_matchups` | `SUMMONER_MATCHUPS` |
-| Record | `ProfileRecord` | `ProfileRecordService` | `profile_records` `{puuid,filterKey,metric}` | — (via service) |
+| Record | `ProfileRecord` | `ProfileRecordService` | `profile_records` `{puuid,filterKey,metric}`; mastery adds `championId` | — (via service) |
 | Champion | `ChampionView` / `ChampionStatistics` / `Build` | `ChampionService` + `ChampionAnalyzer` | `champion_statistics` / `champion_builds` | `CHAMPION_PAGE` / `CHAMPION_TIER_LIST` |
 | Leaderboard | `SummonerLeaderboard` / `LeaderboardPage` | `LeaderboardService` | `competitive` / `leaderboard_aggregates` | `LEADERBOARD_PAGE` |
+
+`RankService` is the only normal runtime entry point to `CompetitiveService`.
+`MasteryService` is the only normal runtime entry point to mastery records in
+`ProfileRecordService`. Test commands and migration/rebuild utilities are the
+only exceptions.
 
 ### Primary Indexes (Mongo)
 
@@ -617,7 +622,7 @@ class MongoDBTest {
 | `profile_statistics` | `profile_statistics_identity {puuid,filterKey}` | **unique** | preflight aborts on duplicates, no `dropIndex` |
 | `profile_activity` | `{puuid,filterKey}` | unique | — |
 | `profile_matchups` | `{puuid,filterKey}` | unique | — |
-| `profile_records` | `{puuid,filterKey,metric}` | unique | ObjectId `_id` |
+| `profile_records` | `{puuid,filterKey,metric,championId}` | unique | ObjectId `_id` |
 | `competitive` | `_id` | unique | BSON Binary: first 16 SHA-256 bytes of `puuid:queue`; MMR/OTP derived |
 | `champion_statistics` | `{filterKey}` / `patch+queue` | compound | matrix |
 

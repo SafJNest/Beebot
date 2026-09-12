@@ -29,6 +29,23 @@ public class RecordsController {
         return profileRecordService.getGlobalOverview(Filter.canonical(), LolApiParameters.region(regionValue));
     }
 
+    @GetMapping("/highest_mastery/{champion}")
+    public RecordPage highestMasteryByChampion(
+            @PathVariable("champion") String championValue,
+            @RequestParam(name = "region", required = false) String regionValue,
+            @RequestParam(name = "limit", defaultValue = "20") int limit,
+            @RequestParam(name = "offset", defaultValue = "0") int offset
+    ) {
+        return profileRecordService.getGlobalPage(
+            Filter.canonical(),
+            RecordMetric.HIGHEST_MASTERY,
+            LolApiParameters.region(regionValue),
+            LolApiParameters.champion(championValue),
+            LolApiParameters.matchLimit(limit),
+            LolApiParameters.matchOffset(offset)
+        );
+    }
+
     @GetMapping("/{metric}")
     public RecordPage metric(
             @PathVariable("metric") String metricValue,

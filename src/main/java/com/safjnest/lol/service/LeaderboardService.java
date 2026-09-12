@@ -194,13 +194,10 @@ public class LeaderboardService {
 
     public static void rebuild() {
         MongoDB.rebuildLeaderboardAggregates();
-        warmupIndex();
     }
 
     public static MongoDB.LeaderboardAggregateRebuild rebuildAllAggregates() {
-        MongoDB.LeaderboardAggregateRebuild report = MongoDB.rebuildAllLeaderboardAggregates();
-        warmupIndex();
-        return report;
+        return MongoDB.rebuildAllLeaderboardAggregates();
     }
 
     public static Map<GameQueueType, Rank> resolveRankings(

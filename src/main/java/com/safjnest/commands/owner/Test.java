@@ -27,6 +27,7 @@ import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.nosql.MongoMigration;
+import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -40,8 +41,9 @@ import org.json.JSONObject;
 public class Test extends Command {
 
     private static final List<String> REGENERATION_OPERATIONS = List.of(
-        "profiles", "competitive", "records", "champions", "indexables", "all"
+        "profiles", "competitive", "aggregates", "records", "mastery-records", "champions", "indexables", "all"
     );
+    private static final List<String> AUDIT_OPERATIONS = List.of("mastery-records");
     private static final List<String> MIGRATION_OPERATIONS = List.of(
         "all", "tracked", "ranks", "fix-tracked", "rankprogress [runId]"
     );
@@ -69,7 +71,7 @@ public class Test extends Command {
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
                 + " | pushsamplegame | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
-                + " | migrate [" + String.join(" | ", MIGRATION_OPERATIONS) + "]");
+                + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS) + "]");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -97,6 +99,7 @@ public class Test extends Command {
             case "retrieveallgamesfast" -> queueMatchHistory(event, arguments, GameQueueType.values());
             case "highstats" -> queueHighEloStatistics(event);
             case "regenerate", "regen" -> queueRegeneration(event, arguments);
+            case "audit" -> queueAudit(event, arguments);
             case "migrate" -> queueMigration(event, arguments);
             default -> event.reply("Usage: !test regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
@@ -135,6 +138,20 @@ public class Test extends Command {
             case "rankprogress" -> queueRankProgressMigration(event, migrationArguments);
             default -> event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
         }
+    }
+
+    private static void queueAudit(CommandEvent event, String[] arguments) {
+        String operation = arguments.length < 2 ? "" : arguments[1].trim().toLowerCase();
+        if (!AUDIT_OPERATIONS.contains(operation)) {
+            event.reply("Usage: !test audit <" + String.join("|", AUDIT_OPERATIONS) + ">.");
+            return;
+        }
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-audit:" + operation, "owner audit " + operation, job -> {
+                System.out.println("[Mastery records audit] " + MongoDB.masteryRecordsSpaceAudit().toJson());
+                return null;
+            });
+        event.reply("Audit " + operation + " queued.");
     }
 
     private static void queueMigrationOperation(CommandEvent event, String operation, String label, Runnable migration) {
@@ -237,13 +254,17 @@ public class Test extends Command {
         switch (operation) {
             case "profiles" -> regenerateProfiles();
             case "competitive" -> regenerateCompetitive();
+            case "aggregates" -> regenerateAggregates();
             case "records" -> regenerateRecords();
+            case "mastery-records" -> regenerateMasteryRecords();
             case "champions" -> regenerateChampions();
             case "indexables" -> regenerateIndexables();
             case "all" -> {
                 regenerateProfiles();
                 regenerateCompetitive();
+                regenerateAggregates();
                 regenerateRecords();
+                regenerateMasteryRecords();
                 regenerateChampions();
                 regenerateIndexables();
             }
@@ -263,10 +284,13 @@ public class Test extends Command {
 
     private static void regenerateCompetitive() {
         var competitive = CompetitiveService.rebuild();
-        var aggregates = LeaderboardService.rebuildAllAggregates();
-        LeaderboardService.warmupIndex();
         System.out.println("[Regenerate competitive] entries=" + competitive.entries()
-            + " removed=" + competitive.removed() + " aggregates=" + aggregates.total());
+            + " removed=" + competitive.removed());
+    }
+
+    private static void regenerateAggregates() {
+        var aggregates = LeaderboardService.rebuildAllAggregates();
+        System.out.println("[Regenerate leaderboard aggregates] total=" + aggregates.total());
     }
 
     private static void regenerateRecords() {
@@ -275,6 +299,13 @@ public class Test extends Command {
         for (LeagueShard shard : LeagueShardUtils.getActives())
             refreshed += profileService.refreshAllRecords(shard);
         System.out.println("[Regenerate records] refreshed=" + refreshed);
+    }
+
+    private static void regenerateMasteryRecords() {
+        ProfileRecordService profileRecordService = new ProfileRecordService();
+        int refreshed = 0;
+        for (LeagueShard shard : LeagueShardUtils.getActives()) refreshed += profileRecordService.regenerateMasteries(shard);
+        System.out.println("[Regenerate mastery records] refreshed=" + refreshed);
     }
 
     private static void regenerateChampions() {
