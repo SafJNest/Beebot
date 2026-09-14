@@ -63,11 +63,15 @@ public class LolController {
     @GetMapping("/profile/{puuid}")
     public ResponseEntity<?> profile(
             @PathVariable("shard") String shardValue,
-            @PathVariable("puuid") String puuid
+            @PathVariable("puuid") String puuid,
+            @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "patch", required = false) String patchValue,
+            @RequestParam(name = "season", required = false) String seasonValue
     ) {
         ApiResult<SummonerView> result = profileService.get(
             LolApiParameters.requiredShard(shardValue),
-            LolApiParameters.requiredText(puuid, "puuid")
+            LolApiParameters.requiredText(puuid, "puuid"),
+            LolApiParameters.profileFilter(queueValue, patchValue, seasonValue)
         );
         return profileResponse(result);
     }
@@ -227,12 +231,16 @@ public class LolController {
     public ResponseEntity<?> profileByName(
             @PathVariable("shard") String shardValue,
             @PathVariable("gameName") String gameName,
-            @PathVariable("tagLine") String tagLine
+            @PathVariable("tagLine") String tagLine,
+            @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "patch", required = false) String patchValue,
+            @RequestParam(name = "season", required = false) String seasonValue
     ) {
         ApiResult<SummonerView> result = profileService.get(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(gameName, "game name"),
-            LolApiParameters.requiredText(tagLine, "tag line")
+            LolApiParameters.requiredText(tagLine, "tag line"),
+            LolApiParameters.profileFilter(queueValue, patchValue, seasonValue)
         );
         return profileResponse(result);
     }

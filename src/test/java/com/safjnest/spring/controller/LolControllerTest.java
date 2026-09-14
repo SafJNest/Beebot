@@ -18,6 +18,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.safjnest.lol.utils.SeasonUtils;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -62,6 +63,53 @@ public class LolControllerTest {
             .getAnnotation(GetMapping.class);
 
         assertEquals("/profile/{puuid}/rank-history", mapping.value()[0]);
+    }
+
+    @Test
+    public void shouldExposeFilteredProfilesByPuuidAndRiotId() throws NoSuchMethodException {
+        GetMapping byPuuid = LolController.class.getMethod("profile", String.class, String.class,
+            String.class, String.class, String.class).getAnnotation(GetMapping.class);
+        GetMapping byName = LolController.class.getMethod("profileByName", String.class, String.class,
+            String.class, String.class, String.class, String.class).getAnnotation(GetMapping.class);
+
+        assertEquals("/profile/{puuid}", byPuuid.value()[0]);
+        assertEquals("/profile-by-name/{gameName}/{tagLine}", byName.value()[0]);
+    }
+
+    @Test
+    public void shouldParseProfileFilters() {
+        Filter season = LolApiParameters.profileFilter("ranked_flex_sr", "15.1", "2025");
+        Filter patch = LolApiParameters.profileFilter(null, "16.1", null);
+        Filter all = LolApiParameters.profileFilter("all", null, "all");
+
+        assertEquals(GameQueueType.RANKED_FLEX_SR, season.queue());
+        assertEquals("15.1", season.patch());
+        assertEquals(SeasonUtils.getSeasonRange(2025).start(), season.timeStart());
+        assertEquals(SeasonUtils.getSeasonRange(2025).end(), season.timeEnd());
+        assertEquals(SeasonUtils.getSeasonRange(2026).start(), patch.timeStart());
+        assertEquals(SeasonUtils.getSeasonRange(2026).end(), patch.timeEnd());
+        assertNull(all.queue());
+        assertEquals(0, all.timeStart());
+        assertEquals(0, all.timeEnd());
+    }
+
+    @Test
+    public void shouldRejectProfilesWithAPatchOutsideTheSelectedSeason() {
+        try {
+            LolApiParameters.profileFilter(null, "15.1", "2026");
+            throw new AssertionError("Expected an invalid profile filter");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+            assertTrue(exception.getReason().contains("16."));
+        }
+
+        try {
+            LolApiParameters.profileFilter(null, "99.1", "all");
+            throw new AssertionError("Expected an invalid profile filter");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+            assertTrue(exception.getReason().contains("configured season"));
+        }
     }
 
     @Test

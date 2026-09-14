@@ -154,6 +154,31 @@ public final class LolApiParameters {
         return filter.setQueue(queue).setChampion(champion);
     }
 
+    public static Filter profileFilter(String queueValue, String patchValue, String seasonValue) {
+        GameQueueType queue = optionalQueue(queueValue);
+        String patch = patch(patchValue);
+        boolean allSeasons = seasonValue != null && LeagueConstants.ALL.equalsIgnoreCase(seasonValue.trim());
+        SeasonUtils.SeasonRange season = allSeasons ? null : profileSeason(seasonValue);
+        if (patch != null) {
+            int patchSeason = patchMajor(patch);
+            SeasonUtils.SeasonRange patchSeasonRange = SeasonUtils.getSeasonRange(2010 + patchSeason);
+            if (patchSeasonRange == null) {
+                throw invalid("patch", "must identify a patch from a configured season; available season years are " + rankHistorySeasons());
+            }
+            if (season != null && patchSeason != season.season()) {
+                throw invalid("patch", "must start with " + season.season() + ". for season " + season.year());
+            }
+            if (season == null && !allSeasons) {
+                season = patchSeasonRange;
+            }
+        }
+
+        Filter filter = allSeasons ? Filter.summoner(0, 0) : season == null
+            ? Filter.canonical()
+            : Filter.summoner(season.start(), season.end());
+        return filter.setQueue(queue).setPatch(patch);
+    }
+
     public static LeagueShard region(String value) {
         if (value == null || value.isBlank()) return null;
         String normalized = value.trim().toUpperCase(Locale.ROOT);
@@ -258,6 +283,21 @@ public final class LolApiParameters {
             joiner.add(String.valueOf(season.year()));
         }
         return joiner.length() == 0 ? "none" : joiner.toString();
+    }
+
+    private static SeasonUtils.SeasonRange profileSeason(String value) {
+        if (value == null || value.isBlank()) return null;
+        int year;
+        try {
+            year = Integer.parseInt(value.trim());
+        } catch (NumberFormatException exception) {
+            throw invalid("season", "must be all or a configured season year; available years are " + rankHistorySeasons());
+        }
+        SeasonUtils.SeasonRange season = SeasonUtils.getSeasonRange(year);
+        if (season == null) {
+            throw invalid("season", "must be all or a configured season year; available years are " + rankHistorySeasons());
+        }
+        return season;
     }
 
     private static int patchMajor(String patch) {

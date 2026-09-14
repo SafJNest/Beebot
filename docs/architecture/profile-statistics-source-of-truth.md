@@ -21,6 +21,25 @@ The PUUID identifies the Riot account. The `Filter` identifies exactly the datas
 
 Recent-match lists are not part of the aggregate or `SummonerView`; the dedicated profile-matches endpoint owns their lightweight projection.
 
+## Profile overview filters
+
+`GET /api/lol/{shard}/profile/{puuid}` and
+`GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}` accept the same
+optional `queue`, `patch` and `season` selectors. They construct one complete
+`Filter` before resolving either identity, so the selected filter is propagated
+through pending, partial and ready metadata and reaches the normal
+`PUUID + filterKey` Redis/Mongo/queue path.
+
+`queue` accepts any valid Riot `GameQueueType`; omitted or `all` remains all
+queues. A numeric `season` selects its configured full-season range. A patch
+uses `major.minor`; its major is the season number, so `15.x` belongs to 2025
+and `16.x` to 2026. A simultaneous numeric season and patch must agree or the
+API returns `400`. Patch-only requests derive their season range. `season=all`
+uses the unbounded period (`timeStart=0`, `timeEnd=0`) and therefore aggregates
+every persisted game for that PUUID. The unfiltered request continues to use
+`Filter.canonical()` and stays aligned with the leaderboard's current-season
+range.
+
 ## Profile records
 
 Records are a distinct projection in `profile_records`, with identity

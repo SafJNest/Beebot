@@ -6,6 +6,28 @@
 
 `shard` is a `LeagueShard` and `puuid` is the canonical Riot PUUID of the summoner.
 
+## Parameters
+
+| Name | Position | Type | Required | Description |
+|---|---|---|---:|---|
+| `shard` | path | `LeagueShard` | yes | Shard of the summoner. |
+| `puuid` | path | string | yes | Canonical Riot PUUID. |
+| `queue` | query | `GameQueueType` or `all` | no | Limits statistics to one valid Riot queue. Omitted or `all` includes every queue. |
+| `patch` | query | `major.minor` | no | Limits statistics to the exact patch. Its major identifies the season (`15.x` is 2025; `16.x` is 2026). |
+| `season` | query | configured year or `all` | no | Limits statistics to that whole season. `all` removes the time bound and returns every persisted game matching any selected queue or patch. |
+
+With both `patch` and a numeric `season`, the patch major must equal the
+season number: `season=2025&patch=15.1` is valid, while
+`season=2026&patch=15.1` returns `400`. With only `patch`, its season is
+derived automatically. With no filters, the profile retains the canonical
+current-season dataset shared with the leaderboard.
+
+```bash
+curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid' \
+  --data-urlencode 'queue=RANKED_SOLO_5X5' \
+  --data-urlencode 'season=2026'
+```
+
 ## `200` response
 
 Returns `SummonerView`. `overview.statistics` is an aggregatable leaf dataset, not an already precomputed page: the consumer builds total,

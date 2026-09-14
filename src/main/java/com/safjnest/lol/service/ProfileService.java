@@ -41,7 +41,11 @@ public class ProfileService {
     private final ProfileRecordService profileRecordService = new ProfileRecordService();
 
     public ApiResult<SummonerView> get(LeagueShard shard, String puuid) {
-        Filter filter = Filter.canonical();
+        return get(shard, puuid, Filter.canonical());
+    }
+
+    public ApiResult<SummonerView> get(LeagueShard shard, String puuid, Filter filter) {
+        if (shard == null || puuid == null || puuid.isBlank() || filter == null) return ApiResult.notFound();
         String key = RedisKey.SUMMONER_OVERVIEW.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
         if (cached != null && isReady(cached)) {
@@ -77,10 +81,17 @@ public class ProfileService {
     }
 
     public ApiResult<SummonerView> get(LeagueShard shard, String gameName, String tagLine) {
+        return get(shard, gameName, tagLine, Filter.canonical());
+    }
+
+    public ApiResult<SummonerView> get(LeagueShard shard, String gameName, String tagLine, Filter filter) {
+        if (shard == null || gameName == null || gameName.isBlank() || tagLine == null || tagLine.isBlank() || filter == null) {
+            return ApiResult.notFound();
+        }
         CompletableFuture<String> puuidFuture = SummonerService.getPuuidByRiotIdAsync(gameName, tagLine, shard);
-        if (!isReadyFuture(puuidFuture)) return ApiResult.pending(ResponseMetadata.of(0, true, Filter.canonical()));
+        if (!isReadyFuture(puuidFuture)) return ApiResult.pending(ResponseMetadata.of(0, true, filter));
         String puuid = completed(puuidFuture);
-        return puuid != null ? get(shard, puuid) : ApiResult.notFound();
+        return puuid != null ? get(shard, puuid, filter) : ApiResult.notFound();
     }
 
     public ProfileStatistics getStatistics(String puuid, LeagueShard shard, Filter filter) {
