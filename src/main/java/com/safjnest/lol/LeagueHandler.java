@@ -409,7 +409,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         int games = wins + losses;
         long wrPercent = games > 0 ? (long) Math.ceil((wins * 100.0) / games) : 0;
         return CustomEmojiHandler.getFormattedEmoji(rank.tier().getTier()) + " "
-            + TierDivisionUtils.getFormattedRank(rank.tier(), false) + " " + rank.lp() + " LP\n"
+            + rank.tier().prettyName().toUpperCase() + " " + rank.lp() + " LP\n"
             + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 

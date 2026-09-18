@@ -757,7 +757,7 @@ public final class MongoDB {
     public static List<QueryRecord> findAccountsByUserId(String userId) {
         traceRead("summoner.findAccountsByUserId", "userId=" + userId);
         List<QueryRecord> result = new ArrayList<>();
-        for (Document document : summoners().find(Filters.eq("userId", userId)).sort(Sorts.ascending("_id"))) {
+        for (Document document : summoners().find(Filters.eq("userId", userId))) {
             result.add(record(document));
         }
         return result;

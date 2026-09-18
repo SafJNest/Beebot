@@ -419,12 +419,10 @@ public class LeagueMessage {
 
         builder.addField("Highest Masteries", masteryString, false);
         ProfileStatistics statistics = profileStatistics(s, parameter);
-        if (statistics == null) {
-            builder.addField("Statistics", "Statistics are being prepared for this filter.", false);
-        } else {
-            builder = addLegacyProfileStats(builder, statistics, s, parameter);
-        }
-        builder.addField("Last update", statistics == null ? "not available" : formatLastUpdate(statistics.lastUpdate), false);
+        
+        if (statistics == null)  builder.addField("Statistics", "Statistics are being prepared for this filter.", false);
+        else builder = addLegacyProfileStats(builder, statistics, s, parameter);
+        
         builder = LeagueHandler.getActivity(builder, s);
 
         return builder;
