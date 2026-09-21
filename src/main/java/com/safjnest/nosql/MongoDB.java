@@ -779,8 +779,9 @@ public final class MongoDB {
         traceRead("summoner.findRank", "puuid=" + puuid + " queue=" + queue);
         Document document = summoners().find(summonerFilter(puuid, shard))
                 .projection(Projections.include("ranks")).first();
-        if (document == null) return null;
-        return queue == null ? null : ranks(document).get(GameQueueTypeUtils.canonicalQueue(queue));
+        if (document == null || queue == null) return null;
+        Map<GameQueueType, Rank> ranks = ranks(document);
+        return ranks == null ? null : ranks.get(GameQueueTypeUtils.canonicalQueue(queue));
     }
 
     public static Map<GameQueueType, Rank> findRanks(String puuid, LeagueShard shard) {
@@ -2905,8 +2906,8 @@ public final class MongoDB {
             putIfNotNull(document, "region", summoner.region() == null ? null : summoner.region().name());
             putIfNotNull(document, "userId", summoner.userId());
             if (summoner.tracking()) document.put("tracking", true);
-            document.put("ranks", writeRanks(summoner.ranks()));
-            if (!summoner.masteries().isEmpty()) document.put("masteries", writeMasteries(summoner.masteries()));
+            if (summoner.ranks() != null && !summoner.ranks().isEmpty()) document.put("ranks", writeRanks(summoner.ranks()));
+            if (summoner.masteries() != null && !summoner.masteries().isEmpty()) document.put("masteries", writeMasteries(summoner.masteries()));
         } else if (value instanceof Rank rank) {
             document = new Document("rank", rank.tier() == null ? null : rank.tier().name()).append("lp", rank.lp())
                     .append("wins", rank.wins()).append("losses", rank.losses());
@@ -2928,9 +2929,9 @@ public final class MongoDB {
     private static Summoner readSummoner(QueryRecord record) {
         String puuid = record.getAsString("puuid");
         if (puuid == null) puuid = record.getAsString("_id");
-        Map<GameQueueType, Rank> ranks = ranks(QueryRecordParser.toDocument(record));
-        List<Mastery> masteries = new ArrayList<>();
-        for (QueryRecord mastery : record.getAsRecords("masteries")) masteries.add(readMastery(mastery));
+        Document source = QueryRecordParser.toDocument(record);
+        Map<GameQueueType, Rank> ranks = ranks(source);
+        List<Mastery> masteries = masteries(source);
         return Summoner.hydrated(puuid, record.getAsString("riotId"),
                 parseShard(record.getAsString("region")), record.getAsInt("level"), record.getAsInt("icon"),
                 record.getAsString("userId"), record.getAsBoolean("tracking"), ranks, masteries);
@@ -3744,13 +3745,15 @@ public final class MongoDB {
     }
 
     private static Rank soloRank(Document document) {
-        return ranks(document).get(GameQueueType.RANKED_SOLO_5X5);
+        Map<GameQueueType, Rank> ranks = ranks(document);
+        return ranks == null ? null : ranks.get(GameQueueType.RANKED_SOLO_5X5);
     }
 
     private static Map<GameQueueType, Rank> ranks(Document document) {
+        if (document == null || !document.containsKey("ranks")) return null;
         Object value = document.get("ranks");
         if (value instanceof Document values) return objectRanks(values);
-        if (!(value instanceof List<?> values)) return Map.of();
+        if (!(value instanceof List<?> values)) return null;
         // TODO remove legacy ranks array compatibility after Mongo migration
         Map<GameQueueType, Rank> result = new LinkedHashMap<>();
         for (Object item : values) if (item instanceof Document rank) {
@@ -3775,8 +3778,9 @@ public final class MongoDB {
     }
 
     private static List<Mastery> masteries(Document document) {
+        if (document == null || !document.containsKey("masteries")) return null;
         Object value = document.get("masteries");
-        if (!(value instanceof List<?> values)) return List.of();
+        if (!(value instanceof List<?> values)) return null;
         List<Mastery> result = new ArrayList<>(values.size());
         for (Object item : values) if (item instanceof Document mastery) {
             result.add(new Mastery(mastery.getInteger("championId", 0), mastery.getInteger("level", 0),
@@ -3930,7 +3934,6 @@ public final class MongoDB {
         List<Bson> updates = new ArrayList<>(fields.size() + 2);
         for (Map.Entry<String, Object> field : fields.entrySet()) updates.add(Updates.set(field.getKey(), field.getValue()));
         if (ranks instanceof Document rankValues && !rankValues.isEmpty()) updates.add(Updates.set("ranks", rankValues));
-        else if (ranks != null) updates.add(Updates.setOnInsert("ranks", ranks));
         String riotSearch = normalizedRiotId(summoner.riotId());
         if (!riotSearch.isBlank()) updates.add(Updates.set("riotSearch", riotSearch));
         if (userId != null) updates.add(Updates.set("userId", userId));

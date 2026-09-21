@@ -101,7 +101,7 @@ public final class MasteryService {
     private static CompletableFuture<List<Mastery>> fetch(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return SummonerService.getAsync(puuid, shard).thenCompose(summoner -> {
+        return SummonerService.getSummonerAsync(puuid, shard).thenCompose(summoner -> {
             if (summoner == null) return CompletableFuture.failedFuture(
                 new IllegalStateException("Summoner is not available for mastery persistence"));
             return getRiotMasteriesAsync(puuid, shard).thenApplyAsync(entries -> {

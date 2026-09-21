@@ -33,9 +33,9 @@ public class Summoner extends AbstractEntity<Summoner> {
     @JsonIgnore
     private boolean tracking;
     @JsonIgnore
-    private Map<GameQueueType, Rank> ranks = new LinkedHashMap<>();
+    private Map<GameQueueType, Rank> ranks;
     @JsonIgnore
-    private List<Mastery> masteries = new ArrayList<>();
+    private List<Mastery> masteries;
 
     @JsonCreator
     public Summoner(
@@ -64,8 +64,8 @@ public class Summoner extends AbstractEntity<Summoner> {
         Summoner summoner = new Summoner(puuid, riotId, region, level, icon);
         summoner.userId = userId;
         summoner.tracking = tracking;
-        summoner.ranks = ranks == null ? new LinkedHashMap<>() : new LinkedHashMap<>(ranks);
-        summoner.masteries = masteries == null ? new ArrayList<>() : new ArrayList<>(masteries);
+        summoner.ranks = ranks == null ? null : new LinkedHashMap<>(ranks);
+        summoner.masteries = masteries == null ? null : new ArrayList<>(masteries);
         summoner.markExisting();
         return summoner;
     }
@@ -99,11 +99,11 @@ public class Summoner extends AbstractEntity<Summoner> {
     }
 
     public Map<GameQueueType, Rank> ranks() {
-        return Map.copyOf(ranks);
+        return ranks == null ? null : Map.copyOf(ranks);
     }
 
     public List<Mastery> masteries() {
-        return List.copyOf(masteries);
+        return masteries == null ? null : List.copyOf(masteries);
     }
 
     public Summoner setRiotId(String riotId) {
@@ -133,13 +133,14 @@ public class Summoner extends AbstractEntity<Summoner> {
     public Summoner setRank(GameQueueType queue, Rank rank) {
         if (queue == null || rank == null) throw new IllegalArgumentException("Summoner rank queue and value are required");
         GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        if (ranks == null) ranks = new LinkedHashMap<>();
         ranks.put(canonicalQueue, rank);
         setValue("ranks." + canonicalQueue.name(), rank);
         return this;
     }
 
     public Summoner setMasteries(List<Mastery> masteries) {
-        this.masteries = masteries == null ? new ArrayList<>() : new ArrayList<>(masteries);
+        this.masteries = masteries == null ? null : new ArrayList<>(masteries);
         setValue("masteries", this.masteries);
         return this;
     }
@@ -195,8 +196,8 @@ public class Summoner extends AbstractEntity<Summoner> {
         if (region != null) values.put("region", region.name());
         if (userId != null) values.put("userId", userId);
         if (tracking) values.put("tracking", true);
-        values.put("ranks", ranks);
-        if (!masteries.isEmpty()) values.put("masteries", masteries);
+        if (ranks != null) values.put("ranks", ranks);
+        if (masteries != null && !masteries.isEmpty()) values.put("masteries", masteries);
         return values;
     }
 

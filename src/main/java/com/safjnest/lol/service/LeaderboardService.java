@@ -17,6 +17,7 @@ import com.safjnest.lol.model.competitive.CompetitiveEntry;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
@@ -95,7 +96,8 @@ public class LeaderboardService {
 
         List<RankedSummoner> rankingSubjects = new ArrayList<>(summoners.size());
         for (Summoner summoner : summoners) {
-            Rank rankValue = summoner.ranks().get(selectedQueue);
+            Map<GameQueueType, Rank> stored = summoner.ranks();
+            Rank rankValue = stored == null ? null : stored.get(selectedQueue);
             if (rankValue == null) rankValue = Rank.unranked();
             rankingSubjects.add(new RankedSummoner(
                 summoner.puuid(), summoner.region(), Map.of(selectedQueue, rankValue)));
@@ -105,15 +107,17 @@ public class LeaderboardService {
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
         for (int index = 0; index < summoners.size(); index++) {
             Summoner summoner = summoners.get(index);
-            Rank rankValue = summoner.ranks().get(selectedQueue);
+            Map<GameQueueType, Rank> stored = summoner.ranks();
+            Rank rankValue = stored == null ? null : stored.get(selectedQueue);
             if (rankValue == null) rankValue = Rank.unranked();
             Map<GameQueueType, Rank> ranks = rankings.getOrDefault(summoner.puuid(), Map.of(selectedQueue, rankValue));
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
+            List<Mastery> masteries = summoner.masteries();
             SummonerView view = SummonerView.from(
                 summoner,
                 ranks,
                 statistics,
-                statistics == null ? List.of() : summoner.masteries()
+                statistics == null || masteries == null ? List.of() : masteries
             );
             leaderboardSummoners.add(new SummonerLeaderboard(offset + index + 1, view));
         }

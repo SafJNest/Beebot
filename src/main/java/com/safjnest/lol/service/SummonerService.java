@@ -71,6 +71,10 @@ public final class SummonerService {
     }
 
     public static CompletableFuture<Summoner> getAsync(String puuid, LeagueShard shard) {
+        return getSummonerAsync(puuid, shard).thenCompose(SummonerService::hydrate);
+    }
+
+    static CompletableFuture<Summoner> getSummonerAsync(String puuid, LeagueShard shard) {
         Summoner saved = find(puuid, shard);
         return saved != null
             ? CompletableFuture.completedFuture(saved)
@@ -103,7 +107,10 @@ public final class SummonerService {
         invalidateRefreshSourceCaches(puuid, shard);
         return refreshRiotAccountAsync(puuid, shard).thenCompose(account -> refreshRiotSummonerAsync(puuid, shard)
             .thenComposeAsync(source -> refreshProfile(source, account)))
-            .exceptionally(ignored -> RefreshResult.ignored());
+            .exceptionally(exception -> {
+                System.err.println("Summoner refresh failed puuid=" + puuid + " shard=" + shard + " " + exception.getMessage());
+                return RefreshResult.ignored();
+            });
     }
 
     public static no.stelar7.api.r4j.pojo.lol.summoner.Summoner getRiotSummoner(String puuid, LeagueShard shard) {
@@ -424,12 +431,14 @@ public final class SummonerService {
             RedisKey.R4J_ACCOUNT.of(shard.name(), puuid),
             RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid),
             RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid),
+            RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid),
+            RedisKey.R4J_MATCH_LIST.of(shard.name(), puuid, "null", 0),
             RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
             RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
             RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
-            RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
-            RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid)
+            RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid)
         ));
+        ProfileService.invalidate(puuid, shard);
     }
 
     private static Map<String, LiveGame.ProfileOverview> profileOverviews(
@@ -483,6 +492,33 @@ public final class SummonerService {
             if (!MongoDB.upsertSummoner(participant, shard)) continue;
             RankService.refreshBackgroundAsync(participant.getPuuid(), shard);
         }
+    }
+
+    private static CompletableFuture<Summoner> hydrate(Summoner identity) {
+        if (identity == null || identity.puuid() == null || identity.puuid().isBlank() || identity.region() == null)
+            return CompletableFuture.completedFuture(null);
+        String puuid = identity.puuid();
+        LeagueShard shard = identity.region();
+        Map<GameQueueType, Rank> foundRanks = RankService.find(puuid, shard);
+        List<Mastery> foundMasteries = MasteryService.find(puuid, shard);
+        CompletableFuture<Map<GameQueueType, Rank>> ranksFuture = foundRanks != null
+            ? CompletableFuture.completedFuture(foundRanks)
+            : RankService.getAsync(puuid, shard);
+        return ranksFuture.thenCompose(ranks -> {
+            if (foundRanks == null && ranks != null) {
+                for (Map.Entry<GameQueueType, Rank> entry : ranks.entrySet()) {
+                    if (entry.getKey() != null && entry.getValue() != null) identity.setRank(entry.getKey(), entry.getValue());
+                }
+            }
+            CompletableFuture<List<Mastery>> masteriesFuture = foundMasteries != null
+                ? CompletableFuture.completedFuture(foundMasteries)
+                : MasteryService.getAsync(puuid, shard);
+            return masteriesFuture.thenApply(masteries -> {
+                if (foundMasteries == null && masteries != null) identity.setMasteries(masteries);
+                RedisClient.set(RedisKey.SUMMONER, identity, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+                return identity;
+            });
+        }).exceptionally(ignored -> identity);
     }
 
     private static CompletableFuture<Summoner> saveAsync(no.stelar7.api.r4j.pojo.lol.summoner.Summoner source) {

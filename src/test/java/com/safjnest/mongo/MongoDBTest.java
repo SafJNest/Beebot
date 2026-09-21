@@ -125,7 +125,7 @@ public class MongoDBTest {
     }
 
     @Test
-    public void identityUpsertInitializesEmptyRanksWithoutOverwritingExistingRanks() throws Exception {
+    public void identityUpsertDoesNotCreateRanksKey() throws Exception {
         Method method = MongoDB.class.getDeclaredMethod("summonerUpdate", Summoner.class, String.class);
         method.setAccessible(true);
 
@@ -133,7 +133,7 @@ public class MongoDBTest {
         org.bson.BsonDocument identityUpdate = ((Bson) method.invoke(null, identity, null))
                 .toBsonDocument(Document.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry());
         assertFalse(identityUpdate.getDocument("$set").containsKey("ranks"));
-        assertTrue(identityUpdate.getDocument("$setOnInsert").containsKey("ranks"));
+        assertFalse(identityUpdate.containsKey("$setOnInsert"));
 
         Summoner ranked = Summoner.hydrated("puuid-ranked", "Name#TAG", LeagueShard.EUW1, 1, 1,
                 null, false, Map.of(GameQueueType.RANKED_SOLO_5X5,
@@ -172,6 +172,35 @@ public class MongoDBTest {
             .append("ranks", List.of(new Document("queue", "RANKED_SOLO_5X5").append("rank", "MASTER_I").append("lp", 500)));
         Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(legacy), Summoner.class);
         assertEquals(TierDivisionType.MASTER_I, decoded.ranks().get(GameQueueType.RANKED_SOLO_5X5).tier());
+    }
+
+    @Test
+    public void summonerAbsentPiecesReadAsNullAndWriteOmitsNull() {
+        Document keyless = new Document("_id", "puuid-keyless").append("region", LeagueShard.EUW1.name())
+            .append("riotId", "Name#TAG").append("level", 30).append("icon", 500);
+        Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(keyless), Summoner.class);
+        assertNull(decoded.ranks());
+        assertNull(decoded.masteries());
+
+        Document nulled = new Document("_id", "puuid-nulled").append("region", LeagueShard.EUW1.name())
+            .append("ranks", null).append("masteries", null);
+        Summoner decodedNulled = MongoDB.read(QueryRecordParser.fromDocument(nulled), Summoner.class);
+        assertNull(decodedNulled.ranks());
+        assertNull(decodedNulled.masteries());
+
+        Document stored = MongoDB.toDocument(Summoner.hydrated("puuid-null", "Name#TAG", LeagueShard.EUW1, 1, 1,
+            null, false, null, null));
+        assertFalse(stored.containsKey("ranks"));
+        assertFalse(stored.containsKey("masteries"));
+
+        Document presentEmpty = new Document("_id", "puuid-present-empty").append("region", LeagueShard.EUW1.name())
+            .append("riotId", "Name#TAG").append("level", 30).append("icon", 500)
+            .append("ranks", new Document()).append("masteries", List.of());
+        Summoner decodedEmpty = MongoDB.read(QueryRecordParser.fromDocument(presentEmpty), Summoner.class);
+        assertNotNull(decodedEmpty.ranks());
+        assertTrue(decodedEmpty.ranks().isEmpty());
+        assertNotNull(decodedEmpty.masteries());
+        assertTrue(decodedEmpty.masteries().isEmpty());
     }
 
     @Test

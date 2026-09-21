@@ -221,7 +221,7 @@ public final class RankService {
     private static CompletableFuture<Map<GameQueueType, Rank>> fetch(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(Map.of());
 
-        return SummonerService.getAsync(puuid, shard).thenCompose(summoner -> {
+        return SummonerService.getSummonerAsync(puuid, shard).thenCompose(summoner -> {
             if (summoner == null) return CompletableFuture.failedFuture(
                 new IllegalStateException("Summoner is not available for rank persistence"));
             return getEntriesAsync(puuid, shard).thenApplyAsync(entries -> {
