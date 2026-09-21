@@ -32,11 +32,11 @@ Order when documents diverge:
 
 1. `AGENTS.md` — repo-wide rules (Java/JS style, canonical model, presentation stability, service layout, API/doc sync gate).
 2. Accepted ADRs in `docs/architecture/adr/`.
-3. `docs/HANDBOOK.md` (this file) + assigned macro-task.
+3. `docs/HANDBOOK.md` (this file).
 4. **CodeGraph** — `codegraph status` → `codegraph sync` → `codegraph explore <symbol>` + `codegraph impact <symbol>` before touching LoL code.
 5. Current code — only evidence of migration status.
 
-**Never silently suppress an ADR/macro-task conflict: stop + report to the main agent. Without `explore`/`impact`, do not modify LoL code.**
+**Never silently suppress an ADR conflict: stop + report to the main agent. Without `explore`/`impact`, do not modify LoL code.**
 
 Quick Style Rules (from `AGENTS.md`):
 
@@ -579,7 +579,7 @@ class MongoDBTest {
 ```
 
 - Unit for analyzer (pure, no Mongo). Integration for service with `MongoDB` test DB + mocked or embedded `RedisClient`.
-- Verify `explain` IXSCAN in `docs/TODO.md` P1 before marking gate.
+- Verify `explain` IXSCAN on the affected query before marking gate.
 - Never commit real credentials/URIs; use `rsc/settings.json` template.
 
 ---
@@ -678,7 +678,7 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 
 - [ ] **CodeGraph:** `codegraph status` up-to-date → `codegraph explore <symbol>` + `codegraph impact <symbol>` executed and blast radius verified before editing LoL code.
 - [ ] **API sync:** controller / `lol.model` / `docs/api/<scope>/*.md` + `docs/api/lol-api.md` aligned in the same task. If internal-only, explicit verification that no exposed endpoint changes.
-- [ ] **Doc sync:** `docs/architecture/README.md` + ADR + `docs/mongo/*` + `docs/audit/*` + `HANDBOOK.md` updated or `handoff` with `no-doc-change` rationale.
+- [ ] **Doc sync:** `docs/architecture/README.md` + ADR + `docs/mongo/*` + `HANDBOOK.md` updated or `handoff` with `no-doc-change` rationale.
 - [ ] **Stable presentation:** no restyling of embed/view/field order/text/layout unless explicitly requested.
 - [ ] **Indexes & explain:** `explain("executionStats")` IXSCAN + `collStats` ok before merge.
 - [ ] **Cache invalidation:** `RedisKey` + `RedisClient.set/delete` consistent with `puuid+filterKey`.

@@ -7,6 +7,4 @@
 - [LoL queues (walkthrough)](new-queue.md) — `QueueHandler` / `RiotScheduler` / `ComputeScheduler` / `SyncScheduler`
 - [Profile statistics source of truth](architecture/profile-statistics-source-of-truth.md) — `PUUID + filterKey`, cache, Mongo, OTP
 - [MongoDB LoL migration](mongo/README.md) — operational status, BSON rules, indexes, backfill
-- [LoL/Mongo flow audits](audit/README.md) — verified flows (historical, see status in HANDBOOK)
-- [Agent workflow](agents/README.md) — roles and macro-task order
 - [SQL structure](sql/README.md) — only for `LeagueDB` backfill adapter

@@ -90,7 +90,7 @@ Use existing utilities before adding new mapping logic, especially `ChampionUtil
 ## Documentation synchronization rule
 
 - Every change to models, data structures, persistence, filters, services, commands, embeds, caches, API behavior or ownership must review the relevant documentation in the same task.
-- Update the canonical source-of-truth document, ADR, macro-task, API documentation, audit or Mongo documentation whenever the changed behavior is covered there.
+- Update the canonical source-of-truth document, ADR, API documentation or Mongo documentation whenever the changed behavior is covered there.
 - Documentation is part of the implementation gate: a task is incomplete while its affected documentation is stale or the reason for no documentation change is not recorded.
 - When a change is internal-only, explicitly record that the public API, presentation and relevant documentation remain unchanged.
 - When data changes but presentation must remain stable, document the new data source and keep the existing command, embed, view, field order, text, formatting and layout unchanged unless a style change was explicitly requested.
@@ -103,13 +103,12 @@ Read these files before changing LoL architecture:
 2. `docs/architecture/README.md`;
 3. the relevant accepted ADR;
 4. `docs/HANDBOOK.md` §5-§7 for operational steps (command/endpoint/service/model/queue/mongo/cache);
-5. the relevant macro-task plan under `docs/agents/macro-tasks/` (archived, see `docs/HANDBOOK.md`);
-6. **CodeGraph** — `codegraph status` → if stale `codegraph sync` → `codegraph explore <symbol>` + `codegraph impact <symbol>` for blast radius before touching code.
+5. **CodeGraph** — `codegraph status` → if stale `codegraph sync` → `codegraph explore <symbol>` + `codegraph impact <symbol>` for blast radius before touching code.
 
-The source-of-truth agent proposes and maintains architecture decisions. Macro-task agents implement only their assigned scope. The main agent reviews ownership, boundaries, tests and the handoff before approving the next task.
+The source-of-truth agent proposes and maintains architecture decisions. The main agent reviews ownership, boundaries, tests and the handoff before approving the next task.
 
 Global agents (Cursor / Claude Code / Codex / Opencode) live in `.agents/agents/` (canonical) and are shimmed to `.cursor/rules/`, `.claude/agents/`, `.codex/agents/`, `.opencode/agent/`. Skills live in `.agents/skills/beebot-handbook/`. Never edit the shim — edit `.agents/agents/*.md`.
 
 CodeGraph is mandatory: no LoL change without up-to-date `explore`/`impact`. If `codegraph status` reports a stale or missing index, the agent must sync before proceeding.
 
-Agents must stop and report a conflict instead of silently changing an ADR, another macro-task, or an unrelated owner.
+Agents must stop and report a conflict instead of silently changing an ADR or an unrelated owner.

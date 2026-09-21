@@ -8,7 +8,7 @@ When documents disagree, use this order:
 
 1. `AGENTS.md` for repository-wide implementation rules;
 2. accepted ADRs for architectural decisions;
-3. the assigned macro-task plan for implementation scope;
+3. `docs/HANDBOOK.md` for operational scope and checklists;
 4. current code only as evidence of the migration state.
 
 An agent must report a contradiction. It must not resolve the contradiction by changing an ADR or expanding its task scope without approval from the main agent.
@@ -146,7 +146,3 @@ Operational guide for adding command / endpoint / service / model / queue / Mong
 ## MongoDB migration
 
 The operational documentation for the LoL migration is in [`docs/mongo/`](../mongo/README.md). ADR-0009 is accepted; Guardian gates remain mandatory for every capability.
-
-## Macro-task index
-
-Archived in [`docs/agents/_archive/`](../agents/_archive/) — completed: `0000`, `0001`, `0003`, `0004`, `0007`; under review: `0002`, `0005`, `0006`, `0008` (see `HANDBOOK.md` for status). Current order and gates in [`docs/agents/README.md`](../agents/README.md).

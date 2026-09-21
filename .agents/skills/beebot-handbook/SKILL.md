@@ -36,7 +36,7 @@ codegraph impact <symbol> # blast radius before editing
 ## Mandatory checklist (HANDBOOK §7)
 
 - [ ] API sync: controller + `lol.model` + `docs/api/<scope>/*.md` in the same task
-- [ ] Doc sync: `HANDBOOK.md` + ADR + `docs/mongo` + `docs/audit` or explicit `no-doc-change`
+- [ ] Doc sync: `HANDBOOK.md` + ADR + `docs/mongo` or explicit `no-doc-change`
 - [ ] Presentation stability: no embed/view restyle unless requested
 - [ ] Indexes & `explain("executionStats")` → `IXSCAN`, no `COLLSCAN`
 - [ ] Cache invalidation: `RedisKey` + `RedisClient.set/delete` on `puuid+filterKey`

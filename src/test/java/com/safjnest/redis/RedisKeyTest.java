@@ -7,39 +7,47 @@ import org.junit.Test;
 
 public class RedisKeyTest {
 
+    private static final int SECONDS_PER_MINUTE = 60;
+    private static final int SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
+    private static final int SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+
     @Test
     public void centralizesTheBalancedCachePolicy() {
-        assertEquals(60, RedisKey.R4J_SUMMONER.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_SUMMONER_ID.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_ACCOUNT.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_ACCOUNT_BY_NAME.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_USER_ID_BY_PUUID.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_LEAGUE_ENTRIES.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_CHAMPION_MASTERIES.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_SPECTATOR_CURRENT.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_MATCH_LIST.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_MATCH.ttlSeconds());
-        assertEquals(60, RedisKey.MATCH_DETAIL.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_DATA.ttlSeconds());
-        assertEquals(60, RedisKey.CHAMPION_STATS.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_AUTOCOMPLETE.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_SEARCH.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER.ttlSeconds());
-        assertEquals(60, RedisKey.R4J_SUMMONER_REFRESH_COOLDOWN.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_OVERVIEW.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_RANK.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_RANKS.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_MASTERIES.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_STATISTICS.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_ACTIVITY.ttlSeconds());
-        assertEquals(60, RedisKey.SUMMONER_MATCHUPS.ttlSeconds());
-        assertEquals(24 * 60 * 60, RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
-        assertEquals(60, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
-        assertEquals(60, RedisKey.LEADERBOARD_COUNT.ttlSeconds());
-        assertEquals(60, RedisKey.LEADERBOARD_COUNT_LOCK.ttlSeconds());
-        assertEquals(60, RedisKey.LEADERBOARD_RANK_DISTRIBUTION.ttlSeconds());
-        assertEquals(60, RedisKey.LEADERBOARD_TOP_REGIONS.ttlSeconds());
-        assertEquals(60, RedisKey.CHAMPION_PAGE.ttlSeconds());
+        assertEquals(0, RedisKey.R4J_SUMMONER.ttlSeconds());
+        assertEquals(0, RedisKey.R4J_SUMMONER_ID.ttlSeconds());
+        assertEquals(0, RedisKey.R4J_ACCOUNT.ttlSeconds());
+        assertEquals(0, RedisKey.R4J_ACCOUNT_BY_NAME.ttlSeconds());
+        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.R4J_USER_ID_BY_PUUID.ttlSeconds());
+        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.R4J_LEAGUE_ENTRIES.ttlSeconds());
+        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.R4J_CHAMPION_MASTERIES.ttlSeconds());
+        assertEquals(SECONDS_PER_MINUTE, RedisKey.R4J_SPECTATOR_CURRENT.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_MATCH_LIST.ttlSeconds());
+        assertEquals(0, RedisKey.R4J_MATCH.ttlSeconds());
+        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.MATCH_DETAIL.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.SUMMONER_DATA.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.CHAMPION_STATS.ttlSeconds());
+        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.SUMMONER_AUTOCOMPLETE.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.SUMMONER_SEARCH.ttlSeconds());
+        assertEquals(4 * SECONDS_PER_HOUR, RedisKey.SUMMONER.ttlSeconds());
+        assertEquals(2 * SECONDS_PER_MINUTE, RedisKey.R4J_SUMMONER_REFRESH_COOLDOWN.ttlSeconds());
+        assertEquals(4 * SECONDS_PER_HOUR, RedisKey.SUMMONER_OVERVIEW.ttlSeconds());
+        assertEquals(4 * SECONDS_PER_HOUR, RedisKey.SUMMONER_RANK.ttlSeconds());
+        assertEquals(4 * SECONDS_PER_HOUR, RedisKey.SUMMONER_RANKS.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_MASTERIES.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_STATISTICS.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_ACTIVITY.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_MATCHUPS.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.LEADERBOARD_COUNT.ttlSeconds());
+        assertEquals(SECONDS_PER_MINUTE, RedisKey.LEADERBOARD_COUNT_LOCK.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.LEADERBOARD_RANK_DISTRIBUTION.ttlSeconds());
+        assertEquals(12 * SECONDS_PER_HOUR, RedisKey.LEADERBOARD_TOP_REGIONS.ttlSeconds());
+        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.ttlSeconds());
+        assertEquals(0, RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.ttlSeconds());
+        assertEquals(10 * SECONDS_PER_MINUTE, RedisKey.CONTEXTUAL_LEADERBOARD_BUILD.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.CHAMPION_PAGE.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.CHAMPION_TIER_LIST.ttlSeconds());
     }
 
     @Test

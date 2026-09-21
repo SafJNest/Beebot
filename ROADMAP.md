@@ -2,7 +2,7 @@
 
 > Guida operativa per nuove feature: [`docs/HANDBOOK.md`](docs/HANDBOOK.md) (§5 TOC + §6 reference indici/peso/RAM + §7 checklist).
 
-Roadmap operativa del perimetro LoL (stato 2026-08-31: runtime Mongo-only, code `QueueHandler`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler` via ADR-0014). Il dettaglio delle decisioni resta negli ADR e in `docs/mongo` / `docs/audit`.
+Roadmap operativa del perimetro LoL (stato 2026-08-31: runtime Mongo-only, code `QueueHandler`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler` via ADR-0014). Il dettaglio delle decisioni resta negli ADR e in `docs/mongo`.
 
 ## Posizione attuale
 
@@ -16,7 +16,7 @@ Il branch `lol-api` ha definito il perimetro API LoL. Il branch `lol-api-mongo` 
 - [x] Uniformare account, tracking, profile, leaderboard, match, participant, rank, mastery e champion aggregate (verifica `explain` ancora P1).
 - [ ] Consolidare la gestione degli errori Mongo senza trasformare gli errori in dati vuoti.
 
-Riferimenti: [ADR-0009](docs/architecture/adr/0009-mongo-persistence-and-migration.md), [write path](docs/mongo/04-write-path-and-refactor.md).
+Riferimenti: [ADR-0009](docs/architecture/adr/0009-mongo-persistence-and-migration.md), [Mongo README](docs/mongo/README.md).
 
 ## Fase 2 — rendere operativo il backfill raw
 
@@ -26,7 +26,7 @@ Riferimenti: [ADR-0009](docs/architecture/adr/0009-mongo-persistence-and-migrati
 - [ ] Gestire documenti già presenti e documenti mancanti senza riletture inutili da MariaDB.
 - [ ] Rigenerare successivamente statistiche profilo, statistiche champion e build tramite i flussi applicativi.
 
-Riferimento: [data migration and cutover](docs/mongo/05-data-migration-and-cutover.md).
+Riferimento: [Mongo README](docs/mongo/README.md).
 
 ## Fase 3 — completare gli aggregate LoL
 
@@ -35,7 +35,7 @@ Riferimento: [data migration and cutover](docs/mongo/05-data-migration-and-cutov
 - [ ] Mantenere separati i dati raw (`summoner`, `match`, `match_events`) dagli aggregate derivati.
 - [ ] Rifinire la generazione lazy delle statistiche globali e delle build per champion.
 
-Riferimenti: [champion stats/build flow](docs/audit/07-champion-stats-build-flow.md), [space optimization](docs/mongo/09-space-optimization.md).
+Riferimenti: [ADR-0012](docs/architecture/adr/0012-profile-and-champion-analysis-facades.md), [Mongo README](docs/mongo/README.md).
 
 ## Fase 4 — rifinitura dei consumer e dell’esperienza LoL
 
@@ -45,7 +45,7 @@ Riferimenti: [champion stats/build flow](docs/audit/07-champion-stats-build-flow
 - [ ] Mantenere le cache profile, advanced overview e OP.GG coerenti dopo gli aggiornamenti Tracker.
 - [ ] Conservare il comportamento asincrono per profile, champion, leaderboard e match detail.
 
-Riferimenti: [OP.GG flow](docs/audit/03-opgg-flow.md), [all LoL commands and Tracker](docs/audit/06-all-lol-commands-tracker.md).
+Riferimenti: [profile statistics](docs/architecture/profile-statistics-source-of-truth.md), [HANDBOOK](docs/HANDBOOK.md).
 
 ## Fase 5 — storage e operatività Mongo
 
@@ -54,7 +54,7 @@ Riferimenti: [OP.GG flow](docs/audit/03-opgg-flow.md), [all LoL commands and Tra
 - [ ] Mantenere la separazione tra database applicativo e database di ambiente tramite configurazione.
 - [ ] Conservare cleanup dei payload legacy come operazione manuale, fuori dal runtime.
 
-Riferimenti: [Mongo README](docs/mongo/README.md), [space optimization](docs/mongo/09-space-optimization.md).
+Riferimenti: [Mongo README](docs/mongo/README.md), [query inventory](docs/mongo/08-query-inventory.md).
 
 ## Dopo il cutover LoL
 

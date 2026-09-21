@@ -24,7 +24,7 @@
 ## Docs
 
 - [ ] `docs/HANDBOOK.md` §5-§7 updated (or `N/A — no new collection/endpoint`)
-- [ ] `docs/architecture/README.md` / ADR / `docs/mongo/*` / `docs/audit/*` updated (or `N/A — internal-only`)
+- [ ] `docs/architecture/README.md` / ADR / `docs/mongo/*` updated (or `N/A — internal-only`)
 
 ## Verification
 

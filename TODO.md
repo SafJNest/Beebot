@@ -15,7 +15,7 @@ Indice operativo del lavoro aperto dopo il cutover Mongo-first (2026-08-31). I d
 - [ ] Verificare che `LeagueDB` resti utilizzato esclusivamente da `MongoMigration`.
 - [ ] Verificare write acknowledgement, idempotenza e comportamento esplicito degli errori Mongo.
 
-Riferimenti: [current audit](docs/architecture/current-audit.md), [migrazione dati](docs/mongo/05-data-migration-and-cutover.md), [ADR-0009](docs/architecture/adr/0009-mongo-persistence-and-migration.md).
+Riferimenti: [mongo README](docs/mongo/README.md), [ADR-0009](docs/architecture/adr/0009-mongo-persistence-and-migration.md).
 
 ## P1 — Verifica query e runtime
 
@@ -26,7 +26,7 @@ Riferimenti: [current audit](docs/architecture/current-audit.md), [migrazione da
 - [ ] Verificare separatamente queue e participant Riot mancanti.
 - [ ] Verificare il primo `202 profile_pending` e le tre Future async.
 
-Riferimenti: [query inventory](docs/mongo/08-query-inventory.md), [space audit](docs/mongo/09-space-optimization.md), [query findings](docs/audit/05-query-contract-findings.md), [OP.GG flow](docs/audit/03-opgg-flow.md).
+Riferimenti: [query inventory](docs/mongo/08-query-inventory.md), [profile statistics](docs/architecture/profile-statistics-source-of-truth.md).
 
 ## P1 — Modifiche locali da revisionare
 
@@ -45,7 +45,7 @@ Riferimenti: [query inventory](docs/mongo/08-query-inventory.md), [space audit](
 
 - [ ] Ripetere la build completa quando è disponibile la configurazione Java/JDA compatibile.
 - [ ] Risolvere o documentare l'errore preesistente `setAudioModuleConfig`.
-- [ ] Aggiornare questo indice e i documenti di audit dopo ogni gate verificato.
+- [ ] Aggiornare questo indice e la documentazione operativa dopo ogni gate verificato.
 
 ## TODO secondari del bot
 
@@ -56,4 +56,4 @@ Riferimenti: [query inventory](docs/mongo/08-query-inventory.md), [space audit](
 
 ## Regola di aggiornamento
 
-Quando un'attività viene iniziata, spostarla nella sezione corretta o aggiungere una nota di stato e mantenere il riferimento al documento tecnico proprietario. Questo file è l'indice; non sostituisce ADR, audit o runbook.
+Quando un'attività viene iniziata, spostarla nella sezione corretta o aggiungere una nota di stato e mantenere il riferimento al documento tecnico proprietario. Questo file è l'indice; non sostituisce ADR o runbook.

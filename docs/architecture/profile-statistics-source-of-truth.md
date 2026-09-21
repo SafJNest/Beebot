@@ -1,6 +1,6 @@
 # Profile statistics: single source of truth
 
-- State: implemented — see `docs/HANDBOOK.md` §5.9/§5.10 for changes; `explain` IXSCAN verification still in `TODO.md P1` gate
+- State: implemented — see `docs/HANDBOOK.md` §5.9/§5.10 for changes; verify `explain` IXSCAN on profile queries before merge
 - Last updated: 2026-08-31
 - Scope: `SummonerOverview`, `SummonerProfile`, `ProfileMatchups`, `!summoner`, HTTP profile and LoL Mongo statistics
 - Cache, persistence and composition owner: `ProfileService`
