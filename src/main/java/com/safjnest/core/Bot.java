@@ -143,7 +143,7 @@ public class Bot {
             public void onReady(ReadyEvent event) {
                 CustomEmojiHandler.loadEmoji();
                 AutomatedActionTimer.init();
-                //TrackerScheduler.start();
+                TrackerScheduler.start();
                 BotLogger.info("Bot ready");
             }
         });
