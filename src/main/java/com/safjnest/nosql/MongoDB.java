@@ -149,8 +149,8 @@ public final class MongoDB {
         return new CreateCollectionOptions().storageEngineOptions(new Document("wiredTiger", new Document("configString", EVENTS_STORAGE_ENGINE_CONFIG)));
     }
 
-    public static final String PRODUCTION_DATABASE = "beebot";
-    public static final String TEST_DATABASE = "beebot_test";
+    public static final String PRODUCTION_DATABASE = "beebot_test"; //cant rename mongo db...
+    public static final String TEST_DATABASE = "beebot_test_test";
     private static final String MONGO_URI_ERROR = "Mongo URI is missing from settings.json";
     private static MongoClient client;
     private static MongoDatabase database;
