@@ -86,7 +86,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     static {
 
         LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
-        LeagueHandler.patch = PatchUtils.getPatch() + ".1";
+        String currentPatch = PatchUtils.getPatch();
+        LeagueHandler.patch = currentPatch == null ? "16.18.1" : currentPatch + ".1";
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
         loadRunes();
@@ -173,9 +174,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
      */
     private static void loadRunes(){
         try {
-            URI uri = new URI(runesURL);
-            URL url = uri.toURL();
-            String json = IOUtils.toString(url, Charset.forName("UTF-8"));
+            String json = PatchUtils.readUrl(runesURL);
             JSONParser parser = new JSONParser();
             JSONArray file = (JSONArray) parser.parse(json);
 
