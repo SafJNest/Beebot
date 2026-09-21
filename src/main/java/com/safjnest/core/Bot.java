@@ -62,6 +62,7 @@ import com.safjnest.commands.settings.*;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
 import com.safjnest.lol.message.LeagueEventHandler;
+import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.BotSettings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -142,6 +143,7 @@ public class Bot {
             public void onReady(ReadyEvent event) {
                 CustomEmojiHandler.loadEmoji();
                 AutomatedActionTimer.init();
+                //TrackerScheduler.start();
                 BotLogger.info("Bot ready");
             }
         });
