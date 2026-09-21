@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
@@ -226,15 +227,29 @@ public final class MatchService {
         if (summoner == null || summoner.getPlatform() == null) return;
         try {
             List<String> matchIds = new ArrayList<>();
-            List<String> page = getMatchlist(summoner, queue, 0, MATCH_LIST_BATCH_SIZE, 0, null);
-            while (page != null && !page.isEmpty()) {
-                matchIds.addAll(page);
-                for (String matchId : page) {
-                    if (LeagueHandler.isMatchDBCached(matchId)) continue;
-                    LOLMatch match = fetch(matchId, summoner.getPlatform());
-                    if (match != null) insertAsync(match, JobPriority.BACKGROUND);
-                }
+            List<String> page;
+            do {
                 page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null);
+                if (page == null) page = List.of();
+                matchIds.addAll(page);
+                Thread.sleep(350);
+            } while (!page.isEmpty());
+
+            int total = matchIds.size();
+            java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger(0);
+            for (String matchId : matchIds) {
+                if (LeagueHandler.isMatchDBCached(matchId)) continue;
+                
+                fetchAsync(matchId, summoner.getPlatform()).whenComplete((match, failure) -> {
+                    if (failure != null) {
+                        BotLogger.error("Match fetch failed: " + matchId + " message=" + failure.getMessage());
+                        return;
+                    }
+                    if (match == null) return;
+                    insert(match);
+                    BotLogger.info("[" + done.incrementAndGet() + "/" + total + "] " + match.getGameId() + " - "
+                        + match.getPlatform() + " - " + match.getQueue());
+                });
             }
         } catch (Exception exception) {
             BotLogger.error("Match history import failed for puuid=" + summoner.getPUUID() + " message=" + exception.getMessage());
@@ -528,7 +543,7 @@ public final class MatchService {
         return type != null ? builder.withType(type) : builder.withQueue(queue);
     }
 
-    private static String matchListRequestKey(
+    public static String matchListRequestKey(
             GameQueueType queue,
             int count,
             long startTime,

@@ -34,6 +34,8 @@ import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
 
@@ -105,6 +107,16 @@ public class Tracker {
                 if (summoner == null) throw new Exception("account null ??????");
 
                 LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+
+                //TODO: implement a generic method to clear the match list cache
+                int requestedCount = 2;
+                String requestKey = MatchService.matchListRequestKey(GameQueueType.TEAM_BUILDER_RANKED_SOLO, requestedCount, 0, null);
+                RedisClient.delete(RedisKey.R4J_MATCH_LIST.of(
+                    summoner.getPlatform().name(),
+                    summoner.getPUUID(),
+                    requestKey,
+                    0
+                ));
 
                 try { Thread.sleep(350); }
                 catch (InterruptedException exception) { Thread.currentThread().interrupt(); }
