@@ -1,0 +1,267 @@
+package com.safjnest.spring.controller;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+
+import org.junit.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.match.MatchOrder;
+import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.safjnest.lol.utils.SeasonUtils;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+
+public class LolControllerTest {
+
+    @Test
+    public void shouldParseEveryOperationalR4jLeagueShard() {
+        for (LeagueShard shard : LeagueShard.values()) {
+            if (shard == LeagueShard.UNKNOWN) continue;
+            assertEquals(shard, LolApiParameters.requiredShard(" " + shard.name().toLowerCase() + " "));
+        }
+    }
+
+    @Test
+    public void shouldRejectR4jAliases() {
+        ResponseStatusException exception = invalidShard("euw");
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertTrue(exception.getReason().contains("EUW1"));
+    }
+
+    @Test
+    public void shouldRejectUnknownShard() {
+        assertEquals(HttpStatus.BAD_REQUEST, invalidShard("unknown").getStatusCode());
+    }
+
+    @Test
+    public void shouldExposeLiveGameByPuuidAndRiotId() throws NoSuchMethodException {
+        GetMapping byPuuid = LolController.class.getMethod("liveGame", String.class, String.class)
+            .getAnnotation(GetMapping.class);
+        GetMapping byName = LolController.class.getMethod("liveGameByName", String.class, String.class, String.class)
+            .getAnnotation(GetMapping.class);
+
+        assertEquals("/livegame/{puuid}", byPuuid.value()[0]);
+        assertEquals("/livegame-by-name/{gameName}/{tagLine}", byName.value()[0]);
+    }
+
+    @Test
+    public void shouldExposeRankHistory() throws NoSuchMethodException {
+        GetMapping mapping = LolController.class.getMethod("rankHistory", String.class, String.class,
+            String.class, String.class, Integer.class, String.class, long.class, long.class, String.class)
+            .getAnnotation(GetMapping.class);
+
+        assertEquals("/profile/{puuid}/rank-history", mapping.value()[0]);
+    }
+
+    @Test
+    public void shouldExposeFilteredProfilesByPuuidAndRiotId() throws NoSuchMethodException {
+        GetMapping byPuuid = LolController.class.getMethod("profile", String.class, String.class,
+            String.class, String.class, String.class).getAnnotation(GetMapping.class);
+        GetMapping byName = LolController.class.getMethod("profileByName", String.class, String.class,
+            String.class, String.class, String.class, String.class).getAnnotation(GetMapping.class);
+
+        assertEquals("/profile/{puuid}", byPuuid.value()[0]);
+        assertEquals("/profile-by-name/{gameName}/{tagLine}", byName.value()[0]);
+    }
+
+    @Test
+    public void shouldParseProfileFilters() {
+        Filter season = LolApiParameters.profileFilter("ranked_flex_sr", "15.1", "2025");
+        Filter patch = LolApiParameters.profileFilter(null, "16.1", null);
+        Filter all = LolApiParameters.profileFilter("all", null, "all");
+
+        assertEquals(GameQueueType.RANKED_FLEX_SR, season.queue());
+        assertEquals("15.1", season.patch());
+        assertEquals(SeasonUtils.getSeasonRange(2025).start(), season.timeStart());
+        assertEquals(SeasonUtils.getSeasonRange(2025).end(), season.timeEnd());
+        assertEquals(SeasonUtils.getSeasonRange(2026).start(), patch.timeStart());
+        assertEquals(SeasonUtils.getSeasonRange(2026).end(), patch.timeEnd());
+        assertNull(all.queue());
+        assertEquals(0, all.timeStart());
+        assertEquals(0, all.timeEnd());
+    }
+
+    @Test
+    public void shouldRejectProfilesWithAPatchOutsideTheSelectedSeason() {
+        try {
+            LolApiParameters.profileFilter(null, "15.1", "2026");
+            throw new AssertionError("Expected an invalid profile filter");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+            assertTrue(exception.getReason().contains("16."));
+        }
+
+        try {
+            LolApiParameters.profileFilter(null, "99.1", "all");
+            throw new AssertionError("Expected an invalid profile filter");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+            assertTrue(exception.getReason().contains("configured season"));
+        }
+    }
+
+    @Test
+    public void shouldParseProfileMatchupsFilterDefaults() {
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(0, 0, null, null, null, 5);
+
+        assertNull(filter.queue());
+        assertNull(filter.patch());
+        assertNull(filter.lane());
+        assertEquals(5, filter.minGames());
+    }
+
+    @Test
+    public void shouldParseProfileMatchupsFilterValues() {
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+            0, 0, "ranked_flex_sr", "14.10", "top", 8);
+
+        assertEquals(GameQueueType.RANKED_FLEX_SR, filter.queue());
+        assertEquals("14.10", filter.patch());
+        assertEquals(LaneType.TOP, filter.lane());
+        assertEquals(8, filter.minGames());
+    }
+
+    @Test
+    public void shouldPreferStartAndEndOverPatch() {
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+            1711929600000L, 1714521600000L, null, "14.10", null, 5);
+
+        assertEquals(1711929600000L, filter.timeStart());
+        assertEquals(1714521600000L, filter.timeEnd());
+        assertNull(filter.patch());
+    }
+
+    @Test
+    public void shouldUseEndOfTodayWhenOnlyStartIsProvided() {
+        long expectedEnd = LocalDate.now(ZoneId.systemDefault()).plusDays(1)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1;
+        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+            expectedEnd - 1000, 0, null, "14.10", null, 5);
+
+        assertEquals(expectedEnd - 1000, filter.timeStart());
+        assertEquals(expectedEnd, filter.timeEnd());
+        assertNull(filter.patch());
+    }
+
+    @Test
+    public void shouldRejectInvalidProfileMatchupsParameters() {
+        try {
+            LolApiParameters.matchupsFilter(0, 0, null, "14", null, 5);
+            throw new AssertionError("Expected invalid patch");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchupsFilter(0, 0, "aram", null, "top", 5);
+            throw new AssertionError("Expected invalid role");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchupsFilter(0, 0, null, null, null, 0);
+            throw new AssertionError("Expected invalid minimum games");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchupsFilter(1714521600000L, 1711929600000L, null, null, null, 5);
+            throw new AssertionError("Expected invalid period");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+    }
+
+    @Test
+    public void shouldMapProfileMatchupsResponseStates() {
+        ProfileMatchups payload = new ProfileMatchups(null, 0, 0, 0, java.util.Map.of());
+        ResponseEntity<?> ready = LolApiResponses.from(
+            ApiResult.ready(payload), "pending", "Pending", "Not found");
+        ResponseEntity<?> pending = LolApiResponses.from(
+            ApiResult.pending(), "profile_matchups_pending", "Pending", "Not found");
+
+        assertEquals(HttpStatus.OK, ready.getStatusCode());
+        assertEquals(HttpStatus.ACCEPTED, pending.getStatusCode());
+        ResponseMetadata metadata = ((com.safjnest.spring.dto.LolApiError) LolApiResponses.from(
+                ApiResult.pending(new ResponseMetadata(null, null, true, Filter.canonical())),
+                "pending", "Pending", "Not found").getBody()).metadata();
+        assertEquals(Filter.canonical().toSummonerKey(), metadata.filter().toSummonerKey());
+        try {
+            LolApiResponses.from(ApiResult.notFound(), "pending", "Pending", "Not found");
+            throw new AssertionError("Expected not found");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        }
+    }
+
+    @Test
+    public void shouldParseMatchPageParameters() {
+        assertEquals(MatchOrder.ASC, LolApiParameters.matchOrder("timeStart:asc"));
+        assertEquals(MatchOrder.DESC, LolApiParameters.matchOrder("timeStart:desc"));
+        assertEquals(MatchOrder.DESC, LolApiParameters.matchOrder(null));
+        assertEquals(100, LolApiParameters.matchLimit(100));
+        assertEquals(0, LolApiParameters.matchOffset(0));
+    }
+
+    @Test
+    public void shouldRestrictRankHistoryToRankedQueues() {
+        assertEquals(GameQueueType.RANKED_SOLO_5X5, LolApiParameters.rankHistoryQueue(null));
+        assertEquals(GameQueueType.RANKED_SOLO_5X5, LolApiParameters.rankHistoryQueue("team_builder_ranked_solo"));
+        assertEquals(GameQueueType.RANKED_FLEX_SR, LolApiParameters.rankHistoryQueue("ranked_flex_sr"));
+
+        try {
+            LolApiParameters.rankHistoryQueue("aram");
+            throw new AssertionError("Expected an invalid rank history queue");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+    }
+
+    @Test
+    public void shouldRejectInvalidMatchPageParameters() {
+        try {
+            LolApiParameters.matchOrder("timeEnd:desc");
+            throw new AssertionError("Expected invalid sort");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchLimit(101);
+            throw new AssertionError("Expected invalid limit");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+
+        try {
+            LolApiParameters.matchOffset(-1);
+            throw new AssertionError("Expected invalid offset");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        }
+    }
+
+    private ResponseStatusException invalidShard(String value) {
+        try {
+            LolApiParameters.requiredShard(value);
+            throw new AssertionError("Expected an invalid LeagueShard");
+        } catch (ResponseStatusException exception) {
+            return exception;
+        }
+    }
+
+}

@@ -3,7 +3,7 @@ package com.safjnest.core.events;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import com.safjnest.lol.model.summoner.Summoner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
@@ -273,12 +273,11 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         
         
         event.deferEdit().queue();
-        String user_id = LeagueService.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = SummonerService.getUserId(puuid, LeagueShard.valueOf(region));
         if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";
-        Summoner s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+        Summoner s = SummonerService.get(puuid, LeagueShard.valueOf(region));
 
-        int summonerId = LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
+        LeagueMessage.send(event.getHook(), user_id, s, s.puuid(), parameter);
     }
 
     private void blacklist(ModalInteractionEvent event) {

@@ -1,15 +1,17 @@
 package com.safjnest.lol.message;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.safjnest.core.events.EventButtonHandler;
 import com.safjnest.core.events.EventUtils;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.MatchService;
+import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
+import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.core.cache.managers.UserCache;
 
@@ -29,7 +31,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import com.safjnest.lol.model.summoner.Summoner;
 
 public class LeagueEventHandler extends EventButtonHandler {
 
@@ -88,7 +90,7 @@ public class LeagueEventHandler extends EventButtonHandler {
         String puuid = lolCenterData.value2().trim().split("#")[0];
         String region = lolCenterData.value2().trim().split("#")[1];
 
-        String user_id = LeagueService.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = SummonerService.getUserId(puuid, LeagueShard.valueOf(region));
         if (user_id == null || user_id.isEmpty()) user_id = fallbackUserId;
 
         return new LeagueContext(puuid, region, user_id, parameter, lolCenterData.active());
@@ -97,9 +99,8 @@ public class LeagueEventHandler extends EventButtonHandler {
     private void dispatch(InteractionHook hook, List<Button> buttons, LeagueContext context) {
         boolean hasLeft = buttons.stream().anyMatch(b -> (LeagueMessage.BUTTON_ID_PREFIX + "-left").equals(b.getCustomId()));
         String user_id = (hasLeft || context.userIdFallback()) ? context.user_id() : "";
-        Summoner s = LeagueService.getSummonerByPuuid(context.puuid(), LeagueShard.valueOf(context.region()));
-        int summonerId = s != null ? LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform()) : 0;
-        LeagueMessage.send(hook, user_id, s, summonerId, context.parameter());
+        Summoner s = SummonerService.get(context.puuid(), LeagueShard.valueOf(context.region()));
+        LeagueMessage.send(hook, user_id, s, s == null ? null : s.puuid(), context.parameter());
     }
 
     // ---- handlers ----
@@ -113,7 +114,7 @@ public class LeagueEventHandler extends EventButtonHandler {
         String region = context.region();
         LeagueMessageParameter parameter = context.parameter();
 
-        HashMap<String, String> accounts = UserCache.getUser(context.user_id()).getRiotAccounts();
+        Map<String, Summoner> accounts = UserCache.getUser(context.user_id()).getRiotAccounts();
         int index = 0;
         for (String k : accounts.keySet()) {
             if (k.equals(puuid)) break;
@@ -124,12 +125,12 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "center", "right" -> {
                 index = (index + 1) == accounts.size() ? 0 : index + 1;
                 puuid = (String) accounts.keySet().toArray()[index];
-                region = accounts.get(puuid);
+                region = accounts.get(puuid).region().name();
             }
             case "left" -> {
                 index = index == 0 ? accounts.size() - 1 : index - 1;
                 puuid = (String) accounts.keySet().toArray()[index];
-                region = accounts.get(puuid);
+                region = accounts.get(puuid).region().name();
             }
             case "queue" -> {
                 parameter.setQueueType(!active ? GameQueueType.valueOf(content) : null);
@@ -148,8 +149,8 @@ public class LeagueEventHandler extends EventButtonHandler {
             }
             case "season" -> {
                 long[] time = switch (content) {
-                    case "current" -> LeagueHandler.getCurrentSplitRange();
-                    case "previous" -> LeagueHandler.getPreviousSplitRange();
+                    case "current" -> SeasonUtils.getCurrentSplitRange();
+                    case "previous" -> SeasonUtils.getPreviousSplitRange();
                     default -> new long[] {0, 0};
                 };
                 parameter.setPeriod(time);
@@ -174,8 +175,14 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "leftpage" -> parameter.setOffset(Math.max(0, parameter.getOffset() - parameter.getMessageType().getPageItem()));
             case "rightpage" -> parameter.setOffset(parameter.getOffset() + parameter.getMessageType().getPageItem());
             case "refresh" -> {
-                LeagueHandler.clearSummonerCache(LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region)));
-                try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                LeagueShard shard = LeagueShard.valueOf(region);
+                if (parameter.getMessageType() == LeagueMessageType.OPGG) {
+                    MatchService.invalidateMatchlist(
+                        SummonerService.getRiotSummoner(puuid, shard),
+                        parameter.getQueueType(),
+                        parameter.getOffset()
+                    );
+                } else SummonerService.refresh(puuid, shard);
             }
         }
 
@@ -193,13 +200,10 @@ public class LeagueEventHandler extends EventButtonHandler {
                 parameter.setOffset(0);
             }
             case "tier" -> {
-                parameter.setRank(value == null || value.equals("ALL") ? null : TierType.valueOf(value.toUpperCase()));
+                parameter.setRank(value == null || value.equals(LeagueConstants.ALL) ? null : TierType.valueOf(value.toUpperCase()));
                 parameter.setOffset(0);
             }
-            case "opggselect" -> parameter.setMatch(
-                LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI()
-                    .getMatch(LeagueShard.valueOf(context.region()).toRegionShard(), value)
-            );
+            case "opggselect" -> parameter.setSelectedMatchId(value == null ? null : value.split("#", 2)[0]);
             case "rankselect" -> {
                 context = context.with(value.split("#")[0], value.split("#")[1]);
                 context.parameter().setMessageType(LeagueMessageType.PROFILE);

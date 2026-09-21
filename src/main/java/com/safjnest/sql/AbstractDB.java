@@ -3,13 +3,9 @@ package com.safjnest.sql;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringJoiner;
@@ -22,40 +18,37 @@ import com.safjnest.utils.log.BotLogger;
 public abstract class AbstractDB {
     protected abstract String getDatabase();
 
-    public static HashMap<Long, List<String>> queryAnalytics = new HashMap<>();
-
     public Connection getConnection() {
         try { return DatabaseHandler.getConnection(getDatabase());} 
         catch (SQLException e) { return null; }
     }
 
-    public QueryResult query(String query) {
+    public List<QueryRecord> query(String query) {
         Connection c = null;
         Statement stmt = null;
-        QueryResult result = new QueryResult();
+        List<QueryRecord> result = new ArrayList<>();
 
         try {
             c = DatabaseHandler.getConnection(getDatabase());
             if (c == null) throw new SQLException("Connection to the database failed!");
-            insertAnalytics(query);
             stmt = c.createStatement();
             result = query(stmt, query);
             c.commit();
         } catch (SQLException ex) {
             if (c != null) {
                 try {
-                    stmt.close();
+                    if (stmt != null) stmt.close();
                     c.rollback();
                 } catch (SQLException rollbackEx) {
                     System.out.println("Rollback failed: " + rollbackEx.getMessage());
                 }
             }
             System.out.println("Query execution failed: " + ex.getMessage());
+            throw new IllegalStateException("Query execution failed", ex);
         } finally {
             if (c != null) {
                 try {
-                    result.setSuccess(true);
-                    stmt.close();
+                    if (stmt != null) stmt.close();
                     c.close();
                 } catch (SQLException closeEx) {
                     System.out.println("Failed to close connection: " + closeEx.getMessage());
@@ -67,56 +60,33 @@ public abstract class AbstractDB {
     }
 
     /**
-     * Method used for returning a {@link com.safjnest.sql.QueryResult result} from a query using default statement
+     * Method used for returning rows from a query using default statement
      * @param stmt
      * @param query
      * @throws SQLException
      */
-    public QueryResult query(Statement stmt, String query) throws SQLException {
-        insertAnalytics(query);
+    public List<QueryRecord> query(Statement stmt, String query) throws SQLException {
         if (App.isTesting()) BotLogger.trace(query);
-        QueryResult result = new QueryResult();
+        List<QueryRecord> result;
         boolean hasResult = (stmt instanceof PreparedStatement pstmt)
                 ? pstmt.execute()
                 : stmt.execute(query, Statement.RETURN_GENERATED_KEYS);
 
-        result = elaborate(hasResult ? stmt.getResultSet() : stmt.getGeneratedKeys());
-        result.setAffectedRows(stmt.getUpdateCount());
-        return result;
-    }
-
-    private QueryResult elaborate(ResultSet set) throws SQLException {
-        QueryResult result = new QueryResult();
-        ResultSetMetaData rsmd = set.getMetaData();
-        while (set.next()) {
-            QueryRecord row = new QueryRecord();
-            for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                String key = rsmd.getColumnLabel(i).toLowerCase();
-                if (isBinarySqlType(rsmd, i)) {
-                    byte[] bytes = set.getBytes(i);
-                    if (bytes != null) {
-                        row.put(key, Base64.getEncoder().encodeToString(bytes));
-                    }
-                } else {
-                    row.put(key, set.getString(i));
-                }
-            }
-            result.add(row);
+        ResultSet resultSet = hasResult ? stmt.getResultSet() : stmt.getGeneratedKeys();
+        try {
+            result = elaborate(resultSet);
+        } finally {
+            if (resultSet != null) resultSet.close();
         }
         return result;
     }
 
-    private static boolean isBinarySqlType(ResultSetMetaData rsmd, int columnIndex) throws SQLException {
-        int type = rsmd.getColumnType(columnIndex);
-        if (type == Types.BLOB || type == Types.BINARY || type == Types.VARBINARY || type == Types.LONGVARBINARY) {
-            return true;
-        }
-        String typeName = rsmd.getColumnTypeName(columnIndex);
-        return typeName != null && typeName.toUpperCase().contains("BLOB");
+    private List<QueryRecord> elaborate(ResultSet set) throws SQLException {
+        return QueryRecordParser.fromRows(set);
     }
 
-    public List<QueryResult> queries(String... queries) {
-        List<QueryResult> results = new ArrayList<>();
+    public List<List<QueryRecord>> queries(String... queries) {
+        List<List<QueryRecord>> results = new ArrayList<>();
         Connection c = null;
         Statement stmt = null;
 
@@ -127,8 +97,7 @@ public abstract class AbstractDB {
             stmt = c.createStatement();
 
             for (String q : queries) {
-                insertAnalytics(q);
-                QueryResult result = query(stmt, q);
+                List<QueryRecord> result = query(stmt, q);
                 results.add(result);
             }
 
@@ -185,11 +154,13 @@ public abstract class AbstractDB {
      * @param queries
      */
     public boolean defaultQuery(String... queries) {
-        List<QueryResult> results = new ArrayList<>();
-        for (String query : queries) {
-            results.add(query(query));
+        if (queries == null || queries.length == 0) return false;
+        try {
+            for (String query : queries) query(query);
+            return true;
+        } catch (RuntimeException exception) {
+            return false;
         }
-        return !results.isEmpty() && results.stream().allMatch(QueryResult::isSuccess);
     }
 
     public CompletableFuture<Void> runQueryAsync(String... queries) {
@@ -215,8 +186,8 @@ public abstract class AbstractDB {
             query(stmt, query);
     }
 
-    public QueryResult insert(String table, LinkedHashMap<String, Object> values) {
-        QueryResult result = new QueryResult();
+    public List<QueryRecord> insert(String table, LinkedHashMap<String, Object> values) {
+        List<QueryRecord> result = new ArrayList<>();
         StringJoiner fields = new StringJoiner(", ");
         StringJoiner placeholders = new StringJoiner(", ");
         StringJoiner updates = new StringJoiner(", ");
@@ -259,7 +230,6 @@ public abstract class AbstractDB {
         } finally {
             if (c != null) {
                 try {
-                    result.setSuccess(true);
                     c.close();
                 } catch (SQLException closeEx) {
                     System.out.println("Failed to close connection: " + closeEx.getMessage());
@@ -268,14 +238,6 @@ public abstract class AbstractDB {
         }
         return result;
     }
-
-        
-    private void insertAnalytics(String query) {
-        List<String> queries = queryAnalytics.getOrDefault(System.currentTimeMillis(), new ArrayList<>());
-        queries.add(query);
-        queryAnalytics.put(System.currentTimeMillis(), queries);
-    }
-    
 
     /**
      * @deprecated

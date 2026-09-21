@@ -1,0 +1,90 @@
+package com.safjnest.lol.model.record;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.match.RankProgress;
+import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.utils.TierDivisionUtils;
+
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProfileRecord {
+
+    public String puuid;
+    public String riotId;
+    public Integer icon;
+    public String filterKey;
+    public RecordMetric metric;
+    public long value;
+    public long score;
+    public String matchId;
+    public long occurredAt;
+    public int championId;
+    public LeagueShard region;
+    public Integer mmr;
+    public TeamType team;
+    public String actorPuuid;
+    public Boolean gameShared;
+    public Long globalRanking;
+    public Long regionRanking;
+    public long lastUpdate;
+
+    public static ProfileRecord from(
+        String puuid,
+        String filterKey,
+        RecordMetric metric,
+        long value,
+        String matchId,
+        long occurredAt,
+        Participant participant,
+        LeagueShard region,
+        TeamType team,
+        String actorPuuid
+    ) {
+        ProfileRecord record = new ProfileRecord();
+        record.puuid = puuid;
+        record.filterKey = filterKey;
+        record.metric = metric;
+        record.value = value;
+        record.score = metric.order().score(value);
+        record.matchId = matchId;
+        record.occurredAt = occurredAt;
+        record.championId = participant == null ? 0 : participant.champion;
+        record.region = region;
+        record.team = team;
+        record.actorPuuid = actorPuuid;
+        record.gameShared = metric.gameShared() ? Boolean.TRUE : null;
+        applyMmr(record, participant == null ? null : participant.rankProgress);
+        return record;
+    }
+
+    public static ProfileRecord mastery(
+        String puuid,
+        String filterKey,
+        Mastery mastery,
+        LeagueShard region,
+        long lastUpdate
+    ) {
+        if (mastery == null) throw new IllegalArgumentException("Mastery is required");
+        ProfileRecord record = new ProfileRecord();
+        record.puuid = puuid;
+        record.filterKey = filterKey;
+        record.metric = RecordMetric.HIGHEST_MASTERY;
+        record.value = mastery.points();
+        record.score = record.metric.order().score(record.value);
+        record.occurredAt = lastUpdate;
+        record.championId = mastery.championId();
+        record.region = region;
+        record.lastUpdate = lastUpdate;
+        return record;
+    }
+
+    private static void applyMmr(ProfileRecord record, RankProgress progress) {
+        if (progress == null || progress.rank == null || progress.lp == null) return;
+        int value = TierDivisionUtils.getMmr(progress.rank, progress.lp);
+        if (value < 0) return;
+        record.mmr = value;
+    }
+}

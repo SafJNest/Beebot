@@ -1,0 +1,66 @@
+package com.safjnest.lol.service;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Test;
+
+import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.model.summoner.Summoner;
+import com.safjnest.lol.model.summoner.SummonerOverview;
+import com.safjnest.lol.model.summoner.SummonerView;
+import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.utils.TimeConstant;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+
+public class ProfileServiceTest {
+
+    @Test
+    public void exposesCanonicalSummonerViewData() {
+        ProfileStatistics statistics = new ProfileStatistics(0);
+        statistics.add(match("top", LaneType.TOP), GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP);
+        statistics.add(match("none", LaneType.NONE), GameQueueType.ARAM, LaneType.NONE);
+
+        SummonerView page = SummonerView.from(
+            new Summoner("puuid", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 27),
+            Map.of(GameQueueType.RANKED_FLEX_SR, new Rank(TierDivisionType.BRONZE_II, 15, 76, 131)),
+            statistics,
+            List.of(),
+            java.util.Map.of(1, new SummonerOverview.Champion("Annie", "image"))
+        );
+
+        assertEquals(1, page.overview().statistics().laneStats.get(0).games);
+        assertEquals(LaneType.TOP, page.overview().statistics().laneStats.get(0).reference);
+        assertEquals(TierDivisionType.BRONZE_II, page.ranks().get(GameQueueType.RANKED_FLEX_SR).tier());
+        assertEquals(27, page.summoner().icon());
+        assertEquals("Annie", page.overview().champions().get(1).name());
+    }
+
+    @Test
+    public void treatsOnlyRecentlySeenMonthOldAggregatesAsStale() {
+        long now = 1_800_000_000_000L;
+
+        assertTrue(ProfileService.isStale("puuid", 0, now, now));
+        assertFalse(ProfileService.isStale("puuid", now - TimeConstant.DAY * 29, now, now));
+        assertTrue(ProfileService.isStale("puuid", now - TimeConstant.DAY * 45, now, now));
+        assertFalse(ProfileService.isStale("puuid", now - TimeConstant.DAY * 45,
+            now - TimeConstant.DAY * 61, now));
+    }
+
+    private static MatchResult match(String id, LaneType lane) {
+        return new MatchResult(
+            id, GameQueueType.ARAM, 1_000, 2_000, true, "2/1/3", 1, lane, 100, 10, 100, 10, 10,
+            List.of(), List.of(), List.of(Participant.forMatchResult(2, "puuid", "BLUE"))
+        );
+    }
+
+}

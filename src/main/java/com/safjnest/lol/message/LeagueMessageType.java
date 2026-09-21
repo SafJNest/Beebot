@@ -6,7 +6,9 @@ public enum LeagueMessageType {
   LIVEGAME("Live Game", false),
   OVERVIEW("Overview", false),
   MATCHUP("Matchups", false),
+  @Deprecated
   OVERVIEW_PING("Pings", false),
+  @Deprecated
   OVERVIEW_OBJECTIVES("Objectives", false),
   OVERVIEW_CHAMPIONS("Champions", true, 10),
   OVERVIEW_OPGG("OPgg", true, 5),

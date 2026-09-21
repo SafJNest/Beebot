@@ -1,12 +1,12 @@
 package com.safjnest.core.cache.managers;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.CacheAdapter;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;
@@ -94,7 +94,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     public void retrieveAllGuilds() {
-        QueryResult guilds = BotDB.getGuildData();
+        List<QueryRecord> guilds = BotDB.getGuildData();
         
         for(QueryRecord guildData : guilds){        
             GuildData guild = new GuildData(guildData);

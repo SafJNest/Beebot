@@ -64,11 +64,6 @@ public class SpotifyTokenManager {
             public boolean hasError(ClientHttpResponse response) {
                 return false;
             }
-
-            @Override
-            public void handleError(ClientHttpResponse response) {
-                // no-op
-            }
         });
 
         String auth = CLIENT_ID + ":" + CLIENT_SECRET;

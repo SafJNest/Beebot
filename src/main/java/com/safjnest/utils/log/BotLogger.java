@@ -11,7 +11,7 @@ import ch.qos.logback.core.joran.spi.JoranException;
 
 public class BotLogger {
 
-    private static Logger logger;
+    private static Logger logger = LoggerFactory.getLogger(BotLogger.class);
     public BotLogger(String name, String resourceBundleName) {
         logger = LoggerFactory.getLogger(BotLogger.class);
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -57,7 +57,7 @@ public class BotLogger {
      */
     public static void trace (String message, LoggerIDpair... values) {
         logger.trace(formatLog(message, values));
-        sendLog("TRACE", formatLog(message, values));
+       //sendLog("TRACE", formatLog(message, values));
     }
 
     /**
@@ -109,4 +109,3 @@ public class BotLogger {
     }
 
 }
-

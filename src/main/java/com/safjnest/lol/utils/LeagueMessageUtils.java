@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.model.PlayerChampionStats;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
 
@@ -20,8 +21,6 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
@@ -30,23 +29,23 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 public class LeagueMessageUtils {
 
 
-    public static String formatAdvancedData(PlayerChampionStats championStats, ChampionMastery mastery) {
+    public static String formatAdvancedData(PlayerChampionStats championStats, Mastery mastery) {
       StaticChampion champion = ChampionUtils.getChampion(championStats.getChampion());
       if (champion == null) return championStats.getChampion() + "\n";
-      int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLosses()) + " games (" + championStats.getWins() + "W/" + championStats.getLosses() + "L) | " + championStats.getLp() + "LP\n"
+      int level = (mastery != null ? (mastery.level() >= 10 ? 10 : mastery.level()) : 0);
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.level() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLosses()) + " games (" + championStats.getWins() + "W/" + championStats.getLosses() + "L) | " + championStats.getLp() + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", championStats.avgKills()) + "/" + String.format("%.2f", championStats.avgDeaths()) + "/" + String.format("%.2f", championStats.avgAssists()) + "`";
     }
 
-    public static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
+    public static String formatAdvancedData(QueryRecord data, Mastery mastery) {
       StaticChampion champion = ChampionUtils.getChampion(data.getAsInt("champion"));
-      int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
+      int level = (mastery != null ? (mastery.level() >= 10 ? 10 : mastery.level()) : 0);
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.level() : 0) + "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
 
-    public static String getPosition(HashMap<MatchParticipant, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
+    public static String getPosition(Map<?, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
         int personalStatValue = Integer.parseInt(personalStats.get(statKey));
         int position = 1;
 
@@ -71,24 +70,6 @@ public class LeagueMessageUtils {
             return df.format(value) + "k";
         }
         return String.valueOf(number);
-    }
-
-    public static String getFormatedRank(TierDivisionType rank, boolean withEmoji) {
-        if (rank == null) return "";
-        String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
-
-        if (division.equals("2") && rank.getDivision().equals("IV")) division = "4";
-        else if (rank.ordinal() < 3) division = "";
-
-        String tier = rank.prettyName().charAt(0) + "";
-
-        if(rank == TierDivisionType.MASTER_I) tier = "MS";
-        else if (rank == TierDivisionType.GRANDMASTER_I) tier  = "GM";
-        else if (rank == TierDivisionType.CHALLENGER_I) tier = "CH";
-
-        if (withEmoji) return CustomEmojiHandler.getFormattedEmoji(rank.getTier()) + tier + division;
-        else return tier + division;
-
     }
 
     public static String getFormattedDuration(int seconds) {
@@ -149,42 +130,42 @@ public class LeagueMessageUtils {
     }
 
 
-    public static EmbedBuilder buildMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, int[]> data) {  
-        List<Map.Entry<Integer, int[]>> worstMatchups = data.entrySet().stream()
+    public static EmbedBuilder buildMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, long[]> data) {  
+        List<Map.Entry<Integer, long[]>> worstMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
             .sorted((a, b) -> {
                 double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
                 double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
+                long gamesA = a.getValue()[0] + a.getValue()[1];
+                long gamesB = b.getValue()[0] + b.getValue()[1];
                 int cmp = Double.compare(winrateA, winrateB);
-                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+                return cmp == 0 ? Long.compare(gamesB, gamesA) : cmp;
             })
             .collect(Collectors.toList());
         
-        List<Map.Entry<Integer, int[]>> bestMatchups = data.entrySet().stream()
+        List<Map.Entry<Integer, long[]>> bestMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
             .sorted((a, b) -> {
                 double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
                 double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
+                long gamesA = a.getValue()[0] + a.getValue()[1];
+                long gamesB = b.getValue()[0] + b.getValue()[1];
                 int cmp = Double.compare(winrateB, winrateA);
-                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+                return cmp == 0 ? Long.compare(gamesB, gamesA) : cmp;
             })
             .collect(Collectors.toList());
         
-        List<Map.Entry<Integer, int[]>> popularMatchups = data.entrySet().stream()
+        List<Map.Entry<Integer, long[]>> popularMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
             .sorted((a, b) -> {
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
+                long gamesA = a.getValue()[0] + a.getValue()[1];
+                long gamesB = b.getValue()[0] + b.getValue()[1];
                 if (gamesA == gamesB) {
                     double winrateA = (double) a.getValue()[0] / (gamesA);
                     double winrateB = (double) b.getValue()[0] / (gamesB);
                     return Double.compare(winrateB, winrateA);
                 }
-                return Integer.compare(gamesB, gamesA);
+                return Long.compare(gamesB, gamesA);
             })
             .collect(Collectors.toList());
         
@@ -194,15 +175,15 @@ public class LeagueMessageUtils {
         return eb;
     }
 
-    public static String getWinrateLabel(List<Entry<Integer, int[]>> data) {
+    public static String getWinrateLabel(List<Entry<Integer, long[]>> data) {
         String label = "";
         int limit = 10;
-        for (Map.Entry<Integer, int[]> entry : data) {
+        for (Map.Entry<Integer, long[]> entry : data) {
             if (limit-- == 0) break;
             StaticChampion champ = ChampionUtils.getChampion(entry.getKey());
             if (champ == null) continue;
-            int[] val = entry.getValue();
-            int totalGames = val[0] + val[1];
+            long[] val = entry.getValue();
+            long totalGames = val[0] + val[1];
             double winrate = (double) val[0] / totalGames * 100.0;
             label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "W/" + val[1] + "L (" + String.format("%.1f%%", winrate) + ")`\n";
         }
@@ -222,9 +203,9 @@ public class LeagueMessageUtils {
         Button flex = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
         Button draft = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
         Button aram = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
-        Button curretModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
+        Button currentModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
 
-        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, currentModeButton);
 
         switch (queue) {
             case TEAM_BUILDER_RANKED_SOLO:
@@ -242,13 +223,13 @@ public class LeagueMessageUtils {
             case CHERRY:
             case ULTBOOK:
             case SWIFTPLAY:
-                curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                currentModeButton = currentModeButton.withStyle(ButtonStyle.SUCCESS);
                 break;
             default:
                 break;
         }
 
-        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        return ActionRow.of(soloQ, flex, draft, aram, currentModeButton);
     }
 
     public static String capitalizeFirstLetter(String text) {

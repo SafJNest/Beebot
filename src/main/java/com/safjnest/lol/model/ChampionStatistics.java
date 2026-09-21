@@ -1,27 +1,41 @@
 package com.safjnest.lol.model;
 
+import com.safjnest.utils.JsonCodec;
+
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.utils.KryoUtils;
-
 public record ChampionStatistics(
     Filter filter,
-    int games,
-    int picks,
-    int bans,
-    int wins,
-    double winrate,
-    double pickrate,
-    double banrate,
+    Overview overview,
     List<LaneStat> laneStats,
-    Map<MatchupKey, Matchup> matchups
+    Map<Integer, Matchup> matchups,
+    List<LaneSynergy> laneSynergies,
+    List<PowerCurvePoint> powerCurve,
+    Trend trend
 ) {
 
-    private final static int EMBED_LIMIT = 3;
+    private static final int EMBED_LIMIT = 3;
+
+    public record Overview(
+        int games,
+        int picks,
+        int bans,
+        int wins,
+        double winrate,
+        double pickrate,
+        Double banrate,
+        Double kda,
+        Double csPerMinute,
+        Double goldPerMinute,
+        DamageProfile damageProfile
+    ) {}
+
+    public record DamageProfile(Double physical, Double magic, Double trueDamage) {}
+
     public record LaneStat(LaneType lane, int games, double winrate) {
         public String prettyGames() {
             return String.format("%d", games);
@@ -36,12 +50,27 @@ public record ChampionStatistics(
         }
 
         public double getPickrate(int totalGames) {
-            return (double) games / totalGames * 100;
+            return totalGames > 0 ? (double) games / totalGames * 100 : 0;
+        }
+    }
+
+    public record Matchup(
+        int matches,
+        int wins,
+        double winrate,
+        Double deltaWinrate,
+        Integer goldDiffAt15,
+        Double csDiffAt15,
+        Double soloKillRate,
+        Double killParticipation,
+        Double opponentBanRate,
+        Integer metricGames
+    ) {
+        public Matchup(int matches, double winrate) {
+            this(matches, (int) Math.round(matches * winrate), winrate,
+                null, null, null, null, null, null, null);
         }
 
-    }
-    public record MatchupKey(int champion, LaneType lane) {}
-    public record Matchup(int champion, int matches, double winrate) {
         public String prettyMatches() {
             return String.format("%d", matches);
         }
@@ -51,89 +80,125 @@ public record ChampionStatistics(
         }
     }
 
-    public String encode() {
-        return KryoUtils.encode(this);
+    public record LaneSynergy(
+        int allyChampion,
+        LaneType allyLane,
+        int matches,
+        int wins,
+        double winrate,
+        double pickrate
+    ) {}
+
+    public record PowerCurvePoint(String durationBucket, int games, int wins, double winrate) {}
+
+    public record Trend(String previousPatch, Integer games, Double winrate, Double deltaWinrate) {}
+
+    public String toJson() {
+        return JsonCodec.toJson(this);
     }
 
-    public static ChampionStatistics decode(String b64) {
-        return KryoUtils.decode(b64, ChampionStatistics.class);
+    public static ChampionStatistics fromJson(String json) {
+        try {
+            ChampionStatistics statistics = JsonCodec.fromJson(json, ChampionStatistics.class);
+            if (statistics == null) return null;
+            if (statistics.filter() != null && !(statistics.filter() instanceof Filter)) return null;
+            if (statistics.overview() == null || statistics.laneStats() == null
+                    || statistics.matchups() == null || statistics.laneSynergies() == null
+                    || statistics.powerCurve() == null) return null;
+            for (LaneStat lane : statistics.laneStats()) if (lane == null) return null;
+            for (Map.Entry<Integer, Matchup> entry : statistics.matchups().entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) return null;
+            }
+            return statistics;
+        } catch (RuntimeException | LinkageError ignored) {
+            return null;
+        }
     }
 
-    public Matchup getOpponentMatchup(int opponent, LaneType lane) {
-        return matchups().get(new MatchupKey(opponent, lane));
+    public int games() {
+        return overview.games();
     }
 
-    private List<Matchup> getMatchups(LaneType lane) {
-        return matchups().entrySet().stream()
-            .filter(entry -> entry.getKey().lane() == lane)
-            .map(Map.Entry::getValue)
-            .toList();
+    public int picks() {
+        return overview.picks();
     }
 
-    public List<Matchup> weakAgainst(LaneType lane) {
-        List<Matchup> sameLane = getMatchups(lane);
-
-        double avgGames = sameLane.stream().mapToInt(e -> e.matches()).average().orElse(0);
-    
-        return sameLane.stream()
-            .filter(e -> e.matches() > avgGames)
-            .sorted(Comparator.comparingDouble(Matchup::winrate))
-            .limit(EMBED_LIMIT)
-            .toList();
-    }
-    
-    public List<Matchup> strongAgainst(LaneType lane) {
-        List<Matchup> sameLane = getMatchups(lane);
-    
-        double avgGames = sameLane.stream().mapToInt(e -> e.matches()).average().orElse(0);
-    
-        return sameLane.stream()
-            .filter(e -> e.matches() > avgGames)
-            .sorted(Comparator.comparingDouble(Matchup::winrate).reversed())
-            .limit(EMBED_LIMIT)
-            .toList();
+    public int bans() {
+        return overview.bans();
     }
 
-    public List<Matchup> popularMatchups(LaneType lane) {
-        return getMatchups(lane).stream()
-            .sorted(Comparator.comparingInt(Matchup::matches).reversed())
-            .limit(EMBED_LIMIT)
-            .toList();
+    public int wins() {
+        return overview.wins();
+    }
+
+    public double winrate() {
+        return overview.winrate();
+    }
+
+    public double pickrate() {
+        return overview.pickrate();
+    }
+
+    public double banrate() {
+        return overview.banrate() == null ? 0 : overview.banrate();
+    }
+
+    public Matchup getOpponentMatchup(int opponent) {
+        return matchups().get(opponent);
+    }
+
+    private List<Map.Entry<Integer, Matchup>> matchupEntries() {
+        return new java.util.ArrayList<>(matchups().entrySet());
+    }
+
+    public List<Map.Entry<Integer, Matchup>> weakAgainst() {
+        List<Map.Entry<Integer, Matchup>> values = matchupEntries();
+        double avgGames = values.stream().mapToInt(entry -> entry.getValue().matches()).average().orElse(0);
+        return values.stream().filter(entry -> entry.getValue().matches() > avgGames)
+            .sorted(Comparator.comparingDouble(entry -> entry.getValue().winrate())).limit(EMBED_LIMIT).toList();
+    }
+
+    public List<Map.Entry<Integer, Matchup>> strongAgainst() {
+        List<Map.Entry<Integer, Matchup>> values = matchupEntries();
+        double avgGames = values.stream().mapToInt(entry -> entry.getValue().matches()).average().orElse(0);
+        return values.stream().filter(entry -> entry.getValue().matches() > avgGames)
+            .sorted(Comparator.comparingDouble((Map.Entry<Integer, Matchup> entry) -> entry.getValue().winrate()).reversed())
+            .limit(EMBED_LIMIT).toList();
+    }
+
+    public List<Map.Entry<Integer, Matchup>> popularMatchups() {
+        return matchupEntries().stream()
+            .sorted(Comparator.comparingInt((Map.Entry<Integer, Matchup> entry) -> entry.getValue().matches()).reversed())
+            .limit(EMBED_LIMIT).toList();
     }
 
     public LaneStat getLaneStat(LaneType lane) {
-        return laneStats().stream()
-            .filter(l -> l.lane() == lane)
-            .findFirst()
-            .orElse(null);
+        return laneStats().stream().filter(stat -> stat.lane() == lane).findFirst().orElse(null);
     }
 
     public String prettyGames() {
-        return String.format("%d", games);
+        return String.format("%d", games());
     }
 
     public String prettyWinrate() {
-        return String.format("%.2f", winrate * 100) + "%";
+        return String.format("%.2f", winrate() * 100) + "%";
     }
 
     public String prettyPickrate() {
-        return String.format("%.2f", pickrate * 100) + "%";
+        return String.format("%.2f", pickrate() * 100) + "%";
     }
 
     public String prettyBanrate() {
-        return String.format("%.2f", banrate * 100) + "%";
+        return overview.banrate() == null ? "—" : String.format("%.2f", overview.banrate() * 100) + "%";
     }
 
     public void print() {
         System.out.println("Stats for " + filter().champion() + " in " + filter().lane());
-        System.out.println("Games: "    + games);
-        System.out.println("Picks: "    + picks);
-        System.out.println("Bans: "     + bans);
-        System.out.println("Wins: "     + wins);
-        System.out.println("Winrate: "  + winrate  * 100 + "%");
-        System.out.println("Pickrate: " + pickrate * 100 + "%");
-        System.out.println("Banrate: "  + banrate  * 100 + "%");
+        System.out.println("Overview: " + overview);
         System.out.println("Lane stats: " + laneStats());
-        System.out.println("Matchups: "   + matchups());
+        System.out.println("Matchups: " + matchups());
+        System.out.println("Lane synergies: " + laneSynergies());
+        System.out.println("Power curve: " + powerCurve());
+        System.out.println("Trend: " + trend());
     }
 }

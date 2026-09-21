@@ -25,7 +25,6 @@ import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.AbstractDB;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.sql.QueryRecord;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -53,14 +52,14 @@ public class BotDB extends AbstractDB {
         return instance;
     }
 
-    public static QueryResult getGuildsData(String filter){
+    public static List<QueryRecord> getGuildsData(String filter){
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
         return instance.query(query);
     }
 
     public static List<Sound> getSounds(String user_id, int page, int limit) {
-        QueryResult res = instance.query("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE user_id = '" + user_id + "' OR public = '1' ORDER BY id ASC LIMIT " + (page-1)*limit + ", " + limit);
-        QueryResult tags = BotDB.getSoundsTags(res.arrayColumn("id").toArray(new String[0]));
+        List<QueryRecord> res = instance.query("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE user_id = '" + user_id + "' OR public = '1' ORDER BY id ASC LIMIT " + (page-1)*limit + ", " + limit);
+        List<QueryRecord> tags = BotDB.getSoundsTags(columnValues(res, "id").toArray(new String[0]));
         
         List<Sound> sounds = new ArrayList<>();
         for(QueryRecord qr : res) {
@@ -83,61 +82,61 @@ public class BotDB extends AbstractDB {
     }
 
 
-    public static QueryResult getlistGuildSounds(String guild_id) {
+    public static List<QueryRecord> getlistGuildSounds(String guild_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC");
     }
 
-    public static QueryResult getlistGuildSounds(String guild_id, int limit) {
+    public static List<QueryRecord> getlistGuildSounds(String guild_id, int limit) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT " + limit);
     }
 
-    public static QueryResult getlistGuildSounds(String guild_id, String orderBy) {
+    public static List<QueryRecord> getlistGuildSounds(String guild_id, String orderBy) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY " + orderBy +" ASC ");
     }
 
 
 
-    public static QueryResult getGuildRandomSound(String guild_id){
+    public static List<QueryRecord> getGuildRandomSound(String guild_id){
         return instance.query("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getUserSound(String user_id){
+    public static List<QueryRecord> getUserSound(String user_id){
         return instance.query("SELECT name, id, guild_id, extension FROM sound WHERE user_id = '" + user_id + "';");
     }
 
-    public static QueryResult getlistUserSounds(String user_id) {
+    public static List<QueryRecord> getlistUserSounds(String user_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY name ASC");
     }
 
-    public static QueryResult getlistUserSoundsTime(String user_id) {
+    public static List<QueryRecord> getlistUserSoundsTime(String user_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY time ASC");
     }
 
-    public static QueryResult getlistUserSounds(String user_id, String guild_id) {
+    public static List<QueryRecord> getlistUserSounds(String user_id, String guild_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY name ASC");
     }
 
-    public static QueryResult getlistUserSoundsTime(String user_id, String guild_id) {
+    public static List<QueryRecord> getlistUserSoundsTime(String user_id, String guild_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY time ASC");
     }
 
-    public static QueryResult getFocusedGuildSound(String guild_id, String like){
+    public static List<QueryRecord> getFocusedGuildSound(String guild_id, String like){
         return instance.query("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' AND guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedUserSound(String user_id, String like){
+    public static List<QueryRecord> getFocusedUserSound(String user_id, String like){
         return instance.query("SELECT name, id, guild_id FROM sound WHERE (name LIKE '" + like + "%' OR id LIKE '" + like + "%') AND user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getUserGuildSounds(String user_id, String guild_id) {
+    public static List<QueryRecord> getUserGuildSounds(String user_id, String guild_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' OR guild_id = '" + guild_id + "' ORDER BY name ASC");
     }
 
-    public static QueryResult getFocusedListUserSounds(String user_id, String guild_id, String like) {
+    public static List<QueryRecord> getFocusedListUserSounds(String user_id, String guild_id, String like) {
         return instance.query("SELECT name, id, guild_id, extension FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND (user_id = '" + user_id + "' OR guild_id = '" + guild_id + "') ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getSoundsById(String... sound_ids) {
+    public static List<QueryRecord> getSoundsById(String... sound_ids) {
         StringBuilder sb = new StringBuilder();
         for(String sound_id : sound_ids)
             sb.append(sound_id + ", ");
@@ -146,7 +145,7 @@ public class BotDB extends AbstractDB {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public, time, plays, likes, dislikes FROM sound WHERE id IN (" + sb.toString() + ");");
     }
 
-    public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
+    public static List<QueryRecord> getSoundsById(String id, String guild_id, String author_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
@@ -154,11 +153,11 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "'");
     }
 
-    public static QueryResult getSoundsByName(String name, String guild_id, String author_id) {
+    public static List<QueryRecord> getSoundsByName(String name, String guild_id, String author_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
-    public static QueryResult getDuplicateSoundsByName(String name, String guild_id, String author_id) {
+    public static List<QueryRecord> getDuplicateSoundsByName(String name, String guild_id, String author_id) {
         return instance.query("SELECT id, guild_id, user_id FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "' OR user_id = '" + author_id + "')");
     }
 
@@ -256,7 +255,7 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT count(sound_id) as cont FROM soundboard_sounds WHERE id = '" + id + "'").getAsInt("count");
     }
 
-    public static QueryResult getSoundsFromSoundBoard(String id) {
+    public static List<QueryRecord> getSoundsFromSoundBoard(String id) {
         return instance.query("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "' order by name");
     }
 
@@ -264,24 +263,24 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("select name, thumbnail from soundboard where id = '" + id + "'");
     }
 
-    public static QueryResult getRandomSoundboard(String guild_id, String user_id) {
+    public static List<QueryRecord> getRandomSoundboard(String guild_id, String user_id) {
         return instance.query("SELECT name, id, guild_id FROM soundboard WHERE guild_id = '" + guild_id + "' OR user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedSoundboard(String guild_id, String user_id, String like){
+    public static List<QueryRecord> getFocusedSoundboard(String guild_id, String user_id, String like){
         return instance.query("SELECT name, id, guild_id FROM soundboard WHERE name LIKE '" + like + "%' AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "') ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedSoundFromSounboard(String id, String like){
+    public static List<QueryRecord> getFocusedSoundFromSounboard(String id, String like){
         return instance.query("SELECT s.name as name, s.id as sound_id, s.guild_id as guild_id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult extremeSoundResearch(String query) {
+    public static List<QueryRecord> extremeSoundResearch(String query) {
         return instance.query("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.name like '%" + query + "%' OR t.name like '%" + query + "%';");
         //return instance.query("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%';");
     }
 
-    public static QueryResult extremeSoundResearch(String query, String user_id) {
+    public static List<QueryRecord> extremeSoundResearch(String query, String user_id) {
         return instance.query("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.user_id = " + user_id + " AND (MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%');");
     }
 
@@ -412,7 +411,7 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT name_tts, language_tts FROM guild WHERE guild_id = '" + guild_id + "';");
     }
 
-    public static QueryResult getGuildData(){
+    public static List<QueryRecord> getGuildData(){
         String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild;";
         return instance.query(query);
     }
@@ -433,7 +432,7 @@ public class BotDB extends AbstractDB {
     }
 
 
-    public static QueryResult getUsersByExp(String guild_id, int limit) {
+    public static List<QueryRecord> getUsersByExp(String guild_id, int limit) {
         if (limit == 0) {
             return instance.query("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC;");
         }
@@ -491,7 +490,7 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("DELETE FROM blacklist WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "'");
     }
 
-    public static QueryResult getGuildByThreshold(int threshold, String guild_id){
+    public static List<QueryRecord> getGuildByThreshold(int threshold, String guild_id){
         return instance.query("SELECT guild_id, blacklist_channel, threshold FROM guild WHERE blacklist_enabled = 1 AND threshold <= '" + threshold + "' AND blacklist_channel IS NOT NULL AND guild_id != '" + guild_id + "'");
     }
 
@@ -591,7 +590,7 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("UPDATE alert SET enabled = '" + (toggle ? 1 : 0) + "' WHERE ID = '" + ID + "';");
     }
 
-    public static QueryResult getAlertsRoles(String guild_id) {
+    public static List<QueryRecord> getAlertsRoles(String guild_id) {
         return instance.query("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "';");
     }
 
@@ -670,7 +669,7 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("UPDATE alert_twitch SET role_id = '" + roleId + "' WHERE alert_id = '" + alertId + "';");
     }
 
-    public static QueryResult getAlerts(String guild_id) {
+    public static List<QueryRecord> getAlerts(String guild_id) {
         String query = "SELECT " +
                        "a.id AS alert_id, " +
                        "a.message, " +
@@ -720,7 +719,7 @@ public class BotDB extends AbstractDB {
         values = values.substring(0, values.length() - 2);
         if (deleteAlertRoles(valueOf) && instance.defaultQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
             HashMap<Integer, String> roleMap = new HashMap<>();
-            QueryResult result = instance.query("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");
+            List<QueryRecord> result = instance.query("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");
             for(QueryRecord row : result) {
                 roleMap.put(row.getAsInt("id"), row.get("role_id"));
             }
@@ -763,7 +762,7 @@ public class BotDB extends AbstractDB {
         return id;
     }
 
-    public static QueryResult getChannelData(String guild_id) {
+    public static List<QueryRecord> getChannelData(String guild_id) {
         return instance.query("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled, league_shard FROM channel WHERE guild_id = '" + guild_id + "';");
     }
 
@@ -832,7 +831,7 @@ public class BotDB extends AbstractDB {
     }
 
 
-    public static QueryResult getAliases(String user_id) {
+    public static List<QueryRecord> getAliases(String user_id) {
         return instance.query("SELECT id, name, command FROM alias WHERE user_id = '" + user_id + "';");
     }
 
@@ -873,36 +872,36 @@ public class BotDB extends AbstractDB {
 
 
 
-    public static HashMap<String, QueryResult> getCustomCommandData(String guild_id) {
-        HashMap<String, QueryResult> commandData = new HashMap<>();
-        QueryResult result = instance.query("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + guild_id);
+    public static HashMap<String, List<QueryRecord>> getCustomCommandData(String guild_id) {
+        HashMap<String, List<QueryRecord>> commandData = new HashMap<>();
+        List<QueryRecord> result = instance.query("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + guild_id);
 
         if (result.isEmpty()) {
             return null;
         }
         commandData.put("commands", result);
 
-        String ids = String.join(", ", result.arrayColumn("ID"));
+        String ids = String.join(", ", columnValues(result, "ID"));
 
-        QueryResult optionResult = instance.query("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
+        List<QueryRecord> optionResult = instance.query("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
         commandData.put("options", optionResult);
 
-        QueryResult valueResult = null;
+        List<QueryRecord> valueResult = null;
         if (!optionResult.isEmpty()) {
-            String optionIds = String.join(", ", optionResult.arrayColumn("ID"));
+            String optionIds = String.join(", ", columnValues(optionResult, "ID"));
             valueResult = instance.query("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (" + optionIds + ")");
             commandData.put("values", valueResult);
         }
 
-        QueryResult taskResult = instance.query("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ") order by `order`");
+        List<QueryRecord> taskResult = instance.query("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ") order by `order`");
         commandData.put("tasks", taskResult);
 
-        String taskIds = String.join(", ", taskResult.arrayColumn("ID"));
-        QueryResult taskValueResult = instance.query("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
+        String taskIds = String.join(", ", columnValues(taskResult, "ID"));
+        List<QueryRecord> taskValueResult = instance.query("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
         commandData.put("task_values", taskValueResult);
 
-        String taskValueIds = String.join(", ", taskValueResult.arrayColumn("ID"));
-        QueryResult taskMessage = instance.query("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
+        String taskValueIds = String.join(", ", columnValues(taskValueResult, "ID"));
+        List<QueryRecord> taskMessage = instance.query("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
         if (!taskMessage.isEmpty()) {
             commandData.put("task_messages", taskMessage);
         }
@@ -917,15 +916,15 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("UPDATE channel SET league_shard = '" + shard.ordinal() + "' WHERE id = '" + valueOf + "';");
     }
 
-    public static QueryResult getTwitchSubscriptions(String streamer_id) {
+    public static List<QueryRecord> getTwitchSubscriptions(String streamer_id) {
         return instance.query("SELECT a.guild_id as guild_id from alert_twitch as at join alert as a on at.alert_id = a.id WHERE at.streamer_id = '" + streamer_id + "';");
     }
 
-    public static QueryResult getSoundTags(String sound_id) {
+    public static List<QueryRecord> getSoundTags(String sound_id) {
         return instance.query("SELECT ts.tag_id as id,t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id = '" + sound_id + "';");
     }
 
-    public static QueryResult getSoundsTags(String ...sound_id) {
+    public static List<QueryRecord> getSoundsTags(String ...sound_id) {
         StringBuilder sb = new StringBuilder();
         for(String sound : sound_id) {
             sb.append("'" + sound + "', ");
@@ -1048,7 +1047,7 @@ public class BotDB extends AbstractDB {
         return id;
     }
 
-    public static QueryResult getPlaylists(String user_id) {
+    public static List<QueryRecord> getPlaylists(String user_id) {
         return instance.query("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "';");
     }
 
@@ -1056,7 +1055,7 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "' AND id = " + playlist_id + ";");
     }
 
-    public static QueryResult getPlaylistsWithSize(String user_id) {
+    public static List<QueryRecord> getPlaylistsWithSize(String user_id) {
         return instance.query("SELECT id, name, created_at, (select count(*) as size from playlist_track where playlist_id = p.id) as size FROM playlist p WHERE user_id = '" + user_id + "';");
     }
 
@@ -1192,7 +1191,7 @@ public class BotDB extends AbstractDB {
         return !instance.query("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();
     }
 
-    public static QueryResult getPlaylistTracks(int playlist_id, Integer limit, Integer page) {
+    public static List<QueryRecord> getPlaylistTracks(int playlist_id, Integer limit, Integer page) {
         String limitString = limit != null ? " LIMIT " + limit + " " : "";
         limitString += page != null ? " OFFSET " + (page * limit) + " " : "";
         return instance.query("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC" + limitString);
@@ -1386,11 +1385,11 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " GROUP BY member_id").getAsInt("warning_count");
     }
 
-    public static QueryResult getWarnings(String valueOf) {
+    public static List<QueryRecord> getWarnings(String valueOf) {
         return instance.query("SELECT id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id = '" + valueOf + "' ORDER BY infractions DESC");
     }
 
-    public static QueryResult getAutomatedActionsExpiring() {
+    public static List<QueryRecord> getAutomatedActionsExpiring() {
         String query = "SELECT aae.*, u.user_id, u.guild_id " + "FROM automated_action_expiration aae " + "JOIN `member` u ON aae.member_id = u.id " + "WHERE aae.time BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 2 HOUR)";
         return instance.query(query);
     }
@@ -1465,13 +1464,20 @@ public class BotDB extends AbstractDB {
         return sortedString.toString();
     }
 
-    public static QueryResult test() {
+    public static List<QueryRecord> test() {
         LinkedHashMap<String, Object> values = new LinkedHashMap<>();
         values.put("name", "eee");
         values.put("guild_id", "608967318789160970");
         values.put("user_id", "383358222972616705");
         values.put("extension", "mp3");
         return instance.insert("sound", values);
+    }
+
+    private static List<String> columnValues(List<QueryRecord> rows, String column) {
+        List<String> values = new ArrayList<>();
+        if (rows == null) return values;
+        for (QueryRecord row : rows) values.add(row.get(column));
+        return values;
     }
 
 }

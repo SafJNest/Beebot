@@ -1,7 +1,9 @@
 package com.safjnest.lol.utils;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.safjnest.lol.LeagueHandler;
 
@@ -10,6 +12,8 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 public class ItemUtils {
 
   private static Map<Integer, Item> items = new HashMap<>();
+  private static Set<Integer> boots = new HashSet<>();
+  public static final int BASE_BOOTS = 1001;
 
   static {
     items = LeagueHandler.getRiotApi().getDDragonAPI().getItems();
@@ -24,9 +28,21 @@ public class ItemUtils {
   }
 
   public static boolean isBoots(Item item) {
+    boolean isBoots = item.getId() == BASE_BOOTS;
     boolean fromBoots = item.getFrom() != null && item.getFrom().contains("1001");
     boolean containsBoots = item.getName().toLowerCase().contains("boots") || item.getTags().contains("Boots");
-    return fromBoots || containsBoots;
+    return isBoots || fromBoots || containsBoots;
+  }
+
+  public static Set<Integer> getBoots() {
+    if (!boots.isEmpty()) return boots;
+
+    for (Item item : items.values()) {
+      if (isBoots(item)) {
+        boots.add(item.getId());
+      }
+    }
+    return boots;
   }
 
   public static boolean isPrismatic(Item item) {

@@ -7,13 +7,13 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
-import com.safjnest.lol.service.LeagueService;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -47,20 +47,16 @@ public class SummonerOverview extends SlashCommand {
   @Override
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
-    no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
-
-    String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-    LeagueMessage.send(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
+    Summoner summoner = LeagueHandler.getSummonerByArgs(event);
+    String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.puuid()) != null ? event.getUser().getId() : null;
+    LeagueMessage.send(event.getHook(), userId, summoner, summoner.puuid(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
 	}
 
   @Override
 	protected void execute(CommandEvent event) {
-    no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
-
-    String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
-    LeagueMessage.send(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
+    Summoner summoner = LeagueHandler.getSummonerByArgs(event);
+    String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.puuid()) != null ? event.getAuthor().getId() : null;
+    LeagueMessage.send(event, userId, summoner, summoner.puuid(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
 	}
 
 

@@ -1,96 +1,8708 @@
 {
+  "item_events": [
+    {
+      "item": 3865,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 0,
+      "timestamp": 0
+    },
+    {
+      "item": 3865,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 0,
+      "timestamp": 0
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 3857
+    },
+    {
+      "item": 1055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 4491
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 4491
+    },
+    {
+      "item": 1086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 4625
+    },
+    {
+      "item": 1086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 5093
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 5093
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 5093
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 5126
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 5160
+    },
+    {
+      "item": 1102,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 5160
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 5427
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 5594
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 6362
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 6730
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 7698
+    },
+    {
+      "item": 1120,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 7832
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 7832
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 7999
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 8901
+    },
+    {
+      "item": 1103,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 9101
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 9335
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 9903
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 10070
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 10604
+    },
+    {
+      "item": 1086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 11373
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 11373
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 11373
+    },
+    {
+      "item": 1056,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 14546
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 14546
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 14546
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 65983
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 71061
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 72831
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 78577
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 79846
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 80447
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 93175
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 94444
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 101693
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 108778
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 122208
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 122375
+    },
+    {
+      "item": 2010,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 132965
+    },
+    {
+      "item": 1052,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 139779
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 141950
+    },
+    {
+      "item": 2010,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 143420
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 158089
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 159325
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 159359
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 173259
+    },
+    {
+      "item": 2151,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 174228
+    },
+    {
+      "item": 1052,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 175665
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 175832
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 180155
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 180422
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 201902
+    },
+    {
+      "item": 1006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 207447
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 213191
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 221242
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 245661
+    },
+    {
+      "item": 2010,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 246062
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 246095
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 247665
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 247799
+    },
+    {
+      "item": 6660,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 273929
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 275936
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 287193
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 300376
+    },
+    {
+      "item": 3051,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 304217
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 304317
+    },
+    {
+      "item": 1043,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 304317
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 307157
+    },
+    {
+      "item": 2010,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 314707
+    },
+    {
+      "item": 1026,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 315876
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 316344
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 317680
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 326733
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 326733
+    },
+    {
+      "item": 3077,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 326733
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 327668
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 349188
+    },
+    {
+      "item": 1052,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 353130
+    },
+    {
+      "item": 3145,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 353130
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 353965
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 357205
+    },
+    {
+      "item": 3364,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 357205
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 357606
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 357606
+    },
+    {
+      "item": 1006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 357673
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 357673
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 358508
+    },
+    {
+      "item": 0,
+      "before": 3801,
+      "gold_gain": 500,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 1,
+      "timestamp": 359544
+    },
+    {
+      "item": 0,
+      "before": 1011,
+      "gold_gain": 500,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 1,
+      "timestamp": 360178
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 360880
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 360880
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 362216
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 363953
+    },
+    {
+      "item": 1006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 363953
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 363953
+    },
+    {
+      "item": 0,
+      "before": 3801,
+      "gold_gain": 100,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 1,
+      "timestamp": 365222
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 365924
+    },
+    {
+      "item": 2010,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 369298
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 398185
+    },
+    {
+      "item": 0,
+      "before": 1036,
+      "gold_gain": 350,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 4,
+      "timestamp": 399488
+    },
+    {
+      "item": 1083,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 400724
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 401492
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 401559
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 407539
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 407539
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 409910
+    },
+    {
+      "item": 3006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 423439
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 423940
+    },
+    {
+      "item": 3057,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 423940
+    },
+    {
+      "item": 3865,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 426345
+    },
+    {
+      "item": 1038,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 431423
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 432258
+    },
+    {
+      "item": 3144,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 432258
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 9,
+      "timestamp": 434964
+    },
+    {
+      "item": 1038,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 436536
+    },
+    {
+      "item": 3144,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 436536
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 436536
+    },
+    {
+      "item": 3032,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 436536
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 438574
+    },
+    {
+      "item": 3008,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 438574
+    },
+    {
+      "item": 3865,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 460295
+    },
+    {
+      "item": 2010,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 464880
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 474267
+    },
+    {
+      "item": 3364,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 474267
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 476539
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 478176
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 478810
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 479278
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 501859
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 532341
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 532341
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 532442
+    },
+    {
+      "item": 1006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 532442
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 532442
+    },
+    {
+      "item": 2152,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 545325
+    },
+    {
+      "item": 1006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 546193
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 557769
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 557769
+    },
+    {
+      "item": 3006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 560041
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 560776
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 569036
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 574781
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 576752
+    },
+    {
+      "item": 1203,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 576752
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 576752
+    },
+    {
+      "item": 1055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 6,
+      "timestamp": 579391
+    },
+    {
+      "item": 3077,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 580360
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 580360
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 580360
+    },
+    {
+      "item": 3074,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 580360
+    },
+    {
+      "item": 6690,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 596394
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 602048
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 603283
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 607392
+    },
+    {
+      "item": 3211,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 617882
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 620922
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 637967
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 637967
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 637967
+    },
+    {
+      "item": 3084,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 637967
+    },
+    {
+      "item": 0,
+      "before": 3084,
+      "gold_gain": 400,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 1,
+      "timestamp": 638735
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 639337
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 639337
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 639337
+    },
+    {
+      "item": 3083,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 639337
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 640071
+    },
+    {
+      "item": 1201,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 646353
+    },
+    {
+      "item": 3057,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 650895
+    },
+    {
+      "item": 1052,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 650895
+    },
+    {
+      "item": 1026,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 650895
+    },
+    {
+      "item": 3100,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 650895
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 653066
+    },
+    {
+      "item": 3020,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 653066
+    },
+    {
+      "item": 3020,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 653066
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 655939
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 662124
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 662758
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 664562
+    },
+    {
+      "item": 3145,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 673715
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 673715
+    },
+    {
+      "item": 3152,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 673715
+    },
+    {
+      "item": 1200,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 677857
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 684638
+    },
+    {
+      "item": 3158,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 684638
+    },
+    {
+      "item": 1202,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 707891
+    },
+    {
+      "item": 3006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 707891
+    },
+    {
+      "item": 1207,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 707891
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 722356
+    },
+    {
+      "item": 1006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 722356
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 722356
+    },
+    {
+      "item": 3006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 726832
+    },
+    {
+      "item": 1201,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 726832
+    },
+    {
+      "item": 3866,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 730774
+    },
+    {
+      "item": 1203,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 730774
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 736386
+    },
+    {
+      "item": 3076,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 736386
+    },
+    {
+      "item": 1038,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 736653
+    },
+    {
+      "item": 6690,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 738491
+    },
+    {
+      "item": 3051,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 738491
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 738491
+    },
+    {
+      "item": 6672,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 738491
+    },
+    {
+      "item": 3867,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 739326
+    },
+    {
+      "item": 3869,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 739326
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 741798
+    },
+    {
+      "item": 1208,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 741798
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 741798
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 741931
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 742967
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 743100
+    },
+    {
+      "item": 1222,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 751352
+    },
+    {
+      "item": 1202,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 763377
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 763377
+    },
+    {
+      "item": 1207,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 763377
+    },
+    {
+      "item": 3145,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 783998
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 803790
+    },
+    {
+      "item": 3111,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 803790
+    },
+    {
+      "item": 3866,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 804825
+    },
+    {
+      "item": 1203,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 804825
+    },
+    {
+      "item": 3867,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 808299
+    },
+    {
+      "item": 6660,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 808500
+    },
+    {
+      "item": 3211,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 808500
+    },
+    {
+      "item": 6664,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 808500
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 810972
+    },
+    {
+      "item": 3044,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 811974
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 813043
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 813377
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 816350
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 816985
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 817990
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 7,
+      "timestamp": 818625
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 820028
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 820028
+    },
+    {
+      "item": 3211,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 820028
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 835169
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 837407
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 837407
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 837407
+    },
+    {
+      "item": 3006,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 837407
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 839177
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 839177
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 839177
+    },
+    {
+      "item": 3190,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 839177
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 850970
+    },
+    {
+      "item": 1204,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 853242
+    },
+    {
+      "item": 1103,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 853242
+    },
+    {
+      "item": 3145,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 874798
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 874798
+    },
+    {
+      "item": 4645,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 874798
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 881814
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 881814
+    },
+    {
+      "item": 2021,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 881814
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 882582
+    },
+    {
+      "item": 2422,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 889698
+    },
+    {
+      "item": 3158,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 889698
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 890499
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 892871
+    },
+    {
+      "item": 3363,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 892871
+    },
+    {
+      "item": 3108,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 895645
+    },
+    {
+      "item": 1038,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 929263
+    },
+    {
+      "item": 3031,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 929263
+    },
+    {
+      "item": 1204,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 938751
+    },
+    {
+      "item": 1102,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 938751
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 950322
+    },
+    {
+      "item": 1043,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 950322
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 950322
+    },
+    {
+      "item": 3153,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 950322
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 963489
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 976958
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 987385
+    },
+    {
+      "item": 1043,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 987385
+    },
+    {
+      "item": 2021,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1008650
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1008650
+    },
+    {
+      "item": 3044,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1008650
+    },
+    {
+      "item": 3073,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1008650
+    },
+    {
+      "item": 1120,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 1,
+      "timestamp": 1010320
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1011022
+    },
+    {
+      "item": 3801,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1011155
+    },
+    {
+      "item": 3084,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1011155
+    },
+    {
+      "item": 2001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1038518
+    },
+    {
+      "item": 2001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 1038518
+    },
+    {
+      "item": 2001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1038518
+    },
+    {
+      "item": 3363,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1038518
+    },
+    {
+      "item": 3513,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1052729
+    },
+    {
+      "item": 3211,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 1076491
+    },
+    {
+      "item": 3065,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1076491
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1083255
+    },
+    {
+      "item": 2420,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 1084257
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1084424
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1084424
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1084424
+    },
+    {
+      "item": 3050,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1084424
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1084491
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1088933
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1089100
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1090035
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1091438
+    },
+    {
+      "item": 1208,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1091438
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1091438
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1091606
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1101738
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1102306
+    },
+    {
+      "item": 2002,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1106148
+    },
+    {
+      "item": 1043,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1106715
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1106715
+    },
+    {
+      "item": 3124,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1106715
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1115200
+    },
+    {
+      "item": 3108,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1124468
+    },
+    {
+      "item": 4633,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1124468
+    },
+    {
+      "item": 2422,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1130949
+    },
+    {
+      "item": 3009,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1130949
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1131951
+    },
+    {
+      "item": 0,
+      "before": 1028,
+      "gold_gain": 400,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 1,
+      "timestamp": 1134256
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1134991
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1135361
+    },
+    {
+      "item": 1082,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1152859
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1158137
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1166244
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1166244
+    },
+    {
+      "item": 3155,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1166244
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1167580
+    },
+    {
+      "item": 3051,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1167580
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1168282
+    },
+    {
+      "item": 2420,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 1170086
+    },
+    {
+      "item": 0,
+      "before": 1042,
+      "gold_gain": 250,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 4,
+      "timestamp": 1170553
+    },
+    {
+      "item": 0,
+      "before": 3051,
+      "gold_gain": 850,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 4,
+      "timestamp": 1171355
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1172391
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1194872
+    },
+    {
+      "item": 3051,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1194872
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1195508
+    },
+    {
+      "item": 1086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 8,
+      "timestamp": 1208389
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1209190
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1209959
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1209959
+    },
+    {
+      "item": 6670,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1209959
+    },
+    {
+      "item": 0,
+      "before": 6670,
+      "gold_gain": 350,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 8,
+      "timestamp": 1211696
+    },
+    {
+      "item": 0,
+      "before": 1037,
+      "gold_gain": 875,
+      "after": 0,
+      "event": "ITEM_UNDO",
+      "participant": 8,
+      "timestamp": 1211830
+    },
+    {
+      "item": 0,
+      "before": 0,
+      "gold_gain": -160,
+      "after": 1086,
+      "event": "ITEM_UNDO",
+      "participant": 8,
+      "timestamp": 1211963
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1213099
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1213600
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1213600
+    },
+    {
+      "item": 6670,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1213600
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1215170
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1215671
+    },
+    {
+      "item": 3364,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1215671
+    },
+    {
+      "item": 3364,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1215872
+    },
+    {
+      "item": 3363,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1215872
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1266534
+    },
+    {
+      "item": 1037,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1282440
+    },
+    {
+      "item": 6670,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1282440
+    },
+    {
+      "item": 6673,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1282440
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 1285146
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 1285146
+    },
+    {
+      "item": 3086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1285146
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1285647
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1286182
+    },
+    {
+      "item": 1001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1290302
+    },
+    {
+      "item": 1033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1290302
+    },
+    {
+      "item": 3111,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1290302
+    },
+    {
+      "item": 1031,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1291504
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1291571
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1292239
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1303315
+    },
+    {
+      "item": 3340,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1312491
+    },
+    {
+      "item": 3364,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1312491
+    },
+    {
+      "item": 2001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1313292
+    },
+    {
+      "item": 2001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1313292
+    },
+    {
+      "item": 2001,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1313292
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1321046
+    },
+    {
+      "item": 1043,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1321046
+    },
+    {
+      "item": 2421,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 1321480
+    },
+    {
+      "item": 3157,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 1321480
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1322950
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1322950
+    },
+    {
+      "item": 3109,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1322950
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1326358
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1328632
+    },
+    {
+      "item": 3051,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1329768
+    },
+    {
+      "item": 1043,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1329768
+    },
+    {
+      "item": 3302,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1329768
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1333710
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1333710
+    },
+    {
+      "item": 3077,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1333710
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1333777
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1340993
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1341026
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1341694
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1367327
+    },
+    {
+      "item": 1036,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1367327
+    },
+    {
+      "item": 3133,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1367327
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 1379579
+    },
+    {
+      "item": 3086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 1379579
+    },
+    {
+      "item": 1042,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 1379579
+    },
+    {
+      "item": 6675,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1379579
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1400926
+    },
+    {
+      "item": 2002,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1422773
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1444352
+    },
+    {
+      "item": 2420,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1444352
+    },
+    {
+      "item": 2002,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1446924
+    },
+    {
+      "item": 1028,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1455889
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1455889
+    },
+    {
+      "item": 2002,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 1457898
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 1463945
+    },
+    {
+      "item": 3123,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1464846
+    },
+    {
+      "item": 2003,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1467403
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1478414
+    },
+    {
+      "item": 3082,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1478414
+    },
+    {
+      "item": 2002,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1493443
+    },
+    {
+      "item": 2002,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1493443
+    },
+    {
+      "item": 3155,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1509690
+    },
+    {
+      "item": 3133,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 6,
+      "timestamp": 1509690
+    },
+    {
+      "item": 3156,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 6,
+      "timestamp": 1509690
+    },
+    {
+      "item": 1038,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1513453
+    },
+    {
+      "item": 3086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1515724
+    },
+    {
+      "item": 3077,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1547441
+    },
+    {
+      "item": 1011,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1547441
+    },
+    {
+      "item": 3748,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1547441
+    },
+    {
+      "item": 3082,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1553351
+    },
+    {
+      "item": 1031,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 1558195
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 1558195
+    },
+    {
+      "item": 2502,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1558195
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1564662
+    },
+    {
+      "item": 2420,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1604856
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1626843
+    },
+    {
+      "item": 2421,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 2,
+      "timestamp": 1626843
+    },
+    {
+      "item": 3157,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1626843
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1630130
+    },
+    {
+      "item": 3086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 4,
+      "timestamp": 1649816
+    },
+    {
+      "item": 3046,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1649816
+    },
+    {
+      "item": 1083,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 4,
+      "timestamp": 1651119
+    },
+    {
+      "item": 2420,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 4,
+      "timestamp": 1652188
+    },
+    {
+      "item": 1086,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 8,
+      "timestamp": 1687522
+    },
+    {
+      "item": 0,
+      "before": 0,
+      "gold_gain": -160,
+      "after": 1086,
+      "event": "ITEM_UNDO",
+      "participant": 8,
+      "timestamp": 1689372
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1720309
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 2,
+      "timestamp": 1722035
+    },
+    {
+      "item": 3024,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1727880
+    },
+    {
+      "item": 3082,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 1,
+      "timestamp": 1730185
+    },
+    {
+      "item": 3143,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1730185
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 1,
+      "timestamp": 1734606
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1736510
+    },
+    {
+      "item": 1208,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 10,
+      "timestamp": 1736510
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1736510
+    },
+    {
+      "item": 2055,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 10,
+      "timestamp": 1736677
+    },
+    {
+      "item": 1056,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_SOLD",
+      "participant": 3,
+      "timestamp": 1759510
+    },
+    {
+      "item": 1058,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 3,
+      "timestamp": 1760212
+    },
+    {
+      "item": 3089,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 1760212
+    },
+    {
+      "item": 3067,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1818967
+    },
+    {
+      "item": 1029,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 5,
+      "timestamp": 1818967
+    },
+    {
+      "item": 2524,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1818967
+    },
+    {
+      "item": 2022,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 7,
+      "timestamp": 1828976
+    },
+    {
+      "item": 3057,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 7,
+      "timestamp": 1828976
+    },
+    {
+      "item": 3123,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 9,
+      "timestamp": 1837728
+    },
+    {
+      "item": 3033,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 9,
+      "timestamp": 1837728
+    },
+    {
+      "item": 4630,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 3,
+      "timestamp": 1838296
+    },
+    {
+      "item": 1038,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1839469
+    },
+    {
+      "item": 1018,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_DESTROYED",
+      "participant": 8,
+      "timestamp": 1839469
+    },
+    {
+      "item": 3031,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 8,
+      "timestamp": 1839469
+    },
+    {
+      "item": 1052,
+      "before": 0,
+      "gold_gain": 0,
+      "after": 0,
+      "event": "ITEM_PURCHASED",
+      "participant": 5,
+      "timestamp": 1851742
+    }
+  ],
+  "level_events": [
+    {
+      "level": 2,
+      "participant": 2,
+      "timestamp": 72163
+    },
+    {
+      "level": 2,
+      "participant": 7,
+      "timestamp": 79278
+    },
+    {
+      "level": 2,
+      "participant": 8,
+      "timestamp": 84355
+    },
+    {
+      "level": 2,
+      "participant": 3,
+      "timestamp": 94277
+    },
+    {
+      "level": 2,
+      "participant": 6,
+      "timestamp": 95814
+    },
+    {
+      "level": 2,
+      "participant": 5,
+      "timestamp": 98352
+    },
+    {
+      "level": 2,
+      "participant": 4,
+      "timestamp": 98352
+    },
+    {
+      "level": 2,
+      "participant": 10,
+      "timestamp": 112085
+    },
+    {
+      "level": 2,
+      "participant": 9,
+      "timestamp": 112085
+    },
+    {
+      "level": 3,
+      "participant": 3,
+      "timestamp": 113789
+    },
+    {
+      "level": 2,
+      "participant": 1,
+      "timestamp": 114892
+    },
+    {
+      "level": 3,
+      "participant": 6,
+      "timestamp": 118901
+    },
+    {
+      "level": 3,
+      "participant": 2,
+      "timestamp": 122275
+    },
+    {
+      "level": 3,
+      "participant": 7,
+      "timestamp": 123110
+    },
+    {
+      "level": 3,
+      "participant": 8,
+      "timestamp": 140714
+    },
+    {
+      "level": 3,
+      "participant": 1,
+      "timestamp": 140915
+    },
+    {
+      "level": 3,
+      "participant": 4,
+      "timestamp": 158189
+    },
+    {
+      "level": 3,
+      "participant": 5,
+      "timestamp": 160962
+    },
+    {
+      "level": 3,
+      "participant": 9,
+      "timestamp": 161797
+    },
+    {
+      "level": 3,
+      "participant": 10,
+      "timestamp": 161797
+    },
+    {
+      "level": 4,
+      "participant": 1,
+      "timestamp": 165071
+    },
+    {
+      "level": 4,
+      "participant": 3,
+      "timestamp": 170917
+    },
+    {
+      "level": 4,
+      "participant": 7,
+      "timestamp": 181525
+    },
+    {
+      "level": 4,
+      "participant": 8,
+      "timestamp": 184264
+    },
+    {
+      "level": 4,
+      "participant": 6,
+      "timestamp": 210386
+    },
+    {
+      "level": 4,
+      "participant": 4,
+      "timestamp": 220140
+    },
+    {
+      "level": 5,
+      "participant": 3,
+      "timestamp": 232834
+    },
+    {
+      "level": 4,
+      "participant": 9,
+      "timestamp": 236542
+    },
+    {
+      "level": 5,
+      "participant": 1,
+      "timestamp": 237677
+    },
+    {
+      "level": 4,
+      "participant": 10,
+      "timestamp": 243723
+    },
+    {
+      "level": 5,
+      "participant": 8,
+      "timestamp": 247932
+    },
+    {
+      "level": 4,
+      "participant": 2,
+      "timestamp": 262303
+    },
+    {
+      "level": 5,
+      "participant": 6,
+      "timestamp": 273227
+    },
+    {
+      "level": 4,
+      "participant": 5,
+      "timestamp": 276270
+    },
+    {
+      "level": 5,
+      "participant": 4,
+      "timestamp": 278876
+    },
+    {
+      "level": 6,
+      "participant": 3,
+      "timestamp": 298757
+    },
+    {
+      "level": 5,
+      "participant": 7,
+      "timestamp": 299391
+    },
+    {
+      "level": 6,
+      "participant": 1,
+      "timestamp": 306856
+    },
+    {
+      "level": 5,
+      "participant": 2,
+      "timestamp": 311132
+    },
+    {
+      "level": 5,
+      "participant": 10,
+      "timestamp": 327668
+    },
+    {
+      "level": 5,
+      "participant": 9,
+      "timestamp": 334824
+    },
+    {
+      "level": 6,
+      "participant": 8,
+      "timestamp": 337396
+    },
+    {
+      "level": 6,
+      "participant": 6,
+      "timestamp": 363753
+    },
+    {
+      "level": 7,
+      "participant": 1,
+      "timestamp": 376552
+    },
+    {
+      "level": 5,
+      "participant": 5,
+      "timestamp": 385304
+    },
+    {
+      "level": 7,
+      "participant": 3,
+      "timestamp": 386953
+    },
+    {
+      "level": 6,
+      "participant": 7,
+      "timestamp": 392131
+    },
+    {
+      "level": 6,
+      "participant": 4,
+      "timestamp": 425610
+    },
+    {
+      "level": 7,
+      "participant": 6,
+      "timestamp": 445155
+    },
+    {
+      "level": 7,
+      "participant": 8,
+      "timestamp": 446524
+    },
+    {
+      "level": 8,
+      "participant": 1,
+      "timestamp": 454717
+    },
+    {
+      "level": 6,
+      "participant": 9,
+      "timestamp": 459995
+    },
+    {
+      "level": 6,
+      "participant": 10,
+      "timestamp": 465515
+    },
+    {
+      "level": 6,
+      "participant": 2,
+      "timestamp": 470726
+    },
+    {
+      "level": 8,
+      "participant": 3,
+      "timestamp": 476439
+    },
+    {
+      "level": 8,
+      "participant": 6,
+      "timestamp": 518912
+    },
+    {
+      "level": 7,
+      "participant": 4,
+      "timestamp": 523623
+    },
+    {
+      "level": 8,
+      "participant": 8,
+      "timestamp": 523689
+    },
+    {
+      "level": 6,
+      "participant": 5,
+      "timestamp": 529636
+    },
+    {
+      "level": 7,
+      "participant": 7,
+      "timestamp": 540548
+    },
+    {
+      "level": 7,
+      "participant": 9,
+      "timestamp": 543387
+    },
+    {
+      "level": 9,
+      "participant": 6,
+      "timestamp": 567065
+    },
+    {
+      "level": 9,
+      "participant": 3,
+      "timestamp": 569102
+    },
+    {
+      "level": 9,
+      "participant": 1,
+      "timestamp": 572610
+    },
+    {
+      "level": 8,
+      "participant": 7,
+      "timestamp": 591784
+    },
+    {
+      "level": 7,
+      "participant": 10,
+      "timestamp": 597864
+    },
+    {
+      "level": 7,
+      "participant": 2,
+      "timestamp": 598766
+    },
+    {
+      "level": 8,
+      "participant": 4,
+      "timestamp": 622926
+    },
+    {
+      "level": 9,
+      "participant": 8,
+      "timestamp": 633524
+    },
+    {
+      "level": 10,
+      "participant": 3,
+      "timestamp": 647656
+    },
+    {
+      "level": 10,
+      "participant": 6,
+      "timestamp": 655538
+    },
+    {
+      "level": 11,
+      "participant": 6,
+      "timestamp": 681899
+    },
+    {
+      "level": 8,
+      "participant": 9,
+      "timestamp": 693059
+    },
+    {
+      "level": 10,
+      "participant": 1,
+      "timestamp": 695665
+    },
+    {
+      "level": 8,
+      "participant": 2,
+      "timestamp": 710464
+    },
+    {
+      "level": 9,
+      "participant": 4,
+      "timestamp": 712635
+    },
+    {
+      "level": 9,
+      "participant": 7,
+      "timestamp": 731776
+    },
+    {
+      "level": 12,
+      "participant": 6,
+      "timestamp": 739259
+    },
+    {
+      "level": 7,
+      "participant": 5,
+      "timestamp": 744403
+    },
+    {
+      "level": 10,
+      "participant": 8,
+      "timestamp": 750917
+    },
+    {
+      "level": 8,
+      "participant": 10,
+      "timestamp": 768223
+    },
+    {
+      "level": 11,
+      "participant": 3,
+      "timestamp": 772210
+    },
+    {
+      "level": 11,
+      "participant": 1,
+      "timestamp": 779259
+    },
+    {
+      "level": 10,
+      "participant": 7,
+      "timestamp": 790612
+    },
+    {
+      "level": 9,
+      "participant": 2,
+      "timestamp": 796831
+    },
+    {
+      "level": 10,
+      "participant": 4,
+      "timestamp": 810704
+    },
+    {
+      "level": 9,
+      "participant": 9,
+      "timestamp": 868313
+    },
+    {
+      "level": 11,
+      "participant": 8,
+      "timestamp": 872593
+    },
+    {
+      "level": 12,
+      "participant": 1,
+      "timestamp": 893506
+    },
+    {
+      "level": 8,
+      "participant": 5,
+      "timestamp": 913420
+    },
+    {
+      "level": 12,
+      "participant": 3,
+      "timestamp": 923274
+    },
+    {
+      "level": 13,
+      "participant": 6,
+      "timestamp": 924309
+    },
+    {
+      "level": 10,
+      "participant": 2,
+      "timestamp": 924787
+    },
+    {
+      "level": 11,
+      "participant": 4,
+      "timestamp": 951224
+    },
+    {
+      "level": 11,
+      "participant": 7,
+      "timestamp": 951591
+    },
+    {
+      "level": 10,
+      "participant": 9,
+      "timestamp": 955700
+    },
+    {
+      "level": 9,
+      "participant": 10,
+      "timestamp": 964558
+    },
+    {
+      "level": 13,
+      "participant": 1,
+      "timestamp": 1000692
+    },
+    {
+      "level": 11,
+      "participant": 2,
+      "timestamp": 1002837
+    },
+    {
+      "level": 12,
+      "participant": 8,
+      "timestamp": 1019687
+    },
+    {
+      "level": 9,
+      "participant": 5,
+      "timestamp": 1048176
+    },
+    {
+      "level": 13,
+      "participant": 3,
+      "timestamp": 1056437
+    },
+    {
+      "level": 12,
+      "participant": 4,
+      "timestamp": 1058608
+    },
+    {
+      "level": 14,
+      "participant": 1,
+      "timestamp": 1091138
+    },
+    {
+      "level": 12,
+      "participant": 2,
+      "timestamp": 1094690
+    },
+    {
+      "level": 11,
+      "participant": 9,
+      "timestamp": 1116318
+    },
+    {
+      "level": 10,
+      "participant": 10,
+      "timestamp": 1127408
+    },
+    {
+      "level": 13,
+      "participant": 8,
+      "timestamp": 1149116
+    },
+    {
+      "level": 14,
+      "participant": 6,
+      "timestamp": 1158838
+    },
+    {
+      "level": 13,
+      "participant": 4,
+      "timestamp": 1159106
+    },
+    {
+      "level": 10,
+      "participant": 5,
+      "timestamp": 1159106
+    },
+    {
+      "level": 12,
+      "participant": 7,
+      "timestamp": 1166612
+    },
+    {
+      "level": 13,
+      "participant": 2,
+      "timestamp": 1226750
+    },
+    {
+      "level": 14,
+      "participant": 8,
+      "timestamp": 1235049
+    },
+    {
+      "level": 13,
+      "participant": 7,
+      "timestamp": 1247910
+    },
+    {
+      "level": 15,
+      "participant": 1,
+      "timestamp": 1260031
+    },
+    {
+      "level": 11,
+      "participant": 5,
+      "timestamp": 1260031
+    },
+    {
+      "level": 14,
+      "participant": 2,
+      "timestamp": 1313292
+    },
+    {
+      "level": 14,
+      "participant": 3,
+      "timestamp": 1313292
+    },
+    {
+      "level": 14,
+      "participant": 4,
+      "timestamp": 1313292
+    },
+    {
+      "level": 12,
+      "participant": 5,
+      "timestamp": 1313292
+    },
+    {
+      "level": 12,
+      "participant": 9,
+      "timestamp": 1320441
+    },
+    {
+      "level": 16,
+      "participant": 1,
+      "timestamp": 1320612
+    },
+    {
+      "level": 15,
+      "participant": 6,
+      "timestamp": 1334646
+    },
+    {
+      "level": 15,
+      "participant": 8,
+      "timestamp": 1342863
+    },
+    {
+      "level": 11,
+      "participant": 10,
+      "timestamp": 1347633
+    },
+    {
+      "level": 15,
+      "participant": 3,
+      "timestamp": 1451456
+    },
+    {
+      "level": 17,
+      "participant": 1,
+      "timestamp": 1451456
+    },
+    {
+      "level": 15,
+      "participant": 2,
+      "timestamp": 1495180
+    },
+    {
+      "level": 15,
+      "participant": 4,
+      "timestamp": 1495180
+    },
+    {
+      "level": 14,
+      "participant": 7,
+      "timestamp": 1514588
+    },
+    {
+      "level": 13,
+      "participant": 9,
+      "timestamp": 1527801
+    },
+    {
+      "level": 12,
+      "participant": 10,
+      "timestamp": 1538837
+    },
+    {
+      "level": 13,
+      "participant": 5,
+      "timestamp": 1554053
+    },
+    {
+      "level": 16,
+      "participant": 6,
+      "timestamp": 1563493
+    },
+    {
+      "level": 18,
+      "participant": 1,
+      "timestamp": 1577043
+    },
+    {
+      "level": 16,
+      "participant": 2,
+      "timestamp": 1584962
+    },
+    {
+      "level": 16,
+      "participant": 4,
+      "timestamp": 1608798
+    },
+    {
+      "level": 16,
+      "participant": 8,
+      "timestamp": 1634038
+    },
+    {
+      "level": 14,
+      "participant": 9,
+      "timestamp": 1694419
+    },
+    {
+      "level": 13,
+      "participant": 10,
+      "timestamp": 1694419
+    },
+    {
+      "level": 15,
+      "participant": 7,
+      "timestamp": 1722903
+    },
+    {
+      "level": 19,
+      "participant": 1,
+      "timestamp": 1764287
+    },
+    {
+      "level": 17,
+      "participant": 2,
+      "timestamp": 1773100
+    },
+    {
+      "level": 17,
+      "participant": 4,
+      "timestamp": 1788171
+    },
+    {
+      "level": 14,
+      "participant": 5,
+      "timestamp": 1815658
+    },
+    {
+      "level": 16,
+      "participant": 3,
+      "timestamp": 1820140
+    },
+    {
+      "level": 17,
+      "participant": 8,
+      "timestamp": 1823514
+    },
+    {
+      "level": 17,
+      "participant": 6,
+      "timestamp": 1823514
+    }
+  ],
   "monster_events": [
     {
-      "subtype": "FIRE_DRAGON",
-      "assists": [2, 3, 8, 10],
+      "killer_team": "RED",
+      "subtype": "",
+      "assists": [],
+      "killer": 7,
+      "timestamp": 507071,
+      "monster": "HORDE"
+    },
+    {
+      "killer_team": "RED",
+      "subtype": "",
+      "assists": [],
+      "killer": 7,
+      "timestamp": 517238,
+      "monster": "HORDE"
+    },
+    {
+      "killer_team": "RED",
+      "subtype": "",
+      "assists": [],
+      "killer": 7,
+      "timestamp": 518407,
+      "monster": "HORDE"
+    },
+    {
+      "killer_team": "RED",
+      "subtype": "EARTH_DRAGON",
+      "assists": [
+        2,
+        4,
+        5
+      ],
       "killer": 9,
+      "timestamp": 543387,
       "monster": "DRAGON"
     },
-    { "subtype": "", "assists": [7, 8], "killer": 6, "monster": "HORDE" },
-    { "subtype": "", "assists": [7, 8], "killer": 6, "monster": "HORDE" },
-    { "subtype": "", "assists": [6, 8], "killer": 7, "monster": "HORDE" },
     {
-      "subtype": "HEXTECH_DRAGON",
-      "assists": [8],
+      "killer_team": "RED",
+      "subtype": "WATER_DRAGON",
+      "assists": [
+        9,
+        10
+      ],
       "killer": 7,
-      "monster": "DRAGON"
-    },
-    { "subtype": "", "assists": [], "killer": 2, "monster": "RIFTHERALD" },
-    {
-      "subtype": "WATER_DRAGON",
-      "assists": [5, 9],
-      "killer": 7,
+      "timestamp": 919666,
       "monster": "DRAGON"
     },
     {
+      "killer_team": "BLUE",
       "subtype": "",
-      "assists": [1, 2, 3, 5, 7],
-      "killer": 10,
-      "monster": "ATAKHAN"
-    },
-    {
-      "subtype": "WATER_DRAGON",
-      "assists": [2, 5],
-      "killer": 4,
-      "monster": "DRAGON"
-    },
-    {
-      "subtype": "",
-      "assists": [2, 4, 5],
-      "killer": 1,
-      "monster": "BARON_NASHOR"
-    },
-    {
-      "subtype": "WATER_DRAGON",
-      "assists": [2, 5, 7, 9, 10],
-      "killer": 1,
-      "monster": "DRAGON"
-    },
-    {
-      "subtype": "",
-      "assists": [1, 4, 5],
+      "assists": [
+        3,
+        4
+      ],
       "killer": 2,
+      "timestamp": 1035845,
+      "monster": "RIFTHERALD"
+    },
+    {
+      "killer_team": "RED",
+      "subtype": "FIRE_DRAGON",
+      "assists": [
+        9
+      ],
+      "killer": 7,
+      "timestamp": 1247910,
+      "monster": "DRAGON"
+    },
+    {
+      "killer_team": "BLUE",
+      "subtype": "",
+      "assists": [
+        1,
+        3,
+        4,
+        5
+      ],
+      "killer": 2,
+      "timestamp": 1313292,
       "monster": "BARON_NASHOR"
     },
     {
-      "subtype": "WATER_DRAGON",
-      "assists": [3, 8],
-      "killer": 7,
+      "killer_team": "BLUE",
+      "subtype": "FIRE_DRAGON",
+      "assists": [
+        4,
+        5
+      ],
+      "killer": 2,
+      "timestamp": 1566834,
       "monster": "DRAGON"
     }
   ],
+  "objective_events": [
+    {
+      "team": "SUBTEAM",
+      "type": "DRAGON_SOUL_GIVEN",
+      "timestamp": 920167
+    }
+  ],
+  "game_events": [
+    {
+      "type": "PAUSE_END",
+      "timestamp": 0
+    },
+    {
+      "winning_team": "BLUE",
+      "type": "GAME_END",
+      "timestamp": 1869954
+    }
+  ],
+  "snapshots": [
+    {
+      "timestamp": 240049,
+      "participants": {
+        "1": {
+          "cs": 30,
+          "current_gold": 223,
+          "total_gold": 1423
+        },
+        "2": {
+          "cs": 19,
+          "current_gold": 417,
+          "total_gold": 1317
+        },
+        "3": {
+          "cs": 16,
+          "current_gold": 695,
+          "total_gold": 1895
+        },
+        "4": {
+          "cs": 25,
+          "current_gold": 925,
+          "total_gold": 1425
+        },
+        "5": {
+          "cs": 2,
+          "current_gold": 254,
+          "total_gold": 1054
+        },
+        "6": {
+          "cs": 22,
+          "current_gold": 420,
+          "total_gold": 1620
+        },
+        "7": {
+          "cs": 32,
+          "current_gold": 1053,
+          "total_gold": 1553
+        },
+        "8": {
+          "cs": 22,
+          "current_gold": 669,
+          "total_gold": 1269
+        },
+        "9": {
+          "cs": 26,
+          "current_gold": 842,
+          "total_gold": 1342
+        },
+        "10": {
+          "cs": 9,
+          "current_gold": 592,
+          "total_gold": 1092
+        }
+      }
+    },
+    {
+      "timestamp": 540211,
+      "participants": {
+        "1": {
+          "cs": 79,
+          "current_gold": 296,
+          "total_gold": 3396
+        },
+        "2": {
+          "cs": 47,
+          "current_gold": 877,
+          "total_gold": 2802
+        },
+        "3": {
+          "cs": 67,
+          "current_gold": 1060,
+          "total_gold": 4010
+        },
+        "4": {
+          "cs": 74,
+          "current_gold": 402,
+          "total_gold": 3102
+        },
+        "5": {
+          "cs": 12,
+          "current_gold": 461,
+          "total_gold": 2361
+        },
+        "6": {
+          "cs": 63,
+          "current_gold": 979,
+          "total_gold": 3579
+        },
+        "7": {
+          "cs": 61,
+          "current_gold": 726,
+          "total_gold": 3126
+        },
+        "8": {
+          "cs": 64,
+          "current_gold": 579,
+          "total_gold": 3029
+        },
+        "9": {
+          "cs": 68,
+          "current_gold": 865,
+          "total_gold": 4445
+        },
+        "10": {
+          "cs": 19,
+          "current_gold": 569,
+          "total_gold": 2269
+        }
+      }
+    },
+    {
+      "timestamp": 840313,
+      "participants": {
+        "1": {
+          "cs": 109,
+          "current_gold": 643,
+          "total_gold": 5043
+        },
+        "2": {
+          "cs": 76,
+          "current_gold": 1336,
+          "total_gold": 4566
+        },
+        "3": {
+          "cs": 97,
+          "current_gold": 305,
+          "total_gold": 7105
+        },
+        "4": {
+          "cs": 111,
+          "current_gold": 185,
+          "total_gold": 6110
+        },
+        "5": {
+          "cs": 14,
+          "current_gold": 4,
+          "total_gold": 3604
+        },
+        "6": {
+          "cs": 101,
+          "current_gold": 233,
+          "total_gold": 6953
+        },
+        "7": {
+          "cs": 108,
+          "current_gold": 43,
+          "total_gold": 5638
+        },
+        "8": {
+          "cs": 97,
+          "current_gold": 1061,
+          "total_gold": 4786
+        },
+        "9": {
+          "cs": 106,
+          "current_gold": 560,
+          "total_gold": 6540
+        },
+        "10": {
+          "cs": 25,
+          "current_gold": 94,
+          "total_gold": 3349
+        }
+      }
+    },
+    {
+      "timestamp": 1140392,
+      "participants": {
+        "1": {
+          "cs": 162,
+          "current_gold": 56,
+          "total_gold": 7876
+        },
+        "2": {
+          "cs": 105,
+          "current_gold": 391,
+          "total_gold": 7321
+        },
+        "3": {
+          "cs": 130,
+          "current_gold": 657,
+          "total_gold": 9956
+        },
+        "4": {
+          "cs": 147,
+          "current_gold": 108,
+          "total_gold": 8508
+        },
+        "5": {
+          "cs": 17,
+          "current_gold": 222,
+          "total_gold": 4932
+        },
+        "6": {
+          "cs": 130,
+          "current_gold": 455,
+          "total_gold": 9074
+        },
+        "7": {
+          "cs": 125,
+          "current_gold": 731,
+          "total_gold": 7781
+        },
+        "8": {
+          "cs": 139,
+          "current_gold": 984,
+          "total_gold": 6934
+        },
+        "9": {
+          "cs": 148,
+          "current_gold": 384,
+          "total_gold": 9414
+        },
+        "10": {
+          "cs": 28,
+          "current_gold": 426,
+          "total_gold": 4877
+        }
+      }
+    },
+    {
+      "timestamp": 1440469,
+      "participants": {
+        "1": {
+          "cs": 216,
+          "current_gold": 1439,
+          "total_gold": 10659
+        },
+        "2": {
+          "cs": 150,
+          "current_gold": 1292,
+          "total_gold": 10156
+        },
+        "3": {
+          "cs": 139,
+          "current_gold": 1304,
+          "total_gold": 12254
+        },
+        "4": {
+          "cs": 191,
+          "current_gold": 814,
+          "total_gold": 11864
+        },
+        "5": {
+          "cs": 24,
+          "current_gold": 330,
+          "total_gold": 6940
+        },
+        "6": {
+          "cs": 160,
+          "current_gold": 469,
+          "total_gold": 10688
+        },
+        "7": {
+          "cs": 157,
+          "current_gold": 540,
+          "total_gold": 9189
+        },
+        "8": {
+          "cs": 192,
+          "current_gold": 364,
+          "total_gold": 9014
+        },
+        "9": {
+          "cs": 191,
+          "current_gold": 275,
+          "total_gold": 11109
+        },
+        "10": {
+          "cs": 31,
+          "current_gold": 632,
+          "total_gold": 5938
+        }
+      }
+    },
+    {
+      "timestamp": 1740551,
+      "participants": {
+        "1": {
+          "cs": 259,
+          "current_gold": 46,
+          "total_gold": 13466
+        },
+        "2": {
+          "cs": 190,
+          "current_gold": 505,
+          "total_gold": 12330
+        },
+        "3": {
+          "cs": 155,
+          "current_gold": 2223,
+          "total_gold": 14372
+        },
+        "4": {
+          "cs": 231,
+          "current_gold": 626,
+          "total_gold": 15745
+        },
+        "5": {
+          "cs": 26,
+          "current_gold": 1080,
+          "total_gold": 8101
+        },
+        "6": {
+          "cs": 180,
+          "current_gold": 873,
+          "total_gold": 11843
+        },
+        "7": {
+          "cs": 191,
+          "current_gold": 605,
+          "total_gold": 10960
+        },
+        "8": {
+          "cs": 224,
+          "current_gold": 1472,
+          "total_gold": 11422
+        },
+        "9": {
+          "cs": 236,
+          "current_gold": 1617,
+          "total_gold": 13256
+        },
+        "10": {
+          "cs": 34,
+          "current_gold": 64,
+          "total_gold": 7049
+        }
+      }
+    },
+    {
+      "timestamp": 1860609,
+      "participants": {
+        "1": {
+          "cs": 273,
+          "current_gold": 1659,
+          "total_gold": 15078
+        },
+        "2": {
+          "cs": 191,
+          "current_gold": 958,
+          "total_gold": 12783
+        },
+        "3": {
+          "cs": 155,
+          "current_gold": 408,
+          "total_gold": 15797
+        },
+        "4": {
+          "cs": 250,
+          "current_gold": 2124,
+          "total_gold": 17244
+        },
+        "5": {
+          "cs": 27,
+          "current_gold": 157,
+          "total_gold": 8783
+        },
+        "6": {
+          "cs": 180,
+          "current_gold": 1340,
+          "total_gold": 12309
+        },
+        "7": {
+          "cs": 196,
+          "current_gold": 526,
+          "total_gold": 11531
+        },
+        "8": {
+          "cs": 228,
+          "current_gold": 1862,
+          "total_gold": 13412
+        },
+        "9": {
+          "cs": 246,
+          "current_gold": 95,
+          "total_gold": 13934
+        },
+        "10": {
+          "cs": 34,
+          "current_gold": 579,
+          "total_gold": 7564
+        }
+      }
+    }
+  ],
+  "turret_plate_events": [
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 343042
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 417159
+    },
+    {
+      "killer": 0,
+      "team": "BLUE",
+      "lane": "TOP",
+      "timestamp": 529268
+    },
+    {
+      "killer": 6,
+      "team": "BLUE",
+      "lane": "TOP",
+      "timestamp": 533009
+    },
+    {
+      "killer": 6,
+      "team": "BLUE",
+      "lane": "TOP",
+      "timestamp": 555498
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 613639
+    },
+    {
+      "killer": 0,
+      "team": "BLUE",
+      "lane": "BOT",
+      "timestamp": 621623
+    },
+    {
+      "killer": 9,
+      "team": "BLUE",
+      "lane": "BOT",
+      "timestamp": 650128
+    },
+    {
+      "killer": 7,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 665464
+    },
+    {
+      "killer": 6,
+      "team": "BLUE",
+      "lane": "TOP",
+      "timestamp": 668871
+    },
+    {
+      "killer": 0,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 672445
+    },
+    {
+      "killer": 6,
+      "team": "BLUE",
+      "lane": "TOP",
+      "timestamp": 677857
+    },
+    {
+      "killer": 0,
+      "team": "BLUE",
+      "lane": "BOT",
+      "timestamp": 707891
+    },
+    {
+      "killer": 8,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 726832
+    },
+    {
+      "killer": 8,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 761473
+    },
+    {
+      "killer": 9,
+      "team": "BLUE",
+      "lane": "BOT",
+      "timestamp": 776954
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 819761
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 823168
+    },
+    {
+      "killer": 8,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 897816
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 902856
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 904994
+    },
+    {
+      "killer": 9,
+      "team": "BLUE",
+      "lane": "BOT",
+      "timestamp": 906264
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 917227
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 973083
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1081417
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1086829
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1090971
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1099066
+    },
+    {
+      "killer": 0,
+      "team": "BLUE",
+      "lane": "TOP",
+      "timestamp": 1176766
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1185685
+    },
+    {
+      "killer": 9,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 1189427
+    },
+    {
+      "killer": 0,
+      "team": "BLUE",
+      "lane": "MID",
+      "timestamp": 1199784
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1243701
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1253043
+    },
+    {
+      "killer": 3,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1280904
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1282006
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1283008
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1286382
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1388236
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1388236
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1390240
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1395350
+    },
+    {
+      "killer": 2,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1418698
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1422940
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1457029
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1572913
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1574851
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1574851
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1600161
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1607262
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1612573
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1623736
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "MID",
+      "timestamp": 1628313
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1643268
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1694820
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1695855
+    },
+    {
+      "killer": 0,
+      "team": "RED",
+      "lane": "BOT",
+      "timestamp": 1701450
+    },
+    {
+      "killer": 4,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1841039
+    },
+    {
+      "killer": 1,
+      "team": "RED",
+      "lane": "TOP",
+      "timestamp": 1843010
+    }
+  ],
+  "ward_events": [
+    {
+      "creator": 5,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 33621
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 38832
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 40536
+    },
+    {
+      "creator": 4,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 70226
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 72998
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 144923
+    },
+    {
+      "creator": 2,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 147098
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 161931
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 189074
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 213926
+    },
+    {
+      "creator": 2,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 237544
+    },
+    {
+      "creator": 4,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 240450
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 240550
+    },
+    {
+      "creator": 5,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 250571
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 296752
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 299157
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 358308
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 372744
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 374047
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 416291
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 416357
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 432525
+    },
+    {
+      "creator": 5,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 459460
+    },
+    {
+      "creator": 8,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 470459
+    },
+    {
+      "creator": 2,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 501859
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 504599
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 530371
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 562655
+    },
+    {
+      "creator": 4,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 584235
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 602448
+    },
+    {
+      "creator": 10,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 607392
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 611868
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 615276
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 646854
+    },
+    {
+      "creator": 4,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 658678
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 669439
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 671477
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 685874
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 696768
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 730106
+    },
+    {
+      "creator": 8,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 732244
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 732712
+    },
+    {
+      "creator": 8,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 734282
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 771229
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 807030
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 813611
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 820128
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 821297
+    },
+    {
+      "creator": 4,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 827577
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 840881
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 847127
+    },
+    {
+      "creator": 10,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 850970
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 857751
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 862367
+    },
+    {
+      "creator": 8,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 901253
+    },
+    {
+      "creator": 0,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 905027
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 906431
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 909504
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 916493
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 926591
+    },
+    {
+      "creator": 4,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 927259
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 931234
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 933139
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 938383
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 939655
+    },
+    {
+      "creator": 0,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 960450
+    },
+    {
+      "creator": 10,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 976958
+    },
+    {
+      "creator": 0,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 979965
+    },
+    {
+      "creator": 0,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 985882
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 995514
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 997953
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1001861
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1015211
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1023139
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1090871
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1109922
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1120727
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1124335
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1130548
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1132786
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1133254
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1138851
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1152525
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1169551
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1175063
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1189393
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1206906
+    },
+    {
+      "creator": 4,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1211963
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1222642
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1224178
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1227886
+    },
+    {
+      "creator": 0,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1229389
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1230740
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1232845
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1233646
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1236218
+    },
+    {
+      "creator": 10,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1238156
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1239559
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1244202
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1256283
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1290135
+    },
+    {
+      "creator": 2,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1303315
+    },
+    {
+      "creator": 8,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1312958
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1319105
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1323985
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1331338
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1332842
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1338988
+    },
+    {
+      "creator": 10,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1341694
+    },
+    {
+      "creator": 4,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1350640
+    },
+    {
+      "creator": 0,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1354615
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1355583
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1365037
+    },
+    {
+      "creator": 0,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1372378
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1376288
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1378844
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1395851
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1438393
+    },
+    {
+      "creator": 0,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1442048
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1447125
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1484461
+    },
+    {
+      "creator": 8,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1489801
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1492007
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1496985
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1502708
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1508120
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1508621
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1512851
+    },
+    {
+      "creator": 0,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1513553
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1515925
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1518797
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1532611
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1537165
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1537599
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1559531
+    },
+    {
+      "creator": 0,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1564295
+    },
+    {
+      "creator": 4,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1570141
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1572145
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1580717
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1599559
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1600161
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1620457
+    },
+    {
+      "creator": 8,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1631700
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1654606
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1666155
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1675642
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1677145
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1699880
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1702886
+    },
+    {
+      "creator": 0,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1705659
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1713127
+    },
+    {
+      "creator": 4,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1718973
+    },
+    {
+      "creator": 10,
+      "ward": "CONTROL_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1720309
+    },
+    {
+      "creator": 0,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1729584
+    },
+    {
+      "creator": 7,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1735441
+    },
+    {
+      "creator": 5,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1736310
+    },
+    {
+      "creator": 8,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1752224
+    },
+    {
+      "creator": 0,
+      "ward": "BLUE_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1753329
+    },
+    {
+      "creator": 6,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1753362
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1760646
+    },
+    {
+      "creator": 10,
+      "ward": "SIGHT_WARD",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1771430
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1778948
+    },
+    {
+      "creator": 3,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1786534
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1793363
+    },
+    {
+      "creator": 0,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_KILL",
+      "participant": 0,
+      "timestamp": 1799342
+    },
+    {
+      "creator": 1,
+      "ward": "UNDEFINED",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1812366
+    },
+    {
+      "creator": 9,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1813535
+    },
+    {
+      "creator": 1,
+      "ward": "YELLOW_TRINKET",
+      "event": "WARD_PLACED",
+      "participant": 0,
+      "timestamp": 1828342
+    }
+  ],
+  "dragon_soul": {
+    "subtype": "FIRE_DRAGON",
+    "team": "BLUE",
+    "source": "last_non_elder_dragon",
+    "timestamp": 1566834
+  },
+  "champion_kills": [
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 400,
+      "kill_type": "first_blood",
+      "victim": 8,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 111451
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 300,
+      "victim": 2,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 155717
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 300,
+      "victim": 6,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 170917
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 251,
+      "victim": 8,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 287227
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 300,
+      "victim": 6,
+      "killer": 1,
+      "shutdown_bounty": 0,
+      "timestamp": 322858
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        4
+      ],
+      "bounty": 300,
+      "victim": 10,
+      "killer": 5,
+      "shutdown_bounty": 0,
+      "timestamp": 385705
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7,
+        10
+      ],
+      "bounty": 300,
+      "victim": 4,
+      "killer": 9,
+      "shutdown_bounty": 0,
+      "timestamp": 388456
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7,
+        8,
+        10
+      ],
+      "bounty": 300,
+      "victim": 5,
+      "killer": 9,
+      "shutdown_bounty": 0,
+      "timestamp": 391129
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 291,
+      "victim": 2,
+      "killer": 8,
+      "shutdown_bounty": 0,
+      "timestamp": 405501
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2
+      ],
+      "bounty": 300,
+      "victim": 8,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 409242
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7,
+        8,
+        10
+      ],
+      "bounty": 310,
+      "victim": 3,
+      "killer": 9,
+      "shutdown_bounty": 240,
+      "timestamp": 420499
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 320,
+      "victim": 1,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 524458
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 290,
+      "victim": 2,
+      "killer": 9,
+      "shutdown_bounty": 0,
+      "timestamp": 539991
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        4,
+        5
+      ],
+      "bounty": 310,
+      "victim": 9,
+      "killer": 3,
+      "shutdown_bounty": 247,
+      "timestamp": 549066
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        4,
+        5
+      ],
+      "bounty": 250,
+      "victim": 10,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 554562
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 330,
+      "victim": 6,
+      "killer": 1,
+      "shutdown_bounty": 10,
+      "timestamp": 572610
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 330,
+      "victim": 1,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 635629
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7
+      ],
+      "bounty": 330,
+      "victim": 3,
+      "killer": 8,
+      "shutdown_bounty": 0,
+      "timestamp": 646654
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 330,
+      "victim": 8,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 647656
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 257,
+      "victim": 2,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 655538
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 173,
+      "victim": 10,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 710397
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 320,
+      "victim": 9,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 712635
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 340,
+      "victim": 1,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 717512
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 330,
+      "victim": 4,
+      "killer": 7,
+      "shutdown_bounty": 0,
+      "timestamp": 731776
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 310,
+      "victim": 5,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 748479
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 360,
+      "victim": 6,
+      "killer": 3,
+      "shutdown_bounty": 343,
+      "timestamp": 772210
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        4
+      ],
+      "bounty": 301,
+      "victim": 9,
+      "killer": 2,
+      "shutdown_bounty": 0,
+      "timestamp": 796831
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        5
+      ],
+      "bounty": 133,
+      "victim": 10,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 800605
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2
+      ],
+      "bounty": 99,
+      "victim": 10,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 857852
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        9,
+        10
+      ],
+      "bounty": 350,
+      "victim": 3,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 868313
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        5
+      ],
+      "bounty": 360,
+      "victim": 6,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 870856
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        6,
+        7,
+        8,
+        10
+      ],
+      "bounty": 330,
+      "victim": 2,
+      "killer": 9,
+      "shutdown_bounty": 0,
+      "timestamp": 871557
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        6,
+        8,
+        9
+      ],
+      "bounty": 280,
+      "victim": 5,
+      "killer": 7,
+      "shutdown_bounty": 0,
+      "timestamp": 873929
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7
+      ],
+      "bounty": 340,
+      "victim": 4,
+      "killer": 9,
+      "shutdown_bounty": 0,
+      "timestamp": 885322
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2
+      ],
+      "bounty": 350,
+      "victim": 8,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 923274
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        3,
+        4
+      ],
+      "bounty": 370,
+      "victim": 6,
+      "killer": 2,
+      "shutdown_bounty": 0,
+      "timestamp": 1002837
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        4
+      ],
+      "bounty": 302,
+      "victim": 8,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1048176
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        3,
+        5
+      ],
+      "bounty": 340,
+      "victim": 9,
+      "killer": 1,
+      "shutdown_bounty": 0,
+      "timestamp": 1056437
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        5
+      ],
+      "bounty": 146,
+      "victim": 10,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1058608
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7,
+        9,
+        10
+      ],
+      "bounty": 370,
+      "victim": 3,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 1064755
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "bounty": 350,
+      "victim": 7,
+      "killer": 1,
+      "shutdown_bounty": 0,
+      "timestamp": 1067294
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        5
+      ],
+      "bounty": 327,
+      "victim": 6,
+      "killer": 2,
+      "shutdown_bounty": 0,
+      "timestamp": 1081017
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        10
+      ],
+      "bounty": 360,
+      "victim": 2,
+      "killer": 8,
+      "shutdown_bounty": 13,
+      "timestamp": 1118556
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        8,
+        10
+      ],
+      "bounty": 380,
+      "victim": 1,
+      "killer": 7,
+      "shutdown_bounty": 0,
+      "timestamp": 1127408
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 360,
+      "victim": 4,
+      "killer": 6,
+      "shutdown_bounty": 0,
+      "timestamp": 1158838
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        5
+      ],
+      "bounty": 299,
+      "victim": 6,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 1159106
+    },
+    {
+      "killer_team": "RED",
+      "assists": [],
+      "bounty": 370,
+      "victim": 3,
+      "killer": 8,
+      "shutdown_bounty": 0,
+      "timestamp": 1182144
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "bounty": 204,
+      "victim": 6,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1260031
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        5
+      ],
+      "bounty": 206,
+      "victim": 10,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1265364
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        5
+      ],
+      "bounty": 350,
+      "victim": 9,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1267235
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        5
+      ],
+      "bounty": 370,
+      "victim": 7,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 1275721
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        3
+      ],
+      "bounty": 390,
+      "victim": 8,
+      "killer": 2,
+      "shutdown_bounty": 0,
+      "timestamp": 1392043
+    },
+    {
+      "assists": [],
+      "bounty": 380,
+      "victim": 2,
+      "killer": 0,
+      "shutdown_bounty": 186,
+      "timestamp": 1422773
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        7,
+        10
+      ],
+      "bounty": 360,
+      "victim": 5,
+      "killer": 9,
+      "shutdown_bounty": 3,
+      "timestamp": 1446924
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        4,
+        5
+      ],
+      "bounty": 162,
+      "victim": 10,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1448343
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 360,
+      "victim": 9,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1451456
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        6,
+        7,
+        9,
+        10
+      ],
+      "bounty": 390,
+      "victim": 3,
+      "killer": 8,
+      "shutdown_bounty": 634,
+      "timestamp": 1457898
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        4
+      ],
+      "bounty": 215,
+      "victim": 6,
+      "killer": 1,
+      "shutdown_bounty": 0,
+      "timestamp": 1495180
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        2
+      ],
+      "bounty": 390,
+      "victim": 8,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 1499142
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        5
+      ],
+      "bounty": 380,
+      "victim": 7,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 1554053
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        4,
+        5
+      ],
+      "bounty": 358,
+      "victim": 9,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1581185
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        4,
+        5
+      ],
+      "bounty": 148,
+      "victim": 6,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1584962
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [],
+      "bounty": 380,
+      "victim": 7,
+      "killer": 4,
+      "shutdown_bounty": 0,
+      "timestamp": 1622400
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        6,
+        7,
+        9,
+        10
+      ],
+      "bounty": 360,
+      "victim": 5,
+      "killer": 8,
+      "shutdown_bounty": 0,
+      "timestamp": 1812667
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        4,
+        5
+      ],
+      "bounty": 344,
+      "victim": 9,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1814237
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "bounty": 154,
+      "victim": 10,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1815658
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        6,
+        7,
+        9,
+        10
+      ],
+      "bounty": 390,
+      "victim": 3,
+      "killer": 8,
+      "shutdown_bounty": 163,
+      "timestamp": 1818399
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        1,
+        4,
+        5
+      ],
+      "bounty": 390,
+      "victim": 7,
+      "killer": 3,
+      "shutdown_bounty": 0,
+      "timestamp": 1820140
+    },
+    {
+      "killer_team": "RED",
+      "assists": [
+        6,
+        7,
+        10
+      ],
+      "bounty": 410,
+      "victim": 2,
+      "killer": 8,
+      "shutdown_bounty": 341,
+      "timestamp": 1823514
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "bounty": 189,
+      "victim": 6,
+      "killer": 1,
+      "shutdown_bounty": 0,
+      "timestamp": 1825886
+    },
+    {
+      "killer_team": "BLUE",
+      "assists": [
+        3,
+        4
+      ],
+      "bounty": 410,
+      "victim": 8,
+      "killer": 1,
+      "shutdown_bounty": 0,
+      "timestamp": 1832952
+    }
+  ],
   "building_events": [
-    { "assists": [], "killer": 8, "building": "TOWER_BUILDING" },
-    { "assists": [10], "killer": 9, "building": "TOWER_BUILDING" },
-    { "assists": [3], "killer": 1, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 6, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 6, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 8, "building": "TOWER_BUILDING" },
-    { "assists": [8], "killer": 9, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 6, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 9, "building": "INHIBITOR_BUILDING" },
-    { "assists": [], "killer": 1, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 3, "building": "TOWER_BUILDING" },
-    { "assists": [1, 4, 5], "killer": 2, "building": "TOWER_BUILDING" },
-    { "assists": [1, 4, 5], "killer": 2, "building": "TOWER_BUILDING" },
-    { "assists": [4, 5], "killer": 2, "building": "INHIBITOR_BUILDING" },
-    { "assists": [4], "killer": 2, "building": "TOWER_BUILDING" },
-    { "assists": [], "killer": 0, "building": "TOWER_BUILDING" },
-    { "assists": [2, 4], "killer": 5, "building": "TOWER_BUILDING" },
-    { "assists": [2, 5], "killer": 3, "building": "INHIBITOR_BUILDING" },
-    { "assists": [1, 3, 5], "killer": 2, "building": "TOWER_BUILDING" },
-    { "assists": [1, 2, 5], "killer": 3, "building": "TOWER_BUILDING" }
+    {
+      "assists": [],
+      "killer": 6,
+      "team": "BLUE",
+      "building": "TOWER_BUILDING",
+      "lane": "TOP",
+      "timestamp": 677857,
+      "tower": "OUTER_TURRET"
+    },
+    {
+      "assists": [],
+      "killer": 8,
+      "team": "BLUE",
+      "building": "TOWER_BUILDING",
+      "lane": "MID",
+      "timestamp": 897816,
+      "tower": "OUTER_TURRET"
+    },
+    {
+      "assists": [],
+      "killer": 9,
+      "team": "BLUE",
+      "building": "TOWER_BUILDING",
+      "lane": "BOT",
+      "timestamp": 906264,
+      "tower": "OUTER_TURRET"
+    },
+    {
+      "assists": [],
+      "killer": 1,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "TOP",
+      "timestamp": 917227,
+      "tower": "OUTER_TURRET"
+    },
+    {
+      "assists": [],
+      "killer": 5,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "BOT",
+      "timestamp": 1185685,
+      "tower": "OUTER_TURRET"
+    },
+    {
+      "assists": [],
+      "killer": 4,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "MID",
+      "timestamp": 1243701,
+      "tower": "OUTER_TURRET"
+    },
+    {
+      "assists": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "killer": 4,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "MID",
+      "timestamp": 1286382,
+      "tower": "INNER_TURRET"
+    },
+    {
+      "assists": [
+        3
+      ],
+      "killer": 4,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "TOP",
+      "timestamp": 1457029,
+      "tower": "INNER_TURRET"
+    },
+    {
+      "assists": [],
+      "killer": 4,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "BOT",
+      "timestamp": 1612573,
+      "tower": "INNER_TURRET"
+    },
+    {
+      "assists": [
+        4
+      ],
+      "killer": 1,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "TOP",
+      "timestamp": 1843010,
+      "tower": "BASE_TURRET"
+    },
+    {
+      "assists": [
+        4
+      ],
+      "killer": 1,
+      "team": "RED",
+      "building": "INHIBITOR_BUILDING",
+      "lane": "TOP",
+      "timestamp": 1847687
+    },
+    {
+      "assists": [
+        4
+      ],
+      "killer": 1,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "MID",
+      "timestamp": 1853112,
+      "tower": "NEXUS_TURRET"
+    },
+    {
+      "assists": [
+        1
+      ],
+      "killer": 4,
+      "team": "RED",
+      "building": "TOWER_BUILDING",
+      "lane": "MID",
+      "timestamp": 1860093,
+      "tower": "NEXUS_TURRET"
+    }
+  ],
+  "skill_events": [
+    {
+      "skill_slot": 3,
+      "participant": 2,
+      "timestamp": 2587
+    },
+    {
+      "skill_slot": 1,
+      "participant": 3,
+      "timestamp": 5594
+    },
+    {
+      "skill_slot": 1,
+      "participant": 6,
+      "timestamp": 6395
+    },
+    {
+      "skill_slot": 1,
+      "participant": 10,
+      "timestamp": 10504
+    },
+    {
+      "skill_slot": 3,
+      "participant": 7,
+      "timestamp": 11473
+    },
+    {
+      "skill_slot": 1,
+      "participant": 1,
+      "timestamp": 27675
+    },
+    {
+      "skill_slot": 2,
+      "participant": 5,
+      "timestamp": 27775
+    },
+    {
+      "skill_slot": 1,
+      "participant": 8,
+      "timestamp": 30748
+    },
+    {
+      "skill_slot": 1,
+      "participant": 4,
+      "timestamp": 45513
+    },
+    {
+      "skill_slot": 3,
+      "participant": 9,
+      "timestamp": 52361
+    },
+    {
+      "skill_slot": 1,
+      "participant": 2,
+      "timestamp": 75002
+    },
+    {
+      "skill_slot": 2,
+      "participant": 7,
+      "timestamp": 81216
+    },
+    {
+      "skill_slot": 3,
+      "participant": 8,
+      "timestamp": 85191
+    },
+    {
+      "skill_slot": 3,
+      "participant": 3,
+      "timestamp": 95246
+    },
+    {
+      "skill_slot": 3,
+      "participant": 6,
+      "timestamp": 97751
+    },
+    {
+      "skill_slot": 2,
+      "participant": 4,
+      "timestamp": 100357
+    },
+    {
+      "skill_slot": 1,
+      "participant": 5,
+      "timestamp": 103567
+    },
+    {
+      "skill_slot": 2,
+      "participant": 9,
+      "timestamp": 113088
+    },
+    {
+      "skill_slot": 3,
+      "participant": 10,
+      "timestamp": 113589
+    },
+    {
+      "skill_slot": 2,
+      "participant": 3,
+      "timestamp": 115159
+    },
+    {
+      "skill_slot": 3,
+      "participant": 1,
+      "timestamp": 115727
+    },
+    {
+      "skill_slot": 2,
+      "participant": 6,
+      "timestamp": 121774
+    },
+    {
+      "skill_slot": 2,
+      "participant": 2,
+      "timestamp": 123745
+    },
+    {
+      "skill_slot": 1,
+      "participant": 7,
+      "timestamp": 124079
+    },
+    {
+      "skill_slot": 1,
+      "participant": 8,
+      "timestamp": 143420
+    },
+    {
+      "skill_slot": 2,
+      "participant": 1,
+      "timestamp": 144957
+    },
+    {
+      "skill_slot": 3,
+      "participant": 4,
+      "timestamp": 159626
+    },
+    {
+      "skill_slot": 3,
+      "participant": 5,
+      "timestamp": 161931
+    },
+    {
+      "skill_slot": 1,
+      "participant": 9,
+      "timestamp": 162900
+    },
+    {
+      "skill_slot": 2,
+      "participant": 10,
+      "timestamp": 163668
+    },
+    {
+      "skill_slot": 1,
+      "participant": 1,
+      "timestamp": 169347
+    },
+    {
+      "skill_slot": 1,
+      "participant": 3,
+      "timestamp": 174262
+    },
+    {
+      "skill_slot": 2,
+      "participant": 7,
+      "timestamp": 183228
+    },
+    {
+      "skill_slot": 2,
+      "participant": 8,
+      "timestamp": 185266
+    },
+    {
+      "skill_slot": 1,
+      "participant": 6,
+      "timestamp": 211689
+    },
+    {
+      "skill_slot": 1,
+      "participant": 4,
+      "timestamp": 221476
+    },
+    {
+      "skill_slot": 1,
+      "participant": 3,
+      "timestamp": 234036
+    },
+    {
+      "skill_slot": 1,
+      "participant": 1,
+      "timestamp": 238980
+    },
+    {
+      "skill_slot": 3,
+      "participant": 9,
+      "timestamp": 239581
+    },
+    {
+      "skill_slot": 1,
+      "participant": 10,
+      "timestamp": 245227
+    },
+    {
+      "skill_slot": 1,
+      "participant": 8,
+      "timestamp": 248935
+    },
+    {
+      "skill_slot": 2,
+      "participant": 2,
+      "timestamp": 263840
+    },
+    {
+      "skill_slot": 1,
+      "participant": 6,
+      "timestamp": 274900
+    },
+    {
+      "skill_slot": 2,
+      "participant": 5,
+      "timestamp": 278174
+    },
+    {
+      "skill_slot": 1,
+      "participant": 4,
+      "timestamp": 279978
+    },
+    {
+      "skill_slot": 4,
+      "participant": 3,
+      "timestamp": 299959
+    },
+    {
+      "skill_slot": 2,
+      "participant": 7,
+      "timestamp": 307892
+    },
+    {
+      "skill_slot": 4,
+      "participant": 1,
+      "timestamp": 308493
+    },
+    {
+      "skill_slot": 2,
+      "participant": 2,
+      "timestamp": 313270
+    },
+    {
+      "skill_slot": 1,
+      "participant": 10,
+      "timestamp": 329680
+    },
+    {
+      "skill_slot": 4,
+      "participant": 8,
+      "timestamp": 338632
+    },
+    {
+      "skill_slot": 3,
+      "participant": 9,
+      "timestamp": 340102
+    },
+    {
+      "skill_slot": 4,
+      "participant": 6,
+      "timestamp": 367795
+    },
+    {
+      "skill_slot": 1,
+      "participant": 1,
+      "timestamp": 385337
+    },
+    {
+      "skill_slot": 1,
+      "participant": 3,
+      "timestamp": 388256
+    },
+    {
+      "skill_slot": 4,
+      "participant": 7,
+      "timestamp": 395070
+    },
+    {
+      "skill_slot": 2,
+      "participant": 5,
+      "timestamp": 419464
+    },
+    {
+      "skill_slot": 4,
+      "participant": 4,
+      "timestamp": 426913
+    },
+    {
+      "skill_slot": 1,
+      "participant": 6,
+      "timestamp": 446925
+    },
+    {
+      "skill_slot": 1,
+      "participant": 8,
+      "timestamp": 448195
+    },
+    {
+      "skill_slot": 3,
+      "participant": 1,
+      "timestamp": 456020
+    },
+    {
+      "skill_slot": 4,
+      "participant": 10,
+      "timestamp": 468521
+    },
+    {
+      "skill_slot": 4,
+      "participant": 9,
+      "timestamp": 468922
+    },
+    {
+      "skill_slot": 4,
+      "participant": 2,
+      "timestamp": 472063
+    },
+    {
+      "skill_slot": 3,
+      "participant": 3,
+      "timestamp": 480246
+    },
+    {
+      "skill_slot": 1,
+      "participant": 4,
+      "timestamp": 526596
+    },
+    {
+      "skill_slot": 3,
+      "participant": 8,
+      "timestamp": 527564
+    },
+    {
+      "skill_slot": 3,
+      "participant": 6,
+      "timestamp": 529836
+    },
+    {
+      "skill_slot": 4,
+      "participant": 5,
+      "timestamp": 530604
+    },
+    {
+      "skill_slot": 2,
+      "participant": 7,
+      "timestamp": 542920
+    },
+    {
+      "skill_slot": 3,
+      "participant": 9,
+      "timestamp": 558204
+    },
+    {
+      "skill_slot": 1,
+      "participant": 3,
+      "timestamp": 570338
+    },
+    {
+      "skill_slot": 1,
+      "participant": 1,
+      "timestamp": 573646
+    },
+    {
+      "skill_slot": 1,
+      "participant": 6,
+      "timestamp": 576451
+    },
+    {
+      "skill_slot": 1,
+      "participant": 10,
+      "timestamp": 600036
+    },
+    {
+      "skill_slot": 2,
+      "participant": 2,
+      "timestamp": 600069
+    },
+    {
+      "skill_slot": 3,
+      "participant": 7,
+      "timestamp": 611367
+    },
+    {
+      "skill_slot": 2,
+      "participant": 4,
+      "timestamp": 624429
+    },
+    {
+      "skill_slot": 1,
+      "participant": 8,
+      "timestamp": 634860
+    },
+    {
+      "skill_slot": 3,
+      "participant": 3,
+      "timestamp": 648892
+    },
+    {
+      "skill_slot": 3,
+      "participant": 6,
+      "timestamp": 668838
+    },
+    {
+      "skill_slot": 4,
+      "participant": 6,
+      "timestamp": 693393
+    },
+    {
+      "skill_slot": 3,
+      "participant": 1,
+      "timestamp": 698538
+    },
+    {
+      "skill_slot": 1,
+      "participant": 9,
+      "timestamp": 700108
+    },
+    {
+      "skill_slot": 3,
+      "participant": 2,
+      "timestamp": 712501
+    },
+    {
+      "skill_slot": 1,
+      "participant": 4,
+      "timestamp": 718515
+    },
+    {
+      "skill_slot": 2,
+      "participant": 4,
+      "timestamp": 721053
+    },
+    {
+      "skill_slot": 2,
+      "participant": 7,
+      "timestamp": 738290
+    },
+    {
+      "skill_slot": 3,
+      "participant": 6,
+      "timestamp": 744270
+    },
+    {
+      "skill_slot": 2,
+      "participant": 5,
+      "timestamp": 745505
+    },
+    {
+      "skill_slot": 3,
+      "participant": 8,
+      "timestamp": 752888
+    },
+    {
+      "skill_slot": 3,
+      "participant": 10,
+      "timestamp": 770027
+    },
+    {
+      "skill_slot": 4,
+      "participant": 3,
+      "timestamp": 773713
+    },
+    {
+      "skill_slot": 4,
+      "participant": 1,
+      "timestamp": 780356
+    },
+    {
+      "skill_slot": 1,
+      "participant": 7,
+      "timestamp": 795494
+    },
+    {
+      "skill_slot": 2,
+      "participant": 2,
+      "timestamp": 804859
+    },
+    {
+      "skill_slot": 2,
+      "participant": 4,
+      "timestamp": 812308
+    },
+    {
+      "skill_slot": 1,
+      "participant": 4,
+      "timestamp": 838175
+    },
+    {
+      "skill_slot": 4,
+      "participant": 8,
+      "timestamp": 873929
+    },
+    {
+      "skill_slot": 3,
+      "participant": 9,
+      "timestamp": 877937
+    },
+    {
+      "skill_slot": 3,
+      "participant": 1,
+      "timestamp": 894541
+    },
+    {
+      "skill_slot": 3,
+      "participant": 5,
+      "timestamp": 918831
+    },
+    {
+      "skill_slot": 3,
+      "participant": 3,
+      "timestamp": 924988
+    },
+    {
+      "skill_slot": 1,
+      "participant": 2,
+      "timestamp": 926725
+    },
+    {
+      "skill_slot": 3,
+      "participant": 6,
+      "timestamp": 934676
+    },
+    {
+      "skill_slot": 3,
+      "participant": 4,
+      "timestamp": 940223
+    },
+    {
+      "skill_slot": 4,
+      "participant": 4,
+      "timestamp": 957674
+    },
+    {
+      "skill_slot": 4,
+      "participant": 7,
+      "timestamp": 958409
+    },
+    {
+      "skill_slot": 1,
+      "participant": 10,
+      "timestamp": 966162
+    },
+    {
+      "skill_slot": 1,
+      "participant": 9,
+      "timestamp": 974553
+    },
+    {
+      "skill_slot": 3,
+      "participant": 1,
+      "timestamp": 1002804
+    },
+    {
+      "skill_slot": 4,
+      "participant": 2,
+      "timestamp": 1004775
+    },
+    {
+      "skill_slot": 3,
+      "participant": 8,
+      "timestamp": 1021034
+    },
+    {
+      "skill_slot": 2,
+      "participant": 5,
+      "timestamp": 1049479
+    },
+    {
+      "skill_slot": 3,
+      "participant": 3,
+      "timestamp": 1057874
+    },
+    {
+      "skill_slot": 2,
+      "participant": 4,
+      "timestamp": 1077159
+    },
+    {
+      "skill_slot": 2,
+      "participant": 1,
+      "timestamp": 1093387
+    },
+    {
+      "skill_slot": 3,
+      "participant": 2,
+      "timestamp": 1099366
+    },
+    {
+      "skill_slot": 4,
+      "participant": 9,
+      "timestamp": 1123399
+    },
+    {
+      "skill_slot": 3,
+      "participant": 10,
+      "timestamp": 1129747
+    },
+    {
+      "skill_slot": 3,
+      "participant": 8,
+      "timestamp": 1151556
+    },
+    {
+      "skill_slot": 3,
+      "participant": 4,
+      "timestamp": 1160375
+    },
+    {
+      "skill_slot": 2,
+      "participant": 6,
+      "timestamp": 1160709
+    },
+    {
+      "skill_slot": 3,
+      "participant": 5,
+      "timestamp": 1160832
+    },
+    {
+      "skill_slot": 1,
+      "participant": 7,
+      "timestamp": 1179673
+    },
+    {
+      "skill_slot": 3,
+      "participant": 2,
+      "timestamp": 1228554
+    },
+    {
+      "skill_slot": 2,
+      "participant": 8,
+      "timestamp": 1237287
+    },
+    {
+      "skill_slot": 1,
+      "participant": 7,
+      "timestamp": 1253611
+    },
+    {
+      "skill_slot": 2,
+      "participant": 1,
+      "timestamp": 1261055
+    },
+    {
+      "skill_slot": 4,
+      "participant": 5,
+      "timestamp": 1263026
+    },
+    {
+      "skill_slot": 2,
+      "participant": 3,
+      "timestamp": 1314562
+    },
+    {
+      "skill_slot": 3,
+      "participant": 5,
+      "timestamp": 1314695
+    },
+    {
+      "skill_slot": 3,
+      "participant": 2,
+      "timestamp": 1314963
+    },
+    {
+      "skill_slot": 3,
+      "participant": 4,
+      "timestamp": 1318804
+    },
+    {
+      "skill_slot": 4,
+      "participant": 1,
+      "timestamp": 1323952
+    },
+    {
+      "skill_slot": 1,
+      "participant": 9,
+      "timestamp": 1327797
+    },
+    {
+      "skill_slot": 2,
+      "participant": 6,
+      "timestamp": 1337886
+    },
+    {
+      "skill_slot": 2,
+      "participant": 8,
+      "timestamp": 1344059
+    },
+    {
+      "skill_slot": 4,
+      "participant": 10,
+      "timestamp": 1349437
+    },
+    {
+      "skill_slot": 2,
+      "participant": 1,
+      "timestamp": 1453794
+    },
+    {
+      "skill_slot": 2,
+      "participant": 3,
+      "timestamp": 1453961
+    },
+    {
+      "skill_slot": 3,
+      "participant": 4,
+      "timestamp": 1500971
+    },
+    {
+      "skill_slot": 1,
+      "participant": 2,
+      "timestamp": 1501305
+    },
+    {
+      "skill_slot": 1,
+      "participant": 9,
+      "timestamp": 1533680
+    },
+    {
+      "skill_slot": 3,
+      "participant": 10,
+      "timestamp": 1541777
+    },
+    {
+      "skill_slot": 3,
+      "participant": 7,
+      "timestamp": 1546306
+    },
+    {
+      "skill_slot": 3,
+      "participant": 5,
+      "timestamp": 1555122
+    },
+    {
+      "skill_slot": 4,
+      "participant": 6,
+      "timestamp": 1569573
+    },
+    {
+      "skill_slot": 2,
+      "participant": 1,
+      "timestamp": 1578312
+    },
+    {
+      "skill_slot": 4,
+      "participant": 2,
+      "timestamp": 1586198
+    },
+    {
+      "skill_slot": 4,
+      "participant": 4,
+      "timestamp": 1617667
+    },
+    {
+      "skill_slot": 4,
+      "participant": 8,
+      "timestamp": 1635341
+    },
+    {
+      "skill_slot": 2,
+      "participant": 9,
+      "timestamp": 1710889
+    },
+    {
+      "skill_slot": 3,
+      "participant": 7,
+      "timestamp": 1729584
+    },
+    {
+      "skill_slot": 3,
+      "participant": 10,
+      "timestamp": 1730118
+    },
+    {
+      "skill_slot": 3,
+      "participant": 4,
+      "timestamp": 1790088
+    },
+    {
+      "skill_slot": 1,
+      "participant": 2,
+      "timestamp": 1793096
+    },
+    {
+      "skill_slot": 2,
+      "participant": 8,
+      "timestamp": 1825218
+    },
+    {
+      "skill_slot": 1,
+      "participant": 5,
+      "timestamp": 1828308
+    },
+    {
+      "skill_slot": 4,
+      "participant": 3,
+      "timestamp": 1828743
+    },
+    {
+      "skill_slot": 2,
+      "participant": 6,
+      "timestamp": 1837695
+    }
   ],
   "participants": {
-    "1": "hUMqoyfVhD96J9MR7mZZ0BntPoibuCmBVTC88wuMmanMVDTSVTtPdXVzvqInY6g7wcBDFCylDj97cw",
-    "2": "gk1Fy2k5oPDryMhWh14BUqnWdq3xdOrE-8cOLuRsEYmtGld7yqSqNguECMcgvLkCXh3zUFXaePos7A",
-    "3": "t5Cf8zUS3uCylghJBIX5Tkp5c5HxbxoNcmjpECdWpY7ymUr3T7KgBid-WHHYVAXb2ukwXw-41XspZA",
-    "4": "MzQUOqpPHVxLOC0NHcfXMoHvZTfjSh9GAzkfU1c93S7uPNFx4ZsWtreSTOhQF3POZ6c6rKZZBZiheQ",
-    "5": "biCKZDQyItSeVHEhO5eNMA2PCUgW2KT4VtWyXPikTc1bEVUmzMae9JXLJQIKhF5qXKvNhviVdsdMPA",
-    "6": "_QhCC6n4YU3CCJiyPxUg82kFdm14jZlOsWzyybHd4mFoh5kClzjcUo0Yw6ktjGDact9WW2NUv0qYeg",
-    "7": "LGMJzPN9gOmokRpn5GPVhwnvhVEv27l1QcxNS6TmNnpRVuWMfuNnNgk4b1PaagOCtXP56zN-ngShAg",
-    "8": "bgh_KEX9qZo2BOZC_3IxvcNiiWBbqpRBkAlK_5s5NredRHES9hpcyhGR3BvajserMbvhjX0xYULgOw",
-    "9": "b2qcIRhlpI81E_HRb4X0eOOOGW2OfKFyyzC8tUL07RIQ1SAuXuglAbxjOAgX5gRU9KtMlSm5XoM0Mg",
-    "10": "qRXO7OPjCI45hCqMzOW_kim0ZeBfrypp9cL5BlrohEj_zLh8h9RFNLC2OV8fCrP5eer8B61gYEiZWA"
+    "1": "ewgKaR2gy4G-5cUNLB2Ql--ifIYG6n4duIqO3vMdlsDvTUZ0WVOHzMCMATIe8SeKOASUZ0cjC-A_Qw",
+    "2": "lbQqZ0ucd7LfVD7Ft3zHuKjwVOUDhJS5K57AFAMrh0JKj5k-PJIDlusHJcBL11lOidLXD3tTetS6Vg",
+    "3": "DTYYX9uIZ8T4qMT0JiwgQS3lgVaJjI_xQEch51imgKPTMh1n2ug6O2PhtVOzdA49kMUGCz_mPX5nXg",
+    "4": "mzncZ5ahDgLOb6LsUBFVLyE8rBdoA4fQtNW3_PLbbxEgQsrSvUKOlKQsVE9wrft0omTxx_Y4_h8nSQ",
+    "5": "Dm8QRt5fVkZMEKM82XLKTg0dKnT_nv5hhek9GZ1mhTA1vV9njzxWVx3Vr0TKXenTRCdUPYdbJoZMcQ",
+    "6": "obPyv4570dHdjQIYbyK8Q1Fl1qyvTm4bFYqSwGzUHHJ3kZTHbzGbWHIUYLt2UHzUQHR5pPxzMqkIWg",
+    "7": "mHyWjIuKheDXSvohxQ0kk9wzkvLK0rmoWPyzISk2TkkrXfTN7mXSnDbGMs2skzY6B8X1zt04haetkA",
+    "8": "y1l9ngRADBqsGN2Rh8Owh9XFLqhJkeeTvjiQqiBzZzzOdZmo_ZQLbF_fcVNFw496OWHSCyOSEh2BgQ",
+    "9": "9JndoqOoungfjm2FkU-h7R_g7mJR4eqX5M5e_4htaFsu2XL6N528jNcrXddfE7yyJsgbKJuDDO4Oew",
+    "10": "2dxdbWcZ_TsnlVHAuEIOCz7D6aTSaSm49ACMGJeD70KBmLp7QHl8I2zn8qMnR8a0cVV7bCzZtBmiMg"
   }
 }

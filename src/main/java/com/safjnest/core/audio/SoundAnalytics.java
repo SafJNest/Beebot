@@ -37,7 +37,8 @@ public class SoundAnalytics extends Thread {
                            "WHERE last_updated < DATE_SUB(NOW(), INTERVAL 1 HOUR) " +
                            "LIMIT " + BATCH_SIZE;
 
-            List<String> soundIds = BotDB.get().query(query).arrayColumn("sound_id");
+            List<String> soundIds = new java.util.ArrayList<>();
+            for (com.safjnest.sql.QueryRecord row : BotDB.get().query(query)) soundIds.add(row.get("sound_id"));
 
             if (soundIds.isEmpty()) {
                 BotLogger.trace("[SOUND ANALYTICS] Everything is up to date");

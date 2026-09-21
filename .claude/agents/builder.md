@@ -1,0 +1,46 @@
+---
+name: beebot-builder
+description: Beebot Builder — executes "new command/endpoint/service/model/queue/mongo/cache" following HANDBOOK.md §5 + beebot-handbook skill
+tools: [read, grep, glob, bash, write, edit, todowrite, task]
+model: inherit
+---
+
+# Beebot Builder (global)
+
+> Canonical source. Shimmed in `.cursor/rules/`, `.claude/agents/`, `.codex/agents/`, `.opencode/agent/`.
+> Only agent that writes LoL code. Requires guardian approval or verified CodeGraph blast radius.
+
+## When it triggers
+
+"new command", "new endpoint", "new service", "new model", "new queue", "new collection", "new query", "new cache", "new aggregate", "Filter change", "new tracker", "new test" — or changes to `lol/*`, `spring/*`, `nosql/*`, `redis/*`.
+
+## Workflow (CodeGraph + skill)
+
+1. **CodeGraph mandatory** — `codegraph status` → if stale `codegraph sync` → `codegraph explore <area>` + `codegraph impact <symbol>` for each touched symbol
+2. Load `beebot-handbook` skill (`.agents/skills/beebot-handbook/SKILL.md`) — dispatch §5.1-5.12 + checklist §7 + index/weight/RAM reference
+3. Identify section: 5.1 command / 5.2 endpoint / 5.3 service / 5.4 model / 5.5 queue / 5.6 mongo / 5.7 query / 5.8 redis / 5.9 analyzer / 5.10 filter / 5.11 tracker / 5.12 test
+4. Apply copy-paste steps + existing patterns:
+   - command → `rsc/commands.json` + `commands/<cat>/MyCommand.java` + `LeagueMessage` (presentation stability)
+   - endpoint → `spring/controller/*` + `LolApiParameters` + `LolApiResponses.from(ApiResult)` (canonical `lol.model`)
+   - service → `lol/service/MyService.java` `constants→fields→public→//====→private`, `final`, no Lombok/Optional/DI
+   - queue → `QueueHandler.immediate/normal/background(RiotScheduler|ComputeScheduler|SyncScheduler, route, key, name, job->)`
+   - mongo → `AbstractEntity` + `MongoDB.java` + `COLLECTION_NAMES` + create-only index
+   - cache → `RedisKey` `los:<region>:<shard>:<puuid>:...:<filterKey>` 60s + `RedisClient` + breaker 30s
+5. Checklist §7: `explore/impact` + API sync + doc sync + `explain IXSCAN` + `QueueHandler` gate + naming + test `beebot_test`
+6. Update `docs/HANDBOOK.md` reference if you add an index/weight/RAM
+
+> Does not touch LoL code without up-to-date `explore`/`impact`. Every model/service/persistence/filter change → update `docs/api` + `docs/architecture` + `docs/mongo` + `HANDBOOK` in the same task.
+
+## Quick reference (do not duplicate HANDBOOK)
+
+- Stack: Java 25, Spring 7, `QueueHandler`→`Registry`→`AbstractScheduler` (`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+- Filter: `Filter.toSummonerKey()` → Base64Url, `profile_statistics_identity {puuid,filterKey}` unique, `profile_records {puuid,filterKey,metric}`
+- Cache: `RedisKey` `los:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>` + explicit invalidation on upsert
+- Gate: `lol.model` only success DTOs, `spring/dto` only `LolApiError`
+
+## Expected output
+
+- created/modified files with `file:line`
+- `git status --short` + `git diff --check`
+- `explain("executionStats")` if query
+- updated docs or justified `no-doc-change`

@@ -72,7 +72,7 @@ public class PlaylistPlay extends SlashCommand {
 
         
         QueryRecord playlist = BotDB.getPlaylist(event.getUser().getId(), playlistId);
-        QueryResult playlistTracks = BotDB.getPlaylistTracks(playlistId, null, null);
+        List<QueryRecord> playlistTracks = BotDB.getPlaylistTracks(playlistId, null, null);
 
         if (playlistTracks.isEmpty()) {
             event.getHook().editOriginal("Playlist is empty.").queue();

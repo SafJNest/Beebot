@@ -1,11 +1,11 @@
 package com.safjnest.core.events;
 
 import java.util.HashMap;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.ExperienceSystem;
@@ -324,7 +324,7 @@ public class Functions {
         int times = 0;
         times = times + BotDB.getBannedTimes(badGuy.getId());
 
-        QueryResult guilds = BotDB.getGuildByThreshold(times, guild.getId());
+        List<QueryRecord> guilds = BotDB.getGuildByThreshold(times, guild.getId());
         if(guilds == null)
             return;
         

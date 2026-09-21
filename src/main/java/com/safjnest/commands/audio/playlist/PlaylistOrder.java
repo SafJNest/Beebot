@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -50,13 +49,14 @@ public class PlaylistOrder extends SlashCommand {
         int place = event.getOption("playlist-order").getAsInt();
         String order = event.getOption("order").getAsString();
 
-        QueryResult playlist = BotDB.getPlaylistTracks(playlistId, null, null);
+        List<QueryRecord> playlist = BotDB.getPlaylistTracks(playlistId, null, null);
         
         HashMap<Integer, Integer> song = new HashMap<>();
         for (QueryRecord row : playlist) 
             song.put(row.getAsInt("id"), row.getAsInt("order"));
         
-        List<String> tracks = playlist.arrayColumn("id");
+        List<String> tracks = new java.util.ArrayList<>();
+        for (QueryRecord row : playlist) tracks.add(row.get("id"));
 
         selected = song.get(selected);
         place = song.get(place);

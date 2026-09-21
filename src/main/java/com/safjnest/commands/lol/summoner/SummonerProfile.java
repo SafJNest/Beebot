@@ -5,11 +5,11 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -45,7 +45,7 @@ public class SummonerProfile extends SlashCommand {
 
 	@Override
 	protected void execute(SlashCommandEvent event) {        
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        Summoner s = null;
 
         User theGuy = null;
         event.deferReply(false).queue();
@@ -60,8 +60,7 @@ public class SummonerProfile extends SlashCommand {
         }
 
 
-        int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.PROFILE));
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.puuid(), new LeagueMessageParameter(LeagueMessageType.PROFILE));
 	}
 
 }

@@ -44,6 +44,7 @@ rsc/settings.json
 config.properties
 
 /TODO
- 
+
+/tomcat.*
  
 spring.properties

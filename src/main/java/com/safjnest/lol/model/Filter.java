@@ -5,13 +5,10 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.stream.Collectors;
-
-import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.FilterCodec;
+import com.safjnest.lol.utils.NumberUtils;
 import com.safjnest.lol.utils.PatchUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 
 public class Filter {
 
@@ -24,50 +21,102 @@ public class Filter {
         this.patch = PatchUtils.getPatch();
         this.rank = TierType.EMERALD;
         this.rankBehavior = RankBehavior.GREATER_OR_EQUAL;
+        long[] period = SeasonUtils.getCurrentSplitRange();
+        if (period != null) {
+            this.timeStart = period[0];
+            this.timeEnd = period[1];
+        }
+    }
+
+    public static Filter summoner(long timeStart, long timeEnd) {
+        return new Filter()
+            .setChampion(0)
+            .setLane(null)
+            .setQueue(null)
+            .setRank(null)
+            .setPatch(null)
+            .setRegion(null)
+            .setOpponent(0)
+            .setDuo(0)
+            .setPeriod(timeStart, timeEnd);
+    }
+
+    public static Filter canonical() {
+        SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        return new Filter()
+            .setChampion(0)
+            .setLane(null)
+            .setQueue(null)
+            .setRank(null)
+            .setPatch(null)
+            .setRegion(null)
+            .setOpponent(0)
+            .setDuo(0)
+            .setPeriod(season == null ? 0 : season.start(), season == null ? 0 : season.end());
     }
 
     public static Filter fromGenericKey(String key) {
-      String raw = new String(Base64.getDecoder().decode(key), StandardCharsets.UTF_8);
-      String[] parts = raw.split("\\|");
-      return new Filter()
-        .setQueue(parts[0].equals("*") ? null : GameQueueType.valueOf(parts[0]))
-        .setRank(parts[1].equals("*") ? null : TierType.valueOf(parts[1]))
-        .setPatch(parts[2].equals("*") ? null : parts[2])
-        .setRegion(parts[3].equals("*") ? null : LeagueShard.valueOf(parts[3]));
+        String raw = FilterCodec.decode(key);
+        String[] parts = FilterCodec.split(raw);
+        return new Filter()
+            .setQueue(FilterCodec.decodeEnum(parts[0], GameQueueType.class))
+            .setRank(FilterCodec.decodeEnum(parts[1], TierType.class))
+            .setPatch(FilterCodec.decodeString(parts[2]))
+            .setRegion(FilterCodec.decodeEnum(parts[3], LeagueShard.class))
+            .setLane(parts.length > 4 ? FilterCodec.decodeEnum(parts[4], LaneType.class) : null);
     }
 
     public static Filter fromKey(String key) {
-      String raw = new String(Base64.getDecoder().decode(key), StandardCharsets.UTF_8);
-      String[] parts = raw.split("\\|");
-      Filter filter = new Filter()
-        .setChampion(Integer.parseInt(parts[0]))
-        .setLane(parts[1].equals("*") ? null : LaneType.valueOf(parts[1]))
-        .setQueue(parts[2].equals("*") ? null : GameQueueType.valueOf(parts[2]))
-        .setRank(parts[3].equals("*") ? null : TierType.valueOf(parts[3]))
-        .setPatch(parts[4].equals("*") ? null : parts[4])
-        .setRegion(parts[5].equals("*") ? null : LeagueShard.valueOf(parts[5]));
-      if (parts.length > 6 && !parts[6].equals("*"))
-        filter.setOpponent(Integer.parseInt(parts[6]));
-      if (parts.length > 7 && !parts[7].equals("*"))
-        filter.setDuo(Integer.parseInt(parts[7]));
-      return filter;
+        String raw = FilterCodec.decode(key);
+        String[] parts = FilterCodec.split(raw);
+        Filter filter = new Filter()
+            .setChampion(NumberUtils.parseInt(parts[0]))
+            .setLane(FilterCodec.decodeEnum(parts[1], LaneType.class))
+            .setQueue(FilterCodec.decodeEnum(parts[2], GameQueueType.class))
+            .setRank(FilterCodec.decodeEnum(parts[3], TierType.class))
+            .setRankBehavior(RankBehavior.valueOf(parts[4]))
+            .setPatch(FilterCodec.decodeString(parts[5]))
+            .setRegion(FilterCodec.decodeEnum(parts[6], LeagueShard.class));
+        if (parts.length > 7) filter.setOpponent(FilterCodec.decodeInt(parts[7]));
+        if (parts.length > 8) filter.setDuo(FilterCodec.decodeInt(parts[8]));
+        return filter;
     }
 
     public static Filter fromStateKey(String key) {
-      String raw = new String(Base64.getUrlDecoder().decode(key), StandardCharsets.UTF_8);
-      String[] parts = raw.split("\\|");
-      Filter filter = new Filter()
-        .setChampion(Integer.parseInt(parts[0]))
-        .setLane(parts[1].equals("*") ? null : LaneType.values()[Integer.parseInt(parts[1])])
-        .setQueue(parts[2].equals("*") ? null : GameQueueType.values()[Integer.parseInt(parts[2])])
-        .setRank(parts[3].equals("*") ? null : TierType.values()[Integer.parseInt(parts[3])])
-        .setPatch(parts[4].equals("*") ? null : parts[4])
-        .setRegion(parts[5].equals("*") ? null : LeagueShard.valueOf(parts[5]));
-      if (parts.length > 6 && !parts[6].equals("*"))
-        filter.setOpponent(Integer.parseInt(parts[6]));
-      if (parts.length > 7 && !parts[7].equals("*"))
-        filter.setDuo(Integer.parseInt(parts[7]));
-      return filter;
+        String raw = FilterCodec.decodeUrl(key);
+        String[] parts = FilterCodec.split(raw);
+        Filter filter = new Filter()
+            .setChampion(NumberUtils.parseInt(parts[0]))
+            .setLane(FilterCodec.decodeOrdinal(parts[1], LaneType.class))
+            .setQueue(FilterCodec.decodeOrdinal(parts[2], GameQueueType.class))
+            .setRank(FilterCodec.decodeOrdinal(parts[3], TierType.class))
+            .setPatch(FilterCodec.decodeString(parts[4]))
+            .setRegion(FilterCodec.decodeEnum(parts[5], LeagueShard.class));
+        if (parts.length > 6) filter.setOpponent(FilterCodec.decodeInt(parts[6]));
+        if (parts.length > 7) filter.setDuo(FilterCodec.decodeInt(parts[7]));
+        if (parts.length > 8) filter.setPeriod(FilterCodec.decodeLong(parts[8]), parts.length > 9 ? FilterCodec.decodeLong(parts[9]) : 0);
+        if (parts.length > 10) {
+        try { filter.setRankBehavior(RankBehavior.valueOf(parts[10])); }
+        catch (RuntimeException ignored) { }
+      }
+        return filter;
+    }
+
+    public static Filter fromSummonerKey(String key) {
+        String raw = FilterCodec.decodeUrl(key);
+        String[] parts = FilterCodec.split(raw);
+        if (parts.length != 11) throw new IllegalArgumentException("Invalid summoner filter key");
+        return new Filter()
+            .setChampion(FilterCodec.decodeInt(parts[0]))
+            .setLane(FilterCodec.decodeEnum(parts[1], LaneType.class))
+            .setQueue(FilterCodec.decodeEnum(parts[2], GameQueueType.class))
+            .setRank(FilterCodec.decodeEnum(parts[3], TierType.class))
+            .setRankBehavior(RankBehavior.valueOf(parts[4]))
+            .setPatch(FilterCodec.decodeString(parts[5]))
+            .setRegion(FilterCodec.decodeEnum(parts[6], LeagueShard.class))
+            .setOpponent(FilterCodec.decodeInt(parts[7]))
+            .setDuo(FilterCodec.decodeInt(parts[8]))
+            .setPeriod(FilterCodec.decodeLong(parts[9]), FilterCodec.decodeLong(parts[10]));
     }
 
     private int champion;
@@ -79,6 +128,8 @@ public class Filter {
     private LeagueShard region;
     private int opponent;
     private int duo;
+    private long timeStart;
+    private long timeEnd;
 
     public Filter setChampion(int champion) {
         this.champion = champion;
@@ -101,7 +152,7 @@ public class Filter {
     }
 
     public Filter setRankBehavior(RankBehavior b) {
-        this.rankBehavior = b;
+        this.rankBehavior = b != null ? b : RankBehavior.GREATER_OR_EQUAL;
         return this;
     }
 
@@ -157,109 +208,107 @@ public class Filter {
         return this;
     }
 
-    public String sql() {
-        StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (queue != null)
-            sb.append(" AND m.queue = '").append(queue).append("'");
-        if (patch != null)
-            sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (rank != null)
-            sb.append(rankSql());
-        if (region != null)
-            sb.append(" AND m.region = '").append(region).append("'");
-        if (lane != null && GameQueueTypeUtils.hasLane(queue))
-            sb.append(" AND p.lane = '").append(lane).append("'");
-        if (opponent != 0) {
-            sb.append(" AND EXISTS (SELECT 1 FROM participant opp WHERE opp.match_id = p.match_id")
-              .append(" AND opp.champion = ").append(opponent);
-            if (GameQueueTypeUtils.isCherry(queue))
-                sb.append(" AND opp.subteam <> p.subteam");
-            else {
-                sb.append(" AND opp.team <> p.team");
-                if (lane != null && GameQueueTypeUtils.hasLane(queue))
-                    sb.append(" AND opp.lane = p.lane");
-            }
-            sb.append(")");
-        }
-        if (duo != 0) {
-            sb.append(" AND EXISTS (SELECT 1 FROM participant duo WHERE duo.match_id = p.match_id")
-              .append(" AND duo.champion = ").append(duo)
-              .append(" AND duo.id <> p.id");
-            if (GameQueueTypeUtils.isCherry(queue))
-                sb.append(" AND duo.subteam = p.subteam");
-            else
-                sb.append(" AND duo.team = p.team");
-            sb.append(")");
-        }
-        return sb.toString();
+    public Filter setPeriod(long timeStart, long timeEnd) {
+        this.timeStart = Math.max(0, timeStart);
+        this.timeEnd = Math.max(0, timeEnd);
+        return this;
     }
 
-    public String sqlMatchOnly() {
-        StringBuilder sb = new StringBuilder("WHERE 1=1");
-        if (patch != null)
-            sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (queue != null)
-            sb.append(" AND m.queue = '").append(queue).append("'");
-        if (rank != null)
-            sb.append(rankSql());
-        if (region != null)
-            sb.append(" AND m.region = '").append(region).append("'");
-        return sb.toString();
+    public Filter setPeriod(long[] period) {
+        return period == null || period.length < 2 ? setPeriod(0, 0) : setPeriod(period[0], period[1]);
     }
 
-    /** Tutti i participant dei match filtrati, senza filtrare per champion/lane. */
-    public String sqlAllParticipants() {
-        System.out.println("sqlAllParticipants: " + patch);
-        StringBuilder sb = new StringBuilder(
-                "FROM participant p JOIN `match` m ON p.match_id = m.id WHERE 1=1");
-        if (patch != null)
-            sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (queue != null)
-            sb.append(" AND m.queue = '").append(queue).append("'");
-        if (rank != null)
-            sb.append(rankSql());
-        if (region != null)
-            sb.append(" AND m.region = '").append(region).append("'");
-        return sb.toString();
+    public RankBehavior rankBehavior() {
+        return rankBehavior;
+    }
+
+    public long timeStart() {
+        return timeStart;
+    }
+
+    public long timeEnd() {
+        return timeEnd;
+    }
+
+    public long[] period() {
+        return new long[] {timeStart, timeEnd};
     }
 
     public String toKey() {
-        String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region);
-        if (opponent != 0 || duo != 0)
-            raw += "|" + val(opponent) + "|" + val(duo);
-        return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+        String raw = FilterCodec.join(
+            String.valueOf(champion),
+            FilterCodec.encodeEnum(lane),
+            FilterCodec.encodeEnum(queue),
+            FilterCodec.encodeEnum(rank),
+            rankBehavior.name(),
+            FilterCodec.encodeValue(patch),
+            FilterCodec.encodeEnum(region)
+        );
+        if (opponent != 0 || duo != 0) raw += "|" + FilterCodec.encodeInt(opponent) + "|" + FilterCodec.encodeInt(duo);
+        return FilterCodec.encode(raw);
+    }
+
+    public String pageKey() {
+        String raw = FilterCodec.join(
+            FilterCodec.encodeEnum(lane),
+            FilterCodec.encodeEnum(queue),
+            FilterCodec.encodeEnum(rank),
+            rankBehavior.name(),
+            FilterCodec.encodeValue(patch),
+            FilterCodec.encodeEnum(region),
+            String.valueOf(timeStart),
+            String.valueOf(timeEnd)
+        );
+        if (opponent != 0 || duo != 0) raw += "|" + FilterCodec.encodeInt(opponent) + "|" + FilterCodec.encodeInt(duo);
+        return FilterCodec.encode(raw);
     }
 
     public String toStateKey() {
-        String raw = champion + "|" + ordinal(lane) + "|" + ordinal(queue) + "|" + ordinal(rank) + "|"
-                + val(patch) + "|" + val(region) + "|" + val(opponent) + "|" + val(duo);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+        String raw = FilterCodec.join(
+            String.valueOf(champion),
+            FilterCodec.encodeOrdinal(lane),
+            FilterCodec.encodeOrdinal(queue),
+            FilterCodec.encodeOrdinal(rank),
+            FilterCodec.encodeValue(patch),
+            FilterCodec.encodeEnum(region),
+            FilterCodec.encodeInt(opponent),
+            FilterCodec.encodeInt(duo),
+            String.valueOf(timeStart),
+            String.valueOf(timeEnd),
+            rankBehavior.name()
+        );
+        return FilterCodec.encodeUrl(raw);
+    }
+
+    public String toSummonerKey() {
+        String raw = FilterCodec.join(
+            String.valueOf(champion),
+            FilterCodec.encodeEnum(lane),
+            FilterCodec.encodeEnum(queue),
+            FilterCodec.encodeEnum(rank),
+            rankBehavior.name(),
+            FilterCodec.encodeValue(patch),
+            FilterCodec.encodeEnum(region),
+            FilterCodec.encodeInt(opponent),
+            FilterCodec.encodeInt(duo),
+            String.valueOf(timeStart),
+            String.valueOf(timeEnd)
+        );
+        return FilterCodec.encodeUrl(raw);
     }
 
     public String genericKey() {
-        String raw = val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region);
-        return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+        String raw = FilterCodec.join(
+            FilterCodec.encodeEnum(queue),
+            FilterCodec.encodeEnum(rank),
+            rankBehavior.name(),
+            FilterCodec.encodeValue(patch),
+            FilterCodec.encodeEnum(region),
+            FilterCodec.encodeEnum(lane),
+            String.valueOf(timeStart),
+            String.valueOf(timeEnd)
+        );
+        return FilterCodec.encode(raw);
     }
 
-    private String rankSql() {
-        if (rank == TierType.CHALLENGER)
-            return " AND m.rank IN ('CHALLENGER', 'GRANDMASTER')";
-        if (rankBehavior == RankBehavior.EXACT)
-            return " AND m.rank = '" + rank + "'";
-        return " AND m.rank IN ('" + String.join("', '", TierDivisionUtils.getHigherTiers(rank).stream().map(TierType::name).collect(Collectors.toList())) + "')";
-    }
-
-    private static String val(Object o) {
-        return o != null ? o.toString() : "*";
-    }
-
-    private static String val(int i) {
-        return i != 0 ? String.valueOf(i) : "*";
-    }
-
-    private static String ordinal(Enum<?> e) {
-        return e != null ? String.valueOf(e.ordinal()) : "*";
-    }
 }

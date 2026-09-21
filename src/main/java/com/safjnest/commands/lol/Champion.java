@@ -15,12 +15,12 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.service.BuildService;
-import com.safjnest.lol.service.ChampionStatsService;
+import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -44,6 +44,8 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
  * @since 1.3
  */
 public class Champion extends SlashCommand {
+
+    private static final ChampionService CHAMPION_SERVICE = new ChampionService();
 
     public Champion() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -91,8 +93,8 @@ public class Champion extends SlashCommand {
         }
 
         Filter filter = readFilter(event, champion);
-        ChampionStatistics stats = new ChampionStatsService().get(filter);
-        Build build = new BuildService().getMostUsed(filter);
+        ChampionStatistics stats = CHAMPION_SERVICE.getStatistics(filter);
+        Build build = CHAMPION_SERVICE.getBuild(filter);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getId()));
@@ -120,7 +122,7 @@ public class Champion extends SlashCommand {
 
         if (event.getOption("rank") != null) {
             String rank = event.getOption("rank").getAsString();
-            filter.setRank(rank.equals("ALL") ? null : TierType.valueOf(rank));
+            filter.setRank(rank.equals(LeagueConstants.ALL) ? null : TierType.valueOf(rank));
         }
         if (event.getOption("region") != null)
             filter.setRegion(LeagueShard.valueOf(event.getOption("region").getAsString()));
@@ -163,7 +165,7 @@ public class Champion extends SlashCommand {
 
     private void appendOpponent(StringBuilder desc, ChampionStatistics stats, Filter filter) {
         StaticChampion opponent = ChampionUtils.getChampion(filter.opponent());
-        Matchup matchup = getOpponentMatchup(stats, filter.opponent(), filter.lane());
+        Matchup matchup = getOpponentMatchup(stats, filter.opponent());
         if (opponent == null) return;
 
         desc.append("Against ")
@@ -202,9 +204,9 @@ public class Champion extends SlashCommand {
     private void addMatchups(EmbedBuilder eb, ChampionStatistics stats, Filter filter) {
         if (stats == null || filter.lane() == null) return;
 
-        eb.addField("Weak Against", formatMatchups(stats.weakAgainst(filter.lane())), true);
-        eb.addField("Strong Against", formatMatchups(stats.strongAgainst(filter.lane())), true);
-        eb.addField("Popular Matchups", formatMatchups(stats.popularMatchups(filter.lane())), true);
+        eb.addField("Weak Against", formatMatchups(stats.weakAgainst()), true);
+        eb.addField("Strong Against", formatMatchups(stats.strongAgainst()), true);
+        eb.addField("Popular Matchups", formatMatchups(stats.popularMatchups()), true);
     }
 
     private void addBuild(EmbedBuilder eb, Build build, Filter filter) {
@@ -217,8 +219,8 @@ public class Champion extends SlashCommand {
         addSummonerSpells(eb, build);
 
         if (GameQueueTypeUtils.isCherry(filter.queue())) {
-            eb.addField("Best Augments", formatAugments(build.augments()), true);
-            eb.addField("Best Prismatics", formatPrismatics(build.prismatics()), true);
+            eb.addField("Augment Options", formatAugments(build.augments()), true);
+            eb.addField("Prismatic Options", formatPrismatics(build.prismatics()), true);
             addItemFields(eb, build);
             return;
         }
@@ -337,10 +339,11 @@ public class Champion extends SlashCommand {
             eb.addField((i + 4) + " Slot", formatSlot(build.slots().get(i)), true);
     }
 
-    private String formatMatchups(List<Matchup> matchups) {
+    private String formatMatchups(List<Map.Entry<Integer, Matchup>> matchups) {
         StringBuilder string = new StringBuilder();
-        for (Matchup matchup : matchups) {
-            StaticChampion champion = ChampionUtils.getChampion(matchup.champion());
+        for (Map.Entry<Integer, Matchup> entry : matchups) {
+            Matchup matchup = entry.getValue();
+            StaticChampion champion = ChampionUtils.getChampion(entry.getKey());
             if (champion == null) continue;
             string.append(CustomEmojiHandler.getFormattedEmoji(champion.getName())).append(" ").append(champion.getName())
                 .append("\n`").append(matchup.prettyMatches()).append(" G ").append(matchup.prettyWinrate()).append(" WR`\n");
@@ -395,19 +398,8 @@ public class Champion extends SlashCommand {
         return value(string);
     }
 
-    private Matchup getOpponentMatchup(ChampionStatistics stats, int opponent, LaneType lane) {
-        Matchup matchup = stats.getOpponentMatchup(opponent, lane);
-        if (matchup != null || lane != null) return matchup;
-
-        int matches = 0;
-        double wins = 0;
-        for (Map.Entry<ChampionStatistics.MatchupKey, Matchup> entry : stats.matchups().entrySet()) {
-            if (entry.getKey().champion() != opponent) continue;
-            matches += entry.getValue().matches();
-            wins += entry.getValue().matches() * entry.getValue().winrate();
-        }
-        if (matches == 0) return null;
-        return new Matchup(opponent, matches, wins / matches);
+    private Matchup getOpponentMatchup(ChampionStatistics stats, int opponent) {
+        return stats.getOpponentMatchup(opponent);
     }
 
     private StaticChampion getChampion(String name) {

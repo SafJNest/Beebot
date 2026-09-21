@@ -1,6 +1,7 @@
 package com.safjnest.utils.twitch;
 
 import java.time.Instant;
+import java.util.List;
 
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.events.EventSocketConnectionStateEvent;
@@ -8,7 +9,6 @@ import com.github.twitch4j.helix.domain.User;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.TwitchData;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;
@@ -29,7 +29,7 @@ class TwitchEventsHandler {
     public static void onStreamOnlineEvent(StreamOnlineEvent event) {
         BotLogger.trace("[TWITCH] " + event.getBroadcasterUserName() + " is now live on Twitch!");
         
-        QueryResult result = BotDB.getTwitchSubscriptions(event.getBroadcasterUserId());
+        List<QueryRecord> result = BotDB.getTwitchSubscriptions(event.getBroadcasterUserId());
         
         User streamer = TwitchClient.getStreamerByName(event.getBroadcasterUserLogin());
 

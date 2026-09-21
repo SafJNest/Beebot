@@ -49,6 +49,18 @@ public class LeagueShardUtils {
         };
     }
 
+    public static String cacheRegion(LeagueShard shard) {
+        return shard.toRegionShard().name();
+    }
+
+    public static String leaderboardScope(LeagueShard shard) {
+        return shard == null ? LeagueConstants.GLOBAL_REGION : shard.name();
+    }
+
+    public static String defaultRegion(LeagueShard shard) {
+        return shard == null ? LeagueConstants.GLOBAL_REGION : shard.name();
+    }
+
     public static List<LeagueShard> getActives() {
         return List.of(
             LeagueShard.EUW1,

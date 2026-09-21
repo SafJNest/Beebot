@@ -1,96 +1,56 @@
 package com.safjnest.lol.tracker;
 
-import java.util.LinkedHashMap;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.service.ChampionDataRefreshService;
-import com.safjnest.lol.tracker.TrackerState.Priority;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.service.RankService;
 import com.safjnest.utils.TimeConstant;
-import com.safjnest.utils.log.BotLogger;
 
-import no.stelar7.api.r4j.basic.calling.DataCall;
-import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
-public class TrackerScheduler {
+public final class TrackerScheduler {
 
-    private static final ChampionDataRefreshService championDataRefreshService;
+    private static volatile boolean started;
+    private static volatile boolean cronScheduled;
 
-    static {
-        championDataRefreshService = new ChampionDataRefreshService();
-        
-        if (!App.isTesting()) {
-            ChronoTask track = () -> retriveSummoners();
-            track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
+    private TrackerScheduler() {}
 
-            ChronoTask trackQueuedGames = () -> popSet();
-            trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
-
-            //ChronoTask trackSampleGames = () -> retriveSampleGames();
-            //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
-
-            ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
-            retriveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
-
-            ChronoTask refreshChampionData = () -> refreshChampionData();
-            refreshChampionData.scheduleAtFixedTime(3, 0, 0);
-
-            ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
-            clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
-        }
+    public static synchronized void start() {
+        if (started) return;
+        started = true;
+        scheduleIfEnabled();
     }
 
-    public static void retriveSummoners() {
-        TrackerState.acquire(Priority.HIGH);
-        try { Tracker.retriveSummoners(); } 
-        finally { TrackerState.release(Priority.HIGH); }
+    public static synchronized void scheduleIfEnabled() {
+        if (cronScheduled || !App.tracking()) return;
+        cronScheduled = true;
+
+        ChronoTask track = TrackerScheduler::retrieveSummoners;
+        track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
+
+        ChronoTask retrieveHighEloEntries = TrackerScheduler::retrieveHighEloEntries;
+        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
     }
 
-    public static void popSet() {
-        TrackerState.awaitCondition(Priority.MID);
-
-        Set<LOLMatch> toAnalyze = Tracker.popQueue();
-        if (toAnalyze.isEmpty()) return;
-
-        TrackerState.acquire(Priority.MID);
-        try {
-            BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
-            int i = 0;
-            for (LOLMatch match : toAnalyze) {
-                TrackerState.awaitCondition(Priority.MID);
-                try {
-                    Tracker.analyzeMatchHistory(match).completeWithException();
-                    BotLogger.info("[LPTracker] [" + i + "/" + toAnalyze.size() + "] Pushed match " + match.getGameId() + " (" + match.getPlatform() + " - " + match.getQueue() + ")");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                i++;
-            }
-        } finally {
-            TrackerState.release(Priority.MID);
-        }
+    public static void retrieveSummoners() {
+        Tracker.retrieveSummoners();
     }
 
-    public static void retriveSampleGames(GameQueueType queue) {
-        TrackerState.awaitCondition(Priority.LOW);
-        Tracker.retriveSampleGames(queue);
+    public static void retrieveSampleGames(GameQueueType queue) {
+        Tracker.retrieveSampleGames(queue);
     }
 
-    public static void retriveHighEloEntries() {
-        TrackerState.awaitCondition(Priority.MID);
-        Tracker.retriveHighEloEntries();
+    public static void retrieveHighEloEntries() {
+        RankService.enqueueRankEntries(true, false);
+    }
+
+    public static void retrieveAllEntries() {
+        RankService.enqueueRankEntries(false, true);
     }
 
     public static void refreshChampionData() {
-        championDataRefreshService.refresh();
-    }
-
-    public static void retriveAllEntries() {
-        TrackerState.awaitCondition(Priority.LOW);
-        Tracker.retriveAllEntries();
+        ComputeScheduler.enqueueChampionDataRefresh();
     }
 }

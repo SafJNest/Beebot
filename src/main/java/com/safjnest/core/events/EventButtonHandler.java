@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -738,7 +737,7 @@ public class EventButtonHandler extends ListenerAdapter {
         boolean timeOrder = listOrderData.active();
         order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
-        QueryResult sounds = BotDB.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
+        List<QueryRecord> sounds = BotDB.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -856,7 +855,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 userId = b.getCustomId().split("-")[2];
             }
         }
-        QueryResult sounds = null;
+        List<QueryRecord> sounds = null;
         if (!timeOrder) {
             sounds = (userId.equals(event.getMember().getId()))
                                ? BotDB.getlistUserSounds(userId)
