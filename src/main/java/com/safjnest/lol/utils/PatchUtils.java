@@ -1,17 +1,12 @@
 package com.safjnest.lol.utils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
+
+import com.safjnest.utils.HttpUtils;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -19,8 +14,6 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 
 public class PatchUtils {
 
-	static final int CONNECT_TIMEOUT_MS = 5_000;
-	static final int READ_TIMEOUT_MS = 10_000;
 	private static final List<String> FALLBACK_PATCHES = List.of("16.18", "16.17", "16.16");
 
 	private static final List<String> patches = fetchPatches();
@@ -87,27 +80,9 @@ public class PatchUtils {
 		}
 	}
 
-	public static String readUrl(String url) throws IOException {
-		try {
-			HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
-			connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
-			connection.setReadTimeout(READ_TIMEOUT_MS);
-			connection.setRequestProperty("User-Agent", "Beebot");
-			int status = connection.getResponseCode();
-			if (status < 200 || status >= 300) {
-				throw new IOException("HTTP " + status + " for " + url);
-			}
-			try (InputStream input = connection.getInputStream()) {
-				return IOUtils.toString(input, StandardCharsets.UTF_8);
-			}
-		} catch (URISyntaxException exception) {
-			throw new IOException("Invalid URL: " + url, exception);
-		}
-	}
-
 	private static List<String> fetchPatches() {
 		try {
-			String json = readUrl("https://ddragon.leagueoflegends.com/api/versions.json");
+			String json = HttpUtils.readUrl("https://ddragon.leagueoflegends.com/api/versions.json");
 			JSONArray file = (JSONArray) new JSONParser().parse(json);
 			List<String> result = new ArrayList<>();
 			for (Object v : file) {

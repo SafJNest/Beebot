@@ -8,7 +8,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -19,7 +18,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -49,6 +47,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.utils.HttpUtils;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 
@@ -86,8 +85,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     static {
 
         LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
-        String currentPatch = PatchUtils.getPatch();
-        LeagueHandler.patch = currentPatch == null ? "16.18.1" : currentPatch + ".1";
+        LeagueHandler.patch = PatchUtils.getPatch() + ".1";
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
         loadRunes();
@@ -174,7 +172,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
      */
     private static void loadRunes(){
         try {
-            String json = PatchUtils.readUrl(runesURL);
+            String json = HttpUtils.readUrl(runesURL);
             JSONParser parser = new JSONParser();
             JSONArray file = (JSONArray) parser.parse(json);
 
