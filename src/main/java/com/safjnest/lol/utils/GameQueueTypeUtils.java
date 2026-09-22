@@ -27,6 +27,12 @@ public class GameQueueTypeUtils {
     GameQueueType.RANKED_FLEX_SR
   );
 
+  private static final List<GameQueueType> RANKED_QUEUES = List.of(
+    GameQueueType.RANKED_SOLO_5X5,
+    GameQueueType.RANKED_FLEX_SR,
+    GameQueueType.RANKED_PREMADE_5X5
+  );
+
   public static boolean hasLane(GameQueueType queue) {
     return !QUEUES_WITHOUT_LANE.contains(queue);
   }
@@ -39,6 +45,13 @@ public class GameQueueTypeUtils {
     return queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO
         ? GameQueueType.RANKED_SOLO_5X5
         : queue;
+  }
+
+  public static GameQueueType rankedCanonicalQueue(GameQueueType queue) {
+    GameQueueType canonical = canonicalQueue(queue);
+    if (canonical == null) return null;
+    if (!RANKED_QUEUES.contains(canonical) || canonical == GameQueueType.RANKED_SOLO_5X5) return GameQueueType.RANKED_SOLO_5X5;
+    return canonical;
   }
 
   public static GameQueueType defaultQueue(GameQueueType queue) {

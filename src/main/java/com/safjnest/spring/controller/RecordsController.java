@@ -29,7 +29,7 @@ public class RecordsController {
         return profileRecordService.getGlobalOverview(Filter.canonical(), LolApiParameters.region(regionValue));
     }
 
-    @GetMapping("/highest_mastery/{champion}")
+    @GetMapping("/HIGHEST_MASTERY/{champion}")
     public RecordPage highestMasteryByChampion(
             @PathVariable("champion") String championValue,
             @RequestParam(name = "region", required = false) String regionValue,

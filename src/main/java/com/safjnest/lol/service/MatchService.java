@@ -36,6 +36,7 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.MatchUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -48,6 +49,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
@@ -125,17 +127,22 @@ public final class MatchService {
     }
 
     public static Match insert(LOLMatch source) {
+        return insert(source, false);
+    }
+
+    private static Match insert(LOLMatch source, boolean ranking) {
         if (source == null || source.getPlatform() == null) return null;
         String fullGameId = MatchUtils.fullGameId(source);
         cacheR4JMatch(source);
         if ((!SeasonUtils.isCurrentSplit(source.getGameStartTimestamp())
-                && GameQueueTypeUtils.isRankedSolo(source.getQueue())) || MatchUtils.isRemake(source)) {
+                && GameQueueTypeUtils.isRankedSolo(source.getQueue()) && !ranking) || MatchUtils.isRemake(source)) {
             invalidateR4JMatch(fullGameId, source.getPlatform());
             return null;
         }
 
         Match match = Match.fromR4J(source);
         if (match == null) return null;
+        if (ranking) localRanking(match);
         boolean inserted = MongoDB.insertMatch(match);
         if (source.getParticipants() == null) return null;
         for (var participant : source.getParticipants()) {
@@ -246,9 +253,13 @@ public final class MatchService {
                         return;
                     }
                     if (match == null) return;
-                    insert(match);
-                    BotLogger.info("[" + done.incrementAndGet() + "/" + total + "] " + match.getGameId() + " - "
-                        + match.getPlatform() + " - " + match.getQueue());
+                    try {
+                        Match result = insert(match, true);
+                        BotLogger.info("[" + done.incrementAndGet() + "/" + total + "] " + match.getGameId() + " - "
+                            + match.getPlatform() + " - " + match.getQueue() + " rank=" + (result == null ? "null" : result.rank));
+                    } catch (Throwable throwable) {
+                        BotLogger.error("Import insert failed: " + matchId + " " + throwable);
+                    }
                 });
             }
         } catch (Exception exception) {
@@ -417,6 +428,19 @@ public final class MatchService {
 
     private static Rank soloRank(Map<GameQueueType, Rank> ranks) {
         return ranks == null ? null : ranks.get(GameQueueType.RANKED_SOLO_5X5);
+    }
+
+    private static void localRanking(Match match) {
+        if (match == null || match.rank != null || match.leagueShard == null || match.participants == null || match.queue == null) return;
+        GameQueueType queue = GameQueueTypeUtils.rankedCanonicalQueue(match.queue);
+        List<TierDivisionType> tiers = new ArrayList<>();
+        for (Participant participant : match.participants) {
+            if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
+            Map<GameQueueType, Rank> ranks = RankService.find(participant.puuid, match.leagueShard);
+            Rank rank = ranks == null ? null : ranks.get(queue);
+            if (rank != null && rank.tier() != null) tiers.add(rank.tier());
+        }
+        if (!tiers.isEmpty()) match.setRank(TierDivisionUtils.getAverageRank(tiers));
     }
 
     private static void upsertRankProgress(List<String> gameIds, String puuid, RankProgress progress, LeagueShard shard) {
