@@ -22,7 +22,8 @@ score is `#3`.
 
 `HIGHEST_MASTERY` is the sole champion-scoped metric. Mongo persists one
 rebuildable row for every canonical `Summoner.masteries` entry with the same
-`puuid`, `championId` and `points` as its `value`/`score`. The global overview
+`puuid`, `championId` and `points` as its `value`/`score`, plus `masteryLevel`
+from `Mastery.level` (omitted on every other metric). The global overview
 returns its five highest rows under `highest_mastery`; the champion route adds
 the exact `championId` context. No queue, lane or kill-type record dimension is
 introduced.

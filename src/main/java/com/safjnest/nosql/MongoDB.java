@@ -2720,7 +2720,7 @@ public final class MongoDB {
                 if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
                 else updates.add(Updates.set(entry.getKey(), entry.getValue()));
             }
-            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared", "globalRanking", "regionRanking"))
+            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared", "globalRanking", "regionRanking", "masteryLevel"))
                 if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
             updates.add(Updates.unset("riotId"));
             updates.add(Updates.unset("icon"));

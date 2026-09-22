@@ -30,6 +30,8 @@ public class ProfileRecord {
     public Long globalRanking;
     public Long regionRanking;
     public long lastUpdate;
+    // TODO: extend dedicated subtype for HIGHEST_MASTERY-only fields
+    public Integer masteryLevel;
 
     public static ProfileRecord from(
         String puuid,
@@ -78,6 +80,7 @@ public class ProfileRecord {
         record.championId = mastery.championId();
         record.region = region;
         record.lastUpdate = lastUpdate;
+        record.masteryLevel = mastery.level();
         return record;
     }
 

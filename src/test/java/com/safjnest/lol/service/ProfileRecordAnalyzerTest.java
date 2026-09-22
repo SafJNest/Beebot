@@ -92,6 +92,7 @@ public class ProfileRecordAnalyzerTest {
         assertEquals(412, record.championId);
         assertEquals(2_000_000, record.value);
         assertEquals(2_000_000, record.score);
+        assertEquals(10, record.masteryLevel.intValue());
         assertNull(record.matchId);
         assertNull(record.gameShared);
     }
