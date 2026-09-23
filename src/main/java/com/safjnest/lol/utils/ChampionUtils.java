@@ -6,8 +6,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.lol.service.StaticDataService;
 
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
@@ -17,7 +17,7 @@ public class ChampionUtils {
   private static Map<Integer, StaticChampion> champions = new HashMap<>();
 
   static {
-    champions = LeagueHandler.getRiotApi().getDDragonAPI().getChampions()
+    champions = StaticDataService.getChampions()
         .entrySet()
         .stream()
         .filter(entry -> !entry.getValue().getKey().startsWith("Jade_"))

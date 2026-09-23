@@ -220,7 +220,8 @@ public final class ProfileRecordService {
                 if (!RedisClient.sortedSetExists(key)) continue;
                 if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(record), record.score)));
                 else RedisClient.removeSortedSetMember(key, member(record));
-                RedisClient.expire(key, RedisKey.CONTEXTUAL_RECORD_SEGMENT.ttlSeconds());
+                RedisClient.expire(RedisKey.CONTEXTUAL_RECORD_SEGMENT, record.filterKey, record.metric.name(),
+                    LeagueShardUtils.leaderboardScope(region), championId == null ? "all" : championId);
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_RECORD_ACCESS.of(), key, System.currentTimeMillis());
             }
         }
@@ -236,7 +237,9 @@ public final class ProfileRecordService {
             RecordSegment segment = entry.getKey();
             String key = entry.getValue();
             if (existing.contains(key)) {
-                RedisClient.expire(key, RedisKey.CONTEXTUAL_RECORD_SEGMENT.ttlSeconds());
+                RedisClient.expire(RedisKey.CONTEXTUAL_RECORD_SEGMENT, segment.filterKey(), segment.metric().name(),
+                    LeagueShardUtils.leaderboardScope(segment.region()),
+                    segment.championId() == null ? "all" : segment.championId());
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_RECORD_ACCESS.of(), key, System.currentTimeMillis());
                 continue;
             }
@@ -256,8 +259,11 @@ public final class ProfileRecordService {
         }
         try {
             boolean built = RedisClient.buildSortedSet(
-                RedisKey.CONTEXTUAL_RANKING_BUILD.of(java.util.UUID.randomUUID()), key,
-                RedisKey.CONTEXTUAL_RECORD_SEGMENT.ttlSeconds(), RedisKey.CONTEXTUAL_RANKING_BUILD.ttlSeconds(),
+                RedisKey.CONTEXTUAL_RANKING_BUILD, new Object[] { java.util.UUID.randomUUID() },
+                RedisKey.CONTEXTUAL_RECORD_SEGMENT,
+                new Object[] { segment.filterKey(), segment.metric().name(),
+                    LeagueShardUtils.leaderboardScope(segment.region()),
+                    segment.championId() == null ? "all" : segment.championId() },
                 entries -> MongoDB.forEachProfileRecordRankingSegment(segment.filterKey(), segment.metric(), segment.region(), segment.championId(), record ->
                     entries.accept(new RedisClient.SortedSetEntry(member(record), record.score))));
             if (built) {

@@ -154,7 +154,7 @@ record ResponseMetadata(Pagination pagination, Long lastUpdate, Boolean refresh,
 ### Read-through Cache
 
 ```
-Redis SUMMONER_STATISTICS(region, shard, puuid, filterKey)  60s TTL (BE: 6h logico, invalidato su upsert)
+Redis SUMMONER_STATISTICS(region, shard, puuid, filterKey)  12h TTL (RedisKey.SUMMONER_STATISTICS, invalidato su upsert)
   → Mongo {puuid, filterKey}   unique profile_statistics_identity
   → miss: ComputeScheduler.startProfileStatistics(...) → 202
   hit:  Redis.set dopo Mongo + invalida overview su upsert riuscito
@@ -451,9 +451,9 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 
 1. **Register key in `redis/RedisKey.java`:**
    ```java
-   MY_VIEW("los:%s:%s:my:%s:%s", Duration.ofSeconds(60)), // pattern con %s placeholders
+   MY_VIEW("los:%s:%s:my:%s:%s", Duration.ofHours(6)), // pattern con %s placeholders
    ```
-   Pattern: `los:<region>:<shard>:<puuid>:my:<filterKey>` or global `los:my:%s`. Logical TTL 60s (BE: 6h/12h but explicitly invalidated). Auto prefix `beebot:lol:` / `beebot_test:lol` via `App.isTesting()`.
+   Pattern: `los:<region>:<shard>:<puuid>:my:<filterKey>` or global `los:my:%s`. The enum TTL is the effective TTL; `Duration.ZERO` means persistent. Auto prefix `beebot:lol:` / `beebot_test:lol` via `App.isTesting()`.
 2. **Usage:**
    ```java
    String k = RedisKey.MY_VIEW.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
@@ -461,11 +461,13 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
    if(c!=null) return c;
    MyView s = MongoDB.findMy(puuid, filter);
    if(s!=null) RedisClient.set(RedisKey.MY_VIEW, s, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
-   // invalida su upsert: RedisClient.delete(k) o deleteByPattern via scan se serve
+   // invalida su upsert tramite CacheInvalidationService.clearRedis(...)
    ```
-3. **Available operations:** `set/get/mget/setex (60s), claim(NX EX), delete, increment(+expire), exists, rpush/sadd/smembers, lrangeAll/popList, dbSize, usedMemory, ttl`.
+3. **Available operations:** `set/get/mget/delete, claim(NX EX), setCached, expire, exists, rpush/sadd/smembers, lrangeAll/popList, dbSize, usedMemory, ttl`. Every write/refresh that accepts a `RedisKey` uses its declared TTL; zero means persistent.
 4. **Circuit breaker:** `RedisClient` disables for 30s on failure (`disabledUntil`). Do not abuse `mget` with >1k keys.
 5. **RAM weight:** each value Jackson-serialized; `SUMMONER_STATISTICS` ~ a few KB per PUUID/filter. Separate keys per namespace: `r4j:*` vs `ls:*` (League OS). Avoid caching entire `List<Match>`.
+6. **Invalidation owner:** Redis invalidations go through `lol.service.CacheInvalidationService`; use `clearRedis` for Redis keys and `clearMatchHistory` for the exact matchlist request/batch key. R4J uses `EmptyCacheProvider`, so it has no filesystem cache to invalidate. The tracker temporarily caches the match timeline in `R4J_TIMELINE` Redis for two minutes as a fallback and clears it in `finally` after tracking. Redis coordination locks and application-local Caffeine caches remain with their owners.
+7. **Static Riot data:** `lol.service.StaticDataService` is the single Redis-backed access path for Data Dragon items, champions and summoner spells. Rune JSON and `versions.json` use the same one-day Redis TTL. Each key is patch-scoped where the payload is patch-dependent; all other keys honor their declared `RedisKey` TTL.
 
 ---
 
@@ -636,7 +638,7 @@ Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` �
 | `match` doc | ~8-15 KB | 10 flat participants + `bans`, no events |
 | `match_events` | ~15-40 KB JSON | native WiredTiger zstd lvl 9, ~60% saving vs raw BSON |
 | `profile_statistics` | ~2-8 KB | leaves `champion×queue×lane`; no materialized `total`/`queueStats` |
-| Redis value | ~1-4 KB JSON | 60s TTL, mget batch ≤100, pool 32 conn, circuit breaker 30s |
+| Redis value | ~1-4 KB JSON | TTL declared by `RedisKey`, mget batch ≤100, pool 32 conn, circuit breaker 30s |
 | `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` | batch 100, no `List<Match>` in memory, cursor streaming |
 | Compute worker | max 2 concurrent | `CHAMPION` reserved for heavy, PROFILE least-loaded |
 
@@ -650,7 +652,7 @@ Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` �
 | Controller method | verb + resource | `profile()`, `search()`, `match()` |
 | Service method | `get/generate/refresh/invalidate` | `getStatistics()`, `generateActivity()` |
 | Queue key | `domain:puuid:filterKey` | `profile-statistics:<puuid>:<b64>` |
-| Riot rate-limit | per `LeagueShard` | `R4J SUMMONER_REFRESH_COOLDOWN 60s NX` |
+| Riot rate-limit | per `LeagueShard` | `R4J SUMMONER_REFRESH_COOLDOWN 2m NX` |
 
 ### Queries — Common Templates
 
@@ -681,7 +683,7 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - [ ] **Doc sync:** `docs/architecture/README.md` + ADR + `docs/mongo/*` + `HANDBOOK.md` updated or `handoff` with `no-doc-change` rationale.
 - [ ] **Stable presentation:** no restyling of embed/view/field order/text/layout unless explicitly requested.
 - [ ] **Indexes & explain:** `explain("executionStats")` IXSCAN + `collStats` ok before merge.
-- [ ] **Cache invalidation:** `RedisKey` + `RedisClient.set/delete` consistent with `puuid+filterKey`.
+- [ ] **Cache invalidation:** `RedisKey` + `RedisClient.set` consistent with `puuid+filterKey`; Redis evictions use `CacheInvalidationService`. R4J response caching is disabled via `EmptyCacheProvider`.
 - [ ] **Queue gate:** new work goes through `QueueHandler` (no free `thenApplyAsync`).
 - [ ] **Naming gate:** canonical model, no `*Document`, no `Optional`, no Lombok in operational code, service layout `//====`.
 - [ ] **Tests:** unit analyzer + `MockMvc` controller + Mongo test DB; no secrets in commit.

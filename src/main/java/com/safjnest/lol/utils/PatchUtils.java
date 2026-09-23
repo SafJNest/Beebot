@@ -7,6 +7,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 
 import com.safjnest.utils.HttpUtils;
+import com.safjnest.lol.service.StaticDataService;
+import com.safjnest.redis.RedisKey;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -82,7 +84,14 @@ public class PatchUtils {
 
 	private static List<String> fetchPatches() {
 		try {
-			String json = HttpUtils.readUrl("https://ddragon.leagueoflegends.com/api/versions.json");
+			String json = StaticDataService.getText(RedisKey.DDRAGON_VERSIONS, "versions",
+				() -> {
+					try {
+						return HttpUtils.readUrl("https://ddragon.leagueoflegends.com/api/versions.json");
+					} catch (java.io.IOException exception) {
+						throw new IllegalStateException(exception);
+					}
+				});
 			JSONArray file = (JSONArray) new JSONParser().parse(json);
 			List<String> result = new ArrayList<>();
 			for (Object v : file) {

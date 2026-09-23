@@ -13,16 +13,17 @@ public class RedisKeyTest {
 
     @Test
     public void centralizesTheBalancedCachePolicy() {
-        assertEquals(0, RedisKey.R4J_SUMMONER.ttlSeconds());
-        assertEquals(0, RedisKey.R4J_SUMMONER_ID.ttlSeconds());
-        assertEquals(0, RedisKey.R4J_ACCOUNT.ttlSeconds());
-        assertEquals(0, RedisKey.R4J_ACCOUNT_BY_NAME.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_SUMMONER.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_SUMMONER_ID.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_ACCOUNT.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_ACCOUNT_BY_NAME.ttlSeconds());
         assertEquals(6 * SECONDS_PER_HOUR, RedisKey.R4J_USER_ID_BY_PUUID.ttlSeconds());
-        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.R4J_LEAGUE_ENTRIES.ttlSeconds());
-        assertEquals(6 * SECONDS_PER_HOUR, RedisKey.R4J_CHAMPION_MASTERIES.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_LEAGUE_ENTRIES.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_CHAMPION_MASTERIES.ttlSeconds());
         assertEquals(SECONDS_PER_MINUTE, RedisKey.R4J_SPECTATOR_CURRENT.ttlSeconds());
         assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_MATCH_LIST.ttlSeconds());
-        assertEquals(0, RedisKey.R4J_MATCH.ttlSeconds());
+        assertEquals(SECONDS_PER_HOUR, RedisKey.R4J_MATCH.ttlSeconds());
+        assertEquals(2 * SECONDS_PER_MINUTE, RedisKey.R4J_TIMELINE.ttlSeconds());
         assertEquals(6 * SECONDS_PER_HOUR, RedisKey.MATCH_DETAIL.ttlSeconds());
         assertEquals(SECONDS_PER_HOUR, RedisKey.SUMMONER_DATA.ttlSeconds());
         assertEquals(12 * SECONDS_PER_HOUR, RedisKey.CHAMPION_STATS.ttlSeconds());
@@ -48,6 +49,11 @@ public class RedisKeyTest {
         assertEquals(10 * SECONDS_PER_MINUTE, RedisKey.CONTEXTUAL_LEADERBOARD_BUILD.ttlSeconds());
         assertEquals(SECONDS_PER_HOUR, RedisKey.CHAMPION_PAGE.ttlSeconds());
         assertEquals(SECONDS_PER_DAY, RedisKey.CHAMPION_TIER_LIST.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.DDRAGON_ITEMS.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.DDRAGON_CHAMPIONS.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.DDRAGON_SUMMONER_SPELLS.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.DDRAGON_RUNES.ttlSeconds());
+        assertEquals(SECONDS_PER_DAY, RedisKey.DDRAGON_VERSIONS.ttlSeconds());
     }
 
     @Test
@@ -88,6 +94,8 @@ public class RedisKeyTest {
     @Test
     public void separatesR4jAndLeagueOsNamespaces() {
         assertTrue(RedisKey.R4J_SUMMONER.of("EUW1", "id").contains(":r4j:"));
+        assertTrue(RedisKey.R4J_TIMELINE.of("EUROPE", "EUW1_123")
+                .endsWith("r4j:match:timeline:EUROPE:EUW1_123"));
         assertTrue(RedisKey.MATCH_DETAIL.of("EUROPE", "EUW1", "EUW1_123").endsWith("los:EUROPE:EUW1:match:EUW1_123:detail"));
     }
 }

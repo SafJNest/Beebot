@@ -65,14 +65,14 @@ public class ChampionService {
         long statsLastUpdate = statsDoc == null ? 0 : statsDoc.updatedAt;
         long buildLastUpdate = MongoDB.findChampionBuildLastUpdate(filter);
         if (isStale(statsLastUpdate) || isStale(buildLastUpdate)) {
-            RedisClient.delete(key);
-            RedisClient.delete(RedisKey.CHAMPION_STATS.of(filter.champion(), filter.genericKey()));
+            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_PAGE, filter.champion(), filter.pageKey());
+            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_STATS, filter.champion(), filter.genericKey());
         }
         ChampionView cached;
         try {
             cached = RedisClient.get(key, ChampionView.class);
         } catch (RuntimeException exception) {
-            RedisClient.delete(key);
+            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_PAGE, filter.champion(), filter.pageKey());
             cached = null;
         }
         if (cached != null) {
@@ -93,7 +93,7 @@ public class ChampionService {
         try {
             stats = RedisClient.get(key, ChampionStatistics.class);
         } catch (RuntimeException exception) {
-            RedisClient.delete(key);
+            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_STATS, filter.champion(), filter.genericKey());
             stats = null;
         }
         if (stats != null) return stats;
@@ -195,7 +195,8 @@ public class ChampionService {
         try {
             cached = RedisClient.get(key, ChampionTierList.class);
         } catch (RuntimeException exception) {
-            RedisClient.delete(key);
+            CacheInvalidationService.clearRedis(
+                RedisKey.CHAMPION_TIER_LIST, tierFilter(base, null).genericKey());
             cached = null;
         }
         if (cached != null) return ApiResult.ready(cached, cached.metadata());
@@ -340,11 +341,12 @@ public class ChampionService {
     }
 
     public static void invalidate(Filter filter) {
-        if (filter != null) RedisClient.delete(RedisKey.CHAMPION_PAGE.of(filter.champion(), filter.pageKey()));
+        if (filter != null) CacheInvalidationService.clearRedis(RedisKey.CHAMPION_PAGE, filter.champion(), filter.pageKey());
     }
 
     public static void invalidateTierList(Filter filter) {
-        if (filter != null) RedisClient.delete(tierListKey(filter));
+        if (filter != null) CacheInvalidationService.clearRedis(
+            RedisKey.CHAMPION_TIER_LIST, tierFilter(filter, null).genericKey());
     }
 
     // ============================================================================
@@ -416,8 +418,8 @@ public class ChampionService {
 
     private static void invalidateStatistics(Filter filter) {
         for (Filter cached : statisticsCacheFilters(filter)) {
-            RedisClient.delete(RedisKey.CHAMPION_STATS.of(cached.champion(), cached.genericKey()));
-            RedisClient.delete(RedisKey.CHAMPION_PAGE.of(cached.champion(), cached.pageKey()));
+            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_STATS, cached.champion(), cached.genericKey());
+            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_PAGE, cached.champion(), cached.pageKey());
         }
     }
 
@@ -445,7 +447,7 @@ public class ChampionService {
         if (filters == null || filters.isEmpty()) return;
         Set<String> keys = new HashSet<>();
         for (Filter filter : filters) if (filter != null) keys.add(tierListKey(filter));
-        for (String key : keys) RedisClient.delete(key);
+        CacheInvalidationService.clearRedis(new ArrayList<>(keys));
     }
 
     private static boolean isStale(long lastUpdate) {

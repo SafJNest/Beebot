@@ -35,6 +35,7 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
@@ -560,7 +561,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> item(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         HashMap<String, String> items = new HashMap<>();
-        for (Item item : LeagueHandler.getRiotApi().getDDragonAPI().getItems().values()) {
+        for (Item item : StaticDataService.getItems().values()) {
             // 30 is arena, so the item is different with the same name (riot?)         
             if (item.getMaps().get("30")) items.put(item.getName().replaceAll("<.+?>", "") + " (ARENA)", item.getId() + "");
             else if (item.getMaps().get("33")) items.put(item.getName().replaceAll("<.+?>", "") + " (SWARM)", item.getId() + "");

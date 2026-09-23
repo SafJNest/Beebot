@@ -52,10 +52,11 @@ import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 
 public final class MatchService {
 
-    private static final int MATCH_LIST_BATCH_SIZE = 100;
+    static final int MATCH_LIST_BATCH_SIZE = 100;
 
     private static final TypeReference<List<String>> MATCH_IDS_TYPE = new TypeReference<List<String>>() {};
     private static final TypeReference<List<RankHistoryMatch>> RANK_HISTORY_TYPE = new TypeReference<>() {};
@@ -200,9 +201,27 @@ public final class MatchService {
         RedisClient.set(RedisKey.R4J_MATCH, match, match.getPlatform().toRegionShard().name(), gameId);
     }
 
+    public static LOLTimeline getTimeline(LOLMatch match) {
+        if (match == null || match.getPlatform() == null) return null;
+        String gameId = MatchUtils.fullGameId(match);
+        String region = match.getPlatform().toRegionShard().name();
+        LOLTimeline cached = RedisClient.get(RedisKey.R4J_TIMELINE.of(region, gameId), LOLTimeline.class);
+        if (cached != null) return cached;
+
+        LOLTimeline timeline = match.getTimeline();
+        if (timeline != null) RedisClient.set(RedisKey.R4J_TIMELINE, timeline, region, gameId);
+        return timeline;
+    }
+
+    public static void clearTimelineCache(LOLMatch match) {
+        if (match == null || match.getPlatform() == null) return;
+        CacheInvalidationService.clearRedis(
+            RedisKey.R4J_TIMELINE, match.getPlatform().toRegionShard().name(), MatchUtils.fullGameId(match));
+    }
+
     public static void invalidateR4JMatch(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
-        RedisClient.delete(RedisKey.R4J_MATCH.of(shard.toRegionShard().name(), gameId));
+        CacheInvalidationService.clearRedis(RedisKey.R4J_MATCH, shard.toRegionShard().name(), gameId);
     }
 
     public static ApiResult<Match> getDetail(String gameId, LeagueShard shard) {
@@ -323,7 +342,20 @@ public final class MatchService {
 
     public static void invalidate(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
-        RedisClient.delete(RedisKey.MATCH_DETAIL.of(LeagueShardUtils.cacheRegion(shard), shard.name(), gameId));
+        CacheInvalidationService.clearRedis(
+            RedisKey.MATCH_DETAIL, LeagueShardUtils.cacheRegion(shard), shard.name(), gameId);
+    }
+
+    public static void invalidate(Match match) {
+        if (match == null || !valid(match.gameId, match.leagueShard)) return;
+        invalidate(match.gameId, match.leagueShard);
+        if (match.participants == null) return;
+        for (Participant participant : match.participants) {
+            if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
+            CacheInvalidationService.clearRedis(
+                RedisKey.SUMMONER_DATA,
+                LeagueShardUtils.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid);
+        }
     }
 
     public static List<String> getRecentIds(
@@ -345,14 +377,7 @@ public final class MatchService {
         if (summoner == null || index < 0) return;
 
         int batchIndex = index / MATCH_LIST_BATCH_SIZE * MATCH_LIST_BATCH_SIZE;
-        String requestKey = matchListRequestKey(queue, MATCH_LIST_BATCH_SIZE, 0, null);
-        RedisClient.delete(RedisKey.R4J_MATCH_LIST.of(
-            summoner.getPlatform().name(),
-            summoner.getPUUID(),
-            requestKey,
-            batchIndex
-        ));
-        LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, queue);
+        CacheInvalidationService.clearMatchHistory(summoner, queue, batchIndex, MATCH_LIST_BATCH_SIZE, 0, null);
     }
 
     public static List<String> getMatchlist(
@@ -487,7 +512,8 @@ public final class MatchService {
         if (cached != null) return cached;
 
         List<RankHistoryMatch> source = MongoDB.findRankHistoryMatches(puuid, shard, season.start(), season.end());
-        RedisClient.setCached(key, JsonCodec.toJson(source), RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
+        RedisClient.setCached(RedisKey.SUMMONER_RANK_HISTORY, JsonCodec.toJson(source),
+            cacheRegion, shard.name(), puuid, season.season());
         return source;
     }
 

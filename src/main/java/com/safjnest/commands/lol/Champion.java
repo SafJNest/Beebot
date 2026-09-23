@@ -16,6 +16,7 @@ import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -423,7 +424,7 @@ public class Champion extends SlashCommand {
 
     private String itemName(int item) {
         try {
-            var data = LeagueHandler.getRiotApi().getDDragonAPI().getItem(item);
+            var data = StaticDataService.getItem(item);
             if (data != null) return data.getName();
         } catch (Exception e) { }
         return String.valueOf(item);

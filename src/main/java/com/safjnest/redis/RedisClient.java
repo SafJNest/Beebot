@@ -26,7 +26,6 @@ public class RedisClient {
 
     public static final int SORTED_SET_BATCH_SIZE = 250;
     private static final int CONNECTION_TIMEOUT_MS = 500;
-    private static final int TEMPORARY_TTL_SECONDS = 60;
     private static final long RETRY_AFTER_FAILURE_MS = 30_000;
     private static final JedisPool pool;
     private static volatile long disabledUntil;
@@ -54,17 +53,21 @@ public class RedisClient {
     }
 
     public static void set(RedisKey key, String value, Object... args) {
-        set(key.of(args), value);
+        if (key == null) return;
+        set(key.of(args), value, key.ttlSeconds());
     }
 
     public static <T> void set(RedisKey key, T value, Object... args) {
-        set(key.of(args), value);
+        if (key == null) return;
+        set(key.of(args), JsonCodec.toJson(value), key.ttlSeconds());
     }
 
     public static boolean claim(RedisKey key, String value, Object... args) {
         if (key == null || !canUseRedis()) return false;
         try (Jedis jedis = pool.getResource()) {
-            String result = jedis.set(key.of(args), value, SetParams.setParams().nx().ex(TEMPORARY_TTL_SECONDS));
+            SetParams params = SetParams.setParams().nx();
+            if (key.ttlSeconds() > 0) params.ex(key.ttlSeconds());
+            String result = jedis.set(key.of(args), value, params);
             markAvailable();
             return "OK".equals(result);
         } catch (Exception ignored) {
@@ -73,20 +76,11 @@ public class RedisClient {
         }
     }
 
-    private static void set(String key, String value) {
-        if (!canUseRedis()) return;
+    private static void set(String key, String value, int ttlSeconds) {
+        if (key == null || value == null || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.setex(key, TEMPORARY_TTL_SECONDS, value);
-            markAvailable();
-        } catch (Exception ignored) {
-            markUnavailable();
-        }
-    }
-
-    private static <T> void set(String key, T value) {
-        if (!canUseRedis()) return;
-        try (Jedis jedis = pool.getResource()) {
-            jedis.setex(key, TEMPORARY_TTL_SECONDS, JsonCodec.toJson(value));
+            if (ttlSeconds > 0) jedis.setex(key, ttlSeconds, value);
+            else jedis.set(key, value);
             markAvailable();
         } catch (Exception ignored) {
             markUnavailable();
@@ -172,18 +166,27 @@ public class RedisClient {
         }
     }
 
-    public static long rpush(String key, String element) {
+    public static long rpush(RedisKey key, String element, Object... args) {
+        if (key == null || element == null || !canUseRedis()) return 0;
         try (Jedis jedis = pool.getResource()) {
-            long result = jedis.rpush(key, element);
-            jedis.expire(key, TEMPORARY_TTL_SECONDS);
+            String redisKey = key.of(args);
+            long result = jedis.rpush(redisKey, element);
+            applyTtl(jedis, redisKey, key.ttlSeconds());
+            markAvailable();
             return result;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return 0;
         }
     }
 
-    public static long sadd(String key, String element) {
+    public static long sadd(RedisKey key, String element, Object... args) {
+        if (key == null || element == null || !canUseRedis()) return 0;
         try (Jedis jedis = pool.getResource()) {
-            long result = jedis.sadd(key, element);
-            jedis.expire(key, TEMPORARY_TTL_SECONDS);
+            String redisKey = key.of(args);
+            long result = jedis.sadd(redisKey, element);
+            applyTtl(jedis, redisKey, key.ttlSeconds());
+            markAvailable();
             return result;
         }
         catch (Exception ignored) {
@@ -253,14 +256,9 @@ public class RedisClient {
         }
     }
 
-    public static void setCached(String key, String value, int ttlSeconds) {
-        if (key == null || value == null || ttlSeconds <= 0 || !canUseRedis()) return;
-        try (Jedis jedis = pool.getResource()) {
-            jedis.setex(key, ttlSeconds, value);
-            markAvailable();
-        } catch (Exception ignored) {
-            markUnavailable();
-        }
+    public static void setCached(RedisKey key, String value, Object... args) {
+        if (key == null) return;
+        set(key.of(args), value, key.ttlSeconds());
     }
 
     public static long ttl(String key) {
@@ -275,10 +273,15 @@ public class RedisClient {
         }
     }
 
-    public static void expire(String key, int seconds) {
-        if (key == null || seconds <= 0 || !canUseRedis()) return;
+    public static void expire(RedisKey key, Object... args) {
+        if (key == null) return;
+        expire(key.of(args), key.ttlSeconds());
+    }
+
+    private static void expire(String key, int seconds) {
+        if (key == null || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.expire(key, seconds);
+            applyTtl(jedis, key, seconds);
             markAvailable();
         } catch (Exception ignored) {
             markUnavailable();
@@ -382,7 +385,7 @@ public class RedisClient {
         }
     }
 
-    public static void publishSortedSet(String temporaryKey, String key, int ttlSeconds) {
+    private static void publishSortedSet(String temporaryKey, String key, int ttlSeconds) {
         if (temporaryKey == null || key == null || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             jedis.rename(temporaryKey, key);
@@ -395,13 +398,15 @@ public class RedisClient {
     }
 
     public static boolean buildSortedSet(
-        String temporaryKey,
-        String key,
-        int ttlSeconds,
-        int temporaryTtlSeconds,
+        RedisKey temporaryRedisKey,
+        Object[] temporaryValues,
+        RedisKey redisKey,
+        Object[] values,
         Consumer<Consumer<SortedSetEntry>> source
     ) {
-        if (temporaryKey == null || key == null || source == null) return false;
+        if (temporaryRedisKey == null || redisKey == null || source == null) return false;
+        String temporaryKey = temporaryRedisKey.of(temporaryValues);
+        String key = redisKey.of(values);
         List<SortedSetEntry> batch = new ArrayList<>(SORTED_SET_BATCH_SIZE);
         try {
             source.accept(entry -> {
@@ -411,9 +416,9 @@ public class RedisClient {
                 batch.clear();
             });
             if (!batch.isEmpty()) addSortedSet(temporaryKey, batch);
-            expire(temporaryKey, temporaryTtlSeconds);
+            expire(temporaryKey, temporaryRedisKey.ttlSeconds());
             if (!sortedSetExists(temporaryKey)) return false;
-            publishSortedSet(temporaryKey, key, ttlSeconds);
+            publishSortedSet(temporaryKey, key, redisKey.ttlSeconds());
             return sortedSetExists(key);
         } finally {
             delete(temporaryKey);
@@ -544,6 +549,11 @@ public class RedisClient {
 
     private static boolean canUseRedis() {
         return System.currentTimeMillis() >= disabledUntil;
+    }
+
+    private static void applyTtl(Jedis jedis, String key, int ttlSeconds) {
+        if (ttlSeconds > 0) jedis.expire(key, ttlSeconds);
+        else jedis.persist(key);
     }
 
     private static void markUnavailable() {

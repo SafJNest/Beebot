@@ -315,7 +315,8 @@ public class ProfileService {
 
     public static void invalidate(String puuid, LeagueShard shard) {
         if (shard == null || puuid == null || puuid.isBlank()) return;
-        RedisClient.delete(RedisKey.SUMMONER_OVERVIEW.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
+        CacheInvalidationService.clearRedis(
+            RedisKey.SUMMONER_OVERVIEW, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
     }
 
     public static void markManuallySeen(String puuid) {

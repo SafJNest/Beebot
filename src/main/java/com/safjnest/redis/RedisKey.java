@@ -16,7 +16,14 @@ public enum RedisKey {
     R4J_SPECTATOR_CURRENT("r4j:match:current:%s:%s", Duration.ofSeconds(60)),
     R4J_MATCH_LIST("r4j:match:list:%s:%s:%s:%s", Duration.ofHours(1)),
     R4J_MATCH("r4j:match:by-id:%s:%s", Duration.ofHours(1)),
+    R4J_TIMELINE("r4j:match:timeline:%s:%s", Duration.ofMinutes(2)),
     R4J_SUMMONER_REFRESH_COOLDOWN("r4j:summoner:refresh:cooldown:%s:%s", Duration.ofMinutes(2)),
+
+    DDRAGON_ITEMS("r4j:static:items:%s", Duration.ofDays(1)),
+    DDRAGON_CHAMPIONS("r4j:static:champions:%s", Duration.ofDays(1)),
+    DDRAGON_SUMMONER_SPELLS("r4j:static:summoner-spells:%s", Duration.ofDays(1)),
+    DDRAGON_RUNES("r4j:static:runes:%s", Duration.ofDays(1)),
+    DDRAGON_VERSIONS("r4j:static:versions:%s", Duration.ofDays(1)),
 
     MATCH_DETAIL("los:%s:%s:match:%s:detail", Duration.ofHours(6)),
     SUMMONER_DATA("los:%s:%s:summoner:%s:data", Duration.ofHours(1)),

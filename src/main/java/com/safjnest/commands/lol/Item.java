@@ -11,6 +11,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.BotCommand;
@@ -45,7 +46,7 @@ public class Item extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         int itemId = event.getOption("item").getAsInt();
 
-        no.stelar7.api.r4j.pojo.lol.staticdata.item.Item item = LeagueHandler.getRiotApi().getDDragonAPI().getItem(itemId);
+        no.stelar7.api.r4j.pojo.lol.staticdata.item.Item item = StaticDataService.getItem(itemId);
 
         EmbedBuilder eb = new EmbedBuilder();
 

@@ -103,7 +103,6 @@ public final class SummonerService {
             return CompletableFuture.completedFuture(RefreshResult.ignored());
         }
 
-        LeagueHandler.clearRiotProfileRefreshCache(shard, puuid);
         invalidateRefreshSourceCaches(puuid, shard);
         return refreshRiotAccountAsync(puuid, shard).thenCompose(account -> refreshRiotSummonerAsync(puuid, shard)
             .thenComposeAsync(source -> refreshProfile(source, account)))
@@ -331,17 +330,19 @@ public final class SummonerService {
     public static void invalidate(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return;
 
-        RedisClient.delete(RedisKey.R4J_SUMMONER.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.R4J_ACCOUNT.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.R4J_USER_ID_BY_PUUID.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
-        RedisClient.delete(RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
-        RedisClient.delete(RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
-        RedisClient.delete(RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.R4J_MATCH_LIST.of(shard.name(), puuid, "null", 0));
-        RedisClient.delete(RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid));
+        CacheInvalidationService.clearRedis(List.of(
+            RedisKey.R4J_SUMMONER.of(shard.name(), puuid),
+            RedisKey.R4J_ACCOUNT.of(shard.name(), puuid),
+            RedisKey.R4J_USER_ID_BY_PUUID.of(shard.name(), puuid),
+            RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid),
+            RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid),
+            RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
+            RedisKey.R4J_SPECTATOR_CURRENT.of(shard.name(), puuid),
+            RedisKey.R4J_MATCH_LIST.of(shard.name(), puuid, "null", 0),
+            RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid)
+        ));
         ProfileService.invalidate(puuid, shard);
     }
 
@@ -426,7 +427,7 @@ public final class SummonerService {
     }
 
     private static void invalidateRefreshSourceCaches(String puuid, LeagueShard shard) {
-        RedisClient.delete(List.of(
+        CacheInvalidationService.clearRedis(List.of(
             RedisKey.R4J_SUMMONER.of(shard.name(), puuid),
             RedisKey.R4J_ACCOUNT.of(shard.name(), puuid),
             RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid),

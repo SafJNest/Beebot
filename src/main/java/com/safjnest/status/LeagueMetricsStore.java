@@ -63,7 +63,7 @@ public final class LeagueMetricsStore {
             }
             long value = Math.max(0, source.getAsLong());
             target.set(value);
-            RedisClient.setCached(redisKey, Long.toString(value), key.ttlSeconds());
+            RedisClient.setCached(key, Long.toString(value));
         } catch (Exception ignored) {
         }
     }
@@ -78,7 +78,7 @@ public final class LeagueMetricsStore {
             }
             Map<String, Long> value = MongoDB.rankTotalsByQueue();
             RANKS_BY_QUEUE.set(value);
-            RedisClient.setCached(redisKey, JsonCodec.toJson(value), RedisKey.STATUS_RANKS_BY_QUEUE.ttlSeconds());
+            RedisClient.setCached(RedisKey.STATUS_RANKS_BY_QUEUE, JsonCodec.toJson(value));
         } catch (Exception ignored) {
         }
     }

@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.StaticDataService;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
@@ -16,7 +16,7 @@ public class ItemUtils {
   public static final int BASE_BOOTS = 1001;
 
   static {
-    items = LeagueHandler.getRiotApi().getDDragonAPI().getItems();
+    items = StaticDataService.getItems();
   }
 
   public static Map<Integer, Item> getItems() {

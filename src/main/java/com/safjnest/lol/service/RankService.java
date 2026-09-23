@@ -25,7 +25,6 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -322,15 +321,11 @@ public final class RankService {
     }
 
     private static void hardInvalidate(String puuid, LeagueShard shard) {
-        RedisClient.delete(List.of(
+        CacheInvalidationService.clearRedis(List.of(
             RedisKey.R4J_LEAGUE_ENTRIES.of(shard.name(), puuid),
             RedisKey.SUMMONER_RANK.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid),
             RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid)
         ));
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("platform", shard);
-        data.put("id", puuid);
-        LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, data);
     }
 
     private static Map<GameQueueType, Rank> toRanks(List<LeagueEntry> entries) {
