@@ -46,6 +46,21 @@ public class ProfileStatistics {
         return champions != null;
     }
 
+    @JsonIgnore
+    public boolean hasSpellCastBreakdowns() {
+        if (champions == null) return false;
+        for (Map<CanonicalQueue, Map<String, ProfileLeafStats>> queues : champions.values()) {
+            if (queues == null) continue;
+            for (Map<String, ProfileLeafStats> positions : queues.values()) {
+                if (positions == null) continue;
+                for (ProfileLeafStats leaf : positions.values()) {
+                    if (leaf == null || spellCasts(leaf.spellDCasts) != leaf.d || spellCasts(leaf.spellFCasts) != leaf.f) return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public void add(MatchResult match, GameQueueType queue, LaneType lane) {
         if (match == null || queue == null) return;
         Participant participant = new Participant();
@@ -171,6 +186,7 @@ public class ProfileStatistics {
         if (player.championLevel != null) leaf.championLevelTotal = leaf.championLevelTotal == null ? (long)player.championLevel : leaf.championLevelTotal + player.championLevel;
         leaf.doubles += player.doubles; leaf.triples += player.triples; leaf.quadruples += player.quadruples; leaf.pentas += player.pentas;
         leaf.q += player.q; leaf.w += player.w; leaf.e += player.e; leaf.r += player.r; leaf.d += player.d; leaf.f += player.f;
+        leaf.accumulateSpellCasts(player);
         if (arena) { if (player.subTeamPlacement==1) leaf.arenaFirst++; else if (player.subTeamPlacement==2) leaf.arenaSecond++; else if (player.subTeamPlacement==3) leaf.arenaThird++; leaf.arenaPlacementSum += player.subTeamPlacement; }
         leaf.playtime += Math.max(0, match.timeEnd - match.timeStart);
         leaf.lastPlayedAt = Math.max(leaf.lastPlayedAt, match.timeStart);
@@ -191,6 +207,12 @@ public class ProfileStatistics {
 
     private static String laneKey(LaneType lane) {
         return lane == null || lane == LaneType.NONE ? "UNKNOWN" : lane.name();
+    }
+
+    private static long spellCasts(Map<Integer, Long> spells) {
+        long result = 0;
+        if (spells != null) for (Long casts : spells.values()) if (casts != null) result += casts;
+        return result;
     }
 
     private void updateTime(long start, long end) {

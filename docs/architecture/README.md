@@ -37,6 +37,7 @@ lol/model/leaderboard/
 lol/model/statistics/
   ProfileStatistics
   ProfileActivity
+  ProfileMatchups
   shared/LeafStats
   shared/ProfileLeafStats
   shared/ChampionLeafStats

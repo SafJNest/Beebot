@@ -343,7 +343,7 @@ public class ProfileService {
     }
 
     private static boolean isCurrent(ProfileStatistics statistics) {
-        return statistics != null && statistics.hasLeafStatistics();
+        return statistics != null && statistics.hasLeafStatistics() && statistics.hasSpellCastBreakdowns();
     }
 
     static boolean isStale(String puuid, long lastUpdate) {

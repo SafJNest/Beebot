@@ -511,6 +511,8 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 4. **Enqueue:** `ComputeScheduler.startMy(puuid, shard, filter)` → `QueueHandler.normal(PROFILE, key="my:"+puuid+":"+filter.toSummonerKey(), ...)`.
 5. **API:** `MyService.get(...)` read-through → `ApiResult.ready/pending/partial`.
 
+Profile leaves expose `D` and `F` spell-cast maps whose values sum to `d` and `f` by construction. Profile matchups persist same-lane opponents and applicable BOT/UTILITY or Arena teammates; response filtering combines buckets below `minGames` under `others` so every relation remains additive. Refreshing the aggregate rebuilds the persisted projection from stored matches.
+
 ---
 
 ### 5.10 Filter Modification

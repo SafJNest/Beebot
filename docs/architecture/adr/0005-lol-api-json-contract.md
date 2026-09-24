@@ -24,12 +24,37 @@ not turned into zero. Arena fields are present only in the
 that leaf. This amendment replaces the subsequent incompatible paragraphs
 regarding champion rows.
 
+Each profile-statistics leaf also exposes `D` and `F`, maps from summoner-spell
+ID to total casts in that slot. Their values sum to the existing `d` and `f`
+cast counters. If casts exist but the historical spell ID is unavailable, ID
+`0` carries those casts. Existing cached or persisted statistics that do not
+reconcile these maps are treated as stale and rebuilt from stored matches.
+
 `GET /profile/{puuid}/matchups` uses the distinct `profile_matchups`
-collection and serializes only the leaves
-`champions.<championId>.<canonicalQueue>.<position>.matchups.<opponentId>`.
-This payload also contains no aggregates that remove queue/position, nor
-`reference`, `winrate`, `kda` or `avg*`; the consumer composes its own views.
+collection. It serializes only `champion × canonicalQueue × position` leaves,
+with same-position enemy `matchups`, complementary BOT/UTILITY or Arena
+same-subteam `synergies`, and per-leaf `D`/`F` cast maps. Matchup and synergy
+maps use decimal champion-ID keys and reserve `others` for the sum of entries
+below `minGames` (default 5); no entries are dropped. The `others` value has
+the same `ProfileLeafStats` shape and preserves the sum of the relation map.
+Lane-based games get one same-position opponent; BOT/UTILITY games also get
+one complementary teammate. Arena games get one same-subteam teammate and no
+lane matchup. Champion ID `0` is the fallback relation key if match data lacks
+the corresponding participant. Matchup and synergy child values use the same
+accumulator shape as their parent, including D/F casts. The payload contains
+no aggregates that remove queue/position, nor `reference`, `winrate`, `kda` or
+`avg*`; the consumer composes its own views.
 `ProfileStatistics` does not store a root aggregate `matchups` or `duoStats`.
+
+The persisted `profile_matchups` document is keyed by `{ puuid, filterKey }`.
+Redis keeps the stable `SUMMONER_MATCHUPS` key. The API projection applies
+`minGames` at read time, so a cached complete aggregate can serve different
+thresholds.
+
+### Amendment 2026-09-24: profile matchup breakdowns
+
+This amendment extends the 2026-08-27 profile-statistics leaf contract with
+the spell-cast maps and the complete, additive matchup/synergy breakdowns above.
 
 Success payloads use canonical models from `lol.model`. Spring retains only HTTP error models.
 

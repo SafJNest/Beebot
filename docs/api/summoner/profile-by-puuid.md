@@ -48,6 +48,16 @@ only by the dedicated profile-matches endpoint.
             "TOP": {
               "games": 42,
               "wins": 24,
+              "d": 145,
+              "f": 96,
+              "D": {
+                "4": 125,
+                "6": 20
+              },
+              "F": {
+                "4": 14,
+                "14": 82
+              },
               "kills": 286,
               "deaths": 198,
               "assists": 512,
@@ -79,6 +89,11 @@ Neither `total`, `queueStats`, `laneStats`,
 returned or stored.
 A leaf may include `isOtp: true` only for the single OTP champion of the
 same queue; the non-OTP case is omitted.
+
+`D` and `F` map summoner-spell IDs to total casts made with that spell in the
+corresponding slot. Their values sum to the leaf's existing `d` and `f` cast
+counters. A spell ID may be `0` when the participant has cast data but no
+spell ID was available.
 
 Dataset queues are `CanonicalQueue`, not Riot enums: for example
 `RANKED_SOLO`, `RANKED_FLEX`, `NORMAL_DRAFT`, `ARAM`, `ARENA` and `SWIFTPLAY`.
