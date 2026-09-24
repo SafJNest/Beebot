@@ -19,7 +19,8 @@ curl 'http://localhost:8080/api/lol/EUW1/match/EUW1_6789012345'
 
 The prefix before `_` is stripped for the SQL lookup; the path shard
 remains the reference region. A miss follows `Redis → DB → Tracker → Riot`
-and does not perform a synchronous Riot fetch in the HTTP request.
+and does not perform a synchronous Riot fetch in the HTTP request. Fetched
+non-remake matches are persisted regardless of split age.
 
 ## `200` response
 
