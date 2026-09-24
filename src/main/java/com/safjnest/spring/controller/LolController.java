@@ -1,6 +1,8 @@
 package com.safjnest.spring.controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,7 @@ import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.SummonerService;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")
@@ -101,25 +104,31 @@ public class LolController {
             @RequestParam(name = "offset", defaultValue = "0") int offset,
             @RequestParam(name = "timeStart", defaultValue = "0") long timeStart,
             @RequestParam(name = "timeEnd", defaultValue = "0") long timeEnd,
-            @RequestParam(name = "sort", required = false) String sortValue
+            @RequestParam(name = "sort", required = false) String sortValue,
+            @RequestParam(name = "champion", required = false) String championValue,
+            @RequestParam(name = "lane", required = false) String laneValue,
+            @RequestParam(name = "patch", required = false) String patchValue,
+            @RequestParam Map<String, String> queryParameters
     ) {
+        LolApiParameters.validateQueryParameters(queryParameters,
+            Set.of("queue", "limit", "offset", "timeStart", "timeEnd", "sort", "champion", "lane", "patch"));
         LeagueShard shard = LolApiParameters.requiredShard(shardValue);
         String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
         int pageLimit = LolApiParameters.matchLimit(limit);
         int pageOffset = LolApiParameters.matchOffset(offset);
         MatchOrder order = LolApiParameters.matchOrder(sortValue);
+        GameQueueType queue = LolApiParameters.optionalQueue(queueValue);
         Filter filter = LolApiParameters.activityFilter(
             timeStart,
             timeEnd,
-            LolApiParameters.optionalQueue(queueValue),
-            0
-        );
+            queue,
+            LolApiParameters.optionalChampion(championValue)
+        ).setLane(LolApiParameters.matchLane(laneValue, queue))
+            .setPatch(LolApiParameters.patch(patchValue))
+            .setRegion(shard);
         MatchPage page = MatchService.getPage(
             profilePuuid,
-            shard,
-            filter.timeStart(),
-            filter.timeEnd(),
-            filter.queue(),
+            filter,
             pageOffset,
             pageLimit,
             order

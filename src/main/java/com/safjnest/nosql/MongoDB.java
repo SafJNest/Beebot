@@ -897,26 +897,35 @@ public final class MongoDB {
 
     public static List<com.safjnest.lol.model.match.MatchResult> findMatchResults(
             String puuid,
-            LeagueShard shard,
-            long timeStart,
-            long timeEnd,
-            GameQueueType queue,
+            Filter filter,
             int offset,
             int limit,
             boolean ascending) {
-        traceRead("match.findResults", "puuid=" + puuid + " queue=" + queue + " offset=" + offset + " limit=" + limit);
+        traceRead("match.findResults", "puuid=" + puuid + " queue=" + (filter == null ? null : filter.queue())
+            + " offset=" + offset + " limit=" + limit);
         List<com.safjnest.lol.model.match.MatchResult> result = new ArrayList<>();
+        if (puuid == null || puuid.isBlank() || filter == null) return result;
         int boundedOffset = Math.max(0, offset);
         int boundedLimit = Math.max(0, Math.min(101, limit));
         if (boundedLimit == 0) return result;
-        for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))
-                .projection(matchResultProjection())
-                .sort(ascending ? Sorts.ascending("timeStart", "_id") : Sorts.descending("timeStart", "_id"))
-                .skip(boundedOffset)
-                .limit(boundedLimit)) {
-            com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);
+        boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
+        FindIterable<Document> documents = matches().find(buildMatchFilter(puuid, null, filter, 0, 0))
+            .projection(relationalFilter ? profileStatisticsMatchProjection() : matchResultProjection())
+            .sort(ascending ? Sorts.ascending("timeStart", "_id") : Sorts.descending("timeStart", "_id"))
+            .skip(relationalFilter ? 0 : boundedOffset);
+        if (!relationalFilter) documents = documents.limit(boundedLimit);
+        int skipped = 0;
+        for (Document document : documents) {
+            com.safjnest.lol.model.match.Match match = relationalFilter
+                ? readMatch(matchRecord(document))
+                : read(matchRecord(document), Match.class);
+            if (relationalFilter) {
+                if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
+                if (skipped++ < boundedOffset) continue;
+            }
             com.safjnest.lol.model.match.MatchResult matchResult = toMatchResult(match, puuid);
             if (matchResult != null) result.add(matchResult);
+            if (result.size() >= boundedLimit) break;
         }
         return result;
     }
@@ -1028,10 +1037,6 @@ public final class MongoDB {
                 consumer.accept(aiTrainingSample(match, "RED", red));
             }
         }
-    }
-
-        public static long countMatches(String puuid, LeagueShard shard, long timeStart, long timeEnd, GameQueueType queue) {
-        return matches().countDocuments(matchFilter(puuid, shard, timeStart, timeEnd, queue));
     }
 
         public static boolean hasMatch(String fullGameId) {

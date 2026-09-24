@@ -3,6 +3,8 @@ package com.safjnest.spring.controller;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.StringJoiner;
 
 import org.springframework.http.HttpStatus;
@@ -207,6 +209,16 @@ public final class LolApiParameters {
         }
     }
 
+    public static LaneType matchLane(String value, GameQueueType queue) {
+        if (value == null || value.isBlank()) return null;
+        LaneType lane = parseEnum(value, LaneType.class, "lane");
+        if (!LaneTypeUtils.playables().contains(lane)) {
+            throw invalid("lane", "must be one of: TOP, JUNGLE, MID, BOT, UTILITY");
+        }
+        if (!GameQueueTypeUtils.hasLane(queue)) throw invalid("lane", "is not supported by the selected queue");
+        return lane;
+    }
+
     public static Integer otpChampion(String value) {
         if (value == null || value.isBlank()) return null;
         try {
@@ -226,6 +238,24 @@ public final class LolApiParameters {
         StaticChampion champion = ChampionUtils.findChampion(value);
         if (champion != null && champion.getId() > 0) return champion.getId();
         throw invalid("champion", "must identify a known champion");
+    }
+
+    public static int optionalChampion(String value) {
+        if (value == null || value.isBlank()) return 0;
+        StaticChampion champion = ChampionUtils.findChampion(value);
+        if (champion != null && champion.getId() > 0) return champion.getId();
+        try {
+            int championId = Integer.parseInt(value.trim());
+            if (ChampionUtils.getChampion(championId) != null) return championId;
+        } catch (NumberFormatException ignored) { }
+        throw invalid("champion", "must identify a known champion");
+    }
+
+    public static void validateQueryParameters(Map<String, String> parameters, Set<String> allowed) {
+        if (parameters == null) return;
+        for (String parameter : parameters.keySet()) {
+            if (!allowed.contains(parameter)) throw invalid(parameter, "is not supported");
+        }
     }
 
     public static int page(int page) {

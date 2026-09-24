@@ -151,7 +151,7 @@ public class QueryRecord extends HashMap<String, Object> {
             if (value instanceof Timestamp timestamp) return timestamp;
             if (value instanceof Date date) return new Timestamp(date.getTime());
             if (value instanceof Instant instant) return Timestamp.from(instant);
-            return Timestamp.valueOf(LocalDateTime.parse(stringValue(value), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            return Timestamp.valueOf(LocalDateTime.parse(stringValue(value), BASE_FORMATTER));
         } catch (Exception e) {
             return null;
         }

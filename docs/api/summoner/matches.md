@@ -7,7 +7,7 @@
 ## Fetch
 
 ```bash
-curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?queue=RANKED_SOLO_5X5&limit=20&offset=0&sort=timeStart:desc'
+curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?queue=RANKED_SOLO_5X5&champion=Ahri&lane=MID&patch=16.18&limit=20&offset=0&sort=timeStart:desc'
 ```
 
 ## Parameters
@@ -17,10 +17,13 @@ curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?
 | `shard` | path | enum `LeagueShard` | yes | — | Riot shard of the profile. |
 | `puuid` | path | string | yes | — | Canonical Riot PUUID of the summoner. |
 | `queue` | query | enum `GameQueueType` | no | all | Filter by queue. |
+| `champion` | query | champion name or ID | no | all | Only matches where this profile played the selected champion. |
+| `lane` | query | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY` | no | all | Filter by the profile's lane. |
+| `patch` | query | `major.minor` | no | all | Filter by patch major version, for example `16.18`. |
 | `limit` | query | integer | no | `20` | From `1` to `100`. |
 | `offset` | query | integer | no | `0` | Zero-based offset, `>= 0`. |
-| `timeStart` | query | long | no | `0` | Unix epoch ms inclusive. |
-| `timeEnd` | query | long | no | `0` | Unix epoch ms inclusive. |
+| `timeStart` | query | long | no | current season start | Unix epoch ms inclusive. |
+| `timeEnd` | query | long | no | current season end | Unix epoch ms inclusive. |
 | `sort` | query | string | no | `timeStart:desc` | Only `timeStart:asc` or `timeStart:desc`. |
 
 ## `200` response
@@ -66,8 +69,12 @@ Riot calls, lookups or statistic regenerations.
 Sorting always uses `timeStart` and `_id` as a technical tie-breaker, so
 offset and pages remain stable.
 
+When one time bound is nonzero, the endpoint uses the requested range and a
+zero on the other bound is unbounded. When both are zero, it uses the current season.
+Unknown query parameters return `400`.
+
 `total` is the number of persisted matches that satisfy the same filters as
-`items` (`shard`, `queue`, `timeStart` and `timeEnd`), before applying
+`items` (`shard`, `queue`, `champion`, `lane`, `patch`, `timeStart` and `timeEnd`), before applying
 `limit` and `offset`.
 
 Each result exposes the requested summoner's runes: the first entry of
@@ -85,8 +92,10 @@ The page keeps existing fields and adds root `metadata` with
 
 | HTTP | Description |
 |---:|---|
-| `400` | Invalid parameter, time range, limit, offset or sort. |
+| `400` | Invalid or unsupported query parameter, champion, time range, limit, offset or sort. |
 
 ## Owner
 
-`MatchService.getPage` and `MongoDB.findMatchResults`.
+`MatchService.getPage(puuid, Filter, ...)`, `MongoDB.findMatchResults(puuid, Filter, ...)`
+and `MongoDB.countMatches(puuid, Filter)`. The `Filter` carries the shard and match
+selectors; pagination and ordering stay separate.

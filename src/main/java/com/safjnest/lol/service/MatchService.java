@@ -288,24 +288,18 @@ public final class MatchService {
 
     public static MatchPage getPage(
             String puuid,
-            LeagueShard shard,
-            long timeStart,
-            long timeEnd,
-            GameQueueType queue,
+            Filter filter,
             int offset,
             int limit,
             MatchOrder order) {
-        if (!valid(puuid, shard) || offset < 0 || limit < 1 || order == null) {
+        if (filter == null || !valid(puuid, filter.region()) || offset < 0 || limit < 1 || order == null) {
             return new MatchPage(List.of(), limit, offset, 0, false);
         }
 
-        long total = MongoDB.countMatches(puuid, shard, timeStart, timeEnd, queue);
+        long total = MongoDB.countMatches(puuid, filter);
         List<MatchResult> items = MongoDB.findMatchResults(
             puuid,
-            shard,
-            timeStart,
-            timeEnd,
-            queue,
+            filter,
             offset,
             limit + 1,
             order.ascending()
