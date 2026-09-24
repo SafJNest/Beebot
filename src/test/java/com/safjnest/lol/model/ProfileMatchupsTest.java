@@ -33,9 +33,9 @@ public class ProfileMatchupsTest {
         assertEquals(1, top.games);
         assertEquals(1, mid.games);
         assertEquals(Long.valueOf(18), top.championLevelTotal);
-        assertEquals(1, top.matchups.get(2).games);
-        assertEquals(Long.valueOf(18), top.matchups.get(2).championLevelTotal);
-        assertEquals(1, mid.matchups.get(2).games);
+        assertEquals(1, top.matchups.get("2").games);
+        assertEquals(Long.valueOf(18), top.matchups.get("2").championLevelTotal);
+        assertEquals(1, mid.matchups.get("2").games);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ProfileMatchupsTest {
     }
 
     @Test
-    public void minimumGamesFiltersOnlyLeafMatchups() {
+    public void minimumGamesGroupsSmallLeafMatchupsUnderOthers() {
         ProfileMatchups matchups = ProfileMatchups.from(List.of(
             match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("two", 200, 1, LaneType.TOP, 2, LaneType.TOP, true),
@@ -68,8 +68,10 @@ public class ProfileMatchupsTest {
 
         ProfileMatchupLeaf leaf = matchups.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
         assertEquals(3, leaf.games);
-        assertEquals(1, leaf.matchups.size());
-        assertTrue(leaf.matchups.containsKey(2));
+        assertEquals(2, leaf.matchups.size());
+        assertTrue(leaf.matchups.containsKey("2"));
+        assertEquals(2, leaf.matchups.get("2").games);
+        assertEquals(1, leaf.matchups.get("others").games);
     }
 
     @Test
@@ -96,9 +98,9 @@ public class ProfileMatchupsTest {
         ProfileMatchups bsonDecoded = JsonCodec.fromDocument(JsonCodec.toDocument(source), ProfileMatchups.class);
 
         assertTrue(decoded.hasLeafMatchups());
-        assertEquals(1, decoded.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").matchups.get(2).games);
+        assertEquals(1, decoded.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").matchups.get("2").games);
         assertTrue(bsonDecoded.hasLeafMatchups());
-        assertEquals(1, bsonDecoded.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").matchups.get(2).games);
+        assertEquals(1, bsonDecoded.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").matchups.get("2").games);
     }
 
     private static Filter filter() {

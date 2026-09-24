@@ -77,6 +77,11 @@ patch/queue/lane/champion. Derived filters remain on-demand. The profile champio
 `ProfileStatistics`; the refresh does not start global champion statistics and does not
 require or modify the matchlist.
 
+Every statistics leaf groups summoner-spell casts by Riot spell ID and slot:
+`D` sums to the leaf `d` cast counter and `F` sums to `f`. Existing statistics
+that do not satisfy this invariant are not current; the normal profile-statistics
+job rebuilds them from persisted match participants.
+
 ## Profile activity
 
 The `GET /api/lol/{shard}/profile/{puuid}/activity` endpoint uses only the
@@ -115,20 +120,31 @@ the server timezone, so the key remains stable during the day; if only
 `end` is passed, the lower bound remains open. When at least one of the two bounds is
 present, it defines the period and takes precedence over `patch`; if both are missing,
 `patch` is the fallback while the period remains that of the canonical season.
-`minGames` defaults to 5 and filters only the matchup rows in the response; it does not
-participate in `Filter.toSummonerKey()`.
+`minGames` defaults to 5 and changes only the API projection; it does not
+participate in `Filter.toSummonerKey()`. Entries below the threshold are merged
+into `others` separately in `matchups` and `synergies`, preserving all counts.
 
 `ProfileMatchups` has a separate contract from `ProfileStatistics`: it saves only
 the leaves `champions.<championId>.<CanonicalQueue>.<position>`. Each leaf
-contains the base accumulators and `matchups.<opponentChampionId>` for
-opponents encountered in the same position. It does not save aggregates per champion,
-queue or lane, nor `reference`, `winrate`, `kda` or `avg*`; these values are
-computed by the consumer. `UNKNOWN` keeps games without a valid position and
-Riot queues are canonicalized at ingestion.
+contains the base accumulators, `matchups.<opponentChampionId>` for opponents
+in the same position, and `synergies.<allyChampionId>` for the complementary
+BOT/UTILITY teammate or the same-subteam Arena teammate. Lane-based matches
+with no identifiable opponent or duo use relation ID `0`, so their game still
+contributes to the breakdown. Arena contributes a synergy and no lane matchup.
+The leaf and every relationship value share the same `D`/`F` spell-cast maps.
+No aggregates per champion, queue or lane, nor `reference`, `winrate`, `kda`
+or `avg*`, are persisted; the consumer computes those values. `UNKNOWN` keeps
+games without a valid position and Riot queues are canonicalized at ingestion.
 
-`ProfileMatchups` is the only persisted source for matchups. A consumer
+For each applicable relationship map, `minGames` displays champion-ID keys
+whose count meets the threshold and combines all smaller groups under
+`others`. The relationship bucket sums equal the complete relation totals;
+the root leaf keeps the full player totals. The API response handles the
+default threshold of 5 as an `others` bucket containing 1–4 game groups.
+
+`ProfileMatchups` is the only persisted source for matchups and synergies. A consumer
 serving a global view rebuilds it by summing the leaves; `ProfileStatistics`
-does not store `matchups` nor `duoStats`. `ProfileMatchups` has its own
+does not store root `matchups` nor `duoStats`. `ProfileMatchups` has its own
 Redis/Mongo read-through:
 
 ```text
@@ -144,7 +160,8 @@ Computation does not happen during the request. A miss returns `202`; a
 stale aggregate remains `200` with `metadata.refresh=true` and enqueues only the
 matchup refresh at low priority. The refresh is executed by the general database worker, shared with the other
 non-build refreshes; the build worker remains dedicated to build calculations only.
-The existing profile JSON does not change.
+The profile JSON exposes the new leaf cast maps; the matchups JSON adds
+synergies and threshold-preserving `others` buckets.
 
 ## Stale freshness
 
@@ -510,7 +527,7 @@ PUUID finds the summoner's projections without a literal `puuid` token.
 | summoner mastery | `SUMMONER_MASTERIES(region, shard, PUUID)` | 6h | `MasteryService` | after component refresh or `SummonerService.invalidate` |
 | aggregated statistics | `SUMMONER_STATISTICS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
 | aggregated activity | `SUMMONER_ACTIVITY(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
-| summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 6h | `ProfileService` | update after upsert |
+| summoner matchups | `SUMMONER_MATCHUPS(region, shard, PUUID, filterKey)` | 12h | `ProfileService` | update after upsert |
 | summoner overview | `SUMMONER_OVERVIEW(region, shard, PUUID)` | 1h | `ProfileService` | after statistics or summoner component refresh |
 | raw match | existing match keys | per `RedisKey` | `MatchService`/`Tracker` | per match flow |
 

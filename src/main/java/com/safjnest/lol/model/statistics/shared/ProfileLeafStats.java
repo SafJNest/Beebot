@@ -1,7 +1,11 @@
 package com.safjnest.lol.model.statistics.shared;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.utils.KdaUtils;
 
@@ -44,6 +48,11 @@ public class ProfileLeafStats extends LeafStats {
     public long d;
     public long f;
 
+    @JsonProperty("D")
+    public Map<Integer, Long> spellDCasts = new LinkedHashMap<>();
+    @JsonProperty("F")
+    public Map<Integer, Long> spellFCasts = new LinkedHashMap<>();
+
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long arenaFirst;
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -85,6 +94,7 @@ public class ProfileLeafStats extends LeafStats {
         championLevelTotal = sum(championLevelTotal, participant.championLevel == null ? null : participant.championLevel.longValue());
         doubles += participant.doubles; triples += participant.triples; quadruples += participant.quadruples; pentas += participant.pentas;
         q += participant.q; w += participant.w; e += participant.e; r += participant.r; d += participant.d; f += participant.f;
+        accumulateSpellCasts(participant);
         if (arena) {
             arenaFirst += participant.subTeamPlacement == 1 ? 1 : 0;
             arenaSecond += participant.subTeamPlacement == 2 ? 1 : 0;
@@ -121,6 +131,12 @@ public class ProfileLeafStats extends LeafStats {
     public double avgKillParticipation() { return games == 0 ? 0 : killParticipationSum / games; }
     public double avgDeathShare() { return games == 0 ? 0 : deathShareSum / games; }
 
+    public void accumulateSpellCasts(Participant participant) {
+        if (participant == null) return;
+        if (participant.d > 0) spellDCasts.merge(participant.summonerSpell1, (long) participant.d, Long::sum);
+        if (participant.f > 0) spellFCasts.merge(participant.summonerSpell2, (long) participant.f, Long::sum);
+    }
+
     @Override
     public void merge(LeafStats other) {
         super.merge(other);
@@ -150,6 +166,8 @@ public class ProfileLeafStats extends LeafStats {
             r += o.r;
             d += o.d;
             f += o.f;
+            mergeSpellCasts(spellDCasts, o.spellDCasts);
+            mergeSpellCasts(spellFCasts, o.spellFCasts);
             arenaFirst += o.arenaFirst;
             arenaSecond += o.arenaSecond;
             arenaThird += o.arenaThird;
@@ -165,5 +183,11 @@ public class ProfileLeafStats extends LeafStats {
         if (b == null) return a;
         if (a == null) return b;
         return a + b;
+    }
+
+    private static void mergeSpellCasts(Map<Integer, Long> target, Map<Integer, Long> source) {
+        if (target == null || source == null) return;
+        for (Map.Entry<Integer, Long> entry : source.entrySet())
+            if (entry.getKey() != null && entry.getValue() != null) target.merge(entry.getKey(), entry.getValue(), Long::sum);
     }
 }

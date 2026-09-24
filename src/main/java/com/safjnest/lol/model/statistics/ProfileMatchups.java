@@ -10,6 +10,7 @@ import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.KdaUtils;
+import com.safjnest.lol.utils.LaneTypeUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -53,9 +54,11 @@ public record ProfileMatchups(
         for (Map<CanonicalQueue, Map<String, ProfileMatchupLeaf>> queues : champions.values())
             if (queues != null) for (Map<String, ProfileMatchupLeaf> positions : queues.values())
                 if (positions != null) for (ProfileMatchupLeaf leaf : positions.values())
-                    if (leaf != null && leaf.matchups != null) for (Map.Entry<Integer, ProfileLeafStats> matchup : leaf.matchups.entrySet())
-                        if (matchup.getKey() != null && matchup.getValue() != null)
-                            result.computeIfAbsent(matchup.getKey(), ignored -> new ProfileLeafStats()).merge(matchup.getValue());
+                    if (leaf != null && leaf.matchups != null) for (Map.Entry<String, ProfileLeafStats> matchup : leaf.matchups.entrySet())
+                        if (matchup.getKey() != null && matchup.getValue() != null) try {
+                            int champion = Integer.parseInt(matchup.getKey());
+                            if (champion != 0) result.computeIfAbsent(champion, ignored -> new ProfileLeafStats()).merge(matchup.getValue());
+                        } catch (NumberFormatException ignored) {}
         return result;
     }
 
@@ -64,6 +67,7 @@ public record ProfileMatchups(
     }
 
     public ProfileMatchups withMinGames(int minGames) {
+        if (champions == null) return this;
         Map<Integer, Map<CanonicalQueue, Map<String, ProfileMatchupLeaf>>> values = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<CanonicalQueue, Map<String, ProfileMatchupLeaf>>> champion : champions.entrySet()) {
             Map<CanonicalQueue, Map<String, ProfileMatchupLeaf>> queues = new LinkedHashMap<>();
@@ -105,14 +109,37 @@ public record ProfileMatchups(
 
         public void accept(Match match, Participant player, int teamKills, int enemyTeamKills, boolean arena) {
             if (match == null || player == null) return;
-            ProfileMatchupLeaf leaf = leaf(player.champion, CanonicalQueue.from(match.queue), player.lane);
+            CanonicalQueue queue = CanonicalQueue.from(match.queue);
+            ProfileMatchupLeaf leaf = leaf(player.champion, queue, player.lane);
             leaf.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
-            if (player.lane != null && player.lane != LaneType.NONE && match.participants != null)
+            if (!queue.arena() && player.lane != null && player.lane != LaneType.NONE && match.participants != null) {
+                boolean foundOpponent = false;
                 for (Participant opponent : match.participants)
                     if (opponent != null && opponent != player && opponent.champion != 0
-                        && opponent.team != player.team && opponent.lane == player.lane)
-                        leaf.matchups.computeIfAbsent(opponent.champion, ignored -> new ProfileLeafStats())
+                        && opponent.team != player.team && opponent.lane == player.lane) {
+                        leaf.matchups.computeIfAbsent(String.valueOf(opponent.champion), ignored -> new ProfileLeafStats())
                             .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                        foundOpponent = true;
+                        break;
+                    }
+                if (!foundOpponent) leaf.matchups.computeIfAbsent("0", ignored -> new ProfileLeafStats())
+                    .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+            }
+            if (match.participants != null && (queue.arena() || LaneTypeUtils.isDuoLane(player.lane))) {
+                Participant ally = null;
+                for (Participant participant : match.participants) {
+                    if (participant == null || participant == player || participant.team != player.team) continue;
+                    boolean sameArenaTeam = queue.arena() && player.subTeam != 0 && participant.subTeam == player.subTeam;
+                    boolean complementaryLane = !queue.arena() && LaneTypeUtils.isDuo(player.lane, participant.lane);
+                    if (sameArenaTeam || complementaryLane) {
+                        ally = participant;
+                        break;
+                    }
+                }
+                int allyChampion = ally == null ? 0 : ally.champion;
+                leaf.synergies.computeIfAbsent(String.valueOf(allyChampion), ignored -> new ProfileLeafStats())
+                    .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+            }
             oldestMatchAt = oldestMatchAt == 0 ? match.timeStart : Math.min(oldestMatchAt, match.timeStart);
             newestMatchAt = Math.max(newestMatchAt, match.timeEnd);
         }
@@ -133,13 +160,30 @@ public record ProfileMatchups(
     private static ProfileMatchupLeaf copyLeaf(ProfileMatchupLeaf source, int minGames) {
         ProfileMatchupLeaf copy = new ProfileMatchupLeaf();
         copy.merge(source);
-        if (source.matchups != null) for (Map.Entry<Integer, ProfileLeafStats> entry : source.matchups.entrySet())
-            if (entry.getValue() != null && entry.getValue().games >= minGames) {
-                ProfileLeafStats matchup = new ProfileLeafStats();
-                matchup.merge(entry.getValue());
-                copy.matchups.put(entry.getKey(), matchup);
-            }
+        copy.matchups = filterBreakdown(source.matchups, minGames);
+        copy.synergies = filterBreakdown(source.synergies, minGames);
         return copy;
+    }
+
+    private static Map<String, ProfileLeafStats> filterBreakdown(
+            Map<String, ProfileLeafStats> source,
+            int minGames) {
+        Map<String, ProfileLeafStats> result = new LinkedHashMap<>();
+        ProfileLeafStats others = null;
+        if (source != null) for (Map.Entry<String, ProfileLeafStats> entry : source.entrySet()) {
+            ProfileLeafStats value = entry.getValue();
+            if (entry.getKey() == null || value == null) continue;
+            if (!"others".equals(entry.getKey()) && value.games >= minGames) {
+                ProfileLeafStats copy = new ProfileLeafStats();
+                copy.merge(value);
+                result.put(entry.getKey(), copy);
+            } else {
+                if (others == null) others = new ProfileLeafStats();
+                others.merge(value);
+            }
+        }
+        if (others != null && others.games > 0) result.put("others", others);
+        return result;
     }
 
     private static String position(LaneType lane) {
