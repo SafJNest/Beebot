@@ -128,22 +128,17 @@ public final class MatchService {
     }
 
     public static Match insert(LOLMatch source) {
-        return insert(source, false);
-    }
-
-    private static Match insert(LOLMatch source, boolean ranking) {
         if (source == null || source.getPlatform() == null) return null;
         String fullGameId = MatchUtils.fullGameId(source);
         cacheR4JMatch(source);
-        if ((!SeasonUtils.isCurrentSplit(source.getGameStartTimestamp())
-                && GameQueueTypeUtils.isRankedSolo(source.getQueue()) && !ranking) || MatchUtils.isRemake(source)) {
+        if (MatchUtils.isRemake(source)) {
             invalidateR4JMatch(fullGameId, source.getPlatform());
             return null;
         }
 
         Match match = Match.fromR4J(source);
         if (match == null) return null;
-        if (ranking) localRanking(match);
+        localRanking(match);
         boolean inserted = MongoDB.insertMatch(match);
         if (source.getParticipants() == null) return null;
         for (var participant : source.getParticipants()) {
@@ -273,7 +268,7 @@ public final class MatchService {
                     }
                     if (match == null) return;
                     try {
-                        Match result = insert(match, true);
+                        Match result = insert(match);
                         BotLogger.info("[" + done.incrementAndGet() + "/" + total + "] " + match.getGameId() + " - "
                             + match.getPlatform() + " - " + match.getQueue() + " rank=" + (result == null ? "null" : result.rank));
                     } catch (Throwable throwable) {
