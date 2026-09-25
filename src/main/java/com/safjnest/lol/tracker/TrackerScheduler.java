@@ -7,6 +7,7 @@ import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.service.RankService;
 import com.safjnest.utils.TimeConstant;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
@@ -35,7 +36,12 @@ public final class TrackerScheduler {
     }
 
     public static void retrieveSummoners() {
-        Tracker.retrieveSummoners();
+        Tracker.retrieveSummoners().whenComplete((ignored, failure) -> {
+            long nextUpdate = System.currentTimeMillis() + TimeConstant.MINUTE * 10;
+            BotLogger.info("[LPTracker] Tracking finished. Next update at " + new java.util.Date(nextUpdate));
+            ChronoTask track = TrackerScheduler::retrieveSummoners;
+            track.schedule(TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
+        });
     }
 
     public static void retrieveSampleGames(GameQueueType queue) {

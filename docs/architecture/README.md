@@ -101,7 +101,7 @@ Queue glossary:
 
 - `RiotScheduler` — outbound Riot work, one queue per `LeagueShard`;
 - `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
-- `SyncScheduler` — tracking, rank, match, sample and participant refresh workflows, one queue per shard.
+- `SyncScheduler` — starts each tracking, rank, match, sample and participant refresh job immediately on its own virtual thread; Registry owns parent/child completion.
 
 Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
 `MatchService` owns untracked match insertion and can only create a

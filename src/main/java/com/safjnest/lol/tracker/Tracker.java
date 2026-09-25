@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -60,20 +61,21 @@ public class Tracker {
 
     private static final long timelineSnapshotInterval = TimeConstant.MINUTE * 5;
 
-    static void retrieveSummoners() {
-        List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
-        Map<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> accountsByShard = new LinkedHashMap<>();
-        for (com.safjnest.lol.model.summoner.Summoner account : accounts) {
-            if (account == null || account.puuid() == null) continue;
-            LeagueShard shard = account.region();
-            if (shard == null || shard == LeagueShard.UNKNOWN) {
-                BotLogger.error("Tracked summoner has no active shard: " + account.puuid());
-                continue;
-            }
-            accountsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(account);
-        }
-        QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", root -> {
+    static CompletableFuture<Void> retrieveSummoners() {
+        return QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", root -> {
             root.phase("TRACKING");
+            BotLogger.info("[LPTracker] Started tracking summoners");
+            List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
+            Map<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> accountsByShard = new LinkedHashMap<>();
+            for (com.safjnest.lol.model.summoner.Summoner account : accounts) {
+                if (account == null || account.puuid() == null) continue;
+                LeagueShard shard = account.region();
+                if (shard == null || shard == LeagueShard.UNKNOWN) {
+                    BotLogger.error("Tracked summoner has no active shard: " + account.puuid());
+                    continue;
+                }
+                accountsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(account);
+            }
             for (Map.Entry<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> entry : accountsByShard.entrySet()) {
                 LeagueShard shard = entry.getKey();
                 List<com.safjnest.lol.model.summoner.Summoner> shardAccounts = entry.getValue();
@@ -93,7 +95,6 @@ public class Tracker {
             }
             return null;
         });
-        BotLogger.info("[LPTracker] Start tracking summoners (" + accounts.size() + " accounts)");
     }
 
     private static void retrieveSummoner(com.safjnest.lol.model.summoner.Summoner account, Job<?> task) {

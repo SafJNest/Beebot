@@ -156,6 +156,16 @@ public final class Registry {
         }
     }
 
+    public void failed(Job<?> job, Throwable failure) {
+        synchronized (this) {
+            Entry<?> entry = entry(job);
+            if (entry.state.terminal() || entry.bodyFinished) return;
+            entry.failure = failure == null ? new IllegalStateException("Job execution failed") : failure;
+            entry.bodyFinished = true;
+            completeIfReady(entry);
+        }
+    }
+
     public JobStatus status(Job<?> job) {
         return status(entry(job), null, false);
     }

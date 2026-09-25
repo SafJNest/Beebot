@@ -9,10 +9,12 @@ persistent match-queue read.
 job tree; `dispatchers` is the physical queue/worker projection. The obsolete
 `tracker`, `workers`, `riot`, `gameQueue` and `profileQueue` fields were removed.
 
-Each scheduler reports its routes, the single worker for each route and its
-current job plus up to twenty queued jobs. Job snapshots include `pid` and
-`ppid`. `runs` is a compatibility projection derived from active registry roots
-for tracking, sample games and rank entries; it is not lifecycle state.
+Riot and Compute dispatchers report their physical workers, current jobs and up
+to twenty queued jobs per route. Sync jobs start immediately on virtual threads
+and therefore have no physical queue or worker projection; their lifecycle is
+visible in `jobs`. Job snapshots include `pid` and `ppid`. `runs` is a
+compatibility projection derived from active registry roots for tracking,
+sample games and rank entries; it is not lifecycle state.
 
 Each `jobs` item has `pid`, `ppid`, scheduler `type`, logical `route`, priority
 and lifecycle state. Physical placement belongs to `dispatchers.queues[].worker`.
@@ -204,4 +206,5 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
 ```
 
 The owner command `tracker` renders the dispatcher snapshot only. Sync tasks
-are memory-only and do not reappear after a restart.
+are memory-only, visible in the Registry while active, and do not reappear after
+a restart.

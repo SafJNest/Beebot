@@ -20,10 +20,14 @@ queue placement and workers.
 | --- | --- | --- |
 | `RiotScheduler` | one `LeagueShard` worker | outbound Riot API |
 | `ComputeScheduler` | `PROFILE`, `CHAMPION` | expensive Mongo compute |
-| `SyncScheduler` | one `LeagueShard` worker | tracking, rank, match, sample and participant refresh workflows |
+| `SyncScheduler` | starts every submitted job immediately on its own virtual thread | tracking, rank, match, sample and participant refresh workflows |
 
-Every route has its own three-lane physical queue. An immediate EUW task can
-overtake background EUW work, but cannot reorder or block NA work.
+Riot and Compute keep their route-local priority queues. Sync has no waiting
+queue or per-shard worker limit: each submitted job starts immediately and may
+run alongside other Sync jobs. Sync parents and their descendants remain
+tracked by the Registry until the full job tree completes. Riot API requests
+created by those jobs still pass through RiotScheduler's per-shard priority
+queues and rate protection.
 
 `runs` is only a derived compatibility view for live Sync roots (`TRACKING`,
 `RANK_ENTRIES`, `MATCH_ANALYSIS`, `SAMPLE_GAMES`). It
@@ -76,6 +80,9 @@ commits the authoritative history.
 After the final `tracked=true` persistence, the scheduled tracked-summoner flow
 emits one `LPTracker` success log for that summoner. Raw ingestion and
 already-tracked matches do not emit this log.
+
+The periodic tracker starts its next run ten minutes after the current root and
+all its descendants finish. Other periodic jobs keep their own schedules.
 
 `thenApplyAsync` and `thenComposeAsync` in a domain service remain continuations
 of an already-owned request; new background work must enter one of the three

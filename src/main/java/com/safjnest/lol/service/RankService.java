@@ -120,28 +120,8 @@ public final class RankService {
         List<LeagueEntry> entries = refreshEntriesFromRiotAsync(
             puuid, shard, priority == null ? JobPriority.IMMEDIATE : priority).join();
         Map<GameQueueType, Rank> ranks = toRanks(entries);
-        if (!update(puuid, shard, ranks)) throw new IllegalStateException("Rank update did not complete");
+        saveEntries(puuid, shard, ranks);
         return ranks;
-    }
-
-    public static void put(LeagueShard shard, LeagueEntry entry) {
-        if (entry == null || shard == null || entry.getPuuid() == null) return;
-
-        List<LeagueEntry> entries = cacheEntries(entry.getPuuid(), shard);
-        if (entries == null) entries = new ArrayList<>();
-
-        boolean updated = false;
-        for (int index = 0; index < entries.size(); index++) {
-            if (entries.get(index).getQueueType() == entry.getQueueType()) {
-                entries.set(index, entry);
-                updated = true;
-                break;
-            }
-        }
-        if (!updated) entries.add(entry);
-
-        RedisClient.set(RedisKey.R4J_LEAGUE_ENTRIES, entries, shard.name(), entry.getPuuid());
-        save(shard, entry);
     }
 
     public static void saveEntry(LeagueShard shard, LeagueEntry entry) {
@@ -151,7 +131,24 @@ public final class RankService {
             if (summoner == null) return;
             if (SummonerService.find(entry.getPuuid(), shard) == null && !SummonerService.upsert(summoner, null)) return;
         }
-        put(shard, entry);
+        GameQueueType queue = GameQueueTypeUtils.canonicalQueue(entry.getQueueType());
+        Rank rank = toRank(entry);
+        if (rank == null || !MongoDB.upsertRank(entry.getPuuid(), shard, queue, rank))
+            throw new IllegalStateException("Rank entry update did not complete");
+
+        List<LeagueEntry> entries = cacheEntries(entry.getPuuid(), shard);
+        if (entries == null) entries = new ArrayList<>();
+        boolean updated = false;
+        for (int index = 0; index < entries.size(); index++) {
+            if (GameQueueTypeUtils.canonicalQueue(entries.get(index).getQueueType()) == queue) {
+                entries.set(index, entry);
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) entries.add(entry);
+        RedisClient.set(RedisKey.R4J_LEAGUE_ENTRIES, entries, shard.name(), entry.getPuuid());
+        publishRank(entry.getPuuid(), shard, queue, rank);
     }
 
     public static void enqueueRankEntries(boolean highElo, boolean allEntries) {
@@ -167,30 +164,31 @@ public final class RankService {
         });
     }
 
-    public static void save(String puuid, LeagueShard shard, List<LeagueEntry> entries) {
-        if (!valid(puuid, shard) || entries == null) return;
-        if (!update(puuid, shard, toRanks(entries))) throw new IllegalStateException("Rank update did not complete");
-    }
-
-    public static void save(LeagueShard shard, LeagueEntry entry) {
-        if (entry == null || !valid(entry.getPuuid(), shard)) return;
-
-        GameQueueType queue = GameQueueTypeUtils.canonicalQueue(entry.getQueueType());
-        Rank rank = toRank(entry);
-        if (rank == null) return;
-        Map<GameQueueType, Rank> ranks = replaceRank(find(entry.getPuuid(), shard), queue, rank);
-        if (!update(entry.getPuuid(), shard, ranks)) throw new IllegalStateException("Rank update did not complete");
-    }
-
-    public static boolean update(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
-        if (!valid(puuid, shard) || ranks == null || !MongoDB.upsertRanks(puuid, shard, ranks)) return false;
-        RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
-        if (!CompetitiveService.updateFromRanks(puuid, shard, ranks)) return false;
-        ProfileService.invalidate(puuid, shard);
-        return true;
+    public static void saveEntries(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
+        if (!valid(puuid, shard) || ranks == null) return;
+        if (!MongoDB.upsertRanks(puuid, shard, ranks))
+            throw new IllegalStateException("Rank snapshot update did not complete");
+        publishRanks(puuid, shard, ranks);
     }
 
     // ============================================================================
+
+    private static void publishRanks(String puuid, LeagueShard shard, Map<GameQueueType, Rank> ranks) {
+        if (ranks == null) ranks = Map.of();
+        RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        if (!CompetitiveService.updateFromRanks(puuid, shard, ranks))
+            throw new IllegalStateException("Competitive rank update did not complete");
+        ProfileService.invalidate(puuid, shard);
+    }
+
+    private static void publishRank(String puuid, LeagueShard shard, GameQueueType queue, Rank rank) {
+        Map<GameQueueType, Rank> ranks = MongoDB.findRanks(puuid, shard);
+        if (ranks == null) ranks = Map.of();
+        RedisClient.set(RedisKey.SUMMONER_RANKS, ranks, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        if (!CompetitiveService.updateFromRank(puuid, shard, queue, rank))
+            throw new IllegalStateException("Competitive rank update did not complete");
+        ProfileService.invalidate(puuid, shard);
+    }
 
     private static Map<GameQueueType, Rank> cache(String puuid, LeagueShard shard) {
         return RedisClient.get(RedisKey.SUMMONER_RANKS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), RANKS_TYPE);
@@ -212,7 +210,7 @@ public final class RankService {
 
         return refreshEntriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
             Map<GameQueueType, Rank> ranks = toRanks(entries);
-            if (!update(puuid, shard, ranks)) throw new IllegalStateException("Rank update did not complete");
+            saveEntries(puuid, shard, ranks);
             return ranks;
         });
     }
@@ -225,7 +223,7 @@ public final class RankService {
                 new IllegalStateException("Summoner is not available for rank persistence"));
             return getEntriesAsync(puuid, shard).thenApplyAsync(entries -> {
                 Map<GameQueueType, Rank> ranks = toRanks(entries);
-                if (!update(puuid, shard, ranks)) throw new IllegalStateException("Rank update did not complete");
+                saveEntries(puuid, shard, ranks);
                 return ranks;
             });
         });
@@ -347,15 +345,6 @@ public final class RankService {
             entry.getWins(),
             entry.getLosses()
         );
-    }
-
-    private static Map<GameQueueType, Rank> replaceRank(
-            Map<GameQueueType, Rank> current,
-            GameQueueType queue,
-            Rank next) {
-        Map<GameQueueType, Rank> ranks = current == null ? new LinkedHashMap<>() : new LinkedHashMap<>(current);
-        ranks.put(queue, next);
-        return ranks;
     }
 
 }

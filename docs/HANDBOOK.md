@@ -60,14 +60,15 @@ Quick Style Rules (from `AGENTS.md`):
 |---|---|---|
 | `RiotScheduler` | one worker per `LeagueShard` | outbound Riot calls |
 | `ComputeScheduler` | `PROFILE` + `CHAMPION` | expensive Mongo computes |
-| `SyncScheduler` | one worker per `LeagueShard` (+ global) | tracking, rank, match, sample, participant refresh |
+| `SyncScheduler` | each job starts immediately on its own virtual thread | tracking, rank, match, sample, participant refresh |
 
 ```
 QueueHandler.immediate/normal/background → Router → Registry (dedup + parent/child + follower)
-                                      → AbstractScheduler<R> → JobQueue (3 lane) → JobWorker → Job
+                                      → Riot/Compute: AbstractScheduler<R> → JobQueue (3 lane) → JobWorker → Job
+                                      → Sync: one virtual thread per submitted job
 ```
 
-- Priority `IMMEDIATE > NORMAL > BACKGROUND`, promotion only if `requested.ordinal() < current`, never interrupting a running body.
+- Riot and Compute priority: `IMMEDIATE > NORMAL > BACKGROUND`, promotion only if `requested.ordinal() < current`, never interrupting a running body. Sync jobs start immediately; their child work still uses the selected scheduler.
 - Dedup key = `scheduler:route:key`. Followers reuse the leader's `future`. `retain(job)` + `resume(job, callback)` for async callbacks.
 - `profileQueue()` does insert-time least-loaded between PROFILE/CHAMPION; heavy keys (`champion-stats-matrix:|champion-build:|champion-data-refresh:`) reserve `CHAMPION`.
 
@@ -351,7 +352,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
    |---|---|---|---|
    | Riot outbound | `RiotScheduler` | `LeagueShard` | `r4j-<shard>-` |
    | Expensive Mongo compute | `ComputeScheduler` | `DatabaseWorkerType` | `lol-db-profile-worker-` / `champion` |
-   | Tracking/rank/match/sample | `SyncScheduler` | `LeagueShard` (+ global) | `lol-sync-<shard>-` |
+   | Tracking/rank/match/sample | `SyncScheduler` | `LeagueShard` (+ global) | one virtual thread per job |
 
 2. **Enqueue:**
    ```java
@@ -379,7 +380,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
    QueueHandler.retain(job); // prima di return del body
    asyncOp.thenAccept(v -> QueueHandler.resume(job, () -> { /* schedule figli */ }));
    ```
-4. **Diagnostics:** `GET /api/status` exposes `dispatchers[].queues[].worker` + `runs[]`. No hot-path logging — only on `onBodyFailed`.
+4. **Diagnostics:** `GET /api/status` exposes Riot/Compute `dispatchers[].queues[].worker`, Sync jobs in `jobs[]`, and the derived `runs[]`. No hot-path logging — only on `onBodyFailed`.
 5. **RAM/weight:** max 2 concurrent Compute workers; `CHAMPION` reserved for heavy matrix (`champion-stats-matrix:`). Do not move work after `offer` (insert-time placement).
 
 ---
@@ -607,6 +608,9 @@ class MongoDBTest {
 | Champion | `ChampionView` / `ChampionStatistics` / `Build` | `ChampionService` + `ChampionAnalyzer` | `champion_statistics` / `champion_builds` | `CHAMPION_PAGE` / `CHAMPION_TIER_LIST` |
 | Leaderboard | `SummonerLeaderboard` / `LeaderboardPage` | `LeaderboardService` | `competitive` / `leaderboard_aggregates` | `LEADERBOARD_PAGE` |
 
+`RankService.saveEntry` updates one canonical queue and preserves the other
+stored queue ranks. `RankService.saveEntries` replaces the complete rank map
+from a full Riot response; passing a partial map would remove omitted queues.
 `RankService` is the only normal runtime entry point to `CompetitiveService`.
 `MasteryService` is the only normal runtime entry point to mastery records in
 `ProfileRecordService`. Test commands and migration/rebuild utilities are the
