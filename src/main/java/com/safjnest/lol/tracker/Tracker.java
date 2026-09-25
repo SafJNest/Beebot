@@ -849,13 +849,14 @@ public class Tracker {
         BotLogger.info("[LPTracker] Pushing sample matches");
         String currentPatch = PatchUtils.getPatch();
         String previousPatch = PatchUtils.getPreviousPatch();
+        String queueName = queue == null ? "ALL" : queue.name();
     
         long[] splitRange = SeasonUtils.getCurrentSplitRange();
         List<LeagueShard> shards = LeagueShardUtils.getActives();
-        QueueHandler.background(SyncScheduler.class, null, "sample-games:" + queue.name(), "sample games", root -> {
+        QueueHandler.background(SyncScheduler.class, null, "sample-games:" + queueName, "sample games", root -> {
             for (LeagueShard shard : shards) {
-                QueueHandler.background(SyncScheduler.class, shard, "sample-games:" + shard.name() + ":" + queue.name(),
-                    "sample games queue=" + queue.name(), task -> {
+                QueueHandler.background(SyncScheduler.class, shard, "sample-games:" + shard.name() + ":" + queueName,
+                    "sample games queue=" + queueName, task -> {
                 try {
                     task.phase("DISCOVERING");
                     long threshold = splitRange != null ? MongoDB.findLatestMatchTime(previousPatch, shard) : 0;

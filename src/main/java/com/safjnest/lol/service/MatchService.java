@@ -579,7 +579,8 @@ public final class MatchService {
         MatchListBuilder builder = summoner.getLeagueGames().withBeginIndex(index);
         if (count > 0) builder = builder.withCount(count);
         if (startTime > 0) builder = builder.withStartTime(startTime);
-        return type != null ? builder.withType(type) : builder.withQueue(queue);
+        if (type != null) builder = builder.withType(type);
+        return queue == null ? builder : builder.withQueue(queue);
     }
 
     public static String matchListRequestKey(
