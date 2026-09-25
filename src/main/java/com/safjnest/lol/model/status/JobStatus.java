@@ -20,6 +20,7 @@ public record JobStatus(
     Long startedAt,
     Long completedAt,
     String phase,
+    String currentItem,
     JobProgress progress,
     Map<String, String> items,
     Map<String, String> itemLabels,

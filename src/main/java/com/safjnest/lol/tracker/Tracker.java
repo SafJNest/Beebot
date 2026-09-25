@@ -898,24 +898,33 @@ public class Tracker {
                     task.phase("PERSISTING");
                     int i = 0;
                     for (MatchEntry me : allMatches) {
+                        String matchLabel = me.matchId();
                         try {
+                            matchLabel = me.entry().getTier() + " match " + shard + " - "
+                                + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId();
+                            task.currentItem("Fetching " + matchLabel);
                             LOLMatch match = MatchService.fetch(me.matchId(), me.summoner().getPlatform());
                             if (match == null) {
+                                task.currentItem("Missing " + matchLabel);
                                 task.missing(me.matchId());
                                 continue;
                             }
                             if (!match.getGameVersion().startsWith(currentPatch)) {
+                                task.currentItem("Skipping old patch " + matchLabel);
                                 task.done(me.matchId());
                                 continue;
                             }
                             i++;
-                            BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
+                            String detail = "[" + i + "/" + allMatches.size() + "] Pushing " + matchLabel;
+                            task.currentItem(detail);
+                            BotLogger.info("[LPTracker] " + detail);
                             Match persisted = MatchService.insert(match);
                             if (persisted == null) task.failed(me.matchId());
                             else task.done(me.matchId());
                             Thread.sleep(350);
                         } catch (Exception e) {
                             e.printStackTrace();
+                            task.currentItem("Failed " + matchLabel);
                             task.failed(me.matchId());
                         }
                     }

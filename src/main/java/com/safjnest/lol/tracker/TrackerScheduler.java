@@ -13,6 +13,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class TrackerScheduler {
 
+    private static final long TRACKING_INTERVAL = TimeConstant.MINUTE * 10;
+
     private static volatile boolean started;
     private static volatile boolean cronScheduled;
 
@@ -29,18 +31,16 @@ public final class TrackerScheduler {
         cronScheduled = true;
 
         ChronoTask track = TrackerScheduler::retrieveSummoners;
-        track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
+        track.scheduleAtFixedRate(0, TRACKING_INTERVAL, TimeUnit.MILLISECONDS);
 
         ChronoTask retrieveHighEloEntries = TrackerScheduler::retrieveHighEloEntries;
         retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
     }
 
     public static void retrieveSummoners() {
+        long nextUpdate = System.currentTimeMillis() + TRACKING_INTERVAL;
         Tracker.retrieveSummoners().whenComplete((ignored, failure) -> {
-            long nextUpdate = System.currentTimeMillis() + TimeConstant.MINUTE * 10;
             BotLogger.info("[LPTracker] Tracking finished. Next update at " + new java.util.Date(nextUpdate));
-            ChronoTask track = TrackerScheduler::retrieveSummoners;
-            track.schedule(TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
         });
     }
 

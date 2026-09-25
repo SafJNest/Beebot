@@ -26,9 +26,11 @@ children have terminated.
 
 The top-level `jobs` projection includes every job in the first three levels from
 a root, then at most 100 fourth-level jobs ordered by priority and enqueue time.
-It exposes phase and aggregate `progress`, but never per-item `items` or `itemLabels`.
-For example, `rank-entries` exposes its regional/tier job and `500/1000`
-progress without serializing the thousand summoner PUUIDs.
+It exposes phase, aggregate `progress`, and an optional active `currentItem`
+detail, but never per-item `items` or `itemLabels`. For example, `rank-entries`
+exposes its regional/tier job and `500/1000` progress without serializing the
+thousand summoner PUUIDs. `pushsamplegame` reports the current match label while
+fetching and its `[current/total] Pushing ...` detail while persisting.
 
 A leaf job reports its own item progress. A parent reports terminal direct
 children over direct children created, including children that already left the
@@ -122,6 +124,7 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
     "startedAt": 1755680400001,
     "completedAt": null,
     "phase": "TRACKING",
+    "currentItem": null,
     "progress": null,
     "items": {},
     "itemLabels": {},
@@ -149,6 +152,7 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
             "startedAt": 1755680400123,
             "completedAt": null,
             "phase": "PERSISTING",
+            "currentItem": "[124/128] Pushing CHALLENGER match JP1 - summoner#JP1 -> JP1_6789012345",
             "progress": { "current": 100, "total": 1000 },
             "items": {},
             "itemLabels": {},
