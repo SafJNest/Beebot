@@ -993,7 +993,7 @@
         "alias" : ["wip"],
         "help"  : "Owner diagnostics. `test gc` requests JVM garbage collection.",
         "category" : "Owner",
-        "arguments" : "[gc | diagnostic | pushsamplegame [GameQueueType]]"
+        "arguments" : "[gc | diagnostic | pushsamplegame [GameQueueType] | fix-rank]"
     },
 
     "championstats": {

@@ -70,7 +70,7 @@ public class Test extends Command {
         switch (operation) {
             case "list" -> event.reply("gc | tracking | log | ranking | regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
-                + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
+                + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | fix-rank | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS) + "]");
             case "gc" -> {
@@ -91,6 +91,7 @@ public class Test extends Command {
             case "getserver" -> event.reply("```json\\n"
                 + new JSONObject(GuildCache.getGuildOrPut(event.getGuild().getId()).getChannels()) + "```");
             case "queue" -> event.reply("Queued jobs=" + QueueHandler.snapshot().size() + ".");
+            case "fix-rank" -> queueRankProgressFix(event);
             case "pushsamplegame" -> {
                 GameQueueType queue = null;
                 if (arguments.length > 1 && !arguments[1].isBlank()) {
@@ -219,6 +220,17 @@ public class Test extends Command {
                 return null;
             });
         event.reply("Sample game retrieval queued: " + (queue == null ? "all queues" : queue.name()) + ".");
+    }
+
+    private static void queueRankProgressFix(CommandEvent event) {
+        List<String> patches = List.of("16.19", "16.18", "16.17");
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, "owner-fix-rank",
+            "owner fix rank progress", job -> {
+                int updated = MongoDB.fillMissingMatchRankProgress(patches);
+                System.out.println("[RankProgress fix] Updated participant snapshots=" + updated);
+                return null;
+            });
+        event.reply("RankProgress fix queued for patches " + String.join(", ", patches) + ".");
     }
 
     private static void queueHighElo(CommandEvent event) {

@@ -792,6 +792,62 @@ public final class MongoDB {
         return ranks(document);
     }
 
+    public static Map<String, Map<GameQueueType, Rank>> findRanksByPuuids(List<String> puuids, LeagueShard shard) {
+        Map<String, Map<GameQueueType, Rank>> result = new HashMap<>();
+        if (puuids == null || puuids.isEmpty() || shard == null) return result;
+        List<String> ids = boundedIds(puuids);
+        for (Document document : summoners()
+                .find(Filters.and(Filters.in("_id", ids), Filters.eq("region", shard.name())))
+                .projection(Projections.include("_id", "ranks"))
+                .limit(ids.size())) {
+            result.put(document.getString("_id"), ranks(document));
+        }
+        return result;
+    }
+
+    public static int fillMissingMatchRankProgress(List<String> patchMajors) {
+        if (patchMajors == null || patchMajors.isEmpty()) return 0;
+        Bson missingSnapshot = Filters.or(Filters.exists("rankProgress", false),
+                Filters.exists("rankProgress.rank", false), Filters.exists("rankProgress.lp", false));
+        Bson filter = Filters.and(Filters.in("patchMajor", patchMajors), Filters.ne("tracked", true),
+                Filters.elemMatch("participants", missingSnapshot));
+        FindIterable<Document> query = matches().find(filter)
+                .projection(Projections.include("_id", "region", "queue", "participants.puuid", "participants.rankProgress"))
+                .batchSize(100);
+
+        int updated = 0;
+        try (MongoCursor<Document> cursor = query.iterator()) {
+            while (cursor.hasNext()) {
+                Document match = cursor.next();
+                String gameId = match.getString("_id");
+                LeagueShard shard = parseShard(match.getString("region"));
+                GameQueueType queue = queue(match.getString("queue"));
+                if (gameId == null || shard == LeagueShard.UNKNOWN || queue == null) continue;
+
+                List<Document> participants = documents(match.get("participants"));
+                List<String> puuids = new ArrayList<>();
+                for (Document participant : participants) {
+                    String puuid = participant.getString("puuid");
+                    if (puuid != null && !puuid.isBlank() && !puuids.contains(puuid)) puuids.add(puuid);
+                }
+                Map<String, Map<GameQueueType, Rank>> ranksByPuuid = findRanksByPuuids(puuids, shard);
+
+                for (Document participantDocument : participants) {
+                    Participant participant = readParticipant(matchRecord(participantDocument));
+                    if (participant.puuid == null || participant.puuid.isBlank()
+                            || RankProgressUtils.hasCurrentSnapshot(participant.rankProgress)) continue;
+                    if (!ranksByPuuid.containsKey(participant.puuid) || ranksByPuuid.get(participant.puuid) == null) continue;
+                    Map<GameQueueType, Rank> ranks = ranksByPuuid.get(participant.puuid);
+                    Rank rank = ranks.get(GameQueueTypeUtils.canonicalQueue(queue));
+                    if (rank == null) rank = Rank.unranked();
+                    if (updateUntrackedParticipantRankProgress(gameId, participant.puuid, RankProgressUtils.snapshot(rank)))
+                        updated++;
+                }
+            }
+        }
+        return updated;
+    }
+
     public static Map<String, Rank> findSoloRanksByPuuid(List<String> puuids, LeagueShard shard) {
         Map<String, Rank> result = new HashMap<>();
         if (puuids == null || puuids.isEmpty()) return result;

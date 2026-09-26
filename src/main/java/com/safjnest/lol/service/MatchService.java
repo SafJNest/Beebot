@@ -450,9 +450,12 @@ public final class MatchService {
         List<TierDivisionType> tiers = new ArrayList<>();
         for (Participant participant : match.participants) {
             if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
-            Map<GameQueueType, Rank> ranks = RankService.find(participant.puuid, match.leagueShard);
-            Rank rank = ranks == null ? null : ranks.get(queue);
-            if (rank != null && rank.tier() != null) tiers.add(rank.tier());
+            Map<GameQueueType, Rank> ranks = MongoDB.findRanks(participant.puuid, match.leagueShard);
+            if (ranks == null) continue;
+            Rank rank = ranks.get(queue);
+            if (rank == null) rank = Rank.unranked();
+            participant.rankProgress = RankProgressUtils.snapshot(rank);
+            if (rank.tier() != null) tiers.add(rank.tier());
         }
         if (!tiers.isEmpty()) match.setRank(TierDivisionUtils.getAverageRank(tiers));
     }

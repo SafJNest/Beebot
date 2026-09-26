@@ -185,6 +185,11 @@ actual response contains all available participants for the match.
 
 `participant.rankProgress` is the only rank contract for the participant. It contains
 the current snapshot (`rank`, `lp`), the optional gain and the optional previous snapshot.
+An untracked match inserted from stored rank records may contain only the current
+snapshot; `gain` and the previous snapshot remain unset until the tracker completes
+rank history. When a stored rank map exists but has no entry for the match queue,
+the current snapshot is `UNRANKED` with `lp: 0`; when the rank map is absent or null,
+the rank is unknown and the snapshot remains unset.
 The former top-level `rank`, `lp` and `gain` participant fields
 have been intentionally removed from the public JSON.
 

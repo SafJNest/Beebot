@@ -14,6 +14,7 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |
 | match results | projection of only the fields needed for `MatchResult` and participants | 1 | profile/tracker |
 | tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC, _id DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
+| sample rank progress repair | scan matches by `patchMajor` where `tracked != true` and a participant lacks a current rank snapshot; fill from a present Mongo rank map, defaulting a missing queue to `UNRANKED/0 LP`; absent/null rank maps remain unknown | cursor batches of 100 matches; rank reads batched per match | `!test fix-rank` |
 | match events | `_id: {$in: [...]}` on `match_events` | 1 | match detail/history |
 | champion | match id with projection; builds and statistics read only the required participants; raw batch without full `Match -> Participant` | 2 per batch (+ count/trend) | Champion services |
 | leaderboard aggregates | Mongo snapshot `leaderboard_aggregates` per filter; rebuild every 12 hours and `$match` + `$group` on `summoner.ranks.<QUEUE>` path for new filters | 1 | LeaderboardService |
