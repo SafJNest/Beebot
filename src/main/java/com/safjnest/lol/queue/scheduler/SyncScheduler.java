@@ -1,11 +1,16 @@
 package com.safjnest.lol.queue.scheduler;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.safjnest.lol.model.status.SchedulerStatus;
+import com.safjnest.lol.queue.job.Job;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class SyncScheduler extends AbstractScheduler<LeagueShard> {
 
+    private static final ExecutorService JOBS = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
     private static final SyncScheduler INSTANCE = new SyncScheduler();
 
     private SyncScheduler() {
@@ -17,11 +22,23 @@ public final class SyncScheduler extends AbstractScheduler<LeagueShard> {
     }
 
     public static void shutdown() {
-        INSTANCE.shutdownDispatcher();
+        JOBS.shutdownNow();
     }
 
     public static SchedulerStatus status() {
         return INSTANCE.snapshot();
+    }
+
+    @Override
+    public <T> void enqueue(Job<T> job) {
+        LeagueShard shard = routeForJob(job.route());
+        JOBS.submit(() -> {
+            try {
+                execute(job, shard, 0);
+            } finally {
+                workerReleased(job);
+            }
+        });
     }
 
     @Override

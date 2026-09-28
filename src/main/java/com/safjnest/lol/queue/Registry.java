@@ -156,6 +156,16 @@ public final class Registry {
         }
     }
 
+    public void failed(Job<?> job, Throwable failure) {
+        synchronized (this) {
+            Entry<?> entry = entry(job);
+            if (entry.state.terminal() || entry.bodyFinished) return;
+            entry.failure = failure == null ? new IllegalStateException("Job execution failed") : failure;
+            entry.bodyFinished = true;
+            completeIfReady(entry);
+        }
+    }
+
     public JobStatus status(Job<?> job) {
         return status(entry(job), null, false);
     }
@@ -325,14 +335,16 @@ public final class Registry {
             job.pid(), job.ppid(), job.scheduler().getSimpleName(), job.key(), job.name(),
             job.route() == null ? null : job.route().toString(), job.priority(), entry.state,
             entry.followingPid, entry.queuedAt, entry.startedAt == 0 ? null : entry.startedAt,
-            entry.completedAt == 0 ? null : entry.completedAt, job.phase(), progress(entry),
+            entry.completedAt == 0 ? null : entry.completedAt, job.phase(), job.currentItem(), progress(entry),
             includeItems ? job.items() : java.util.Map.of(), includeItems ? job.itemLabels() : java.util.Map.of(),
             activeChildren(entry, visible)
         );
     }
 
     private JobProgress progress(Entry<?> entry) {
-        if (entry.childrenTotal == 0) return entry.job.progress();
+        JobProgress jobProgress = entry.job.progress();
+        if (jobProgress != null) return jobProgress;
+        if (entry.childrenTotal == 0) return null;
         return new JobProgress(Math.min(entry.completedChildren, entry.childrenTotal), entry.childrenTotal);
     }
 

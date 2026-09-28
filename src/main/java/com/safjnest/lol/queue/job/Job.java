@@ -29,6 +29,7 @@ public final class Job<T> {
     private final AtomicInteger total;
     private final AtomicInteger processed;
     private volatile String phase;
+    private volatile String currentItem;
 
     public Job(long pid, long ppid, Class<?> scheduler, Object route, String key, String name,
         JobPriority priority, Function<Job<T>, T> work) {
@@ -61,6 +62,7 @@ public final class Job<T> {
     public Function<Job<T>, T> work() { return work; }
 
     public void phase(String value) { phase = value; }
+    public void currentItem(String value) { currentItem = value; }
     public void trackItems(Collection<String> values) { if (values != null) for (String value : values) trackItem(value); }
     public void trackItem(String value) { if (value != null && !value.isBlank() && items.putIfAbsent(value, PENDING) == null) total.incrementAndGet(); }
     public void labelItem(String value, String label) { if (value != null && !value.isBlank() && label != null && !label.isBlank()) itemLabels.put(value, label); }
@@ -69,6 +71,7 @@ public final class Job<T> {
     public void failed(String value) { terminal(value, FAILED); }
 
     public String phase() { return phase; }
+    public String currentItem() { return currentItem; }
     public JobProgress progress() { int count = total.get(); return count == 0 ? null : new JobProgress(Math.min(processed.get(), count), count); }
     public Map<String, String> items() { return items.isEmpty() ? Map.of() : Map.copyOf(new LinkedHashMap<>(items)); }
     public Map<String, String> itemLabels() { return itemLabels.isEmpty() ? Map.of() : Map.copyOf(new LinkedHashMap<>(itemLabels)); }

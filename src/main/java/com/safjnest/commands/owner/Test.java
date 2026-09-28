@@ -2,6 +2,7 @@ package com.safjnest.commands.owner;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -69,7 +70,7 @@ public class Test extends Command {
         switch (operation) {
             case "list" -> event.reply("gc | tracking | log | ranking | regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
-                + " | pushsamplegame | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
+                + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS) + "]");
             case "gc" -> {
@@ -90,7 +91,18 @@ public class Test extends Command {
             case "getserver" -> event.reply("```json\\n"
                 + new JSONObject(GuildCache.getGuildOrPut(event.getGuild().getId()).getChannels()) + "```");
             case "queue" -> event.reply("Queued jobs=" + QueueHandler.snapshot().size() + ".");
-            case "pushsamplegame" -> queueSampleGames(event, GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+            case "pushsamplegame" -> {
+                GameQueueType queue = null;
+                if (arguments.length > 1 && !arguments[1].isBlank()) {
+                    try {
+                        queue = GameQueueType.valueOf(arguments[1].trim().toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException exception) {
+                        event.reply("Usage: !test pushsamplegame [GameQueueType].");
+                        return;
+                    }
+                }
+                queueSampleGames(event, queue);
+            }
             case "pushsamplegamecherry" -> queueSampleGames(event, GameQueueType.CHERRY);
             case "pushsamplegamearam" -> queueSampleGames(event, GameQueueType.ARAM);
             case "pushhighelo", "getrank" -> queueHighElo(event);
@@ -200,12 +212,13 @@ public class Test extends Command {
     }
 
     private static void queueSampleGames(CommandEvent event, GameQueueType queue) {
-        QueueHandler.background(SyncScheduler.class, null, "owner-sample-games:" + queue.name(),
-            "owner sample games " + queue.name(), job -> {
+        String queueName = queue == null ? "ALL" : queue.name();
+        QueueHandler.background(SyncScheduler.class, null, "owner-sample-games:" + queueName,
+            "owner sample games " + queueName, job -> {
                 TrackerScheduler.retrieveSampleGames(queue);
                 return null;
             });
-        event.reply("Sample game retrieval queued: " + queue.name() + ".");
+        event.reply("Sample game retrieval queued: " + (queue == null ? "all queues" : queue.name()) + ".");
     }
 
     private static void queueHighElo(CommandEvent event) {

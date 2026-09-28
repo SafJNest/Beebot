@@ -30,6 +30,16 @@ public final class CompetitiveService {
         return update(puuid, shard, ranks, MongoDB.findProfileStatistics(puuid, Filter.canonical()));
     }
 
+    static boolean updateFromRank(String puuid, LeagueShard shard, GameQueueType queue, Rank rank) {
+        if (puuid == null || puuid.isBlank() || shard == null || queue == null || rank == null) return false;
+        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        ProfileStatistics statistics = MongoDB.findProfileStatistics(puuid, Filter.canonical());
+        CompetitiveEntry previous = MongoDB.findCompetitive(puuid, canonicalQueue);
+        CompetitiveEntry next = entry(puuid, shard, Map.of(canonicalQueue, rank), statistics, canonicalQueue,
+            System.currentTimeMillis());
+        return write(previous, next, true);
+    }
+
     public static MongoDB.CompetitiveRebuild rebuild() {
         long now = System.currentTimeMillis();
         long[] counts = new long[3];

@@ -17,8 +17,10 @@ and worker implementation for `RiotScheduler`, `ComputeScheduler` and
 Each job body receives its own `Job`, including progress. The registry, not the
 job, owns the lifecycle entry, child count, future, result and follower link. A body
 can finish and release its physical worker while its job is `WAITING_CHILDREN`.
-The job future completes only after all descendants are terminal. Explicit async
-callbacks retain and restore their parent with `QueueHandler.retain(job)` and
+Execution failures before the body starts also fail the job body, with future
+completion deferred until its registered children terminate. The job future
+completes only after all descendants are terminal. Explicit async callbacks
+retain and restore their parent with `QueueHandler.retain(job)` and
 `QueueHandler.resume(job, callback)`. Child
 failures do not cancel siblings; they yield `COMPLETED_WITH_ERRORS` on an
 otherwise successful parent. A reused active job creates a follower PID with
@@ -32,13 +34,17 @@ regardless of its current load. Already placed profile tasks are never moved;
 once the heavy champion work completes, normal insert-time balancing resumes.
 
 Sync is volatile by design. It owns no Redis backlog, pending set or retry map.
-`SYNC + null` is the logical global/root route and is mapped internally to a
-dedicated Sync worker; its public route remains `null`. Missing API matches are
-background Sync work; OP.GG match loading is immediate Sync work.
+Each submitted Sync job starts immediately on its own virtual thread, without a
+per-shard Sync queue or worker limit. `SYNC + null` remains the logical
+global/root route; its public route remains `null`. Parent/child completion is
+owned by Registry. Riot API calls created by Sync jobs still use RiotScheduler's
+per-shard priority queues. Missing API matches are background Sync work; OP.GG
+match loading is immediate Sync work.
 
-`/api/status.jobs` is the registry view. Dispatcher snapshots still expose the
-local queues and workers and include PID/PPID on task snapshots. `runs` remains
-only a derived compatibility projection for tracking, sample-game and rank-entry
+`/api/status.jobs` is the registry view. Dispatcher snapshots expose Riot and
+Compute queues/workers; Sync lifecycle appears in `jobs` without a physical
+queue/worker projection. Task snapshots include PID/PPID. `runs` remains only a
+derived compatibility projection for tracking, sample-game and rank-entry
 roots. A job remains in memory while its body, an explicit async callback or at
 least one child is active. It is removed as soon as its full subtree is terminal;
 no Redis, MongoDB or pub/sub persistence is involved.

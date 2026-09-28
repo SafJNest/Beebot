@@ -9,10 +9,12 @@ persistent match-queue read.
 job tree; `dispatchers` is the physical queue/worker projection. The obsolete
 `tracker`, `workers`, `riot`, `gameQueue` and `profileQueue` fields were removed.
 
-Each scheduler reports its routes, the single worker for each route and its
-current job plus up to twenty queued jobs. Job snapshots include `pid` and
-`ppid`. `runs` is a compatibility projection derived from active registry roots
-for tracking, sample games and rank entries; it is not lifecycle state.
+Riot and Compute dispatchers report their physical workers, current jobs and up
+to twenty queued jobs per route. Sync jobs start immediately on virtual threads
+and therefore have no physical queue or worker projection; their lifecycle is
+visible in `jobs`. Job snapshots include `pid` and `ppid`. `runs` is a
+compatibility projection derived from active registry roots for tracking,
+sample games and rank entries; it is not lifecycle state.
 
 Each `jobs` item has `pid`, `ppid`, scheduler `type`, logical `route`, priority
 and lifecycle state. Physical placement belongs to `dispatchers.queues[].worker`.
@@ -24,9 +26,11 @@ children have terminated.
 
 The top-level `jobs` projection includes every job in the first three levels from
 a root, then at most 100 fourth-level jobs ordered by priority and enqueue time.
-It exposes phase and aggregate `progress`, but never per-item `items` or `itemLabels`.
-For example, `rank-entries` exposes its regional/tier job and `500/1000`
-progress without serializing the thousand summoner PUUIDs.
+It exposes phase, aggregate `progress`, and an optional active `currentItem`
+detail, but never per-item `items` or `itemLabels`. For example, `rank-entries`
+exposes its regional/tier job and `500/1000` progress without serializing the
+thousand summoner PUUIDs. `pushsamplegame` reports the current match label while
+fetching and its `[current/total] Pushing ...` detail while persisting.
 
 A leaf job reports its own item progress. A parent reports terminal direct
 children over direct children created, including children that already left the
@@ -120,6 +124,7 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
     "startedAt": 1755680400001,
     "completedAt": null,
     "phase": "TRACKING",
+    "currentItem": null,
     "progress": null,
     "items": {},
     "itemLabels": {},
@@ -147,6 +152,7 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
             "startedAt": 1755680400123,
             "completedAt": null,
             "phase": "PERSISTING",
+            "currentItem": "[124/128] Pushing CHALLENGER match JP1 - summoner#JP1 -> JP1_6789012345",
             "progress": { "current": 100, "total": 1000 },
             "items": {},
             "itemLabels": {},
@@ -204,4 +210,5 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
 ```
 
 The owner command `tracker` renders the dispatcher snapshot only. Sync tasks
-are memory-only and do not reappear after a restart.
+are memory-only, visible in the Registry while active, and do not reappear after
+a restart.

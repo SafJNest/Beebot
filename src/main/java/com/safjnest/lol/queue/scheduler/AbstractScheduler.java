@@ -96,7 +96,7 @@ public abstract class AbstractScheduler<R> {
         return false;
     }
 
-    public final <T> void enqueue(Job<T> job) {
+    public <T> void enqueue(Job<T> job) {
         R route = routeForJob(job.route());
         synchronized (lifecycleLock) {
             R queueRoute = queueFor(route);
@@ -155,13 +155,14 @@ public abstract class AbstractScheduler<R> {
     // ============================================================================
 
     public final Throwable execute(Job<?> job, R queueRoute, int worker) {
-        registry.started(job);
         try {
+            registry.started(job);
             onStarted(job);
             registry.execute(job);
             onBodyCompleted(job);
             return null;
         } catch (Throwable failure) {
+            registry.failed(job, failure);
             onBodyFailed(job, failure);
             return failure;
         } finally {

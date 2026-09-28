@@ -101,7 +101,7 @@ Queue glossary:
 
 - `RiotScheduler` — outbound Riot work, one queue per `LeagueShard`;
 - `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
-- `SyncScheduler` — tracking, rank, match, sample and participant refresh workflows, one queue per shard.
+- `SyncScheduler` — starts each tracking, rank, match, sample and participant refresh job immediately on its own virtual thread; Registry owns parent/child completion.
 
 Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
 `MatchService` owns untracked match insertion and can only create a
@@ -109,8 +109,13 @@ Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010
 the normal RankProgress history completion and commits the single
 `tracked=false -> true` transition. `%test fix-tracked` is the explicit Mongo
 recovery exception: after rebuilding the stored ranked history, it marks each
-repaired ranked match `tracked=true`. OP.GG may persist a best-effort participant
-`{ rank, lp }` snapshot, but never gain or predecessor data.
+repaired ranked match `tracked=true`. Non-tracker match insertion, including
+OP.GG and sample-game imports, may persist a best-effort participant `{ rank, lp }`
+snapshot from the canonical Mongo rank record while computing `match.rank`; a
+missing queue rank in a present `ranks` map is stored as `{ rank: UNRANKED, lp: 0 }`;
+missing or null `ranks` remains unknown. It never writes gain or predecessor data.
+`!test fix-rank` backfills missing snapshots for selected patches on matches that
+are not yet tracked; completed match history remains owned by `Tracker`.
 The package boundary is intentional: `job/` owns lifecycle data, `scheduler/`
 owns route selection and physical queues, and `worker/` owns queue draining.
 A job body receives the `Job` itself for phase/item reporting; simple bodies

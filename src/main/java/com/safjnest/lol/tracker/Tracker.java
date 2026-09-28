@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -60,20 +61,21 @@ public class Tracker {
 
     private static final long timelineSnapshotInterval = TimeConstant.MINUTE * 5;
 
-    static void retrieveSummoners() {
-        List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
-        Map<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> accountsByShard = new LinkedHashMap<>();
-        for (com.safjnest.lol.model.summoner.Summoner account : accounts) {
-            if (account == null || account.puuid() == null) continue;
-            LeagueShard shard = account.region();
-            if (shard == null || shard == LeagueShard.UNKNOWN) {
-                BotLogger.error("Tracked summoner has no active shard: " + account.puuid());
-                continue;
-            }
-            accountsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(account);
-        }
-        QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", root -> {
+    static CompletableFuture<Void> retrieveSummoners() {
+        return QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", root -> {
             root.phase("TRACKING");
+            BotLogger.info("[LPTracker] Started tracking summoners");
+            List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
+            Map<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> accountsByShard = new LinkedHashMap<>();
+            for (com.safjnest.lol.model.summoner.Summoner account : accounts) {
+                if (account == null || account.puuid() == null) continue;
+                LeagueShard shard = account.region();
+                if (shard == null || shard == LeagueShard.UNKNOWN) {
+                    BotLogger.error("Tracked summoner has no active shard: " + account.puuid());
+                    continue;
+                }
+                accountsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(account);
+            }
             for (Map.Entry<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> entry : accountsByShard.entrySet()) {
                 LeagueShard shard = entry.getKey();
                 List<com.safjnest.lol.model.summoner.Summoner> shardAccounts = entry.getValue();
@@ -93,7 +95,6 @@ public class Tracker {
             }
             return null;
         });
-        BotLogger.info("[LPTracker] Start tracking summoners (" + accounts.size() + " accounts)");
     }
 
     private static void retrieveSummoner(com.safjnest.lol.model.summoner.Summoner account, Job<?> task) {
@@ -848,13 +849,14 @@ public class Tracker {
         BotLogger.info("[LPTracker] Pushing sample matches");
         String currentPatch = PatchUtils.getPatch();
         String previousPatch = PatchUtils.getPreviousPatch();
+        String queueName = queue == null ? "ALL" : queue.name();
     
         long[] splitRange = SeasonUtils.getCurrentSplitRange();
         List<LeagueShard> shards = LeagueShardUtils.getActives();
-        QueueHandler.background(SyncScheduler.class, null, "sample-games:" + queue.name(), "sample games", root -> {
+        QueueHandler.background(SyncScheduler.class, null, "sample-games:" + queueName, "sample games", root -> {
             for (LeagueShard shard : shards) {
-                QueueHandler.background(SyncScheduler.class, shard, "sample-games:" + shard.name() + ":" + queue.name(),
-                    "sample games queue=" + queue.name(), task -> {
+                QueueHandler.background(SyncScheduler.class, shard, "sample-games:" + shard.name() + ":" + queueName,
+                    "sample games queue=" + queueName, task -> {
                 try {
                     task.phase("DISCOVERING");
                     long threshold = splitRange != null ? MongoDB.findLatestMatchTime(previousPatch, shard) : 0;
@@ -897,24 +899,33 @@ public class Tracker {
                     task.phase("PERSISTING");
                     int i = 0;
                     for (MatchEntry me : allMatches) {
+                        String matchLabel = me.matchId();
                         try {
+                            matchLabel = me.entry().getTier() + " match " + shard + " - "
+                                + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId();
+                            task.currentItem("Fetching " + matchLabel);
                             LOLMatch match = MatchService.fetch(me.matchId(), me.summoner().getPlatform());
                             if (match == null) {
+                                task.currentItem("Missing " + matchLabel);
                                 task.missing(me.matchId());
                                 continue;
                             }
                             if (!match.getGameVersion().startsWith(currentPatch)) {
+                                task.currentItem("Skipping old patch " + matchLabel);
                                 task.done(me.matchId());
                                 continue;
                             }
                             i++;
-                            BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
+                            String detail = "[" + i + "/" + allMatches.size() + "] Pushing " + matchLabel;
+                            task.currentItem(detail);
+                            BotLogger.info("[LPTracker] " + detail);
                             Match persisted = MatchService.insert(match);
                             if (persisted == null) task.failed(me.matchId());
                             else task.done(me.matchId());
                             Thread.sleep(350);
                         } catch (Exception e) {
                             e.printStackTrace();
+                            task.currentItem("Failed " + matchLabel);
                             task.failed(me.matchId());
                         }
                     }
