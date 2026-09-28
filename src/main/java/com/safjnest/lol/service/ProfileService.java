@@ -169,12 +169,12 @@ public class ProfileService {
         long lastUpdate = matchups == null ? 0 : matchups.lastUpdate();
         if (matchups != null && isStale(puuid, lastUpdate)) {
             ComputeScheduler.startStaleProfileMatchups(puuid, shard, filter);
-            ProfileMatchups response = matchups.withMinGames(requestFilter.minGames())
+            ProfileMatchups response = MatchupTierAnalyzer.rank(matchups.withMinGames(requestFilter.minGames()))
                 .withMetadata(ResponseMetadata.of(lastUpdate, true, filter));
             return ApiResult.partial(response, response.metadata());
         }
         if (matchups != null) {
-            ProfileMatchups response = matchups.withMinGames(requestFilter.minGames())
+            ProfileMatchups response = MatchupTierAnalyzer.rank(matchups.withMinGames(requestFilter.minGames()))
                 .withMetadata(ResponseMetadata.of(lastUpdate, false, filter));
             return ApiResult.ready(response, response.metadata());
         }
