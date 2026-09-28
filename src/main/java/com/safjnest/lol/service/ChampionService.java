@@ -76,7 +76,12 @@ public class ChampionService {
             cached = null;
         }
         if (cached != null) {
-            ChampionView page = cached.withMetadata(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter));
+            ChampionView page = new ChampionView(
+                cached.champion(),
+                MatchupTierAnalyzer.rank(cached.stats()),
+                cached.build(),
+                ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter)
+            );
             return ApiResult.ready(page, page.metadata());
         }
         return compose(champion, filter, statsLastUpdate, buildLastUpdate);
@@ -365,10 +370,15 @@ public class ChampionService {
             ComputeScheduler.startChampionData(filter, statisticsPending, buildPending);
             return ApiResult.pending(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), true, filter));
         }
-        ChampionView page = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
-            ChampionUtils.getChampionProfilePic(champion.getId())), stats, build)
-            .withMetadata(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter));
-        RedisClient.set(RedisKey.CHAMPION_PAGE, page.withMetadata(null), filter.champion(), filter.pageKey());
+        ChampionView cachedPage = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
+            ChampionUtils.getChampionProfilePic(champion.getId())), stats, build);
+        RedisClient.set(RedisKey.CHAMPION_PAGE, cachedPage, filter.champion(), filter.pageKey());
+        ChampionView page = new ChampionView(
+            cachedPage.champion(),
+            MatchupTierAnalyzer.rank(cachedPage.stats()),
+            cachedPage.build(),
+            ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter)
+        );
         return ApiResult.ready(page, page.metadata());
     }
 
