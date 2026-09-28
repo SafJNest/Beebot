@@ -71,6 +71,17 @@ public class ProfileLeafStats extends LeafStats {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean isOtp;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double adjustedWinrate;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double weightedDelta;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double matchupScore;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String tier;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean reliable;
+
     public ProfileLeafStats() {}
 
     public void accumulate(Participant participant, long timeStart, long timeEnd, int teamKills, int enemyTeamKills, boolean arena) {
