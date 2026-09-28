@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.json.JSONObject;
 import org.junit.Test;
 
 import com.safjnest.lol.model.match.Match;
@@ -13,6 +14,8 @@ import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileMatchupLeaf;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
+import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.utils.JsonCodec;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -87,6 +90,41 @@ public class ProfileMatchupsTest {
         assertFalse(json.contains("\"winrate\""));
         assertFalse(json.contains("\"kda\""));
         assertFalse(json.contains("\"schemaVersion\""));
+        assertTrue(json.contains("\"goldDiffAt15Sum\":0.0"));
+        assertTrue(json.contains("\"goldDiffAt15Games\":0"));
+        assertTrue(json.contains("\"csDiffAt15Sum\":0.0"));
+        assertTrue(json.contains("\"csDiffAt15Games\":0"));
+        assertTrue(json.contains("\"xpDiffAt15Sum\":0.0"));
+        assertTrue(json.contains("\"xpDiffAt15Games\":0"));
+        assertTrue(json.contains("\"killDiffAt15Sum\":0.0"));
+        assertTrue(json.contains("\"killDiffAt15Games\":0"));
+        assertTrue(json.contains("\"levelDiffAt15Sum\":0.0"));
+        assertTrue(json.contains("\"levelDiffAt15Games\":0"));
+        assertTrue(json.contains("\"plateDiffAt15Sum\":0.0"));
+        assertTrue(json.contains("\"plateDiffAt15Games\":0"));
+    }
+
+    @Test
+    public void aggregatesFifteenMinuteLaneAndDuoDifferencesWithCorrectSigns() {
+        Match match = duoMatchWithTimeline();
+        assertEquals(Integer.valueOf(3000), MatchupTimelineUtils.read(match).snapshots().get("puuid").gold());
+        ProfileMatchups profile = ProfileMatchups.from(List.of(match), "puuid", filter());
+        ProfileMatchupLeaf leaf = profile.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("BOT");
+
+        ProfileLeafStats matchup = leaf.matchups.get("4");
+        assertEquals(200d, matchup.goldDiffAt15Sum, 0d);
+        assertEquals(10d, matchup.csDiffAt15Sum, 0d);
+        assertEquals(200d, matchup.xpDiffAt15Sum, 0d);
+        assertEquals(0d, matchup.killDiffAt15Sum, 0d);
+        assertEquals(1d, matchup.levelDiffAt15Sum, 0d);
+        assertEquals(1d, matchup.plateDiffAt15Sum, 0d);
+
+        ProfileLeafStats synergy = leaf.synergies.get("2");
+        assertEquals(500d, synergy.goldDiffAt15Sum, 0d);
+        assertEquals(20d, synergy.csDiffAt15Sum, 0d);
+        assertEquals(500d, synergy.xpDiffAt15Sum, 0d);
+        assertEquals(1d, synergy.killDiffAt15Sum, 0d);
+        assertEquals(1d, synergy.plateDiffAt15Sum, 0d);
     }
 
     @Test
@@ -152,5 +190,42 @@ public class ProfileMatchupsTest {
         participant.goldEarned = 300;
         participant.championLevel = 18;
         return participant;
+    }
+
+    private static Match duoMatchWithTimeline() {
+        Match match = new Match();
+        match.gameId = "timeline-duo";
+        match.queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+        match.patch = "14.10";
+        match.timeStart = 100;
+        match.timeEnd = 1_800_100;
+        match.participants = List.of(
+            participant("puuid", 1, LaneType.BOT, TeamType.BLUE, true),
+            participant("ally", 2, LaneType.UTILITY, TeamType.BLUE, true),
+            participant("enemy", 4, LaneType.BOT, TeamType.RED, false),
+            participant("enemy-ally", 5, LaneType.UTILITY, TeamType.RED, false)
+        );
+        match.events = new JSONObject("""
+            {
+              "participants":{"1":"puuid","2":"ally","3":"enemy","4":"enemy-ally"},
+              "snapshots":[{"timestamp":900000,"minute":15,"participants":{
+                "1":{"total_gold":3000,"cs":100,"xp":5000,"level":11},
+                "2":{"total_gold":2000,"cs":50,"xp":3000,"level":9},
+                "3":{"total_gold":2800,"cs":90,"xp":4800,"level":10},
+                "4":{"total_gold":1700,"cs":40,"xp":2700,"level":9}
+              }}],
+              "champion_kills":[
+                {"timestamp":900000,"killer":1},
+                {"timestamp":900000,"killer":2},
+                {"timestamp":900000,"killer":3}
+              ],
+              "turret_plate_events":[
+                {"timestamp":900000,"team":"BLUE","lane":"BOT"},
+                {"timestamp":900000,"team":"BLUE","lane":"BOT"},
+                {"timestamp":900000,"team":"RED","lane":"BOT"}
+              ]
+            }
+            """);
+        return match;
     }
 }

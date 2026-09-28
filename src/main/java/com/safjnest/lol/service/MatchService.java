@@ -198,20 +198,32 @@ public final class MatchService {
 
     public static LOLTimeline getTimeline(LOLMatch match) {
         if (match == null || match.getPlatform() == null) return null;
-        String gameId = MatchUtils.fullGameId(match);
-        String region = match.getPlatform().toRegionShard().name();
+        return getTimeline(MatchUtils.fullGameId(match), match.getPlatform());
+    }
+
+    public static LOLTimeline getTimeline(String gameId, LeagueShard shard) {
+        if (!valid(gameId, shard)) return null;
+        String region = shard.toRegionShard().name();
         LOLTimeline cached = RedisClient.get(RedisKey.R4J_TIMELINE.of(region, gameId), LOLTimeline.class);
         if (cached != null) return cached;
 
-        LOLTimeline timeline = match.getTimeline();
-        if (timeline != null) RedisClient.set(RedisKey.R4J_TIMELINE, timeline, region, gameId);
-        return timeline;
+        return QueueHandler.<LOLTimeline>immediate(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
+            "timeline id=" + gameId, ignored -> {
+                LOLTimeline timeline = RIOT_API.getLoLAPI().getMatchAPI().getTimeline(shard.toRegionShard(), gameId);
+                if (timeline != null) RedisClient.set(RedisKey.R4J_TIMELINE, timeline, region, gameId);
+                return timeline;
+            }).join();
     }
 
     public static void clearTimelineCache(LOLMatch match) {
         if (match == null || match.getPlatform() == null) return;
+        clearTimelineCache(MatchUtils.fullGameId(match), match.getPlatform());
+    }
+
+    public static void clearTimelineCache(String gameId, LeagueShard shard) {
+        if (!valid(gameId, shard)) return;
         CacheInvalidationService.clearRedis(
-            RedisKey.R4J_TIMELINE, match.getPlatform().toRegionShard().name(), MatchUtils.fullGameId(match));
+            RedisKey.R4J_TIMELINE, shard.toRegionShard().name(), gameId);
     }
 
     public static void invalidateR4JMatch(String gameId, LeagueShard shard) {

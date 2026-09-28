@@ -151,7 +151,7 @@ Redis/Mongo read-through:
 Redis SUMMONER_MATCHUPS(PUUID, filterKey)
   -> Mongo profile_matchups { puuid, filterKey }
   -> ComputeScheduler profile-matchups:<puuid>:<filterKey> (PROFILE lane)
-  -> Mongo.findProfileStatisticsMatches(..., Filter, 0, 0)
+  -> Mongo cursor batches of 100 profile matches + matching `match_events` timelines
   -> ProfileAnalyzer.matchups(...)
   -> Mongo upsert and Redis cache
 ```
@@ -160,6 +160,10 @@ Computation does not happen during the request. A miss returns `202`; a
 stale aggregate remains `200` with `metadata.refresh=true` and enqueues only the
 matchup refresh at low priority. The refresh is executed by the general database worker, shared with the other
 non-build refreshes; the build worker remains dedicated to build calculations only.
+The matchup refresh reads all event fields for each selected match in the same
+cursor pass, in bounded batches, and releases the match/timeline tree after the
+consumer finishes. Its response-only ranking combines overall performance with
+timeline lane dominance at 15 minutes; the stored aggregate remains raw.
 The profile JSON exposes the new leaf cast maps; the matchups JSON adds
 synergies and threshold-preserving `others` buckets.
 

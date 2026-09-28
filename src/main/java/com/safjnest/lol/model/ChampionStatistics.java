@@ -1,5 +1,6 @@
 package com.safjnest.lol.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.utils.JsonCodec;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -64,11 +65,49 @@ public record ChampionStatistics(
         Double soloKillRate,
         Double killParticipation,
         Double opponentBanRate,
-        Integer metricGames
+        Integer metricGames,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double kda,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double goldPerMinute,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double deathShare,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double xpDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double killDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double levelDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double turretPlateDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double adjustedWinrate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double weightedDelta,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double matchupScore,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String tier,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean reliable,
+        long goldDiffAt15Games,
+        long csDiffAt15Games,
+        long xpDiffAt15Games,
+        long killDiffAt15Games,
+        long levelDiffAt15Games,
+        long turretPlateDiffAt15Games
     ) {
+        public Matchup(
+            int matches,
+            int wins,
+            double winrate,
+            Double deltaWinrate,
+            Integer goldDiffAt15,
+            Double csDiffAt15,
+            Double soloKillRate,
+            Double killParticipation,
+            Double opponentBanRate,
+            Integer metricGames
+        ) {
+            this(matches, wins, winrate, deltaWinrate, goldDiffAt15, csDiffAt15,
+                soloKillRate, killParticipation, opponentBanRate, metricGames,
+                null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 0, 0, 0, 0, 0);
+        }
+
         public Matchup(int matches, double winrate) {
             this(matches, (int) Math.round(matches * winrate), winrate,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 0, 0, 0, 0, 0);
         }
 
         public String prettyMatches() {
@@ -86,8 +125,42 @@ public record ChampionStatistics(
         int matches,
         int wins,
         double winrate,
-        double pickrate
-    ) {}
+        double pickrate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double goldDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double csDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double kda,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double goldPerMinute,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double killParticipation,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double deathShare,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double xpDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double killDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double levelDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double turretPlateDiffAt15,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double adjustedWinrate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double weightedDelta,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double matchupScore,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String tier,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean reliable,
+        long goldDiffAt15Games,
+        long csDiffAt15Games,
+        long xpDiffAt15Games,
+        long killDiffAt15Games,
+        long levelDiffAt15Games,
+        long turretPlateDiffAt15Games
+    ) {
+        public LaneSynergy(
+            int allyChampion,
+            LaneType allyLane,
+            int matches,
+            int wins,
+            double winrate,
+            double pickrate
+        ) {
+            this(allyChampion, allyLane, matches, wins, winrate, pickrate,
+                null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 0, 0, 0, 0, 0);
+        }
+    }
 
     public record PowerCurvePoint(String durationBucket, int games, int wins, double winrate) {}
 

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -967,16 +968,102 @@ public final class MongoDB {
             long afterTime,
             long untilTime,
             Consumer<Match> consumer) {
+        if (consumer == null) return;
+        forEachProfileStatisticsMatchWhile(puuid, shard, filter, afterTime, untilTime, false, match -> {
+            consumer.accept(match);
+            return true;
+        });
+    }
+
+    public static void forEachProfileStatisticsMatchWhile(
+            String puuid,
+            LeagueShard shard,
+            Filter filter,
+            long afterTime,
+            long untilTime,
+            boolean newestFirst,
+            Predicate<Match> consumer) {
         traceRead("match.findProfileStatistics", "puuid=" + puuid + " filter=" + (filter == null ? "null" : filter.toSummonerKey()));
         if (puuid == null || puuid.isBlank() || filter == null || consumer == null) return;
         try (MongoCursor<Document> cursor = matches().find(buildMatchFilter(puuid, shard, filter, afterTime, untilTime))
                 .projection(profileStatisticsMatchProjection())
-                .sort(Sorts.ascending("timeStart", "_id"))
+                .sort(newestFirst ? Sorts.descending("timeStart", "_id") : Sorts.ascending("timeStart", "_id"))
                 .iterator()) {
             while (cursor.hasNext()) {
                 Match match = read(matchRecord(cursor.next()), Match.class);
-                if (ProfileStatistics.matchesFilter(match, puuid, filter)) consumer.accept(match);
+                if (ProfileStatistics.matchesFilter(match, puuid, filter) && !consumer.test(match)) return;
             }
+        }
+    }
+
+    public static void forEachProfileStatisticsMatchWithEvents(
+            String puuid,
+            LeagueShard shard,
+            Filter filter,
+            long afterTime,
+            long untilTime,
+            Consumer<Match> consumer) {
+        if (puuid == null || puuid.isBlank() || filter == null || consumer == null) return;
+        List<Match> batch = new ArrayList<>(100);
+        List<String> ids = new ArrayList<>(100);
+        FindIterable<Document> query = matches().find(buildMatchFilter(puuid, shard, filter, afterTime, untilTime))
+            .projection(profileStatisticsMatchProjection()).sort(Sorts.ascending("timeStart", "_id")).batchSize(100);
+        try (MongoCursor<Document> cursor = query.iterator()) {
+            while (cursor.hasNext()) {
+                Document document = cursor.next();
+                try {
+                    Match match = read(matchRecord(document), Match.class);
+                    if (ProfileStatistics.matchesFilter(match, puuid, filter)) {
+                        batch.add(match);
+                        ids.add(match.gameId);
+                    } else {
+                        MatchMemoryUtils.release(match);
+                    }
+                } finally {
+                    MatchMemoryUtils.release(document);
+                }
+                if (batch.size() >= 100) flushProfileStatisticsMatchEvents(batch, ids, consumer);
+            }
+            if (!batch.isEmpty()) flushProfileStatisticsMatchEvents(batch, ids, consumer);
+        } finally {
+            MatchMemoryUtils.release(batch);
+            MatchMemoryUtils.release(ids);
+        }
+    }
+
+    private static void flushProfileStatisticsMatchEvents(List<Match> batch, List<String> ids,
+                                                            Consumer<Match> consumer) {
+        if (batch.isEmpty()) return;
+        Map<String, Match> byId = new HashMap<>();
+        Map<String, Document> eventsById = new HashMap<>();
+        for (Match match : batch) byId.put(match.gameId, match);
+        try {
+            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", ids)).batchSize(ids.size()).iterator()) {
+                while (cursor.hasNext()) {
+                    Document event = cursor.next();
+                    String id = event.getString("_id");
+                    if (byId.containsKey(id)) eventsById.put(id, event);
+                    else MatchMemoryUtils.release(event);
+                }
+            }
+            for (Match match : batch) {
+                Document event = eventsById.remove(match.gameId);
+                try {
+                    if (event != null) {
+                        match.eventData = decodeMatchEvents(event);
+                        match.restoreEvents();
+                    }
+                    consumer.accept(match);
+                } finally {
+                    MatchMemoryUtils.release(match);
+                    if (event != null) MatchMemoryUtils.release(event);
+                }
+            }
+        } finally {
+            MatchMemoryUtils.release(eventsById);
+            MatchMemoryUtils.release(batch);
+            MatchMemoryUtils.release(ids);
+            byId.clear();
         }
     }
 
@@ -1475,6 +1562,11 @@ public final class MongoDB {
 
     public static void forEachChampionRawMatchEventBatch(Filter filter, int batchSize,
                                                            Consumer<ChampionRawMatch> consumer) {
+        forEachChampionRawMatchEventBatch(filter, batchSize, false, consumer);
+    }
+
+    public static void forEachChampionRawMatchEventBatch(Filter filter, int batchSize, boolean withBuild,
+                                                           Consumer<ChampionRawMatch> consumer) {
         if (filter == null || batchSize <= 0 || consumer == null) return;
         List<String> batch = new ArrayList<>(batchSize);
         FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
@@ -1486,25 +1578,26 @@ public final class MongoDB {
                     try {
                         String matchId = document.getString("_id");
                         if (matchId != null) batch.add(matchId);
-                        if (batch.size() == batchSize) processChampionRawMatchEventBatch(batch, batchSize, consumer);
+                        if (batch.size() == batchSize) processChampionRawMatchEventBatch(batch, batchSize, withBuild, consumer);
                     } finally {
                         MatchMemoryUtils.release(document);
                     }
                 }
-                if (!batch.isEmpty()) processChampionRawMatchEventBatch(batch, batchSize, consumer);
+                if (!batch.isEmpty()) processChampionRawMatchEventBatch(batch, batchSize, withBuild, consumer);
             }
         } finally {
             MatchMemoryUtils.release(batch);
         }
     }
 
-    private static void processChampionRawMatchEventBatch(List<String> batch, int batchSize,
+    private static void processChampionRawMatchEventBatch(List<String> batch, int batchSize, boolean withBuild,
                                                             Consumer<ChampionRawMatch> consumer) {
         if (batch.isEmpty()) return;
         Map<String, Document> matchesById = new HashMap<>();
         try {
             try (MongoCursor<Document> cursor = matches().find(Filters.in("_id", batch))
-                    .projection(championRawProjection()).batchSize(batchSize).iterator()) {
+                    .projection(withBuild ? championRawWithBuildProjection() : championRawProjection())
+                    .batchSize(batchSize).iterator()) {
                 while (cursor.hasNext()) {
                     Document match = cursor.next();
                     String matchId = match.getString("_id");
@@ -1516,17 +1609,20 @@ public final class MongoDB {
                 while (cursor.hasNext()) {
                     long eventStarted = System.nanoTime();
                     Document event = cursor.next();
-                    Document match = matchesById.remove(event.getString("_id"));
+                    Document match = matchesById.get(event.getString("_id"));
                     try {
                         if (match == null) continue;
                         match.put("events", decodeMatchEventsJson(event));
                         consumer.accept(new ChampionRawMatch(match, 0, System.nanoTime() - eventStarted));
+                        matchesById.remove(event.getString("_id"));
                     } finally {
                         MatchMemoryUtils.release(event);
                         if (match != null) MatchMemoryUtils.release(match);
                     }
                 }
             }
+            for (Document match : matchesById.values()) consumer.accept(new ChampionRawMatch(match, 0, 0));
+            matchesById.clear();
         } finally {
             MatchMemoryUtils.release(matchesById);
             MatchMemoryUtils.release(batch);

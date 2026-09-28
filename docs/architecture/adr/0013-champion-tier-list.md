@@ -16,7 +16,10 @@ role.
 ready `ChampionStatsDocument` for the scope and derives every role from each
 champion's raw `lanes.<lane>` leaf; no overview or tier-list projection is persisted.
 `ChampionTierAnalyzer` calculates the score in Java after clustering every
-champion-role pair from the requested lane buckets. The two standardized
+champion-role pair from the requested lane buckets. Median calculation,
+shrinkage, Z-score standardization, posterior rate moments and tier thresholds
+are owned by the shared `TierMathUtils`; response matchup/synergy ranking uses
+the same primitives so the two projections cannot drift mathematically. The two standardized
 features are `log1p(picksInRole)` and `logit(picksInRole /
 totalPicksAcrossRoles)`; the cluster whose centroid is higher on both features
 owns the eligible roles. Only eligible champions contribute to the role

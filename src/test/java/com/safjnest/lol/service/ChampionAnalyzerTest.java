@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
 import org.junit.Test;
 
 import com.safjnest.lol.champion.ChampionStatsData;
@@ -120,6 +121,38 @@ public class ChampionAnalyzerTest {
         assertEquals(0.7, statistics.matchups().get(20).opponentBanRate(), 0.001);
     }
 
+    @Test
+    public void parsesFifteenMinuteSnapshotAndLaneEventsByPuuid() {
+        List<ChampionStatsData.Player> players = List.of(
+            eventPlayer(10, "own", LaneType.TOP, TeamType.BLUE),
+            eventPlayer(20, "enemy", LaneType.TOP, TeamType.RED)
+        );
+        ChampionStatsData.MatchData data = ChampionAnalyzer.parseEventData(players, new JSONObject("""
+            {
+              "participants":{"1":"own","2":"enemy"},
+              "snapshots":[{"timestamp":899900,"minute":15,"participants":{
+                "1":{"total_gold":5000,"cs":100,"xp":6000,"level":12},
+                "2":{"total_gold":4500,"cs":90,"xp":5500,"level":11}
+              }}],
+              "champion_kills":[
+                {"timestamp":900000,"killer":1,"victim":2,"assists":[]},
+                {"timestamp":900001,"killer":2,"victim":1,"assists":[]}
+              ],
+              "turret_plate_events":[
+                {"timestamp":900000,"killer":0,"team":"BLUE","lane":"TOP"},
+                {"timestamp":900000,"killer":1,"team":"BLUE","lane":"TOP"}
+              ]
+            }
+            """));
+
+        assertEquals(Integer.valueOf(6000), data.snapshots().get("own").xp());
+        assertEquals(Integer.valueOf(12), data.snapshots().get("own").level());
+        assertEquals(1, data.eventMetrics().get("own").killsAt15());
+        assertEquals(0, data.eventMetrics().get("enemy").killsAt15());
+        assertEquals(2, data.eventMetrics().get("own").platesAt15());
+        assertTrue(data.eventMetrics().get("own").available());
+    }
+
     private static Filter filter(LeagueShard region, TierType rank) {
         return new Filter()
             .setPatch("15.14")
@@ -154,5 +187,10 @@ public class ChampionAnalyzerTest {
     private static ChampionStatsData.Player player(int champion, LaneType lane, boolean win, TeamType team) {
         return new ChampionStatsData.Player(champion, lane, win, team, "match", 0, 600_000,
             "1/2/3", 100, 10_000, String.valueOf(champion));
+    }
+
+    private static ChampionStatsData.Player eventPlayer(int champion, String puuid, LaneType lane, TeamType team) {
+        return new ChampionStatsData.Player(champion, lane, team == TeamType.BLUE, team, "timeline", 0, 1_800_000,
+            "2/1/3", 100, 10_000, puuid);
     }
 }

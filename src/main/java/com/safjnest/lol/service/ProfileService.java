@@ -169,12 +169,14 @@ public class ProfileService {
         long lastUpdate = matchups == null ? 0 : matchups.lastUpdate();
         if (matchups != null && isStale(puuid, lastUpdate)) {
             ComputeScheduler.startStaleProfileMatchups(puuid, shard, filter);
-            ProfileMatchups response = matchups.withMinGames(requestFilter.minGames())
+            ProfileMatchups response = MatchupRankingAnalyzer.rank(
+                matchups.withMinGames(requestFilter.minGames()))
                 .withMetadata(ResponseMetadata.of(lastUpdate, true, filter));
             return ApiResult.partial(response, response.metadata());
         }
         if (matchups != null) {
-            ProfileMatchups response = matchups.withMinGames(requestFilter.minGames())
+            ProfileMatchups response = MatchupRankingAnalyzer.rank(
+                matchups.withMinGames(requestFilter.minGames()))
                 .withMetadata(ResponseMetadata.of(lastUpdate, false, filter));
             return ApiResult.ready(response, response.metadata());
         }
@@ -228,7 +230,7 @@ public class ProfileService {
     public boolean generateMatchups(String puuid, LeagueShard shard, Filter filter) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null) return false;
         ProfileAnalyzer.MatchupsAccumulator accumulator = ProfileAnalyzer.matchupsAccumulator(puuid, filter);
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, match -> {
+        MongoDB.forEachProfileStatisticsMatchWithEvents(puuid, shard, filter, 0, 0, match -> {
             try {
                 accumulator.accept(match);
             } finally {
@@ -263,7 +265,7 @@ public class ProfileService {
         Filter filter = Filter.canonical();
         ProfileAnalyzer.ProfileRefreshAccumulator accumulator = ProfileAnalyzer.refreshAccumulator(
             puuid, filter, filter, filter);
-        MongoDB.forEachProfileStatisticsMatch(puuid, shard, filter, 0, 0, match -> {
+        MongoDB.forEachProfileStatisticsMatchWithEvents(puuid, shard, filter, 0, 0, match -> {
             try {
                 accumulator.accept(match);
             } finally {

@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import org.bson.Document;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.nosql.MongoDB;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -24,39 +25,35 @@ public final class ChampionStatsProvider {
 
     public static void forEachMatch(
             Filter filter,
-            Consumer<ChampionStatsData.RawMatchRead> matchConsumer,
-            Consumer<ChampionStatsData.RawMatchRead> eventConsumer) {
-        if (filter == null || matchConsumer == null || eventConsumer == null) return;
-        MongoDB.forEachChampionRawMatch(filter, raw -> {
+            java.util.function.Consumer<ChampionStatsData.RawMatchRead> consumer) {
+        if (filter == null || consumer == null) return;
+        MongoDB.forEachChampionRawMatchEventBatch(filter, EVENT_BATCH_SIZE, false, raw -> {
             long materializeStarted = System.nanoTime();
-            matchConsumer.accept(new ChampionStatsData.RawMatchRead(
-                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
-                    System.nanoTime() - materializeStarted));
-        });
-        MongoDB.forEachChampionRawMatchEventBatch(filter, EVENT_BATCH_SIZE, raw -> {
-            long materializeStarted = System.nanoTime();
-            eventConsumer.accept(new ChampionStatsData.RawMatchRead(
-                rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
-                System.nanoTime() - materializeStarted));
+            ChampionStatsData.RawMatch match = rawMatch(raw.document());
+            ChampionStatsData.RawMatchRead read = new ChampionStatsData.RawMatchRead(match,
+                raw.matchReadNanos(), raw.eventReadNanos(), System.nanoTime() - materializeStarted);
+            try {
+                consumer.accept(read);
+            } finally {
+                MatchMemoryUtils.release(match);
+            }
         });
     }
 
     public static void forEachMatchWithBuild(
             Filter filter,
-            BiConsumer<ChampionStatsData.RawMatchRead, Document> matchConsumer,
-            Consumer<ChampionStatsData.RawMatchRead> eventConsumer) {
-        if (filter == null || matchConsumer == null || eventConsumer == null) return;
-        MongoDB.forEachChampionRawMatchWithBuild(filter, raw -> {
+            BiConsumer<ChampionStatsData.RawMatchRead, Document> consumer) {
+        if (filter == null || consumer == null) return;
+        MongoDB.forEachChampionRawMatchEventBatch(filter, EVENT_BATCH_SIZE, true, raw -> {
             long materializeStarted = System.nanoTime();
-            matchConsumer.accept(new ChampionStatsData.RawMatchRead(
-                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
-                    System.nanoTime() - materializeStarted), raw.document());
-        });
-        MongoDB.forEachChampionRawMatchEventBatch(filter, EVENT_BATCH_SIZE, raw -> {
-            long materializeStarted = System.nanoTime();
-            eventConsumer.accept(new ChampionStatsData.RawMatchRead(
-                    rawMatch(raw.document()), raw.matchReadNanos(), raw.eventReadNanos(),
-                    System.nanoTime() - materializeStarted));
+            ChampionStatsData.RawMatch match = rawMatch(raw.document());
+            ChampionStatsData.RawMatchRead read = new ChampionStatsData.RawMatchRead(match,
+                raw.matchReadNanos(), raw.eventReadNanos(), System.nanoTime() - materializeStarted);
+            try {
+                consumer.accept(read, raw.document());
+            } finally {
+                MatchMemoryUtils.release(match);
+            }
         });
     }
 

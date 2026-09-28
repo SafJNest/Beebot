@@ -30,6 +30,8 @@ curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
 
 `ChampionView`. The internal `filter` field is not part of the HTTP JSON.
 
+Matchup and synergy `*At15Games` fields report how many matches contain each timeline value. A `null` metric and count `0` mean unavailable; an average of `0` with a positive count is an observed zero. Ranking shrinkage uses each metric's own count, so missing XP or level data is not scored as zero.
+
 If the refresh has completed but the filter contains no valid games/builds, the
 same `200` response contains a zeroed overview and empty lists. The frontend must
 render the no-data state; no indefinite `202` is kept.
@@ -79,7 +81,25 @@ render the no-data state; no indefinite `202` is kept.
         "soloKillRate": 0.031,
         "killParticipation": 0.58,
         "opponentBanRate": 0.021,
-        "metricGames": 286
+        "metricGames": 286,
+        "kda": 2.18,
+        "goldPerMinute": 423.5,
+        "deathShare": 0.16,
+        "xpDiffAt15": -315,
+        "killDiffAt15": -1.0,
+        "levelDiffAt15": -0.2,
+        "turretPlateDiffAt15": -0.3,
+        "goldDiffAt15Games": 286,
+        "csDiffAt15Games": 286,
+        "xpDiffAt15Games": 274,
+        "killDiffAt15Games": 286,
+        "levelDiffAt15Games": 274,
+        "turretPlateDiffAt15Games": 286,
+        "adjustedWinrate": 0.472,
+        "weightedDelta": -0.058,
+        "matchupScore": -1.21,
+        "tier": "D",
+        "reliable": true
       }
     },
     "laneSynergies": [
@@ -89,7 +109,28 @@ render the no-data state; no indefinite `202` is kept.
         "matches": 488,
         "wins": 278,
         "winrate": 0.57,
-        "pickrate": 0.039
+        "pickrate": 0.039,
+        "goldDiffAt15": 420,
+        "csDiffAt15": 8.2,
+        "kda": 3.1,
+        "goldPerMinute": 449.8,
+        "killParticipation": 0.66,
+        "deathShare": 0.12,
+        "xpDiffAt15": 620,
+        "killDiffAt15": 1.4,
+        "levelDiffAt15": 0.4,
+        "turretPlateDiffAt15": 0.5,
+        "goldDiffAt15Games": 488,
+        "csDiffAt15Games": 488,
+        "xpDiffAt15Games": 460,
+        "killDiffAt15Games": 488,
+        "levelDiffAt15Games": 460,
+        "turretPlateDiffAt15Games": 488,
+        "adjustedWinrate": 0.551,
+        "weightedDelta": 0.021,
+        "matchupScore": 0.84,
+        "tier": "A",
+        "reliable": true
       }
     ],
     "powerCurve": [
@@ -255,7 +296,31 @@ when available, otherwise the maximum available length. `matches` and
 sequence, so games that ended before that level also contribute
 to the compatible combination.
 starter, boots, support items, consumables, trinket, prismatics and augment
-keep existing categories and exclusions. `matchups` is a map with
+keep existing categories and exclusions.
+
+Before the HTTP response is returned, champion matchups and lane synergies are
+ranked on a response-only copy. Mongo, Redis and Discord-facing raw statistics
+remain unchanged. Both relation types use the shared tier math also used by the
+tier-list: prior strength is the median relation game count, win rate is shrunk
+toward the champion baseline, and scores use standardized values.
+
+Champion matchups and synergies use the same two-part score: 50% overall
+performance and 50% lane dominance. Overall performance weights adjusted win
+rate 55%, KDA 20%, gold per minute 10%, kill participation 10% and inverse
+death share 5%. Lane dominance weights gold difference at 15 25%, CS difference
+20%, XP difference 20%, kill difference 25% and turret-plate difference 10%.
+Synergy lane values compare the focal player and ally against the opposing lane
+pair. Snapshot metrics use the available frame nearest minute 15 without
+interpolation; kill and plate events are counted through minute 15. Level
+difference is descriptive and is not scored. Ban and
+pick rates do not affect the score.
+
+Both relation types expose `adjustedWinrate`, `weightedDelta`,
+`matchupScore`, `tier` and `reliable`. Reliability means relation games
+are at least the median sample of the relevant group and never removes a row.
+Ordering is descending score, then adjusted win rate, games and champion ID.
+Tier thresholds are shared with the tier-list: `S+ >= 2`, `S >= 1`,
+`A >= 0.25`, `B >= -0.25`, `C >= -1`, otherwise `D`. `matchups` is a map with
 keys serialized as
 `MatchupKey[champion=championId, lane=ROLE]`; unavailable metrics are
 `null`. The frontend converts this map into an array for the presentation layer.

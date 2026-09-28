@@ -100,7 +100,34 @@ position are stored, nor `reference`, `winrate`, `kda` or `avg*` fields.
                 "14": 40
               },
               "playtime": 15840000,
-              "lastPlayedAt": 1714518000000
+              "lastPlayedAt": 1714518000000,
+              "kda": 2.4,
+              "goldPerMinute": 441.2,
+              "killParticipation": 63.1,
+              "deathShare": 17.2,
+              "goldDiffAt15": 125,
+              "goldDiffAt15Sum": 750,
+              "goldDiffAt15Games": 6,
+              "csDiffAt15": 4.3,
+              "csDiffAt15Sum": 25.8,
+              "csDiffAt15Games": 6,
+              "xpDiffAt15": 1320,
+              "xpDiffAt15Sum": 7920,
+              "xpDiffAt15Games": 6,
+              "killDiffAt15": 1.0,
+              "killDiffAt15Sum": 6,
+              "killDiffAt15Games": 6,
+              "levelDiffAt15": 0.4,
+              "levelDiffAt15Sum": 2.4,
+              "levelDiffAt15Games": 6,
+              "turretPlateDiffAt15": 0.6,
+              "plateDiffAt15Sum": 3.6,
+              "plateDiffAt15Games": 6,
+              "adjustedWinrate": 0.514,
+              "weightedDelta": -0.024,
+              "matchupScore": -0.82,
+              "tier": "C",
+              "reliable": true
             },
             "others": {
               "games": 7,
@@ -144,7 +171,34 @@ position are stored, nor `reference`, `winrate`, `kda` or `avg*` fields.
                 "4": 10,
                 "14": 70
               },
-              "playtime": 26400000
+              "playtime": 26400000,
+              "kda": 3.2,
+              "goldPerMinute": 455.6,
+              "killParticipation": 66.4,
+              "deathShare": 14.8,
+              "goldDiffAt15": 380,
+              "goldDiffAt15Sum": 3800,
+              "goldDiffAt15Games": 10,
+              "csDiffAt15": 9.2,
+              "csDiffAt15Sum": 92,
+              "csDiffAt15Games": 10,
+              "xpDiffAt15": 2140,
+              "xpDiffAt15Sum": 21400,
+              "xpDiffAt15Games": 10,
+              "killDiffAt15": 2.0,
+              "killDiffAt15Sum": 20,
+              "killDiffAt15Games": 10,
+              "levelDiffAt15": 0.8,
+              "levelDiffAt15Sum": 8,
+              "levelDiffAt15Games": 10,
+              "turretPlateDiffAt15": 1.0,
+              "plateDiffAt15Sum": 10,
+              "plateDiffAt15Games": 10,
+              "adjustedWinrate": 0.561,
+              "weightedDelta": 0.023,
+              "matchupScore": 0.67,
+              "tier": "A",
+              "reliable": true
             },
             "others": {
               "games": 3,
@@ -182,6 +236,34 @@ with fewer than `minGames` games for that leaf and relation. With the default
 `minGames=5`, it contains the 1–4 game buckets. Summing named champion buckets
 and `others` reproduces the complete relation totals; `D` and `F` spell-cast
 counts sum to the leaf's existing `d` and `f` cast counts.
+
+The HTTP projection ranks `matchups` and `synergies` separately inside each
+champion × canonicalQueue × position leaf, after the existing `minGames`
+projection has grouped small buckets into `others`. Relation leaves expose raw
+timeline sums/counts in the response as well as in Mongo and Redis. Their
+averages, adjusted win rate and tier are response-only. A missing timeline
+metric has a zero sum and zero sample count.
+
+For both relation maps, prior strength is the median game count of named
+champions. Win rate is shrunk toward the parent leaf win rate. The score gives
+50% to overall performance (adjusted WR 55%, KDA 20%, gold per minute 10%, kill
+participation 10%, inverse death share 5%) and 50% to lane dominance (gold
+difference at 15 25%, CS difference 20%, XP difference 20%, kill difference
+25%, turret-plate difference 10%). Synergies compare the focal player and ally
+against the opposing lane pair. Snapshot metrics use the available frame nearest
+minute 15 without interpolation; kill and plate events are counted through
+minute 15. Each metric is standardized inside its relation map and non-win-rate
+values are shrunk toward the local relation mean before standardization. Level
+difference is exposed for context but is not scored.
+Pick rate and ban rate are not inputs.
+
+Ranked named entries expose `adjustedWinrate`, `weightedDelta`,
+`matchupScore`, `tier` and `reliable`. Reliability means games are at
+least the median sample and does not remove entries. Named entries are ordered
+by score descending, then adjusted win rate, games and champion ID. Champion
+ID `"0"` and `"others"` are not scored, have no tier and are kept at the
+end. Tier thresholds are `S+ >= 2`, `S >= 1`, `A >= 0.25`,
+`B >= -0.25`, `C >= -1`, otherwise `D`.
 
 For lane-based queues, every game contributes to the opposing champion in the
 same lane. BOT and UTILITY leaves also include the complementary teammate in

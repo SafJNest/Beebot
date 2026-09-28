@@ -15,6 +15,8 @@ import com.safjnest.lol.model.ChampionTierSource;
 import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.lol.utils.TierMathUtils;
+import com.safjnest.lol.utils.TierMathUtils.Moments;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
@@ -24,11 +26,6 @@ public final class ChampionTierAnalyzer {
     private static final double WINRATE_WEIGHT = 0.50;
     private static final double PICKRATE_WEIGHT = 0.45;
     private static final double BANRATE_WEIGHT = 0.05;
-    private static final double S_PLUS_SCORE = 2;
-    private static final double S_SCORE = 1;
-    private static final double A_SCORE = 0.25;
-    private static final double B_SCORE = -0.25;
-    private static final double C_SCORE = -1;
 
     private ChampionTierAnalyzer() {}
 
@@ -73,11 +70,11 @@ public final class ChampionTierAnalyzer {
         Moments banrates = moments(values, Metric.BANRATE);
         List<ChampionTierList.Champion> result = new ArrayList<>(values.size());
         for (SourceChampion value : values) {
-            double score = z(value.adjustedWinrate(), winrates) * WINRATE_WEIGHT
-                + z(value.statistics().pickrate(), pickrates) * PICKRATE_WEIGHT
-                + z(value.statistics().banrate(), banrates) * BANRATE_WEIGHT;
+            double score = TierMathUtils.z(value.adjustedWinrate(), winrates) * WINRATE_WEIGHT
+                + TierMathUtils.z(value.statistics().pickrate(), pickrates) * PICKRATE_WEIGHT
+                + TierMathUtils.z(value.statistics().banrate(), banrates) * BANRATE_WEIGHT;
             MatchupAnalysis matchups = matchups(filter, value, eligibleForRole, champions);
-            result.add(new ChampionTierList.Champion(value.champion(), true, tier(score), score, value.statistics(),
+            result.add(new ChampionTierList.Champion(value.champion(), true, TierMathUtils.tier(score), score, value.statistics(),
                 counters(matchups), strongAgainst(matchups)));
         }
         result.sort(Comparator.comparingDouble(ChampionTierList.Champion::tierScore).reversed()
@@ -218,15 +215,9 @@ public final class ChampionTierAnalyzer {
     }
 
     private static Moments pointMoments(List<RolePoint> points, boolean xAxis) {
-        double sum = 0;
-        for (RolePoint point : points) sum += xAxis ? point.x() : point.y();
-        double mean = sum / points.size();
-        double variance = 0;
-        for (RolePoint point : points) {
-            double value = xAxis ? point.x() : point.y();
-            variance += Math.pow(value - mean, 2);
-        }
-        return new Moments(mean, Math.sqrt(variance / points.size()));
+        List<Double> values = new ArrayList<>(points.size());
+        for (RolePoint point : points) values.add(xAxis ? point.x() : point.y());
+        return TierMathUtils.moments(values);
     }
 
     private static List<ClusterPoint> normalized(
@@ -235,7 +226,7 @@ public final class ChampionTierAnalyzer {
             Moments yMoments) {
         List<ClusterPoint> result = new ArrayList<>(points.size());
         for (RolePoint point : points) result.add(new ClusterPoint(
-            z(point.x(), xMoments), z(point.y(), yMoments)));
+            TierMathUtils.z(point.x(), xMoments), TierMathUtils.z(point.y(), yMoments)));
         return result;
     }
 
@@ -285,8 +276,8 @@ public final class ChampionTierAnalyzer {
         List<SourceChampion> result = new ArrayList<>(values.size());
         for (SourceChampion value : values) {
             ChampionTierList.Statistics statistics = value.statistics();
-            double adjustedWinrate = (statistics.wins() + priorStrength * roleAverageWinrate)
-                / (statistics.picks() + priorStrength);
+            double adjustedWinrate = TierMathUtils.shrinkRate(
+                statistics.wins(), statistics.picks(), roleAverageWinrate, priorStrength);
             result.add(new SourceChampion(value.id(), value.champion(), statistics, value.matchups(), adjustedWinrate));
         }
         return result;
@@ -306,7 +297,7 @@ public final class ChampionTierAnalyzer {
     private static double medianPicks(List<SourceChampion> values) {
         List<Integer> picks = new ArrayList<>(values.size());
         for (SourceChampion value : values) if (value.statistics().picks() > 0) picks.add(value.statistics().picks());
-        return median(picks);
+        return TierMathUtils.median(picks);
     }
 
     private static List<ChampionTierList.Matchup> counters(MatchupAnalysis matchups) {
@@ -336,8 +327,8 @@ public final class ChampionTierAnalyzer {
             ChampionView.Champion opponent = champions.apply(source.champion());
             if (opponent == null) continue;
             double rawWinrate = (double) source.wins() / source.games();
-            double adjustedWinrate = (source.wins() + priorStrength * value.adjustedWinrate())
-                / (source.games() + priorStrength);
+            double adjustedWinrate = TierMathUtils.shrinkRate(
+                source.wins(), source.games(), value.adjustedWinrate(), priorStrength);
             double weightedDelta = adjustedWinrate - value.adjustedWinrate();
             result.add(new ChampionTierList.Matchup(opponent, source.games(), source.wins(),
                 source.games() - source.wins(), rawWinrate, adjustedWinrate, weightedDelta));
@@ -371,7 +362,7 @@ public final class ChampionTierAnalyzer {
     private static double medianMatchupGames(List<ChampionTierSource.Matchup> values) {
         List<Integer> games = new ArrayList<>(values.size());
         for (ChampionTierSource.Matchup value : values) if (value != null && value.games() > 0) games.add(value.games());
-        return median(games);
+        return TierMathUtils.median(games);
     }
 
     private static List<ChampionTierList.Matchup> limited(List<ChampionTierList.Matchup> values) {
@@ -379,54 +370,22 @@ public final class ChampionTierAnalyzer {
     }
 
     private static Moments adjustedWinrateMoments(List<SourceChampion> values, double priorStrength) {
-        double mean = 0;
-        for (SourceChampion value : values) mean += value.adjustedWinrate();
-        mean /= values.size();
-        double variance = 0;
+        List<Double> rates = new ArrayList<>(values.size());
+        List<Integer> samples = new ArrayList<>(values.size());
         for (SourceChampion value : values) {
-            double posteriorVariance = value.adjustedWinrate() * (1 - value.adjustedWinrate())
-                / (value.statistics().picks() + priorStrength + 1);
-            variance += Math.pow(value.adjustedWinrate() - mean, 2) + posteriorVariance;
+            rates.add(value.adjustedWinrate());
+            samples.add(value.statistics().picks());
         }
-        return new Moments(mean, Math.sqrt(variance / values.size()));
+        return TierMathUtils.posteriorRateMoments(rates, samples, priorStrength);
     }
 
     private static Moments moments(List<SourceChampion> values, Metric metric) {
-        double sum = 0;
-        int count = 0;
+        List<Double> samples = new ArrayList<>(values.size());
         for (SourceChampion value : values) {
             Double metricValue = metric.value(value.statistics());
-            if (metricValue == null) continue;
-            sum += metricValue;
-            count++;
+            if (metricValue != null) samples.add(metricValue);
         }
-        if (count == 0) return new Moments(0, 0);
-        double mean = sum / count;
-        double variance = 0;
-        for (SourceChampion value : values) {
-            Double metricValue = metric.value(value.statistics());
-            if (metricValue != null) variance += Math.pow(metricValue - mean, 2);
-        }
-        return new Moments(mean, Math.sqrt(variance / count));
-    }
-
-    private static double z(Double value, Moments moments) {
-        return value == null || moments.deviation() == 0 ? 0 : (value - moments.mean()) / moments.deviation();
-    }
-
-    private static double median(List<Integer> values) {
-        if (values.isEmpty()) return 0;
-        values.sort(Integer::compareTo);
-        int middle = values.size() / 2;
-        return values.size() % 2 == 0 ? (values.get(middle - 1) + values.get(middle)) / 2d : values.get(middle);
-    }
-
-    private static String tier(double score) {
-        if (score >= S_PLUS_SCORE) return "S+";
-        if (score >= S_SCORE) return "S";
-        if (score >= A_SCORE) return "A";
-        if (score >= B_SCORE) return "B";
-        return score >= C_SCORE ? "C" : "D";
+        return TierMathUtils.moments(samples);
     }
 
     private static ChampionView.Champion champion(int championId) {
@@ -482,5 +441,4 @@ public final class ChampionTierAnalyzer {
         double adjustedWinrate
     ) {}
 
-    private record Moments(double mean, double deviation) {}
 }

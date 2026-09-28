@@ -3,12 +3,15 @@ package com.safjnest.commands.owner;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
@@ -21,8 +24,10 @@ import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.alert.AlertData;
@@ -37,10 +42,12 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import org.json.JSONObject;
 
 public class Test extends Command {
 
+    private static final int TIMELINE_NULL_STOP_THRESHOLD = 10;
     private static final List<String> REGENERATION_OPERATIONS = List.of(
         "profiles", "competitive", "aggregates", "records", "mastery-records", "champions", "indexables", "all"
     );
@@ -72,7 +79,8 @@ public class Test extends Command {
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
                 + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
-                + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS) + "]");
+                + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
+                + "] | fix-timeline <puuid>");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -113,8 +121,10 @@ public class Test extends Command {
             case "regenerate", "regen" -> queueRegeneration(event, arguments);
             case "audit" -> queueAudit(event, arguments);
             case "migrate" -> queueMigration(event, arguments);
+            case "fix-timeline" -> queueTimelineRepair(event, arguments);
             default -> event.reply("Usage: !test regenerate <"
-                + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
+                + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS)
+                + "] | !test fix-timeline <puuid>.");
         }
     }
 
@@ -219,6 +229,90 @@ public class Test extends Command {
                 return null;
             });
         event.reply("Sample game retrieval queued: " + (queue == null ? "all queues" : queue.name()) + ".");
+    }
+
+    private static void queueTimelineRepair(CommandEvent event, String[] arguments) {
+        if (arguments.length < 2 || arguments[1].isBlank()) {
+            event.reply("Usage: !test fix-timeline <puuid>.");
+            return;
+        }
+        String puuid = arguments[1].trim();
+        QueueHandler.background(SyncScheduler.class, null, "owner-fix-timeline:" + puuid,
+            "owner fix timeline " + puuid, job -> {
+                Filter filter = Filter.summoner(0, 0);
+                int total = MongoDB.countMatches(puuid, filter);
+                int[] counts = new int[3];
+                System.out.println("[Fix timelines] puuid=" + puuid + " total=" + total);
+                job.setProgressTotal(total);
+                job.phase("TIMELINES");
+                int[] step = {0};
+                int[] missingTimelineStreak = {0};
+                MongoDB.forEachProfileStatisticsMatchWhile(puuid, null, filter, 0, 0, true, match -> {
+                    int current = ++step[0];
+                    String gameId = match.gameId;
+                    String itemId = gameId == null || gameId.isBlank() ? "missing-game-id:" + current : gameId;
+                    job.trackItem(itemId);
+                    job.currentItem(current + "/" + total + " Fetching timeline " + itemId);
+                    System.out.println("[Fix timelines] " + current + "/" + total + " match=" + itemId);
+                    if (gameId == null || gameId.isBlank()) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        missingTimelineStreak[0] = 0;
+                        MatchMemoryUtils.release(match);
+                        return true;
+                    }
+                    LOLTimeline timeline = null;
+                    try {
+                        if (match.leagueShard == null) {
+                            counts[1]++;
+                            job.missing(itemId);
+                            missingTimelineStreak[0] = 0;
+                            return true;
+                        }
+                        timeline = MatchService.getTimeline(gameId, match.leagueShard);
+                        if (timeline == null) {
+                            counts[1]++;
+                            job.missing(itemId);
+                            int consecutiveMissing = ++missingTimelineStreak[0];
+                            boolean stop = consecutiveMissing >= TIMELINE_NULL_STOP_THRESHOLD;
+                            job.currentItem(current + "/" + total + (stop
+                                ? " Stopping after " + consecutiveMissing + " consecutive missing timelines "
+                                : " Timeline unavailable ") + itemId);
+                            if (stop) System.out.println("[Fix timelines] stopping after " + consecutiveMissing
+                                + " consecutive missing timelines at match=" + gameId);
+                            return !stop;
+                        }
+                        missingTimelineStreak[0] = 0;
+                        Map<String, Object> refreshedEvents = Tracker.rebuildTimelineEvents(timeline);
+                        if (refreshedEvents == null || refreshedEvents.isEmpty()) {
+                            counts[2]++;
+                            job.failed(itemId);
+                            return true;
+                        }
+                        MongoDB.updateMatchEvents(gameId, refreshedEvents);
+                        counts[0]++;
+                        job.done(itemId);
+                    } catch (Exception exception) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        missingTimelineStreak[0] = 0;
+                        System.err.println("[Fix timelines] failed match=" + gameId + " error=" + exception.getMessage());
+                    } finally {
+                        MatchService.clearTimelineCache(gameId, match.leagueShard);
+                        MatchMemoryUtils.release(timeline);
+                        MatchMemoryUtils.release(match);
+                    }
+                    return true;
+                });
+                System.out.println("[Fix timelines] puuid=" + puuid + " total=" + total
+                    + " completed=" + (counts[0] + counts[1] + counts[2])
+                    + " updated=" + counts[0] + " missing=" + counts[1] + " failed=" + counts[2]);
+                return null;
+            }).whenComplete((ignored, failure) -> {
+                if (failure == null) System.out.println("[Fix timelines] job completed puuid=" + puuid);
+                else System.err.println("[Fix timelines] job failed puuid=" + puuid + " error=" + failure.getMessage());
+            });
+        event.reply("Timeline repair queued for PUUID " + puuid + ".");
     }
 
     private static void queueHighElo(CommandEvent event) {

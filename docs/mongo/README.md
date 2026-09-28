@@ -15,6 +15,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - Owner-only migration commands enqueue their work on the Mongo database worker: `!test migrate` (or `!test migrate all`) runs the global backfill, `!test migrate tracked` recovers missing raw matches and RankProgress for `summoner.tracking=true`, and `!test migrate ranks` recovers canonical `summoner.ranks` then rebuilds its derived projections. The recovery commands are `!test migrate fix-tracked`, which repairs only stored tracked RankProgress, and `!test migrate rankprogress [runId]`, which runs the checkpointed Mongo RankProgress schema/history stages globally. MariaDB remains reachable only through `MongoMigration`.
 - `!test regenerate competitive` rebuilds only `competitive` from canonical Mongo data. It replaces every competitive row, so it removes retired projection fields such as `tier`. `!test regenerate aggregates` rebuilds only `leaderboard_aggregates`. Permanent leaderboard indexes are warmed independently at application startup.
 - `!test regenerate profiles`, `records`, `champions` and `indexables` rebuild their respective Mongo-derived data; `!test regenerate all` runs the complete sequence on the Mongo scheduler.
+- `!test fix-timeline <puuid>` streams stored matches for that PUUID from newest to oldest, fetches each Riot timeline directly by match ID, regenerates the complete compact event payload, and replaces only that match's `match_events` record. It stops after 10 consecutive matches without a Riot timeline. Job progress reports completed matches against the initial total; missing timelines are counted, and stored match and participant data are left untouched.
 - MariaDB's historical participant KDA string is split into the flat `kills`, `deaths` and `assists` fields before the raw match is written to Mongo.
 - Global profile-record rebuilds scan all season PUUIDs through a Mongo cursor in batches of 2,000; the batch size does not cap the total population.
 - `profile_statistics`, `profile_activity`, `profile_matchups`, build and `leaderboard_aggregates` are built subsequently by the application; the latter contain only rebuildable snapshots of distribution and top-region.
@@ -26,6 +27,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - The migration normalizes `match` document residues; other legacy documents and old Kryo payloads remain outside automatic cleanup and are removed manually before regeneration.
 - Readers use `_id` as fallback only for defensive compatibility with documents outside the clean migration.
 - Events are not in the `match` document: they live in `match_events` as JSON and the collection uses native WiredTiger Zstandard.
+- Champion and profile-matchup rebuilds join `match_events` to match records in batches of 100, process each timeline before continuing, and recursively release the temporary event tree. The compact timeline marks the available frame nearest minute 15 (without interpolation); event counts use timestamps through minute 15. Missing timeline metrics remain absent.
 
 ## Code structure
 

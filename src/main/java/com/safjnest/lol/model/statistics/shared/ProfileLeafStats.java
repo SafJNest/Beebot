@@ -68,8 +68,53 @@ public class ProfileLeafStats extends LeafStats {
     public double killParticipationSum;
     public double deathShareSum;
 
+    public double goldDiffAt15Sum;
+    public long goldDiffAt15Games;
+    public double csDiffAt15Sum;
+    public long csDiffAt15Games;
+    public double xpDiffAt15Sum;
+    public long xpDiffAt15Games;
+    public double killDiffAt15Sum;
+    public long killDiffAt15Games;
+    public double levelDiffAt15Sum;
+    public long levelDiffAt15Games;
+    public double plateDiffAt15Sum;
+    public long plateDiffAt15Games;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean isOtp;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double adjustedWinrate;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double weightedDelta;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double matchupScore;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String tier;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean reliable;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double kda;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double goldPerMinute;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double killParticipation;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double deathShare;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double goldDiffAt15;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double csDiffAt15;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double xpDiffAt15;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double killDiffAt15;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double levelDiffAt15;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Double turretPlateDiffAt15;
 
     public ProfileLeafStats() {}
 
@@ -176,6 +221,18 @@ public class ProfileLeafStats extends LeafStats {
             lastPlayedAt = Math.max(lastPlayedAt, o.lastPlayedAt);
             killParticipationSum += o.killParticipationSum;
             deathShareSum += o.deathShareSum;
+            goldDiffAt15Sum += o.goldDiffAt15Sum;
+            goldDiffAt15Games += o.goldDiffAt15Games;
+            csDiffAt15Sum += o.csDiffAt15Sum;
+            csDiffAt15Games += o.csDiffAt15Games;
+            xpDiffAt15Sum += o.xpDiffAt15Sum;
+            xpDiffAt15Games += o.xpDiffAt15Games;
+            killDiffAt15Sum += o.killDiffAt15Sum;
+            killDiffAt15Games += o.killDiffAt15Games;
+            levelDiffAt15Sum += o.levelDiffAt15Sum;
+            levelDiffAt15Games += o.levelDiffAt15Games;
+            plateDiffAt15Sum += o.plateDiffAt15Sum;
+            plateDiffAt15Games += o.plateDiffAt15Games;
         }
     }
 

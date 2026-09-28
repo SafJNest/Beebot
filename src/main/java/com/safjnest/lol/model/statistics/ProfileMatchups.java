@@ -8,6 +8,9 @@ import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
+import com.safjnest.lol.utils.MatchupTimelineUtils;
+import com.safjnest.lol.utils.MatchupTimelineUtils.Data;
+import com.safjnest.lol.utils.MatchupTimelineUtils.Snapshot;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
@@ -112,13 +115,15 @@ public record ProfileMatchups(
             CanonicalQueue queue = CanonicalQueue.from(match.queue);
             ProfileMatchupLeaf leaf = leaf(player.champion, queue, player.lane);
             leaf.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+            Data timeline = MatchupTimelineUtils.read(match);
             if (!queue.arena() && player.lane != null && player.lane != LaneType.NONE && match.participants != null) {
                 boolean foundOpponent = false;
                 for (Participant opponent : match.participants)
                     if (opponent != null && opponent != player && opponent.champion != 0
                         && opponent.team != player.team && opponent.lane == player.lane) {
-                        leaf.matchups.computeIfAbsent(String.valueOf(opponent.champion), ignored -> new ProfileLeafStats())
-                            .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                        ProfileLeafStats relation = leaf.matchups.computeIfAbsent(String.valueOf(opponent.champion), ignored -> new ProfileLeafStats());
+                        relation.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                        addMatchupTimeline(relation, player, opponent, timeline);
                         foundOpponent = true;
                         break;
                     }
@@ -137,8 +142,18 @@ public record ProfileMatchups(
                     }
                 }
                 int allyChampion = ally == null ? 0 : ally.champion;
-                leaf.synergies.computeIfAbsent(String.valueOf(allyChampion), ignored -> new ProfileLeafStats())
-                    .accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                ProfileLeafStats relation = leaf.synergies.computeIfAbsent(String.valueOf(allyChampion), ignored -> new ProfileLeafStats());
+                relation.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
+                if (ally != null && !arena) {
+                    Participant enemyPlayer = null;
+                    Participant enemyAlly = null;
+                    for (Participant participant : match.participants) {
+                        if (participant == null || participant.team == player.team) continue;
+                        if (participant.lane == player.lane) enemyPlayer = participant;
+                        if (participant.lane == ally.lane) enemyAlly = participant;
+                    }
+                    addSynergyTimeline(relation, player, ally, enemyPlayer, enemyAlly, timeline);
+                }
             }
             oldestMatchAt = oldestMatchAt == 0 ? match.timeStart : Math.min(oldestMatchAt, match.timeStart);
             newestMatchAt = Math.max(newestMatchAt, match.timeEnd);
@@ -201,4 +216,61 @@ public record ProfileMatchups(
         }
         return result;
     }
+
+    private static void addMatchupTimeline(ProfileLeafStats target, Participant player, Participant opponent, Data timeline) {
+        Snapshot own = timeline.snapshots().get(player.puuid);
+        Snapshot enemy = timeline.snapshots().get(opponent.puuid);
+        if (own != null && enemy != null) {
+            if (own.gold() != null && enemy.gold() != null) add(target, own.gold() - enemy.gold(), Metric.GOLD);
+            if (own.cs() != null && enemy.cs() != null) add(target, own.cs() - enemy.cs(), Metric.CS);
+            if (own.xp() != null && enemy.xp() != null) add(target, own.xp() - enemy.xp(), Metric.XP);
+            if (own.level() != null && enemy.level() != null) add(target, own.level() - enemy.level(), Metric.LEVEL);
+        }
+        if (timeline.killsAvailable() && player.puuid != null && opponent.puuid != null)
+            add(target, timeline.kills().getOrDefault(player.puuid, 0) - timeline.kills().getOrDefault(opponent.puuid, 0), Metric.KILL);
+        if (player.team != null && opponent.team != null && player.lane != null)
+            add(target, MatchupTimelineUtils.plates(timeline, player.team.name(), player.lane.name())
+                - MatchupTimelineUtils.plates(timeline, opponent.team.name(), opponent.lane.name()), Metric.PLATE);
+    }
+
+    private static void addSynergyTimeline(ProfileLeafStats target, Participant player, Participant ally,
+                                           Participant enemyPlayer, Participant enemyAlly, Data timeline) {
+        if (enemyPlayer == null || enemyAlly == null) return;
+        Snapshot own = timeline.snapshots().get(player.puuid);
+        Snapshot ownAlly = timeline.snapshots().get(ally.puuid);
+        Snapshot enemy = timeline.snapshots().get(enemyPlayer.puuid);
+        Snapshot enemyAllySnapshot = timeline.snapshots().get(enemyAlly.puuid);
+        if (own != null && ownAlly != null && enemy != null && enemyAllySnapshot != null) {
+            if (own.gold() != null && ownAlly.gold() != null && enemy.gold() != null && enemyAllySnapshot.gold() != null)
+                add(target, own.gold() + ownAlly.gold() - enemy.gold() - enemyAllySnapshot.gold(), Metric.GOLD);
+            if (own.cs() != null && ownAlly.cs() != null && enemy.cs() != null && enemyAllySnapshot.cs() != null)
+                add(target, own.cs() + ownAlly.cs() - enemy.cs() - enemyAllySnapshot.cs(), Metric.CS);
+            if (own.xp() != null && ownAlly.xp() != null && enemy.xp() != null && enemyAllySnapshot.xp() != null)
+                add(target, own.xp() + ownAlly.xp() - enemy.xp() - enemyAllySnapshot.xp(), Metric.XP);
+            if (own.level() != null && ownAlly.level() != null && enemy.level() != null && enemyAllySnapshot.level() != null)
+                add(target, own.level() + ownAlly.level() - enemy.level() - enemyAllySnapshot.level(), Metric.LEVEL);
+        }
+        if (timeline.killsAvailable() && player.puuid != null && ally.puuid != null
+                && enemyPlayer.puuid != null && enemyAlly.puuid != null) {
+            int ownKills = timeline.kills().getOrDefault(player.puuid, 0) + timeline.kills().getOrDefault(ally.puuid, 0);
+            int enemyKills = timeline.kills().getOrDefault(enemyPlayer.puuid, 0) + timeline.kills().getOrDefault(enemyAlly.puuid, 0);
+            add(target, ownKills - enemyKills, Metric.KILL);
+        }
+        if (player.team != null && enemyPlayer.team != null && player.lane != null && enemyPlayer.lane != null)
+            add(target, MatchupTimelineUtils.plates(timeline, player.team.name(), player.lane.name())
+                - MatchupTimelineUtils.plates(timeline, enemyPlayer.team.name(), enemyPlayer.lane.name()), Metric.PLATE);
+    }
+
+    private static void add(ProfileLeafStats target, double value, Metric metric) {
+        switch (metric) {
+            case GOLD -> { target.goldDiffAt15Sum += value; target.goldDiffAt15Games++; }
+            case CS -> { target.csDiffAt15Sum += value; target.csDiffAt15Games++; }
+            case XP -> { target.xpDiffAt15Sum += value; target.xpDiffAt15Games++; }
+            case KILL -> { target.killDiffAt15Sum += value; target.killDiffAt15Games++; }
+            case LEVEL -> { target.levelDiffAt15Sum += value; target.levelDiffAt15Games++; }
+            case PLATE -> { target.plateDiffAt15Sum += value; target.plateDiffAt15Games++; }
+        }
+    }
+
+    private enum Metric { GOLD, CS, XP, KILL, LEVEL, PLATE }
 }

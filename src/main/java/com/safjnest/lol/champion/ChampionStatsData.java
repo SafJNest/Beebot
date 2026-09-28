@@ -40,9 +40,10 @@ public final class ChampionStatsData {
     public record Player(int champion, LaneType lane, boolean win, TeamType team, String matchId,
                          long timeStart, long timeEnd, String kda, Integer cs, Integer gold, String puuid) {}
 
-    public record Snapshot(Integer cs, Integer gold) {}
+    public record Snapshot(Integer cs, Integer gold, Integer xp, Integer level) {}
 
     public record EventMetric(int kills, int soloKills, int assists, int teamKills, int deaths,
+                              int enemyTeamKills, int killsAt15, int deathsAt15, int platesAt15,
                               boolean available) {}
 
     public record MatchData(Map<String, EventMetric> eventMetrics, Map<String, Snapshot> snapshots,

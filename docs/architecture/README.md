@@ -114,14 +114,21 @@ OP.GG and sample-game imports, may persist a best-effort participant `{ rank, lp
 snapshot from the canonical Mongo rank record while computing `match.rank`; a
 missing queue rank in a present `ranks` map is stored as `{ rank: UNRANKED, lp: 0 }`;
 missing or null `ranks` remains unknown. It never writes gain or predecessor data.
-`!test fix-rank` backfills missing snapshots for selected patches on matches that
-are not yet tracked; completed match history remains owned by `Tracker`.
 The package boundary is intentional: `job/` owns lifecycle data, `scheduler/`
 owns route selection and physical queues, and `worker/` owns queue draining.
 A job body receives the `Job` itself for phase/item reporting; simple bodies
 ignore it. An async callback calls `QueueHandler.retain(job)` before the body
 returns and `QueueHandler.resume(job, callback)` when it schedules or completes
 its children.
+
+## Response ranking ownership
+
+Champion-page relations and profile matchup/synergy relations are ranked only
+for HTTP responses by `MatchupRankingAnalyzer`. Stored aggregates and Redis
+caches remain raw. `TierMathUtils` is the single owner of median priors,
+shrinkage, Z-score standardization, posterior rate moments and the common
+S+/S/A/B/C/D thresholds used both by this projection and
+`ChampionTierAnalyzer`.
 
 ## Statistics source of truth
 

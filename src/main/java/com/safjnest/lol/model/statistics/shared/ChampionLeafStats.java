@@ -15,7 +15,7 @@ public class ChampionLeafStats extends LeafStats {
 
     public Map<Integer, MatchupStats> matchups = new LinkedHashMap<>();
 
-    public Map<String, Map<Integer, WinLossStats>> synergies = new LinkedHashMap<>();
+    public Map<String, Map<Integer, MatchupStats>> synergies = new LinkedHashMap<>();
 
     public Map<String, WinLossStats> powerCurve = new LinkedHashMap<>();
 
@@ -54,11 +54,11 @@ public class ChampionLeafStats extends LeafStats {
                 if (existing == null) matchups.put(e.getKey(), copy(e.getValue()));
                 else existing.merge(e.getValue());
             }
-            for (Map.Entry<String, Map<Integer, WinLossStats>> e : o.synergies.entrySet()) {
-                Map<Integer, WinLossStats> target = synergies.computeIfAbsent(e.getKey(), k -> new LinkedHashMap<>());
-                for (Map.Entry<Integer, WinLossStats> inner : e.getValue().entrySet()) {
-                    WinLossStats existing = target.get(inner.getKey());
-                    if (existing == null) target.put(inner.getKey(), new WinLossStats(inner.getValue().games, inner.getValue().wins));
+            for (Map.Entry<String, Map<Integer, MatchupStats>> e : o.synergies.entrySet()) {
+                Map<Integer, MatchupStats> target = synergies.computeIfAbsent(e.getKey(), k -> new LinkedHashMap<>());
+                for (Map.Entry<Integer, MatchupStats> inner : e.getValue().entrySet()) {
+                    MatchupStats existing = target.get(inner.getKey());
+                    if (existing == null) target.put(inner.getKey(), copy(inner.getValue()));
                     else existing.merge(inner.getValue());
                 }
             }
@@ -83,6 +83,20 @@ public class ChampionLeafStats extends LeafStats {
         dst.kp = src.kp;
         dst.kpGames = src.kpGames;
         dst.metricGames = src.metricGames;
+        dst.kdaSum = src.kdaSum;
+        dst.kdaGames = src.kdaGames;
+        dst.goldPerMinuteSum = src.goldPerMinuteSum;
+        dst.goldPerMinuteGames = src.goldPerMinuteGames;
+        dst.deathShareSum = src.deathShareSum;
+        dst.deathShareGames = src.deathShareGames;
+        dst.xpDiff = src.xpDiff;
+        dst.xpDiffGames = src.xpDiffGames;
+        dst.killDiff = src.killDiff;
+        dst.killDiffGames = src.killDiffGames;
+        dst.levelDiff = src.levelDiff;
+        dst.levelDiffGames = src.levelDiffGames;
+        dst.plateDiff = src.plateDiff;
+        dst.plateDiffGames = src.plateDiffGames;
         return dst;
     }
 }

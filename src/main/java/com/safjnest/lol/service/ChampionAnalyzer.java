@@ -59,7 +59,21 @@ public final class ChampionAnalyzer {
     private static final int KILLS = 8;
     private static final int KILL_PARTICIPATION_SUM = 9;
     private static final int KILL_PARTICIPATION_GAMES = 10;
-    private static final int MATCHUP_VALUE_SIZE = 11;
+    private static final int KDA_SUM = 11;
+    private static final int MATCHUP_KDA_GAMES = 12;
+    private static final int MATCHUP_GOLD_PER_MINUTE_SUM = 13;
+    private static final int MATCHUP_GOLD_PER_MINUTE_GAMES = 14;
+    private static final int DEATH_SHARE_SUM = 15;
+    private static final int DEATH_SHARE_GAMES = 16;
+    private static final int XP_DIFF_SUM = 17;
+    private static final int XP_DIFF_GAMES = 18;
+    private static final int KILL_DIFF_SUM = 19;
+    private static final int KILL_DIFF_GAMES = 20;
+    private static final int LEVEL_DIFF_SUM = 21;
+    private static final int LEVEL_DIFF_GAMES = 22;
+    private static final int PLATE_DIFF_SUM = 23;
+    private static final int PLATE_DIFF_GAMES = 24;
+    private static final int MATCHUP_VALUE_SIZE = 25;
 
     private static final int KDA_KILLS = 0;
     private static final int KDA_DEATHS = 1;
@@ -105,7 +119,12 @@ public final class ChampionAnalyzer {
             double mWinrate = m.winrate();
             ChampionNode opponent = doc.champions.get(e.getKey());
             Double opponentBanRate = opponent == null || banGames == 0 ? null : (double) opponent.bans / banGames;
-            matchups.put(e.getKey(), new ChampionStatistics.Matchup((int)m.games, (int)m.wins, mWinrate, mWinrate - winrate, m.goldDiffAt15() == null ? null : m.goldDiffAt15().intValue(), m.csDiffAt15(), m.soloKillRate(), m.killParticipation(), opponentBanRate, (int)m.metricGames));
+            matchups.put(e.getKey(), new ChampionStatistics.Matchup((int)m.games, (int)m.wins, mWinrate,
+                mWinrate - winrate, m.goldDiffAt15() == null ? null : m.goldDiffAt15().intValue(),
+                m.csDiffAt15(), m.soloKillRate(), m.killParticipation(), opponentBanRate,
+                (int)m.metricGames, m.kda(), m.goldPerMinute(), m.deathShare(), m.xpDiffAt15(),
+                m.killDiffAt15(), m.levelDiffAt15(), m.plateDiffAt15(), null, null, null, null, null,
+                m.goldDiffGames, m.csDiffGames, m.xpDiffGames, m.killDiffGames, m.levelDiffGames, m.plateDiffGames));
         }
         // laneStats: single entry for requested lane or all lanes if lane==null
         java.util.List<ChampionStatistics.LaneStat> laneStats = new java.util.ArrayList<>();
@@ -114,14 +133,18 @@ public final class ChampionAnalyzer {
             try { LaneType l = LaneType.valueOf(e.getKey()); laneStats.add(new ChampionStatistics.LaneStat(l, (int)e.getValue().games, e.getValue().winrate())); } catch (Exception ignored) {}
         }
         List<LaneSynergy> synergies = new ArrayList<>();
-        for (Map.Entry<String, Map<Integer, WinLossStats>> lane : leaf.synergies.entrySet()) {
+        for (Map.Entry<String, Map<Integer, MatchupStats>> lane : leaf.synergies.entrySet()) {
             LaneType allyLane;
             try { allyLane = LaneType.valueOf(lane.getKey()); } catch (IllegalArgumentException ignored) { continue; }
-            for (Map.Entry<Integer, WinLossStats> ally : lane.getValue().entrySet()) {
-                WinLossStats value = ally.getValue();
+            for (Map.Entry<Integer, MatchupStats> ally : lane.getValue().entrySet()) {
+                MatchupStats value = ally.getValue();
                 if (value != null && value.games > 0)
                     synergies.add(new LaneSynergy(ally.getKey(), allyLane, (int)value.games, (int)value.wins,
-                        value.winrate(), (double)value.games / picks));
+                        value.winrate(), (double)value.games / picks, value.goldDiffAt15(), value.csDiffAt15(),
+                        value.kda(), value.goldPerMinute(), value.killParticipation(), value.deathShare(),
+                        value.xpDiffAt15(), value.killDiffAt15(), value.levelDiffAt15(), value.plateDiffAt15(),
+                        null, null, null, null, null, value.goldDiffGames, value.csDiffGames,
+                        value.xpDiffGames, value.killDiffGames, value.levelDiffGames, value.plateDiffGames));
             }
         }
         List<PowerCurvePoint> powerCurve = new ArrayList<>();
@@ -166,13 +189,12 @@ public final class ChampionAnalyzer {
         try {
             ChampionStatsProvider.forEachMatchWithBuild(source, (read, document) -> {
                 ChampionStatsData.RawMatch rm = read.match();
-                try {
-                    for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) for (var rec : com.safjnest.nosql.MongoDB.championBuildRecords(document, acc.filter())) ChampionBuildEngine.accept(acc, rec);
-                    ChampionStatsData.Game g = parse(rm); if (g != null) raw.addBase(g, rm.metadata());
-                } finally { MatchMemoryUtils.release(rm); }
-            }, read -> {
-                ChampionStatsData.RawMatch rm = read.match();
-                try { ChampionStatsData.Game g = parse(rm); if (g != null) raw.addEvents(g, rm.metadata()); } finally { MatchMemoryUtils.release(rm); }
+                for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) for (var rec : com.safjnest.nosql.MongoDB.championBuildRecords(document, acc.filter())) ChampionBuildEngine.accept(acc, rec);
+                ChampionStatsData.Game game = parse(rm);
+                if (game != null) {
+                    raw.addBase(game, rm.metadata());
+                    raw.addEvents(game, rm.metadata());
+                }
             });
             // previousPatch at root
             String previousPatch = null;
@@ -224,31 +246,20 @@ public final class ChampionAnalyzer {
                                 int opp = me.getKey();
                                 double[] v = me.getValue();
                                 MatchupStats ms = leaf.matchups.computeIfAbsent(opp, k -> new MatchupStats());
-                                ms.games = (long) v[MATCHES];
-                                ms.wins = (long) v[WINS];
-                                ms.goldDiff = (long) v[GOLD_DIFF_SUM];
-                                ms.goldDiffGames = (long) v[GOLD_DIFF_GAMES];
-                                ms.csDiff = (long) v[CS_DIFF_SUM];
-                                ms.csDiffGames = (long) v[CS_DIFF_GAMES];
-                                ms.soloKills = (long) v[SOLO_KILLS];
-                                ms.kills = (long) v[KILLS];
-                                ms.kp = v[KILL_PARTICIPATION_SUM];
-                                ms.kpGames = (long) v[KILL_PARTICIPATION_GAMES];
-                                ms.metricGames = (long) v[METRIC_GAMES];
+                                setRelationValues(ms, v);
                             }
                         }
-                        for (Map.Entry<Integer, Map<ChampionStatsData.SynergyKey, int[]>> e : proj.synergyRaw().entrySet()) {
+                        for (Map.Entry<Integer, Map<ChampionStatsData.SynergyKey, double[]>> e : proj.synergyRaw().entrySet()) {
                             ChampionNode node = doc.champions.get(e.getKey());
                             if (node == null) continue;
                             ChampionLeafStats leaf = node.lanes.get(lane.name());
                             if (leaf == null) continue;
-                            for (Map.Entry<ChampionStatsData.SynergyKey, int[]> synergy : e.getValue().entrySet()) {
+                            for (Map.Entry<ChampionStatsData.SynergyKey, double[]> synergy : e.getValue().entrySet()) {
                                 ChampionStatsData.SynergyKey key = synergy.getKey();
-                                int[] value = synergy.getValue();
-                                Map<Integer, WinLossStats> byAlly = leaf.synergies.computeIfAbsent(key.lane().name(), k -> new LinkedHashMap<>());
-                                WinLossStats w = byAlly.computeIfAbsent(key.champion(), k -> new WinLossStats());
-                                w.games = value[0];
-                                w.wins = value[1];
+                                double[] value = synergy.getValue();
+                                Map<Integer, MatchupStats> byAlly = leaf.synergies.computeIfAbsent(key.lane().name(), k -> new LinkedHashMap<>());
+                                MatchupStats synergyStats = byAlly.computeIfAbsent(key.champion(), k -> new MatchupStats());
+                                setRelationValues(synergyStats, value);
                             }
                         }
                         for (Map.Entry<Integer, Map<String, int[]>> e : proj.powerCurveRaw().entrySet()) {
@@ -361,7 +372,7 @@ public final class ChampionAnalyzer {
         }
     }
 
-    private static ChampionStatsData.MatchData parseEventData(
+    static ChampionStatsData.MatchData parseEventData(
             List<ChampionStatsData.Player> players,
             JSONObject events) {
         JSONObject participantRefs = events.optJSONObject("participants");
@@ -381,12 +392,17 @@ public final class ChampionAnalyzer {
                 if (killer != null) {
                     EventCounter counter = counters.computeIfAbsent(killer.puuid(), ignored -> new EventCounter());
                     counter.kills++;
+                    if (kill.optLong("timestamp", Long.MAX_VALUE) <= AT_15_MS) counter.killsAt15++;
                     JSONArray assists = kill.optJSONArray("assists");
                     if (assists == null || assists.length() == 0) counter.soloKills++;
                     if (killer.team() != null) teamKills.merge(killer.team(), 1, Integer::sum);
                 }
                 ChampionStatsData.Player victim = resolve(kill.opt("victim"), participantRefs, byPuuid);
-                if (victim != null) counters.computeIfAbsent(victim.puuid(), ignored -> new EventCounter()).deaths++;
+                if (victim != null) {
+                    EventCounter counter = counters.computeIfAbsent(victim.puuid(), ignored -> new EventCounter());
+                    counter.deaths++;
+                    if (kill.optLong("timestamp", Long.MAX_VALUE) <= AT_15_MS) counter.deathsAt15++;
+                }
                 JSONArray assists = kill.optJSONArray("assists");
                 if (assists != null) for (int j = 0; j < assists.length(); j++) {
                     ChampionStatsData.Player assister = resolve(assists.opt(j), participantRefs, byPuuid);
@@ -395,43 +411,50 @@ public final class ChampionAnalyzer {
             }
         }
 
+        Map<TeamType, Map<LaneType, Integer>> plates = new HashMap<>();
+        JSONArray plateEvents = events.optJSONArray("turret_plate_events");
+        if (plateEvents != null) for (int i = 0; i < plateEvents.length(); i++) {
+            JSONObject plate = plateEvents.optJSONObject(i);
+            if (plate == null || plate.optLong("timestamp", Long.MAX_VALUE) > AT_15_MS) continue;
+            TeamType team = enumValue(plate.optString("team", null), TeamType.class);
+            LaneType lane = enumValue(plate.optString("lane", null), LaneType.class);
+            if (lane == LaneType.UTILITY) lane = LaneType.BOT;
+            if (team != null && lane != null) plates.computeIfAbsent(team, ignored -> new HashMap<>())
+                .merge(lane, 1, Integer::sum);
+        }
+
         Map<String, ChampionStatsData.EventMetric> metrics = new HashMap<>();
         for (ChampionStatsData.Player player : players) {
             if (player.puuid() == null || player.puuid().isBlank()) continue;
             EventCounter counter = counters.getOrDefault(player.puuid(), new EventCounter());
             int teamKillsForPlayer = player.team() == null ? 0 : teamKills.getOrDefault(player.team(), 0);
+            int enemyTeamKills = 0;
+            for (Map.Entry<TeamType, Integer> entry : teamKills.entrySet())
+                if (player.team() != null && entry.getKey() != player.team()) enemyTeamKills += entry.getValue();
+            LaneType plateLane = player.lane() == LaneType.UTILITY ? LaneType.BOT : player.lane();
+            int plateCount = player.team() == null || plateLane == null ? 0
+                : plates.getOrDefault(player.team(), Map.of()).getOrDefault(plateLane, 0);
             metrics.put(player.puuid(), new ChampionStatsData.EventMetric(counter.kills, counter.soloKills,
-                counter.assists, teamKillsForPlayer, counter.deaths, available));
+                counter.assists, teamKillsForPlayer, counter.deaths, enemyTeamKills,
+                counter.killsAt15, counter.deathsAt15, plateCount, available));
         }
 
         Map<String, ChampionStatsData.Snapshot> snapshots = new HashMap<>();
         JSONArray snapshotArray = events.optJSONArray("snapshots");
         if (snapshotArray != null && participantRefs != null) {
-            JSONObject nearestSnapshot = null;
-            long nearestTimestamp = -1;
-            long nearestDistance = Long.MAX_VALUE;
             for (int i = 0; i < snapshotArray.length(); i++) {
                 JSONObject snapshot = snapshotArray.optJSONObject(i);
-                if (snapshot == null) continue;
-                long timestamp = snapshot.optLong("timestamp", -1);
-                if (timestamp < 0) continue;
-                long distance = Math.abs(timestamp - AT_15_MS);
-                if (distance < nearestDistance
-                        || distance == nearestDistance && (nearestTimestamp < 0 || timestamp < nearestTimestamp)) {
-                    nearestSnapshot = snapshot;
-                    nearestTimestamp = timestamp;
-                    nearestDistance = distance;
-                }
-            }
-            if (nearestSnapshot != null) {
-                JSONObject participants = nearestSnapshot.optJSONObject("participants");
+                if (snapshot == null || snapshot.optInt("minute", -1) != 15) continue;
+                JSONObject participants = snapshot.optJSONObject("participants");
                 if (participants != null) for (String participantId : participants.keySet()) {
                     String puuid = participantRefs.optString(participantId, null);
                     JSONObject values = participants.optJSONObject(participantId);
                     if (puuid != null && values != null)
                         snapshots.put(puuid, new ChampionStatsData.Snapshot(nullableInt(values, "cs"),
-                            nullableInt(values, "total_gold")));
+                            nullableInt(values, "total_gold"), nullableInt(values, "xp"),
+                            nullableInt(values, "level")));
                 }
+                break;
             }
         }
         return new ChampionStatsData.MatchData(metrics, snapshots, available);
@@ -472,6 +495,40 @@ public final class ChampionAnalyzer {
         return object.has(key) && !object.isNull(key) ? object.optInt(key) : null;
     }
 
+    private static void setRelationValues(MatchupStats target, double[] values) {
+        target.games = (long) values[MATCHES];
+        target.wins = (long) values[WINS];
+        target.goldDiff = (long) values[GOLD_DIFF_SUM];
+        target.goldDiffGames = (long) values[GOLD_DIFF_GAMES];
+        target.csDiff = (long) values[CS_DIFF_SUM];
+        target.csDiffGames = (long) values[CS_DIFF_GAMES];
+        target.soloKills = (long) values[SOLO_KILLS];
+        target.kills = (long) values[KILLS];
+        target.kp = values[KILL_PARTICIPATION_SUM];
+        target.kpGames = (long) values[KILL_PARTICIPATION_GAMES];
+        target.metricGames = (long) values[METRIC_GAMES];
+        target.kdaSum = values[KDA_SUM];
+        target.kdaGames = (long) values[MATCHUP_KDA_GAMES];
+        target.goldPerMinuteSum = values[MATCHUP_GOLD_PER_MINUTE_SUM];
+        target.goldPerMinuteGames = (long) values[MATCHUP_GOLD_PER_MINUTE_GAMES];
+        target.deathShareSum = values[DEATH_SHARE_SUM];
+        target.deathShareGames = (long) values[DEATH_SHARE_GAMES];
+        target.xpDiff = (long) values[XP_DIFF_SUM];
+        target.xpDiffGames = (long) values[XP_DIFF_GAMES];
+        target.killDiff = (long) values[KILL_DIFF_SUM];
+        target.killDiffGames = (long) values[KILL_DIFF_GAMES];
+        target.levelDiff = (long) values[LEVEL_DIFF_SUM];
+        target.levelDiffGames = (long) values[LEVEL_DIFF_GAMES];
+        target.plateDiff = (long) values[PLATE_DIFF_SUM];
+        target.plateDiffGames = (long) values[PLATE_DIFF_GAMES];
+    }
+
+    private static <T extends Enum<T>> T enumValue(String value, Class<T> type) {
+        if (value == null || value.isBlank()) return null;
+        try { return Enum.valueOf(type, value); }
+        catch (IllegalArgumentException ignored) { return null; }
+    }
+
 
     // assemble(RawProjection) removed — new flow uses direct Leaf
 
@@ -483,7 +540,7 @@ public final class ChampionAnalyzer {
         Map<Integer, int[]> banCount,
         Map<Integer, double[]> metricsRaw,
         Map<Integer, Map<Integer, double[]>> matchupRaw,
-        Map<Integer, Map<ChampionStatsData.SynergyKey, int[]>> synergyRaw,
+        Map<Integer, Map<ChampionStatsData.SynergyKey, double[]>> synergyRaw,
         Map<Integer, Map<String, int[]>> powerCurveRaw
     ) {}
 
@@ -562,7 +619,7 @@ public final class ChampionAnalyzer {
                 addMatchups(bucket, sides.get(0), sides.get(1), game.data(), false);
                 addMatchups(bucket, sides.get(1), sides.get(0), game.data(), false);
             }
-            addSynergies(bucket, game.players(), teams);
+            addSynergies(bucket, game.players(), teams, game.data(), false);
             recordBucketPeak(bucket);
         }
 
@@ -578,6 +635,7 @@ public final class ChampionAnalyzer {
                 addMatchups(bucket, sides.get(0), sides.get(1), game.data(), true);
                 addMatchups(bucket, sides.get(1), sides.get(0), game.data(), true);
             }
+            addSynergies(bucket, game.players(), teams, game.data(), true);
             recordBucketPeak(bucket);
         }
 
@@ -588,7 +646,7 @@ public final class ChampionAnalyzer {
             Map<Integer, int[]> pickWin = new LinkedHashMap<>();
             Map<Integer, Map<LaneType, int[]>> laneAccum = new HashMap<>();
             Map<Integer, Map<Integer, double[]>> matchupAccum = new LinkedHashMap<>();
-            Map<Integer, Map<ChampionStatsData.SynergyKey, int[]>> synergyAccum = new HashMap<>();
+            Map<Integer, Map<ChampionStatsData.SynergyKey, double[]>> synergyAccum = new HashMap<>();
             Map<Integer, double[]> metricAccum = new HashMap<>();
             Map<Integer, Map<String, int[]>> powerCurveAccum = new HashMap<>();
 
@@ -624,7 +682,7 @@ public final class ChampionAnalyzer {
                 ChampionStatsData.SynergyKey synergy = new ChampionStatsData.SynergyKey(
                     synergyAlly(key), synergyAllyLane(key));
                 merge(synergyAccum.computeIfAbsent(champion, ignored -> new HashMap<>()), synergy,
-                    entry.getValue(), 2);
+                    entry.getValue(), MATCHUP_VALUE_SIZE);
             }
 
             Map<Integer, int[]> banCount = toJavaMap(rollup.banCount);
@@ -647,6 +705,7 @@ public final class ChampionAnalyzer {
                         bucket.markMatchup(key, sequence++);
                         value[MATCHES]++;
                         if (player.win()) value[WINS]++;
+                        addOverallMetrics(value, player);
                         continue;
                     }
                     ChampionStatsData.Snapshot playerSnapshot = data.snapshots().get(player.puuid());
@@ -660,12 +719,29 @@ public final class ChampionAnalyzer {
                             value[CS_DIFF_SUM] += playerSnapshot.cs() - opponentSnapshot.cs();
                             value[CS_DIFF_GAMES]++;
                         }
+                        if (playerSnapshot.xp() != null && opponentSnapshot.xp() != null) {
+                            value[XP_DIFF_SUM] += playerSnapshot.xp() - opponentSnapshot.xp();
+                            value[XP_DIFF_GAMES]++;
+                        }
+                        if (playerSnapshot.level() != null && opponentSnapshot.level() != null) {
+                            value[LEVEL_DIFF_SUM] += playerSnapshot.level() - opponentSnapshot.level();
+                            value[LEVEL_DIFF_GAMES]++;
+                        }
                     }
                     ChampionStatsData.EventMetric metric = data.eventMetrics().get(player.puuid());
-                    if (metric == null || !metric.available()) continue;
+                    ChampionStatsData.EventMetric opponentMetric = data.eventMetrics().get(opponent.puuid());
+                    if (metric == null || opponentMetric == null || !metric.available() || !opponentMetric.available()) continue;
                     value[METRIC_GAMES]++;
                     value[SOLO_KILLS] += metric.soloKills();
                     value[KILLS] += metric.kills();
+                    value[KILL_DIFF_SUM] += metric.killsAt15() - opponentMetric.killsAt15();
+                    value[KILL_DIFF_GAMES]++;
+                    value[PLATE_DIFF_SUM] += metric.platesAt15() - opponentMetric.platesAt15();
+                    value[PLATE_DIFF_GAMES]++;
+                    if (metric.enemyTeamKills() > 0) {
+                        value[DEATH_SHARE_SUM] += (double) metric.deaths() / metric.enemyTeamKills();
+                        value[DEATH_SHARE_GAMES]++;
+                    }
                     if (metric.teamKills() > 0) {
                         value[KILL_PARTICIPATION_SUM] += (double) (metric.kills() + metric.assists()) / metric.teamKills();
                         value[KILL_PARTICIPATION_GAMES]++;
@@ -675,17 +751,86 @@ public final class ChampionAnalyzer {
         }
 
         private void addSynergies(RawBucket bucket, List<ChampionStatsData.Player> players,
-                                  Map<TeamType, List<ChampionStatsData.Player>> teams) {
+                                  Map<TeamType, List<ChampionStatsData.Player>> teams,
+                                  ChampionStatsData.MatchData data, boolean events) {
             for (ChampionStatsData.Player player : players) {
                 int playerIndex = index(player.champion());
                 int playerLane = laneCode(player.lane());
                 for (ChampionStatsData.Player ally : teams.getOrDefault(player.team(), List.of())) {
                     if (ally == player || !LaneTypeUtils.isDuo(player.lane(), ally.lane()) || player.champion() == ally.champion()) continue;
                     long key = synergyKey(playerIndex, playerLane, index(ally.champion()), laneCode(ally.lane()));
-                    int[] value = ints(bucket.synergies, key, 2);
-                    value[0]++;
-                    if (player.win()) value[1]++;
+                    double[] value = doubles(bucket.synergies, key, MATCHUP_VALUE_SIZE);
+                    if (!events) {
+                        value[MATCHES]++;
+                        if (player.win()) value[WINS]++;
+                        addOverallMetrics(value, player);
+                        continue;
+                    }
+                    List<ChampionStatsData.Player> enemies = teams.getOrDefault(
+                        player.team() == TeamType.BLUE ? TeamType.RED : TeamType.BLUE, List.of());
+                    ChampionStatsData.Player opponent = null;
+                    ChampionStatsData.Player opponentAlly = null;
+                    for (ChampionStatsData.Player enemy : enemies) {
+                        if (enemy.lane() == player.lane()) opponent = enemy;
+                        if (enemy.lane() == ally.lane()) opponentAlly = enemy;
+                    }
+                    if (opponent == null || opponentAlly == null) continue;
+                    ChampionStatsData.Snapshot own = data.snapshots().get(player.puuid());
+                    ChampionStatsData.Snapshot ownAlly = data.snapshots().get(ally.puuid());
+                    ChampionStatsData.Snapshot enemy = data.snapshots().get(opponent.puuid());
+                    ChampionStatsData.Snapshot enemyAlly = data.snapshots().get(opponentAlly.puuid());
+                    if (own != null && ownAlly != null && enemy != null && enemyAlly != null) {
+                        if (own.gold() != null && ownAlly.gold() != null && enemy.gold() != null && enemyAlly.gold() != null) {
+                            value[GOLD_DIFF_SUM] += own.gold() + ownAlly.gold() - enemy.gold() - enemyAlly.gold();
+                            value[GOLD_DIFF_GAMES]++;
+                        }
+                        if (own.cs() != null && ownAlly.cs() != null && enemy.cs() != null && enemyAlly.cs() != null) {
+                            value[CS_DIFF_SUM] += own.cs() + ownAlly.cs() - enemy.cs() - enemyAlly.cs();
+                            value[CS_DIFF_GAMES]++;
+                        }
+                        if (own.xp() != null && ownAlly.xp() != null && enemy.xp() != null && enemyAlly.xp() != null) {
+                            value[XP_DIFF_SUM] += own.xp() + ownAlly.xp() - enemy.xp() - enemyAlly.xp();
+                            value[XP_DIFF_GAMES]++;
+                        }
+                        if (own.level() != null && ownAlly.level() != null && enemy.level() != null && enemyAlly.level() != null) {
+                            value[LEVEL_DIFF_SUM] += own.level() + ownAlly.level() - enemy.level() - enemyAlly.level();
+                            value[LEVEL_DIFF_GAMES]++;
+                        }
+                    }
+                    ChampionStatsData.EventMetric ownMetric = data.eventMetrics().get(player.puuid());
+                    ChampionStatsData.EventMetric allyMetric = data.eventMetrics().get(ally.puuid());
+                    ChampionStatsData.EventMetric enemyMetric = data.eventMetrics().get(opponent.puuid());
+                    ChampionStatsData.EventMetric enemyAllyMetric = data.eventMetrics().get(opponentAlly.puuid());
+                    if (ownMetric != null && allyMetric != null && enemyMetric != null && enemyAllyMetric != null
+                            && ownMetric.available() && allyMetric.available() && enemyMetric.available() && enemyAllyMetric.available()) {
+                        value[METRIC_GAMES]++;
+                        value[KILL_DIFF_SUM] += ownMetric.killsAt15() + allyMetric.killsAt15()
+                            - enemyMetric.killsAt15() - enemyAllyMetric.killsAt15();
+                        value[KILL_DIFF_GAMES]++;
+                        value[PLATE_DIFF_SUM] += ownMetric.platesAt15() - enemyMetric.platesAt15();
+                        value[PLATE_DIFF_GAMES]++;
+                        if (ownMetric.teamKills() > 0) {
+                            value[KILL_PARTICIPATION_SUM] += (double) (ownMetric.kills() + ownMetric.assists()) / ownMetric.teamKills();
+                            value[KILL_PARTICIPATION_GAMES]++;
+                        }
+                        if (ownMetric.enemyTeamKills() > 0) {
+                            value[DEATH_SHARE_SUM] += (double) ownMetric.deaths() / ownMetric.enemyTeamKills();
+                            value[DEATH_SHARE_GAMES]++;
+                        }
+                    }
                 }
+            }
+        }
+
+        private void addOverallMetrics(double[] value, ChampionStatsData.Player player) {
+            int[] kda = KdaUtils.parse(player.kda());
+            double kdaValue = kda[1] == 0 ? kda[0] + kda[2] : (double) (kda[0] + kda[2]) / kda[1];
+            value[KDA_SUM] += kdaValue;
+            value[MATCHUP_KDA_GAMES]++;
+            double minutes = durationMinutes(player);
+            if (minutes > 0 && player.gold() != null) {
+                value[MATCHUP_GOLD_PER_MINUTE_SUM] += player.gold() / minutes;
+                value[MATCHUP_GOLD_PER_MINUTE_GAMES]++;
             }
         }
 
@@ -893,7 +1038,7 @@ public final class ChampionAnalyzer {
         private final Long2ObjectOpenHashMap<double[]> metrics = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<int[]> powerCurve = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<double[]> matchups = new Long2ObjectOpenHashMap<>();
-        private final Long2ObjectOpenHashMap<int[]> synergies = new Long2ObjectOpenHashMap<>();
+        private final Long2ObjectOpenHashMap<double[]> synergies = new Long2ObjectOpenHashMap<>();
 
         private RawBucket(no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard region,
                           no.stelar7.api.r4j.basic.constants.types.lol.TierType rank) {
@@ -916,7 +1061,7 @@ public final class ChampionAnalyzer {
                 if (entry.getIntValue() < order) matchupOrder.put(entry.getLongKey(), entry.getIntValue());
             }
             mergeInts(pickWin, source.pickWin); mergeDoubles(metrics, source.metrics); mergeInts(powerCurve, source.powerCurve);
-            mergeDoubles(matchups, source.matchups); mergeInts(synergies, source.synergies);
+            mergeDoubles(matchups, source.matchups); mergeDoubles(synergies, source.synergies);
         }
 
         private void markPlayer(long key, int order) {
@@ -962,5 +1107,7 @@ public final class ChampionAnalyzer {
         int soloKills;
         int assists;
         int deaths;
+        int killsAt15;
+        int deathsAt15;
     }
 }

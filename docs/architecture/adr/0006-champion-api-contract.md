@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
-- Amended: 2026-08-20
+- Amended: 2026-09-28
 - Service ownership superseded by ADR-0012; public HTTP contract remains in force
 
 ## Context
@@ -16,7 +16,9 @@ Expose `GET /api/lol/champion/{champion}` through `ChampionController` and `Cham
 
 The request accepts optional `rank`, `region`, `queue` and `role` parameters. Missing rank and region mean that those dimensions are not filtered. Missing queue selects `TEAM_BUILDER_RANKED_SOLO`. A supplied rank keeps the existing minimum-tier behavior of `Filter`.
 
-The success model is `ChampionView`, containing champion identity, `ChampionStatistics` and one `Build` aggregate. `Build` contains independent, bounded option lists for core builds/items, starters, boots, support items, item slots, complete rune configurations, summoner spell configurations, skill orders, prismatics and augment slots. `ChampionStatistics` contains the overview, advanced metrics, all valid matchups and all valid lane synergies. No list position means highest win rate or most used.
+The success model is `ChampionView`, containing champion identity, `ChampionStatistics` and one `Build` aggregate. `Build` contains independent, bounded option lists for core builds/items, starters, boots, support items, item slots, complete rune configurations, summoner spell configurations, skill orders, prismatics and augment slots. `ChampionStatistics` contains the overview, advanced metrics, all valid matchups and all valid lane synergies. In the HTTP projection, matchups and lane synergies are enriched with response-only ranking fields and sorted by score; the persisted/cached domain values remain raw.
+
+`MatchupRankingAnalyzer` owns the response-only relation projection. It uses the shared `TierMathUtils` primitives also used by `ChampionTierAnalyzer`: median prior strength, shrinkage, Z-score standardization and the common S+/S/A/B/C/D thresholds. Matchups and synergies share the same score: 50% overall performance (adjusted WR 55%, KDA 20%, gold/minute 10%, kill participation 10%, inverse death share 5%) and 50% lane dominance (gold diff@15 25%, CS diff@15 20%, XP diff@15 20%, kill diff@15 25%, turret plates@15 10%). Synergy lane metrics compare both allied lane participants with the opposing pair. Level diff is descriptive, not scored. Pick rate and ban rate remain descriptive and do not enter relation scores. `reliable` marks rows whose game count reaches the median prior and never filters rows.
 
 The HTTP request is orchestrated by one `ChampionService.get` flow. It first reads the complete page from Redis. On a miss, it reads the persisted statistics and build components without calculating match data on the request thread. If either component is missing, the filter is deduplicated in `ComputeScheduler`, a matrix refresh rooted at the requested `patch + queue` is submitted on the `CHAMPION` channel, a missing build is submitted on the same channel, and the request returns HTTP 202. Statistics persistence is one ready `ChampionStatsDocument` per `queue + rankBehavior + rank + patch + region` scope. Build persistence is one aggregate per `champion + lane + queue + rank + rankBehavior + patch + region` filter, plus opponent/duo when requested. Its `champions.<championId>.lanes.<lane>` values are raw `ChampionLeafStats`; the no-lane API view merges those leaves at runtime. Mongo never stores a `ChampionStatistics`, `overview`, `filter`, `laneStats`, `statistics.<championId>`, or a lane-specific document. A ready scope without the requested champion returns an empty 200 result; when both components are available, the service builds `ChampionView` and caches the complete page. Statistics and build each expose their own update timestamp for stale detection.
 
@@ -29,7 +31,9 @@ Champion statistics, builds and profile statistics use the shared Jackson JSON c
 - `ChampionController` owns HTTP parsing and status mapping.
 - `ChampionService` owns filter construction, page cache, response assembly, persisted statistics/build reads and refresh entry points.
 - `ChampionUtils` owns champion name and image resolution.
-- `ChampionAnalyzer` owns composed champion statistics and build computation.
+- `ChampionAnalyzer` owns composed raw champion statistics and build computation.
+- `MatchupRankingAnalyzer` owns HTTP-only matchup/synergy scoring and ordering.
+- `TierMathUtils` owns reusable median, shrinkage, standardization and tier thresholds.
 - `DatabaseTracker` owns asynchronous champion data requests and in-flight deduplication.
 - Match queue ownership remains in the existing match tracker flow.
 
@@ -38,7 +42,7 @@ Champion statistics, builds and profile statistics use the shared Jackson JSON c
 - No match aggregation or Riot fetch runs during the HTTP request.
 - No second public DTO is created for build or champion statistics.
 - Role is rejected when the selected queue does not support lanes.
-- The page cache is written only when both aggregates are ready.
+- The page cache is written only when both aggregates are ready and always stores the raw page without response ranking fields.
 - Missing global statistics are deduplicated by `champion-stats-matrix:<patch>:<queue>`, while missing builds are deduplicated by `champion-build:<Filter.toKey()>`; both jobs are submitted immediately to the database queue.
 - A matrix starts only from the requested patch and queue, enumerates global and active-region filters plus cumulative rank thresholds, and persists one `ready=true` raw scope document even when `champions={}`.
 - API page reads do not call the synchronous command fallback methods.
@@ -47,6 +51,8 @@ Champion statistics, builds and profile statistics use the shared Jackson JSON c
 - Augments are persisted and exposed by slot, preserving augment order.
 - Champion stats and page cache keys include rank behavior, period and requested lane; persistence is scope-only and stores lane leaves beneath the champion. Recomputing one scope invalidates statistics and page caches for every champion and valid lane in that scope.
 - Missing advanced metrics are represented as `null`, never as fabricated zeroes.
+- HTTP relation ranking never mutates Mongo, Redis or Discord-facing raw champion statistics.
+- Matchups and synergies are scored independently; synergy standardization is scoped to the same ally lane.
 
 ## HTTP behavior
 

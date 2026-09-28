@@ -78,6 +78,31 @@ summoners[]
 
 Rank distribution and top-regions remain non-paginated and continue using their persistent aggregate/cache flow.
 
+
+### Amendment 2026-09-28: response-only matchup and synergy tiers
+
+`GET /api/lol/champion/{champion}` and
+`GET /api/lol/{shard}/profile/{puuid}/matchups` enrich relation rows only in
+the HTTP projection. Mongo documents, Redis cache values and Discord-facing
+domain reads remain raw. The projection adds `adjustedWinrate`,
+`weightedDelta`, `matchupScore`, `tier` and `reliable`, and orders named
+relations by score descending, adjusted win rate, games and champion ID.
+
+The ranking uses `TierMathUtils`, shared with `ChampionTierAnalyzer`, for
+median priors, shrinkage, Z-score standardization and tier thresholds. Champion
+matchups use adjusted win rate plus gold/CS difference at 15, solo-kill rate and
+kill participation; champion synergies use adjusted win rate only and are
+scored independently per ally lane. Profile matchups and synergies are scored
+independently inside each champion × canonicalQueue × position leaf using
+adjusted win rate, KDA, gold per minute, kill participation and inverse death
+share. Pick rate and ban rate never contribute to these relation scores.
+
+`reliable` means games are at least the median relation sample and never
+filters a row. In profile responses the existing `minGames` grouping runs
+first; `"0"` and `"others"` stay unranked at the end. Tier buckets are the
+shared tier-list buckets: S+ >= 2, S >= 1, A >= 0.25, B >= -0.25, C >= -1 and
+D below -1.
+
 ## Amendment 2026-08-31: Records routes
 
 `GET /api/lol/records` is the global Records overview. It returns the top five

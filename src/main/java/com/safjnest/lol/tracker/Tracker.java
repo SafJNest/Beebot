@@ -31,6 +31,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.utils.MatchUtils;
+import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.lol.utils.RankProgressUtils;
@@ -510,6 +511,8 @@ public class Tracker {
                 stats.put("total_gold", participantFrame.getTotalGold());
                 stats.put("current_gold", participantFrame.getCurrentGold());
                 stats.put("cs", participantFrame.getMinionsKilled() + participantFrame.getJungleMinionsKilled());
+                stats.put("xp", participantFrame.getXp());
+                stats.put("level", participantFrame.getLevel());
                 participants.put(participantId, stats);
             }
         }
@@ -528,6 +531,20 @@ public class Tracker {
             }
         }
         snapshots.put(createSnapshot(frame, finalSnapshot));
+    }
+
+    private static void addFifteenMinuteSnapshot(JSONArray snapshots, TimelineFrame frame) {
+        if (frame == null) return;
+        for (int i = 0; i < snapshots.length(); i++) {
+            JSONObject existing = snapshots.getJSONObject(i);
+            if (existing.getLong("timestamp") == frame.getTimestamp()) {
+                existing.put("minute", 15);
+                return;
+            }
+        }
+        JSONObject snapshot = createSnapshot(frame, false);
+        snapshot.put("minute", 15);
+        snapshots.put(snapshot);
     }
 
 
@@ -600,6 +617,35 @@ public class Tracker {
         }
 
         LOLTimeline timeline = MatchService.getTimeline(match);
+        long gameDuration = match.getGameDuration() == null ? Long.MAX_VALUE : match.getGameDuration().longValue() * 1000L;
+        return analyzeTimelineEventData(matchData, participants, timeline, items, gameDuration);
+    }
+
+    public static Map<String, Object> rebuildTimelineEvents(LOLTimeline timeline) {
+        if (timeline == null || timeline.getFrames() == null || timeline.getFrames().isEmpty()
+                || timeline.getParticipants() == null || timeline.getParticipants().isEmpty()) return null;
+
+        HashMap<String, HashMap<String, String>> matchData = new HashMap<>();
+        for (var participant : timeline.getParticipants()) {
+            if (participant.getPuuid() != null) matchData.put(participant.getPuuid(), new HashMap<>());
+        }
+        long gameDuration = 0;
+        for (TimelineFrame frame : timeline.getFrames()) {
+            if (frame != null) gameDuration = Math.max(gameDuration, frame.getTimestamp());
+        }
+        HashMap<String, HashMap<String, String>> eventData = analyzeTimelineEventData(
+            matchData, List.of(), timeline, Map.of(), gameDuration);
+        return eventData == null || eventData.get("match") == null
+            ? null : new JSONObject(createJSONEvents(eventData.get("match"))).toMap();
+    }
+
+    private static HashMap<String, HashMap<String, String>> analyzeTimelineEventData(
+            HashMap<String, HashMap<String, String>> matchData,
+            List<MatchParticipant> participants,
+            LOLTimeline timeline,
+            Map<Integer, Item> items,
+            long gameDuration) {
+        if (timeline == null || timeline.getFrames() == null || timeline.getParticipants() == null) return null;
         Map<String, List<String>> matchItemData = new HashMap<>();
 
         timeline.getParticipants().forEach(participant -> {
@@ -622,10 +668,11 @@ public class Tracker {
         Map<String, JSONObject> indexedChampionKills = new HashMap<>();
         JSONObject dragonSoul = null;
         long dragonSoulTimestamp = -1;
-        long gameDuration = match.getGameDuration() == null ? Long.MAX_VALUE : match.getGameDuration().longValue() * 1000L;
         long nextSnapshotTimestamp = timelineSnapshotInterval;
-        TimelineFrame previousFrame = null;
         TimelineFrame finalFrame = null;
+        TimelineFrame previousFrame = null;
+        TimelineFrame fifteenMinuteFrame = null;
+        long fifteenMinuteDistance = Long.MAX_VALUE;
 
         for (int i = 0; i < timeline.getFrames().size(); i++) {
             TimelineFrame frame = timeline.getFrames().get(i);
@@ -796,8 +843,13 @@ public class Tracker {
             }
 
             long frameTimestamp = frame.getTimestamp();
+            long distance = Math.abs(frameTimestamp - MatchupTimelineUtils.AT_15_MS);
+            if (frameTimestamp <= gameDuration && distance < fifteenMinuteDistance) {
+                fifteenMinuteFrame = frame;
+                fifteenMinuteDistance = distance;
+            }
             while (frameTimestamp >= nextSnapshotTimestamp && nextSnapshotTimestamp <= gameDuration) {
-                TimelineFrame snapshotFrame = frameTimestamp == nextSnapshotTimestamp ? frame : previousFrame;
+                TimelineFrame snapshotFrame = previousFrame == null ? frame : previousFrame;
                 addSnapshot(snapshots, snapshotFrame, false);
                 nextSnapshotTimestamp += timelineSnapshotInterval;
             }
@@ -806,6 +858,9 @@ public class Tracker {
         }
 
         addSnapshot(snapshots, finalFrame, true);
+        if (gameDuration >= MatchupTimelineUtils.AT_15_MS
+                && fifteenMinuteDistance <= timelineSnapshotInterval / 2)
+            addFifteenMinuteSnapshot(snapshots, fifteenMinuteFrame);
 
         matchData.get("match").put("monster_events", monsterEvents.toString());
         matchData.get("match").put("building_events", buildingEvents.toString());
@@ -830,9 +885,6 @@ public class Tracker {
         });
         JSONObject matchJson = new JSONObject(matchParticipants);
 
-        Map<String, Object> data = new LinkedHashMap();
-        data.put("platform", match.getPlatform().toRegionShard());
-        data.put("matchId", match.getPlatform() + "_" + match.getGameId());
         matchData.get("match").put("participants", matchJson.toString());
         return matchData;
     }
