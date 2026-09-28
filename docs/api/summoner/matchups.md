@@ -100,7 +100,12 @@ position are stored, nor `reference`, `winrate`, `kda` or `avg*` fields.
                 "14": 40
               },
               "playtime": 15840000,
-              "lastPlayedAt": 1714518000000
+              "lastPlayedAt": 1714518000000,
+              "adjustedWinrate": 0.514,
+              "weightedDelta": -0.024,
+              "matchupScore": -0.82,
+              "tier": "C",
+              "reliable": true
             },
             "others": {
               "games": 7,
@@ -182,6 +187,22 @@ with fewer than `minGames` games for that leaf and relation. With the default
 `minGames=5`, it contains the 1–4 game buckets. Summing named champion buckets
 and `others` reproduces the complete relation totals; `D` and `F` spell-cast
 counts sum to the leaf's existing `d` and `f` cast counts.
+
+Before a ready/partial response is returned, each named matchup map is ranked
+inside its own champion × queue × position leaf. This is a response projection:
+Mongo and Redis keep only the raw accumulators. The median named-matchup sample
+is used as the prior strength; matchup win rate is shrunk toward the leaf's
+baseline win rate. The score then combines standardized adjusted metrics:
+55% adjusted win rate, 20% KDA, 10% gold per minute, 10% kill participation and
+5% inverse death share. Pick rate and ban rate are not used. The non-win-rate
+metrics are also shrunk toward their local matchup-population mean.
+
+Named opponents are serialized in descending `matchupScore` order.
+`"0"` and `"others"` are not ranked and are kept at the end. Each ranked
+opponent adds `adjustedWinrate`, `weightedDelta`, `matchupScore`, `tier`
+and `reliable`; `reliable` means its game count is at least the median sample
+used as the prior. Tiers are `S+ >= 2`, `S >= 1`, `A >= 0.25`,
+`B >= -0.25`, `C >= -1` and `F < -1`.
 
 For lane-based queues, every game contributes to the opposing champion in the
 same lane. BOT and UTILITY leaves also include the complementary teammate in
