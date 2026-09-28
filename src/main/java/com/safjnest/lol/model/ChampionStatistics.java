@@ -64,8 +64,29 @@ public record ChampionStatistics(
         Double soloKillRate,
         Double killParticipation,
         Double opponentBanRate,
-        Integer metricGames
+        Integer metricGames,
+        Double adjustedWinrate,
+        Double weightedDelta,
+        Double matchupScore,
+        String tier,
+        Boolean reliable
     ) {
+        public Matchup(
+            int matches,
+            int wins,
+            double winrate,
+            Double deltaWinrate,
+            Integer goldDiffAt15,
+            Double csDiffAt15,
+            Double soloKillRate,
+            Double killParticipation,
+            Double opponentBanRate,
+            Integer metricGames
+        ) {
+            this(matches, wins, winrate, deltaWinrate, goldDiffAt15, csDiffAt15, soloKillRate,
+                killParticipation, opponentBanRate, metricGames, null, null, null, null, null);
+        }
+
         public Matchup(int matches, double winrate) {
             this(matches, (int) Math.round(matches * winrate), winrate,
                 null, null, null, null, null, null, null);
