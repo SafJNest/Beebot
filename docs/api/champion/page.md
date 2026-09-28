@@ -79,7 +79,12 @@ render the no-data state; no indefinite `202` is kept.
         "soloKillRate": 0.031,
         "killParticipation": 0.58,
         "opponentBanRate": 0.021,
-        "metricGames": 286
+        "metricGames": 286,
+        "adjustedWinrate": 0.472,
+        "weightedDelta": -0.058,
+        "matchupScore": -1.21,
+        "tier": "F",
+        "reliable": true
       }
     },
     "laneSynergies": [
@@ -255,10 +260,26 @@ when available, otherwise the maximum available length. `matches` and
 sequence, so games that ended before that level also contribute
 to the compatible combination.
 starter, boots, support items, consumables, trinket, prismatics and augment
-keep existing categories and exclusions. `matchups` is a map with
-keys serialized as
-`MatchupKey[champion=championId, lane=ROLE]`; unavailable metrics are
-`null`. The frontend converts this map into an array for the presentation layer.
+keep existing categories and exclusions. `matchups` is returned already sorted
+from easiest to hardest matchup. The ranking is response-only and does not alter
+the stored champion aggregate. It uses the tier-list reliability model: the
+median matchup sample is the prior strength, raw matchup win rate is shrunk
+toward the champion baseline, and the resulting population is standardized.
+The score is 55% adjusted win rate, 20% gold difference at 15, 10% CS difference
+at 15, 10% solo-kill rate and 5% kill participation. Ban rate is not part of the
+score. Non-win-rate metrics are also shrunk toward their matchup-population mean
+before their Z-score is computed. `reliable` is true when the matchup sample is
+at least the median sample used as the prior.
+
+Tiers use `S+ >= 2`, `S >= 1`, `A >= 0.25`, `B >= -0.25`,
+`C >= -1` and `F < -1`. `S+` therefore represents a statistically
+exceptional easy/dominant matchup inside the selected champion/filter population,
+while `F` represents the opposite tail. Raw `winrate` and `deltaWinrate`
+remain exposed beside `adjustedWinrate`, `weightedDelta`, `matchupScore`,
+`tier` and `reliable`.
+
+The matchup map keeps its champion-ID keys; unavailable metrics are `null`.
+The frontend can convert the ordered map into an array for presentation.
 
 ## States and errors
 
