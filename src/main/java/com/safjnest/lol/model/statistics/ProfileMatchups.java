@@ -123,7 +123,7 @@ public record ProfileMatchups(
                         && opponent.team != player.team && opponent.lane == player.lane) {
                         ProfileLeafStats relation = leaf.matchups.computeIfAbsent(String.valueOf(opponent.champion), ignored -> new ProfileLeafStats());
                         relation.accumulate(player, match.timeStart, match.timeEnd, teamKills, enemyTeamKills, arena);
-                        addMatchupTimeline(relation, player, opponent, timeline);
+                        addMatchupTimeline(relation, leaf, player, opponent, timeline);
                         foundOpponent = true;
                         break;
                     }
@@ -170,6 +170,7 @@ public record ProfileMatchups(
                 .computeIfAbsent(queue, ignored -> new LinkedHashMap<>())
                 .computeIfAbsent(position(lane), ignored -> new ProfileMatchupLeaf());
         }
+
     }
 
     private static ProfileMatchupLeaf copyLeaf(ProfileMatchupLeaf source, int minGames) {
@@ -217,20 +218,26 @@ public record ProfileMatchups(
         return result;
     }
 
-    private static void addMatchupTimeline(ProfileLeafStats target, Participant player, Participant opponent, Data timeline) {
+    private static void addMatchupTimeline(ProfileLeafStats target, ProfileLeafStats aggregate,
+                                           Participant player, Participant opponent, Data timeline) {
         Snapshot own = timeline.snapshots().get(player.puuid);
         Snapshot enemy = timeline.snapshots().get(opponent.puuid);
         if (own != null && enemy != null) {
-            if (own.gold() != null && enemy.gold() != null) add(target, own.gold() - enemy.gold(), Metric.GOLD);
-            if (own.cs() != null && enemy.cs() != null) add(target, own.cs() - enemy.cs(), Metric.CS);
-            if (own.xp() != null && enemy.xp() != null) add(target, own.xp() - enemy.xp(), Metric.XP);
-            if (own.level() != null && enemy.level() != null) add(target, own.level() - enemy.level(), Metric.LEVEL);
+            if (own.gold() != null && enemy.gold() != null) addMatchupMetric(target, aggregate, own.gold() - enemy.gold(), Metric.GOLD);
+            if (own.cs() != null && enemy.cs() != null) addMatchupMetric(target, aggregate, own.cs() - enemy.cs(), Metric.CS);
+            if (own.xp() != null && enemy.xp() != null) addMatchupMetric(target, aggregate, own.xp() - enemy.xp(), Metric.XP);
+            if (own.level() != null && enemy.level() != null) addMatchupMetric(target, aggregate, own.level() - enemy.level(), Metric.LEVEL);
         }
-        if (timeline.killsAvailable() && player.puuid != null && opponent.puuid != null)
-            add(target, timeline.kills().getOrDefault(player.puuid, 0) - timeline.kills().getOrDefault(opponent.puuid, 0), Metric.KILL);
-        if (player.team != null && opponent.team != null && player.lane != null)
-            add(target, MatchupTimelineUtils.plates(timeline, player.team.name(), player.lane.name())
-                - MatchupTimelineUtils.plates(timeline, opponent.team.name(), opponent.lane.name()), Metric.PLATE);
+        if (timeline.killsAvailable() && player.puuid != null && opponent.puuid != null) {
+            int playerKills = timeline.kills().getOrDefault(player.puuid, 0);
+            int opponentKills = timeline.kills().getOrDefault(opponent.puuid, 0);
+            addMatchupMetric(target, aggregate, playerKills - opponentKills, Metric.KILL);
+        }
+        if (player.team != null && opponent.team != null && player.lane != null) {
+            int playerPlates = MatchupTimelineUtils.plates(timeline, player.team.name(), player.lane.name());
+            int opponentPlates = MatchupTimelineUtils.plates(timeline, opponent.team.name(), opponent.lane.name());
+            addMatchupMetric(target, aggregate, playerPlates - opponentPlates, Metric.PLATE);
+        }
     }
 
     private static void addSynergyTimeline(ProfileLeafStats target, Participant player, Participant ally,
@@ -256,9 +263,11 @@ public record ProfileMatchups(
             int enemyKills = timeline.kills().getOrDefault(enemyPlayer.puuid, 0) + timeline.kills().getOrDefault(enemyAlly.puuid, 0);
             add(target, ownKills - enemyKills, Metric.KILL);
         }
-        if (player.team != null && enemyPlayer.team != null && player.lane != null && enemyPlayer.lane != null)
-            add(target, MatchupTimelineUtils.plates(timeline, player.team.name(), player.lane.name())
-                - MatchupTimelineUtils.plates(timeline, enemyPlayer.team.name(), enemyPlayer.lane.name()), Metric.PLATE);
+        if (player.team != null && enemyPlayer.team != null && player.lane != null && enemyPlayer.lane != null) {
+            int ownPlates = MatchupTimelineUtils.plates(timeline, player.team.name(), player.lane.name());
+            int enemyPlates = MatchupTimelineUtils.plates(timeline, enemyPlayer.team.name(), enemyPlayer.lane.name());
+            add(target, ownPlates - enemyPlates, Metric.PLATE);
+        }
     }
 
     private static void add(ProfileLeafStats target, double value, Metric metric) {
@@ -270,6 +279,12 @@ public record ProfileMatchups(
             case LEVEL -> { target.levelDiffAt15Sum += value; target.levelDiffAt15Games++; }
             case PLATE -> { target.plateDiffAt15Sum += value; target.plateDiffAt15Games++; }
         }
+    }
+
+    private static void addMatchupMetric(ProfileLeafStats target, ProfileLeafStats aggregate,
+                                         double value, Metric metric) {
+        add(target, value, metric);
+        add(aggregate, value, metric);
     }
 
     private enum Metric { GOLD, CS, XP, KILL, LEVEL, PLATE }

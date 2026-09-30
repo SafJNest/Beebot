@@ -165,7 +165,9 @@ render the no-data state; no indefinite `202` is kept.
         "matches": 1820,
         "wins": 1010,
         "winrate": 0.555,
-        "pickrate": 0.145
+        "pickrate": 0.145,
+        "averageCompletionTimeSeconds": 1680.5,
+        "timedMatches": 1512
       }
     ],
     "coreItems": [
@@ -175,6 +177,8 @@ render the no-data state; no indefinite `202` is kept.
         "wins": 4010,
         "winrate": 0.54,
         "pickrate": 0.592,
+        "averagePurchaseTimeSeconds": 842.7,
+        "timedMatches": 6250,
         "spell1": 31,
         "spell2": 0
       }
@@ -197,6 +201,8 @@ render the no-data state; no indefinite `202` is kept.
         "wins": 2390,
         "winrate": 0.553,
         "pickrate": 0.345,
+        "averagePurchaseTimeSeconds": 630.1,
+        "timedMatches": 3990,
         "spell1": 31,
         "spell2": 17
       }
@@ -208,8 +214,21 @@ render the no-data state; no indefinite `202` is kept.
         "wins": 2150,
         "winrate": 0.557,
         "pickrate": 0.308,
+        "averagePurchaseTimeSeconds": 510.4,
+        "timedMatches": 3490,
         "spell1": 38,
         "spell2": 71
+      }
+    ],
+    "roleBoundItems": [
+      {
+        "id": "3871",
+        "matches": 3860,
+        "wins": 2150,
+        "winrate": 0.557,
+        "pickrate": 0.308,
+        "averagePurchaseTimeSeconds": 740.2,
+        "timedMatches": 3100
       }
     ],
     "slots": [
@@ -271,7 +290,15 @@ render the no-data state; no indefinite `202` is kept.
         "matches": 2210,
         "wins": 1220,
         "winrate": 0.552,
-        "pickrate": 0.176
+        "pickrate": 0.176,
+        "timedOrder": [
+          {
+            "level": 1,
+            "abilitySlot": 3,
+            "averageUpgradeTimeSeconds": 35.4,
+            "timedMatches": 2100
+          }
+        ]
       }
     ],
     "prismatics": [],
@@ -297,6 +324,31 @@ sequence, so games that ended before that level also contribute
 to the compatible combination.
 starter, boots, support items, consumables, trinket, prismatics and augment
 keep existing categories and exclusions.
+
+Individual item options in `coreItems`, `boots`, `supportItems`, `roleBoundItems`,
+`slots` and `prismatics` add `averagePurchaseTimeSeconds` and `timedMatches`. Starter
+bundles keep their existing shape because their option ID represents several
+items. The average is
+in seconds from game start and includes only games where a matching, attributed
+timeline event survives sales, undo and identifiable transformations. Champion
+build and statistics aggregation excludes a match entirely when it has no
+usable stored timeline, including from pick counts and game denominators. When
+a timeline exists but a particular item event is absent or unattributable,
+`matches` still counts the final-inventory observation; that match does not
+contribute to `timedMatches` and the average is omitted. `roleBoundItems`
+reports the final role-bound item from the participant, with timing subject to
+the same timeline attribution rule.
+Each `coreBuilds` option also has `averageCompletionTimeSeconds`, the mean of
+per-game completion times (the latest purchase among all core items) and its
+`timedMatches` sample count. A game contributes to this metric only when every
+core item has an attributable purchase time.
+
+`skillOrders[].timedOrder` reports average timeline upgrade time in seconds by
+champion level and ability slot, with a sample count for each level. It can be
+partial when only some skill upgrades can be matched to both the participant
+and a level event, and is empty when none can.
+Old saved build aggregates remain readable; they have empty role-bound and
+skill-timing values until the existing champion-build refresh recomputes them.
 
 Before the HTTP response is returned, champion matchups and lane synergies are
 ranked on a response-only copy. Mongo, Redis and Discord-facing raw statistics

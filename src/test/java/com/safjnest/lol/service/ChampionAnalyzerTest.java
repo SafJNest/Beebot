@@ -2,6 +2,7 @@ package com.safjnest.lol.service;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -56,6 +57,16 @@ public class ChampionAnalyzerTest {
             .setRankBehavior(Filter.RankBehavior.EXACT);
 
         assertFalse(ChampionAnalyzer.matchesMatrixFilter(exactMaster, match));
+    }
+
+    @Test
+    public void skipsChampionStatsMatchWithoutTimeline() {
+        ChampionStatsData.RawMatch match = new ChampionStatsData.RawMatch("EUW1_2",
+            new ChampionStatsData.MatchMeta(Map.of(), null, 1, 2, LeagueShard.EUW1, TierType.EMERALD),
+            List.of(new ChampionStatsData.RawParticipant(10, LaneType.TOP, true, TeamType.BLUE,
+                "EUW1_2", "1/0/0", 100, 10_000, "player")));
+
+        assertNull(ChampionAnalyzer.parse(match));
     }
 
     @Test

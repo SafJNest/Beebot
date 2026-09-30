@@ -645,7 +645,7 @@ Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` �
 | `match_events` | ~15-40 KB JSON | native WiredTiger zstd lvl 9, ~60% saving vs raw BSON |
 | `profile_statistics` | ~2-8 KB | leaves `champion×queue×lane`; no materialized `total`/`queueStats` |
 | Redis value | ~1-4 KB JSON | TTL declared by `RedisKey`, mget batch ≤100, pool 32 conn, circuit breaker 30s |
-| `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` | batch 100, no `List<Match>` in memory, cursor streaming |
+| `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` at batch 100 | champion stats event batch is now 1,000; retained match map is roughly 8-15 MB if the documented 8-15 KB/match applies, plus cursor and one timeline parse; total heap has not been remeasured, no `List<Match>` in memory |
 | Compute worker | max 2 concurrent | `CHAMPION` reserved for heavy, PROFILE least-loaded |
 
 ### Command / Class Names — Quick Lookup

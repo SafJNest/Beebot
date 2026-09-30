@@ -1,34 +1,33 @@
 package com.safjnest.lol.queue.scheduler;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionService;
 
 final class ChampionMatrixRequest {
 
-    private final ConcurrentMap<String, Filter> buildFilters;
+    private final Map<String, Filter> buildFilters;
     private CompletableFuture<ChampionService.MatrixRefreshResult> future;
     private boolean running;
 
     ChampionMatrixRequest() {
-        buildFilters = new ConcurrentHashMap<>();
+        buildFilters = new HashMap<>();
     }
 
-    synchronized void addBuild(Filter filter) {
-        if (filter != null) buildFilters.putIfAbsent(filter.toKey(), Filter.fromStateKey(filter.toStateKey()));
+    synchronized boolean tryAddBuild(Filter filter) {
+        if (filter == null) return true;
+        if (running) return false;
+        buildFilters.putIfAbsent(filter.toKey(), Filter.fromStateKey(filter.toStateKey()));
+        return true;
     }
 
-    synchronized void start() {
+    synchronized List<Filter> startAndGetBuildFilters() {
         running = true;
-    }
-
-    synchronized boolean running() {
-        return running;
+        return List.copyOf(buildFilters.values());
     }
 
     synchronized void setFuture(CompletableFuture<ChampionService.MatrixRefreshResult> value) {
@@ -39,7 +38,4 @@ final class ChampionMatrixRequest {
         return future;
     }
 
-    List<Filter> buildFilters() {
-        return new ArrayList<>(buildFilters.values());
-    }
 }

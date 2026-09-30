@@ -22,7 +22,9 @@ import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
+import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.nosql.MongoDB;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -282,9 +284,12 @@ public final class ChampionAnalyzer {
                 }
             }
             for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) {
+                ChampionBuildEngine.logBuildSummary(acc, "stats-matrix");
                 java.util.List<com.safjnest.lol.model.Build> res = ChampionBuildEngine.finish(acc);
                 if (res.isEmpty()) res = ChampionBuildEngine.emptyResult(acc.filter());
                 com.safjnest.nosql.MongoDB.upsertChampionBuilds(res);
+                BotLogger.info("[ChampionBuildPersisted] source=stats-matrix filter=" + acc.filter().toKey()
+                    + " games=" + res.get(0).games());
             }
             return new MatrixResult(scopes.size(), 0, persistedChampions);
         } finally {
@@ -345,9 +350,10 @@ public final class ChampionAnalyzer {
         }
     }
 
-    private static ChampionStatsData.Game parse(ChampionStatsData.RawMatch rawMatch) {
+    static ChampionStatsData.Game parse(ChampionStatsData.RawMatch rawMatch) {
         if (rawMatch == null || rawMatch.metadata() == null || rawMatch.participants() == null
-                || rawMatch.participants().isEmpty()) return null;
+                || rawMatch.participants().isEmpty()
+                || !MatchupTimelineUtils.hasTimeline(rawMatch.metadata().events())) return null;
 
         ChampionStatsData.MatchMeta metadata = rawMatch.metadata();
         List<ChampionStatsData.Player> players = new ArrayList<>();

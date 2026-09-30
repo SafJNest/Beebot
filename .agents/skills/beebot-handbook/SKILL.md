@@ -33,6 +33,28 @@ codegraph impact <symbol> # blast radius before editing
 | periodic tracker | §5.11 | `TrackerScheduler` + `SyncScheduler` per shard |
 | new test | §5.12 | `src/test/java/...` + `beebot_test` + `explain` gate |
 
+## Defaults to apply from short requests
+
+When the user asks for a command, test command, or API, apply the matching contract below without asking them to repeat the repository conventions. Treat `test` in a Discord command request as an owner/debug command; treat a request for automated tests as §5.12.
+
+### Discord commands
+
+- Register the command in `rsc/commands.json` and its Java command class; use the existing command/message flow and keep presentation unchanged unless requested.
+- Keep command code as dispatch/input handling. Put LoL business logic in the owning `lol/service` class.
+- For a test, repair, backfill, or bulk command that processes matches across shards, expose an optional shard when useful; otherwise enumerate the active shards and enqueue one bounded job per shard through the existing `QueueHandler`/`SyncScheduler` pattern. Do not hide multi-shard work inside one unsharded bulk operation.
+- Report `total`, `completed`, and `missing` in the existing job progress/status path, and identify the current shard/item. Count candidates consistently and make skipped/failed outcomes understandable. Do not rely on console-only logs for progress that operators need to see.
+- Check owner permissions, duplicate-run/dedup behavior, and retry behavior. Update command help and the relevant handbook/docs with the scope and progress semantics.
+
+### HTTP APIs
+
+- Follow §5.2: choose the canonical controller, validate every path/query value through `LolApiParameters`, call the owning service, and return canonical `lol.model` success data through `LolApiResponses`.
+- Keep controllers thin; use `ApiResult` for ready/pending/error outcomes and the established `202/400/404` error shape. Preserve shard in shard-scoped routes and service/query/cache keys.
+- Update endpoint documentation and the API index in the same task. Review persistence/query indexes, cache invalidation, and API synchronization whenever the change affects those areas.
+
+### Completion check
+
+Before handing off, state which command/API/test contract was applied, whether shard fan-out and visible progress are required, which docs/API surfaces were reviewed, and exactly what validation ran. Do not claim a check that was not run.
+
 ## Mandatory checklist (HANDBOOK §7)
 
 - [ ] API sync: controller + `lol.model` + `docs/api/<scope>/*.md` in the same task

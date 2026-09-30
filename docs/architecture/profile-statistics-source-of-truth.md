@@ -132,9 +132,15 @@ BOT/UTILITY teammate or the same-subteam Arena teammate. Lane-based matches
 with no identifiable opponent or duo use relation ID `0`, so their game still
 contributes to the breakdown. Arena contributes a synergy and no lane matchup.
 The leaf and every relationship value share the same `D`/`F` spell-cast maps.
-No aggregates per champion, queue or lane, nor `reference`, `winrate`, `kda`
-or `avg*`, are persisted; the consumer computes those values. `UNKNOWN` keeps
-games without a valid position and Riot queues are canonicalized at ingestion.
+For lane queues, each available timeline difference against the same-lane
+opponent contributes both to the root leaf's champion/queue/position total and
+to that opponent's relation leaf. This makes the root timeline totals the
+aggregate of its lane matchups without counting a game twice. Synergy timeline
+differences remain scoped to the ally-pair relation. Missing timeline fields
+do not increment their respective game counters. No additional roll-up
+documents above these leaves, nor `reference`, `winrate`, `kda` or `avg*`, are
+persisted; the consumer computes those values. `UNKNOWN` keeps games without a
+valid position and Riot queues are canonicalized at ingestion.
 
 For each applicable relationship map, `minGames` displays champion-ID keys
 whose count meets the threshold and combines all smaller groups under

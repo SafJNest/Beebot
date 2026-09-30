@@ -1,9 +1,13 @@
 package com.safjnest.lol.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.safjnest.lol.champion.RuneSignature;
+import com.safjnest.lol.champion.BuildSignature;
+import com.safjnest.lol.champion.ChampionBuildData;
 import com.safjnest.lol.model.Build;
+import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -129,6 +133,71 @@ public class ChampionBuildEngineTest {
 
         assertEquals(0, runes.toOptions(1).size());
         assertEquals(0, orders.toOptions(1).size());
+    }
+
+    @Test
+    public void aggregatesValidTimelineBuildsWhenSomeEventsCannotBeAttributed() {
+        ChampionBuildEngine.BuildAccumulator accumulator = ChampionBuildEngine.newAccumulator(null);
+        ChampionBuildEngine.accept(accumulator, game(100000, 300000));
+        ChampionBuildEngine.accept(accumulator, game(700000, 500000));
+        ChampionBuildEngine.accept(accumulator, game(0, 0));
+
+        Build build = ChampionBuildEngine.finish(accumulator).get(0);
+
+        Build.CoreBuildOption core = build.coreBuilds().get(0);
+        assertEquals(3, core.matches());
+        assertEquals(2, core.timedMatches().intValue());
+        assertEquals(500, core.averageCompletionTimeSeconds(), 0.001);
+        Build.Option firstCoreItem = build.coreItems().stream().filter(option -> option.id().equals("3078")).findFirst().orElseThrow();
+        assertEquals(3, firstCoreItem.matches());
+        assertEquals(2, firstCoreItem.timedMatches().intValue());
+        assertEquals(400, firstCoreItem.averagePurchaseTimeSeconds(), 0.001);
+        Build.Option boots = build.bootOptions().get(0);
+        assertEquals(3, boots.matches());
+        assertEquals(2, boots.timedMatches().intValue());
+        assertEquals(800, boots.averagePurchaseTimeSeconds(), 0.001);
+        Build.Option supportItem = build.supportItemOptions().get(0);
+        assertEquals(3, supportItem.matches());
+        assertEquals(2, supportItem.timedMatches().intValue());
+        assertEquals(50, supportItem.averagePurchaseTimeSeconds(), 0.001);
+        assertEquals("3871", build.roleBoundItemOptions().get(0).id());
+        assertEquals(3, build.roleBoundItemOptions().get(0).matches());
+        assertEquals(2, build.roleBoundItemOptions().get(0).timedMatches().intValue());
+        assertEquals(2, build.skillOrders().get(0).timedOrder().size());
+        assertEquals(1, build.skillOrders().get(0).timedOrder().get(0).level().intValue());
+        assertEquals(60, build.skillOrders().get(0).timedOrder().get(0).averageUpgradeTimeSeconds(), 0.001);
+        String json = build.toJson();
+        assertTrue(json.contains("averagePurchaseTimeSeconds"));
+        assertTrue(json.contains("averageCompletionTimeSeconds"));
+        assertTrue(json.contains("timedOrder"));
+        assertEquals(build, Build.fromJson(json));
+    }
+
+    @Test
+    public void includesCoreBuildWhenBootsAreAbsent() {
+        BuildSignature signature = new BuildSignature(List.of(), 0, 0, List.of(3078, 3031),
+            List.of(3078, 3031), sequence(18, 1, 2, 3), List.of(), List.of(), List.of());
+        ChampionBuildData.Game game = new ChampionBuildData.Game(signature, null, true, 0,
+            java.util.Map.of(), List.of());
+        ChampionBuildEngine.BuildAccumulator accumulator = ChampionBuildEngine.newAccumulator(null);
+
+        ChampionBuildEngine.accept(accumulator, game);
+
+        Build build = ChampionBuildEngine.finish(accumulator).get(0);
+        assertEquals(1, build.games());
+        assertTrue(build.bootOptions().isEmpty());
+        assertEquals(1, build.coreBuilds().get(0).matches());
+    }
+
+    private static ChampionBuildData.Game game(long firstCoreTime, long secondCoreTime) {
+        BuildSignature signature = new BuildSignature(List.of(), 3006, 3871, List.of(3078, 3031),
+            List.of(3078, 3031), List.of(1, 2), List.of(), List.of(), List.of(4, 7));
+        java.util.Map<Integer, Long> itemTimes = firstCoreTime == 0 ? java.util.Map.of() : java.util.Map.of(
+            3078, firstCoreTime, 3031, secondCoreTime, 3006, 800000L, 3871, 50000L);
+        List<ChampionBuildTimelineUtils.SkillUpgrade> upgrades = firstCoreTime == 0 ? List.of() : List.of(
+            new ChampionBuildTimelineUtils.SkillUpgrade(1, 1, 60000),
+            new ChampionBuildTimelineUtils.SkillUpgrade(2, 2, 120000));
+        return new ChampionBuildData.Game(signature, null, true, 3871, itemTimes, upgrades);
     }
 
     private static List<Integer> sequence(int length, int... pattern) {

@@ -15,16 +15,18 @@ public final class MatchupTimelineUtils {
     private MatchupTimelineUtils() {}
 
     public static Data read(Match match) {
-        return match == null ? Data.empty() : read(match.events != null ? match.events : match.eventData);
+        if (match == null) return Data.empty();
+        Object rawEvents = match.events != null ? match.events : match.eventData;
+        return read(rawEvents);
     }
 
     public static Data read(Object rawEvents) {
         JSONObject events = json(rawEvents);
         if (events == null) return Data.empty();
 
-        JSONObject refs = events.optJSONObject("participants");
+        JSONObject refs = object(events, "participants");
         Map<String, Snapshot> snapshots = new HashMap<>();
-        JSONArray snapshotArray = events.optJSONArray("snapshots");
+        JSONArray snapshotArray = array(events, "snapshots");
         if (snapshotArray != null && refs != null) for (int i = 0; i < snapshotArray.length(); i++) {
             JSONObject snapshot = snapshotArray.optJSONObject(i);
             if (snapshot == null || snapshot.optInt("minute", -1) != 15) continue;
@@ -40,17 +42,19 @@ public final class MatchupTimelineUtils {
         }
 
         Map<String, Integer> kills = new HashMap<>();
-        JSONArray killEvents = events.optJSONArray("champion_kills");
+        JSONArray killEvents = array(events, "champion_kills");
         boolean killsAvailable = killEvents != null;
         if (killEvents != null) for (int i = 0; i < killEvents.length(); i++) {
             JSONObject kill = killEvents.optJSONObject(i);
             if (kill == null || kill.optLong("timestamp", Long.MAX_VALUE) > AT_15_MS) continue;
             String killer = resolve(kill.opt("killer"), refs);
-            if (killer != null) kills.merge(killer, 1, Integer::sum);
+            if (killer != null) {
+                kills.merge(killer, 1, Integer::sum);
+            }
         }
 
         Map<String, Integer> plates = new HashMap<>();
-        JSONArray plateEvents = events.optJSONArray("turret_plate_events");
+        JSONArray plateEvents = array(events, "turret_plate_events");
         if (plateEvents != null) for (int i = 0; i < plateEvents.length(); i++) {
             JSONObject plate = plateEvents.optJSONObject(i);
             if (plate == null || plate.optLong("timestamp", Long.MAX_VALUE) > AT_15_MS) continue;
@@ -59,6 +63,16 @@ public final class MatchupTimelineUtils {
             if (team != null && lane != null) plates.merge(team + ':' + lane, 1, Integer::sum);
         }
         return new Data(snapshots, kills, plates, killsAvailable);
+    }
+
+    public static boolean hasTimeline(Object rawEvents) {
+        JSONObject events = json(rawEvents);
+        if (events == null) return false;
+        JSONObject participants = object(events, "participants");
+        if (participants == null || participants.keySet().isEmpty()) return false;
+        return array(events, "snapshots") != null || array(events, "champion_kills") != null
+            || array(events, "turret_plate_events") != null || array(events, "item_events") != null
+            || array(events, "skill_events") != null || array(events, "level_events") != null;
     }
 
     public static int plates(Data data, String team, String lane) {
@@ -71,13 +85,31 @@ public final class MatchupTimelineUtils {
         if (raw instanceof JSONObject object) return object;
         if (raw instanceof String value && !value.isBlank()) {
             try { return new JSONObject(value); }
-            catch (RuntimeException ignored) { return null; }
+            catch (RuntimeException exception) { return null; }
         }
         if (raw instanceof Map<?, ?> map && !map.isEmpty()) {
             try { return new JSONObject(map); }
-            catch (RuntimeException ignored) { return null; }
+            catch (RuntimeException exception) { return null; }
         }
         return null;
+    }
+
+    private static JSONObject object(JSONObject source, String key) {
+        JSONObject value = source.optJSONObject(key);
+        if (value != null) return value;
+        String raw = source.optString(key, "");
+        if (raw.isBlank()) return null;
+        try { return new JSONObject(raw); }
+        catch (RuntimeException ignored) { return null; }
+    }
+
+    private static JSONArray array(JSONObject source, String key) {
+        JSONArray value = source.optJSONArray(key);
+        if (value != null) return value;
+        String raw = source.optString(key, "");
+        if (raw.isBlank()) return null;
+        try { return new JSONArray(raw); }
+        catch (RuntimeException ignored) { return null; }
     }
 
     private static String resolve(Object id, JSONObject refs) {

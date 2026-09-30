@@ -991,9 +991,9 @@
 
     "test": {
         "alias" : ["wip"],
-        "help"  : "Owner diagnostics. `test gc` requests JVM garbage collection; `test fix-timeline <puuid>` rebuilds stored match timelines.",
+        "help"  : "Owner diagnostics. `test gc` requests JVM garbage collection; `test fix-timeline <puuid>` rebuilds stored match timelines; `test fix-timeline-patch <patch>` rebuilds timelines for every match in a patch.",
         "category" : "Owner",
-        "arguments" : "[gc | diagnostic | pushsamplegame [GameQueueType] | fix-timeline <puuid>]"
+        "arguments" : "[gc | diagnostic | pushsamplegame [GameQueueType] | fix-timeline <puuid> | fix-timeline-patch <patch>]"
     },
 
     "championstats": {

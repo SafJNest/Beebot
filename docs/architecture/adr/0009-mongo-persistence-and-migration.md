@@ -70,7 +70,10 @@ The global Records overview reads the indexed top five rows for every metric; th
 nested metric ladder reads `profile_records` directly with a filterKey, metric
 and score sort. Positions are not persisted. Timeline metrics are rebuilt from
 `match_events` in bounded batches; matches without events simply do not
-produce timeline records. The operator owns the unique identity and
+produce timeline records. Champion-build refresh also joins the separate event
+collection in batches of 100 matches to derive item and skill timing; final
+participant fields remain the source for build membership and counts. The
+operator owns the unique identity and
 global/regional indexes documented in `docs/mongo/12-profile-record-indexes.md`.
 
 ## Amendment 2026-07-26

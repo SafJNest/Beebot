@@ -1,5 +1,13 @@
 package com.safjnest.lol.utils;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,11 +16,9 @@ import com.safjnest.lol.model.Augment;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-
 public class BuildUtils {
+
+    private BuildUtils() {}
 
     public static List<Integer> extractSorted(JSONArray arr, int from) {
         List<Integer> list = new ArrayList<>();

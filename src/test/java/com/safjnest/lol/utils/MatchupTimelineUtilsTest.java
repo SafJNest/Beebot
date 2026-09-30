@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.Test;
 
 public class MatchupTimelineUtilsTest {
@@ -44,6 +46,11 @@ public class MatchupTimelineUtilsTest {
     @Test
     public void absentTimelineAndMissingSnapshotFieldsStayAbsent() {
         assertFalse(MatchupTimelineUtils.read((Object) null).killsAvailable());
+        assertFalse(MatchupTimelineUtils.hasTimeline(null));
+        assertFalse(MatchupTimelineUtils.hasTimeline("{}"));
+        assertFalse(MatchupTimelineUtils.hasTimeline("{\"participants\":{}}"));
+        assertFalse(MatchupTimelineUtils.hasTimeline("{\"participants\":{\"1\":\"player\"}}"));
+        assertTrue(MatchupTimelineUtils.hasTimeline("{\"participants\":{\"1\":\"player\"},\"item_events\":[]}"));
         MatchupTimelineUtils.Data data = MatchupTimelineUtils.read("""
             {"participants":{"1":"player"},"snapshots":[
               {"timestamp":900000,"minute":15,"participants":{"1":{"cs":80}}}
@@ -56,4 +63,5 @@ public class MatchupTimelineUtilsTest {
         assertFalse(data.killsAvailable());
         assertEquals(0, MatchupTimelineUtils.plates(data, "BLUE", "TOP"));
     }
+
 }

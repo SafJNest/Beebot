@@ -29,13 +29,16 @@ curl --get 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/ma
 
 ## `200` response
 
-The source of truth is a `champion × CanonicalQueue × position` leaf.
-Each leaf keeps its base accumulators and the relation maps that apply to that
-queue and position. `matchups` contains opponents encountered in the same
-position. `synergies` contains the complementary BOT/UTILITY ally, or the
-same-subteam ally in Arena. Summoner-spell cast counts are grouped by Riot spell
-ID in the leaf's `D` and `F` maps. No aggregates for champion, queue or
-position are stored, nor `reference`, `winrate`, `kda` or `avg*` fields.
+The source of truth is a `champion × CanonicalQueue × position` leaf. Each leaf
+keeps its base accumulators and the relation maps that apply to that queue and
+position. For lane queues, timeline differences in the leaf are aggregated
+against the same-lane opponent across games where each timeline value is
+available; each `matchups` entry exposes the same metrics scoped to one
+opponent. `synergies` contains the complementary BOT/UTILITY ally, or the
+same-subteam ally in Arena, with timeline differences scoped to the ally pair.
+Summoner-spell cast counts are grouped by Riot spell ID in the leaf's `D` and
+`F` maps. There are no additional roll-up documents above these leaves, nor
+`reference`, `winrate`, `kda` or `avg*` fields in raw storage.
 
 ```json
 {

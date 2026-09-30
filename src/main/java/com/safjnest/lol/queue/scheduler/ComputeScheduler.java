@@ -294,18 +294,21 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         synchronized (INSTANCE.lifecycleLock()) {
             ChampionMatrixRequest existing = CHAMPION_MATRICES.get(key);
             if (existing != null) {
-                if (!existing.running()) existing.addBuild(buildFilter);
-                else if (buildFilter != null) startChampionBuild(buildFilter);
-                return existing.future();
+                if (existing.tryAddBuild(buildFilter)) return existing.future();
+                CompletableFuture<Boolean> buildFuture = startChampionBuild(buildFilter);
+                return existing.future().thenCombine(buildFuture, (result, ignored) -> result);
             }
             ChampionMatrixRequest request = new ChampionMatrixRequest();
-            request.addBuild(buildFilter);
+            request.tryAddBuild(buildFilter);
             CHAMPION_MATRICES.put(key, request);
             CompletableFuture<ChampionService.MatrixRefreshResult> future = submit(
                 DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name, ignored -> {
-                    request.start();
+                    List<Filter> buildFilters = request.startAndGetBuildFilters();
                     try {
-                        return CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, request.buildFilters());
+                        BotLogger.info("[ChampionStatsMatrix] started patch=" + patch
+                            + " queue=" + queue.name()
+                            + " buildFilters=" + buildFilters.size());
+                        return CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, buildFilters);
                     } finally {
                         CHAMPION_MATRICES.remove(key, request);
                     }
@@ -353,7 +356,10 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
             + " region=" + filter.region()
             + " lane=" + filter.lane();
         return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name,
-            ignored -> refreshChampionBuild(filter));
+            ignored -> {
+                BotLogger.info("[ChampionBuild] started filter=" + filter.toKey());
+                return refreshChampionBuild(filter);
+            });
     }
 
     private boolean championReserved() {

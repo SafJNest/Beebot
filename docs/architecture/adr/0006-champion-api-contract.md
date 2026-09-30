@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
-- Amended: 2026-09-28
+- Amended: 2026-09-29
 - Service ownership superseded by ADR-0012; public HTTP contract remains in force
 
 ## Context
@@ -16,7 +16,7 @@ Expose `GET /api/lol/champion/{champion}` through `ChampionController` and `Cham
 
 The request accepts optional `rank`, `region`, `queue` and `role` parameters. Missing rank and region mean that those dimensions are not filtered. Missing queue selects `TEAM_BUILDER_RANKED_SOLO`. A supplied rank keeps the existing minimum-tier behavior of `Filter`.
 
-The success model is `ChampionView`, containing champion identity, `ChampionStatistics` and one `Build` aggregate. `Build` contains independent, bounded option lists for core builds/items, starters, boots, support items, item slots, complete rune configurations, summoner spell configurations, skill orders, prismatics and augment slots. `ChampionStatistics` contains the overview, advanced metrics, all valid matchups and all valid lane synergies. In the HTTP projection, matchups and lane synergies are enriched with response-only ranking fields and sorted by score; the persisted/cached domain values remain raw.
+The success model is `ChampionView`, containing champion identity, `ChampionStatistics` and one `Build` aggregate. `Build` contains independent, bounded option lists for core builds/items, starters, boots, support items, role-bound items, item slots, complete rune configurations, summoner spell configurations, skill orders, prismatics and augment slots. Item options may expose average purchase time in seconds plus the number of timeline samples. A core build's average completion time is computed by finding its last core-item acquisition per game before averaging; only games with a timestamp for every core item enter that sample. Skill orders may include average upgrade time in seconds by champion level and ability slot. Champion build and champion statistics aggregation exclude a match entirely when it has no usable stored timeline, including its pick counts and denominator. When a timeline exists but a specific item event is absent or cannot be attributed, final participant values still determine item identity and pick counts, while that match contributes no time sample for that item. These additions are data-only and do not change Discord presentation. Existing persisted build documents remain readable and acquire timing values through the existing build refresh. `ChampionStatistics` contains the overview, advanced metrics, all valid matchups and all valid lane synergies. In the HTTP projection, matchups and lane synergies are enriched with response-only ranking fields and sorted by score; the persisted/cached domain values remain raw.
 
 `MatchupRankingAnalyzer` owns the response-only relation projection. It uses the shared `TierMathUtils` primitives also used by `ChampionTierAnalyzer`: median prior strength, shrinkage, Z-score standardization and the common S+/S/A/B/C/D thresholds. Matchups and synergies share the same score: 50% overall performance (adjusted WR 55%, KDA 20%, gold/minute 10%, kill participation 10%, inverse death share 5%) and 50% lane dominance (gold diff@15 25%, CS diff@15 20%, XP diff@15 20%, kill diff@15 25%, turret plates@15 10%). Synergy lane metrics compare both allied lane participants with the opposing pair. Level diff is descriptive, not scored. Pick rate and ban rate remain descriptive and do not enter relation scores. `reliable` marks rows whose game count reaches the median prior and never filters rows.
 
@@ -25,6 +25,8 @@ The HTTP request is orchestrated by one `ChampionService.get` flow. It first rea
 The scheduler is started explicitly and idempotently by the application. It owns the calendar trigger and submits the scheduled full champion refresh to `DatabaseTracker`; API-triggered work remains request-driven and deduplicated by the same database queue.
 
 Champion statistics, builds and profile statistics use the shared Jackson JSON codec. MariaDB stores UTF-8 JSON text and Mongo stores structured BSON. Champion stats have one raw aggregate document per scope; legacy champion-stat readers, markers and compatibility fallbacks are not supported. Invalid payloads are treated as missing so the refresh flow can recreate them.
+
+Build aggregation requires at least two eligible completed core items; boots are optional, and a match without boots contributes no boots option.
 
 ## Ownership
 

@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-08-01
-- Amended: 2026-08-20
+- Amended: 2026-09-29
 
 ## Context
 
@@ -23,10 +23,13 @@ and produces or updates `ProfileStatistics`, `ProfileActivity` and
 indexables, cache invalidation and refresh entry points. `ChampionAnalyzer`
 owns the composed computation. For missing statistics it streams a single
 `patch + queue` base cursor with the union stats/build projection. The matrix
-accumulators receive every compatible match and requested build accumulators
-receive only compatible participants from that same document. The bounded
-`match_events` pass is performed only for statistics. A build-only miss keeps
-the narrow build projection and never starts the events pass.
+and requested build accumulators consume the same joined `match_events` batch;
+both ignore matches without a usable stored timeline. A build-only miss uses
+its narrow participant projection and joins bounded `match_events` batches
+before building options. Final participant items identify build options, while
+timeline events provide purchase and skill-upgrade times. Missing boots do not
+invalidate an otherwise complete core build; that game contributes no boots
+option.
 
 `lol.queue.DatabaseTracker` always enqueues champion matrices, builds and the
 scheduled champion refresh on the `CHAMPION` channel and inherits the common

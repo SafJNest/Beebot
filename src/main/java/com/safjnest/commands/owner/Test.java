@@ -11,7 +11,7 @@ import com.safjnest.App;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
@@ -48,6 +48,8 @@ import org.json.JSONObject;
 public class Test extends Command {
 
     private static final int TIMELINE_NULL_STOP_THRESHOLD = 10;
+    private static final long TIMELINE_REQUEST_DELAY_MILLIS = 400L;
+    private static final long PATCH_TIMELINE_REQUEST_DELAY_MILLIS = 500L;
     private static final List<String> REGENERATION_OPERATIONS = List.of(
         "profiles", "competitive", "aggregates", "records", "mastery-records", "champions", "indexables", "all"
     );
@@ -80,7 +82,7 @@ public class Test extends Command {
                 + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
-                + "] | fix-timeline <puuid>");
+                + "] | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -122,9 +124,12 @@ public class Test extends Command {
             case "audit" -> queueAudit(event, arguments);
             case "migrate" -> queueMigration(event, arguments);
             case "fix-timeline" -> queueTimelineRepair(event, arguments);
+            case "fix-timeline-patch" -> queueTimelinePatchRepair(event, arguments);
+            case "test-matchups" -> queueMatchupRegeneration(event, arguments);
             default -> event.reply("Usage: !test regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS)
-                + "] | !test fix-timeline <puuid>.");
+                + "] | !test fix-timeline <puuid> | !test fix-timeline-patch <patch>"
+                + " | !test test-matchups <puuid> <shard>.");
         }
     }
 
@@ -270,6 +275,7 @@ public class Test extends Command {
                             return true;
                         }
                         timeline = MatchService.getTimeline(gameId, match.leagueShard);
+                        Thread.sleep(TIMELINE_REQUEST_DELAY_MILLIS);
                         if (timeline == null) {
                             counts[1]++;
                             job.missing(itemId);
@@ -313,6 +319,132 @@ public class Test extends Command {
                 else System.err.println("[Fix timelines] job failed puuid=" + puuid + " error=" + failure.getMessage());
             });
         event.reply("Timeline repair queued for PUUID " + puuid + ".");
+    }
+
+    private static void queueTimelinePatchRepair(CommandEvent event, String[] arguments) {
+        if (arguments.length < 2 || !arguments[1].trim().matches("\\d+\\.\\d+")) {
+            event.reply("Usage: !test fix-timeline-patch <patch> (example: 16.19).");
+            return;
+        }
+        String patch = arguments[1].trim();
+        List<LeagueShard> shards = MongoDB.findTimelineRegionsByPatch(patch);
+        if (shards.isEmpty()) {
+            event.reply("No stored matches found for patch " + patch + ".");
+            return;
+        }
+        for (LeagueShard shard : shards) queueTimelinePatchRepair(patch, shard);
+        event.reply("Timeline repair queued for patch " + patch + " across " + shards.size() + " regions.");
+    }
+
+    private static void queueTimelinePatchRepair(String patch, LeagueShard shard) {
+        QueueHandler.background(SyncScheduler.class, shard,
+            "owner-fix-timeline-patch:" + patch + ":" + shard.name(),
+            "owner fix timeline patch=" + patch + " region=" + shard.name(), job -> {
+                long total = MongoDB.countMatchesByPatch(patch, shard);
+                int progressTotal = (int) Math.min(Integer.MAX_VALUE, total);
+                int[] counts = new int[3];
+                int[] step = {0};
+                System.out.println("[Fix timelines] region=" + shard.name() + " total=" + total);
+                job.setProgressTotal(progressTotal);
+                job.phase("TIMELINES");
+                MongoDB.forEachTimelineMatchByPatch(patch, shard, gameId -> {
+                    int current = ++step[0];
+                    String itemId = gameId == null || gameId.isBlank() ? "missing-game-id:" + current : gameId;
+                    job.trackItem(itemId);
+                    job.currentItem(current + "/" + total + " Fetching timeline " + itemId);
+                    System.out.println("[Fix timelines] " + shard.name() + " " + current + "/" + total
+                        + " match=" + itemId);
+                    if (gameId == null || gameId.isBlank()) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        return;
+                    }
+
+                    LOLTimeline timeline = null;
+                    try {
+                        timeline = MatchService.getTimeline(gameId, shard);
+                        if (timeline == null) {
+                            counts[1]++;
+                            job.missing(itemId);
+                            return;
+                        }
+                        Map<String, Object> refreshedEvents = Tracker.rebuildTimelineEvents(timeline);
+                        if (refreshedEvents == null || refreshedEvents.isEmpty()) {
+                            counts[2]++;
+                            job.failed(itemId);
+                            return;
+                        }
+                        MongoDB.updateMatchEvents(gameId, refreshedEvents);
+                        counts[0]++;
+                        job.done(itemId);
+                    } catch (Exception exception) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        System.err.println("[Fix timelines] region=" + shard.name() + " match=" + gameId
+                            + " error=" + exception.getMessage());
+                    } finally {
+                        try {
+                            Thread.sleep(PATCH_TIMELINE_REQUEST_DELAY_MILLIS);
+                        } catch (InterruptedException exception) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException("Timeline repair interrupted", exception);
+                        } finally {
+                            MatchService.clearTimelineCache(gameId, shard);
+                            MatchMemoryUtils.release(timeline);
+                        }
+                    }
+                });
+                System.out.println("[Fix timelines] region=" + shard.name() + " patch=" + patch + " total=" + total
+                    + " completed=" + (counts[0] + counts[1] + counts[2])
+                    + " updated=" + counts[0] + " missing=" + counts[1] + " failed=" + counts[2]);
+                return null;
+            }).whenComplete((ignored, failure) -> {
+                if (failure == null) System.out.println("[Fix timelines] job completed region=" + shard.name()
+                    + " patch=" + patch);
+                else System.err.println("[Fix timelines] job failed region=" + shard.name()
+                    + " patch=" + patch + " error=" + failure.getMessage());
+            });
+    }
+
+    private static void queueMatchupRegeneration(CommandEvent event, String[] arguments) {
+        if (arguments.length < 2 || arguments[1].isBlank()) {
+            event.reply("Usage: !test test-matchups <puuid> <shard>.");
+            return;
+        }
+        String[] matchupArguments = arguments[1].trim().split("\\s+", 2);
+        if (matchupArguments.length < 2 || matchupArguments[0].isBlank()) {
+            event.reply("Usage: !test test-matchups <puuid> <shard>.");
+            return;
+        }
+        String puuid = matchupArguments[0];
+        LeagueShard shard;
+        try {
+            shard = LeagueShard.valueOf(matchupArguments[1].trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            event.reply("Unknown shard. Usage: !test test-matchups <puuid> <shard>.");
+            return;
+        }
+        Filter filter = Filter.summoner(0, System.currentTimeMillis());
+        Filter countFilter = Filter.summoner(filter.timeStart(), filter.timeEnd()).setRegion(shard);
+        String jobKey = "owner-test-matchups:" + shard.name() + ":" + puuid;
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, jobKey,
+            "owner test matchups " + shard.name() + " " + puuid, job -> {
+                int matchesFound = MongoDB.countMatches(puuid, countFilter);
+                job.setProgressTotal(matchesFound);
+                job.phase("MATCHUPS");
+                if (matchesFound == 0) return "No matches found for this PUUID and shard.";
+                boolean generated = new ProfileService().generateMatchups(puuid, shard, filter);
+                ProfileMatchups matchups = generated ? MongoDB.findProfileMatchups(puuid, filter) : null;
+                int championBuckets = matchups == null || matchups.champions() == null
+                    ? 0 : matchups.champions().size();
+                return "Read " + matchesFound + " matches; champion buckets=" + championBuckets
+                    + "; saved=" + generated + ".";
+            }).whenComplete((result, failure) -> {
+                if (failure == null) event.reply("Matchup regeneration for " + puuid + " on " + shard.name()
+                    + ": " + result);
+            });
+        event.reply("Matchup regeneration queued for PUUID " + puuid + " on " + shard.name()
+            + " (all match history).");
     }
 
     private static void queueHighElo(CommandEvent event) {

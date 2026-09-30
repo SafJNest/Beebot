@@ -12,11 +12,14 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | contextual record ranking | Mongo cursor over `profile_records {filterKey,metric,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | profile matchup rebuild | cursor over bounded match batches plus one `$in` join on `match_events`; process and recursively clear each decoded timeline | 1 batch of 100 | ProfileService |
+| champion stats rebuild | cursor over match IDs plus bounded match and `match_events` reads; process only matches with a usable event timeline and recursively clear each decoded timeline | 1 batch of 1,000 | ChampionAnalyzer |
+| champion build rebuild | cursor over projected matches and one `$in` join on `match_events`; emit build records only for matches with a usable event timeline, in bounded batches, then recursively clear decoded event trees | 1 event batch of 100 matches | ChampionBuildEngine |
 | history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |
 | match results | projection of only the fields needed for `MatchResult` and participants | 1 | profile/tracker |
 | tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC, _id DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
 | timeline repair | cursor stored matches for one PUUID newest-first, fetch timeline directly by Riot match ID, regenerate the complete compact event payload, replace only that match's `match_events` record; stop after 10 consecutive missing timelines | streaming per PUUID | `!test fix-timeline <puuid>` |
-| match events | `_id: {$in: [...]}` on `match_events` | 1 | match detail/history, profile matchup and champion statistics rebuild |
+| patch timeline repair | one cursor per region over `match.patchMajor + region`, project only `_id`, fetch timelines in parallel across regions with a 500 ms delay per region, log `current/total`, regenerate compact events and replace only its `match_events` record; continue through missing timelines | streaming per region | `!test fix-timeline-patch <patch>` |
+| match events | `_id: {$in: [...]}` on `match_events` | 1 per batch; 100 profile matchups/builds or 1,000 champion stats | match detail/history and aggregate rebuilds |
 | champion | cursor of match IDs, then match/event documents joined in bounded batches; process and recursively clear each timeline; raw batch without full `Match -> Participant` | 2 per batch (+ count/trend) | Champion services |
 | leaderboard aggregates | Mongo snapshot `leaderboard_aggregates` per filter; rebuild every 12 hours and `$match` + `$group` on `summoner.ranks.<QUEUE>` path for new filters | 1 | LeaderboardService |
 | writes | atomic updates, participant pipeline, unordered bulk for builds/statistics/summoners; unique `{puuid, filterKey}` | 1 per update/batch | MongoDB/tracker |
@@ -39,7 +42,7 @@ PUUID is the summoner identity and the document `_id`; the full Riot match ID is
 
 MariaDB stores UTF-8 JSON in `champion_builds.data`, `champion_stats.data`, and `profile_statistics.data`. Mongo stores `build` as structured BSON; its `filterKey` is `champion + lane + queue + rank + rankBehavior + patch + region`, plus opponent/duo when requested. `profile_statistics` stores timestamps directly and only the leaf nodes `champions.<championId>.<canonicalQueue>.<position>`, plus `pings`, `spellOne`, and `spellTwo`, never under a `statistics` field. `isOtp`, totals and queue/lane/champion aggregates are runtime-only. `champion_stats` stores exactly one raw `ChampionStatsDocument` per `queue + rankBehavior + rank + patch + region` scope under `_id = scope.toKey()`: root scope/games/banGames/previousPatch/ready/updatedAt plus `champions.<championId>.bans` and lane leaves. It never stores `statistics`, `overview`, `filter`, `laneStats`, or any calculated rate. Matchups live only in raw leaves keyed directly by opponent champion ID. No Kryo payloads, compatibility reads or `legacyPayload` are used.
 
-`profile_matchups` is a separate collection: its `matchups` payload stores only `champions.<championId>.<canonicalQueue>.<position>` leaves, with same-position `matchups.<opponentChampionId>` and applicable `synergies.<allyChampionId>`. Relation leaves retain raw timeline metric sums/counts; means, adjusted win rate and tier are response-only. The persisted maps retain all champion IDs; `others` is formed only in the API projection by combining buckets below `minGames`.
+`profile_matchups` is a separate collection: its `matchups` payload stores `champions.<championId>.<canonicalQueue>.<position>` leaves, with same-position `matchups.<opponentChampionId>` and applicable `synergies.<allyChampionId>`. For lane queues, root-leaf timeline metric sums/counts aggregate available differences against same-lane opponents; matchup leaves keep the same values scoped by opponent. Synergy leaves keep pair-scoped timeline metrics. Means, adjusted win rate and tier are response-only. The persisted maps retain all champion IDs; `others` is formed only in the API projection by combining buckets below `minGames`.
 
 Details on the `filterKey` format, the reason for the compound index, and profile-match ownership are in [`profile-statistics-source-of-truth.md`](../architecture/profile-statistics-source-of-truth.md).
 
@@ -57,7 +60,6 @@ Indexes are managed by the database operator, not by the runtime or the migratio
 | `match` | `match_participant_time` | history, profile, OPGG, recent matches and LP data |
 | `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | temporal queries, region/patchMajor, bans and champion wins |
 | `match` | `match_champion_filter` | champion batch with equality-first filter and participant/lane |
-| `match` | `match_champion_keyset` | `findChampionMatchIds` with keyset paging on `_id` |
 | `profile_statistics` | `profile_statistics_identity` | lookup/upsert/delete/batch for `{puuid, filterKey}`, `unique` |
 | `profile_statistics` | `profile_statistics_period` | projection over `timeStart`/`timeEnd` ranges |
 | `profile_activity` | `profile_activity_identity` | lookup/upsert for `{puuid, filterKey}`, `unique` |

@@ -1,6 +1,7 @@
 package com.safjnest.lol.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
@@ -23,6 +24,7 @@ public record Build(
     @JsonProperty("starters") List<Option> starterOptions,
     @JsonProperty("boots") List<Option> bootOptions,
     @JsonProperty("supportItems") List<Option> supportItemOptions,
+    @JsonProperty("roleBoundItems") List<Option> roleBoundItemOptions,
     @JsonProperty("slots") List<List<Option>> itemSlots,
     @JsonProperty("runes") List<RuneOption> runeOptions,
     @JsonProperty("summonerSpells") List<Option> summonerSpellOptions,
@@ -31,7 +33,17 @@ public record Build(
     @JsonProperty("augments") List<List<Option>> augmentOptions
 ) {
 
-    public record Option(String id, int matches, int wins, double winrate, double pickrate) {
+    public Build {
+        roleBoundItemOptions = roleBoundItemOptions == null ? List.of() : List.copyOf(roleBoundItemOptions);
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Option(String id, int matches, int wins, double winrate, double pickrate,
+                         Double averagePurchaseTimeSeconds, Integer timedMatches) {
+        public Option(String id, int matches, int wins, double winrate, double pickrate) {
+            this(id, matches, wins, winrate, pickrate, null, null);
+        }
+
         @JsonIgnore
         public List<Integer> itemIds() {
             try { return BuildUtils.parseDashList(id); }
@@ -67,14 +79,32 @@ public record Build(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CoreBuildOption(String id, List<Integer> items, int matches, int wins,
-                                  double winrate, double pickrate) {}
+                                  double winrate, double pickrate,
+                                  Double averageCompletionTimeSeconds, Integer timedMatches) {
+        public CoreBuildOption(String id, List<Integer> items, int matches, int wins,
+                               double winrate, double pickrate) {
+            this(id, items, matches, wins, winrate, pickrate, null, null);
+        }
+    }
 
     public record RuneOption(String id, RuneSignature configuration, int matches, int wins,
                              double winrate, double pickrate) {}
 
     public record SkillOrderOption(String id, List<Integer> order, int matches, int wins,
-                                   double winrate, double pickrate) {}
+                                   double winrate, double pickrate, List<SkillTiming> timedOrder) {
+        public SkillOrderOption {
+            timedOrder = timedOrder == null ? List.of() : List.copyOf(timedOrder);
+        }
+
+        public SkillOrderOption(String id, List<Integer> order, int matches, int wins,
+                                double winrate, double pickrate) {
+            this(id, order, matches, wins, winrate, pickrate, List.of());
+        }
+    }
+
+    public record SkillTiming(Integer level, int abilitySlot, double averageUpgradeTimeSeconds, int timedMatches) {}
 
     /** Compatibility shape used by the Discord command and old callers. */
     public record SlotOption(int itemId, int matches, double winrate) {
@@ -123,6 +153,7 @@ public record Build(
             toItemOptions(starter, games, winsFor(games, winrate)),
             toSlotOptions(boots, games),
             toSlotOptions(suppItems, games),
+            List.of(),
             toOptionSlots(slots),
             runes == null ? List.of() : List.of(new RuneOption(
                 runes.toKey(), runes, games, winsFor(games, winrate), winrate, 1

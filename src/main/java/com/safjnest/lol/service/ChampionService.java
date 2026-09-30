@@ -172,6 +172,9 @@ public class ChampionService {
         if (filter == null || filter.champion() == 0) return false;
         List<Build> builds = ChampionBuildEngine.recomputeAll(filter);
         boolean refreshed = builds != null && !builds.isEmpty();
+        BotLogger.info("[ChampionBuildPersisted] filter=" + filter.toKey()
+            + " refreshed=" + refreshed
+            + " games=" + (refreshed ? builds.get(0).games() : 0));
         if (refreshed) invalidate(filter);
         return refreshed;
     }
@@ -367,6 +370,11 @@ public class ChampionService {
         boolean statisticsPending = stats == null || isStale(statsLastUpdate);
         boolean buildPending = build == null || isStale(buildLastUpdate);
         if (statisticsPending || buildPending) {
+            BotLogger.info("[ChampionDataPending] filter=" + filter.toKey()
+                + " statisticsPending=" + statisticsPending
+                + " statisticsLastUpdate=" + statsLastUpdate
+                + " buildPending=" + buildPending
+                + " buildLastUpdate=" + buildLastUpdate);
             ComputeScheduler.startChampionData(filter, statisticsPending, buildPending);
             return ApiResult.pending(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), true, filter));
         }

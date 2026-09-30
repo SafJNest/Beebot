@@ -32,6 +32,10 @@ public class BuildTest {
         String json = source.toJson();
         assertEquals('{', json.charAt(0));
         assertEquals(source, Build.fromJson(json));
+        Build legacy = Build.fromJson(json.replace(",\"roleBoundItems\":[]", "")
+            .replace(",\"timedOrder\":[]", ""));
+        assertEquals(List.of(), legacy.roleBoundItemOptions());
+        assertEquals(List.of(), legacy.skillOrders().get(0).timedOrder());
         assertNull(Build.fromJson("not-json"));
     }
 }

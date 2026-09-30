@@ -1,14 +1,13 @@
 package com.safjnest.lol.champion;
 
 import com.safjnest.lol.utils.NumberUtils;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import com.safjnest.lol.utils.BuildUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public record RuneSignature(
         int primaryTree,
@@ -20,9 +19,9 @@ public record RuneSignature(
 ) {
 
     public static RuneSignature from(JSONObject runesJson) {
-        JSONArray primary   = runesJson.optJSONArray("primary");
+        JSONArray primary = runesJson.optJSONArray("primary");
         JSONArray secondary = runesJson.optJSONArray("secondary");
-        JSONArray stats     = runesJson.optJSONArray("stats");
+        JSONArray stats = runesJson.optJSONArray("stats");
 
         if (primary == null || primary.length() < 2 || secondary == null) return null;
 
@@ -53,15 +52,13 @@ public record RuneSignature(
     }
 
     public static RuneSignature decode(String key) {
-        String[] p = BuildUtils.fromBase64(key).split("\\|", -1);
+        String[] parts = BuildUtils.fromBase64(key).split("\\|", -1);
         return new RuneSignature(
-                NumberUtils.parseInt(p[0]),
-                NumberUtils.parseInt(p[1]),
-                p.length > 2 ? BuildUtils.parseDashList(p[2]) : List.of(),
-                NumberUtils.parseInt(p[3]),
-                p.length > 4 ? BuildUtils.parseDashList(p[4]) : List.of(),
-                p.length > 5 ? BuildUtils.parseDashList(p[5]) : List.of());
+                NumberUtils.parseInt(parts[0]),
+                NumberUtils.parseInt(parts[1]),
+                parts.length > 2 ? BuildUtils.parseDashList(parts[2]) : List.of(),
+                NumberUtils.parseInt(parts[3]),
+                parts.length > 4 ? BuildUtils.parseDashList(parts[4]) : List.of(),
+                parts.length > 5 ? BuildUtils.parseDashList(parts[5]) : List.of());
     }
-
-
 }

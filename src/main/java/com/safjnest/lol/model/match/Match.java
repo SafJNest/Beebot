@@ -121,7 +121,8 @@ public class Match extends AbstractEntity<Match> {
     }
 
     public void restoreEvents() {
-        if (events == null) events = new JSONObject(eventData != null ? eventData : Map.of());
+        if (eventData != null) events = new JSONObject(eventData);
+        else if (events == null) events = new JSONObject(Map.of());
     }
 
     public Match withMetadata(ResponseMetadata value) {

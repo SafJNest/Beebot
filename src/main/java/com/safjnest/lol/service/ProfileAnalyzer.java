@@ -57,6 +57,7 @@ public final class ProfileAnalyzer {
         public ProfileMatchups finish() {
             return matchups.finish().withLastUpdate(System.currentTimeMillis());
         }
+
     }
 
     public static final class ProfileRefreshAccumulator {
