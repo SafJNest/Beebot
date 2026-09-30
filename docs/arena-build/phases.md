@@ -79,6 +79,79 @@ Status: proposed delivery sequence. Each phase has an explicit gate. Do not star
 
 **Gate**: architecture/docs/API synchronization, approved BSON headroom, successful canary/full rebuild and operational progress visibility.
 
+## Agent execution model
+
+Use agents to parallelize independent evidence gathering and review. Keep one **source-of-truth agent** responsible for the accepted contract, phase gates and integration decisions. Agents should not independently change the same model, response, persistence owner or ADR.
+
+### Parallel analysis before implementation
+
+After the implementation branch exists, run these read-only audits in parallel:
+
+1. **Arena data/parser audit** — timeline frames, first Prismatic evidence, augment IDs/order/times, placements and item transitions. Return source symbols, data gaps and parser requirements.
+2. **Shared Build migration audit** — `Build`, `BuildSignature`, `ChampionBuildEngine`, persistence/API serialization and callers. Return the smallest migration to `builds[]: Build`, affected files/consumers, compatibility risks and validation needs.
+3. **Provider/persistence audit** — Mongo batch/join behavior, matches without `match_events`, projections, memory release, collection/upsert and queue lifecycle. Return reusable owners, required changes and operational gates.
+
+The source-of-truth agent reconciles those reports, updates this contract if evidence requires it, and resolves ownership or ADR conflicts before implementation begins. Analysis agents do not edit code or make product decisions. CodeGraph is mandatory for structural investigation: check status, sync if stale, then explore the relevant symbols and inspect impact before a code change. If a required CodeGraph operation is unavailable, record that limitation and do not claim its check passed.
+
+### Implementation and review
+
+- Give each implementation task one phase, one accepted contract, a named set of files/owners, prerequisites, and an explicit done gate. The implementer owns its assigned files; the source-of-truth agent owns shared contract/ADR changes and integration.
+- Work serially on shared files such as `Build`, `ChampionBuildEngine`, and common Mongo readers. Parallel implementation is safe only after interfaces are fixed and file ownership is disjoint; if agents need separate edits to shared files, give them isolated managed worktrees and integrate the reviewed changes one at a time.
+- Keep a different agent as a read-only reviewer after each substantial phase. The reviewer checks the diff against the contract, CodeGraph impact, related API/docs and edge cases; it reports findings with file/line and does not patch.
+- The source-of-truth agent resolves review findings, checks `git status` before integration, runs the phase gate, and reports exactly what was validated. Do not let an agent overwrite unrelated or in-progress checkout work.
+- Stop and report when source evidence is missing, a contract is contradicted, or an accepted ADR conflicts. Do not silently guess or change the ADR.
+
+### Prompts to start agents
+
+Use these prompts after the branch is ready. Replace the bracketed scope and phase. Send the first three to separate agents at the same time; use the implementation and review prompts only after their dependencies and contract are approved.
+
+**Read-only analysis prompt** (launch one per audit role above):
+
+```text
+Sei l'agente di analisi per Arena Champion Analytics in Beebot.
+
+RUOLO: [Arena data/parser | shared Build migration | provider/persistence]
+AMBITO: [simboli, flusso o domanda specifica]
+
+Fai solo analisi: non modificare file e non prendere decisioni di prodotto.
+Leggi AGENTS.md, docs/architecture/README.md, gli ADR rilevanti, docs/HANDBOOK.md §5-§7 e docs/arena-build/{README,contracts,phases}.md.
+Prima di investigare codice, verifica CodeGraph status; se stale esegui sync; poi usa explore e impact per i simboli del tuo ambito. Usa letture testuali solo per dettagli letterali o file già individuati. Non duplicare l'esplorazione assegnata agli altri agenti.
+
+Restituisci:
+1. flusso e owner attuali, con simboli/file e riferimenti verificabili;
+2. cosa possiamo riusare così com'è e cosa va generalizzato;
+3. file/consumer/contratti impattati e rischio di compatibilità;
+4. dati mancanti, decisioni che bloccano e dipendenze dalle altre fasi;
+5. proposta minima, senza codice;
+6. controlli CodeGraph eseguiti e controlli non disponibili.
+
+Non modificare ADR, API o documentazione. Se trovi un conflitto, riportalo e fermati su quel punto.
+```
+
+**Implementazione di una fase approvata:**
+
+```text
+Implementa solo la fase [N — nome] di Arena Champion Analytics in Beebot.
+
+Contratto approvato: docs/arena-build/contracts.md, sezione [X].
+Prerequisiti/gate superati: [elenco].
+File e owner assegnati: [elenco preciso].
+Fuori ambito: [elenco].
+
+Segui AGENTS.md, docs/architecture/README.md, l'ADR accettato e docs/HANDBOOK.md §5-§7. Controlla git status e preserva ogni modifica preesistente. Prima di modificare codice, esegui CodeGraph status, sync se stale, explore e impact sugli owner interessati.
+Mantieni la response persistita con chiavi semantiche (`core`, `items`, `augments`, `prismatics`); l'eventuale forma normalizzata `kind/id` è interna all'elaborazione. Non duplicare classi o owner se quelli condivisi possono essere generalizzati. Non cambiare file fuori dall'assegnazione; se serve ampliare il perimetro, descrivi il motivo prima di toccare l'owner aggiuntivo.
+
+Completa il gate della fase e aggiorna i documenti/API richiesti. Riporta file cambiati, decisioni, CodeGraph impact, controlli e test eseguiti con esito; distingui ciò che non hai potuto verificare. Se il codice contraddice il contratto o un ADR, fermati e segnala il conflitto.
+```
+
+**Revisione indipendente read-only:**
+
+```text
+Fai una revisione read-only delle modifiche della fase [N] rispetto a docs/arena-build/contracts.md §[X] e al diff corrente.
+Non modificare file. Verifica CodeGraph status/sync ed impact sui simboli cambiati; controlla anche i consumer, la response persistita, API/docs e i casi limite del contratto.
+Riporta prima i blocker e i bug con file/linea e scenario riproducibile; poi rischi non bloccanti e verifiche mancanti. Conferma separatamente quali gate sono dimostrati e quali no. Non approvare per supposizione controlli non eseguiti.
+```
+
 ## Implementation boundaries
 
 - Do not adapt standard `ChampionStatistics` / `ChampionStatsDocument` or `champion_stats` into the Arena statistics root.
