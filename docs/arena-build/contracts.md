@@ -160,13 +160,12 @@ Every leaf reports its own observed `games` and its own valid-placement count. N
 
 `pickRate` must name its denominator. Candidate rules: global first-Prismatic/item/augment pick rate divides by `championGames`; a core-conditioned rate divides by `core.stats.games`; slot/path rates divide by the eligible games for that feature if the UI needs a rate for reachability. Do not call rates comparable when their denominators differ.
 
-### Outcome definitions that block implementation
+### Outcome and population semantics
 
-1. **Win:** define the placement(s) that count as a win. Keep top-placement counts independently so the UI can offer richer measures later. `wins` and `winRate` must use this definition.
-2. **Placement:** define whether placement means participant, pair/subteam, or another Arena rank. Existing `Participant.subTeamPlacement` and profile placement counters are evidence to validate, not a product decision.
-3. **Core boots snapshot:** choose a deterministic event/frame boundary (recommended: the first valid post-selection snapshot after the free first Prismatic has been awarded). Decide how boots sold/replaced later affect the core; do not use final inventory without explicitly accepting that semantic.
-4. **Incomplete data:** retain the game in `championGames`; increment coverage/missing counters and omit it only from leaves whose required inputs are unavailable.
-5. **Bucket:** confirm the key is full patch (as shown in the prompt) and define treatment of patch aliases/partial version fields.
+1. **Win and placement:** the user-defined Arena win rule is `participant.win == true || subTeamPlacement >= 3`. Preserve the observed `subTeamPlacement` position in Arena statistics as its own position distribution, in addition to win counts/rate. Missing placement remains missing and does not become zero; `participant.win == true` can still count as a win when placement is absent.
+2. **Core boots snapshot:** choose a deterministic event/frame boundary (recommended: the first valid post-selection snapshot after the free first Prismatic has been awarded). Decide how boots sold/replaced later affect the core; do not use final inventory without explicitly accepting that semantic.
+3. **Incomplete data:** retain the game in `championGames`; increment coverage/missing counters and omit it only from leaves whose required inputs are unavailable.
+4. **Bucket:** ADR-0009 defines full `patch` separately from `patchMajor`; define treatment of patch aliases/partial or missing version fields for the Arena bucket.
 
 ## 5. First Prismatic evidence and timeline contract
 
@@ -180,6 +179,50 @@ The current Mongo docs describe a compact `match_events` timeline that keeps the
 The first option preserves replayability of the classifier; the second keeps the stored event payload smaller. Both require the ingestion and repair writers to agree on the same versioned contract. Existing historical compact timelines may need a Riot timeline refetch; matches whose raw timeline is no longer obtainable remain unknown. Never infer from final inventory or a later 220007 event and label it exact.
 
 Candidate evidence states: `EXACT`, `AMBIGUOUS`, `UNKNOWN`. If the second storage option is chosen, retain enough provenance to distinguish exact frame comparison from derived/legacy absence. Additional inferred-Prismatic categories are out of the initial scope.
+
+### Source audit — 2026-09-30
+
+The current ingestion path fetches the Riot timeline through `MatchService`, normalizes it in `Tracker`, and persists `Match.eventData` through `MongoDB` into `match_events`. The stored payload includes timestamped participant-attributed item events, including `ITEM_PURCHASED`, `ITEM_SOLD`, `ITEM_UNDO` and `ITEM_DESTROYED`. Its `snapshots` contain scalar match progress such as gold, CS, XP and level; they do not contain participant item inventories. This does not prove the before/after inventory evidence required to classify the free first Prismatic or to select a boots/core snapshot.
+
+The `fix-timeline` repair commands refetch the Riot timeline and replace `match_events` from that timeline. They do not recover participant augment metadata. The raw match has `playerAugment1..6`; the existing `Tracker.analyzeMatchBuild` path reads only slots 1..4 and drops zero IDs, so it can shift internal gaps and loses slots 5..6. The derived `Participant.augments` list is therefore not a reliable source of original Arena slot positions. The participant record also supplies `subTeamPlacement` and final `item0..item6` inventory, but final inventory is not historical core evidence. Augment slot IDs have no verified acquisition times.
+
+`ChampionBuildTimelineUtils.itemEvents` already handles participant attribution, timestamp ordering, purchases, sales, destruction and undo. It returns normalized item events, not historical inventory snapshots, and does not identify the free first Prismatic. Reuse is limited to event rules proven identical to Arena. These findings are code-derived; no representative production timeline or Mongo document was inspected in this audit.
+
+**Gate result:** the initial audit did not prove first-Prismatic evidence or a historical boots/core boundary. The user subsequently approved the strict fallback below: use only direct evidence and retain `UNKNOWN` when it is absent. Do not infer either value from final inventory, replayed events or a later `220007` event.
+
+### Phase 1 strict-evidence payload
+
+The approved Phase 1 policy is strict evidence only: never derive the first Prismatic or the core snapshot by replaying item events. The planned versioned `match_events` payload adds `arena_evidence` only for Arena matches. The current pure parser can consume this contract, but no `Tracker` producer or repair writer persists it:
+
+```json
+{
+  "arena_evidence": {
+    "version": 1,
+    "participants": {
+      "1": {
+        "first_prismatic": {
+          "status": "UNKNOWN",
+          "reason": "NO_DIRECT_SELECTION_SIGNAL"
+        },
+        "core_snapshot": {
+          "status": "UNKNOWN",
+          "reason": "NO_DIRECT_INVENTORY_FRAME"
+        }
+      }
+    }
+  }
+}
+```
+
+Each participant entry uses `EXACT`, `AMBIGUOUS` or `UNKNOWN`. `EXACT` first-Prismatic evidence carries the observed `item_id` and `timestamp`; `EXACT` core evidence carries the observed snapshot `timestamp`, `boots_id` and `item_ids`. The parser requires the snapshot not to precede the first Prismatic, requires a non-empty effective item list containing the boots, and rejects inconsistent values as ambiguous. `AMBIGUOUS` retains a reason; `UNKNOWN` carries a reason and no guessed value. Timeline event times remain metadata and never participate in core identity. Item `220007` is invalid as the first Prismatic and is excluded from core membership and post-core items. The current R4J timeline frames cannot populate exact core snapshots, so their evidence remains `UNKNOWN` until a direct source becomes available.
+
+Augments are read from the existing ordered `Participant.augments` list and receive sequence positions from that list; the parser does not reconstruct empty raw Riot fields or their gaps. This order is not described as temporal selection order. An augment time is null/absent unless a direct source provides it. Raw placement is `subTeamPlacement`; Arena win is `participant.win == true || subTeamPlacement >= 3`. Persist the exact observed placement position in addition to win statistics.
+
+The parser consumes the existing ordered `Participant.augments` list and assigns sequence positions from that list. An absent or empty list is counted as missing; it does not infer choices from another field. This preserves the existing participant model and Match API serialization. The list does not establish augment selection times, which remain null unless a direct source provides them.
+
+### Manual first-Prismatic diagnostic
+
+`ArenaFirstPrismaticManual` is an isolated debug runner: it calls `MongoDB.findMatch(matchId)`, which attaches the persisted `match_events`, and prints each participant's final item slots and relevant item events. `FirstPrismaticResolver` tries pre-anvil possession events, a single candidate, accounting, then the first classified Prismatic in final slot order with `TOOLTIP_FALLBACK`; it records resolution type/reason and missing/ambiguous counts. Its undo handling distinguishes cancelled purchases from undone sales/destruction; an undo without an identifiable target is counted ambiguous and does not cancel a guessed event. Classification currently reuses `ItemUtils.isPrismatic` and explicitly excludes `447111`. This inference and slot-order fallback are diagnostic only: they do not populate the strict-evidence Arena parser or production statistics and must not be described as exact first-Prismatic evidence.
 
 ## 6. Boots and build event contract
 
@@ -195,7 +238,7 @@ Recommended candidate semantics:
 - Count every item at its normalized position once per participant-game. `overall` includes only post-core items and sums the position populations.
 - Count a `path` only when every sequence element in its configured maximum length is observed; cap path length and retention only after representative size/cardinality measurements.
 
-The event rules for selling a core item, repurchasing it, transforming it, or losing it through Arena mechanics must be recorded as explicit cases before finalizing the normalizer. The standard champion build's current four-slot output is not the Arena slot contract.
+The Phase 1 parser fails closed for unresolved transformations and any post-boundary purchase, sale or destruction involving an item in the direct core snapshot; it counts the sequence as ambiguous and omits it. These cases remain open for a future complete Arena normalizer, along with items lost through Arena mechanics. The standard champion build's current four-slot output is not the Arena slot contract.
 
 ## 7. Augment contract
 

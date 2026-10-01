@@ -18,17 +18,22 @@ Status: proposed delivery sequence. Each phase has an explicit gate. Do not star
 
 **Gate**: approved written semantics, proven first-Prismatic source or a documented unknown-data fallback, and measured single-document fit with headroom or an accepted partition/retention design.
 
+**Audit status (2026-09-30): NOT PASSED overall; Phase 1 may proceed with the approved strict-evidence fallback.** The user defined win as `participant.win == true || subTeamPlacement >= 3`, required exact `subTeamPlacement` positions to be retained, and selected strict evidence only: first Prismatic/core values are accepted only with direct evidence, otherwise marked `UNKNOWN`. The current timeline has no item inventory snapshots around the selection round, so current matches will have unknown first-Prismatic/core evidence. Remaining Phase 0 gates include participant-game deduplication and denominators, patch alias/missing-value handling, Arena item transition rules, augment time semantics, and BSON size/retention. Parser handling for unresolved item transitions must report ambiguity and omit affected outputs without guessing. The source audit is recorded in [`contracts.md`](contracts.md#source-audit--2026-09-30).
+
 ## Phase 1 — source evidence and deterministic parser
 
 **Work**
 
 - Add the chosen versioned Arena timeline evidence to the `match_events` producer and timeline-repair writer, or compute an exact first-Prismatic observation during those writes.
-- Build the Arena parsing seam with placement, selected augment order, first-Prismatic evidence, boot snapshot and normalized post-core item sequence. Keep the parsed input as a nested/package-private type unless a separate top-level type materially improves ownership or testing.
+- Preserve all six participant augment fields in a Mongo-only sidecar so slot order and empty positions survive ingestion without changing `Participant.augments` or Match API JSON.
+- Build the deterministic Arena parsing seam with placement, selected augment order, first-Prismatic evidence, boot snapshot and normalized post-core item sequence. The parser accepts only consistent direct evidence; unknown or unsupported evidence is counted and omitted.
 - Reuse `ChampionBuildTimelineUtils` only for transitions proven identical; keep Arena transformation and free-Prismatic interpretation in the Arena parser.
 - Keep subsequent 220007 results out of `firstPrismaticId`, first-Prismatic global stats and core.
-- Add reason counters for missing/ambiguous first Prismatic, unknown boots, partial placement, item event conflicts and missing augment slots.
+- Count missing/ambiguous first Prismatic, inconsistent boots snapshots, partial placement, unresolved transformations/core-item transitions and missing augment slots.
 
-**Gate**: deterministic parser contract covers before/after frames, all listed item event types and Arena transformations; historical refetch gaps are counted and never filled with guesses.
+**Gate status (2026-09-30): NOT PASSED.** The pure parser preserves semantic `core`, `items`, `augments` and `prismatics` outputs, excludes `220007`, excludes timestamps from core identity, applies the literal `participant.win || subTeamPlacement >= 3` rule, and rejects inconsistent direct snapshots or unresolved Arena transitions with reason counters. Common purchase/undo/sell/destroy handling reuses `ChampionBuildTimelineUtils`; unsupported transformations and post-core transitions involving a core item are counted ambiguous and omitted. The `Tracker` evidence writer, repair integration and augment sidecar were removed at the user's request, so no current producer persists v1 `arena_evidence`; ingestion/repair integration remains open. Exact production first-Prismatic/core evidence is also unavailable in current timelines.
+
+**Validation:** the final parser-focused Maven test passed (11 tests). The earlier, pre-removal focused writer/sidecar run passed 20 tests, but those results do not validate the final reverted writer/sidecar state. The full Maven suite, final-state `TrackerTest`/`MongoDBTest`, production data inspection and representative BSON sizing were not run.
 
 ## Phase 2 — shared build contract and pure accumulators
 
