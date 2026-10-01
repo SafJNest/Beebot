@@ -96,3 +96,11 @@ rsc/settings.json contains a server-level URI. The URI must not contain the appl
 ## Gate
 
 Before completion verify LoL Mongo-only reads and writes, no runtime import of LeagueDB, no mirror/outbox/dual-write proxy and tests for test database, registry/idempotency/preflight of indexes, bans, enum, flat participant, conversions and migration resume/high-water mark.
+
+Arena champion analytics Phase 2 is pure and introduces no production Mongo
+operation. Its separate versioned statistics root round-trips through the
+existing structured codec; persistence in `arena_champion_statistics`, BSON
+headroom, retention, bounded source delivery and query explain remain Phase 3.
+Existing `champion_stats`, `champion_builds`, match/participant/event writers
+and standard build documents are unchanged. See
+[`Arena contract`](../arena-build/contracts.md).

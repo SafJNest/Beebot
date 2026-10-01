@@ -31,6 +31,13 @@ public class BuildTest {
 
         String json = source.toJson();
         assertEquals('{', json.charAt(0));
+        org.junit.Assert.assertFalse(json.contains("orderedCore"));
+        org.junit.Assert.assertFalse(json.contains("orderedItems"));
+        org.junit.Assert.assertFalse(json.contains("orderedAugments"));
+        org.junit.Assert.assertFalse(json.contains("paths"));
+        assertEquals(java.util.Set.of("filter", "games", "wins", "winrate", "coreBuilds", "coreItems",
+            "starters", "boots", "supportItems", "roleBoundItems", "slots", "runes", "summonerSpells",
+            "skillOrders", "prismatics", "augments"), new org.json.JSONObject(json).keySet());
         assertEquals(source, Build.fromJson(json));
         Build legacy = Build.fromJson(json.replace(",\"roleBoundItems\":[]", "")
             .replace(",\"timedOrder\":[]", ""));

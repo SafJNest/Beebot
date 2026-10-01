@@ -1,264 +1,328 @@
 package com.safjnest.lol.arena;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
 
+import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class ArenaGameParserTest {
 
+    public static final ArenaItemCatalog CATALOG = new ArenaItemCatalog(
+        Map.of(3006, Kind.BOOTS, 4001, Kind.ITEM, 4002, Kind.ITEM, 4003, Kind.ITEM, 447111, Kind.ITEM),
+        new PrismaticItemClassifier(Map.of()));
+
     @Test
-    public void exactEvidenceBuildsSemanticCoreAndNormalizesPostCoreItems() {
-        Participant participant = participant(3);
-        participant.augments = List.of(11, 33, 66);
-        Match match = match(exactEvents(220001, 2000, 5000, List.of(3006, 1001, 220007), List.of(
-            item("ITEM_PURCHASED", 1000, 3006, 0, 0),
-            item("ITEM_PURCHASED", 2000, 1001, 0, 0),
-            item("ITEM_PURCHASED", 6000, 4001, 0, 0),
-            item("ITEM_PURCHASED", 7000, 4002, 0, 0),
-            item("ITEM_SOLD", 8000, 4002, 4002, 0),
-            item("ITEM_PURCHASED", 9000, 4003, 0, 0),
-            item("ITEM_UNDO", 10000, 0, 0, 0)
-        )));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
-        assertEquals(Integer.valueOf(3), parsed.subTeamPlacement());
-        assertTrue(parsed.win());
-        assertEquals(220001, parsed.core().firstPrismaticId());
-        assertEquals(3006, parsed.core().bootsId());
-        assertEquals(List.of(1001, 3006), parsed.core().snapshotItemIds());
-        assertEquals(2000, parsed.core().firstPrismaticTimestampMillis());
-        assertEquals(5000, parsed.core().snapshotTimestampMillis());
-        assertEquals(parsed.core().identity(), coreWithDifferentTimes(parsed.core()).identity());
-        assertEquals(List.of(new ParsedArenaGame.Item(4001, 1, 6000)), parsed.items());
-        assertEquals(List.of(
-            new ParsedArenaGame.Augment(11, 1, null),
-            new ParsedArenaGame.Augment(33, 2, null),
-            new ParsedArenaGame.Augment(66, 3, null)
-        ), parsed.augments());
-        assertEquals(List.of(new ParsedArenaGame.Prismatic(220001, 2000L)), parsed.prismatics());
-        assertEquals(0, parsed.coverage().missing());
+    public void preservesOrderedPurchasesAndAnvilSeparatelyFromAward() {
+        ParsedArenaGame parsed = parse(List.of(
+            event("ITEM_PURCHASED", 3000, 447001), event("ITEM_PURCHASED", 2000, 220007),
+            event("ITEM_PURCHASED", 1000, 4001), event("ITEM_DESTROYED", 2001, 220007)));
+        assertEquals(List.of(4001, 220007), parsed.core().itemIds());
+        assertEquals(1, choices(parsed, Kind.PRISMATIC).size());
+        assertEquals(Integer.valueOf(1), choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertEquals(447001, choices(parsed, Kind.PRISMATIC).get(0).id());
     }
 
     @Test
-    public void unknownEvidenceAndAbsentAugmentsRemainMissing() {
-        Participant participant = participant(2);
-        participant.augments = List.of();
-        Match match = match(Map.of(
-            "participants", Map.of("1", "player-one"),
-            "item_events", List.of(),
-            "arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
-                "first_prismatic", Map.of("status", "UNKNOWN", "reason", "NO_DIRECT_SELECTION_SIGNAL"),
-                "core_snapshot", Map.of("status", "UNKNOWN", "reason", "NO_DIRECT_INVENTORY_FRAME")
-            )))
-        ));
+    public void doesNotUseFinalSlotOrderForPrismatics() {
+        Participant participant = participant(1, 2);
+        participant.item0 = 447006;
+        participant.item1 = 447001;
+        List<Map<String, Object>> events = new ArrayList<>();
+        for (int i = 6; i >= 1; i--) events.add(event("ITEM_PURCHASED", i * 1000, 447000 + i));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match("EUW1_1", participant, events), participant, CATALOG, true);
+        var choices = choices(parsed, Kind.PRISMATIC);
+        assertEquals(6, choices.size());
+        for (int i = 0; i < 6; i++) {
+            assertEquals(447001 + i, choices.get(i).id());
+            assertEquals(Integer.valueOf(i + 1), choices.get(i).position());
+        }
+    }
 
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
+    @Test
+    public void salesAndDestructionPreserveCommittedHistory() {
+        ParsedArenaGame parsed = parse(List.of(event("ITEM_PURCHASED", 1000, 4001),
+            event("ITEM_SOLD", 2000, 4001), event("ITEM_PURCHASED", 3000, 4002),
+            event("ITEM_DESTROYED", 4000, 4002)));
+        assertEquals(List.of(4001, 4002), parsed.core().itemIds());
+    }
 
+    @Test
+    public void identifiedUndoCancelsPurchaseButNotHistoricalSale() {
+        ParsedArenaGame parsed = parse(List.of(event("ITEM_PURCHASED", 1000, 4001),
+            event("ITEM_PURCHASED", 2000, 4002), event("ITEM_UNDO", 2001, 4002),
+            event("ITEM_SOLD", 3000, 4001), event("ITEM_UNDO", 3001, 4001),
+            event("ITEM_DESTROYED", 4000, 4001), event("ITEM_UNDO", 4001, 4001)));
+        assertEquals(List.of(4001), parsed.core().itemIds());
+        assertEquals(1, choices(parsed, Kind.ITEM).size());
+    }
+
+    @Test
+    public void ambiguousUndoOmitsPotentialPurchaseAndDisablesChronology() {
+        ParsedArenaGame parsed = parse(List.of(event("ITEM_PURCHASED", 1000, 4001),
+            event("ITEM_PURCHASED", 2000, 4002), event("ITEM_UNDO", 2001, 0)));
         assertNull(parsed.core());
-        assertTrue(parsed.items().isEmpty());
-        assertTrue(parsed.prismatics().isEmpty());
-        assertTrue(parsed.augments().isEmpty());
-        assertTrue(parsed.coverage().missingReasons().containsKey("AUGMENTS_ABSENT_OR_EMPTY"));
-        assertTrue(parsed.coverage().missingReasons().containsKey("NO_DIRECT_SELECTION_SIGNAL"));
-        assertTrue(parsed.coverage().missingReasons().containsKey("NO_DIRECT_INVENTORY_FRAME"));
+        assertEquals(1, choices(parsed, Kind.ITEM).size());
+        assertNull(choices(parsed, Kind.ITEM).get(0).position());
+        assertEquals(Long.valueOf(1), parsed.coverage().ambiguous().get("UNDO_TARGET_AMBIGUOUS"));
     }
 
     @Test
-    public void excludes220007FromPrismaticAndCoreAndCountsRejection() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220007, 1000, 2000, List.of(220007, 3006), List.of()));
+    public void transformationUsesOnlyExplicitPurchaseAfterId() {
+        Map<String, Object> transformed = new HashMap<>(event("ITEM_PURCHASED", 2000, 4002));
+        transformed.put("before", 4001);
+        transformed.put("after", 4002);
+        assertEquals(List.of(4001, 4002), parse(List.of(event("ITEM_PURCHASED", 1000, 4001), transformed)).core().itemIds());
+        transformed.put("item", 4003);
+        ParsedArenaGame conflict = parse(List.of(transformed));
+        assertNull(conflict.core());
+        assertTrue(conflict.choices().isEmpty());
+        assertTrue(conflict.coverage().ambiguous().containsKey("PURCHASE_ID_CONFLICT_OR_ABSENT"));
+    }
 
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
+    @Test
+    public void repeatedItemAndExactDuplicateEventsCountOnce() {
+        var first = event("ITEM_PURCHASED", 1000, 4001);
+        ParsedArenaGame parsed = parse(List.of(first, first, event("ITEM_PURCHASED", 2000, 4001),
+            event("ITEM_PURCHASED", 3000, 4002)));
+        assertEquals(List.of(4001, 4002), parsed.core().itemIds());
+        assertEquals(Long.valueOf(1), parsed.coverage().rejected().get("DUPLICATE_ITEM_EVENT"));
+        assertEquals(Long.valueOf(1000), choices(parsed, Kind.ITEM).get(0).timestampMillis());
+    }
 
+    @Test
+    public void participantZeroAndMissingActorsNeverSupplyChoices() {
+        Participant participant = participant(1, 2);
+        var zero = new HashMap<>(event("ITEM_PURCHASED", 1000, 447001));
+        zero.put("participant", 0);
+        var absent = new HashMap<>(event("ITEM_PURCHASED", 2000, 4001));
+        absent.remove("participant");
+        Match match = match("EUW1_1", participant, List.of(zero, absent));
+        match.eventData.put("participants", Map.of("0", participant.puuid, "1", participant.puuid));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
+        assertTrue(parsed.choices().isEmpty());
         assertNull(parsed.core());
-        assertTrue(parsed.prismatics().isEmpty());
-        assertEquals(1, parsed.coverage().rejectedReasons().get("FIRST_PRISMATIC_220007_EXCLUDED").intValue());
-        assertTrue(parsed.coverage().missingReasons().containsKey("CORE_WITHOUT_EXACT_FIRST_PRISMATIC"));
+        assertEquals(Long.valueOf(1), parsed.coverage().rejected().get("PARTICIPANT_ZERO"));
     }
 
     @Test
-    public void excludesLater220007WithoutChangingFirstPrismaticOrCoreIdentity() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220001, 1000, 2000, List.of(3006), List.of(
-            item("ITEM_PURCHASED", 3000, 220007, 0, 0)
-        )));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
-        assertEquals(220001, parsed.core().firstPrismaticId());
-        assertEquals(new ParsedArenaGame.CoreIdentity(220001, 3006, List.of(3006)), parsed.core().identity());
-        assertEquals(List.of(new ParsedArenaGame.Prismatic(220001, 1000L)), parsed.prismatics());
-        assertTrue(parsed.items().isEmpty());
+    public void conflictingAndDuplicateReferencesAreUnattributable() {
+        Participant participant = participant(1, 2);
+        Match match = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 1000, 4001)));
+        match.eventData.put("participants", Map.of("1", "other"));
+        assertTrue(ArenaGameParser.parse(match, participant, CATALOG, true).choices().isEmpty());
+        match.eventData.put("participants", Map.of("1", participant.puuid, "2", participant.puuid));
+        assertTrue(ArenaGameParser.parse(match, participant, CATALOG, true).choices().isEmpty());
     }
 
     @Test
-    public void preservesPositivePlacementAndUsesTheLiteralWinFallback() {
-        Participant second = participant(2);
-        second.subTeamPlacement = 2;
-        second.augments = List.of();
-        Participant third = participant(3);
-        third.subTeamPlacement = 3;
-        third.augments = List.of();
-        Participant outsideExpectedRange = participant(9);
-        outsideExpectedRange.subTeamPlacement = 9;
-        outsideExpectedRange.augments = List.of();
-        Participant wonAtFirstPlace = participant(1);
-        wonAtFirstPlace.win = true;
-        wonAtFirstPlace.augments = List.of();
-        Participant missingPlacement = participant(0);
-        missingPlacement.subTeamPlacement = 0;
-        missingPlacement.augments = List.of();
-
-        ParsedArenaGame secondResult = ArenaGameParser.parse(match(Map.of()), second);
-        ParsedArenaGame thirdResult = ArenaGameParser.parse(match(Map.of()), third);
-        ParsedArenaGame outsideResult = ArenaGameParser.parse(match(Map.of()), outsideExpectedRange);
-        ParsedArenaGame wonResult = ArenaGameParser.parse(match(Map.of()), wonAtFirstPlace);
-        ParsedArenaGame missingResult = ArenaGameParser.parse(match(Map.of()), missingPlacement);
-
-        assertEquals(Integer.valueOf(2), secondResult.subTeamPlacement());
-        assertEquals(false, secondResult.win());
-        assertEquals(Integer.valueOf(3), thirdResult.subTeamPlacement());
-        assertEquals(true, thirdResult.win());
-        assertEquals(Integer.valueOf(9), outsideResult.subTeamPlacement());
-        assertEquals(true, outsideResult.win());
-        assertTrue(outsideResult.coverage().missingReasons().containsKey("PLACEMENT_INVALID_OR_ABSENT"));
-        assertEquals(Integer.valueOf(1), wonResult.subTeamPlacement());
-        assertEquals(true, wonResult.win());
-        assertNull(missingResult.subTeamPlacement());
-        assertTrue(missingResult.coverage().missingReasons().containsKey("PLACEMENT_INVALID_OR_ABSENT"));
-    }
-
-    @Test
-    public void omitsEntirePostCoreSequenceWhenARelevantTransitionIsUnresolved() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220001, 1000, 2000, List.of(3006), List.of(
-            item("ITEM_TRANSFORMED", 3000, 5001, 5000, 5001)
-        )));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
-        assertTrue(parsed.items().isEmpty());
-        assertTrue(parsed.coverage().ambiguousReasons().containsKey("POST_CORE_ITEM_TRANSITION_UNRESOLVED"));
-    }
-
-    @Test
-    public void rejectsCoreWhenSnapshotPredatesFirstPrismatic() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220001, 3000, 2000, List.of(3006), List.of()));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
+    public void absentAndPartialTimelinesKeepIndependentMembershipAndAugmentGaps() {
+        Participant participant = participant(1, 0);
+        participant.item0 = 4001;
+        participant.item1 = 447002;
+        participant.boots = 3006;
+        participant.augments = List.of(11, 0, 33);
+        Match match = match("EUW1_1", participant, List.of());
+        match.eventData = null;
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
         assertNull(parsed.core());
-        assertTrue(parsed.coverage().ambiguousReasons().containsKey("CORE_SNAPSHOT_PRECEDES_FIRST_PRISMATIC"));
+        assertEquals(5, parsed.choices().size());
+        assertNull(choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertNull(choices(parsed, Kind.BOOTS).get(0).timestampMillis());
+        assertEquals(Integer.valueOf(3), choices(parsed, Kind.AUGMENT).get(1).position());
+        match = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 1000, 4001)));
+        parsed = ArenaGameParser.parse(match, participant, CATALOG, false);
+        assertNull(parsed.core());
+        assertNull(choices(parsed, Kind.ITEM).get(0).position());
+        assertEquals(Long.valueOf(1000), choices(parsed, Kind.ITEM).get(0).timestampMillis());
     }
 
     @Test
-    public void rejectsCoreSnapshotWithMissingBootOrEmptyEffectiveItems() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match noBoot = match(exactEvents(220001, 1000, 2000, List.of(1001), List.of()));
-        Match noItems = match(exactEvents(220001, 1000, 2000, List.of(220007), List.of()));
-
-        ParsedArenaGame noBootResult = ArenaGameParser.parse(noBoot, participant);
-        ParsedArenaGame noItemsResult = ArenaGameParser.parse(noItems, participant);
-
-        assertNull(noBootResult.core());
-        assertTrue(noBootResult.coverage().ambiguousReasons().containsKey("CORE_SNAPSHOT_BOOT_NOT_IN_ITEM_IDS"));
-        assertNull(noItemsResult.core());
-        assertTrue(noItemsResult.coverage().ambiguousReasons().containsKey("CORE_SNAPSHOT_ITEMS_EMPTY"));
+    public void missingTimeKeepsChoiceWithoutCoreOrPosition() {
+        var event = new HashMap<>(event("ITEM_PURCHASED", 1000, 447001));
+        event.remove("timestamp");
+        ParsedArenaGame parsed = parse(List.of(event));
+        assertEquals(1, parsed.choices().size());
+        assertNull(parsed.choices().get(0).position());
+        assertNull(parsed.choices().get(0).timestampMillis());
     }
 
     @Test
-    public void rejectsPurchaseTransformationWithDifferentBeforeAndAfterIds() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220001, 1000, 2000, List.of(3006), List.of(
-            item("ITEM_PURCHASED", 3000, 6001, 6000, 6001)
-        )));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
-        assertTrue(parsed.items().isEmpty());
-        assertTrue(parsed.coverage().ambiguousReasons().containsKey("POST_CORE_ITEM_TRANSITION_UNRESOLVED"));
+    public void directFirstEvidenceCanContributeWithoutTimeAndDoesNotInventCore() {
+        Participant participant = participant(1, 3);
+        Match match = match("EUW1_1", participant, List.of());
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "EXACT", "item_id", 447001)))));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, false);
+        assertEquals(Integer.valueOf(1), choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertNull(choices(parsed, Kind.PRISMATIC).get(0).timestampMillis());
+        assertNull(parsed.core());
     }
 
     @Test
-    public void rejectsCoreSaleAndRepurchaseAfterBoundary() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220001, 1000, 2000, List.of(3006), List.of(
-            item("ITEM_SOLD", 3000, 3006, 3006, 0),
-            item("ITEM_PURCHASED", 4000, 3006, 0, 0)
-        )));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
-        assertTrue(parsed.items().isEmpty());
-        assertTrue(parsed.coverage().ambiguousReasons().containsKey("POST_CORE_ITEM_TRANSITION_UNRESOLVED"));
+    public void exactFirstPrismaticShiftsOnlyLaterObservedPrismatics() {
+        Participant participant = participant(1, 3);
+        Match match = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 2000, 447002)));
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "EXACT", "item_id", 447001, "timestamp", 1000)))));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
+        assertEquals(Integer.valueOf(2), choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertEquals(Integer.valueOf(1), choices(parsed, Kind.PRISMATIC).get(1).position());
     }
 
     @Test
-    public void utilityNormalizationRemovesPostCoreItemsDestroyedLater() {
-        Participant participant = participant(1);
-        participant.augments = List.of();
-        Match match = match(exactEvents(220001, 1000, 2000, List.of(3006), List.of(
-            item("ITEM_PURCHASED", 3000, 4001, 0, 0),
-            item("ITEM_DESTROYED", 4000, 4001, 4001, 0),
-            item("ITEM_PURCHASED", 5000, 4002, 0, 0)
-        )));
-
-        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant);
-
-        assertEquals(List.of(new ParsedArenaGame.Item(4002, 1, 5000)), parsed.items());
+    public void unknownCatalogDoesNotShiftLaterPositionsAnd447111IsNotPrismatic() {
+        ParsedArenaGame parsed = parse(List.of(event("ITEM_PURCHASED", 1000, 99999),
+            event("ITEM_PURCHASED", 2000, 447001), event("ITEM_PURCHASED", 3000, 447111)));
+        assertNull(parsed.core());
+        assertNull(choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertEquals(447111, choices(parsed, Kind.ITEM).get(0).id());
     }
 
-    private static Participant participant(int placement) {
+    @Test
+    public void exactSidecarCannotBypassDuplicateParticipantReferences() {
+        Participant participant = participant(1, 3);
+        Match match = match("EUW1_1", participant, List.of());
+        match.eventData.put("participants", Map.of("1", participant.puuid, "2", participant.puuid));
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "EXACT", "item_id", 447001, "timestamp", 1000)))));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
+        assertTrue(parsed.choices().isEmpty());
+        assertTrue(parsed.coverage().rejected().containsKey("FIRST_PRISMATIC_UNATTRIBUTABLE"));
+    }
+
+    @Test
+    public void conflictingExactSidecarDoesNotOverwriteObservedChronology() {
+        Participant participant = participant(1, 3);
+        Match match = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 1000, 447001)));
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "EXACT", "item_id", 447002, "timestamp", 3000)))));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
+        assertEquals(1, choices(parsed, Kind.PRISMATIC).size());
+        assertEquals(447001, choices(parsed, Kind.PRISMATIC).get(0).id());
+        assertEquals(Integer.valueOf(1), choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertTrue(parsed.coverage().rejected().containsKey("FIRST_PRISMATIC_EVIDENCE_CONFLICT"));
+    }
+
+    @Test
+    public void untimedUndoCannotEraseUnrelatedIndependentPurchase() {
+        var undo = new HashMap<>(event("ITEM_UNDO", 1500, 4001));
+        undo.remove("timestamp");
+        ParsedArenaGame parsed = parse(List.of(event("ITEM_PURCHASED", 1000, 4001), undo,
+            event("ITEM_PURCHASED", 2000, 4002)));
+        assertNull(parsed.core());
+        assertEquals(1, choices(parsed, Kind.ITEM).size());
+        assertEquals(4002, choices(parsed, Kind.ITEM).get(0).id());
+        assertNull(choices(parsed, Kind.ITEM).get(0).position());
+    }
+
+    @Test
+    public void unknownAndInvalidDirectEvidenceCannotCreatePrismaticChoices() {
+        Participant participant = participant(1, 3);
+        Match match = match("EUW1_1", participant, List.of());
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "UNKNOWN")))));
+        assertTrue(choices(ArenaGameParser.parse(match, participant, CATALOG, true), Kind.PRISMATIC).isEmpty());
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "EXACT", "item_id", 220007, "timestamp", 1000)))));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
+        assertTrue(choices(parsed, Kind.PRISMATIC).isEmpty());
+        assertTrue(parsed.coverage().rejected().containsKey("FIRST_PRISMATIC_ID_INVALID"));
+    }
+
+    @Test
+    public void untimedExactSidecarKeepsAlreadyObservedFirstAcquisitionTime() {
+        Participant participant = participant(1, 3);
+        Match match = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 1000, 447001)));
+        match.eventData.put("arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
+            "first_prismatic", Map.of("status", "EXACT", "item_id", 447001)))));
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, CATALOG, true);
+        assertEquals(1, choices(parsed, Kind.PRISMATIC).size());
+        assertEquals(Integer.valueOf(1), choices(parsed, Kind.PRISMATIC).get(0).position());
+        assertEquals(Long.valueOf(1000), choices(parsed, Kind.PRISMATIC).get(0).timestampMillis());
+    }
+
+    @Test
+    public void untimedIdentityFreeUndoSuppressesTheWholeAcquisitionHistory() {
+        var undo = new HashMap<>(event("ITEM_UNDO", 1000, 0));
+        undo.remove("timestamp");
+        var purchase = new HashMap<>(event("ITEM_PURCHASED", 2000, 4001));
+        purchase.remove("timestamp");
+        ParsedArenaGame parsed = parse(List.of(undo, purchase));
+        assertTrue(parsed.choices().isEmpty());
+        assertNull(parsed.core());
+    }
+
+    @Test
+    public void cancelledBootCannotBeResurrectedByLegacyDerivedBootField() {
+        Participant participant = participant(1, 3);
+        participant.boots = 3006;
+        Match match = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 1000, 3006),
+            event("ITEM_UNDO", 1001, 3006)));
+        assertTrue(choices(ArenaGameParser.parse(match, participant, CATALOG, true), Kind.BOOTS).isEmpty());
+        participant.item0 = 3006;
+        assertEquals(1, choices(ArenaGameParser.parse(match, participant, CATALOG, true), Kind.BOOTS).size());
+        participant.item0 = 0;
+        match.eventData = null;
+        var legacy = choices(ArenaGameParser.parse(match, participant, CATALOG, true), Kind.BOOTS);
+        assertEquals(1, legacy.size());
+        assertNull(legacy.get(0).timestampMillis());
+    }
+
+    @Test
+    public void soldBootRemainsHistoricalAndRepurchaseAfterUndoCountsOnce() {
+        Participant participant = participant(1, 3);
+        participant.boots = 3006;
+        Match sold = match("EUW1_1", participant, List.of(event("ITEM_PURCHASED", 1000, 3006),
+            event("ITEM_SOLD", 2000, 3006)));
+        assertEquals(1, choices(ArenaGameParser.parse(sold, participant, CATALOG, true), Kind.BOOTS).size());
+        Match repurchased = match("EUW1_2", participant, List.of(event("ITEM_PURCHASED", 1000, 3006),
+            event("ITEM_UNDO", 1001, 3006), event("ITEM_PURCHASED", 2000, 3006)));
+        var boots = choices(ArenaGameParser.parse(repurchased, participant, CATALOG, true), Kind.BOOTS);
+        assertEquals(1, boots.size());
+        assertEquals(Long.valueOf(2000), boots.get(0).timestampMillis());
+    }
+
+    public static Participant participant(int id, int placement) {
         Participant participant = new Participant();
-        participant.id = 1;
-        participant.puuid = "player-one";
+        participant.id = id;
+        participant.puuid = "player-" + id;
+        participant.champion = 27;
         participant.subTeamPlacement = placement;
         return participant;
     }
 
-    private static Match match(Map<String, Object> eventData) {
+    public static Match match(String id, Participant participant, List<Map<String, Object>> events) {
         Match match = new Match();
-        match.eventData = eventData;
+        match.gameId = id;
+        match.patch = "16.19.1";
+        match.queue = GameQueueType.CHERRY;
+        match.participants = List.of(participant);
+        match.eventData = new HashMap<>(Map.of("participants", Map.of(String.valueOf(participant.id), participant.puuid),
+            "item_events", events));
         return match;
     }
 
-    private static Map<String, Object> exactEvents(int prismaticId, long prismaticTime, long snapshotTime,
-            List<Integer> snapshotItems, List<Map<String, Object>> itemEvents) {
-        return Map.of(
-            "participants", Map.of("1", "player-one"),
-            "item_events", itemEvents,
-            "arena_evidence", Map.of("version", 1, "participants", Map.of("1", Map.of(
-                "first_prismatic", Map.of("status", "EXACT", "item_id", prismaticId, "timestamp", prismaticTime),
-                "core_snapshot", Map.of("status", "EXACT", "timestamp", snapshotTime,
-                    "boots_id", 3006, "item_ids", snapshotItems)
-            )))
-        );
+    public static Map<String, Object> event(String type, long time, int item) {
+        return Map.of("event", type, "participant", 1, "timestamp", time, "item", item, "before", 0, "after", 0);
     }
 
-    private static Map<String, Object> item(String type, long timestamp, int id, int before, int after) {
-        return Map.of("event", type, "participant", 1, "timestamp", timestamp,
-            "item", id, "before", before, "after", after);
+    private static ParsedArenaGame parse(List<Map<String, Object>> events) {
+        Participant participant = participant(1, 3);
+        return ArenaGameParser.parse(match("EUW1_1", participant, events), participant, CATALOG, true);
     }
 
-    private static ParsedArenaGame.Core coreWithDifferentTimes(ParsedArenaGame.Core core) {
-        return new ParsedArenaGame.Core(core.firstPrismaticId(), core.bootsId(), core.snapshotItemIds(),
-            core.firstPrismaticTimestampMillis() + 5000, core.snapshotTimestampMillis() + 5000);
+    private static List<ParsedArenaGame.Observation> choices(ParsedArenaGame game, Kind kind) {
+        List<ParsedArenaGame.Observation> result = new ArrayList<>();
+        for (var choice : game.choices()) if (choice.kind() == kind) result.add(choice);
+        return result;
     }
 }

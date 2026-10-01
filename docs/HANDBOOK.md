@@ -709,3 +709,21 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `src/main/java/com/safjnest/spring/controller/LolController.java` + `LolApiParameters.java` + `LolApiResponses.java`
 - `docs/architecture/profile-statistics-source-of-truth.md`
 - `docs/new-queue.md` + `docs/mongo/README.md` + `docs/api/lol-api.md`
+
+## Arena analytics Phase 2 handoff
+
+`ArenaChampionAnalyzer.accumulator(championId, fullPatch, catalog)` is a pure
+`accept(Match[, completeItemHistory]) → finish()` boundary. The default accept
+assumes the supplied item-event stream is complete when available; use false
+for known partial histories. Supply an immutable `ArenaItemCatalog` from the
+existing static item data outside the analyzer. No Mongo/Redis/scheduler call
+or progress job is added in Phase 2. Source fan-out and total/completed/missing
+progress are required when the bounded Phase 3 provider/rebuild is implemented.
+
+The internal model extends Build additively without changing standard response
+or presentation. The detailed event, core, position, denominator and
+serialization contract is in [`docs/arena-build/contracts.md`](arena-build/contracts.md).
+No ADR, HTTP controller, standard cache/generation version, Participant field,
+Tracker writer or query/index migration is required. API/Mongo documentation
+records this internal-only scope; production explain, BSON sizing and backfill
+are not Phase 2 checks.

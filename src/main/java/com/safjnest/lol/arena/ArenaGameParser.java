@@ -1,309 +1,317 @@
 package com.safjnest.lol.arena;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.safjnest.lol.arena.ParsedArenaGame.Augment;
 import com.safjnest.lol.arena.ParsedArenaGame.Core;
 import com.safjnest.lol.arena.ParsedArenaGame.Coverage;
-import com.safjnest.lol.arena.ParsedArenaGame.Item;
-import com.safjnest.lol.arena.ParsedArenaGame.Prismatic;
+import com.safjnest.lol.arena.ParsedArenaGame.Observation;
+import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 
 public final class ArenaGameParser {
 
-    private static final int ARENA_EVIDENCE_VERSION = 1;
-    private static final int FIRST_PRISMATIC_INVALID_ID = 220007;
-    private static final int MAX_ARENA_PLACEMENT = 8;
+    private static final int MAX_PRISMATIC_POSITION = 6;
+    private static final Set<String> ITEM_TYPES = Set.of("ITEM_PURCHASED", "ITEM_SOLD", "ITEM_UNDO", "ITEM_DESTROYED");
 
     private ArenaGameParser() {}
 
-    public static ParsedArenaGame parse(Match match, Participant participant) {
+    public static ParsedArenaGame parse(Match match, Participant participant, ArenaItemCatalog catalog,
+            boolean completeItemHistory) {
         Counters counters = new Counters();
-        if (match == null || participant == null) {
-            counters.missing("MATCH_OR_PARTICIPANT_ABSENT");
-            return result(null, false, null, List.of(), List.of(), List.of(), counters);
-        }
-
-        int observedPlacement = participant.subTeamPlacement;
-        Integer placement = observedPlacement > 0 ? observedPlacement : null;
-        boolean validPlacement = observedPlacement >= 1 && observedPlacement <= MAX_ARENA_PLACEMENT;
-        if (!validPlacement) counters.missing("PLACEMENT_INVALID_OR_ABSENT");
-        boolean win = participant.win || observedPlacement >= 3;
-
-        List<Augment> augments = readAugments(participant, counters);
-        JSONObject evidence = arenaParticipantEvidence(match.eventData, participant.id, counters);
-        List<Prismatic> prismatics = readPrismatic(evidence, counters);
-        Core core = readCore(evidence, prismatics, counters);
-        List<Item> items = readPostCoreItems(match.eventData, participant, core, counters);
-
-        return result(placement, win, core, items, augments, prismatics, counters);
-    }
-
-    private static ParsedArenaGame result(Integer placement, boolean win, Core core, List<Item> items,
-            List<Augment> augments, List<Prismatic> prismatics, Counters counters) {
-        return new ParsedArenaGame(placement, win, core, items, augments, prismatics, counters.snapshot());
-    }
-
-    private static List<Augment> readAugments(Participant participant, Counters counters) {
-        List<Integer> augments = participant.augments;
-        if (augments == null || augments.isEmpty()) {
-            counters.missing("AUGMENTS_ABSENT_OR_EMPTY");
-            return List.of();
-        }
-        List<Augment> result = new ArrayList<>();
-        for (int index = 0; index < augments.size(); index++) {
-            Integer id = augments.get(index);
-            if (id == null || id <= 0) {
-                counters.ambiguous("AUGMENT_ID_INVALID");
-            } else {
-                result.add(new Augment(id, index + 1, null));
+        List<Observation> choices = new ArrayList<>();
+        Integer placement = participant.subTeamPlacement > 0 ? participant.subTeamPlacement : null;
+        if (placement == null || placement > 8) counters.missing("PLACEMENT_INVALID_OR_ABSENT");
+        boolean win = participant.win || participant.subTeamPlacement >= 3;
+        List<Event> events = readEvents(match.eventData, participant, counters);
+        boolean ordered = completeItemHistory && counters.orderKnown;
+        if (!completeItemHistory) counters.missing("ITEM_HISTORY_PARTIAL");
+        List<Event> acquisitions = purchases(events, counters);
+        ordered &= counters.orderKnown;
+        List<Integer> coreIds = new ArrayList<>();
+        Set<Integer> itemIds = new HashSet<>();
+        int prismaticPosition = 0;
+        for (Event event : acquisitions) {
+            int id = event.acquiredId();
+            if (catalog.isIgnored(match.patch, id)) continue;
+            Kind kind = catalog.kind(match.patch, id);
+            if (kind == null) {
+                counters.missing("ITEM_CLASSIFICATION_ABSENT");
+                ordered = false;
+                continue;
+            }
+            if (kind == Kind.PRISMATIC) {
+                prismaticPosition++;
+                Integer position = ordered && prismaticPosition <= MAX_PRISMATIC_POSITION ? prismaticPosition : null;
+                if (prismaticPosition > MAX_PRISMATIC_POSITION) counters.missing("PRISMATIC_POSITION_OUT_OF_RANGE");
+                choices.add(new Observation(kind, id, position, event.timestamp));
+            } else if (kind == Kind.BOOTS) {
+                choices.add(new Observation(kind, id, null, event.timestamp));
+            } else if (itemIds.add(id)) {
+                coreIds.add(id);
+                choices.add(new Observation(kind, id, ordered ? coreIds.size() : null, event.timestamp));
             }
         }
-        return List.copyOf(result);
+        if (!ordered) {
+            for (int i = 0; i < choices.size(); i++) {
+                Observation choice = choices.get(i);
+                choices.set(i, new Observation(choice.kind(), choice.id(), null, choice.timestampMillis()));
+            }
+        }
+        addFirstEvidence(match.eventData, participant, catalog, match.patch, choices, counters);
+        Set<String> observed = new HashSet<>();
+        for (Observation choice : choices) observed.add(choice.kind() + ":" + choice.id());
+        int[] finalItems = {participant.item0, participant.item1, participant.item2, participant.item3,
+            participant.item4, participant.item5, participant.item6};
+        for (int id : finalItems) {
+            Kind kind = catalog.kind(match.patch, id);
+            if (id > 0 && kind == null && !catalog.isIgnored(match.patch, id)) counters.missing("FINAL_ITEM_CLASSIFICATION_ABSENT");
+            if (kind != null && id != ArenaItemCatalog.PRISMATIC_ANVIL && observed.add(kind + ":" + id))
+                choices.add(new Observation(kind, id, null, null));
+        }
+        if (participant.boots > 0) {
+            boolean purchaseObserved = false;
+            for (Event event : events) {
+                if ("ITEM_PURCHASED".equals(event.type) && (event.item == participant.boots || event.after == participant.boots))
+                    purchaseObserved = true;
+            }
+            if (catalog.kind(match.patch, participant.boots) != Kind.BOOTS) counters.missing("BOOT_CLASSIFICATION_INVALID_OR_ABSENT");
+            else if (!purchaseObserved && observed.add(Kind.BOOTS + ":" + participant.boots))
+                choices.add(new Observation(Kind.BOOTS, participant.boots, null, null));
+        }
+        if (participant.augments == null || participant.augments.isEmpty()) counters.missing("AUGMENTS_ABSENT_OR_EMPTY");
+        else for (int i = 0; i < participant.augments.size(); i++) {
+            Integer id = participant.augments.get(i);
+            if (id != null && id > 0) choices.add(new Observation(Kind.AUGMENT, id, i + 1, null));
+            else counters.missing("AUGMENT_ID_INVALID_OR_ABSENT");
+        }
+        return new ParsedArenaGame(placement, win,
+            ordered && !coreIds.isEmpty() ? new Core(coreIds) : null, choices, counters.snapshot());
     }
 
-    private static JSONObject arenaParticipantEvidence(Object rawEvents, int participantId, Counters counters) {
-        JSONObject events = json(rawEvents);
-        if (events == null) {
-            counters.missing("MATCH_EVENTS_ABSENT_OR_INVALID");
-            return null;
+    // ============================================================================
+
+    private static List<Event> readEvents(Object raw, Participant participant, Counters counters) {
+        JSONObject root = json(raw);
+        JSONArray items = array(root, "item_events");
+        JSONObject refs = object(root, "participants");
+        if (items == null) {
+            counters.missing("ITEM_EVENTS_ABSENT");
+            counters.orderKnown = false;
+            return List.of();
         }
-        JSONObject evidence = events.optJSONObject("arena_evidence");
-        if (evidence == null) {
-            counters.missing("ARENA_EVIDENCE_ABSENT");
-            return null;
+        boolean validRefs = validReferences(refs, participant);
+        List<Event> result = new ArrayList<>();
+        Set<EventIdentity> seen = new HashSet<>();
+        for (int index = 0; index < items.length(); index++) {
+            JSONObject source = items.optJSONObject(index);
+            if (source == null) {
+                counters.ambiguous("ITEM_EVENT_INVALID");
+                continue;
+            }
+            Integer actor = integer(source.opt("participant"));
+            if (actor != null && actor == 0) {
+                counters.rejected("PARTICIPANT_ZERO");
+                counters.orderKnown = false;
+                continue;
+            }
+            if (actor != null && actor != participant.id && refs != null && refs.has(String.valueOf(actor))) continue;
+            if (!validRefs || actor == null || actor != participant.id) {
+                counters.ambiguous("ITEM_EVENT_UNATTRIBUTABLE");
+                continue;
+            }
+            String type = source.optString("event");
+            Integer item = integer(source.opt("item"));
+            Integer before = integer(source.opt("before"));
+            Integer after = integer(source.opt("after"));
+            Long time = time(source.opt("timestamp"));
+            if (!ITEM_TYPES.contains(type) || item == null || before == null || after == null
+                    || item < 0 || before < 0 || after < 0) {
+                counters.ambiguous("ITEM_TRANSITION_UNSUPPORTED_OR_INVALID");
+                continue;
+            }
+            if (time == null) {
+                counters.missing("ITEM_TIME_ABSENT_OR_INVALID");
+                counters.orderKnown = false;
+            }
+            EventIdentity identity = new EventIdentity(type, item, before, after, time);
+            if (!seen.add(identity)) {
+                counters.rejected("DUPLICATE_ITEM_EVENT");
+                continue;
+            }
+            result.add(new Event(index, type, item, before, after, time));
         }
-        if (evidence.optInt("version", -1) != ARENA_EVIDENCE_VERSION) {
+        result.sort(Comparator.comparing((Event e) -> e.timestamp, Comparator.nullsLast(Long::compareTo))
+            .thenComparingInt(e -> e.index));
+        return result;
+    }
+
+    private static List<Event> purchases(List<Event> events, Counters counters) {
+        List<Event> acquisitions = new ArrayList<>();
+        Event previous = null;
+        for (Event event : events) {
+            switch (event.type) {
+                case "ITEM_PURCHASED" -> {
+                    if (event.acquiredId() <= 0 || (event.after > 0 && event.item > 0 && event.item != event.after)) {
+                        counters.ambiguous("PURCHASE_ID_CONFLICT_OR_ABSENT");
+                    } else acquisitions.add(event);
+                    previous = event;
+                }
+                case "ITEM_SOLD", "ITEM_DESTROYED" -> previous = event;
+                case "ITEM_UNDO" -> {
+                    if (previous == null || event.timestamp == null || previous.timestamp == null || !event.identifies(previous)) {
+                        counters.ambiguous("UNDO_TARGET_AMBIGUOUS");
+                        Set<Integer> ids = event.ids();
+                        if (!ids.isEmpty()) acquisitions.removeIf(acquisition -> ids.contains(acquisition.acquiredId()));
+                        else if (event.timestamp == null) acquisitions.clear();
+                        else if (previous != null && "ITEM_PURCHASED".equals(previous.type)) acquisitions.remove(previous);
+                    } else if ("ITEM_PURCHASED".equals(previous.type)) acquisitions.remove(previous);
+                    previous = null;
+                }
+                default -> counters.ambiguous("ITEM_TRANSITION_UNSUPPORTED_OR_INVALID");
+            }
+        }
+        for (Event event : events) {
+            if ("ITEM_UNDO".equals(event.type) && event.timestamp == null && event.ids().isEmpty()) {
+                acquisitions.clear();
+                break;
+            }
+        }
+        return acquisitions;
+    }
+
+    private static void addFirstEvidence(Object raw, Participant participant, ArenaItemCatalog catalog, String patch,
+            List<Observation> choices, Counters counters) {
+        JSONObject root = json(raw);
+        JSONObject evidence = object(root, "arena_evidence");
+        if (evidence == null) return;
+        if (evidence.optInt("version", -1) != 1) {
             counters.ambiguous("ARENA_EVIDENCE_VERSION_UNSUPPORTED");
-            return null;
+            return;
         }
-        JSONObject participants = evidence.optJSONObject("participants");
-        JSONObject participantEvidence = participants == null ? null : participants.optJSONObject(String.valueOf(participantId));
-        if (participantEvidence == null) counters.missing("ARENA_PARTICIPANT_EVIDENCE_ABSENT");
-        return participantEvidence;
-    }
-
-    private static List<Prismatic> readPrismatic(JSONObject evidence, Counters counters) {
-        JSONObject source = evidence == null ? null : evidence.optJSONObject("first_prismatic");
-        if (source == null) {
-            counters.missing("FIRST_PRISMATIC_EVIDENCE_ABSENT");
-            return List.of();
+        JSONObject refs = object(root, "participants");
+        if (!validReferences(refs, participant)) {
+            counters.rejected("FIRST_PRISMATIC_UNATTRIBUTABLE");
+            return;
         }
-        String status = source.optString("status", "");
-        if ("UNKNOWN".equals(status)) {
-            counters.missing(reason(source, "FIRST_PRISMATIC_UNKNOWN"));
-            return List.of();
-        }
-        if ("AMBIGUOUS".equals(status)) {
-            counters.ambiguous(reason(source, "FIRST_PRISMATIC_AMBIGUOUS"));
-            return List.of();
-        }
+        JSONObject source = object(object(object(evidence, "participants"), String.valueOf(participant.id)), "first_prismatic");
+        if (source == null) return;
+        String status = source.optString("status");
         if (!"EXACT".equals(status)) {
-            counters.ambiguous("FIRST_PRISMATIC_STATUS_INVALID");
-            return List.of();
+            if ("AMBIGUOUS".equals(status)) counters.ambiguous("FIRST_PRISMATIC_EVIDENCE_AMBIGUOUS");
+            else if ("UNKNOWN".equals(status)) counters.missing("FIRST_PRISMATIC_NOT_EXACT");
+            else counters.rejected("FIRST_PRISMATIC_STATUS_INVALID");
+            return;
         }
-        Integer id = integerField(source, "item_id");
-        Long timestamp = longField(source, "timestamp");
-        if (id == null || id <= 0 || timestamp == null || timestamp < 0) {
-            counters.ambiguous("FIRST_PRISMATIC_DIRECT_FIELDS_INVALID");
-            return List.of();
+        Integer id = integer(source.opt("item_id"));
+        Long timestamp = time(source.opt("timestamp"));
+        if (id == null || catalog.kind(patch, id) != Kind.PRISMATIC) {
+            counters.rejected("FIRST_PRISMATIC_ID_INVALID");
+            return;
         }
-        if (id == FIRST_PRISMATIC_INVALID_ID) {
-            counters.rejected("FIRST_PRISMATIC_220007_EXCLUDED");
-            return List.of();
-        }
-        return List.of(new Prismatic(id, timestamp));
-    }
-
-    private static Core readCore(JSONObject evidence, List<Prismatic> prismatics, Counters counters) {
-        JSONObject source = evidence == null ? null : evidence.optJSONObject("core_snapshot");
-        if (source == null) {
-            counters.missing("CORE_SNAPSHOT_EVIDENCE_ABSENT");
-            return null;
-        }
-        String status = source.optString("status", "");
-        if ("UNKNOWN".equals(status)) {
-            counters.missing(reason(source, "CORE_SNAPSHOT_UNKNOWN"));
-            return null;
-        }
-        if ("AMBIGUOUS".equals(status)) {
-            counters.ambiguous(reason(source, "CORE_SNAPSHOT_AMBIGUOUS"));
-            return null;
-        }
-        if (!"EXACT".equals(status)) {
-            counters.ambiguous("CORE_SNAPSHOT_STATUS_INVALID");
-            return null;
-        }
-        Long timestamp = longField(source, "timestamp");
-        Integer bootsId = integerField(source, "boots_id");
-        JSONArray rawItems = source.optJSONArray("item_ids");
-        if (timestamp == null || timestamp < 0 || bootsId == null || bootsId <= 0
-                || bootsId == FIRST_PRISMATIC_INVALID_ID || rawItems == null) {
-            counters.ambiguous("CORE_SNAPSHOT_DIRECT_FIELDS_INVALID");
-            return null;
-        }
-        List<Integer> snapshotItems = new ArrayList<>();
-        for (int index = 0; index < rawItems.length(); index++) {
-            Object rawId = rawItems.opt(index);
-            Integer id = integerValue(rawId);
-            if (id == null || id <= 0) {
-                counters.ambiguous("CORE_SNAPSHOT_ITEM_ID_INVALID");
-                return null;
+        List<Observation> prismatics = new ArrayList<>();
+        for (Observation choice : choices) if (choice.kind() == Kind.PRISMATIC) prismatics.add(choice);
+        if (!prismatics.isEmpty()) {
+            Observation first = prismatics.get(0);
+            if (first.id() == id && (java.util.Objects.equals(first.timestampMillis(), timestamp)
+                    || (timestamp == null && Integer.valueOf(1).equals(first.position())))) return;
+            if (timestamp != null && first.timestampMillis() != null && timestamp >= first.timestampMillis()) {
+                counters.rejected("FIRST_PRISMATIC_EVIDENCE_CONFLICT");
+                return;
             }
-            if (id != FIRST_PRISMATIC_INVALID_ID) snapshotItems.add(id);
-        }
-        Collections.sort(snapshotItems);
-        if (prismatics.isEmpty()) {
-            counters.missing("CORE_WITHOUT_EXACT_FIRST_PRISMATIC");
-            return null;
-        }
-        Prismatic firstPrismatic = prismatics.get(0);
-        if (timestamp < firstPrismatic.timestampMillis()) {
-            counters.ambiguous("CORE_SNAPSHOT_PRECEDES_FIRST_PRISMATIC");
-            return null;
-        }
-        if (snapshotItems.isEmpty()) {
-            counters.ambiguous("CORE_SNAPSHOT_ITEMS_EMPTY");
-            return null;
-        }
-        if (!snapshotItems.contains(bootsId)) {
-            counters.ambiguous("CORE_SNAPSHOT_BOOT_NOT_IN_ITEM_IDS");
-            return null;
-        }
-        return new Core(firstPrismatic.id(), bootsId, List.copyOf(snapshotItems),
-                firstPrismatic.timestampMillis(), timestamp);
-    }
-
-    private static List<Item> readPostCoreItems(Object rawEvents, Participant participant, Core core, Counters counters) {
-        if (core == null) {
-            counters.missing("POST_CORE_SEQUENCE_REQUIRES_EXACT_CORE");
-            return List.of();
-        }
-        JSONObject events = json(rawEvents);
-        JSONArray rawItems = events == null ? null : events.optJSONArray("item_events");
-        JSONObject refs = events == null ? null : events.optJSONObject("participants");
-        if (rawItems == null || refs == null || participant.puuid == null || participant.puuid.isBlank()) {
-            counters.missing("POST_CORE_ITEM_EVENTS_OR_ATTRIBUTION_ABSENT");
-            return List.of();
-        }
-        if (hasUnresolvedPostCoreTransition(rawItems, refs, participant.puuid, core)) {
-            counters.ambiguous("POST_CORE_ITEM_TRANSITION_UNRESOLVED");
-            return List.of();
-        }
-        List<ChampionBuildTimelineUtils.ItemEvent> normalized = ChampionBuildTimelineUtils.itemEvents(rawEvents, participant.puuid);
-        TreeSet<Integer> coreIds = new TreeSet<>(core.snapshotItemIds());
-        coreIds.add(core.bootsId());
-        coreIds.add(core.firstPrismaticId());
-        List<ChampionBuildTimelineUtils.ItemEvent> postCore = new ArrayList<>();
-        for (ChampionBuildTimelineUtils.ItemEvent item : normalized) {
-            if (item.timestampMillis() <= core.snapshotTimestampMillis()
-                    || item.itemId() == FIRST_PRISMATIC_INVALID_ID || coreIds.contains(item.itemId())) continue;
-            postCore.add(item);
-        }
-        postCore.sort(Comparator.comparingLong(ChampionBuildTimelineUtils.ItemEvent::timestampMillis));
-        List<Item> result = new ArrayList<>(postCore.size());
-        for (int index = 0; index < postCore.size(); index++) {
-            ChampionBuildTimelineUtils.ItemEvent item = postCore.get(index);
-            result.add(new Item(item.itemId(), index + 1, item.timestampMillis()));
-        }
-        return List.copyOf(result);
-    }
-
-    private static boolean hasUnresolvedPostCoreTransition(
-            JSONArray events, JSONObject refs, String puuid, Core core) {
-        long boundary = core.snapshotTimestampMillis();
-        TreeSet<Integer> coreIds = new TreeSet<>(core.snapshotItemIds());
-        coreIds.add(core.bootsId());
-        coreIds.add(core.firstPrismaticId());
-        for (int index = 0; index < events.length(); index++) {
-            JSONObject event = events.optJSONObject(index);
-            if (event == null || !puuid.equals(resolve(event.opt("participant"), refs))
-                    || event.optLong("timestamp", -1) <= boundary) continue;
-            String type = event.optString("event", "");
-            if (!List.of("ITEM_PURCHASED", "ITEM_UNDO", "ITEM_SOLD", "ITEM_DESTROYED").contains(type)) return true;
-            int item = event.optInt("item", 0);
-            int before = event.optInt("before", 0);
-            int after = event.optInt("after", 0);
-            if ("ITEM_PURCHASED".equals(type)) {
-                if (before > 0 && after > 0 && before != after) return true;
-                int acquired = after > 0 ? after : item;
-                if (acquired != FIRST_PRISMATIC_INVALID_ID && coreIds.contains(acquired)) return true;
-            }
-            if (("ITEM_SOLD".equals(type) || "ITEM_DESTROYED".equals(type))) {
-                int removed = before > 0 ? before : item;
-                if (removed != FIRST_PRISMATIC_INVALID_ID && coreIds.contains(removed)) return true;
+            for (int i = 0; i < choices.size(); i++) {
+                Observation choice = choices.get(i);
+                if (choice.kind() != Kind.PRISMATIC) continue;
+                Integer position = timestamp != null && choice.timestampMillis() != null
+                    && timestamp < choice.timestampMillis() && choice.position() != null
+                    && choice.position() < MAX_PRISMATIC_POSITION ? choice.position() + 1 : null;
+                choices.set(i, new Observation(choice.kind(), choice.id(), position, choice.timestampMillis()));
             }
         }
-        return false;
+        choices.add(new Observation(Kind.PRISMATIC, id, 1, timestamp));
     }
 
-    private static String resolve(Object id, JSONObject refs) {
-        if (id == null || id == JSONObject.NULL) return null;
-        return refs.optString(String.valueOf(id), null);
+    private static boolean validReferences(JSONObject refs, Participant participant) {
+        if (refs == null || participant.id <= 0 || participant.puuid == null || participant.puuid.isBlank()
+                || !participant.puuid.equals(refs.optString(String.valueOf(participant.id)))) return false;
+        for (String key : refs.keySet()) {
+            if (!key.equals(String.valueOf(participant.id)) && participant.puuid.equals(refs.optString(key))
+                    && !"0".equals(key)) return false;
+        }
+        return true;
     }
 
-    private static String reason(JSONObject evidence, String fallback) {
-        String reason = evidence.optString("reason", "");
-        return reason.isBlank() ? fallback : reason;
-    }
-
-    private static Integer integerField(JSONObject source, String key) {
-        return integerValue(source.opt(key));
-    }
-
-    private static Integer integerValue(Object raw) {
+    private static Integer integer(Object raw) {
         if (!(raw instanceof Number number)) return null;
         long value = number.longValue();
-        return number.doubleValue() == value && value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE
-                ? (int) value : null;
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE && number.doubleValue() == value ? (int) value : null;
     }
 
-    private static Long longField(JSONObject source, String key) {
-        Object raw = source.opt(key);
+    private static Long time(Object raw) {
         if (!(raw instanceof Number number)) return null;
         long value = number.longValue();
-        return number.doubleValue() == value ? value : null;
+        return value >= 0 && number.doubleValue() == value ? value : null;
     }
 
     private static JSONObject json(Object raw) {
         if (raw instanceof JSONObject object) return object;
-        if (raw instanceof String value && !value.isBlank()) {
-            try { return new JSONObject(value); }
-            catch (RuntimeException ignored) { return null; }
-        }
-        if (raw instanceof Map<?, ?> map) {
-            try { return new JSONObject(map); }
-            catch (RuntimeException ignored) { return null; }
-        }
+        if (raw instanceof Map<?, ?> map) return new JSONObject(map);
+        if (raw instanceof String text) try { return new JSONObject(text); }
+        catch (RuntimeException ignored) { return null; }
         return null;
     }
 
+    private static JSONObject object(JSONObject root, String key) {
+        if (root == null) return null;
+        Object value = root.opt(key);
+        return json(value);
+    }
+
+    private static JSONArray array(JSONObject root, String key) {
+        if (root == null) return null;
+        Object value = root.opt(key);
+        if (value instanceof JSONArray array) return array;
+        if (value instanceof String text) try { return new JSONArray(text); }
+        catch (RuntimeException ignored) { return null; }
+        return null;
+    }
+
+    private record EventIdentity(String type, int item, int before, int after, Long timestamp) {}
+
+    private record Event(int index, String type, int item, int before, int after, Long timestamp) {
+        private int acquiredId() { return after > 0 ? after : item; }
+        private Set<Integer> ids() {
+            Set<Integer> ids = new HashSet<>();
+            if (item > 0) ids.add(item);
+            if (before > 0) ids.add(before);
+            if (after > 0) ids.add(after);
+            return ids;
+        }
+        private boolean identifies(Event target) {
+            Set<Integer> ids = ids();
+            if (ids.isEmpty()) return false;
+            for (int id : ids) if (id != target.item && id != target.before && id != target.after) return false;
+            return true;
+        }
+    }
+
     private static final class Counters {
-        private final Map<String, Integer> missing = new HashMap<>();
-        private final Map<String, Integer> ambiguous = new HashMap<>();
-        private final Map<String, Integer> rejected = new HashMap<>();
-
-        private void missing(String reason) { missing.merge(reason, 1, Integer::sum); }
-        private void ambiguous(String reason) { ambiguous.merge(reason, 1, Integer::sum); }
-        private void rejected(String reason) { rejected.merge(reason, 1, Integer::sum); }
-
-        private Coverage snapshot() {
-            return new Coverage(total(missing), total(ambiguous), total(rejected), missing, ambiguous, rejected);
-        }
-
-        private int total(Map<String, Integer> values) {
-            return values.values().stream().mapToInt(Integer::intValue).sum();
-        }
+        private final Map<String, Long> missing = new HashMap<>();
+        private final Map<String, Long> ambiguous = new HashMap<>();
+        private final Map<String, Long> rejected = new HashMap<>();
+        private boolean orderKnown = true;
+        private void missing(String reason) { missing.merge(reason, 1L, Long::sum); }
+        private void ambiguous(String reason) { ambiguous.merge(reason, 1L, Long::sum); orderKnown = false; }
+        private void rejected(String reason) { rejected.merge(reason, 1L, Long::sum); }
+        private Coverage snapshot() { return new Coverage(missing, ambiguous, rejected); }
     }
 }

@@ -159,3 +159,13 @@ Operational guide for adding command / endpoint / service / model / queue / Mong
 ## MongoDB migration
 
 The operational documentation for the LoL migration is in [`docs/mongo/`](../mongo/README.md). ADR-0009 is accepted; Guardian gates remain mandatory for every capability.
+
+## Arena champion analytics Phase 2
+
+[`docs/arena-build/contracts.md`](../arena-build/contracts.md) defines the
+internal pure Arena parser/accumulator and separate `ArenaChampionStatistics`
+root. Shared Build gains optional ordered containers; standard constructors,
+generator, persistence, APIs and presentation retain ADR-0006/0012 behavior.
+Participant and Tracker are unchanged. Mongo/Redis/queue orchestration, source
+completeness and BSON retention/size gates remain later-phase work. No accepted
+ADR is amended by this additive computation change.

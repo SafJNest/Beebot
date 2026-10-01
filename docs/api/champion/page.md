@@ -404,3 +404,19 @@ and statistics timestamps; all global variants remain available.
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)
+
+## Arena analytics Phase 2 compatibility
+
+Arena Phase 2 is an internal pure computation contract documented in
+[`docs/arena-build/contracts.md`](../../arena-build/contracts.md). It does not
+change this endpoint, `ChampionView`, standard build eligibility, JSON option
+lists or Discord presentation, including requests using `queue=CHERRY` on the
+existing route. That route continues to use the existing build generator.
+
+Shared `Build` now supports optional `orderedCore`, `orderedItems`,
+`orderedAugments` and `paths` for the separate `ArenaChampionStatistics.builds`
+root. Existing standard constructors omit these fields from both HTTP and
+stored JSON, and old build documents remain readable. The Arena root is not
+served by an endpoint in Phase 2; a dedicated read contract remains Phase 4.
+No controller, cache key, pending-state or standard generator migration is
+required by this internal additive change.

@@ -1,166 +1,76 @@
 # Arena analytics implementation phases
 
-Status: proposed delivery sequence. Each phase has an explicit gate. Do not start a later phase while its contract or data prerequisite is unresolved.
+The user contract of 2026-10-01 authorizes Phase 2's pure computation independently of the earlier persistence/source feasibility gates. Accepted ADRs remain unchanged; standard behavior follows ADR-0006/0012. See [contracts.md](contracts.md) for the reconciled semantics.
 
-## Phase 0 — settle semantics and prove source availability
+## Phase 0 — source and rollout gates
 
-**Work**
+The existing win rule and strict evidence fallback remain valid. Historical timelines have no verified inventory selection frames. Missing choices/positions/times stay unknown. Before persistence, inspect representative real timelines, validate item catalog coverage and complete-stream guarantees, measure BSON cardinality/headroom and agree retention/partitioning. These production gates remain open and do not authorize backfill.
 
-- Decide `wins`, placement meaning, champion-game identity, full-patch key, and missing-data denominators.
-- Decide the boot snapshot boundary and whether later sales/upgrades can change the core.
-- Verify which Arena rounds expose the free Prismatic transition in Riot timeline `participantFrames` for real matches.
-- Inspect representative persisted `match_events` to determine whether the needed frames exist. Current docs only promise a compact minute-15 frame and selected event counts.
-- Define the source event rules for `UNDO`, `SELL`, `DESTROYED`, item transformations, duplicate acquisitions and uncertain event attribution.
-- Confirm whether Arena augment source data includes an acquisition/round time. Preserve `time` when observed; if the upstream source has no time, represent that absence explicitly without excluding the augment from its slot counts.
-- Define the normalized choice identity and core key. Entry `kind`, `id` and slot/order position identify the choice; observed time is metadata and must not split otherwise identical cores or paths.
-- Measure BSON size/cardinality using representative champion/patch samples. Resolve the 16 MiB feasibility gate and retention/partition choice.
-- Review the current `BuildSignature`/`ChampionBuildEngine` behavior and every consumer of `Build` before changing the shared response; preserve any in-progress checkout work.
+## Phase 1 — parser source seam
 
-**Gate**: approved written semantics, proven first-Prismatic source or a documented unknown-data fallback, and measured single-document fit with headroom or an accepted partition/retention design.
+The original optional v1 `arena_evidence.first_prismatic` signal remains supported. Its Tracker/repair writer and augment sidecar were removed at the user's request. Phase 2 replaces the snapshot-based core with relevant purchase history, includes 220007 and supports observed Prismatics in positions 1–6. No new ingestion writer or Participant fields are introduced. Existing augment list ordering is the available source; raw missing Riot slots cannot be restored.
 
-**Audit status (2026-09-30): NOT PASSED overall; Phase 1 may proceed with the approved strict-evidence fallback.** The user defined win as `participant.win == true || subTeamPlacement >= 3`, required exact `subTeamPlacement` positions to be retained, and selected strict evidence only: first Prismatic/core values are accepted only with direct evidence, otherwise marked `UNKNOWN`. The current timeline has no item inventory snapshots around the selection round, so current matches will have unknown first-Prismatic/core evidence. Remaining Phase 0 gates include participant-game deduplication and denominators, patch alias/missing-value handling, Arena item transition rules, augment time semantics, and BSON size/retention. Parser handling for unresolved item transitions must report ambiguity and omit affected outputs without guessing. The source audit is recorded in [`contracts.md`](contracts.md#source-audit--2026-09-30).
+## Phase 2 — shared model and pure accumulator
 
-## Phase 1 — source evidence and deterministic parser
+- Extend Build with optional shared ordered core, typed dynamic item/augment slots, choices, timing and paths. Keep every existing standard constructor, field, generator and consumer behavior; standard JSON omits the optional fields. Arena uses `builds[]: Build`.
+- Add reusable StatisticalLeaf and the separate ArenaChampionStatistics root in `lol.model`.
+- Parse actual supported timeline events with strict attribution and the documented purchase/sale/destruction/undo/transformation policy. Retain independent choices/outcomes when chronology is missing or partial.
+- Accumulate global boots/items/Prismatics/augments, ordered Prismatic slots 1–6, and core-conditioned slots/paths. Deduplicate matches before mutation and choices within participant-games. Expose distinct outcome, position, timing and coverage denominators.
+- Keep catalogs as supplied immutable data; no Mongo/Redis/scheduler access. Finish into detached immutable snapshots through the existing JSON/BSON codec.
+- Test all requested transitions, coverage, duplicate/denominator invariants, serialization and standard regressions. Synchronize Arena/API/Mongo docs without changing existing endpoints or query owners.
 
-**Work**
+**Gate: passed for pure Phase 2 computation.** Parser → accumulator → shared Build/Arena root is connected; standard producer and consumers are unchanged and regression-tested. No Phase 3/4 operational gate is implied.
 
-- Add the chosen versioned Arena timeline evidence to the `match_events` producer and timeline-repair writer, or compute an exact first-Prismatic observation during those writes.
-- Preserve all six participant augment fields in a Mongo-only sidecar so slot order and empty positions survive ingestion without changing `Participant.augments` or Match API JSON.
-- Build the deterministic Arena parsing seam with placement, selected augment order, first-Prismatic evidence, boot snapshot and normalized post-core item sequence. The parser accepts only consistent direct evidence; unknown or unsupported evidence is counted and omitted.
-- Reuse `ChampionBuildTimelineUtils` only for transitions proven identical; keep Arena transformation and free-Prismatic interpretation in the Arena parser.
-- Keep subsequent 220007 results out of `firstPrismaticId`, first-Prismatic global stats and core.
-- Count missing/ambiguous first Prismatic, inconsistent boots snapshots, partial placement, unresolved transformations/core-item transitions and missing augment slots.
+**Validation (2026-10-01):** Maven offline compile and the final targeted suite passed with 67 tests, zero failures/errors/skips. The suite includes 22 Arena parser tests, 11 Arena accumulator tests, plus Build serialization, standard BuildSignature/ChampionBuildEngine/timeline regression tests, Spring JSON configuration and the isolated first-Prismatic diagnostic classifier tests. JSON and structured BSON codec round trips passed in memory; this is not a Mongo server round trip. BuildTest asserts the exact existing standard serialized field set and old optional-field deserialization.
 
-**Gate status (2026-09-30): NOT PASSED.** The pure parser preserves semantic `core`, `items`, `augments` and `prismatics` outputs, excludes `220007`, excludes timestamps from core identity, applies the literal `participant.win || subTeamPlacement >= 3` rule, and rejects inconsistent direct snapshots or unresolved Arena transitions with reason counters. Common purchase/undo/sell/destroy handling reuses `ChampionBuildTimelineUtils`; unsupported transformations and post-core transitions involving a core item are counted ambiguous and omitted. The `Tracker` evidence writer, repair integration and augment sidecar were removed at the user's request, so no current producer persists v1 `arena_evidence`; ingestion/repair integration remains open. Exact production first-Prismatic/core evidence is also unavailable in current timelines.
+Compilation used source/target 25 on the installed OpenJDK 26.0.2 runtime (the local `openjdk@25` alias resolves to 26). Runtime on an actual JDK 25 was not tested. Existing deprecation/Lombok compiler warnings remain.
 
-**Validation:** the final parser-focused Maven test passed (11 tests). The earlier, pre-removal focused writer/sidecar run passed 20 tests, but those results do not validate the final reverted writer/sidecar state. The full Maven suite, final-state `TrackerTest`/`MongoDBTest`, production data inspection and representative BSON sizing were not run.
+An earlier wider targeted run failed one of six ChampionControllerTest cases during external static-data initialization with an unreachable network/Data Dragon request (`ExceptionInInitializerError` / R4J timeout). The final offline suite excludes that network-dependent class. The full Maven suite, actual JDK 25 execution, live API, Mongo/Redis integration, production source inspection, BSON cardinality/size measurements, query explain and heap measurement were not run. No production Mongo operation, backfill or commit was performed.
 
-## Phase 2 — shared build contract and pure accumulators
+An independent read-only review found and resolved attribution/sidecar conflicts, untimed undo handling, timing preservation and stale derived boots after undo; each correction has a regression test. The final diff began from a clean checkout and is restricted to Arena computation, additive shared Build containers, targeted tests and synchronized documentation.
 
-**Work**
+## Phase 3 — bounded provider, persistence, orchestration
 
-- Generalize the existing build model so normal and Arena responses expose `builds[]: Build`; each `Build` contains one normalized core plus its typed slots and paths. Normal builds populate item slots; Arena also populates augment slots.
-- Normalize choices to a shared compact representation containing `kind`, `id`, `position`, observed `time` and additive stats. Preserve null/unknown time where the source cannot provide it; do not invent timestamps or use time in choice/core identity.
-- Keep the Arena statistics root and a reusable additive `StatisticalLeaf` separate from standard champion statistics. Migrate the standard build producer and all affected consumers/API serialization together, or provide a temporary compatibility projection with a removal phase.
-- Add a mutable Arena accumulator with maps for normalized cores, core-conditioned item/augment slots and paths, global first Prismatics, global items and global augments. Its `finish()` returns immutable shared `Build` elements inside the Arena root.
-- Update all applicable maps exactly once per participant-game and per observed choice/position, using distinct denominators.
-- Derive rates/means from counts in the final projection. Keep paths secondary and follow the Phase 0 retention policy.
-- Add invariants for population relationships and duplicate-game rejection.
+Reuse/generalize the existing bounded match/event join, preserving standard eligibility while emitting Arena matches without timelines. Supply catalog and explicit completeness evidence. Add the separate Arena collection and atomic full-document upsert, measured BSON guard/headroom, versioning and query explain checks. Enqueue through QueueHandler with current champion/patch and total/completed/missing/failed progress. Mongo, Redis, scheduler and Tracker retain their respective ownership. Resolve route and retention decisions before rollout.
 
-**Gate**: existing standard build response semantics are preserved or the approved new response is synchronized across consumers; synthetic cases validate shared branch/slot behavior, Arena aggregation invariants and duplicate-game rejection without Mongo, Redis or scheduler dependencies.
+## Phase 4 — read/API contract
 
-## Phase 3 — bounded provider, persistence and rebuild orchestration
+Only when requested, expose the canonical Arena root through an agreed dedicated read path. Document coverage, rates, sortability, versioning and pending/error states; test controller statuses and cache ownership. The existing ChampionView and standard build contract remain compatible.
 
-**Work**
+## Phase 5 — operational rollout
 
-- First try to generalize/reuse the existing bounded champion match/event stream so Arena can observe matches both with and without event documents while standard statistics retain their current exclusion rules. Add a separate Arena adapter only if it can use the shared lower-level batch/join mechanics. Choose batch size from measured payload and heap cost.
-- Add `arena_champion_statistics` persistence keyed by champion + patch, complete-document upsert and `_id` lookup. Store schema/aggregation versions, coverage and update metadata.
-- Verify BSON encoded size before each write and refuse writes over the approved ceiling without replacing the previous good document.
-- Add queue registration through `QueueHandler`; decide route/channel in the relevant ADR. Report current patch/champion and total/completed/missing/failed work in existing job progress.
-- Release decoded event trees after every batch and make rebuild retry/dedup behavior explicit.
+Canary source coverage and measured size checks precede full rebuilds. No production operations are authorized by Phase 2. Complete Mongo round trip, explain, bounded heap, source inspection and operational progress gates before declaring rollout complete.
 
-**Gate**: Mongo test-database round trip, idempotent rebuild, byte-limit guard, cursor explain plan and bounded-memory evidence pass.
+## Review
 
-## Phase 4 — API/read contract (if requested for the first release)
+Keep shared model edits serial. Use a separate read-only reviewer after Phase 2 implementation to check the diff, consumer compatibility, API/docs and edge cases. The main agent resolves findings and reports actual checks without claiming production evidence.
 
-**Work**
+## Phase 2 changed files
 
-- Add a dedicated Arena read endpoint and canonical Arena statistics root. The build subtree uses the shared generalized build response; update standard build API docs and consumers in the same migration if its response changes.
-- Return all stored candidate leaves in raw support/count form so consumers can sort by games, win rate or placement without duplicated `bestBy...` lists.
-- Document winner semantics, placement, denominator/coverage, core definition, slot positions, sortability, pending/error states and version behavior.
-- Add cache only if a real read path needs it; keep its key and invalidation tied to champion + patch + aggregation version.
+Computation and shared models:
 
-**Gate**: controller, canonical `lol.model`, API index and endpoint docs agree; tests cover ready, absent and queued/pending states.
+- `src/main/java/com/safjnest/lol/arena/ArenaGameParser.java`
+- `src/main/java/com/safjnest/lol/arena/ParsedArenaGame.java`
+- `src/main/java/com/safjnest/lol/arena/ArenaItemCatalog.java`
+- `src/main/java/com/safjnest/lol/service/ArenaChampionAnalyzer.java`
+- `src/main/java/com/safjnest/lol/model/Build.java`
+- `src/main/java/com/safjnest/lol/model/statistics/StatisticalLeaf.java`
+- `src/main/java/com/safjnest/lol/model/statistics/ArenaChampionStatistics.java`
 
-## Phase 5 — operational rollout and documentation closure
+Tests:
 
-**Work**
+- `src/test/java/com/safjnest/lol/arena/ArenaGameParserTest.java`
+- `src/test/java/com/safjnest/lol/service/ArenaChampionAnalyzerTest.java`
+- `src/test/java/com/safjnest/lol/model/BuildTest.java`
 
-- Rebuild a canary patch/champion set, compare source candidate counts with stored counters, inspect missing-data and event-rejection rates, and verify sampled response values manually.
-- Rebuild a full patch only after the canary satisfies coverage and document-size thresholds.
-- Update `docs/architecture/README.md`, the accepted Arena ADR, `docs/HANDBOOK.md`, Mongo collection/query/index docs and API docs as applicable.
-- Record CodeGraph `status`, `explore` and `impact` outcomes after implementation changes; the current environment only exposes `codegraph_explore`, so status/impact need their supported CLI or tools restored before the code-change gate can be claimed complete.
-- State exactly which static checks, tests, Mongo explain/round trips, API checks and production-like size checks ran. Do not report unrun evidence.
+Synchronized documentation:
 
-**Gate**: architecture/docs/API synchronization, approved BSON headroom, successful canary/full rebuild and operational progress visibility.
-
-## Agent execution model
-
-Use agents to parallelize independent evidence gathering and review. Keep one **source-of-truth agent** responsible for the accepted contract, phase gates and integration decisions. Agents should not independently change the same model, response, persistence owner or ADR.
-
-### Parallel analysis before implementation
-
-After the implementation branch exists, run these read-only audits in parallel:
-
-1. **Arena data/parser audit** — timeline frames, first Prismatic evidence, augment IDs/order/times, placements and item transitions. Return source symbols, data gaps and parser requirements.
-2. **Shared Build migration audit** — `Build`, `BuildSignature`, `ChampionBuildEngine`, persistence/API serialization and callers. Return the smallest migration to `builds[]: Build`, affected files/consumers, compatibility risks and validation needs.
-3. **Provider/persistence audit** — Mongo batch/join behavior, matches without `match_events`, projections, memory release, collection/upsert and queue lifecycle. Return reusable owners, required changes and operational gates.
-
-The source-of-truth agent reconciles those reports, updates this contract if evidence requires it, and resolves ownership or ADR conflicts before implementation begins. Analysis agents do not edit code or make product decisions. CodeGraph is mandatory for structural investigation: check status, sync if stale, then explore the relevant symbols and inspect impact before a code change. If a required CodeGraph operation is unavailable, record that limitation and do not claim its check passed.
-
-### Implementation and review
-
-- Give each implementation task one phase, one accepted contract, a named set of files/owners, prerequisites, and an explicit done gate. The implementer owns its assigned files; the source-of-truth agent owns shared contract/ADR changes and integration.
-- Work serially on shared files such as `Build`, `ChampionBuildEngine`, and common Mongo readers. Parallel implementation is safe only after interfaces are fixed and file ownership is disjoint; if agents need separate edits to shared files, give them isolated managed worktrees and integrate the reviewed changes one at a time.
-- Keep a different agent as a read-only reviewer after each substantial phase. The reviewer checks the diff against the contract, CodeGraph impact, related API/docs and edge cases; it reports findings with file/line and does not patch.
-- The source-of-truth agent resolves review findings, checks `git status` before integration, runs the phase gate, and reports exactly what was validated. Do not let an agent overwrite unrelated or in-progress checkout work.
-- Stop and report when source evidence is missing, a contract is contradicted, or an accepted ADR conflicts. Do not silently guess or change the ADR.
-
-### Prompts to start agents
-
-Use these prompts after the branch is ready. Replace the bracketed scope and phase. Send the first three to separate agents at the same time; use the implementation and review prompts only after their dependencies and contract are approved.
-
-**Read-only analysis prompt** (launch one per audit role above):
-
-```text
-Sei l'agente di analisi per Arena Champion Analytics in Beebot.
-
-RUOLO: [Arena data/parser | shared Build migration | provider/persistence]
-AMBITO: [simboli, flusso o domanda specifica]
-
-Fai solo analisi: non modificare file e non prendere decisioni di prodotto.
-Leggi AGENTS.md, docs/architecture/README.md, gli ADR rilevanti, docs/HANDBOOK.md §5-§7 e docs/arena-build/{README,contracts,phases}.md.
-Prima di investigare codice, verifica CodeGraph status; se stale esegui sync; poi usa explore e impact per i simboli del tuo ambito. Usa letture testuali solo per dettagli letterali o file già individuati. Non duplicare l'esplorazione assegnata agli altri agenti.
-
-Restituisci:
-1. flusso e owner attuali, con simboli/file e riferimenti verificabili;
-2. cosa possiamo riusare così com'è e cosa va generalizzato;
-3. file/consumer/contratti impattati e rischio di compatibilità;
-4. dati mancanti, decisioni che bloccano e dipendenze dalle altre fasi;
-5. proposta minima, senza codice;
-6. controlli CodeGraph eseguiti e controlli non disponibili.
-
-Non modificare ADR, API o documentazione. Se trovi un conflitto, riportalo e fermati su quel punto.
-```
-
-**Implementazione di una fase approvata:**
-
-```text
-Implementa solo la fase [N — nome] di Arena Champion Analytics in Beebot.
-
-Contratto approvato: docs/arena-build/contracts.md, sezione [X].
-Prerequisiti/gate superati: [elenco].
-File e owner assegnati: [elenco preciso].
-Fuori ambito: [elenco].
-
-Segui AGENTS.md, docs/architecture/README.md, l'ADR accettato e docs/HANDBOOK.md §5-§7. Controlla git status e preserva ogni modifica preesistente. Prima di modificare codice, esegui CodeGraph status, sync se stale, explore e impact sugli owner interessati.
-Mantieni la response persistita con chiavi semantiche (`core`, `items`, `augments`, `prismatics`); l'eventuale forma normalizzata `kind/id` è interna all'elaborazione. Non duplicare classi o owner se quelli condivisi possono essere generalizzati. Non cambiare file fuori dall'assegnazione; se serve ampliare il perimetro, descrivi il motivo prima di toccare l'owner aggiuntivo.
-
-Completa il gate della fase e aggiorna i documenti/API richiesti. Riporta file cambiati, decisioni, CodeGraph impact, controlli e test eseguiti con esito; distingui ciò che non hai potuto verificare. Se il codice contraddice il contratto o un ADR, fermati e segnala il conflitto.
-```
-
-**Revisione indipendente read-only:**
-
-```text
-Fai una revisione read-only delle modifiche della fase [N] rispetto a docs/arena-build/contracts.md §[X] e al diff corrente.
-Non modificare file. Verifica CodeGraph status/sync ed impact sui simboli cambiati; controlla anche i consumer, la response persistita, API/docs e i casi limite del contratto.
-Riporta prima i blocker e i bug con file/linea e scenario riproducibile; poi rischi non bloccanti e verifiche mancanti. Conferma separatamente quali gate sono dimostrati e quali no. Non approvare per supposizione controlli non eseguiti.
-```
-
-## Implementation boundaries
-
-- Do not adapt standard `ChampionStatistics` / `ChampionStatsDocument` or `champion_stats` into the Arena statistics root.
-- Generalize the shared `Build` model and producer so `builds[]` contains one `Build` per core, with dynamically sized typed slots, paths and normalized choices carrying ID/position/time. Reuse those containers for normal and Arena responses; an Arena `Build` may have augment slots and the Arena root owns Arena-specific placement and global aggregates.
-- Keep the Arena statistics accumulator and persistence dedicated. Generalize the shared match/event source where that reduces duplicated stream handling without changing standard statistics eligibility or output behavior.
-- Do not amend an accepted ADR silently. Record conflicts or route/collection decisions for the main architecture owner to accept.
-- Preserve any in-progress checkout edits in `BuildSignature.java`, `ChampionBuildEngine.java` and related tests unless a separate, explicit task authorizes changing them.
+- `docs/arena-build/README.md`
+- `docs/arena-build/contracts.md`
+- `docs/arena-build/phases.md`
+- `docs/architecture/README.md`
+- `docs/HANDBOOK.md`
+- `docs/api/lol-api.md`
+- `docs/api/champion/page.md`
+- `docs/mongo/README.md`
+- `docs/mongo/08-query-inventory.md`

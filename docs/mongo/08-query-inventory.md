@@ -110,3 +110,21 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `indexSizes`. The leaderboard uses `competitive` for MMR/range/role and then a
 `$in` on the `summoner` primary key; the required indexes are described in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
+
+## Arena analytics Phase 2 (internal)
+
+Phase 2 introduces no Mongo reader, collection bootstrap, query, writer or
+backfill. `ArenaChampionAnalyzer` accepts detached canonical `Match` values and
+an immutable supplied item catalog; callers can explicitly mark partial item
+history. Mongo/event delivery and catalog loading remain provider work for
+Phase 3. Independent Arena outcomes, boots and observed item/Prismatic/augment
+membership survive absent timelines; standard timeline eligibility is unchanged.
+
+The separate `ArenaChampionStatistics` snapshot uses structured JSON/BSON
+through `JsonCodec`. Its shared Build containers have optional `orderedCore`,
+`orderedItems`, `orderedAugments`, `paths`; standard `champion_builds` JSON
+omits these fields and needs no migration or version bump. No stored Arena
+statistics currently require migration. The planned
+`arena_champion_statistics` collection and champion/full-patch `_id` remain
+Phase 3, subject to source completeness, BSON size/retention and explain gates.
+See [`Arena contract`](../arena-build/contracts.md).

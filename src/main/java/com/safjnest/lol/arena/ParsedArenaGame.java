@@ -3,56 +3,24 @@ package com.safjnest.lol.arena;
 import java.util.List;
 import java.util.Map;
 
-public record ParsedArenaGame(
-        Integer subTeamPlacement,
-        boolean win,
-        Core core,
-        List<Item> items,
-        List<Augment> augments,
-        List<Prismatic> prismatics,
-        Coverage coverage) {
+import com.safjnest.lol.model.Build.Kind;
 
-    public ParsedArenaGame {
-        items = List.copyOf(items);
-        augments = List.copyOf(augments);
-        prismatics = List.copyOf(prismatics);
+public record ParsedArenaGame(Integer subTeamPlacement, boolean win, Core core,
+        List<Observation> choices, Coverage coverage) {
+
+    public ParsedArenaGame { choices = List.copyOf(choices); }
+
+    public record Core(List<Integer> itemIds) {
+        public Core { itemIds = List.copyOf(itemIds); }
     }
 
-    public record Core(
-            int firstPrismaticId,
-            int bootsId,
-            List<Integer> snapshotItemIds,
-            long firstPrismaticTimestampMillis,
-            long snapshotTimestampMillis) {
-        public Core {
-            snapshotItemIds = List.copyOf(snapshotItemIds);
-        }
+    public record Observation(Kind kind, int id, Integer position, Long timestampMillis) {}
 
-        public CoreIdentity identity() {
-            return new CoreIdentity(firstPrismaticId, bootsId, snapshotItemIds);
-        }
-    }
-
-    public record CoreIdentity(int firstPrismaticId, int bootsId, List<Integer> snapshotItemIds) {
-        public CoreIdentity {
-            snapshotItemIds = List.copyOf(snapshotItemIds);
-        }
-    }
-
-    public record Item(int id, int position, long timestampMillis) {}
-
-    public record Augment(int id, int position, Long timestampMillis) {}
-
-    public record Prismatic(int id, Long timestampMillis) {}
-
-    public record Coverage(int missing, int ambiguous, int rejected,
-            Map<String, Integer> missingReasons,
-            Map<String, Integer> ambiguousReasons,
-            Map<String, Integer> rejectedReasons) {
+    public record Coverage(Map<String, Long> missing, Map<String, Long> ambiguous, Map<String, Long> rejected) {
         public Coverage {
-            missingReasons = Map.copyOf(missingReasons);
-            ambiguousReasons = Map.copyOf(ambiguousReasons);
-            rejectedReasons = Map.copyOf(rejectedReasons);
+            missing = Map.copyOf(missing);
+            ambiguous = Map.copyOf(ambiguous);
+            rejected = Map.copyOf(rejected);
         }
     }
 }

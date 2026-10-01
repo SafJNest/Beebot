@@ -130,3 +130,9 @@ the queue does not support a lane.
 - [ADR-0013](../architecture/adr/0013-champion-tier-list.md) — champion tier list;
 - [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parameters and status;
 - [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache and async flows.
+
+Arena champion analytics Phase 2 adds an internal canonical statistics root and
+optional shared Build containers. No Arena endpoint is registered and existing
+champion responses remain compatible. See
+[`Arena computation contract`](../arena-build/contracts.md) and
+[`champion page compatibility`](champion/page.md#arena-analytics-phase-2-compatibility).

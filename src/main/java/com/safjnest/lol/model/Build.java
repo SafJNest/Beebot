@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.lol.model.statistics.StatisticalLeaf;
 import com.safjnest.utils.JsonCodec;
 
 import java.util.ArrayList;
@@ -30,11 +31,61 @@ public record Build(
     @JsonProperty("summonerSpells") List<Option> summonerSpellOptions,
     List<SkillOrderOption> skillOrders,
     @JsonProperty("prismatics") List<Option> prismaticOptions,
-    @JsonProperty("augments") List<List<Option>> augmentOptions
+    @JsonProperty("augments") List<List<Option>> augmentOptions,
+    @JsonInclude(JsonInclude.Include.NON_NULL) Core orderedCore,
+    @JsonInclude(JsonInclude.Include.NON_NULL) List<Slot> orderedItems,
+    @JsonInclude(JsonInclude.Include.NON_NULL) List<Slot> orderedAugments,
+    @JsonInclude(JsonInclude.Include.NON_NULL) List<Path> paths
 ) {
 
     public Build {
         roleBoundItemOptions = roleBoundItemOptions == null ? List.of() : List.copyOf(roleBoundItemOptions);
+        orderedItems = orderedItems == null ? null : List.copyOf(orderedItems);
+        orderedAugments = orderedAugments == null ? null : List.copyOf(orderedAugments);
+        paths = paths == null ? null : List.copyOf(paths);
+    }
+
+    public Build(Filter filter, int games, int wins, double winrate,
+            List<CoreBuildOption> coreBuilds, List<Option> coreItems, List<Option> starterOptions,
+            List<Option> bootOptions, List<Option> supportItemOptions, List<Option> roleBoundItemOptions,
+            List<List<Option>> itemSlots, List<RuneOption> runeOptions, List<Option> summonerSpellOptions,
+            List<SkillOrderOption> skillOrders, List<Option> prismaticOptions, List<List<Option>> augmentOptions) {
+        this(filter, games, wins, winrate, coreBuilds, coreItems, starterOptions, bootOptions,
+            supportItemOptions, roleBoundItemOptions, itemSlots, runeOptions, summonerSpellOptions,
+            skillOrders, prismaticOptions, augmentOptions, null, null, null, null);
+    }
+
+    public static Build arena(Core core, List<Slot> items, List<Slot> augments, List<Path> paths) {
+        return new Build(null, Math.toIntExact(core.stats().games()), Math.toIntExact(core.stats().wins()),
+            core.stats().winrate(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), core, items, augments, paths);
+    }
+
+    public enum Kind { ITEM, BOOTS, PRISMATIC, AUGMENT }
+
+    public record Timing(long timeSumMillis, long timeCount) {
+        public Double averageTimeMillis() {
+            return timeCount == 0 ? null : (double) timeSumMillis / timeCount;
+        }
+    }
+
+    public record Choice(Kind kind, int id, Integer position, StatisticalLeaf stats, Timing timing,
+                         long denominator, long unpositionedGames) {
+        public double pickrate() {
+            return denominator == 0 ? 0 : (double) stats.games() / denominator;
+        }
+    }
+
+    public record Core(List<Choice> entries, StatisticalLeaf stats) {
+        public Core { entries = List.copyOf(entries); }
+    }
+
+    public record Slot(Kind kind, int position, StatisticalLeaf population, List<Choice> options) {
+        public Slot { options = List.copyOf(options); }
+    }
+
+    public record Path(List<Choice> entries, StatisticalLeaf stats) {
+        public Path { entries = List.copyOf(entries); }
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
