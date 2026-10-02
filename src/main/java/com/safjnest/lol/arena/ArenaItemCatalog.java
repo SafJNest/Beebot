@@ -45,9 +45,11 @@ public final class ArenaItemCatalog {
 
     public Kind kind(String patch, int id) {
         if (id <= 0) return null;
-        if (id == PRISMATIC_ANVIL) return Kind.ITEM;
+        if (id == PRISMATIC_ANVIL) return null;
         if (prismatics.classify(patch, id) == PrismaticItemClassifier.Classification.UNKNOWN) return null;
         if (prismatics.isPrismatic(patch, id)) return Kind.PRISMATIC;
         return kinds.get(id);
     }
+
+    public PrismaticItemClassifier prismatics() { return prismatics; }
 }

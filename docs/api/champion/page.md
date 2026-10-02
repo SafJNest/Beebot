@@ -405,18 +405,30 @@ and statistics timestamps; all global variants remain available.
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)
 
-## Arena analytics Phase 2 compatibility
+## Arena analytics Phase 2
 
-Arena Phase 2 is an internal pure computation contract documented in
-[`docs/arena-build/contracts.md`](../../arena-build/contracts.md). It does not
-change this endpoint, `ChampionView`, standard build eligibility, JSON option
-lists or Discord presentation, including requests using `queue=CHERRY` on the
-existing route. That route continues to use the existing build generator.
+The [final Arena contract](../../arena-build/contracts.md) and
+[implemented schema](../../arena-build/schema.md) require overall positional stats,
+actually observed builds and two generic core types (boots+A1 and boots+P1),
+each with complete-context steps. Arena aggregation retains all supported
+samples; frontend selects exact/generic state, fallback core or observed build.
 
-Shared `Build` now supports optional `orderedCore`, `orderedItems`,
-`orderedAugments` and `paths` for the separate `ArenaChampionStatistics.builds`
-root. Existing standard constructors omit these fields from both HTTP and
-stored JSON, and old build documents remain readable. The Arena root is not
-served by an endpoint in Phase 2; a dedicated read contract remains Phase 4.
-No controller, cache key, pending-state or standard generator migration is
-required by this internal additive change.
+This target is not currently exposed by this endpoint. The route, ChampionView,
+standard build eligibility, bounded standard options, statuses, caches and
+Discord presentation remain unchanged, including existing `queue=CHERRY`
+requests, which still use the current standard build generator. Arena
+calculation uses only Build.arena; obsolete ordered Arena fields and their
+compatibility constructor/factory have been removed.
+
+The final payload is Build-owned Arena data and reuses `champion_builds`, with
+one complete champion/patch/CHERRY document. [schema.md](../../arena-build/schema.md)
+documents the implemented nullable `Build.arena` payload (schema=2,
+aggregation=3), omitted for standard builds.
+No dedicated route, second success DTO or separate collection is required.
+The pure accumulator now produces this shared Build payload, with JSON and
+in-memory BSON round-trip coverage. Provider loading, operational persistence and
+read/controller integration remain Phases 3–4 under ADR-0006/0012; existing
+CHERRY output cannot be assumed to contain Arena data. Obsolete Arena aggregates
+are to be discarded/regenerated, not supported through compatibility readers
+or adapters. Phase 2 preserves the existing response and does not imply an
+HTTP contract change.

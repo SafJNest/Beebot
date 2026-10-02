@@ -25,6 +25,11 @@ public final class FirstPrismaticResolver {
 
     public static FirstPrismaticResult resolve(String patch, Participant participant,
             Object rawEvents, PrismaticItemClassifier classifier) {
+        return resolve(patch, participant, rawEvents, classifier, true);
+    }
+
+    public static FirstPrismaticResult resolve(String patch, Participant participant,
+            Object rawEvents, PrismaticItemClassifier classifier, boolean completeItemHistory) {
         if (participant == null) throw new IllegalArgumentException("participant is required");
         if (classifier == null) throw new IllegalArgumentException("classifier is required");
 
@@ -39,11 +44,12 @@ public final class FirstPrismaticResolver {
         List<PrismaticEvent> prismaticEvents = getPrismaticEvents(patch, participantEvents, classifier);
         int missingCount = countUnknownItems(patch, finalItems, prismaticEvents, classifier);
         if (itemEventArray(jsonObject(rawEvents)) == null) missingCount++;
+        if (!completeItemHistory) missingCount++;
 
         Set<Integer> candidates = getCandidates(patch, finalItems, prismaticEvents, classifier);
         if (candidates.isEmpty()) missingCount++;
         Set<Integer> preAnvilCandidates = resolveFromPreAnvilEvents(patch, prismaticEvents, firstAnvilTimestamp, classifier);
-        if (preAnvilCandidates.size() == 1) {
+        if (completeItemHistory && preAnvilCandidates.size() == 1) {
             int itemId = preAnvilCandidates.iterator().next();
             return result(itemId, FirstPrismaticResolveType.PRE_ANVIL_EVENT,
                     "Un evento di possesso Prismatic precede il primo utilizzo di 220007.", finalItems,

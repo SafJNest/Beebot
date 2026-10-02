@@ -710,20 +710,40 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `docs/architecture/profile-statistics-source-of-truth.md`
 - `docs/new-queue.md` + `docs/mongo/README.md` + `docs/api/lol-api.md`
 
-## Arena analytics Phase 2 handoff
+## Arena analytics final-model handoff
 
-`ArenaChampionAnalyzer.accumulator(championId, fullPatch, catalog)` is a pure
-`accept(Match[, completeItemHistory]) → finish()` boundary. The default accept
-assumes the supplied item-event stream is complete when available; use false
-for known partial histories. Supply an immutable `ArenaItemCatalog` from the
-existing static item data outside the analyzer. No Mongo/Redis/scheduler call
-or progress job is added in Phase 2. Source fan-out and total/completed/missing
-progress are required when the bounded Phase 3 provider/rebuild is implemented.
+Follow [Arena contracts](arena-build/contracts.md),
+[implemented schema](arena-build/schema.md) and [phases](arena-build/phases.md).
+The current `ArenaChampionAnalyzer.accumulator(championId, fullPatch, catalog)`
+returns the shared `Build` with immutable `ArenaBuildData` (schema=2,
+aggregation=3). `accept(match)` defaults to unknown/incomplete source history;
+only the loading owner may explicitly supply completeness. `finish()` uses
+`Filter.championBuild(...)`, which avoids static-data/default-period fetching;
+existing public Filter defaults and factories are unchanged.
 
-The internal model extends Build additively without changing standard response
-or presentation. The detailed event, core, position, denominator and
-serialization contract is in [`docs/arena-build/contracts.md`](arena-build/contracts.md).
-No ADR, HTTP controller, standard cache/generation version, Participant field,
-Tracker writer or query/index migration is required. API/Mongo documentation
-records this internal-only scope; production explain, BSON sizing and backfill
-are not Phase 2 checks.
+The parser reconstructs equipment and augments separately, calls the resolver
+after attribution/undo filtering, retains timeline/resolver/tooltip quality and
+excludes 220007 from selectable data. StatisticalLeaf and shared Build primitives
+supply independent boots/A1..A6/P1..P6/L1..Ln stats, actually observed
+boots+P1+ordered-Legendary builds, and generic boots+A1 or boots+P1 cores with
+full-context steps. Preserve missing/ambiguous/rejected coverage, strict undo/
+attribution and match/choice deduplication. Retain one-game steps; frontend owns
+sample thresholds and fallback selection.
+
+Supply immutable catalog/source data outside the accumulator. Persistence must
+reuse `champion_builds`, one complete document per champion/patch/CHERRY, through
+existing MongoDB/service owners. No separate Arena collection/service or
+preemptive core splitting. Support only the current Arena aggregate schema;
+discard/regenerate obsolete Arena aggregates from source matches at integration,
+without compatibility adapters, old-document tests or changes to standard
+generation. The former ordered Arena fields/constructors/Core/Path were removed. Source fan-out and total/completed/missing/failed progress become
+required when the bounded provider/rebuild is implemented through QueueHandler.
+
+Phase 2 code/model realignment and 105 offline tests pass, including standard
+Build/generator/provider/Mongo projection checks and in-memory JSON/BSON round
+trips; [phases](arena-build/phases.md) records exact limits. Controller,
+Participant, Tracker, operational writer/query/index/cache and presentation
+remain unchanged. Accepted ADRs and the standard endpoint contract are unchanged;
+final Arena API exposure is pending review at the canonical owners. Live source
+inspection, test-Mongo integration, BSON/cardinality/heap sizing, explains and
+live API/Redis validation remain rollout gates.

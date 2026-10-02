@@ -97,10 +97,32 @@ rsc/settings.json contains a server-level URI. The URI must not contain the appl
 
 Before completion verify LoL Mongo-only reads and writes, no runtime import of LeagueDB, no mirror/outbox/dual-write proxy and tests for test database, registry/idempotency/preflight of indexes, bans, enum, flat participant, conversions and migration resume/high-water mark.
 
-Arena champion analytics Phase 2 is pure and introduces no production Mongo
-operation. Its separate versioned statistics root round-trips through the
-existing structured codec; persistence in `arena_champion_statistics`, BSON
-headroom, retention, bounded source delivery and query explain remain Phase 3.
-Existing `champion_stats`, `champion_builds`, match/participant/event writers
-and standard build documents are unchanged. See
-[`Arena contract`](../arena-build/contracts.md).
+## Arena final target in the existing build collection
+
+The [final Arena contract](../arena-build/contracts.md) reuses `champion_builds`.
+Store one complete build per champion + patch + CHERRY through the existing
+filter-key/structured-build envelope. Arena data contains stats, positional
+distributions, observed builds and generic cores/steps. Standard and Arena
+populations remain distinct within that collection.
+
+No separate Arena statistics, summary, state or fallback collection is planned.
+No core splitting is part of the initial design. Only measured BSON/cardinality
+limits can justify later splitting cores into documents in the same collection.
+The implemented [schema](../arena-build/schema.md) uses optional `Build.arena`
+with schemaVersion=2 and aggregationVersion=3. JsonCodec JSON/structured BSON
+round trips pass in memory. Operational persistence/read dispatch is still
+Phase 3 work; no new writer/query owner or collection was introduced.
+
+At integration, identify the current Arena payload at the MongoDB/service
+owners. Discard and regenerate obsolete Arena aggregates from source matches;
+no backward-compatible projection, adapter or old-Arena-document test is required.
+The standard generator and unrelated populations remain unchanged.
+Review the actual filter-key identity/index, atomic replacement, BSON headroom
+and source coverage before rollout; do not claim a migration or index change
+without implementing and verifying it.
+
+This Phase 2 realignment performs no live Mongo read/write, collection bootstrap,
+backfill or production migration. Match/Participant/event writers, standard
+build queries and caches remain unchanged. Missing timelines must retain
+independent Arena statistics in the future provider path; existing standard
+timeline eligibility remains unchanged.

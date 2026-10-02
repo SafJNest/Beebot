@@ -160,12 +160,28 @@ Operational guide for adding command / endpoint / service / model / queue / Mong
 
 The operational documentation for the LoL migration is in [`docs/mongo/`](../mongo/README.md). ADR-0009 is accepted; Guardian gates remain mandatory for every capability.
 
-## Arena champion analytics Phase 2
+## Arena champion analytics final target
 
-[`docs/arena-build/contracts.md`](../arena-build/contracts.md) defines the
-internal pure Arena parser/accumulator and separate `ArenaChampionStatistics`
-root. Shared Build gains optional ordered containers; standard constructors,
-generator, persistence, APIs and presentation retain ADR-0006/0012 behavior.
-Participant and Tracker are unchanged. Mongo/Redis/queue orchestration, source
-completeness and BSON retention/size gates remain later-phase work. No accepted
-ADR is amended by this additive computation change.
+The [Arena contract](../arena-build/contracts.md),
+[Java/JSON schema](../arena-build/schema.md) and
+[phases](../arena-build/phases.md) record the final user requirement.
+Phase 2 is realigned: parser → resolver → pure accumulator → `Build.arena`.
+
+Arena data belongs to the shared Build, with overall positional statistics,
+actually observed builds and generic cores containing flat steps with full
+context. Core keys are boots+A1 or boots+P1. The existing `StatisticalLeaf`,
+catalog, coverage and strict event handling are reused; FirstPrismaticResolver
+is invoked on sanitized attributable evidence in the analytics flow. No competing canonical statistics
+root, duplicate service or Spring success DTO is required.
+
+Persist the complete champion/patch/CHERRY build in `champion_builds`, keeping
+Arena and standard populations logically separate. No new Arena collection or
+preemptive core splitting is planned. Future splitting, only after measured BSON/
+cardinality problems, stays in the same collection.
+
+Standard generator, eligibility, response and presentation keep ADR-0006/0012
+behavior. Arena computation is currently internal: Phase 2 changes no HTTP
+contract and amends no accepted ADR. The eventual Arena read integration
+must review canonical Build projection/versioning at the existing owners.
+Participant and Tracker stay unchanged; pure accumulation, Mongo persistence
+and service/queue orchestration retain separate ownership.
