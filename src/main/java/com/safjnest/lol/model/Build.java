@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.lol.model.statistics.StatisticalLeaf;
 import com.safjnest.utils.JsonCodec;
 
 import java.util.ArrayList;
@@ -30,11 +31,49 @@ public record Build(
     @JsonProperty("summonerSpells") List<Option> summonerSpellOptions,
     List<SkillOrderOption> skillOrders,
     @JsonProperty("prismatics") List<Option> prismaticOptions,
-    @JsonProperty("augments") List<List<Option>> augmentOptions
+    @JsonProperty("augments") List<List<Option>> augmentOptions,
+    @JsonInclude(JsonInclude.Include.NON_NULL) ArenaBuildData arena
 ) {
 
     public Build {
         roleBoundItemOptions = roleBoundItemOptions == null ? List.of() : List.copyOf(roleBoundItemOptions);
+    }
+
+    public Build(Filter filter, int games, int wins, double winrate,
+            List<CoreBuildOption> coreBuilds, List<Option> coreItems, List<Option> starterOptions,
+            List<Option> bootOptions, List<Option> supportItemOptions, List<Option> roleBoundItemOptions,
+            List<List<Option>> itemSlots, List<RuneOption> runeOptions, List<Option> summonerSpellOptions,
+            List<SkillOrderOption> skillOrders, List<Option> prismaticOptions, List<List<Option>> augmentOptions) {
+        this(filter, games, wins, winrate, coreBuilds, coreItems, starterOptions, bootOptions,
+            supportItemOptions, roleBoundItemOptions, itemSlots, runeOptions, summonerSpellOptions,
+            skillOrders, prismaticOptions, augmentOptions, null);
+    }
+
+    public static Build arena(Filter filter, ArenaBuildData data) {
+        return new Build(filter, Math.toIntExact(data.stats().games()), Math.toIntExact(data.stats().wins()),
+            data.stats().winrate(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), data);
+    }
+
+    public enum Kind { ITEM, BOOTS, PRISMATIC, AUGMENT }
+
+    public record Timing(long timeSumMillis, long timeCount) {
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        public Double averageTimeMillis() {
+            return timeCount == 0 ? null : (double) timeSumMillis / timeCount;
+        }
+    }
+
+    public record Choice(Kind kind, int id, Integer position, StatisticalLeaf stats, Timing timing,
+                         long denominator, long unpositionedGames) {
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        public double pickrate() {
+            return denominator == 0 ? 0 : (double) stats.games() / denominator;
+        }
+    }
+
+    public record Slot(Kind kind, int position, StatisticalLeaf population, List<Choice> options) {
+        public Slot { options = List.copyOf(options); }
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

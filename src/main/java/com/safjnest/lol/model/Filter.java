@@ -18,6 +18,11 @@ public class Filter {
     }
 
     public Filter() {
+        this(true);
+    }
+
+    private Filter(boolean initializeDefaults) {
+        if (!initializeDefaults) return;
         this.patch = PatchUtils.getPatch();
         this.rank = TierType.EMERALD;
         this.rankBehavior = RankBehavior.GREATER_OR_EQUAL;
@@ -26,6 +31,10 @@ public class Filter {
             this.timeStart = period[0];
             this.timeEnd = period[1];
         }
+    }
+
+    public static Filter championBuild(int champion, String patch, GameQueueType queue) {
+        return new Filter(false).setChampion(champion).setPatch(patch).setQueue(queue);
     }
 
     public static Filter summoner(long timeStart, long timeEnd) {

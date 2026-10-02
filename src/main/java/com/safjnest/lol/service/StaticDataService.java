@@ -19,12 +19,16 @@ public final class StaticDataService {
     private static final TypeReference<Map<Integer, Item>> ITEMS_TYPE = new TypeReference<>() {};
     private static final TypeReference<Map<Integer, StaticChampion>> CHAMPIONS_TYPE = new TypeReference<>() {};
     private static final TypeReference<Map<Integer, StaticSummonerSpell>> SUMMONER_SPELLS_TYPE = new TypeReference<>() {};
+    private static Map<Integer, Item> items;
 
     private StaticDataService() {
     }
 
     public static Map<Integer, Item> getItems() {
-        return get(RedisKey.DDRAGON_ITEMS, ITEMS_TYPE, () -> LeagueHandler.getRiotApi().getDDragonAPI().getItems());
+        if (items == null) {
+            items = get(RedisKey.DDRAGON_ITEMS, ITEMS_TYPE, () -> LeagueHandler.getRiotApi().getDDragonAPI().getItems());
+        }
+        return items;
     }
 
     public static Item getItem(int id) {

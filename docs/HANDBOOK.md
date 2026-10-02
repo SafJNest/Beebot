@@ -709,3 +709,41 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `src/main/java/com/safjnest/spring/controller/LolController.java` + `LolApiParameters.java` + `LolApiResponses.java`
 - `docs/architecture/profile-statistics-source-of-truth.md`
 - `docs/new-queue.md` + `docs/mongo/README.md` + `docs/api/lol-api.md`
+
+## Arena analytics final-model handoff
+
+Follow [Arena contracts](arena-build/contracts.md),
+[implemented schema](arena-build/schema.md) and [phases](arena-build/phases.md).
+The current `ArenaChampionAnalyzer.accumulator(championId, fullPatch, catalog)`
+returns the shared `Build` with immutable `ArenaBuildData` (schema=2,
+aggregation=3). `accept(match)` defaults to unknown/incomplete source history;
+only the loading owner may explicitly supply completeness. `finish()` uses
+`Filter.championBuild(...)`, which avoids static-data/default-period fetching;
+existing public Filter defaults and factories are unchanged.
+
+The parser reconstructs equipment and augments separately, calls the resolver
+after attribution/undo filtering, retains timeline/resolver/tooltip quality and
+excludes 220007 from selectable data. StatisticalLeaf and shared Build primitives
+supply independent boots/A1..A6/P1..P6/L1..Ln stats, actually observed
+boots+P1+ordered-Legendary builds, and generic boots+A1 or boots+P1 cores with
+full-context steps. Preserve missing/ambiguous/rejected coverage, strict undo/
+attribution and match/choice deduplication. Retain one-game steps; frontend owns
+sample thresholds and fallback selection.
+
+Supply immutable catalog/source data outside the accumulator. Persistence must
+reuse `champion_builds`, one complete document per champion/patch/CHERRY, through
+existing MongoDB/service owners. No separate Arena collection/service or
+preemptive core splitting. Support only the current Arena aggregate schema;
+discard/regenerate obsolete Arena aggregates from source matches at integration,
+without compatibility adapters, old-document tests or changes to standard
+generation. The former ordered Arena fields/constructors/Core/Path were removed. Source fan-out and total/completed/missing/failed progress become
+required when the bounded provider/rebuild is implemented through QueueHandler.
+
+Phase 2 code/model realignment and 105 offline tests pass, including standard
+Build/generator/provider/Mongo projection checks and in-memory JSON/BSON round
+trips; [phases](arena-build/phases.md) records exact limits. Controller,
+Participant, Tracker, operational writer/query/index/cache and presentation
+remain unchanged. Accepted ADRs and the standard endpoint contract are unchanged;
+final Arena API exposure is pending review at the canonical owners. Live source
+inspection, test-Mongo integration, BSON/cardinality/heap sizing, explains and
+live API/Redis validation remain rollout gates.

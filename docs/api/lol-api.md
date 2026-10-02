@@ -130,3 +130,13 @@ the queue does not support a lane.
 - [ADR-0013](../architecture/adr/0013-champion-tier-list.md) — champion tier list;
 - [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parameters and status;
 - [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache and async flows.
+
+The [final Arena contract](../arena-build/contracts.md) targets Build-owned
+positional statistics, observed builds and two generic core types with full-context
+steps, persisted in the existing `champion_builds` collection. This model is not
+yet exposed by a registered Arena read path; existing champion routes/responses
+remain unchanged, including CHERRY requests. Parser/resolver/pure accumulator → Build.arena is implemented; provider and
+read/persistence integration remain gated without changing controllers or
+accepted ADRs. See
+[Java/JSON schema](../arena-build/schema.md) and
+[champion page scope](champion/page.md#arena-analytics-phase-2).
