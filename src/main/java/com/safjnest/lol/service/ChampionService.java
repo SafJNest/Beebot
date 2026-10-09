@@ -7,8 +7,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
+import com.safjnest.lol.arena.ArenaItemCatalog;
+import com.safjnest.lol.champion.ChampionBuildProvider;
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionTierList;
@@ -17,17 +24,20 @@ import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.lol.model.statistics.shared.MatchupStats;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -43,7 +53,67 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class ChampionService {
 
+    private final BiConsumer<Filter, Consumer<List<Match>>> arenaSource;
+    private final BiPredicate<Filter, ArenaBuildData> arenaWriter;
+
+    public ChampionService() {
+        this(ChampionBuildProvider::forEachArenaBatch, MongoDB::upsertChampionArena);
+    }
+
+    ChampionService(BiConsumer<Filter, Consumer<List<Match>>> arenaSource,
+            BiPredicate<Filter, ArenaBuildData> arenaWriter) {
+        this.arenaSource = Objects.requireNonNull(arenaSource);
+        this.arenaWriter = Objects.requireNonNull(arenaWriter);
+    }
+
     public record MatrixRefreshResult(int combinations, int skipped, int generated, int empty, int persistedChampions) {}
+
+    public static Filter arenaFilterSnapshot(Filter filter) {
+        if (filter == null || filter.champion() <= 0 || filter.queue() != GameQueueType.CHERRY
+                || filter.patch() == null || !filter.patch().matches("[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)*")
+                || filter.lane() != null || filter.rank() != null || filter.region() != null
+                || filter.rankBehavior() != Filter.RankBehavior.GREATER_OR_EQUAL
+                || filter.opponent() != 0 || filter.duo() != 0 || filter.timeStart() != 0 || filter.timeEnd() != 0)
+            throw new IllegalArgumentException("Neutral champion/full-patch/CHERRY Arena scope required");
+        return Filter.championBuild(filter.champion(), filter.patch(), GameQueueType.CHERRY);
+    }
+
+    public boolean refreshArena(Filter filter, ArenaItemCatalog catalog, Job<?> job) {
+        Objects.requireNonNull(job, "Arena job required");
+        String item = job.key();
+        job.trackItem(item);
+        ArenaProgress progress = new ArenaProgress();
+        try {
+            Filter snapshot = arenaFilterSnapshot(filter);
+            Objects.requireNonNull(catalog, "Detached catalog for the requested full patch required");
+            job.currentItem("champion=" + snapshot.champion() + " patch=" + snapshot.patch() + " shard=ALL");
+            ArenaChampionAnalyzer.Accumulator accumulator = ArenaChampionAnalyzer.accumulator(
+                snapshot.champion(), snapshot.patch(), catalog);
+            progress.report(job, "READ");
+            arenaSource.accept(snapshot, batch -> {
+                Objects.requireNonNull(batch, "Arena batch required");
+                progress.total += batch.size();
+                for (Match match : batch) {
+                    if (!accumulator.accept(match, false))
+                        throw new IllegalArgumentException("Arena source match does not match the requested scope");
+                    progress.completed++;
+                    if (!MatchupTimelineUtils.hasTimeline(match.events)) progress.missing++;
+                }
+                progress.report(job, "READ");
+            });
+            progress.report(job, "WRITE");
+            if (!arenaWriter.test(snapshot, accumulator.finish()))
+                throw new IllegalStateException("Arena write was not completed");
+            progress.report(job, "DONE");
+            job.done(item);
+            return true;
+        } catch (RuntimeException | Error exception) {
+            progress.failed++;
+            progress.report(job, "FAILED");
+            job.failed(item);
+            throw exception;
+        }
+    }
 
     public ApiResult<ChampionView> get(
         String championValue,
@@ -358,6 +428,18 @@ public class ChampionService {
     }
 
     // ============================================================================
+
+    private static final class ArenaProgress {
+        private long total;
+        private long completed;
+        private long missing;
+        private long failed;
+
+        private void report(Job<?> job, String phase) {
+            job.phase(phase + " total=" + total + " completed=" + completed
+                + " missing=" + missing + " failed=" + failed);
+        }
+    }
 
     private ApiResult<ChampionView> compose(
         StaticChampion champion,

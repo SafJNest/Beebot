@@ -21,7 +21,6 @@ import com.safjnest.lol.model.ArenaBuildData.CoreKey;
 import com.safjnest.lol.model.ArenaBuildData.EquipmentKey;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.Kind;
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.StatisticalLeaf;
@@ -29,8 +28,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class ArenaChampionAnalyzer {
 
-    private static final int SCHEMA_VERSION = 2;
-    private static final int AGGREGATION_VERSION = 3;
+    private static final int SCHEMA_VERSION = ArenaBuildData.SCHEMA_VERSION;
+    private static final int AGGREGATION_VERSION = ArenaBuildData.AGGREGATION_VERSION;
 
     private ArenaChampionAnalyzer() {}
 
@@ -111,7 +110,7 @@ public final class ArenaChampionAnalyzer {
             return true;
         }
 
-        public Build finish() {
+        public ArenaBuildData finish() {
             List<ArenaBuildData.ObservedBuild> builds = new ArrayList<>();
             List<ObservedKey> buildKeys = new ArrayList<>(observed.keySet());
             buildKeys.sort(Comparator.comparingInt(ObservedKey::bootsId).thenComparingInt(ObservedKey::firstPrismaticId)
@@ -139,15 +138,13 @@ public final class ArenaChampionAnalyzer {
                 }
                 coreValues.add(new ArenaBuildData.Core(key, value.stats.finish(), overall.games, steps));
             }
-            ArenaBuildData data = new ArenaBuildData(SCHEMA_VERSION, AGGREGATION_VERSION, overall.finish(),
+            return new ArenaBuildData(SCHEMA_VERSION, AGGREGATION_VERSION, overall.finish(),
                 new ArenaBuildData.Positions(global.options(Kind.BOOTS, overall.games, true),
                     global.slots(Kind.AUGMENT, overall.games), global.slots(Kind.PRISMATIC, overall.games),
                     global.slots(Kind.ITEM, overall.games), global.membership(overall.games),
                     global.unpositioned(overall.games)),
                 builds, coreValues, new ArenaBuildData.Coverage(matches.size(), overall.games, decisionGames,
                     fallbackGames, observedGames, missing, ambiguous, rejected, resolutions, order, firstQuality));
-            Filter filter = Filter.championBuild(championId, patch, GameQueueType.CHERRY);
-            return Build.arena(filter, data);
         }
 
         private void addCore(CoreKey key, ParsedArenaGame game) {
@@ -305,39 +302,39 @@ public final class ArenaChampionAnalyzer {
             }
         }
 
-        private List<Build.Choice> options(Kind kind, long denominator, boolean overall) {
+        private List<ArenaBuildData.Choice> options(Kind kind, long denominator, boolean overall) {
             List<ChoiceKey> keys = new ArrayList<>();
             for (ChoiceKey key : values.keySet()) if (key.kind == kind && (key.position == null) == overall) keys.add(key);
             keys.sort(Comparator.comparingInt(ChoiceKey::id).thenComparing(ChoiceKey::position, Comparator.nullsLast(Integer::compareTo)));
-            List<Build.Choice> result = new ArrayList<>();
+            List<ArenaBuildData.Choice> result = new ArrayList<>();
             for (ChoiceKey key : keys) result.add(values.get(key).finish(key, denominator));
             return List.copyOf(result);
         }
 
-        private List<Build.Slot> slots(Kind kind, long denominator) {
+        private List<ArenaBuildData.Slot> slots(Kind kind, long denominator) {
             List<SlotKey> keys = new ArrayList<>();
             for (SlotKey key : populations.keySet()) if (key.kind == kind) keys.add(key);
             keys.sort(Comparator.comparingInt(SlotKey::position));
-            List<Build.Slot> result = new ArrayList<>();
-            List<Build.Choice> options = options(kind, denominator, false);
+            List<ArenaBuildData.Slot> result = new ArrayList<>();
+            List<ArenaBuildData.Choice> options = options(kind, denominator, false);
             for (SlotKey key : keys) {
-                List<Build.Choice> selected = new ArrayList<>();
-                for (Build.Choice choice : options) if (choice.position() == key.position) selected.add(choice);
-                result.add(new Build.Slot(kind, key.position, populations.get(key).finish(), selected));
+                List<ArenaBuildData.Choice> selected = new ArrayList<>();
+                for (ArenaBuildData.Choice choice : options) if (choice.position() == key.position) selected.add(choice);
+                result.add(new ArenaBuildData.Slot(key.position, populations.get(key).finish(), selected));
             }
             return List.copyOf(result);
         }
 
-        private List<Build.Choice> membership(long denominator) {
-            List<Build.Choice> result = new ArrayList<>();
+        private List<ArenaBuildData.Choice> membership(long denominator) {
+            List<ArenaBuildData.Choice> result = new ArrayList<>();
             for (Kind kind : List.of(Kind.ITEM, Kind.PRISMATIC, Kind.AUGMENT)) result.addAll(options(kind, denominator, true));
             return List.copyOf(result);
         }
 
-        private List<Build.Choice> unpositioned(long denominator) {
+        private List<ArenaBuildData.Choice> unpositioned(long denominator) {
             List<ChoiceKey> keys = new ArrayList<>(unknown.keySet());
             keys.sort(Comparator.comparing(ChoiceKey::kind).thenComparingInt(ChoiceKey::id));
-            List<Build.Choice> result = new ArrayList<>();
+            List<ArenaBuildData.Choice> result = new ArrayList<>();
             for (ChoiceKey key : keys) result.add(unknown.get(key).finish(key, denominator));
             return List.copyOf(result);
         }
@@ -355,8 +352,8 @@ public final class ArenaChampionAnalyzer {
             if (!positioned) unpositionedGames++;
         }
 
-        private Build.Choice finish(ChoiceKey key, long denominator) {
-            return new Build.Choice(key.kind, key.id, key.position, stats.finish(),
+        private ArenaBuildData.Choice finish(ChoiceKey key, long denominator) {
+            return ArenaBuildData.Choice.of(key.kind, key.id, key.position, stats.finish(),
                 new Build.Timing(timeSum, timeCount), denominator, unpositionedGames);
         }
     }

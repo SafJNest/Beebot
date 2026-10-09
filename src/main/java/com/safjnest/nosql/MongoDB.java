@@ -18,6 +18,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.BsonBinaryWriter;
+import org.bson.codecs.EncoderContext;
+import org.bson.io.BasicOutputBuffer;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import org.bson.conversions.Bson;
@@ -50,6 +53,7 @@ import com.mongodb.client.result.UpdateResult;
 import com.safjnest.App;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ProfileIndexable;
 import com.safjnest.utils.SettingsLoader;
@@ -110,6 +114,11 @@ public final class MongoDB {
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final int CHAMPION_BUILD_EVENT_BATCH_SIZE = 100;
     private static final int CHAMPION_BUILD_GENERATION_VERSION = 3;
+    private static final int CHAMPION_BUILD_MAX_BSON_BYTES = 16 * 1024 * 1024 - 256 * 1024;
+    private static final List<String> CHAMPION_STANDARD_BUILD_FIELDS = List.of(
+            "filter", "games", "wins", "winrate", "coreBuilds", "coreItems", "starters", "boots",
+            "supportItems", "roleBoundItems", "slots", "runes", "summonerSpells", "skillOrders",
+            "prismatics", "augments");
     private static final List<String> CHAMPION_BUILD_PARTICIPANT_PROJECTION_FIELDS = List.of(
             "participants.puuid", "participants.champion", "participants.lane", "participants.win",
             "participants.roleQuestId",
@@ -599,6 +608,84 @@ public final class MongoDB {
                 + " matchingParticipants=" + metrics.matchingParticipants
                 + " emittedRecords=" + metrics.emittedRecords);
         }
+    }
+
+    public static void forEachChampionArenaMatchBatch(Filter filter, int batchSize,
+                                                       Consumer<List<Match>> consumer) {
+        if (consumer == null || batchSize <= 0 || batchSize > CHAMPION_BUILD_EVENT_BATCH_SIZE)
+            throw new IllegalArgumentException("Arena consumer and batch size 1..100 required");
+        Bson sourceFilter = championArenaMatchFilter(filter);
+        List<Document> batch = new ArrayList<>(batchSize);
+        try {
+            try (MongoCursor<Document> cursor = matches().find(sourceFilter)
+                    .projection(championArenaProjection()).batchSize(batchSize).iterator()) {
+                while (cursor.hasNext()) {
+                    batch.add(cursor.next());
+                    if (batch.size() == batchSize) flushChampionArenaMatches(batch, consumer);
+                }
+            }
+            if (!batch.isEmpty()) flushChampionArenaMatches(batch, consumer);
+        } finally {
+            MatchMemoryUtils.release(batch);
+        }
+    }
+
+    private static void flushChampionArenaMatches(List<Document> batch, Consumer<List<Match>> consumer) {
+        List<String> ids = new ArrayList<>(batch.size());
+        for (Document match : batch) ids.add(match.getString("_id"));
+        Map<String, Document> events = new HashMap<>();
+        List<Match> detached = null;
+        try {
+            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", ids))
+                    .batchSize(ids.size()).iterator()) {
+                while (cursor.hasNext()) {
+                    Document event = cursor.next();
+                    events.put(event.getString("_id"), event);
+                }
+            }
+            detached = championArenaMatches(batch, events);
+            MatchMemoryUtils.release(batch);
+            MatchMemoryUtils.release(events);
+            consumer.accept(detached);
+        } finally {
+            MatchMemoryUtils.release(detached);
+            MatchMemoryUtils.release(events);
+            MatchMemoryUtils.release(batch);
+            MatchMemoryUtils.release(ids);
+        }
+    }
+
+    private static List<Match> championArenaMatches(List<Document> batch, Map<String, Document> events) {
+        List<Match> result = new ArrayList<>(batch.size());
+        try {
+            for (Document source : batch) {
+                Match match = readMatch(QueryRecordParser.fromDocument(source));
+                result.add(match);
+                Document event = events.get(match.gameId);
+                if (event != null) {
+                    match.eventData = decodeMatchEvents(event);
+                    match.restoreEvents();
+                }
+            }
+            return result;
+        } catch (RuntimeException | Error exception) {
+            MatchMemoryUtils.release(result);
+            throw exception;
+        }
+    }
+
+    private static Bson championArenaMatchFilter(Filter filter) {
+        requireArenaBuildFilter(filter);
+        return Filters.and(championMatchFilter(filter, null), Filters.eq("patch", filter.patch()));
+    }
+
+    private static Document championArenaProjection() {
+        return new Document("_id", 1).append("region", 1).append("queue", 1).append("patch", 1)
+            .append("participants.id", 1).append("participants.puuid", 1).append("participants.champion", 1)
+            .append("participants.win", 1).append("participants.subTeamPlacement", 1).append("participants.boots", 1)
+            .append("participants.item0", 1).append("participants.item1", 1).append("participants.item2", 1)
+            .append("participants.item3", 1).append("participants.item4", 1).append("participants.item5", 1)
+            .append("participants.augments", 1);
     }
 
     public static List<QueryRecord> championBuildRecords(Document match, Filter filter) {
@@ -1565,6 +1652,16 @@ public final class MongoDB {
             if (build != null) result.add(build);
         }
         return result;
+    }
+
+    public static ArenaBuildData findChampionArena(Filter filter) {
+        requireArenaBuildFilter(filter);
+        Document document = builds().find(Filters.eq("_id", filter.toKey()))
+            .projection(Projections.include("build.arena")).first();
+        if (document == null || !(document.get("build") instanceof Map<?, ?> build)) return null;
+        ArenaBuildData arena = JsonCodec.fromDocument(build.get("arena"), ArenaBuildData.class);
+        return arena != null && arena.schemaVersion() == ArenaBuildData.SCHEMA_VERSION
+            && arena.aggregationVersion() == ArenaBuildData.AGGREGATION_VERSION ? arena : null;
     }
 
         public static List<Filter> findStoredChampionBuildFilters() {
@@ -2949,20 +3046,39 @@ public final class MongoDB {
 
     public static boolean upsertChampionBuild(Build build) {
         if (build == null || build.filter() == null) return false;
-        Document document = buildDocument(build);
-        replace(builds(), document);
+        Document update = standardBuildUpdate(build);
+        UpdateResult result = builds().updateOne(Filters.eq("_id", build.filter().toKey()), update,
+            new UpdateOptions().upsert(true));
+        if (!result.wasAcknowledged()) throw new IllegalStateException("Champion build update was not acknowledged");
         return true;
     }
 
-        public static boolean upsertChampionBuilds(List<Build> builds) {
+    public static boolean upsertChampionBuilds(List<Build> builds) {
         if (builds == null || builds.isEmpty()) return false;
         List<WriteModel<Document>> operations = new ArrayList<>(builds.size());
         for (Build build : builds) if (build != null && build.filter() != null) {
-            Document document = buildDocument(build);
-            operations.add(new ReplaceOneModel<>(Filters.eq("_id", document.get("_id")), document,
-                    new ReplaceOptions().upsert(true)));
+            Document update = standardBuildUpdate(build);
+            operations.add(new UpdateOneModel<>(Filters.eq("_id", build.filter().toKey()), update,
+                    new UpdateOptions().upsert(true)));
         }
         if (!operations.isEmpty()) bulkWrite(builds(), operations);
+        return true;
+    }
+
+    public static boolean upsertChampionArena(Filter filter, ArenaBuildData arena) {
+        if (arena == null) return false;
+        requireArenaBuildFilter(filter);
+        if (arena.schemaVersion() != ArenaBuildData.SCHEMA_VERSION
+                || arena.aggregationVersion() != ArenaBuildData.AGGREGATION_VERSION)
+            throw new IllegalArgumentException("Current Arena schema and aggregation versions required");
+        Document payload = JsonCodec.toDocument(arena);
+        requireChampionBuildSize(payload);
+        Document update = new Document("$set", new Document("build.arena", payload))
+            .append("$setOnInsert", new Document("filterKey", filter.toKey()));
+        requireChampionBuildSize(update);
+        UpdateResult result = builds().updateOne(Filters.eq("_id", filter.toKey()), update,
+            new UpdateOptions().upsert(true));
+        if (!result.wasAcknowledged()) throw new IllegalStateException("Arena build update was not acknowledged");
         return true;
     }
 
@@ -4063,7 +4179,13 @@ public final class MongoDB {
     }
 
     private static Build readBuild(Document document) {
-        return readStructured(document.get("build"), Build.class);
+        if (!(document.get("build") instanceof Map<?, ?> value)) return null;
+        Map<String, Object> standard = new LinkedHashMap<>();
+        for (var entry : value.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) return null;
+            if (!"arena".equals(key)) standard.put(key, entry.getValue());
+        }
+        return readStructured(standard, Build.class);
     }
 
     private static <T> T readStructured(Object value, Class<T> type) {
@@ -4093,15 +4215,36 @@ public final class MongoDB {
         return Updates.combine(updates);
     }
 
-    private static Document buildDocument(Build build) {
-        String id = build.filter().toKey();
-        return new Document("_id", id)
-                .append("filterKey", id)
-                .append("games", build.games())
+    private static Document standardBuildUpdate(Build build) {
+        if (build.arena() != null) throw new IllegalArgumentException("Arena requires its dedicated build.arena write path");
+        Document payload = JsonCodec.toDocument(build);
+        Document fields = new Document("games", build.games())
                 .append("winrate", build.winrate())
                 .append("buildVersion", CHAMPION_BUILD_GENERATION_VERSION)
-                .append("lastUpdate", System.currentTimeMillis())
-                .append("build", JsonCodec.toDocument(build));
+                .append("lastUpdate", System.currentTimeMillis());
+        for (String field : CHAMPION_STANDARD_BUILD_FIELDS) fields.put("build." + field, payload.get(field));
+        Document update = new Document("$set", fields)
+            .append("$setOnInsert", new Document("filterKey", build.filter().toKey()));
+        requireChampionBuildSize(update);
+        return update;
+    }
+
+    private static void requireArenaBuildFilter(Filter filter) {
+        if (filter == null || filter.champion() <= 0 || filter.queue() != GameQueueType.CHERRY
+                || filter.patch() == null || !filter.patch().matches("[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)*")
+                || filter.lane() != null || filter.rank() != null || filter.region() != null
+                || filter.rankBehavior() != Filter.RankBehavior.GREATER_OR_EQUAL
+                || filter.opponent() != 0 || filter.duo() != 0 || filter.timeStart() != 0 || filter.timeEnd() != 0)
+            throw new IllegalArgumentException("Arena requires champion/full-patch/CHERRY with neutral dimensions");
+    }
+
+    private static void requireChampionBuildSize(Document document) {
+        try (BasicOutputBuffer output = new BasicOutputBuffer(); BsonBinaryWriter writer = new BsonBinaryWriter(output)) {
+            MongoClientSettings.getDefaultCodecRegistry().get(Document.class).encode(writer, document,
+                EncoderContext.builder().build());
+            if (output.getSize() > CHAMPION_BUILD_MAX_BSON_BYTES)
+                throw new IllegalArgumentException("Champion build BSON exceeds safe update size: " + output.getSize());
+        }
     }
 
     private static Bson entityUpdateStage(Map<String, Object> operation) {

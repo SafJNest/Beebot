@@ -2,12 +2,14 @@ package com.safjnest.lol.queue.scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.arena.ArenaItemCatalog;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.job.Job;
@@ -38,6 +40,22 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     public static AbstractScheduler<DatabaseWorkerType> scheduler() {
         return INSTANCE;
+    }
+
+    public static CompletableFuture<Boolean> startChampionArena(Filter filter, ArenaItemCatalog catalog) {
+        return startChampionArena(filter, catalog, CHAMPION_SERVICE);
+    }
+
+    static CompletableFuture<Boolean> startChampionArena(Filter filter, ArenaItemCatalog catalog,
+            ChampionService service) {
+        Filter snapshot = ChampionService.arenaFilterSnapshot(filter);
+        Objects.requireNonNull(catalog, "Detached catalog for the requested full patch required");
+        Objects.requireNonNull(service);
+        String key = "champion-arena:" + snapshot.toKey();
+        String name = "champion arena champion=" + snapshot.champion()
+            + " patch=" + snapshot.patch() + " shard=ALL";
+        return submit(DatabaseWorkerType.CHAMPION, JobPriority.BACKGROUND, key, name,
+            job -> service.refreshArena(snapshot, catalog, job));
     }
 
     public static CompletableFuture<Boolean> startProfileStatistics(Summoner summoner, Filter filter) {
@@ -344,6 +362,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     static boolean isHeavyChampionTaskKey(String key) {
         return key != null && (key.startsWith("champion-stats-matrix:")
             || key.startsWith("champion-build:")
+            || key.startsWith("champion-arena:")
             || key.startsWith("champion-data-refresh:"));
     }
 

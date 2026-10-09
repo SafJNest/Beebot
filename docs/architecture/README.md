@@ -160,28 +160,26 @@ Operational guide for adding command / endpoint / service / model / queue / Mong
 
 The operational documentation for the LoL migration is in [`docs/mongo/`](../mongo/README.md). ADR-0009 is accepted; Guardian gates remain mandatory for every capability.
 
-## Arena champion analytics final target
+## Arena champion analytics
 
-The [Arena contract](../arena-build/contracts.md),
-[Java/JSON schema](../arena-build/schema.md) and
-[phases](../arena-build/phases.md) record the final user requirement.
-Phase 2 is realigned: parser → resolver → pure accumulator → `Build.arena`.
+The [contract](../arena-build/contracts.md), [schema](../arena-build/schema.md)
+and [phases](../arena-build/phases.md) define the approved Phase 3 ownership.
+Parser → resolver → pure accumulator produces ArenaBuildData; MongoDB updates
+only build.arena in the existing champion_builds document for the normal filterKey.
+Standard writes set their individual root/build paths and preserve Arena.
+No replace/read-merge-replace, CAS, second document, discriminator or collection.
 
-Arena data belongs to the shared Build, with overall positional statistics,
-actually observed builds and generic cores containing flat steps with full
-context. Core keys are boots+A1 or boots+P1. The existing `StatisticalLeaf`,
-catalog, coverage and strict event handling are reused; FirstPrismaticResolver
-is invoked on sanitized attributable evidence in the analytics flow. No competing canonical statistics
-root, duplicate service or Spring success DTO is required.
+Arena and standard retain separate populations, versions and readiness. Standard
+reads omit Arena internally so ADR-0006/0012 output remains unchanged. ChampionService
+and ComputeScheduler own the internal opt-in pipeline through QueueHandler on
+CHAMPION. No new service, HTTP route, automatic refresh or scheduler operation.
 
-Persist the complete champion/patch/CHERRY build in `champion_builds`, keeping
-Arena and standard populations logically separate. No new Arena collection or
-preemptive core splitting is planned. Future splitting, only after measured BSON/
-cardinality problems, stays in the same collection.
+The Arena bounded left join includes matches lacking timelines; standard reader
+eligibility stays unchanged. Catalog is immutable input supplied by the caller
+for the exact requested patch. Completeness remains unproven unless source evidence
+establishes it. Participant and Tracker remain unchanged, as do accepted ADRs.
 
-Standard generator, eligibility, response and presentation keep ADR-0006/0012
-behavior. Arena computation is currently internal: Phase 2 changes no HTTP
-contract and amends no accepted ADR. The eventual Arena read integration
-must review canonical Build projection/versioning at the existing owners.
-Participant and Tracker stay unchanged; pure accumulation, Mongo persistence
-and service/queue orchestration retain separate ownership.
+Shared StatisticalLeaf/timing primitives support positions, observed builds,
+generic boots+A1/boots+P1 cores and full-context steps. The semantic Arena payload
+is versioned independently. Actual Mongo/index/BSON/heap and operational rollout
+gates remain required; offline verification does not certify production readiness.

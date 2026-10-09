@@ -49,12 +49,6 @@ public record Build(
             skillOrders, prismaticOptions, augmentOptions, null);
     }
 
-    public static Build arena(Filter filter, ArenaBuildData data) {
-        return new Build(filter, Math.toIntExact(data.stats().games()), Math.toIntExact(data.stats().wins()),
-            data.stats().winrate(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), data);
-    }
-
     public enum Kind { ITEM, BOOTS, PRISMATIC, AUGMENT }
 
     public record Timing(long timeSumMillis, long timeCount) {

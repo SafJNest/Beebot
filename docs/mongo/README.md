@@ -8,7 +8,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - MariaDB is read exclusively by MongoMigration for the backfill.
 - LoL application reads go through MongoDB; there is no MariaDB fallback.
 - A Mongo error is explicit in the runtime and does not trigger a MariaDB fallback.
-- App.isTesting() selects beebot_test; otherwise beebot is used.
+- App.isTesting() selects beebot_test_test; otherwise beebot_test is used (current MongoDB constants).
 - Custom builds and summoner.metrics are out of scope.
 - The initial backfill migrates only raw data: first `summoner` with `ranks{}` and `masteries[]` in the same batch, then `match` with participants.
 - Identity and participant upserts initialize `ranks{}` only when the summoner is new; existing ranks remain owned by the explicit rank writers and are never replaced by an identity refresh.
@@ -97,32 +97,36 @@ rsc/settings.json contains a server-level URI. The URI must not contain the appl
 
 Before completion verify LoL Mongo-only reads and writes, no runtime import of LeagueDB, no mirror/outbox/dual-write proxy and tests for test database, registry/idempotency/preflight of indexes, bans, enum, flat participant, conversions and migration resume/high-water mark.
 
-## Arena final target in the existing build collection
+## Arena in the existing build collection
 
-The [final Arena contract](../arena-build/contracts.md) reuses `champion_builds`.
-Store one complete build per champion + patch + CHERRY through the existing
-filter-key/structured-build envelope. Arena data contains stats, positional
-distributions, observed builds and generic cores/steps. Standard and Arena
-populations remain distinct within that collection.
+Exactly one champion_builds document per normal filterKey stores standard and
+build.arena. MongoDB owns both entrypoints. Standard single/bulk updates `$set`
+root standard metadata and individual standard build paths, preserving Arena.
+Arena sets build.arena atomically and initializes filterKey on insertion. No
+new identity, discriminator, collection, replacement or read-merge-replace.
+Arena-only inserts have no standard buildVersion/readiness marker. Standard
+read projection removes Arena before deserialization, so malformed Arena cannot
+break standard reads and the public response stays unchanged.
 
-No separate Arena statistics, summary, state or fallback collection is planned.
-No core splitting is part of the initial design. Only measured BSON/cardinality
-limits can justify later splitting cores into documents in the same collection.
-The implemented [schema](../arena-build/schema.md) uses optional `Build.arena`
-with schemaVersion=2 and aggregationVersion=3. JsonCodec JSON/structured BSON
-round trips pass in memory. Operational persistence/read dispatch is still
-Phase 3 work; no new writer/query owner or collection was introduced.
+Arena schema=3/aggregation=3 uses JsonCodec semantic structured BSON. Its full
+subtree is validated/encoded before the update. Local size/headroom guards cannot
+measure existing standard fields without reading: Mongo's atomic combined-document
+limit remains authoritative, and rejection leaves the previous value intact.
+Do not prune rare steps or split cores without measured evidence.
 
-At integration, identify the current Arena payload at the MongoDB/service
-owners. Discard and regenerate obsolete Arena aggregates from source matches;
-no backward-compatible projection, adapter or old-Arena-document test is required.
-The standard generator and unrelated populations remain unchanged.
-Review the actual filter-key identity/index, atomic replacement, BSON headroom
-and source coverage before rollout; do not claim a migration or index change
-without implementing and verifying it.
+The exact full-patch CHERRY match query includes queue/patchMajor/champion plus
+exact patch; bounded event joins use match_events._id and preserve missing timelines.
+Standard build/stat reader eligibility is unchanged. Catalog and source completeness
+are supplied outside pure accumulation; internal callers provide patch-correct
+immutable catalog, with completeness conservative by default.
 
-This Phase 2 realignment performs no live Mongo read/write, collection bootstrap,
-backfill or production migration. Match/Participant/event writers, standard
-build queries and caches remain unchanged. Missing timelines must retain
-independent Arena statistics in the future provider path; existing standard
-timeline eligibility remains unchanged.
+Index definitions/options and explains were not inspected on a live database;
+champion_builds_filter remains the documented candidate access path. No index
+creation/migration or automatic rebuild is introduced. Live Mongo round-trip,
+combined BSON/cardinality, representative heap and rollout gates remain open.
+See [phases](../arena-build/phases.md) for current offline evidence.
+
+Code at MongoDB.PRODUCTION_DATABASE/TEST_DATABASE currently maps production to
+beebot_test and testing to beebot_test_test; the historical names in ADR-0009
+configuration are stale. No database connection or production operation was
+performed in Phase 3. Do not identify an isolated environment from its name alone.

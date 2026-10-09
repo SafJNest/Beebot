@@ -1,6 +1,7 @@
 package com.safjnest.lol.champion;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
@@ -23,6 +24,10 @@ public final class ChampionBuildProvider {
 
     public static void forEachBatch(Filter filter, Consumer<List<QueryRecord>> consumer) {
         MongoDB.forEachChampionBuildRawBatch(filter, BATCH_SIZE, consumer);
+    }
+
+    public static void forEachArenaBatch(Filter filter, Consumer<List<Match>> consumer) {
+        MongoDB.forEachChampionArenaMatchBatch(filter, BATCH_SIZE, consumer);
     }
 
     public static ChampionBuildData.Game parse(QueryRecord record, Filter filter) {

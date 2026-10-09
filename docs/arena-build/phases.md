@@ -2,8 +2,8 @@
 
 Status: Phase 2 realigned on 2026-10-02 to the final Arena requirement of
 2026-10-01. The [contract](contracts.md) is authoritative; [schema](schema.md)
-documents the implemented Java/JSON structure. Operational Phases 3–5 remain
-pending; the previous purchase-sequence Phase 2 is superseded.
+documents the implemented Java/JSON structure. Phase 3 internal implementation follows the approved disjoint-path write
+contract; live operational gates and Phases 4–5 remain pending; the previous purchase-sequence Phase 2 is superseded.
 
 ## Phase 0 — source audit and rollout gates
 
@@ -81,9 +81,9 @@ separate.
 | Serialization | current Arena/standard JSON and in-memory structured BSON round trips; detached snapshots; nullable facts |
 | Standard behavior | current Build serialized field set/results; no Arena payload on standard; standard generator/producer/consumers unchanged |
 
-### Current validation — 2026-10-02
+### Historical Phase 2 validation — 2026-10-02
 
-Maven offline compilation and 105 targeted tests pass with zero failures, errors
+Before Phase 3, Maven offline compilation and 105 targeted tests passed with zero failures, errors
 or skips: ArenaGameParserTest (33), ArenaChampionAnalyzerTest (22),
 FirstPrismaticResolverTest (8), BuildTest (1), BuildSignatureTest (6),
 ChampionBuildEngineTest (10), ChampionBuildProviderTest (2),
@@ -119,30 +119,142 @@ preserved and updated to record current implementation. Participant, Tracker,
 standard generator/provider, operational writers/queries/caches, presentation
 and accepted ADRs are unchanged.
 
-## Phase 3 — existing provider and same-collection persistence
+## Phase 3 — existing provider and same-document persistence
 
-Use existing provider/service/MongoDB owners, with a bounded match/event join
-that delivers Arena matches even when timelines are missing. Preserve standard
-timeline eligibility. Supply immutable catalog and explicit source-completeness
-information outside the accumulator.
+Approved operational contract: exactly one champion_builds document per normal
+filterKey; Arena lives only in build.arena alongside standard fields. Standard
+and Arena own disjoint paths. MongoDB standard single/bulk writes use `$set` of
+root metadata and individual standard build.* fields; Arena sets its complete
+subtree atomically. No whole build set, replacement, CAS, read-merge-replace,
+new identity/discriminator/collection or duplicate service. Both refresh orders
+preserve the other population; an Arena-first document is not standard-ready.
 
-Reuse `champion_builds`: one complete document per champion + patch + CHERRY.
-Use the normal filter-key identity/envelope, with neutral lane/rank/region and
-no opponent/duo variants for the initial Arena scope. Version/discriminate the
-Arena payload so existing standard CHERRY documents are not mistaken for it.
-Only the current Arena schema is supported. Discard obsolete Arena aggregates
-and regenerate whole documents from source matches; do not add conversion,
-compatibility readers or tests to preserve old Arena document shapes.
+ArenaBuildData is the pure accumulator result, schemaVersion=3 and
+aggregationVersion=3. The schema increment represents semantic JSON identities
+and collections, not a change to stats/order/denominators. Build.arena factory
+is removed. Standard Mongo read projection strips Arena before deserialization,
+preserving API and standard readability even with malformed Arena content.
 
-Do not create separate Arena collections, duplicate writers, independent
-services, core documents or a migration/backfill now. Only measured BSON or
-cardinality problems may justify future core splitting in the same collection.
-Verify size/headroom, atomic replacement, existing identity/index usage, in-memory
-and test-database round trips, explains and heap before rollout.
+ChampionBuildProvider/MongoDB use a bounded left join of <=100 matches and
+match_events. Missing timelines still reach Arena; standard eligibility remains
+unchanged. Scope is exact full patch (at least three numeric segments), CHERRY,
+neutral champion dimensions and canonical GREATER_OR_EQUAL rank behavior with
+no rank. Source projection retains all participant identities. Batch/BSON data
+are released; inputs and catalog are detached. Catalog is supplied by the internal
+caller for that patch; no current-patch fetch is introduced. Completeness remains
+false absent explicit source evidence; corrupt payloads fail rather than falling
+back as missing timelines.
 
-Submit operational work through existing QueueHandler owners. A future rebuild
-must expose current champion/patch/shard as applicable plus total/completed/
-missing/failed. No production scheduler or backfill run is part of Phase 2.
+ChampionService and ComputeScheduler reuse QueueHandler/CHAMPION with internal
+opt-in entrypoints, distinct dedup key, and heavy-job reservation. No endpoint,
+command or automatic refresh calls Arena. Progress exposes current champion,
+patch, shard=ALL and source total/completed/missing/failed in phase. Total counts
+discovered candidates; missing overlaps completed. Structured progress follows
+one aggregate item to avoid per-match retained maps. Write/source failures fail
+the job and propagate exceptions.
+
+Local BSON payload/update checks reserve 256 KiB below 16 MiB before Mongo access.
+They do not measure the unknown existing standard subtree. The server's atomic
+final-document size check preserves the old subtree on rejection. Test-database
+round-trip and actual combined BSON/headroom/explain remain rollout gates.
+No pruning, split cores, production operation, rebuild, backfill or commit.
+
+### Current Phase 3 verification — 2026-10-02
+
+**Internal implementation/offline gate passed; live operational gates open.**
+Final coordinated Maven offline run: 151 tests across 19 suites, zero failures,
+errors or skips, completed at 16:27 Europe/Rome. All main/test sources compiled
+with source/target 25 on OpenJDK 26.0.2 (local openjdk@25 alias); actual JDK 25
+execution remains untested. Existing deprecation/Lombok/Unsafe warnings remain.
+Some preexisting Filter/static-data initialization logs unreachable Redis/Riot
+requests; those do not establish any successful live service validation.
+
+| Suite | Tests |
+|---|---:|
+| ArenaGameParserTest | 33 |
+| ArenaChampionAnalyzerTest | 22 |
+| FirstPrismaticResolverTest | 8 |
+| BuildTest | 1 |
+| BuildSignatureTest | 6 |
+| ChampionBuildEngineTest | 10 |
+| ChampionBuildProviderTest | 3 |
+| ChampionBuildTimelineUtilsTest | 4 |
+| MongoChampionBuildRecordTest | 4 |
+| LolApiConfigTest | 5 |
+| FilterTest | 4 |
+| ChampionServiceMatrixTest | 4 |
+| BuildUtilsTest | 2 |
+| MongoChampionArenaSourceTest | 7 |
+| MongoChampionArenaPersistenceTest | 8 |
+| ChampionServiceArenaTest | 9 |
+| ComputeSchedulerArenaTest | 5 |
+| RouterTest | 14 |
+| ChampionMatrixRequestTest | 2 |
+
+The new source tests prove detached projection/hydration helpers, absence/empty/
+corrupt events, full-patch query shape and unchanged standard eligibility offline.
+Persistence tests exercise the actual MongoDB writer against an isolated in-memory
+collection proxy: both refresh orders, concurrent disjoint updates, bulk path,
+true encoded BSON/JSON round-trip of the combined envelope, pre-write size and
+serialization failures, standard isolation from unsupported Arena, acknowledgment
+and simulated server rejection. The proxy proves operation shape/error handling,
+not Mongo server atomicity, index use or final-document enforcement.
+
+Service tests exercise the real pure pipeline with injected source/writer,
+fallback and empty source, fail-closed invalid/duplicate source, write rejection,
+filter snapshot and bounded Job item state. Scheduler tests use the real local
+QueueHandler with synthetic work for CHAMPION/background routing, dedup/follower,
+caller mutation, heavy reservation and retry. Test workers are shut down; no
+actual data rebuild is submitted. Independent reviews: orchestration reviewed A,
+provider reviewed model/B, Mongo reviewed C; fixes remained with their owners.
+An initial test compilation signature error and status route-name expectation
+were corrected before the final fully passing run.
+
+Re-executing relevant Phase 2 parser/model/standard regressions was justified by
+finish interface, JSON schema, provider, standard writer and reader changes.
+Historical 105-test evidence above remains separately recorded.
+
+Four isolated offline synthetic sizing runs on OpenJDK 26.0.2/-Xmx512m, batch100,
+measured encoded BSON and GC-based retained heap. The [sizing report](phase3-sizing.md)
+records fixtures, methodology and limits. Fixed contexts (1k/10k matches) encoded
+the same 43,408-byte combined fixture; retained accumulator grew 0.26→1.29 MiB.
+Unique Legendary-per-match fixtures (500/1000 matches) encoded 10,407,648 /
+20,799,653 bytes and retained 19.10 / 37.82 MiB in the accumulator. The latter
+exceeds 16 MiB and must be rejected; it is evidence of cardinality risk, not
+permission to prune or implicitly split. Sampled allocation high-water is not
+precise peak/RSS; catalog is included in baseline. Synthetic catalog/contexts,
+empty standard option lists and absent timelines are not representative data.
+
+Final CodeGraph status up to date, explore/impact reviewed and whitespace checks
+pass. Arena Java shape, semantic JSON and placement histogram arithmetic checked.
+All new local documentation links resolve; three missing links already present
+at HEAD remain outside this implementation: architecture ADR-0004 link,
+Mongo leaderboard-rank-indexes link and API rank-history link. No accepted ADR,
+controller, exposed HTTP payload/status shape, Participant, Tracker or presentation changed.
+
+No full Maven suite, live API/Redis validation, representative timeline audit,
+live Mongo test-database round-trip, index options/explain, representative combined
+BSON/cardinality/heap or rollout was performed. mongod/mongosh/docker were not
+available in PATH; no isolated Mongo was demonstrated and the configured URI was
+not used. Current runtime names are production=beebot_test and testing=
+beebot_test_test; old ADR configuration names are stale and have not been amended.
+No production operation, backfill, migration, pruning or commit occurred.
+
+### Phase 3 files and reused owners
+
+| Area | Files |
+|---|---|
+| Source | ChampionBuildProvider.java; MongoDB.java bounded left join/projection |
+| Pure model | ArenaBuildData.java; ArenaChampionAnalyzer.java; Build.java removes ambiguous factory |
+| Persistence | MongoDB.java standard single/bulk path updates, Arena subtree update/read, BSON guard and standard projection |
+| Orchestration | ChampionService.java; ComputeScheduler.java; existing QueueHandler/Job/Registry reused unchanged |
+| Tests | ChampionBuildProviderTest.java and ArenaChampionAnalyzerTest.java updated; MongoChampionArenaSourceTest.java, MongoChampionArenaPersistenceTest.java, ChampionServiceArenaTest.java, ComputeSchedulerArenaTest.java added |
+| Documentation | Arena README/contracts/phases/schema, historical phase3-analysis and phase3-sizing; architecture README, handbook, Mongo README/query inventory and API champion/page/index notes synchronized for internal-only scope |
+
+Standard root metadata remains standard-owned. Arena-first insert stores no
+standard ready marker. Arena JSON uses schema3; unsupported old subpayloads
+are missing/rebuilt rather than adapted. Internal caller supplies patch-correct
+immutable catalog explicitly. No automatic Arena API, scheduler or cache hookup.
 
 ## Phase 4 — read/API integration when requested
 
@@ -170,7 +282,7 @@ preexisting documentation edits. Use CodeGraph explore/impact and verify the
 index is current. Report Java schema, JSON, changed files, tests and remaining
 limits; do not describe the current standard CHERRY endpoint as serving Arena.
 
-### Files in the realignment
+### Historical Phase 2 realignment files
 
 | Area | Files |
 |---|---|
@@ -185,5 +297,6 @@ limits; do not describe the current standard CHERRY endpoint as serving Arena.
 The six shared documents retain their previous non-Arena content. Arena schema
 and fixture JSON are synchronized with the actual model/serializer, with checked
 placement histograms, denominators, rates and newly added local links. CodeGraph
-is up to date and the final diff passes whitespace checks. No source outside the
-listed Arena/shared-model boundaries was modified.
+is up to date and the final diff passes whitespace checks. In Phase 2, no source outside the
+listed Arena/shared-model boundaries was modified. Phase 3 extends the provider,
+Mongo/service/queue owners listed in its dedicated file table above.

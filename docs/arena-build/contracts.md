@@ -1,7 +1,7 @@
 # Arena analytics definitive contract
 
 Status: definitive contract from the user's final requirement on 2026-10-01;
-Phase 2 parser/model/accumulator realigned on 2026-10-02. [Schema](schema.md) gives
+Phase 2 parser/model/accumulator realigned on 2026-10-02; Phase 3 write ownership approved on the same date. [Schema](schema.md) gives
 the implemented Java shape and a serializer-generated fixture example;
 [phases](phases.md) records passed offline gates and pending operational integration.
 
@@ -12,8 +12,10 @@ the entire non-Prismatic purchase sequence, `220007` as a build/core item, a
 separate Arena statistics collection, different schemas for decision/fallback
 cores, synthetic default builds and automatic backend sample-threshold backoff.
 
-Reuse shared `Build`, `StatisticalLeaf`, choice/slot/timing primitives,
-`ArenaItemCatalog`, coverage counters and `FirstPrismaticResolver`. Arena data
+Reuse shared `Build`, `StatisticalLeaf` and timing primitives,
+`ArenaItemCatalog`, coverage counters and `FirstPrismaticResolver`. Nested Arena
+choices/slots preserve the same additive semantics with semantic identities;
+standard choice serialization is unchanged. Arena data
 belongs to the build model in `lol.model`; do not create a competing statistics
 root or a Spring success DTO. `ArenaBuildData` denotes the Arena-specific payload
 of the shared Build. Java helper types may be nested/reused rather than creating
@@ -28,7 +30,7 @@ generator, including existing `queue=CHERRY` requests. Phase 2 changes no
 endpoint. Do not amend accepted ADRs implicitly when exposing Arena later.
 
 The accumulator is pure: detached match/parser/catalog inputs in, detached
-snapshots out. MongoDB owns persistence; ChampionService and the existing
+ArenaBuildData snapshots out. MongoDB owns persistence; ChampionService and the existing
 provider/queue owners own loading, refresh and orchestration. No Redis, Mongo,
 scheduler, catalog fetch or Riot call belongs inside the accumulator. Participant
 fields and Tracker writers are unchanged. No new collection or independent
@@ -192,8 +194,8 @@ fallback-build aggregate is required.
 Both core types use the same `cores[]` schema:
 
 ```text
-CoreKey { bootsId, anchorKind, anchorId }
-anchorKind = AUGMENT | PRISMATIC
+core { boots, augment } OR core { boots, prismatic }
+Java derives anchorKind = AUGMENT | PRISMATIC and anchorId internally
 ```
 
 - Decision core: boots + A1 (`anchorKind=AUGMENT`). P1 is a later state/choice.
@@ -211,9 +213,9 @@ not timestamps, identifies contexts and paths. The former
 ## Steps and choices
 
 Every core contains flat `steps[]`. A step stores its complete `context`:
-`bootsId`, ordered equipment (including kind/type position), and augments with
-their positions. A parent ID alone is insufficient. It also stores its own stats
-and choices separated into `legendary[]`, `prismatics[]` and augment options
+`boots`, ordered equipment (item/prismatic identity, general/type position),
+and augments with their positions. A parent ID alone is insufficient. It also stores its own stats
+and choices separated into `items[]`, `prismatics[]` and augment options
 grouped by position (`augments[]`, each carrying `position`).
 
 The context includes the core anchor: A1 for a decision root, P1 for a fallback
@@ -282,45 +284,59 @@ full-order exact/mixed/fallback populations separately. Counters need not be
 mutually exclusive unless their definitions explicitly say so. Unknown source
 completeness cannot be turned into proven completeness by a default boolean.
 
-## Single collection and current serialization
+## Single collection and write ownership — approved Phase 3
 
-Reuse `champion_builds` only. The Arena document is one complete document per
-champion + patch + `queue=CHERRY`, with no lane/rank/region/opponent/duo variants
-in this initial population. Retain the existing filter-key conventions and
-structured `build` envelope. The logical Arena payload is
-`stats + positions + builds + cores + coverage`; [schema](schema.md) shows the
-implemented nullable `Build.arena` payload.
+Exactly one `champion_builds` document exists per normal `filterKey`:
+`_id = filterKey`. Standard and Arena coexist in the same structured `build`.
+Arena scope is champion + exact full patch + CHERRY, neutral lane/rank/region,
+no opponent/duo or time variants. Do not add a document discriminator, second
+identity, second collection or independent persistence owner.
 
-Do not create `arena_champion_statistics`, `arena_summary`, `arena_state` or
-`arena_fallback` collections. These are rejected former proposals, not planned
-collections. Do not split summaries/core states into documents now. Only actual
-BSON/cardinality measurements can justify later splitting cores into additional
-documents in the same collection. Measure BSON/headroom and heap before rollout;
-measurement is not permission to discard rare steps or silently truncate data.
+MongoDB owns both write entrypoints. Standard writes atomically `$set` root
+`games`, `winrate`, `buildVersion`, `lastUpdate`, and the individual standard
+`build.*` paths: filter, games, wins, winrate, coreBuilds, coreItems, starters,
+boots, supportItems, roleBoundItems, slots, runes, summonerSpells, skillOrders,
+prismatics, augments. They must never set the entire `build` or replace the
+whole document. Arena writes atomically set only `build.arena`; filterKey is
+initialized on insertion. No read-merge-replace or CAS is needed for disjoint
+paths. Standard and Arena can rebuild independently in either order.
 
-Use the existing `JsonCodec` for JSON and structured BSON; no opaque JSON field,
-new codec or DTO. Standard serialization omits the optional Arena payload and
-retains the current standard field set. Arena is serialized only in its current
-shape. Nullable facts and empty distributions stay distinct.
+The pure accumulator returns `ArenaBuildData`, not an empty standard Build.
+The ambiguous `Build.arena(...)` factory is removed. Standard root counts,
+version and freshness remain exclusively standard-owned; Arena carries its own
+stats, coverage and schema/aggregation versions. Arena-first inserts do not
+claim standard readiness. The standard reader removes arena from its detached
+projection before deserialization, preserving the public standard response
+and preventing invalid Arena content from breaking standard reads.
 
-The Arena aggregate has one supported schema: `ArenaBuildData` inside Build,
-with schemaVersion=2 and aggregationVersion=3. The former orderedCore/orderedItems/
-orderedAugments/paths fields, their constructor/factory and unused Core/Path types
-have been removed. There is no reader/adapter/migration or regression-test gate
-for those obsolete aggregates. Discard and regenerate affected Arena aggregates
-from matches when operational integration is implemented; preserve source data.
-Standard CHERRY output is not an Arena aggregate. The existing persistence/read
-owners will identify the current Arena payload; absent/obsolete Arena data must
-be rebuilt, not converted or served as current. No production document was
-deleted or regenerated in this task.
+Use JsonCodec for JSON and structured BSON. SchemaVersion=3 and
+aggregationVersion=3 describe the semantic payload: core keys contain boots
+plus augment or prismatic; positions and step choices use items/augments/
+prismatics; identity leaves use item/boots/augment/prismatic. Generic kind/id
+remain internal only. Nullable facts, rates, complete steps and populations
+retain the Phase 2 semantics. This serialization change increments the schema
+version from 2; obsolete Arena aggregates are regenerated from sources, not
+converted. No source or production aggregate is deleted by this task.
+
+Each Arena write serializes and measures the payload/update BSON before Mongo.
+A conservative local headroom gate rejects oversized payloads before sending
+an update. Without reading the existing standard fields, this is not a complete
+combined-document size measurement: Mongo's atomic final-document size check
+is authoritative and rejects the operation without replacing the old value.
+Serialization, local size failure and server failure must propagate to the job;
+no partial subtree updates, deletion, truncation or swallowed error.
+
+No core splitting or sample pruning is introduced. Measure combined BSON,
+cardinality and heap on representative data before rollout. Splitting in the
+same collection remains a future decision requiring measured evidence.
 
 ## Acceptance and scope
 
 The implementation must pass the tests in [phases](phases.md), connect parser →
-resolver → accumulator → shared Build payload, and later connect persistence
+resolver → accumulator → ArenaBuildData → build.arena, and later connect persistence
 and read consumers through existing owners. No backend selection threshold,
 advanced ranking/ML, frontend redesign, new HTTP route, Redis namespace,
 production scheduler operation, backfill or production Mongo migration is part
 of Phase 2. Implemented model, JSON example and current validation are linked
 in [schema](schema.md) and [phases](phases.md). API presentation, Participant,
-Tracker, existing provider/writer/query/cache owners and accepted ADRs are unchanged.
+Tracker, public API/presentation, standard eligibility and accepted ADRs remain unchanged. Phase 3 extends existing provider/Mongo/service/queue owners only; see phases.md for verification and operational limits.

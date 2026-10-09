@@ -111,34 +111,22 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `$in` on the `summoner` primary key; the required indexes are described in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
 
-## Arena analytics final target (not an active query)
+## Arena analytics internal Phase 3 path
 
-The [Arena contract](../arena-build/contracts.md) requires the existing
-`champion_builds` collection, with one complete champion/patch/CHERRY document.
-Use the normal filter-key identity and structured build envelope, with neutral
-lane/rank/region and no opponent/duo variants in this initial scope. No separate
-Arena collection, state query or core-document access pattern is planned.
+Reuse champion_builds with `_id=filterKey`, one standard+Arena document and
+neutral champion/full-patch/CHERRY scope. No discriminator or extra collection.
 
-The document contains Build-owned stats, overall positions, actually observed
-builds and generic boots+A1 / boots+P1 cores with full-context steps. Reuse
-`JsonCodec`; no opaque JSON/second codec. Standard documents omit the optional
-Arena payload and retain the current standard fields. The implemented shared schema is
-in [schema.md](../arena-build/schema.md).
+| Operation | Implemented contract | Owner |
+|---|---|---|
+| Arena source | match query queue+patchMajor+participant champion, exact full patch; complete participant projection; bounded batches <=100 | MongoDB/ChampionBuildProvider |
+| Event left join | match_events `_id: {$in: bounded match IDs}`; missing timeline match still delivered | MongoDB |
+| Standard write | atomic `$set` root metadata and individual standard build.* paths, never build/replace | MongoDB |
+| Arena write | `_id=filterKey`, `$set build.arena`, filterKey on insert; semantic subtree schema3 | MongoDB |
+| Standard read | existing filterKey/buildVersion lookup, detached projection removes arena | MongoDB |
 
-The current findChampionBuilds/readBuild/upsertChampionBuilds path owns standard
-build lookup/mapping/writes and does not yet serve this target. Future integration
-must distinguish final Arena documents from existing standard CHERRY payloads
-at these existing owners. Obsolete Arena aggregates are discarded/regenerated
-from source matches, with no compatibility projection or adapter. Do not present
-an imagined Mongo predicate as a currently implemented query or assume that
-existing buildVersion alone certifies the new Arena data.
-
-The future bounded provider may reuse the existing match/event join but must
-deliver Arena matches without timelines and retain valid fallback/independent
-facts. Preserve standard timeline eligibility. Catalog loading, source completeness,
-persistence, orchestration and cache invalidation stay outside the pure accumulator.
-
-This Phase 2 realignment adds no query/index/writer and performs no explains,
-Mongo operations or backfill. Verify actual identity/index usage, explain,
-test-Mongo round trip and BSON/cardinality/headroom at implementation/rollout.
-Core splitting is a future same-collection option only after measured problems.
+Candidate indexes remain match queue/patchMajor and champion_builds_filter;
+match_events uses unique _id. No new runtime indexes or live explain was executed.
+Indexes/options/coverage must be verified operationally, not inferred from this table.
+BSON local payload/update guards plus Mongo's atomic final-document check protect
+previous data on failure; combined size/heap measurements on representative data
+remain pending. Standard eligibility and public APIs remain unchanged.

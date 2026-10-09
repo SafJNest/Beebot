@@ -1,33 +1,35 @@
-# Implemented Arena Java and JSON schema
+# Arena Java/JSON schema — Phase 3
 
-Status: pure Phase 2 implemented on 2026-10-02. The nullable `Build.arena`
-payload below is real Java, serialized through existing JsonCodec; it is not
-currently served by the champion endpoint. See [contracts](contracts.md) and
-[phases](phases.md) for semantics, test evidence and pending integration gates.
+ArenaBuildData is the pure accumulator result, stored only at `build.arena`.
+The combined Build still contains the original standard fields. The unsafe
+Build.arena factory was removed; Arena does not return an empty standard build.
+SchemaVersion=3 increments the previous schema=2 for semantic JSON identities;
+aggregationVersion=3 preserves the statistical semantics. No compatibility
+reader/conversion for obsolete Arena shapes is added.
 
 ## Java shape
 
-The shared Build preserves its current standard behavior. `arena` is omitted
-when null. Obsolete orderedCore/orderedItems/orderedAugments/paths fields and
-their constructor/factory and unused Core/Path types have been removed. The accumulator returns Build;
-its standard option lists are empty for this projection. The former internal
-ArenaChampionStatistics root and purchase-sequence Branch map were removed.
-
-The complete Arena-specific type is
-[ArenaBuildData.java](../../src/main/java/com/safjnest/lol/model/ArenaBuildData.java):
+Canonical source: [ArenaBuildData.java](../../src/main/java/com/safjnest/lol/model/ArenaBuildData.java).
+Shared StatisticalLeaf and Build.Timing remain unchanged. Internal `kind()/id()`
+accessors derive identity from exactly one semantic field and are JsonIgnore.
+Nullable position/time facts remain explicit. Core anchors and item identity
+have one-of guards; immutable collections detach results from the accumulator.
 
 ```java
 public record ArenaBuildData(int schemaVersion, int aggregationVersion, StatisticalLeaf stats,
         Positions positions, List<ObservedBuild> builds, List<Core> cores, Coverage coverage) {
+
+    public static final int SCHEMA_VERSION = 3;
+    public static final int AGGREGATION_VERSION = 3;
 
     public ArenaBuildData {
         builds = List.copyOf(builds);
         cores = List.copyOf(cores);
     }
 
-    public record Positions(List<Build.Choice> boots, List<Build.Slot> augments,
-            List<Build.Slot> prismatics, List<Build.Slot> legendaryItems,
-            List<Build.Choice> membership, List<Build.Choice> unpositioned) {
+    public record Positions(List<Choice> boots, List<Slot> augments,
+            List<Slot> prismatics, @JsonProperty("items") List<Slot> legendaryItems,
+            List<Choice> membership, List<Choice> unpositioned) {
         public Positions {
             boots = List.copyOf(boots);
             augments = List.copyOf(augments);
@@ -38,7 +40,8 @@ public record ArenaBuildData(int schemaVersion, int aggregationVersion, Statisti
         }
     }
 
-    public record ObservedBuild(int bootsId, int firstPrismaticId, List<Integer> legendaryIds,
+    public record ObservedBuild(@JsonProperty("boots") int bootsId,
+            @JsonProperty("prismatic") int firstPrismaticId, @JsonProperty("items") List<Integer> legendaryIds,
             StatisticalLeaf stats, long denominator, Map<String, Long> orderQuality) {
         public ObservedBuild {
             legendaryIds = List.copyOf(legendaryIds);
@@ -51,9 +54,26 @@ public record ArenaBuildData(int schemaVersion, int aggregationVersion, Statisti
 
     public enum AnchorKind { AUGMENT, PRISMATIC }
 
-    public record CoreKey(int bootsId, AnchorKind anchorKind, int anchorId) {}
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CoreKey(@JsonProperty("boots") int bootsId, Integer augment, Integer prismatic) {
+        public CoreKey {
+            if (bootsId <= 0 || (augment == null) == (prismatic == null)
+                    || augment != null && augment <= 0 || prismatic != null && prismatic <= 0)
+                throw new IllegalArgumentException("Boots and one core anchor required");
+        }
 
-    public record Core(CoreKey key, StatisticalLeaf stats, long denominator, List<Step> steps) {
+        public CoreKey(int bootsId, AnchorKind kind, int id) {
+            this(bootsId, kind == AnchorKind.AUGMENT ? id : null, kind == AnchorKind.PRISMATIC ? id : null);
+        }
+
+        @JsonIgnore
+        public AnchorKind anchorKind() { return augment != null ? AnchorKind.AUGMENT : AnchorKind.PRISMATIC; }
+
+        @JsonIgnore
+        public int anchorId() { return augment != null ? augment : prismatic; }
+    }
+
+    public record Core(@JsonProperty("core") CoreKey key, StatisticalLeaf stats, long denominator, List<Step> steps) {
         public Core { steps = List.copyOf(steps); }
 
         @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -62,24 +82,85 @@ public record ArenaBuildData(int schemaVersion, int aggregationVersion, Statisti
 
     public record Step(Context context, StatisticalLeaf stats, Choices choices) {}
 
-    public record Context(int bootsId, List<EquipmentKey> equipment, List<AugmentKey> augments) {
+    public record Context(@JsonProperty("boots") int bootsId, List<EquipmentKey> equipment, List<AugmentKey> augments) {
         public Context {
             equipment = List.copyOf(equipment);
             augments = List.copyOf(augments);
         }
     }
 
-    public record EquipmentKey(Build.Kind kind, int id, Integer position, Integer typePosition) {}
+    public record EquipmentKey(@JsonInclude(JsonInclude.Include.NON_NULL) Integer item,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer prismatic, Integer position, Integer typePosition) {
+        public EquipmentKey {
+            if ((item == null) == (prismatic == null) || item != null && item <= 0 || prismatic != null && prismatic <= 0)
+                throw new IllegalArgumentException("One equipment identity required");
+        }
 
-    public record AugmentKey(int id, int position) {}
+        public EquipmentKey(Build.Kind kind, int id, Integer position, Integer typePosition) {
+            this(kind == Build.Kind.ITEM ? id : null, kind == Build.Kind.PRISMATIC ? id : null, position, typePosition);
+        }
 
-    public record Choices(List<Build.Choice> legendary, List<Build.Choice> prismatics,
-            List<Build.Slot> augments) {
+        @JsonIgnore
+        public Build.Kind kind() { return item != null ? Build.Kind.ITEM : Build.Kind.PRISMATIC; }
+
+        @JsonIgnore
+        public int id() { return item != null ? item : prismatic; }
+    }
+
+    public record AugmentKey(int augment, int position) {
+        @JsonIgnore
+        public int id() { return augment; }
+    }
+
+    public record Choices(@JsonProperty("items") List<Choice> legendary, List<Choice> prismatics,
+            List<Slot> augments) {
         public Choices {
             legendary = List.copyOf(legendary);
             prismatics = List.copyOf(prismatics);
             augments = List.copyOf(augments);
         }
+    }
+
+    public record Choice(@JsonInclude(JsonInclude.Include.NON_NULL) Integer item,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer boots,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer prismatic,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer augment, Integer position,
+            StatisticalLeaf stats, Build.Timing timing, long denominator, long unpositionedGames) {
+        public Choice {
+            int identities = (item == null ? 0 : 1) + (boots == null ? 0 : 1)
+                + (prismatic == null ? 0 : 1) + (augment == null ? 0 : 1);
+            if (identities != 1 || item != null && item <= 0 || boots != null && boots <= 0
+                    || prismatic != null && prismatic <= 0 || augment != null && augment <= 0)
+                throw new IllegalArgumentException("One choice identity required");
+        }
+
+        public static Choice of(Build.Kind kind, int id, Integer position, StatisticalLeaf stats,
+                Build.Timing timing, long denominator, long unpositionedGames) {
+            return new Choice(kind == Build.Kind.ITEM ? id : null, kind == Build.Kind.BOOTS ? id : null,
+                kind == Build.Kind.PRISMATIC ? id : null, kind == Build.Kind.AUGMENT ? id : null,
+                position, stats, timing, denominator, unpositionedGames);
+        }
+
+        @JsonIgnore
+        public Build.Kind kind() {
+            if (item != null) return Build.Kind.ITEM;
+            if (boots != null) return Build.Kind.BOOTS;
+            return prismatic != null ? Build.Kind.PRISMATIC : Build.Kind.AUGMENT;
+        }
+
+        @JsonIgnore
+        public int id() {
+            if (item != null) return item;
+            if (boots != null) return boots;
+            return prismatic != null ? prismatic : augment;
+        }
+
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        public double pickrate() { return denominator == 0 ? 0 : (double) stats.games() / denominator; }
+    }
+
+    public record Slot(int position, StatisticalLeaf population, List<Choice> options) {
+        public Slot { options = List.copyOf(options); }
     }
 
     public record Coverage(long matches, long participantGames, long decisionCoreGames, long fallbackCoreGames,
@@ -98,149 +179,476 @@ public record ArenaBuildData(int schemaVersion, int aggregationVersion, Statisti
 }
 ```
 
-`JsonProperty` is Jackson's annotation; `StatisticalLeaf` is the existing shared
-primitive. Positions and choices reuse `Build.Choice` and `Build.Slot`; `ITEM`
-means a classified completed normal/Legendary item, without renaming the
-standard enum. Slot `population` is its position-observed population. Every option's
-denominator remains global games or the parent core/step games, not slot games.
-`membership` deduplicates IDs across positions; `unpositioned` contains only
-samples lacking defensible positions. Missing timing uses timeCount=0 and
-averageTimeMillis=null. Missing placement uses placementGames=0 and
-averagePlacement=null. Rates/means are derived READ_ONLY JSON properties and
-are ignored on deserialization; additive counters are the source of truth.
+## Semantic JSON example
 
-Parser-only facts remain in
-[ParsedArenaGame.java](../../src/main/java/com/safjnest/lol/arena/ParsedArenaGame.java):
-
-```java
-record Equipment(Build.Kind kind, int id, Integer position, Integer typePosition,
-    Long timestampMillis, Integer tooltipSlot, OrderSource orderSource) {}
-record Augment(int id, int position) {}
-enum OrderSource { TIMELINE, FIRST_PRISMATIC_RESOLVER, TOOLTIP_FALLBACK }
-enum OrderQuality { EXACT, MIXED, FALLBACK, UNRESOLVED }
-```
-
-Parsed facts also hold placement/win/boots, the two separate paths, independent
-membership choices, effective firstPrismaticId, raw FirstPrismaticResult,
-firstPrismaticExact, equipmentComplete and reason counters. Context identity
-excludes timestamps, tooltip slots and source; nullable positions remain nullable.
-Coverage separates raw resolver type from effective EXACT/FALLBACK/UNRESOLVED P1
-quality and EXACT/MIXED/FALLBACK/UNRESOLVED equipment-path quality.
-
-## JSON payload example
-
-This `ArenaBuildData` fragment was generated by the implemented accumulator and
-JsonCodec from two synthetic fixtures. It is not a live endpoint or Mongo read.
-The first game has timed P1/L1/P2/L2 and A1/A2/A3; the second has the same
-boots/P1/L1/L2, a different A1, an A2 gap and A3, with no timeline. Thus one
-observed build pools both games and the fallback core pools both A1 variants.
-The example shows selected steps; the full aggregate retains all 46 observed
-prefix contexts (15 + 8 decision, 23 fallback), with no pruning. P/A positions
-not observed are absent, not fabricated as zero samples.
+The following excerpt is selected from actual JsonCodec output for two synthetic
+matches (one timed source and one fallback, with augment gaps). It is an offline
+serializer fixture, not an endpoint or live Mongo response. Lists below show only
+one position/membership option and one core/root step for readability; the actual
+aggregate retains all 2 cores and 35 observed steps without pruning.
+Stats/denominators in this excerpt are unmodified. Equipment remains one ordered
+sequence with semantic item/prismatic properties plus general/type positions;
+augments form a separate sequence. Generic kind/id keys never occur in Arena JSON.
 
 ```json
 {
-  "coverage": {
-    "participantGames": 2,
-    "fallbackCoreGames": 2,
-    "firstPrismaticResolutionTypes": {"TOOLTIP_FALLBACK":1,"ACCOUNTING":1},
-    "firstPrismaticQuality": {"FALLBACK":1,"EXACT":1},
-    "rejected": {},
-    "missing": {"ITEM_EVENTS_ABSENT":1,"ITEM_HISTORY_PARTIAL":1,"AUGMENT_ID_INVALID_OR_ABSENT":1,"EQUIPMENT_TIME_ABSENT":3},
-    "observedBuildGames": 2,
-    "ambiguous": {"FIRST_PRISMATIC_TOOLTIP_FALLBACK":1},
-    "matches": 2,
-    "decisionCoreGames": 2,
-    "equipmentOrder": {"FALLBACK":1,"EXACT":1}
-  },
+  "schemaVersion": 3,
   "aggregationVersion": 3,
-  "schemaVersion": 2,
-  "cores": [
-    {"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"pickrate":0.5,"steps":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"context":{"bootsId":3006,"equipment":[],"augments":[{"id":101,"position":1}]},"choices":{"prismatics":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":2000,"averageTimeMillis":2000},"id":447001,"position":1,"pickrate":1,"denominator":1,"unpositionedGames":0}],"legendary":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":3000,"averageTimeMillis":3000},"id":4001,"position":1,"pickrate":1,"denominator":1,"unpositionedGames":0}],"augments":[{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":111,"position":2,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}},{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":121,"position":3,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":3,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}}]}},{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"context":{"bootsId":3006,"equipment":[{"kind":"PRISMATIC","typePosition":1,"id":447001,"position":1}],"augments":[{"id":101,"position":1}]},"choices":{"prismatics":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":5000,"averageTimeMillis":5000},"id":447002,"position":2,"pickrate":1,"denominator":1,"unpositionedGames":0}],"legendary":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":3000,"averageTimeMillis":3000},"id":4001,"position":1,"pickrate":1,"denominator":1,"unpositionedGames":0}],"augments":[{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":111,"position":2,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}},{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":121,"position":3,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":3,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}}]}},{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"context":{"bootsId":3006,"equipment":[{"kind":"PRISMATIC","typePosition":1,"id":447001,"position":1},{"kind":"ITEM","typePosition":1,"id":4001,"position":2}],"augments":[{"id":101,"position":1}]},"choices":{"prismatics":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":5000,"averageTimeMillis":5000},"id":447002,"position":2,"pickrate":1,"denominator":1,"unpositionedGames":0}],"legendary":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":6000,"averageTimeMillis":6000},"id":4003,"position":2,"pickrate":1,"denominator":1,"unpositionedGames":0}],"augments":[{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":111,"position":2,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}},{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":121,"position":3,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":3,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}}]}}],"key":{"bootsId":3006,"anchorKind":"AUGMENT","anchorId":101},"denominator":2},
-    {"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"pickrate":0.5,"steps":[{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"context":{"bootsId":3006,"equipment":[],"augments":[{"id":102,"position":1}]},"choices":{"prismatics":[{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"PRISMATIC","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":447001,"position":1,"pickrate":1,"denominator":1,"unpositionedGames":0}],"legendary":[{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"ITEM","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":4001,"position":1,"pickrate":1,"denominator":1,"unpositionedGames":0}],"augments":[{"kind":"AUGMENT","options":[{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":122,"position":3,"pickrate":1,"denominator":1,"unpositionedGames":0}],"position":3,"population":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2}}]}}],"key":{"bootsId":3006,"anchorKind":"AUGMENT","anchorId":102},"denominator":2},
-    {"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"pickrate":1,"steps":[{"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"context":{"bootsId":3006,"equipment":[{"kind":"PRISMATIC","typePosition":1,"id":447001,"position":1}],"augments":[]},"choices":{"prismatics":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":5000,"averageTimeMillis":5000},"id":447002,"position":2,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"legendary":[{"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":3000,"averageTimeMillis":3000},"id":4001,"position":1,"pickrate":1,"denominator":2,"unpositionedGames":0}],"augments":[{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":101,"position":1,"pickrate":0.5,"denominator":2,"unpositionedGames":0},{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":102,"position":1,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":1,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}},{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":111,"position":2,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}},{"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":121,"position":3,"pickrate":0.5,"denominator":2,"unpositionedGames":0},{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":122,"position":3,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":3,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}}]}}],"key":{"bootsId":3006,"anchorKind":"PRISMATIC","anchorId":447001},"denominator":2}
-  ],
   "stats": {
-    "wins": 1,
-    "placementGames": 2,
-    "averagePlacement": 1.5,
     "games": 2,
+    "wins": 1,
+    "placementSum": 5,
+    "placementGames": 2,
+    "placements": {
+      "2": 1,
+      "3": 1
+    },
     "winrate": 0.5,
-    "placements": {"1":1,"2":1},
-    "placementSum": 3
+    "averagePlacement": 2.5
   },
   "builds": [
-    {"legendaryIds":[4001,4003],"bootsId":3006,"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"firstPrismaticId":447001,"pickrate":1,"orderQuality":{"FALLBACK":1,"EXACT":1},"denominator":2}
+    {
+      "boots": 3006,
+      "prismatic": 447001,
+      "items": [
+        4001,
+        4003
+      ],
+      "stats": {
+        "games": 2,
+        "wins": 1,
+        "placementSum": 5,
+        "placementGames": 2,
+        "placements": {
+          "2": 1,
+          "3": 1
+        },
+        "winrate": 0.5,
+        "averagePlacement": 2.5
+      },
+      "denominator": 2,
+      "orderQuality": {
+        "FALLBACK": 1,
+        "EXACT": 1
+      },
+      "pickrate": 1.0
+    }
   ],
+  "coverage": {
+    "matches": 2,
+    "participantGames": 2,
+    "decisionCoreGames": 1,
+    "fallbackCoreGames": 2,
+    "observedBuildGames": 2,
+    "missing": {
+      "AUGMENT_ID_INVALID_OR_ABSENT": 2,
+      "EQUIPMENT_TIME_ABSENT": 3,
+      "ITEM_HISTORY_PARTIAL": 1
+    },
+    "ambiguous": {
+      "FIRST_PRISMATIC_TOOLTIP_FALLBACK": 2
+    },
+    "rejected": {},
+    "firstPrismaticResolutionTypes": {
+      "TOOLTIP_FALLBACK": 2
+    },
+    "equipmentOrder": {
+      "FALLBACK": 1,
+      "EXACT": 1
+    },
+    "firstPrismaticQuality": {
+      "FALLBACK": 1,
+      "EXACT": 1
+    }
+  },
   "positions": {
-    "prismatics": [
-      {"kind":"PRISMATIC","options":[{"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":2000,"averageTimeMillis":2000},"id":447001,"position":1,"pickrate":1,"denominator":2,"unpositionedGames":0}],"position":1,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}},
-      {"kind":"PRISMATIC","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":5000,"averageTimeMillis":5000},"id":447002,"position":2,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}}
-    ],
-    "unpositioned": [],
     "boots": [
-      {"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"BOOTS","timing":{"timeCount":1,"timeSumMillis":1000,"averageTimeMillis":1000},"id":3006,"position":null,"pickrate":1,"denominator":2,"unpositionedGames":0}
-    ],
-    "legendaryItems": [
-      {"kind":"ITEM","options":[{"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":3000,"averageTimeMillis":3000},"id":4001,"position":1,"pickrate":1,"denominator":2,"unpositionedGames":0}],"position":1,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}},
-      {"kind":"ITEM","options":[{"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":6000,"averageTimeMillis":6000},"id":4003,"position":2,"pickrate":1,"denominator":2,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}}
-    ],
-    "membership": [
-      {"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":3000,"averageTimeMillis":3000},"id":4001,"position":null,"pickrate":1,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"ITEM","timing":{"timeCount":1,"timeSumMillis":6000,"averageTimeMillis":6000},"id":4003,"position":null,"pickrate":1,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":2000,"averageTimeMillis":2000},"id":447001,"position":null,"pickrate":1,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"PRISMATIC","timing":{"timeCount":1,"timeSumMillis":5000,"averageTimeMillis":5000},"id":447002,"position":null,"pickrate":0.5,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":101,"position":null,"pickrate":0.5,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":102,"position":null,"pickrate":0.5,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":111,"position":null,"pickrate":0.5,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":121,"position":null,"pickrate":0.5,"denominator":2,"unpositionedGames":0},
-      {"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":122,"position":null,"pickrate":0.5,"denominator":2,"unpositionedGames":0}
+      {
+        "boots": 3006,
+        "position": null,
+        "stats": {
+          "games": 2,
+          "wins": 1,
+          "placementSum": 5,
+          "placementGames": 2,
+          "placements": {
+            "2": 1,
+            "3": 1
+          },
+          "winrate": 0.5,
+          "averagePlacement": 2.5
+        },
+        "timing": {
+          "timeSumMillis": 0,
+          "timeCount": 0,
+          "averageTimeMillis": null
+        },
+        "denominator": 2,
+        "unpositionedGames": 0,
+        "pickrate": 1.0
+      }
     ],
     "augments": [
-      {"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":101,"position":1,"pickrate":0.5,"denominator":2,"unpositionedGames":0},{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":102,"position":1,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":1,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}},
-      {"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":111,"position":2,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":2,"population":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1}},
-      {"kind":"AUGMENT","options":[{"stats":{"wins":1,"placementGames":1,"averagePlacement":1,"games":1,"winrate":1,"placements":{"1":1},"placementSum":1},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":121,"position":3,"pickrate":0.5,"denominator":2,"unpositionedGames":0},{"stats":{"wins":0,"placementGames":1,"averagePlacement":2,"games":1,"winrate":0,"placements":{"2":1},"placementSum":2},"kind":"AUGMENT","timing":{"timeCount":0,"timeSumMillis":0,"averageTimeMillis":null},"id":122,"position":3,"pickrate":0.5,"denominator":2,"unpositionedGames":0}],"position":3,"population":{"wins":1,"placementGames":2,"averagePlacement":1.5,"games":2,"winrate":0.5,"placements":{"1":1,"2":1},"placementSum":3}}
-    ]
-  }
+      {
+        "position": 1,
+        "population": {
+          "games": 1,
+          "wins": 1,
+          "placementSum": 3,
+          "placementGames": 1,
+          "placements": {
+            "3": 1
+          },
+          "winrate": 1.0,
+          "averagePlacement": 3.0
+        },
+        "options": [
+          {
+            "augment": 11,
+            "position": 1,
+            "stats": {
+              "games": 1,
+              "wins": 1,
+              "placementSum": 3,
+              "placementGames": 1,
+              "placements": {
+                "3": 1
+              },
+              "winrate": 1.0,
+              "averagePlacement": 3.0
+            },
+            "timing": {
+              "timeSumMillis": 0,
+              "timeCount": 0,
+              "averageTimeMillis": null
+            },
+            "denominator": 2,
+            "unpositionedGames": 0,
+            "pickrate": 0.5
+          }
+        ]
+      }
+    ],
+    "prismatics": [
+      {
+        "position": 1,
+        "population": {
+          "games": 2,
+          "wins": 1,
+          "placementSum": 5,
+          "placementGames": 2,
+          "placements": {
+            "2": 1,
+            "3": 1
+          },
+          "winrate": 0.5,
+          "averagePlacement": 2.5
+        },
+        "options": [
+          {
+            "prismatic": 447001,
+            "position": 1,
+            "stats": {
+              "games": 2,
+              "wins": 1,
+              "placementSum": 5,
+              "placementGames": 2,
+              "placements": {
+                "2": 1,
+                "3": 1
+              },
+              "winrate": 0.5,
+              "averagePlacement": 2.5
+            },
+            "timing": {
+              "timeSumMillis": 1000,
+              "timeCount": 1,
+              "averageTimeMillis": 1000.0
+            },
+            "denominator": 2,
+            "unpositionedGames": 0,
+            "pickrate": 1.0
+          }
+        ]
+      }
+    ],
+    "items": [
+      {
+        "position": 1,
+        "population": {
+          "games": 2,
+          "wins": 1,
+          "placementSum": 5,
+          "placementGames": 2,
+          "placements": {
+            "2": 1,
+            "3": 1
+          },
+          "winrate": 0.5,
+          "averagePlacement": 2.5
+        },
+        "options": [
+          {
+            "item": 4001,
+            "position": 1,
+            "stats": {
+              "games": 2,
+              "wins": 1,
+              "placementSum": 5,
+              "placementGames": 2,
+              "placements": {
+                "2": 1,
+                "3": 1
+              },
+              "winrate": 0.5,
+              "averagePlacement": 2.5
+            },
+            "timing": {
+              "timeSumMillis": 2000,
+              "timeCount": 1,
+              "averageTimeMillis": 2000.0
+            },
+            "denominator": 2,
+            "unpositionedGames": 0,
+            "pickrate": 1.0
+          }
+        ]
+      }
+    ],
+    "membership": [
+      {
+        "item": 4001,
+        "position": null,
+        "stats": {
+          "games": 2,
+          "wins": 1,
+          "placementSum": 5,
+          "placementGames": 2,
+          "placements": {
+            "2": 1,
+            "3": 1
+          },
+          "winrate": 0.5,
+          "averagePlacement": 2.5
+        },
+        "timing": {
+          "timeSumMillis": 2000,
+          "timeCount": 1,
+          "averageTimeMillis": 2000.0
+        },
+        "denominator": 2,
+        "unpositionedGames": 0,
+        "pickrate": 1.0
+      }
+    ],
+    "unpositioned": []
+  },
+  "cores": [
+    {
+      "core": {
+        "boots": 3006,
+        "augment": 11
+      },
+      "stats": {
+        "games": 1,
+        "wins": 1,
+        "placementSum": 3,
+        "placementGames": 1,
+        "placements": {
+          "3": 1
+        },
+        "winrate": 1.0,
+        "averagePlacement": 3.0
+      },
+      "denominator": 2,
+      "steps": [
+        {
+          "context": {
+            "boots": 3006,
+            "equipment": [],
+            "augments": [
+              {
+                "augment": 11,
+                "position": 1
+              }
+            ]
+          },
+          "stats": {
+            "games": 1,
+            "wins": 1,
+            "placementSum": 3,
+            "placementGames": 1,
+            "placements": {
+              "3": 1
+            },
+            "winrate": 1.0,
+            "averagePlacement": 3.0
+          },
+          "choices": {
+            "items": [
+              {
+                "item": 4001,
+                "position": 1,
+                "stats": {
+                  "games": 1,
+                  "wins": 1,
+                  "placementSum": 3,
+                  "placementGames": 1,
+                  "placements": {
+                    "3": 1
+                  },
+                  "winrate": 1.0,
+                  "averagePlacement": 3.0
+                },
+                "timing": {
+                  "timeSumMillis": 2000,
+                  "timeCount": 1,
+                  "averageTimeMillis": 2000.0
+                },
+                "denominator": 1,
+                "unpositionedGames": 0,
+                "pickrate": 1.0
+              }
+            ],
+            "prismatics": [
+              {
+                "prismatic": 447001,
+                "position": 1,
+                "stats": {
+                  "games": 1,
+                  "wins": 1,
+                  "placementSum": 3,
+                  "placementGames": 1,
+                  "placements": {
+                    "3": 1
+                  },
+                  "winrate": 1.0,
+                  "averagePlacement": 3.0
+                },
+                "timing": {
+                  "timeSumMillis": 1000,
+                  "timeCount": 1,
+                  "averageTimeMillis": 1000.0
+                },
+                "denominator": 1,
+                "unpositionedGames": 0,
+                "pickrate": 1.0
+              }
+            ],
+            "augments": [
+              {
+                "position": 2,
+                "population": {
+                  "games": 1,
+                  "wins": 1,
+                  "placementSum": 3,
+                  "placementGames": 1,
+                  "placements": {
+                    "3": 1
+                  },
+                  "winrate": 1.0,
+                  "averagePlacement": 3.0
+                },
+                "options": [
+                  {
+                    "augment": 22,
+                    "position": 2,
+                    "stats": {
+                      "games": 1,
+                      "wins": 1,
+                      "placementSum": 3,
+                      "placementGames": 1,
+                      "placements": {
+                        "3": 1
+                      },
+                      "winrate": 1.0,
+                      "averagePlacement": 3.0
+                    },
+                    "timing": {
+                      "timeSumMillis": 0,
+                      "timeCount": 0,
+                      "averageTimeMillis": null
+                    },
+                    "denominator": 1,
+                    "unpositionedGames": 0,
+                    "pickrate": 1.0
+                  }
+                ]
+              },
+              {
+                "position": 3,
+                "population": {
+                  "games": 1,
+                  "wins": 1,
+                  "placementSum": 3,
+                  "placementGames": 1,
+                  "placements": {
+                    "3": 1
+                  },
+                  "winrate": 1.0,
+                  "averagePlacement": 3.0
+                },
+                "options": [
+                  {
+                    "augment": 33,
+                    "position": 3,
+                    "stats": {
+                      "games": 1,
+                      "wins": 1,
+                      "placementSum": 3,
+                      "placementGames": 1,
+                      "placements": {
+                        "3": 1
+                      },
+                      "winrate": 1.0,
+                      "averagePlacement": 3.0
+                    },
+                    "timing": {
+                      "timeSumMillis": 0,
+                      "timeCount": 0,
+                      "averageTimeMillis": null
+                    },
+                    "denominator": 1,
+                    "unpositionedGames": 0,
+                    "pickrate": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "pickrate": 0.5
+    }
+  ]
 }
 ```
 
-The decision steps retain root → P1 → P1+L1, with direct A3 choices alongside
-A2. The fallback root contains P1 and no augment constraint. Its first Legendary
-option has denominator=2 while the one-game decision steps have denominator=1.
-Both observed acquisitions of L2=4003 contribute to the same observed build
-regardless of P2/A1/time variations. Equipment and augment context denotes
-co-occurrence, not an inferred common clock. 220007 appears only as reconstruction
-evidence, nowhere in the selectable payload. All enum/field/rate names shown
-above are the actual serializer's names.
+## Persisted envelope and independent writes
 
-## Mongo envelope and regeneration
+`champion_builds[_id=filterKey]` contains standard root metadata, standard
+`build.*` fields and optional `build.arena`. Standard writes set only root
+standard metadata and individual standard build paths. Arena updates its entire
+subtree atomically; it does not set `build`, standard root counts/version/date,
+or change identity. filterKey is initialized on insert. Arena-first insertion
+is not standard-ready; standard later creates its fields while retaining Arena.
+No read-merge-replace, CAS or second document/collection/writer owner.
 
-The existing owner uses the structured `champion_builds` envelope:
+The standard reader strips Arena from the detached build projection before
+JsonCodec deserialization: malformed/unsupported Arena does not alter standard
+readability or the current HTTP/presentation. Internal Arena reads recognize
+only current schema/aggregation versions. Both populations have their own counts;
+root standard games/wins never become Arena participant-game totals.
 
-```text
-_id / filterKey: normal filter-key encoding for champion + patch + CHERRY
-buildVersion / lastUpdate: existing owner-managed metadata
-build:
-  current standard Build fields
-  arena:
-    schemaVersion: 2
-    aggregationVersion: 3
-    stats / positions / builds[] / cores[] / coverage
-```
+Arena source is a bounded match/event left join (<=100), exact full patch and
+complete participant identity projection. Missing timelines are delivered;
+checksum/decoding errors fail explicitly. Catalog is immutable external input
+provided by the internal caller for that exact patch. Complete item history
+remains false unless source evidence proves it. No external I/O in accumulation.
 
-JSON and in-memory BSON round trips of the current Build.arena pass. There is
-no support, adapter, migration or regression gate for superseded Arena aggregate
-schemas. Discard affected obsolete Arena aggregates and regenerate them from
-source matches at Phase 3 integration; keep raw matches/events. No production
-data was deleted or regenerated here. Standard CHERRY output is not an Arena
-aggregate; only the current Arena payload is served through the future Arena
-read path. Do not change the standard generator or rewrite unrelated data.
-
-`Filter.championBuild(champion, patch, CHERRY)` supplies a neutral lane/rank/region/
-opponent/duo/period scope without fetching defaults. Catalog and completeness
-come from the future loading owner; the accumulator owns no persistence/cache/
-scheduler calls. Operational loading/writing/read dispatch is not connected yet.
-Use one full document per champion/patch/queue in the same collection, measuring
-BSON/headroom/cardinality/heap before rollout. Splitting cores remains a future
-response to measured problems, never a reason to discard one-game steps now.
+Local guards encode Arena/update BSON before writing, leaving headroom; they do
+not claim to measure the unknown existing standard subtree. The Mongo server's
+atomic final-document size check remains authoritative and preserves the old
+value on failure. Combined BSON/representative heap and live test-Mongo/explain
+remain operational gates; no truncation/splitting is used to bypass them.
+See [contract](contracts.md) and [phases](phases.md) for verification and limits.

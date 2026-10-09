@@ -52,7 +52,7 @@ Quick Style Rules (from `AGENTS.md`):
 
 **Stack:** Java 25, Spring 7.0.8 + Tomcat 11, JDA 6.3.1 + jdave, Jedis 5.1.0 (Redis), MongoDB driver sync 5.8.0, MariaDB (backfill only), R4J 2.8.1, Lavalink, FastUtil/Caffeine. Build `mvn package` → `jar-with-dependencies` main `com.safjnest.App`.
 
-**Runtime LoL:** MongoDB is the sole runtime storage (`beebot` / `beebot_test` with `App.isTesting()`). MariaDB only for `MongoMigration` backfill. Redis cache only (no queue/backlog). R4J for Riot.
+**Runtime LoL:** MongoDB is the sole runtime storage (`beebot_test` in production / `beebot_test_test` with `App.isTesting()`, current MongoDB constants). MariaDB only for `MongoMigration` backfill. Redis cache only (no queue/backlog). R4J for Riot.
 
 **Global scheduling:** `lol.queue` single registry — three separate physical schedulers, never shared:
 
@@ -710,40 +710,42 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `docs/architecture/profile-statistics-source-of-truth.md`
 - `docs/new-queue.md` + `docs/mongo/README.md` + `docs/api/lol-api.md`
 
-## Arena analytics final-model handoff
+## Arena analytics Phase 3
 
-Follow [Arena contracts](arena-build/contracts.md),
-[implemented schema](arena-build/schema.md) and [phases](arena-build/phases.md).
-The current `ArenaChampionAnalyzer.accumulator(championId, fullPatch, catalog)`
-returns the shared `Build` with immutable `ArenaBuildData` (schema=2,
-aggregation=3). `accept(match)` defaults to unknown/incomplete source history;
-only the loading owner may explicitly supply completeness. `finish()` uses
-`Filter.championBuild(...)`, which avoids static-data/default-period fetching;
-existing public Filter defaults and factories are unchanged.
+Start from [contracts](arena-build/contracts.md), [schema](arena-build/schema.md)
+and [phases](arena-build/phases.md). The pure accumulator returns ArenaBuildData
+(schema=3, aggregation=3), with semantic JSON identities, independent positions,
+observed builds and both generic cores. Strict evidence/undo, populations and
+all observed steps remain intact; no source I/O or threshold in accumulation.
 
-The parser reconstructs equipment and augments separately, calls the resolver
-after attribution/undo filtering, retains timeline/resolver/tooltip quality and
-excludes 220007 from selectable data. StatisticalLeaf and shared Build primitives
-supply independent boots/A1..A6/P1..P6/L1..Ln stats, actually observed
-boots+P1+ordered-Legendary builds, and generic boots+A1 or boots+P1 cores with
-full-context steps. Preserve missing/ambiguous/rejected coverage, strict undo/
-attribution and match/choice deduplication. Retain one-game steps; frontend owns
-sample thresholds and fallback selection.
+Existing ChampionBuildProvider/MongoDB stream exact full-patch CHERRY match/event
+left joins in batches of at most 100, including missing timelines. Standard
+reader behavior is unchanged. Detached immutable catalog is passed explicitly
+by the internal caller for the requested patch; getItems() current-patch loading
+is not used by this pipeline. Source completeness defaults to false.
 
-Supply immutable catalog/source data outside the accumulator. Persistence must
-reuse `champion_builds`, one complete document per champion/patch/CHERRY, through
-existing MongoDB/service owners. No separate Arena collection/service or
-preemptive core splitting. Support only the current Arena aggregate schema;
-discard/regenerate obsolete Arena aggregates from source matches at integration,
-without compatibility adapters, old-document tests or changes to standard
-generation. The former ordered Arena fields/constructors/Core/Path were removed. Source fan-out and total/completed/missing/failed progress become
-required when the bounded provider/rebuild is implemented through QueueHandler.
+One champion_builds document per normal filterKey stores standard + build.arena.
+MongoDB.upsertChampionBuild/Builds update only owned standard dot paths;
+upsertChampionArena updates only build.arena. Never set all of build, replace
+whole documents or read-merge-replace. Arena-first insert does not mark standard
+ready. Standard reads omit arena, preserving the endpoint/Discord projection.
 
-Phase 2 code/model realignment and 105 offline tests pass, including standard
-Build/generator/provider/Mongo projection checks and in-memory JSON/BSON round
-trips; [phases](arena-build/phases.md) records exact limits. Controller,
-Participant, Tracker, operational writer/query/index/cache and presentation
-remain unchanged. Accepted ADRs and the standard endpoint contract are unchanged;
-final Arena API exposure is pending review at the canonical owners. Live source
-inspection, test-Mongo integration, BSON/cardinality/heap sizing, explains and
-live API/Redis validation remain rollout gates.
+Internal opt-in ChampionService/ComputeScheduler entrypoints submit via QueueHandler
+on CHAMPION; no command/API or scheduled refresh calls Arena automatically.
+Job phase/currentItem show champion, full patch, shard=ALL and source
+`total/completed/missing/failed`. Total counts discovered candidates, final only
+when the cursor ends; completed includes fallback, missing is its timeline-missing
+subset. The structured JobProgress tracks the single aggregate 0/1→1/1, avoiding
+per-match retained status maps. Source/write failures fail the job.
+
+BSON payload/update guards run before a write; Mongo's final combined-document
+limit is authoritative. A size/serialization error preserves the old subtree.
+No silent truncation, pruning or delete. Review live indexes/explain and measure
+combined BSON/cardinality/heap before rollout. The code's actual DB mapping is
+production=beebot_test, testing=beebot_test_test; do not infer safety from names.
+No Mongo connection/rebuild/backfill/production run is performed by this task.
+
+API/controller/presentation, canonical Participant/Tracker, filter identity and
+accepted ADRs remain unchanged. Documentation records the internal path ownership;
+Phase 4 still gates public Arena read integration. Historical Phase 2 105-test
+results and current Phase 3 verification are separated in phases.md.

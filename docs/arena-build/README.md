@@ -1,55 +1,46 @@
 # Arena champion analytics
 
-The [definitive contract](contracts.md), [Java/JSON schema](schema.md) and
-[implementation phases](phases.md) describe the Arena model requested on
-2026-10-01. Phase 2 was realigned on 2026-10-02: parser → resolver → pure
-accumulator → shared `Build.arena` is implemented and verified offline.
-
-Arena reuses `champion_builds`, the existing build collection, with one complete
-document per champion + patch + `queue=CHERRY`. Its logical build payload contains:
+Phase 3 uses the existing provider, MongoDB owner, ChampionService and
+ComputeScheduler. The approved [contract](contracts.md) stores exactly one
+`champion_builds` document per normal filterKey, with standard fields and
+`build.arena` coexisting. No second identity, document, collection or service.
 
 ```text
-Build
-  ArenaBuildData
-    stats
-    positions: boots, A1..A6, P1..P6, L1..Ln
-    builds: actually observed boots + P1 + ordered Legendary sequences
-    cores
-      key: boots + A1 OR boots + P1
+champion_builds[_id = filterKey]
+  standard root metadata
+  build
+    standard fields
+    arena (schemaVersion=3, aggregationVersion=3)
       stats
-      steps: complete context + stats + typed choices
-    coverage
+      positions: boots, augments, prismatics, items, membership, unpositioned
+      builds: actually observed boots + P1 + ordered Legendary items
+      cores: boots + augment OR boots + prismatic
+        complete-context steps with items, prismatics, augments choices
+      coverage
 ```
 
-Both core types use the same structure. Equipment and augment paths remain
-separate. `220007` is reconstruction evidence only. The backend retains complete
-raw aggregates, including steps with one game; the frontend chooses context,
-backoff and an observed build when needed. No synthetic build is assembled from
-the most popular item in each slot.
+The pure accumulator returns ArenaBuildData. Standard writes set only their
+owned root fields and individual build paths; Arena writes set build.arena
+atomically. Neither replaces the whole document or performs read-merge-replace.
+The standard reader projects its original fields and ignores Arena, including
+malformed Arena content. A document inserted by Arena alone is not standard-ready.
 
-This supersedes the purchase-sequence core, inclusion of `220007` in builds,
-separate Arena collection/root, separate decision/fallback schemas and mandatory
-backend sample-threshold proposals. Standard aggregates, generator, serialized
-fields, endpoints and presentation retain their existing contract. Accepted ADRs
-are unchanged.
+The Arena left join delivers all matching full-patch CHERRY matches, with or
+without match_events, in batches of at most 100. Input and catalog are detached;
+unknown source completeness remains false. Catalog is supplied explicitly by
+the internal caller, responsible for using the requested patch. No current-patch
+catalog fetch, API read integration or automatic scheduler hook is added.
 
-The accumulator returns `Build` with `ArenaBuildData` (schemaVersion=2,
-aggregationVersion=3). The earlier purchase-sequence branch/root was removed.
-Both generic cores, observed builds, independent positions, full prefix contexts
-and conditional denominators share existing statistical/choice/slot primitives.
-The parser actually calls `FirstPrismaticResolver` after strict attribution and
-undo filtering. Raw resolver types and effective P1/order quality stay separate.
+Parser, strict attribution/undo, resolver quality, independent positions,
+observed builds, generic cores and all observed steps retain the Phase 2
+semantics. Equipment and augments stay separate. 220007 is evidence only.
+No sample threshold, top-N pruning, synthetic build or core splitting is added.
+JSON uses semantic core/items/augments/prismatics and item/boots/augment/prismatic
+identity properties; generic kind/id remain internal. See [schema](schema.md).
 
-The 105 targeted offline tests passed, including JSON/in-memory BSON round trips and
-standard generator/provider/Mongo projection regressions. See [phases](phases.md)
-for the exact suite and runtime limits. Standard Build behavior is unchanged.
-Arena uses only the current schema; obsolete Arena aggregates are discarded and
-regenerated from source matches, with no compatibility adapter or migration.
-
-Persistence belongs to MongoDB and orchestration to the existing service/queue
-owners. BSON size and cardinality must be measured before rollout. Splitting
-cores into documents in the same collection is only a future response to measured
-limits; it is not part of the current design. No production operation, backfill,
-new endpoint or commit was performed. Provider/persistence/read integration
-remains in Phases 3–4; the current endpoint, including CHERRY, still runs the
-standard generator. No production readiness or live Mongo result is claimed.
+The existing CHERRY endpoint continues to serve standard aggregates. Controller,
+Participant, Tracker and presentation retain their contracts. No rebuild,
+backfill, production operation or commit is executed by this implementation.
+[Phases](phases.md) records exact test results and pending gates. Offline tests
+and synthetic measurements do not certify live Mongo, index explains,
+representative BSON/cardinality/heap or production readiness.

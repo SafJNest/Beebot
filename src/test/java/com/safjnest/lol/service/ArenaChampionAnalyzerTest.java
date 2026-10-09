@@ -13,7 +13,6 @@ import org.json.JSONObject;
 
 import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.ArenaBuildData.AnchorKind;
-import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.utils.JsonCodec;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -32,7 +31,7 @@ public class ArenaChampionAnalyzerTest {
         noTimeline.eventData = null;
         accumulator.accept(noTimeline);
         accumulator.accept(match("EUW1_3", participant(1, 2), List.of()));
-        var source = accumulator.finish().arena();
+        var source = accumulator.finish();
         var boots = source.positions().boots().get(0);
         assertEquals(3, source.stats().games());
         assertEquals(2, boots.stats().games());
@@ -55,7 +54,7 @@ public class ArenaChampionAnalyzerTest {
         var missing = match("EUW1_2", finalOnly, List.of());
         missing.eventData = null;
         accumulator.accept(missing);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(6, result.positions().prismatics().size());
         for (int i = 0; i < 6; i++) {
             var slot = result.positions().prismatics().get(i);
@@ -76,7 +75,7 @@ public class ArenaChampionAnalyzerTest {
         var p = participant(1, 3);
         p.augments = List.of(11, 22, 33, 44, 55, 66);
         accumulator.accept(match("EUW1_1", p, List.of()));
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertTrue(result.cores().isEmpty());
         assertEquals(6, result.positions().augments().size());
         for (int i = 0; i < 6; i++) {
@@ -95,7 +94,7 @@ public class ArenaChampionAnalyzerTest {
         accumulator.accept(match("EUW1_1", p, List.of(event("ITEM_PURCHASED", 1000, 447001),
             event("ITEM_PURCHASED", 2000, 4001), event("ITEM_PURCHASED", 3000, 447002),
             event("ITEM_PURCHASED", 4000, 4003))), true);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertTrue(result.cores().isEmpty());
         assertEquals(2, result.positions().legendaryItems().size());
         assertEquals(4001, result.positions().legendaryItems().get(0).options().get(0).id());
@@ -110,7 +109,7 @@ public class ArenaChampionAnalyzerTest {
         var b = tooltipPath(); b.boots = 3006; b.augments = List.of(33, 44);
         accumulator.accept(match("EUW1_1", a, List.of()));
         accumulator.accept(match("EUW1_2", b, List.of()));
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(3, result.cores().size());
         assertEquals(1, core(result, AnchorKind.AUGMENT, 11).stats().games());
         assertEquals(1, core(result, AnchorKind.AUGMENT, 33).stats().games());
@@ -133,7 +132,7 @@ public class ArenaChampionAnalyzerTest {
         var b = participant(1, 2); b.boots = 3006; b.item0 = 447001;
         accumulator.accept(match("EUW1_1", a, List.of()));
         accumulator.accept(match("EUW1_2", b, List.of()));
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(2, result.cores().size());
         assertEquals(1, core(result, AnchorKind.AUGMENT, 11).stats().games());
         assertEquals(1, core(result, AnchorKind.PRISMATIC, 447001).stats().games());
@@ -145,7 +144,7 @@ public class ArenaChampionAnalyzerTest {
         var accumulator = accumulator();
         var p = participant(1, 3); p.boots = 3006; p.item0 = 447001; p.augments = List.of(0, 0, 33);
         accumulator.accept(match("EUW1_1", p, List.of()));
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(1, result.cores().size());
         assertEquals(AnchorKind.PRISMATIC, result.cores().get(0).key().anchorKind());
         assertEquals(3, result.positions().augments().get(0).position());
@@ -158,7 +157,7 @@ public class ArenaChampionAnalyzerTest {
         accumulator.accept(match("EUW1_1", p, List.of(event("ITEM_PURCHASED", 1000, 447001),
             event("ITEM_PURCHASED", 2000, 4001), event("ITEM_PURCHASED", 3000, 447002),
             event("ITEM_PURCHASED", 4000, 4003))), true);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         var decision = core(result, AnchorKind.AUGMENT, 11);
         assertEquals(15, decision.steps().size());
         for (int i = 0; i <= 4; i++) {
@@ -180,7 +179,7 @@ public class ArenaChampionAnalyzerTest {
         var accumulator = accumulator();
         var p = tooltipPath(); p.boots = 3006; p.augments = List.of(11, 0, 33);
         accumulator.accept(match("EUW1_1", p, List.of()));
-        var root = root(core(accumulator.finish().arena(), AnchorKind.AUGMENT, 11));
+        var root = root(core(accumulator.finish(), AnchorKind.AUGMENT, 11));
         assertEquals(1, root.choices().augments().size());
         var third = root.choices().augments().get(0);
         assertEquals(3, third.position());
@@ -197,7 +196,7 @@ public class ArenaChampionAnalyzerTest {
         accumulator.accept(match("EUW1_1", a, List.of()));
         accumulator.accept(match("EUW1_2", b, List.of()));
         accumulator.accept(match("EUW1_3", c, List.of()));
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(2, result.builds().size());
         var common = result.builds().get(0);
         assertEquals(3006, common.bootsId());
@@ -217,7 +216,7 @@ public class ArenaChampionAnalyzerTest {
         for (int i = 1; i <= 2; i++) accumulator.accept(match("EUW1_" + i, p, List.of(
             event("ITEM_PURCHASED", i * 1000, 447001), event("ITEM_PURCHASED", i * 2000, 4001),
             event("ITEM_PURCHASED", i * 3000, 4002))), true);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(1, result.builds().size());
         assertEquals(2, result.builds().get(0).stats().games());
         assertEquals(2, core(result, AnchorKind.AUGMENT, 11).stats().games());
@@ -233,9 +232,9 @@ public class ArenaChampionAnalyzerTest {
         accumulator.accept(match("EUW1_1", p, List.of(event("ITEM_PURCHASED", 1000, 4001),
             event("ITEM_PURCHASED", 2000, 220007), event("ITEM_DESTROYED", 2000, 220007),
             event("ITEM_PURCHASED", 3000, 447002))), true);
-        String json = JsonCodec.toJson(accumulator.finish().arena());
+        String json = JsonCodec.toJson(accumulator.finish());
         assertFalse(json.contains("220007"));
-        assertEquals(1, accumulator.finish().arena().builds().size());
+        assertEquals(1, accumulator.finish().builds().size());
     }
 
     @Test
@@ -246,7 +245,7 @@ public class ArenaChampionAnalyzerTest {
         var absent = match("EUW1_1", p, List.of()); absent.eventData = null;
         accumulator.accept(absent);
         accumulator.accept(match("EUW1_2", p, List.of(event("ITEM_PURCHASED", 1000, 4001))), false);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(2, result.stats().games());
         assertEquals(2, result.stats().wins());
         assertEquals(0, result.stats().placementGames());
@@ -267,7 +266,7 @@ public class ArenaChampionAnalyzerTest {
         var untimed = new HashMap<>(event("ITEM_PURCHASED", 1000, 4001));
         untimed.remove("timestamp");
         accumulator.accept(match("EUW1_1", p, List.of(untimed)), true);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(1, membership(result, Kind.ITEM, 4001).stats().games());
         assertEquals(1, membership(result, Kind.ITEM, 4001).unpositionedGames());
         assertEquals(1, result.positions().unpositioned().get(0).stats().games());
@@ -282,7 +281,7 @@ public class ArenaChampionAnalyzerTest {
         var p = tooltipPath(); p.boots = 3006; p.augments = List.of(11, 11, 22);
         var first = event("ITEM_PURCHASED", 1000, 447001);
         accumulator.accept(match("EUW1_1", p, List.of(first, first, event("ITEM_PURCHASED", 2000, 447001))), true);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(1, membership(result, Kind.PRISMATIC, 447001).stats().games());
         assertEquals(1, membership(result, Kind.PRISMATIC, 447001).timing().timeCount());
         assertEquals(1, result.positions().prismatics().get(0).options().get(0).stats().games());
@@ -302,7 +301,7 @@ public class ArenaChampionAnalyzerTest {
             if (i == 1) p.item1 = 4001;
             accumulator.accept(match("EUW1_" + i, p, List.of()));
         }
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         var decision = core(result, AnchorKind.AUGMENT, 11);
         var root = root(decision);
         var first = root.choices().prismatics().get(0);
@@ -324,15 +323,15 @@ public class ArenaChampionAnalyzerTest {
         var p = participant(1, 3);
         var source = match("EUW1_1", p, List.of());
         accumulator.accept(source);
-        var before = accumulator.finish().arena();
+        var before = accumulator.finish();
         assertThrows(IllegalArgumentException.class, () -> accumulator.accept(source));
-        assertEquals(before, accumulator.finish().arena());
+        assertEquals(before, accumulator.finish());
         var duplicate = match("EUW1_2", p, List.of()); duplicate.participants = List.of(p, p);
         assertThrows(IllegalArgumentException.class, () -> accumulator.accept(duplicate));
-        assertEquals(before, accumulator.finish().arena());
+        assertEquals(before, accumulator.finish());
         duplicate.participants = List.of(p);
         assertTrue(accumulator.accept(duplicate));
-        assertEquals(2, accumulator.finish().arena().stats().games());
+        assertEquals(2, accumulator.finish().stats().games());
     }
 
     @Test
@@ -344,7 +343,7 @@ public class ArenaChampionAnalyzerTest {
         source.participants = List.of(first, second);
         source.eventData.put("participants", Map.of("1", first.puuid, "2", second.puuid));
         accumulator.accept(source);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(1, result.coverage().matches());
         assertEquals(2, result.coverage().participantGames());
         assertEquals(2, result.positions().boots().get(0).stats().games());
@@ -359,13 +358,8 @@ public class ArenaChampionAnalyzerTest {
         source.queue = GameQueueType.CHERRY; source.patch = "16.19"; assertFalse(accumulator.accept(source));
         source.patch = "16.19.1"; source.gameId = "1";
         assertThrows(IllegalArgumentException.class, () -> accumulator.accept(source));
-        assertEquals(0, accumulator.finish().arena().stats().games());
-        var filter = accumulator.finish().filter();
-        assertEquals(27, filter.champion());
-        assertEquals("16.19.1", filter.patch());
-        assertEquals(GameQueueType.CHERRY, filter.queue());
-        assertNull(filter.rank()); assertNull(filter.lane()); assertNull(filter.region());
-        assertEquals(0, filter.opponent()); assertEquals(0, filter.duo());
+        assertEquals(0, accumulator.finish().stats().games());
+
     }
 
     @Test
@@ -373,27 +367,30 @@ public class ArenaChampionAnalyzerTest {
         var accumulator = accumulator();
         var p = tooltipPath(); p.boots = 3006; p.augments = List.of(11, 22, 33);
         accumulator.accept(match("EUW1_1", p, List.of()));
-        Build source = accumulator.finish();
-        var decoded = Build.fromJson(source.toJson());
+        ArenaBuildData source = accumulator.finish();
+        var decoded = JsonCodec.fromJson(JsonCodec.toJson(source), ArenaBuildData.class);
         assertNotNull(decoded);
-        assertEquals(source.arena(), decoded.arena());
-        assertEquals(source.filter().toKey(), decoded.filter().toKey());
+        assertEquals(source, decoded);
         var bson = JsonCodec.toDocument(source);
-        assertTrue(bson.get("arena") instanceof Map<?, ?>);
-        var bsonBuild = JsonCodec.fromDocument(bson, Build.class);
-        assertNotNull(bsonBuild);
-        assertEquals(source.arena(), bsonBuild.arena());
-        var json = new JSONObject(source.toJson()).getJSONObject("arena");
+        var bsonData = JsonCodec.fromDocument(bson, ArenaBuildData.class);
+        assertNotNull(bsonData);
+        assertEquals(source, bsonData);
+        var json = new JSONObject(JsonCodec.toJson(source));
+        assertEquals(3, json.getInt("schemaVersion"));
+        assertEquals(3, json.getInt("aggregationVersion"));
         assertEquals(1.0, json.getJSONObject("stats").getDouble("winrate"), 0.00001);
         assertEquals(1.0, json.getJSONArray("builds").getJSONObject(0).getDouble("pickrate"), 0.00001);
-        assertThrows(UnsupportedOperationException.class, () -> source.arena().cores().clear());
-        assertThrows(UnsupportedOperationException.class, () -> source.arena().cores().get(0).steps().clear());
-        assertThrows(UnsupportedOperationException.class, () -> source.arena().stats().placements().clear());
+        assertSemanticKeys(json);
+        assertTrue(json.getJSONObject("positions").has("items"));
+        var core = json.getJSONArray("cores").getJSONObject(0).getJSONObject("core");
+        assertTrue(core.has("boots"));
+        assertTrue(core.has("augment") || core.has("prismatic"));
+        assertThrows(UnsupportedOperationException.class, () -> source.cores().clear());
+        assertThrows(UnsupportedOperationException.class, () -> source.cores().get(0).steps().clear());
+        assertThrows(UnsupportedOperationException.class, () -> source.stats().placements().clear());
         accumulator.accept(match("EUW1_2", p, List.of()));
-        assertEquals(1, source.arena().stats().games());
-        assertEquals(2, accumulator.finish().arena().stats().games());
-        source.filter().setChampion(99);
-        assertEquals(27, accumulator.finish().filter().champion());
+        assertEquals(1, source.stats().games());
+        assertEquals(2, accumulator.finish().stats().games());
     }
 
     @Test
@@ -402,7 +399,7 @@ public class ArenaChampionAnalyzerTest {
         List<Map<String, Object>> events = new ArrayList<>();
         for (int i = 1; i <= 7; i++) events.add(event("ITEM_PURCHASED", i * 1000, 447000 + i));
         accumulator.accept(match("EUW1_1", participant(1, 3), events), true);
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(6, result.positions().prismatics().size());
         assertEquals(1, membership(result, Kind.PRISMATIC, 447007).stats().games());
         assertEquals(1, membership(result, Kind.PRISMATIC, 447007).unpositionedGames());
@@ -412,11 +409,22 @@ public class ArenaChampionAnalyzerTest {
     public void unspecifiedSourceCompletenessDoesNotBecomeExactEvidence() {
         var accumulator = accumulator();
         accumulator.accept(match("EUW1_1", participant(1, 3), List.of(event("ITEM_PURCHASED", 1000, 447001))));
-        var result = accumulator.finish().arena();
+        var result = accumulator.finish();
         assertEquals(1, membership(result, Kind.PRISMATIC, 447001).stats().games());
         assertTrue(result.positions().prismatics().isEmpty());
         assertEquals(Map.of("UNRESOLVED", 1L), result.coverage().firstPrismaticQuality());
         assertTrue(result.coverage().missing().containsKey("ITEM_HISTORY_PARTIAL"));
+    }
+
+    private static void assertSemanticKeys(Object value) {
+        if (value instanceof JSONObject object) {
+            for (String key : object.keySet()) {
+                assertFalse("Generic identity key: " + key, key.equals("kind") || key.equals("id"));
+                assertSemanticKeys(object.get(key));
+            }
+        } else if (value instanceof org.json.JSONArray array) {
+            for (int i = 0; i < array.length(); i++) assertSemanticKeys(array.get(i));
+        }
     }
 
     private static ArenaChampionAnalyzer.Accumulator accumulator() {
@@ -429,7 +437,7 @@ public class ArenaChampionAnalyzerTest {
 
     private static ArenaBuildData.Step root(ArenaBuildData.Core core) { return core.steps().get(0); }
 
-    private static Build.Choice membership(ArenaBuildData data, Kind kind, int id) {
+    private static ArenaBuildData.Choice membership(ArenaBuildData data, Kind kind, int id) {
         return data.positions().membership().stream().filter(c -> c.kind() == kind && c.id() == id).findFirst().orElseThrow();
     }
 }
