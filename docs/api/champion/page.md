@@ -404,3 +404,31 @@ and statistics timestamps; all global variants remain available.
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)
+
+## Arena analytics Phase 2
+
+The [final Arena contract](../../arena-build/contracts.md) and
+[implemented schema](../../arena-build/schema.md) require overall positional stats,
+actually observed builds and two generic core types (boots+A1 and boots+P1),
+each with complete-context steps. Arena aggregation retains all supported
+samples; frontend selects exact/generic state, fallback core or observed build.
+
+This target is not currently exposed by this endpoint. The route, ChampionView,
+standard build eligibility, bounded standard options, statuses, caches and
+Discord presentation remain unchanged, including existing `queue=CHERRY`
+requests, which still use the current standard build generator. Arena
+calculation uses only Build.arena; obsolete ordered Arena fields and their
+compatibility constructor/factory have been removed.
+
+The final payload is Build-owned Arena data and reuses `champion_builds`, with
+one complete champion/patch/CHERRY document. [schema.md](../../arena-build/schema.md)
+documents the implemented nullable `Build.arena` payload (schema=2,
+aggregation=3), omitted for standard builds.
+No dedicated route, second success DTO or separate collection is required.
+The pure accumulator now produces this shared Build payload, with JSON and
+in-memory BSON round-trip coverage. Provider loading, operational persistence and
+read/controller integration remain Phases 3–4 under ADR-0006/0012; existing
+CHERRY output cannot be assumed to contain Arena data. Obsolete Arena aggregates
+are to be discarded/regenerated, not supported through compatibility readers
+or adapters. Phase 2 preserves the existing response and does not imply an
+HTTP contract change.

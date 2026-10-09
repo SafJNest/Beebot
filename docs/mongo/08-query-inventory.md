@@ -110,3 +110,35 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `indexSizes`. The leaderboard uses `competitive` for MMR/range/role and then a
 `$in` on the `summoner` primary key; the required indexes are described in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
+
+## Arena analytics final target (not an active query)
+
+The [Arena contract](../arena-build/contracts.md) requires the existing
+`champion_builds` collection, with one complete champion/patch/CHERRY document.
+Use the normal filter-key identity and structured build envelope, with neutral
+lane/rank/region and no opponent/duo variants in this initial scope. No separate
+Arena collection, state query or core-document access pattern is planned.
+
+The document contains Build-owned stats, overall positions, actually observed
+builds and generic boots+A1 / boots+P1 cores with full-context steps. Reuse
+`JsonCodec`; no opaque JSON/second codec. Standard documents omit the optional
+Arena payload and retain the current standard fields. The implemented shared schema is
+in [schema.md](../arena-build/schema.md).
+
+The current findChampionBuilds/readBuild/upsertChampionBuilds path owns standard
+build lookup/mapping/writes and does not yet serve this target. Future integration
+must distinguish final Arena documents from existing standard CHERRY payloads
+at these existing owners. Obsolete Arena aggregates are discarded/regenerated
+from source matches, with no compatibility projection or adapter. Do not present
+an imagined Mongo predicate as a currently implemented query or assume that
+existing buildVersion alone certifies the new Arena data.
+
+The future bounded provider may reuse the existing match/event join but must
+deliver Arena matches without timelines and retain valid fallback/independent
+facts. Preserve standard timeline eligibility. Catalog loading, source completeness,
+persistence, orchestration and cache invalidation stay outside the pure accumulator.
+
+This Phase 2 realignment adds no query/index/writer and performs no explains,
+Mongo operations or backfill. Verify actual identity/index usage, explain,
+test-Mongo round trip and BSON/cardinality/headroom at implementation/rollout.
+Core splitting is a future same-collection option only after measured problems.
