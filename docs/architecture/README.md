@@ -2,6 +2,14 @@
 
 This directory is the source of truth for the LoL domain and API refactor.
 
+## Service separation proposal
+
+The initial analysis for the `beebot-servicies` branch is in
+[`services/README.md`](services/README.md): service boundaries, complete source
+inventory, shared response contracts, generic jobs/queues and extraction plan.
+[ADR-0016](adr/0016-service-boundaries-and-shared-core.md) is **proposed**, not
+accepted. The current package layout, API contracts and accepted ADRs remain in force.
+
 ## Precedence
 
 When documents disagree, use this order:
@@ -151,6 +159,7 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
 - [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — **current queue contract** (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
 - [ADR-0015: Contextual ranking projections](adr/0015-contextual-ranking.md) — **current ranking contract** (`RankService` → `CompetitiveService` → `LeaderboardService`, plus `ProfileRecordService` record indexes)
+- [ADR-0016: Service boundaries and shared core](adr/0016-service-boundaries-and-shared-core.md) — **proposed**, analysis only
 
 ## Developer handbook
 

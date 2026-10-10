@@ -31,6 +31,9 @@ Operational process metrics are exposed at `GET /api/status` for the League-OS d
 
 Developer docs: [`docs/HANDBOOK.md`](docs/HANDBOOK.md) — how to add a new command, endpoint, service, model, queue job, Mongo collection or Redis cache.
 
+Initial service-separation proposal: [`docs/architecture/services/README.md`](docs/architecture/services/README.md)
+— Bbot, R4J, Spring, shared response contracts and generic jobs/queues; analysis only.
+
 ## ***Build with***
 - Java 25, Spring 7.0.8, Tomcat 11 — `mvn package` → `jar-with-dependencies` (`com.safjnest.App`)
 

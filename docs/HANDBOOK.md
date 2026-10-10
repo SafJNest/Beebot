@@ -2,6 +2,10 @@
 
 > **Single operational entry point for making changes.** If you need to create a new command, endpoint, service, model, job, collection, query, cache or aggregate: start here. For architectural decisions see `AGENTS.md` and the ADRs; for the queue walk-through see `new-queue.md`; for Mongo migration see `mongo/README.md`.
 
+Service extraction analysis: [`architecture/services/README.md`](architecture/services/README.md).
+Its shared-contract and generic-job layouts are proposals under ADR-0016;
+the operational instructions below continue to describe the current runtime.
+
 ## Table of Contents
 
 1. [Rules and Precedence](#1-regole-e-precedenza)
