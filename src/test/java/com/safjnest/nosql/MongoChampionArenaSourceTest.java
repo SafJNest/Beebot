@@ -50,8 +50,9 @@ public class MongoChampionArenaSourceTest {
         assertEquals(List.of(101, 0, 103), joined.participants.get(0).augments);
         assertTrue(MatchupTimelineUtils.hasTimeline(joined.events));
         assertEquals(447001, joined.events.getJSONArray("item_events").getJSONObject(0).getInt("item"));
+        assertNull(joined.eventData);
         assertFalse(MatchupTimelineUtils.hasTimeline(matches.get(1).events));
-        assertTrue(matches.get(1).eventData.isEmpty());
+        assertNull(matches.get(1).eventData);
         assertEquals(2, matches.get(1).participants.size());
         MatchMemoryUtils.release(matches);
     }

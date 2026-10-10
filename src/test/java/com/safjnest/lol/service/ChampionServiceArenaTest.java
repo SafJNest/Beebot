@@ -47,7 +47,8 @@ public class ChampionServiceArenaTest {
         assertTrue(service.refreshArena(filter(), CATALOG, job));
         assertEquals(2, saved.get().stats().games());
         assertEquals(2, saved.get().coverage().matches());
-        assertTrue(saved.get().coverage().missing().getOrDefault("ITEM_EVENTS_ABSENT", 0L) > 0);
+        assertEquals(2, saved.get().coverage().missingCoreGames());
+        assertEquals(1, saved.get().coverage().firstPrismaticFallbackGames());
         assertEquals("DONE total=2 completed=2 missing=1 failed=0", job.phase());
         assertEquals("champion=27 patch=16.19.1 shard=ALL", job.currentItem());
         assertEquals(new JobProgress(1, 1), job.progress());

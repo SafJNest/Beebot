@@ -2,54 +2,81 @@ package com.safjnest.lol.arena;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.lol.utils.ItemUtils;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
 public final class ArenaItemCatalog {
 
     public static final int PRISMATIC_ANVIL = 220007;
+    private static final int PRISMATIC_EXCEPTION = 447111;
+
     private final Map<Integer, Kind> kinds;
-    private final Set<Integer> ignored;
-    private final PrismaticItemClassifier prismatics;
+    private final Map<String, Map<Integer, Classification>> classifications;
 
-    public ArenaItemCatalog(Map<Integer, Kind> kinds, PrismaticItemClassifier prismatics) {
-        this(kinds, Set.of(), prismatics);
+    public ArenaItemCatalog(Map<Integer, Kind> kinds) {
+        this(kinds, Map.of());
     }
 
-    private ArenaItemCatalog(Map<Integer, Kind> kinds, Set<Integer> ignored, PrismaticItemClassifier prismatics) {
-        this.kinds = Map.copyOf(kinds);
-        this.ignored = Set.copyOf(ignored);
-        this.prismatics = java.util.Objects.requireNonNull(prismatics);
-    }
-
-    public static ArenaItemCatalog fromItems(Map<Integer, no.stelar7.api.r4j.pojo.lol.staticdata.item.Item> items,
-            PrismaticItemClassifier prismatics) {
-        Map<Integer, Kind> kinds = new HashMap<>();
-        Set<Integer> ignored = new HashSet<>();
-        for (var entry : items.entrySet()) {
-            var item = entry.getValue();
-            if (ItemUtils.isBoots(item)) kinds.put(entry.getKey(), Kind.BOOTS);
-            else if (item != null && item.getDepth() == 3) kinds.put(entry.getKey(), Kind.ITEM);
-            else ignored.add(entry.getKey());
+    public ArenaItemCatalog(Map<Integer, Kind> kinds,
+            Map<String, Map<Integer, Classification>> classifications) {
+        this.kinds = Map.copyOf(kinds == null ? Map.of() : kinds);
+        Map<String, Map<Integer, Classification>> copy = new HashMap<>();
+        if (classifications != null) for (Map.Entry<String, Map<Integer, Classification>> entry : classifications.entrySet()) {
+            String patch = patchMajor(entry.getKey());
+            if (patch != null && entry.getValue() != null) copy.put(patch, Map.copyOf(entry.getValue()));
         }
-        return new ArenaItemCatalog(kinds, ignored, prismatics);
+        this.classifications = Map.copyOf(copy);
     }
 
-    public boolean isIgnored(String patch, int id) {
-        return id != PRISMATIC_ANVIL && ignored.contains(id)
-            && prismatics.classify(patch, id) == PrismaticItemClassifier.Classification.NON_PRISMATIC;
+    public static ArenaItemCatalog fromItems(Map<Integer, Item> items) {
+        Map<Integer, Kind> kinds = new HashMap<>();
+        if (items != null) for (Map.Entry<Integer, Item> entry : items.entrySet()) {
+            Item item = entry.getValue();
+            if (item == null) continue;
+            if (ItemUtils.isBoots(item)) kinds.put(entry.getKey(), Kind.BOOTS);
+            else if (item.getDepth() == 3) kinds.put(entry.getKey(), Kind.ITEM);
+        }
+        return new ArenaItemCatalog(kinds);
     }
 
-    public Kind kind(String patch, int id) {
-        if (id <= 0) return null;
-        if (id == PRISMATIC_ANVIL) return null;
-        if (prismatics.classify(patch, id) == PrismaticItemClassifier.Classification.UNKNOWN) return null;
-        if (prismatics.isPrismatic(patch, id)) return Kind.PRISMATIC;
-        return kinds.get(id);
+    public static ArenaItemCatalog fromItems(Map<Integer, Item> items,
+            Map<String, Map<Integer, Classification>> classifications) {
+        ArenaItemCatalog catalog = fromItems(items);
+        return new ArenaItemCatalog(catalog.kinds, classifications);
     }
 
-    public PrismaticItemClassifier prismatics() { return prismatics; }
+    public Kind kind(String patch, int itemId) {
+        if (itemId <= 0 || itemId == PRISMATIC_ANVIL) return null;
+        Classification override = classification(patch, itemId);
+        if (override == Classification.UNKNOWN) return null;
+        if (override == Classification.PRISMATIC || override == null && isPrismatic(itemId)) return Kind.PRISMATIC;
+        return kinds.get(itemId);
+    }
+
+    public boolean isPrismatic(String patch, int itemId) {
+        return kind(patch, itemId) == Kind.PRISMATIC;
+    }
+
+    private Classification classification(String patch, int itemId) {
+        String major = patchMajor(patch);
+        Classification value = major == null ? null : classifications.getOrDefault(major, Map.of()).get(itemId);
+        if (value != null) return value;
+        if (itemId == PRISMATIC_EXCEPTION) return Classification.NON_PRISMATIC;
+        return null;
+    }
+
+    private static boolean isPrismatic(int itemId) {
+        return itemId != PRISMATIC_EXCEPTION && ItemUtils.isPrismatic(itemId);
+    }
+
+    private static String patchMajor(String patch) {
+        if (patch == null || patch.isBlank()) return null;
+        String value = patch.trim();
+        int separator = value.indexOf('.', value.indexOf('.') + 1);
+        return separator < 0 ? value : value.substring(0, separator);
+    }
+
+    public enum Classification { PRISMATIC, NON_PRISMATIC, UNKNOWN }
 }

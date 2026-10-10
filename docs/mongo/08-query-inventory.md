@@ -111,17 +111,18 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `$in` on the `summoner` primary key; the required indexes are described in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
 
-## Arena analytics internal Phase 3 path
+## Arena build internal path
 
 Reuse champion_builds with `_id=filterKey`, one standard+Arena document and
 neutral champion/full-patch/CHERRY scope. No discriminator or extra collection.
 
 | Operation | Implemented contract | Owner |
 |---|---|---|
-| Arena source | match query queue+patchMajor+participant champion, exact full patch; complete participant projection; bounded batches <=100 | MongoDB/ChampionBuildProvider |
-| Event left join | match_events `_id: {$in: bounded match IDs}`; missing timeline match still delivered | MongoDB |
+| Arena source | match query queue+patchMajor+participant champion, exact full patch; required participant projection; batches of at most 100 | MongoDB/ChampionBuildProvider |
+| Arena timeline join | one `match_events` query by `_id: {$in: batch IDs}`; missing event documents do not drop matches | MongoDB |
+| Arena parsing | attributed `item_events`; timestamp orders purchases, final slots provide first-Prismatic fallback; timestamps are not persisted | ArenaGameParser |
 | Standard write | atomic `$set` root metadata and individual standard build.* paths, never build/replace | MongoDB |
-| Arena write | `_id=filterKey`, `$set build.arena`, filterKey on insert; semantic subtree schema3 | MongoDB |
+| Arena write | `_id=filterKey`, `$set build.arena`, filterKey on insert; aggregate subtree schema=4/aggregation=4 | MongoDB |
 | Standard read | existing filterKey/buildVersion lookup, detached projection removes arena | MongoDB |
 
 Candidate indexes remain match queue/patchMajor and champion_builds_filter;

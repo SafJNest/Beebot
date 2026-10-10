@@ -1,8 +1,10 @@
 # Fase 3 — rapporto storico del primo gate
 
+> Documento storico: il piano attivo è stato semplificato il 2026-10-10. Non seguire le alternative di schema o le fasi operative descritte qui; usare [contratto](contracts.md), [schema target](schema.md) e [piano](phases.md).
+
 Data: 2026-10-02. Rapporto storico del primo gate. La successiva decisione utente
 approva un documento combinato con `$set` su path disgiunti, senza CAS né
-read-merge-replace; vedere [contratto corrente](contracts.md#single-collection-and-write-ownership--approved-phase-3).
+read-merge-replace; vedere [ownership del flusso corrente](contracts.md#flusso-e-ownership).
 Le alternative e i blocchi descritti sotto fotografano lo stato prima di tale decisione.
 
 Stato al primo gate: analisi completata con tre agenti in parallelo;

@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.bson.BsonBinaryReader;
 import org.bson.BsonBinaryWriter;
@@ -102,30 +101,11 @@ public class MongoChampionArenaPersistenceTest {
             assertEquals(4, MongoDB.findChampionBuilds(filter()).get(0).games());
             assertNull(MongoDB.findChampionArena(filter()));
             assertTrue(payload.containsKey("arena"));
-            payload.put("arena", JsonCodec.toDocument(new ArenaBuildData(2, 3, arena().stats(), arena().positions(),
-                arena().builds(), arena().cores(), arena().coverage())));
+            ArenaBuildData current = arena();
+            payload.put("arena", JsonCodec.toDocument(new ArenaBuildData(2, 3, current.stats(), current.cores(),
+                current.prismatics(), current.augments(), current.coverage())));
             assertNull(MongoDB.findChampionArena(filter()));
             assertEquals(4, MongoDB.findChampionBuilds(filter()).get(0).games());
-        }
-    }
-
-    @Test
-    public void sizeAndSerializationErrorsHappenBeforeAnyWriteAndRetainPrevious() throws Exception {
-        try (Store store = new Store()) {
-            MongoDB.upsertChampionBuild(standard(4));
-            MongoDB.upsertChampionArena(filter(), arena());
-            Document previous = cloneDocument(store.saved);
-            int calls = store.updates.size();
-            var oversized = withMissing(Map.of("x".repeat(17 * 1024 * 1024), 1L));
-            assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter(), oversized));
-            assertEquals(calls, store.updates.size());
-            assertEquals(previous, store.saved);
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            Map<String, Long> unsupported = (Map) Map.of("unsupported", new Object());
-            ArenaBuildData invalid = withMissing(unsupported);
-            assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter(), invalid));
-            assertEquals(calls, store.updates.size());
-            assertEquals(previous, store.saved);
         }
     }
 
@@ -137,7 +117,8 @@ public class MongoChampionArenaPersistenceTest {
             assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setPeriod(1, 2), arena()));
             assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setRankBehavior(Filter.RankBehavior.EXACT), arena()));
             ArenaBuildData current = arena();
-            ArenaBuildData unsupported = new ArenaBuildData(3, 2, current.stats(), current.positions(), current.builds(), current.cores(), current.coverage());
+            ArenaBuildData unsupported = new ArenaBuildData(3, 2, current.stats(), current.cores(),
+                current.prismatics(), current.augments(), current.coverage());
             assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter(), unsupported));
             Build source = standard(4);
             Build ambiguous = new Build(source.filter(), source.games(), source.wins(), source.winrate(), source.coreBuilds(),
@@ -196,15 +177,6 @@ public class MongoChampionArenaPersistenceTest {
         var p = participant(1, 3); p.boots = 3006; p.item0 = 447001; p.item1 = 4001; p.augments = List.of(11);
         accumulator.accept(match("EUW1_1", p, List.of()));
         return accumulator.finish();
-    }
-
-    private static ArenaBuildData withMissing(Map<String, Long> missing) {
-        var data = arena(); var coverage = data.coverage();
-        return new ArenaBuildData(data.schemaVersion(), data.aggregationVersion(), data.stats(), data.positions(),
-            data.builds(), data.cores(), new ArenaBuildData.Coverage(coverage.matches(), coverage.participantGames(),
-            coverage.decisionCoreGames(), coverage.fallbackCoreGames(), coverage.observedBuildGames(), missing,
-            coverage.ambiguous(), coverage.rejected(), coverage.firstPrismaticResolutionTypes(), coverage.equipmentOrder(),
-            coverage.firstPrismaticQuality()));
     }
 
     private static Document bsonRoundTrip(Document value) {

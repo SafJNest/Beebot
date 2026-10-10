@@ -405,16 +405,9 @@ and statistics timestamps; all global variants remain available.
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)
 
-## Arena analytics Phase 2
+## Arena storage
 
-The [Arena contract](../../arena-build/contracts.md) now has internal Phase 3 provider,
-path-owned Mongo persistence and opt-in service/queue orchestration. Exactly one
-champion_builds document per filterKey stores standard + build.arena. The pure
-accumulator returns ArenaBuildData, schema=3/aggregation=3, with semantic JSON.
-
-Arena remains unexposed by this endpoint. The standard reader removes arena
-before projection; routes, parameters, ChampionView, status codes, cache behavior,
-standard timeline eligibility and Discord presentation remain unchanged, including
-CHERRY. No new route, HTTP success model, scheduled Arena rebuild or backfill.
-Phase 4 must review explicit Arena exposure. Offline tests do not certify live
-Mongo/index/BSON/heap or rollout; see the Arena phases documentation.
+The `build` in this response is the standard build documented above. Internal
+Arena aggregates stored under `build.arena` are not exposed by this endpoint;
+see the [Arena contract](../../arena-build/contracts.md) and
+[schema](../../arena-build/schema.md).

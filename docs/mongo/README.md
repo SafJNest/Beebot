@@ -108,17 +108,28 @@ Arena-only inserts have no standard buildVersion/readiness marker. Standard
 read projection removes Arena before deserialization, so malformed Arena cannot
 break standard reads and the public response stays unchanged.
 
-Arena schema=3/aggregation=3 uses JsonCodec semantic structured BSON. Its full
-subtree is validated/encoded before the update. Local size/headroom guards cannot
+Arena schema=4/aggregation=4 uses JsonCodec structured BSON with only overall,
+core, Prismatic, augment and minimal coverage aggregates. Its full subtree is validated/encoded before the update. Local size/headroom guards cannot
 measure existing standard fields without reading: Mongo's atomic combined-document
 limit remains authoritative, and rejection leaves the previous value intact.
-Do not prune rare steps or split cores without measured evidence.
+The old schema 3 subtree is unsupported and must be regenerated; no compatibility
+reader or conversion is provided.
 
 The exact full-patch CHERRY match query includes queue/patchMajor/champion plus
-exact patch; bounded event joins use match_events._id and preserve missing timelines.
-Standard build/stat reader eligibility is unchanged. Catalog and source completeness
-are supplied outside pure accumulation; internal callers provide patch-correct
-immutable catalog, with completeness conservative by default.
+exact patch. Each source batch contains at most 100 matches and joins their event
+documents through `match_events._id`; matches with no event document are still
+delivered. `ArenaGameParser` reads attributed `item_events`, orders purchases by
+timeline timestamp and falls back to final slots for the first Prismatic when
+needed. Arena timestamps are used for ordering and are not persisted. Standard
+build/stat reader eligibility is unchanged. Internal callers provide a
+patch-correct immutable item catalog.
+
+The batch callback is synchronous. Each Arena `Match` holds one decoded
+`JSONObject` timeline in `events`; the duplicate `eventData` map is dropped.
+Mongo documents and event trees are released after processing.
+`ArenaChampionAnalyzer` retains aggregate counters and compact primitive IDs,
+not match or timeline objects. Its `coverage.matches` value is incremented from
+the unique Mongo match documents.
 
 Index definitions/options and explains were not inspected on a live database;
 champion_builds_filter remains the documented candidate access path. No index

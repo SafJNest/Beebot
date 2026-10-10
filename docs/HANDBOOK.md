@@ -710,19 +710,32 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `docs/architecture/profile-statistics-source-of-truth.md`
 - `docs/new-queue.md` + `docs/mongo/README.md` + `docs/api/lol-api.md`
 
-## Arena analytics Phase 3
+## Arena build analytics
 
 Start from [contracts](arena-build/contracts.md), [schema](arena-build/schema.md)
-and [phases](arena-build/phases.md). The pure accumulator returns ArenaBuildData
-(schema=3, aggregation=3), with semantic JSON identities, independent positions,
-observed builds and both generic cores. Strict evidence/undo, populations and
-all observed steps remain intact; no source I/O or threshold in accumulation.
+and [phases](arena-build/phases.md). `ArenaGameParser` reads attributed
+`item_events` from the joined `Match.events`, orders them by timestamp and
+original index, and cancels only an immediately undone matching purchase. The
+timestamp orders Arena acquisitions but is not persisted; the payload retains
+Legendary IDs by ordinal position. The standard Build continues to expose its
+existing `averagePurchaseTimeSeconds` and `timedMatches` aggregates. `220007` is
+excluded from Arena choices.
 
-Existing ChampionBuildProvider/MongoDB stream exact full-patch CHERRY match/event
-left joins in batches of at most 100, including missing timelines. Standard
-reader behavior is unchanged. Detached immutable catalog is passed explicitly
-by the internal caller for the requested patch; getItems() current-patch loading
-is not used by this pipeline. Source completeness defaults to false.
+The pure `ArenaChampionAnalyzer` returns schema/aggregation 4/4: one
+boots+first-Prismatic core, timeline-ordered Legendary options, positionless
+Prismatic options and position-specific augments. Packed `longKey` values and
+FastUtil primitive maps hold composite option keys. The parser deduplicates
+items before accumulation; the accumulator keeps its duplicate-match guard with
+primitive numeric IDs instead of retaining a `String` for every match.
+
+`ChampionBuildProvider`/`MongoDB` stream exact full-patch CHERRY matches in batches
+of at most 100, then join at most 100 matching `match_events` documents. Missing
+timelines are still passed to the analyzer. `MatchMemoryUtils` releases Mongo
+documents, timeline trees and detached matches after the synchronous batch
+callback. Standard reader behavior is unchanged. The caller passes a detached
+catalog for the requested patch; `getItems()` current-patch loading is not used.
+Missing timelines still contribute outcomes and final-slot Prismatics/augments;
+they do not create ordered Legendary build items.
 
 One champion_builds document per normal filterKey stores standard + build.arena.
 MongoDB.upsertChampionBuild/Builds update only owned standard dot paths;
@@ -730,8 +743,9 @@ upsertChampionArena updates only build.arena. Never set all of build, replace
 whole documents or read-merge-replace. Arena-first insert does not mark standard
 ready. Standard reads omit arena, preserving the endpoint/Discord projection.
 
-Internal opt-in ChampionService/ComputeScheduler entrypoints submit via QueueHandler
-on CHAMPION; no command/API or scheduled refresh calls Arena automatically.
+Internal opt-in `ChampionService`/`ComputeScheduler` entrypoints submit via
+QueueHandler on CHAMPION; there is currently no production caller, API trigger or
+scheduled refresh that starts Arena automatically.
 Job phase/currentItem show champion, full patch, shard=ALL and source
 `total/completed/missing/failed`. Total counts discovered candidates, final only
 when the cursor ends; completed includes fallback, missing is its timeline-missing
@@ -746,6 +760,6 @@ production=beebot_test, testing=beebot_test_test; do not infer safety from names
 No Mongo connection/rebuild/backfill/production run is performed by this task.
 
 API/controller/presentation, canonical Participant/Tracker, filter identity and
-accepted ADRs remain unchanged. Documentation records the internal path ownership;
-Phase 4 still gates public Arena read integration. Historical Phase 2 105-test
-results and current Phase 3 verification are separated in phases.md.
+accepted ADRs remain unchanged. Any future public Arena read requires its own
+contract review. Historical Phase 2 test results and current implementation
+verification are recorded separately in phases.md.

@@ -1,46 +1,18 @@
-# Arena champion analytics
+# Arena builds
 
-Phase 3 uses the existing provider, MongoDB owner, ChampionService and
-ComputeScheduler. The approved [contract](contracts.md) stores exactly one
-`champion_builds` document per normal filterKey, with standard fields and
-`build.arena` coexisting. No second identity, document, collection or service.
+Il payload interno è schema/aggregation 4/4. Il flusso legge i match Arena con un left join delle timeline in batch da massimo 100, aggrega gli item acquistati e aggiorna solo `build.arena`. I 29 test focalizzati offline passano; la verifica su MongoDB e il rollout sono ancora aperti.
 
-```text
-champion_builds[_id = filterKey]
-  standard root metadata
-  build
-    standard fields
-    arena (schemaVersion=3, aggregationVersion=3)
-      stats
-      positions: boots, augments, prismatics, items, membership, unpositioned
-      builds: actually observed boots + P1 + ordered Legendary items
-      cores: boots + augment OR boots + prismatic
-        complete-context steps with items, prismatics, augments choices
-      coverage
-```
+## Documenti attivi
 
-The pure accumulator returns ArenaBuildData. Standard writes set only their
-owned root fields and individual build paths; Arena writes set build.arena
-atomically. Neither replaces the whole document or performs read-merge-replace.
-The standard reader projects its original fields and ignores Arena, including
-malformed Arena content. A document inserted by Arena alone is not standard-ready.
+- [Contratto](contracts.md): sorgenti, regole di parsing, statistiche e ownership.
+- [Schema](schema.md): struttura persistita ed esempio completo.
+- [Fasi](phases.md): stato dell'implementazione, verifica e gate operativi.
 
-The Arena left join delivers all matching full-patch CHERRY matches, with or
-without match_events, in batches of at most 100. Input and catalog are detached;
-unknown source completeness remains false. Catalog is supplied explicitly by
-the internal caller, responsible for using the requested patch. No current-patch
-catalog fetch, API read integration or automatic scheduler hook is added.
+## Stato e limiti
 
-Parser, strict attribution/undo, resolver quality, independent positions,
-observed builds, generic cores and all observed steps retain the Phase 2
-semantics. Equipment and augments stay separate. 220007 is evidence only.
-No sample threshold, top-N pruning, synthetic build or core splitting is added.
-JSON uses semantic core/items/augments/prismatics and item/boots/augment/prismatic
-identity properties; generic kind/id remain internal. See [schema](schema.md).
+- Il timestamp timeline ordina gli acquisti Arena, ma non viene salvato nel payload. Il Build standard conserva i suoi aggregati `averagePurchaseTimeSeconds` e `timedMatches`.
+- Il job è opt-in: il percorso scheduler/service/provider/writer esiste, ma non ha un caller di produzione né un trigger API o schedulato.
+- Arena resta interno; l'API standard continua a proiettare soltanto il Build generico.
+- I documenti [analisi Fase 3](phase3-analysis.md) e [sizing Fase 3](phase3-sizing.md) descrivono il modello precedente e non stimano il payload 4/4.
 
-The existing CHERRY endpoint continues to serve standard aggregates. Controller,
-Participant, Tracker and presentation retain their contracts. No rebuild,
-backfill, production operation or commit is executed by this implementation.
-[Phases](phases.md) records exact test results and pending gates. Offline tests
-and synthetic measurements do not certify live Mongo, index explains,
-representative BSON/cardinality/heap or production readiness.
+Prima del rollout restano da completare round-trip BSON sul database di test, sizing rappresentativo del documento combinato, explain degli indici e attivazione esplicita del job.

@@ -163,23 +163,28 @@ The operational documentation for the LoL migration is in [`docs/mongo/`](../mon
 ## Arena champion analytics
 
 The [contract](../arena-build/contracts.md), [schema](../arena-build/schema.md)
-and [phases](../arena-build/phases.md) define the approved Phase 3 ownership.
-Parser → resolver → pure accumulator produces ArenaBuildData; MongoDB updates
-only build.arena in the existing champion_builds document for the normal filterKey.
-Standard writes set their individual root/build paths and preserve Arena.
-No replace/read-merge-replace, CAS, second document, discriminator or collection.
+and [phases](../arena-build/phases.md) define the internal Arena build path.
+ArenaGameParser reads the single hydrated `Match.events` tree; ArenaChampionAnalyzer produces
+ArenaBuildData schema/aggregation 4/4. MongoDB updates only `build.arena` in the
+existing `champion_builds` document for the normal `filterKey`. Standard writes
+set their individual root/build paths and preserve Arena. No replace,
+read-merge-replace, CAS, second document, discriminator or collection.
 
 Arena and standard retain separate populations, versions and readiness. Standard
 reads omit Arena internally so ADR-0006/0012 output remains unchanged. ChampionService
 and ComputeScheduler own the internal opt-in pipeline through QueueHandler on
-CHAMPION. No new service, HTTP route, automatic refresh or scheduler operation.
+CHAMPION. There is no new service or HTTP route, and no automatic or scheduled
+trigger currently calls the existing Arena job entrypoint.
 
-The Arena bounded left join includes matches lacking timelines; standard reader
-eligibility stays unchanged. Catalog is immutable input supplied by the caller
-for the exact requested patch. Completeness remains unproven unless source evidence
-establishes it. Participant and Tracker remain unchanged, as do accepted ADRs.
+The Arena bounded join processes at most 100 match records and joins their event
+documents by `_id`, including matches lacking timelines; standard reader
+eligibility stays unchanged. Event timestamps order Arena purchases but are not
+persisted. The standard Build keeps its existing timing aggregates. Catalog is
+immutable input supplied by the caller for the exact requested patch. Participant
+and Tracker remain unchanged, as do accepted ADRs.
 
-Shared StatisticalLeaf/timing primitives support positions, observed builds,
-generic boots+A1/boots+P1 cores and full-context steps. The semantic Arena payload
-is versioned independently. Actual Mongo/index/BSON/heap and operational rollout
+The analyzer packs composite IDs into `longKey` values and uses FastUtil
+primitive maps. It counts unique source match documents incrementally and retains
+no raw timeline after each batch. Its scheduler entrypoint is opt-in and has no
+production caller or automatic trigger. Actual Mongo/index/BSON/heap and rollout
 gates remain required; offline verification does not certify production readiness.

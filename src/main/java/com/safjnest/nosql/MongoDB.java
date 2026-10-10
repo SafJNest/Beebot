@@ -660,11 +660,11 @@ public final class MongoDB {
         try {
             for (Document source : batch) {
                 Match match = readMatch(QueryRecordParser.fromDocument(source));
+                match.eventData = null;
                 result.add(match);
                 Document event = events.get(match.gameId);
                 if (event != null) {
-                    match.eventData = decodeMatchEvents(event);
-                    match.restoreEvents();
+                    match.events = decodeMatchEventsObject(event);
                 }
             }
             return result;
@@ -3558,6 +3558,16 @@ public final class MongoDB {
         if (data.isEmpty()) return new LinkedHashMap<>();
         try {
             return new JSONObject(data).toMap();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("Invalid compressed match event JSON id=" + document.get("_id"), exception);
+        }
+    }
+
+    private static JSONObject decodeMatchEventsObject(Document document) {
+        String data = decodeMatchEventsJson(document);
+        if (data.isEmpty()) return new JSONObject();
+        try {
+            return new JSONObject(data);
         } catch (RuntimeException exception) {
             throw new IllegalStateException("Invalid compressed match event JSON id=" + document.get("_id"), exception);
         }

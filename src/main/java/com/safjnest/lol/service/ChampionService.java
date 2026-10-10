@@ -94,7 +94,7 @@ public class ChampionService {
                 Objects.requireNonNull(batch, "Arena batch required");
                 progress.total += batch.size();
                 for (Match match : batch) {
-                    if (!accumulator.accept(match, false))
+                    if (!accumulator.accept(match))
                         throw new IllegalArgumentException("Arena source match does not match the requested scope");
                     progress.completed++;
                     if (!MatchupTimelineUtils.hasTimeline(match.events)) progress.missing++;

@@ -1,5 +1,7 @@
 # Arena Phase 3 synthetic sizing probe
 
+> Misura storica del precedente modello ad alta cardinalità. Non usare questi numeri per stimare il payload semplificato; il nuovo schema richiede un sizing dedicato prima del rollout.
+
 JVM OpenJDK 26.0.2; `-Xmx512m`. Four isolated JVM runs. No Mongo, Redis, Riot or scheduler calls. Not a representative rollout gate.
 
 Dataset: champion 27, full patch 26.19.123, CHERRY; one participant per match (id=1, puuid=synthetic-participant), unique EUW1_1..N IDs. Source loaded/released in batches of 100. No timeline and completeItemHistory=false, so all reconstruction is labelled fallback. Boots=3006, P1=447001, two Legendary items and three augments. Fixed scenarios share equipment/context IDs; varied scenarios change one Legendary ID per match. No pruning or thresholds.
