@@ -7,7 +7,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;   
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -16,7 +16,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.r4j.scheduler.RiotScheduler;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 
 import com.safjnest.lol.model.summoner.Mastery;
@@ -71,7 +71,7 @@ public final class SummonerService {
     }
 
     public static CompletableFuture<Summoner> getAsync(String puuid, LeagueShard shard) {
-        return getSummonerAsync(puuid, shard).thenCompose(SummonerService::hydrate);
+        return QueueHandler.thenCompose(getSummonerAsync(puuid, shard), SummonerService::hydrate);
     }
 
     static CompletableFuture<Summoner> getSummonerAsync(String puuid, LeagueShard shard) {
@@ -104,8 +104,8 @@ public final class SummonerService {
         }
 
         invalidateRefreshSourceCaches(puuid, shard);
-        return refreshRiotAccountAsync(puuid, shard).thenCompose(account -> refreshRiotSummonerAsync(puuid, shard)
-            .thenComposeAsync(source -> refreshProfile(source, account)))
+        return QueueHandler.thenCompose(refreshRiotAccountAsync(puuid, shard), account ->
+            QueueHandler.thenCompose(refreshRiotSummonerAsync(puuid, shard), source -> refreshProfile(source, account)))
             .exceptionally(exception -> {
                 System.err.println("Summoner refresh failed puuid=" + puuid + " shard=" + shard + " " + exception.getMessage());
                 return RefreshResult.ignored();
@@ -141,13 +141,13 @@ public final class SummonerService {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner cached = cacheRiotSummoner(puuid, shard);
         if (cached != null) return saveAsync(cached).thenApply(ignored -> cached);
 
-        return QueueHandler.<no.stelar7.api.r4j.pojo.lol.summoner.Summoner>immediate(RiotScheduler.class, shard, shard.name() + ":summoner:" + puuid,
-            "summoner puuid=" + puuid, ignored -> {
+        return QueueHandler.thenCompose(QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":summoner:" + puuid,
+            "summoner puuid=" + puuid, no.stelar7.api.r4j.pojo.lol.summoner.Summoner.class, ignored -> {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                 RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
             if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
             return summoner;
-        }).thenComposeAsync(summoner -> summoner == null
+        }), summoner -> summoner == null
             ? CompletableFuture.completedFuture(null)
             : saveAsync(summoner).thenApply(ignored -> summoner));
     }
@@ -202,7 +202,7 @@ public final class SummonerService {
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account:" + puuid,
-            "account puuid=" + puuid, ignored -> {
+            "account puuid=" + puuid, RiotAccount.class, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
             if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
@@ -218,7 +218,7 @@ public final class SummonerService {
 
         String riotId = name + "#" + tag;
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account:" + riotId,
-            "account riotId=" + riotId, ignored -> {
+            "account riotId=" + riotId, RiotAccount.class, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByTag(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), name, tag);
             if (account != null) {
@@ -268,8 +268,8 @@ public final class SummonerService {
         if (cached != null) return cached;
 
         try {
-            return QueueHandler.<SpectatorGameInfo>immediate(RiotScheduler.class, shard, shard.name() + ":spectator:" + puuid,
-                "spectator puuid=" + puuid, ignored -> {
+            return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":spectator:" + puuid,
+                "spectator puuid=" + puuid, SpectatorGameInfo.class, ignored -> {
                 SpectatorGameInfo game = RIOT_API.getLoLAPI().getSpectatorAPI().getCurrentGame(shard, puuid);
                 if (game != null) RedisClient.set(RedisKey.R4J_SPECTATOR_CURRENT, game, shard.name(), puuid);
                 return game;
@@ -384,7 +384,7 @@ public final class SummonerService {
 
     private static CompletableFuture<RiotAccount> refreshRiotAccountAsync(String puuid, LeagueShard shard) {
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account-refresh:" + puuid,
-            "account refresh puuid=" + puuid, ignored -> {
+            "account refresh puuid=" + puuid, RiotAccount.class, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
             if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
@@ -397,7 +397,7 @@ public final class SummonerService {
         LeagueShard shard
     ) {
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":summoner-refresh:" + puuid,
-            "summoner refresh puuid=" + puuid, ignored -> {
+            "summoner refresh puuid=" + puuid,no.stelar7.api.r4j.pojo.lol.summoner.Summoner.class,  ignored -> {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                 RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
             if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
@@ -418,9 +418,8 @@ public final class SummonerService {
         if (profile == null) return CompletableFuture.completedFuture(RefreshResult.ignored());
 
         LeagueShard sourceShard = source.getPlatform();
-        return RankService.refreshAsync(source.getPUUID(), sourceShard)
-            .thenCompose(ignored -> MasteryService.refreshAsync(source.getPUUID(), sourceShard))
-            .thenApply(ignored -> {
+        return QueueHandler.thenApply(QueueHandler.thenCompose(RankService.refreshAsync(source.getPUUID(), sourceShard),
+            ignored -> MasteryService.refreshAsync(source.getPUUID(), sourceShard)), ignored -> {
                 ProfileService.refreshProfile(profile, sourceShard);
                 return new RefreshResult(source, true);
             });
@@ -505,7 +504,7 @@ public final class SummonerService {
         CompletableFuture<Map<GameQueueType, Rank>> ranksFuture = foundRanks != null
             ? CompletableFuture.completedFuture(foundRanks)
             : RankService.getAsync(puuid, shard);
-        return ranksFuture.thenCompose(ranks -> {
+        return QueueHandler.thenCompose(ranksFuture, ranks -> {
             if (foundRanks == null && ranks != null) {
                 for (Map.Entry<GameQueueType, Rank> entry : ranks.entrySet()) {
                     if (entry.getKey() != null && entry.getValue() != null) identity.setRank(entry.getKey(), entry.getValue());
@@ -514,7 +513,7 @@ public final class SummonerService {
             CompletableFuture<List<Mastery>> masteriesFuture = foundMasteries != null
                 ? CompletableFuture.completedFuture(foundMasteries)
                 : MasteryService.getAsync(puuid, shard);
-            return masteriesFuture.thenApply(masteries -> {
+            return QueueHandler.thenApply(masteriesFuture, masteries -> {
                 if (foundMasteries == null && masteries != null) identity.setMasteries(masteries);
                 RedisClient.set(RedisKey.SUMMONER, identity, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
                 return identity;
@@ -527,7 +526,7 @@ public final class SummonerService {
         if (riotId != null && !riotId.isBlank()) return CompletableFuture.completedFuture(store(
             persist(source, riotId, null), source.getPlatform()));
 
-        return getRiotAccountAsync(source.getPUUID(), source.getPlatform()).thenApply(account -> store(
+        return QueueHandler.thenApply(getRiotAccountAsync(source.getPUUID(), source.getPlatform()), account -> store(
             persist(source, account == null ? null : account.getName() + "#" + account.getTag(), null),
             source.getPlatform()
         ));

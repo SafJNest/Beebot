@@ -1,7 +1,8 @@
 # Piano iniziale di estrazione
 
-Stato: proposta; questa consegna completa la fase 0, senza implementare le successive.
-Il codice e gli ADR accettati conservano i loro confini attuali.
+Stato: piano servizi proposto; fase 0 documentata e tranche job/code della fase 3
+implementata anticipatamente con decisione mirata ADR-0017. Le altre fasi
+restano proposte, senza accettazione integrale di ADR-0016.
 
 ## Ordine delle fasi
 
@@ -10,7 +11,7 @@ Il codice e gli ADR accettati conservano i loro confini attuali.
 | 0 — Analisi | Inventario, DTO, job, ownership e dipendenze | Documenti presenti, conflitti registrati, nessuna modifica runtime |
 | 1 — Decisione e baseline | Definire layout, accettare/sincronizzare la decisione architetturale e caratterizzare comportamento vigente | Regole/ADR allineati; risolte discrepanze compute/progresso; fixture JSON e test lifecycle |
 | 2 — Contratti comuni | Separare metodi operativi dai modelli canonici e trasferire DTO/dipendenze di dati | Contratti compilano senza servizi/SDK/driver; JSON compatibile; nessun DTO duplicato |
-| 3 — Job/code comuni | Runtime per istanza, core generico e adapter configurati dai servizi | Test con due runtime e route estranee a LoL; stesso comportamento locale/status |
+| 3 — Job/code comuni | Hive per istanza, core generico e adapter locali implementati nel monolite | Evidenze e review in hive-validation.md; processi ancora condivisi |
 | 4 — Build autonome | Parent Maven e moduli shared/bbot/r4j/spring, dipendenze e risorse locali | Tre bootstrap e artifact avviabili senza avviare gli altri |
 | 5 — Confine R4J | API interna e client Spring, fetch/cache SDK nel servizio R4J | Spring senza SDK Riot; R4J senza Mongo/JDA; errori/timeout/limiter verificati |
 | 6 — Confine Bbot | Client verso Spring e conversione dei comandi/maintenance alle API del proprietario | Bot senza accesso LoL diretto a Mongo/Riot; embed e comandi compatibili |
@@ -125,3 +126,10 @@ chiave Redis, libreria Maven o package Java viene modificato. Handbook, indice
 architetturale e README ricevono soltanto un rimando alla proposta; i documenti
 API/Mongo sono stati riesaminati e restano la descrizione del runtime corrente.
 Disallineamenti preesistenti sono registrati nell'inventario.
+
+## Decisione della tranche job/code
+
+ADR-0017 conserva il codice verificato: quattro worker compute e progresso
+esplicito prima dei contatori figli. Il core vive in `com.hive`, i concreti
+in `r4j.scheduler` e `lol.scheduler`; App compone un solo runtime condiviso.
+DTO dominio, moduli dei servizi e trasporto restano fasi indipendenti.

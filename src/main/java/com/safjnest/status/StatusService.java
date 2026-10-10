@@ -7,14 +7,14 @@ import com.safjnest.lol.model.status.BotStatus;
 import com.safjnest.lol.model.status.LeagueMetrics;
 import com.safjnest.lol.model.status.JvmMetrics;
 import com.safjnest.lol.model.status.MongoMetrics;
-import com.safjnest.lol.model.status.SchedulerStatus;
-import com.safjnest.lol.model.status.JobStatus;
+import com.hive.status.SchedulerStatus;
+import com.hive.status.JobStatus;
 import com.safjnest.lol.model.status.RedisMetrics;
 import com.safjnest.lol.model.status.SystemMetrics;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.safjnest.lol.scheduler.SyncScheduler;
 
 public class StatusService {
 
@@ -47,7 +47,7 @@ public class StatusService {
 
     private static List<SchedulerStatus> dispatcherStatus() {
         try {
-            return List.of(SyncScheduler.status(), RiotScheduler.status(), ComputeScheduler.status());
+            return List.of(QueueHandler.scheduler(SyncScheduler.class).snapshot(), QueueHandler.scheduler(RiotScheduler.class).snapshot(), QueueHandler.scheduler(ComputeScheduler.class).snapshot());
         } catch (Exception ignored) {
             return List.of();
         }

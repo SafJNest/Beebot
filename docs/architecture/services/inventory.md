@@ -1,6 +1,8 @@
 # Inventario e confini del monolite
 
 Stato: analisi iniziale del 2026-10-10, baseline `cef023bc`.
+La tranche Hive è ora implementata secondo ADR-0017; tabelle numeriche e
+accoppiamenti qui sotto documentano la baseline precedente, non un nuovo census.
 Il target è descritto nel [documento principale](README.md).
 
 ## Metodo e copertura
@@ -139,17 +141,19 @@ I PHP/JS in `rsc/backup/old-memories` sono materiale storico; gli script in
 1. ADR-0014, README architetturale e handbook descrivono compute con due worker.
    Il codice registra `PROFILE`, `PROFILE_2`, `CHAMPION`, `MONGO`; il placement
    profile usa le quattro load e, durante la riserva champion, sceglie tra i due
-   profile. La configurazione da preservare deve essere concordata prima del port.
+   profile. ADR-0017 conserva esplicitamente questa configurazione a quattro worker.
 2. ADR-0014 descrive il progresso dei parent tramite figli diretti; in
    `Registry.progress` un progresso esplicito del job ha precedenza sui contatori
-   dei figli. Il port deve caratterizzare e decidere questo caso.
+   dei figli. ADR-0017 conserva il progresso esplicito come precedenza e caratterizza il fallback.
 3. Gli ADR accettati collocano i modelli in `lol.model` e il registry globale in
-   `lol.queue`; il target introduce common e runtime locali. È una modifica
-   architetturale proposta in ADR-0016, non già applicabile al codice.
+   `lol.queue`; il target introduce common e runtime locali. La sola tranche
+   job è accettata in ADR-0017; i modelli del dominio restano in lol.model.
 4. L'indice API contiene un link `summoner/rank-history.md` inesistente; il file
    presente è `docs/api/lol-api/summoner/rank-history.md`. Records è documentato
    in `docs/api/records.md`, ma non indicizzato nel sommario per scope. Questi
    disallineamenti sono preesistenti e saranno trattati nel gate API del port.
 
-Non si modifica codice finché un conflitto pertinente al port non è risolto
-esplicitamente. La presente analisi può registrarlo senza alterare il contratto vigente.
+I conflitti pertinenti alle code sono risolti in ADR-0017. Le discrepanze
+dell’indice API non coinvolte da Hive restano fuori perimetro; nessuna correzione
+di endpoint o migrazione dei modelli viene implicata. Vedere job-queue.md per
+la mappa attuale e hive-validation.md per prove e review.

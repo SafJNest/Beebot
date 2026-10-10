@@ -1,13 +1,21 @@
-# Global job scheduler
+# Hive job runtime
 
-`lol.queue` owns one registry/router boundary and three separate physical
-scheduler owners. A scheduler never shares workers, routes or priority lanes
-with another scheduler.
+`com.hive` owns the JDK-only mechanism. The application facade
+`lol.queue.QueueHandler` explicitly composes one runtime from App before opening
+API/tracker admission. Registry and Router are per-instance; the monolith
+shares one registry across Riot, compute and Sync. A scheduler owns its own
+physical queues and workers. Sync uses direct execution without a physical queue.
+[ADR-0017](architecture/adr/0017-hive-job-runtime.md) defines these boundaries.
 
 ```text
 QueueHandler -> Router -> Registry -> AbstractScheduler<R>
                                       JobQueue -> JobWorker -> Job
 ```
+
+`HiveConfig` supplies identity, clock, snapshot limits, shutdown timeout and
+observation. Scheduler hooks supply route validation, labels, placement and
+execution mode. Public submission relates the scheduler route type and route,
+and uses a result type token to reject incompatible active-key reuse.
 
 `Job` is the submission data (`PID`, `PPID`, scheduler class, key, name,
 logical route, priority, work and progress). `Registry` owns lifecycle,
@@ -19,7 +27,7 @@ queue placement and workers.
 | Dispatcher | Routes | Owner |
 | --- | --- | --- |
 | `RiotScheduler` | one `LeagueShard` worker | outbound Riot API |
-| `ComputeScheduler` | `PROFILE`, `CHAMPION` | expensive Mongo compute |
+| `ComputeScheduler` | `PROFILE`, `PROFILE_2`, `CHAMPION`, `MONGO` | expensive Mongo compute |
 | `SyncScheduler` | starts every submitted job immediately on its own virtual thread | tracking, rank, match, sample and participant refresh workflows |
 
 Riot and Compute keep their route-local priority queues. Sync has no waiting
@@ -39,6 +47,19 @@ the run exposes those child job snapshots without a parallel Tracker telemetry
 store. A job body can call `QueueHandler.retain(job)` and later
 `QueueHandler.resume(job, callback)` so the worker is released while the logical
 parent waits for the callback and its descendants.
+
+Explicit item progress wins over direct-child progress; child counters are the
+fallback. Priority inheritance selects the more urgent parent/request priority.
+Compute profile placement selects the least loaded of its four workers at
+insertion. While champion matrix/build/refresh work reserves CHAMPION, profile
+work chooses only PROFILE or PROFILE_2. Heavy work and all filter/key/merge
+interpretation remain in the concrete `lol.scheduler` adapter. Riot lives in
+`r4j.scheduler`, with existing SDK protection and external-cache ownership.
+
+Future cancellation does not automatically interrupt a job body. Explicit job
+cancellation and runtime shutdown close logical lifecycle separately from
+executor interruption. Shutdown closes admission and owned executors; bodies
+ignoring interruption cannot promise immediate physical termination.
 
 ## Match flow
 
@@ -84,9 +105,10 @@ already-tracked matches do not emit this log.
 The periodic tracker starts its next run ten minutes after the current root and
 all its descendants finish. Other periodic jobs keep their own schedules.
 
-`thenApplyAsync` and `thenComposeAsync` in a domain service remain continuations
-of an already-owned request; new background work must enter one of the three
-dispatchers.
+Async domain continuations use the runtime-owned continuation executor, with
+retained/restored job context. New background work enters the submission facade.
+Orchestrators that wait for compute children run on Sync, avoiding a join onto
+the same occupied serial compute worker.
 
 Rank entries are scheduled as real leaf tasks before execution: one task for
 each `shard + tier + queue`. The derived `runs[].tasks` can therefore be grouped by

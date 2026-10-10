@@ -4,7 +4,7 @@
 - Owner: Main agent
 - Date: 2026-10-10
 - Scope: analisi iniziale sul branch `beebot-servicies`
-- Implementation: non iniziata
+- Implementation: solo infrastruttura job/code implementata separatamente in ADR-0017; tutte le altre migrazioni restano proposte
 
 ## Contesto
 
@@ -50,6 +50,9 @@ build/statistiche restano nel proprietario Spring/Mongo.
 ## Relazione con le decisioni vigenti
 
 Questo ADR **non è accettato** e non sostituisce alcun ADR attuale.
+[ADR-0017](0017-hive-job-runtime.md) accetta esclusivamente Hive e il wiring
+del monolite, con core `com.hive`. Non accetta i DTO comuni,
+i processi separati, i moduli applicativi o i confini HTTP di questa proposta.
 Prima di implementarlo devono essere aggiornate esplicitamente le regole
 pertinenti in `AGENTS.md` e le decisioni sulla collocazione dei modelli
 (ADR-0001/0005/0007), sulla ownership dei servizi/persistenza

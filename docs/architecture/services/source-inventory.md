@@ -1,6 +1,9 @@
 # Inventario dei sorgenti per file
 
-Stato: classificazione preliminare del 2026-10-10, baseline `cef023bc`.
+Stato: inventario baseline del 2026-10-10 (`cef023bc`), con destinazioni Hive
+aggiornate da ADR-0017. I conteggi storici non includono i nuovi file core;
+le altre destinazioni restano proposte. Le righe delle code riportano il
+percorso attuale dopo il port, mantenendo il census originale come riferimento.
 
 Elenco completo dei 424 file Java principali restituiti da CodeGraph aggiornato.
 I percorsi sono quelli attuali; nessun file è stato spostato. Destinazioni e
@@ -270,8 +273,8 @@ nell'inventario per area, non sono destinati al comune per default.
 | [lol/model/statistics/shared/TrendStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/TrendStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [lol/model/statistics/shared/WinLossStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/WinLossStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [lol/model/status/BotStatus.java](../../../src/main/java/com/safjnest/lol/model/status/BotStatus.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/JobProgress.java](../../../src/main/java/com/safjnest/lol/model/status/JobProgress.java) | Comune job | Snapshot generico; proiezioni applicative restano locali |
-| [lol/model/status/JobStatus.java](../../../src/main/java/com/safjnest/lol/model/status/JobStatus.java) | Comune job | Snapshot generico; proiezioni applicative restano locali |
+| [com/hive/status/JobProgress.java](../../../src/main/java/com/hive/status/JobProgress.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
+| [com/hive/status/JobStatus.java](../../../src/main/java/com/hive/status/JobStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [lol/model/status/JvmMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/JvmMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
 | [lol/model/status/LeagueMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/LeagueMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
 | [lol/model/status/MongoCollectionPerformance.java](../../../src/main/java/com/safjnest/lol/model/status/MongoCollectionPerformance.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
@@ -283,33 +286,33 @@ nell'inventario per area, non sono destinati al comune per default.
 | [lol/model/status/MongoOperationsMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/MongoOperationsMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
 | [lol/model/status/MongoPerformanceMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/MongoPerformanceMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
 | [lol/model/status/MongoSlowOperation.java](../../../src/main/java/com/safjnest/lol/model/status/MongoSlowOperation.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/QueueStatus.java](../../../src/main/java/com/safjnest/lol/model/status/QueueStatus.java) | Comune job | Snapshot generico; proiezioni applicative restano locali |
+| [com/hive/status/QueueStatus.java](../../../src/main/java/com/hive/status/QueueStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [lol/model/status/RedisMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/RedisMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/RunStatus.java](../../../src/main/java/com/safjnest/lol/model/status/RunStatus.java) | Comune job | Snapshot generico; proiezioni applicative restano locali |
-| [lol/model/status/SchedulerStatus.java](../../../src/main/java/com/safjnest/lol/model/status/SchedulerStatus.java) | Comune job | Snapshot generico; proiezioni applicative restano locali |
+| [com/hive/status/RunStatus.java](../../../src/main/java/com/hive/status/RunStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
+| [com/hive/status/SchedulerStatus.java](../../../src/main/java/com/hive/status/SchedulerStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [lol/model/status/SystemMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/SystemMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/WorkerStatus.java](../../../src/main/java/com/safjnest/lol/model/status/WorkerStatus.java) | Comune job | Snapshot generico; proiezioni applicative restano locali |
+| [com/hive/status/WorkerStatus.java](../../../src/main/java/com/hive/status/WorkerStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [lol/model/summoner/Mastery.java](../../../src/main/java/com/safjnest/lol/model/summoner/Mastery.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
 | [lol/model/summoner/Rank.java](../../../src/main/java/com/safjnest/lol/model/summoner/Rank.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
 | [lol/model/summoner/Summoner.java](../../../src/main/java/com/safjnest/lol/model/summoner/Summoner.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
 | [lol/model/summoner/SummonerLeaderboard.java](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerLeaderboard.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
 | [lol/model/summoner/SummonerOverview.java](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerOverview.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
 | [lol/model/summoner/SummonerView.java](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerView.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/queue/QueueHandler.java](../../../src/main/java/com/safjnest/lol/queue/QueueHandler.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/Registry.java](../../../src/main/java/com/safjnest/lol/queue/Registry.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/Router.java](../../../src/main/java/com/safjnest/lol/queue/Router.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/job/Job.java](../../../src/main/java/com/safjnest/lol/queue/job/Job.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/job/JobPriority.java](../../../src/main/java/com/safjnest/lol/queue/job/JobPriority.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/job/JobState.java](../../../src/main/java/com/safjnest/lol/queue/job/JobState.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/scheduler/AbstractScheduler.java](../../../src/main/java/com/safjnest/lol/queue/scheduler/AbstractScheduler.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/scheduler/ChampionMatrixRequest.java](../../../src/main/java/com/safjnest/lol/queue/scheduler/ChampionMatrixRequest.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [lol/queue/scheduler/ComputeScheduler.java](../../../src/main/java/com/safjnest/lol/queue/scheduler/ComputeScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [lol/queue/scheduler/DatabaseWorkerType.java](../../../src/main/java/com/safjnest/lol/queue/scheduler/DatabaseWorkerType.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [lol/queue/scheduler/RiotScheduler.java](../../../src/main/java/com/safjnest/lol/queue/scheduler/RiotScheduler.java) | R4J | Adapter routing e naming Riot sopra il core comune |
-| [lol/queue/scheduler/SyncScheduler.java](../../../src/main/java/com/safjnest/lol/queue/scheduler/SyncScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [lol/queue/worker/JobQueue.java](../../../src/main/java/com/safjnest/lol/queue/worker/JobQueue.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/worker/JobWorker.java](../../../src/main/java/com/safjnest/lol/queue/worker/JobWorker.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
-| [lol/queue/worker/WorkerState.java](../../../src/main/java/com/safjnest/lol/queue/worker/WorkerState.java) | Comune job + split | Meccanismo generico; eliminare globali/policy/dipendenze locali |
+| [lol/queue/QueueHandler.java](../../../src/main/java/com/safjnest/lol/queue/QueueHandler.java) | Applicazione | Composizione e facade; delega a Hive, bootstrap esplicito |
+| [com/hive/Registry.java](../../../src/main/java/com/hive/Registry.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/Router.java](../../../src/main/java/com/hive/Router.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/job/Job.java](../../../src/main/java/com/hive/job/Job.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/job/JobPriority.java](../../../src/main/java/com/hive/job/JobPriority.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/job/JobState.java](../../../src/main/java/com/hive/job/JobState.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/scheduler/AbstractScheduler.java](../../../src/main/java/com/hive/scheduler/AbstractScheduler.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [lol/scheduler/ChampionMatrixRequest.java](../../../src/main/java/com/safjnest/lol/scheduler/ChampionMatrixRequest.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [lol/scheduler/ComputeScheduler.java](../../../src/main/java/com/safjnest/lol/scheduler/ComputeScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [lol/scheduler/DatabaseWorkerType.java](../../../src/main/java/com/safjnest/lol/scheduler/DatabaseWorkerType.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [r4j/scheduler/RiotScheduler.java](../../../src/main/java/com/safjnest/r4j/scheduler/RiotScheduler.java) | R4J | Adapter routing e naming Riot sopra il core comune |
+| [lol/scheduler/SyncScheduler.java](../../../src/main/java/com/safjnest/lol/scheduler/SyncScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [com/hive/worker/JobQueue.java](../../../src/main/java/com/hive/worker/JobQueue.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/worker/JobWorker.java](../../../src/main/java/com/hive/worker/JobWorker.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
+| [com/hive/worker/WorkerState.java](../../../src/main/java/com/hive/worker/WorkerState.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [lol/service/CacheInvalidationService.java](../../../src/main/java/com/safjnest/lol/service/CacheInvalidationService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
 | [lol/service/ChampionAnalyzer.java](../../../src/main/java/com/safjnest/lol/service/ChampionAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
 | [lol/service/ChampionBuildEngine.java](../../../src/main/java/com/safjnest/lol/service/ChampionBuildEngine.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
@@ -500,7 +503,10 @@ nell'inventario per area, non sono destinati al comune per default.
 | [utils/twitch/TwitchClient.java](../../../src/main/java/com/safjnest/utils/twitch/TwitchClient.java) | Bbot | Utility bot/integrazione; non trasferimento globale |
 | [utils/twitch/TwitchEventsHandler.java](../../../src/main/java/com/safjnest/utils/twitch/TwitchEventsHandler.java) | Bbot | Utility bot/integrazione; non trasferimento globale |
 
-## Dipendenze testuali dei contratti da isolare
+## Dipendenze testuali baseline dei contratti da isolare
+
+Gli import di snapshot job qui sotto sono storici: il port ADR-0017 li ha
+trasferiti a `com.hive.status` con dipendenze solo Hive/JDK.
 
 Per ciascun file LoL model, import diretti esterni al JDK/Jackson e agli
 altri model LoL. `—` significa soltanto assenza di quegli import, non prova
@@ -586,3 +592,15 @@ di indipendenza operativa o chiusura transitive del contratto.
 | `summoner/SummonerLeaderboard.java` | — |
 | `summoner/SummonerOverview.java` | `com.safjnest.lol.utils.ChampionUtils` |
 | `summoner/SummonerView.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType` |
+
+## Aggiunte Hive rispetto al census baseline
+
+- `com/hive/Hive.java`: runtime e admission per istanza.
+- `com/hive/HiveConfig.java`: clock, identity, limiti, shutdown e osservazione.
+- `com/hive/JobFuture.java`: caller view distinta dalla terminazione lifecycle.
+- `com/hive/job/ResultType.java`: contratti di risultato e token per liste.
+- `hive/pom.xml`: artifact core autonomo dai sorgenti canonici, senza dipendenze runtime.
+- La classificazione dei run è nel hook locale SyncScheduler; StatusService compone il payload.
+- Nessun alias o seconda copia del core in `lol.queue`; queue audio esclusa.
+
+La mappa funzionale dei chiamanti e test è in [job-queue.md](job-queue.md).

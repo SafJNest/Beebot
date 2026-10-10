@@ -41,7 +41,7 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
@@ -98,9 +98,9 @@ public class LeagueMessage {
 
                 embed = LeagueMessage.getLivegameEmbed(summoner, liveGame, users).build();
                 components = new ArrayList<>(composeButtons(summoner, userId != null ? userId : null, new LeagueMessageParameter(LeagueMessageType.LIVEGAME)));
-                if (menu != null) 
+                if (menu != null)
                     components.add(0, ActionRow.of(menu));
-                
+
                 break;
             case OPGG:
                 List<Match> matches = getOpggMatches(summoner, parameter);
@@ -130,21 +130,21 @@ public class LeagueMessage {
             default:
                 break;
         }
-        return new Object[]{embed, components};     
+        return new Object[]{embed, components};
     }
 
     private static List<MessageTopLevelComponent> getChampionsButtons(LeagueMessageParameter parameter) {
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-    
+
         Button winrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_WINRATE,  "Winrate");
         Button pickrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_PICKRATE, "Pickrate");
         Button banrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_BANRATE,  "Banrate");
-    
+
         String stateKey = parameter.toFilter().toStateKey();
         Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-"  + parameter.getOffset() + "-" + stateKey, " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + parameter.getOffset() + "-" + stateKey, " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
         if (parameter.getOffset() <= 0) left = left.asDisabled();
-    
+
         List<SelectOption> tierOptions = new ArrayList<>();
         tierOptions.add(SelectOption.of("All", LeagueConstants.ALL).withDefault(parameter.getRank() == null));
         for (TierType tier : TierType.values()) {
@@ -152,20 +152,20 @@ public class LeagueMessage {
                 .withEmoji(CustomEmojiHandler.getRichEmoji(tier.name()))
                 .withDefault(parameter.getRank() == tier));
         }
-    
+
         List<SelectOption> shardOptions = new ArrayList<>();
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji(shard.getRealmValue().toUpperCase() + "_server");
             SelectOption opt = SelectOption.of(shard.name(), shard.name()).withDefault(parameter.getRegion() == shard);
             shardOptions.add(emoji != null ? opt.withEmoji(emoji) : opt);
         }
-    
+
         switch (parameter.getMessageType()) {
             case CHAMPIONS_BY_PICKRATE -> pickrate = pickrate.withStyle(ButtonStyle.SUCCESS);
             case CHAMPIONS_BY_BANRATE -> banrate = banrate.withStyle(ButtonStyle.SUCCESS);
             default -> winrate = winrate.withStyle(ButtonStyle.SUCCESS);
         }
-    
+
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons(ButtonStyle.SECONDARY, parameter.getQueueType()));
         if (parameter.getQueueType() == null || GameQueueTypeUtils.hasLane(parameter.getQueueType()))
             rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
@@ -186,18 +186,18 @@ public class LeagueMessage {
             )
         );
         rows.add(ActionRow.of(left, right, winrate, pickrate, banrate));
-    
+
         return rows;
     }
 
     private static MessageEmbed buildEmbedChampions(LeagueMessageParameter parameter, List<ChampionStatistics> champions) {
         EmbedBuilder  eb   = new EmbedBuilder();
         StringBuilder desc = new StringBuilder();
-    
+
         int pageSize  = parameter.getMessageType().getPageItem();
         LaneType lane = parameter.getLaneType();
         int opponent  = parameter.getOpponent();
-    
+
         if (parameter.getPatch()     != null) desc.append("Patch `").append(parameter.getPatch()).append("`\n");
         if (parameter.getRegion()    != null) desc.append(LeagueShardUtils.getRegionFlag(parameter.getRegion())).append(" ").append(parameter.getRegion()).append("\n");
         if (parameter.getRank()      != null) desc.append(CustomEmojiHandler.getFormattedEmoji(parameter.getRank().toString())).append(" ").append(SafJNest.capitalize(parameter.getRank().toString())).append("\n");
@@ -208,16 +208,16 @@ public class LeagueMessage {
             if (opponentChampion != null)
                 desc.append("Against ").append(CustomEmojiHandler.getFormattedEmoji(opponentChampion.getName())).append(" ").append(opponentChampion.getName()).append("\n");
         }
-    
+
         desc.append("\n");
-    
+
         Comparator<ChampionStatistics> comparator = switch (parameter.getMessageType()) {
             case CHAMPIONS_BY_WINRATE -> Comparator.comparingDouble(s -> getChampionWinrate(s, lane, opponent));
             case CHAMPIONS_BY_PICKRATE -> Comparator.comparingDouble(s -> getChampionPickrate(s, lane, opponent));
             case CHAMPIONS_BY_BANRATE -> Comparator.comparingDouble(s -> s.banrate());
             default -> Comparator.comparingDouble(s -> getChampionWinrate(s, lane, opponent));
         };
-    
+
         List<ChampionStatistics> filtered = champions.stream()
             .filter(s -> canShowChampion(s, lane, opponent))
             .sorted(comparator.reversed())
@@ -233,7 +233,7 @@ public class LeagueMessage {
             .limit(pageSize)
             .forEach(s -> {
                 StaticChampion champion = ChampionUtils.getChampion(s.filter().champion());
-        
+
                 if (champion == null) {
                     desc.append(s.filter().champion()).append("\n");
                     return;
@@ -241,7 +241,7 @@ public class LeagueMessage {
 
                 Matchup matchup = opponent != 0 ? getOpponentMatchup(s, opponent) : null;
                 LaneStat ls = lane != null ? s.getLaneStat(lane) : null;
-        
+
                 desc.append(CustomEmojiHandler.getFormattedEmoji(champion.getName()))
                     .append(" **").append(champion.getName()).append("**: ");
 
@@ -270,16 +270,16 @@ public class LeagueMessage {
 
         if (filtered.isEmpty())
             desc.append("Not enough data for this filter.");
-        
+
         int total   = filtered.size();
         int pages   = Math.max(1, (int) Math.ceil((double) total / pageSize));
         int curPage = offset / pageSize + 1;
-    
+
         eb.setColor(Bot.getColor());
         eb.setTitle("Champion Tier List");
         eb.setDescription(desc.toString());
         eb.setFooter("Page " + curPage + " / " + pages + " · " + total + " champions");
-    
+
         return eb.build();
     }
 
@@ -326,7 +326,7 @@ public class LeagueMessage {
         String selectedMatchId = parameter.getSelectedMatchId();
         return selectedMatchId == null ? null : MatchService.get(selectedMatchId, summoner.region());
     }
-    
+
     @SuppressWarnings("unchecked")
     public static void send(InteractionHook hook, String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         Object[] built = build(userId, summoner, puuid, parameter);
@@ -348,7 +348,7 @@ public class LeagueMessage {
         Object[] built = build(userId, summoner, puuid, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
-        message.editMessageEmbeds(embed).setComponents(components).queue();   
+        message.editMessageEmbeds(embed).setComponents(components).queue();
     }
 
     public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
@@ -383,7 +383,7 @@ public class LeagueMessage {
         Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.puuid() + "#" + s.region().name(), centerName);
         center = center.asDisabled();
 
-        if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
+        if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1)
             return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(left, center, right, refresh));
         return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
     }
@@ -419,10 +419,10 @@ public class LeagueMessage {
 
         builder.addField("Highest Masteries", masteryString, false);
         ProfileStatistics statistics = profileStatistics(s, parameter);
-        
+
         if (statistics == null)  builder.addField("Statistics", "Statistics are being prepared for this filter.", false);
         else builder = addLegacyProfileStats(builder, statistics, s, parameter);
-        
+
         builder = LeagueHandler.getActivity(builder, s);
 
         return builder;
@@ -469,7 +469,7 @@ public class LeagueMessage {
                     break;
             }
         }
-            
+
         Button allSeason = Button.secondary("lol-season-all", "General");
         Button currentSplit = Button.secondary("lol-season-current", "Current Split");
         Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
@@ -482,7 +482,7 @@ public class LeagueMessage {
         index++;
         buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
         index++;
-        
+
 
         return buttons;
     }
@@ -596,23 +596,23 @@ public class LeagueMessage {
         teamStats.put(TeamType.RED, new HashMap<>());
         switch (match.queue){
             case STRAWBERRY:
-                content = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.champion)) + " Level: " + 
+                content = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.champion)) + " Level: " +
                         (me.championLevel != null && me.championLevel > 0 ? me.championLevel : 1) +
                         " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
                         + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item5)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item5)) + " "
                         + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item6));
-                
+
                 eb.addField("Swarm" + ": " + (me.win ? "WIN" : "LOSE"), content, true);
 
                 String swarmTeam = "";
                 for(Participant mt : match.participants)
-                    swarmTeam += CustomEmojiHandler.getFormattedEmoji(String.valueOf(mt.champion)) + " Level: " +  
+                    swarmTeam += CustomEmojiHandler.getFormattedEmoji(String.valueOf(mt.champion)) + " Level: " +
                             (mt.championLevel != null && mt.championLevel > 0 ? mt.championLevel : 1) +
                             " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.goldEarned + "\n";
 
@@ -624,16 +624,16 @@ public class LeagueMessage {
                 content = CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(me.champion).getName()) + kda + "\n"
                         + date + " | **" + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_")
-                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 0 ? me.augments.get(0) : "0")) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 0 ? me.augments.get(0) : "0")) + " "
                         + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 1 ? me.augments.get(1) : "0")) + "\n"
                         + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell2 + "_")
-                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 2 ? me.augments.get(2) : "0")) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 2 ? me.augments.get(2) : "0")) + " "
                         + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 3 ? me.augments.get(3) : "0")) + "\n"
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " " 
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " "
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " "
                         + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item5));
 
                 eb.addField("ARENA: " + (me.win ? "WIN" : "LOSE"), content, true);
@@ -699,7 +699,7 @@ public class LeagueMessage {
                     if (mt.damageTaken != null)
                         currentStats.put("damageTaken", String.valueOf(mt.damageTaken + getTeamValue(currentStats, "damageTaken")));
                 }
-                
+
                 String blueTeam = "";
                 String redTeam = "";
                 for (int j = 1; j <= 8; j++) {
@@ -1308,7 +1308,7 @@ public class LeagueMessage {
 
     private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, LeagueMessageParameter parameter) {
         StaticChampion champion = parameter.getChampion();
-        
+
         Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
@@ -1374,9 +1374,9 @@ public class LeagueMessage {
             Button leftPage = Button.secondary("lol-leftpage-" + parameter.getOffset(), "Previous Page");
             Button rightPage = Button.secondary("lol-rightpage-" + parameter.getOffset(), "Next Page");
 
-            if (parameter.getOffset() == 0) 
+            if (parameter.getOffset() == 0)
                 leftPage = leftPage.asDisabled();
-            
+
             if (parameter.getMessageType() == LeagueMessageType.OVERVIEW_OPGG) {
                 if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                     center = center.withStyle(ButtonStyle.SUCCESS).asEnabled();
@@ -1385,7 +1385,7 @@ public class LeagueMessage {
             else {
                 if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                     rows.add(ActionRow.of(left, center, right, leftPage, rightPage));
-                else 
+                else
                     rows.add(ActionRow.of(center, leftPage, rightPage));
             }
             return rows;
@@ -1393,7 +1393,7 @@ public class LeagueMessage {
 
         if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
             rows.add(ActionRow.of(left, center, right, championButton, settings));
-        else 
+        else
             rows.add(ActionRow.of(center, championButton, settings));
 
         return rows;
@@ -1709,9 +1709,9 @@ public class LeagueMessage {
 
     private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, String puuid, LeagueMessageParameter parameter) {
         List<QueryRecord> queryResult = MatchService.getSummonerData(s.puuid(), s.region());
-        for (Match match : matches) 
+        for (Match match : matches)
             eb = getOpggEmbedMatchPreview(eb, match, s, queryResult);
-        
+
         int totalPages = MongoDB.countMatches(puuid, parameter.toFilter());
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;

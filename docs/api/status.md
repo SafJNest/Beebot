@@ -32,18 +32,25 @@ exposes its regional/tier job and `500/1000` progress without serializing the
 thousand summoner PUUIDs. `pushsamplegame` reports the current match label while
 fetching and its `[current/total] Pushing ...` detail while persisting.
 
-A leaf job reports its own item progress. A parent reports terminal direct
-children over direct children created, including children that already left the
-registry. A root that starts two children reports `0/2`; if both children each
+Explicit job progress takes precedence for both leaves and parents. Without
+explicit progress, a parent reports terminal direct children over direct children
+created, including children that already left the registry. A root that starts two children reports `0/2`; if both children each
 start two further jobs, the root remains `0/2` while each child reports `0/2`.
 
-A nested job cannot exceed its parent priority: `IMMEDIATE` requested from a
-`BACKGROUND` job remains `BACKGROUND`; `IMMEDIATE` requested from `NORMAL`
-remains `NORMAL`.
+A nested job inherits the more urgent of requested and parent priority:
+`IMMEDIATE` requested from `BACKGROUND` remains `IMMEDIATE`; a `BACKGROUND`
+child of an `IMMEDIATE` parent inherits `IMMEDIATE`. This documents the existing
+behavior preserved by Hive (ADR-0017).
 
 `mongo` is sampled every second in background by `SystemMetricsSampler`. A
 `GET /api/status` read returns the latest in-memory snapshot; it does not
 recompute metrics on demand.
+
+Hive generic status records live in `com.hive.status`;
+`StatusService` still owns BotStatus composition; the local SyncScheduler hook
+classifies operational runs.
+The package extraction does not change JSON fields, endpoint paths or Mongo/Redis
+metrics. Compute still reports four workers; Sync reports an empty queues array.
 
 ## Mongo metrics
 
@@ -108,103 +115,232 @@ Atlas `clusterMonitor`). When denied, these fields stay `null` while
     "gamesAnalyzed": 18439201,
     "totalSummoners": 523891,
     "totalMasteries": 4123901,
-    "ranksByQueue": { "RANKED_SOLO_5X5": 401203 }
+    "ranksByQueue": {
+      "RANKED_SOLO_5X5": 401203
+    }
   },
-  "jobs": [{
-    "pid": 101,
-    "ppid": 0,
-    "type": "SyncScheduler",
-    "key": "tracking",
-    "name": "tracking summoners",
-    "route": null,
-    "priority": "IMMEDIATE",
-    "state": "WAITING_CHILDREN",
-    "followingPid": null,
-    "queuedAt": 1755680400000,
-    "startedAt": 1755680400001,
-    "completedAt": null,
-    "phase": "TRACKING",
-    "currentItem": null,
-    "progress": null,
-    "items": {},
-    "itemLabels": {},
-    "children": [102]
-  }],
+  "jobs": [
+    {
+      "pid": 101,
+      "ppid": 0,
+      "type": "SyncScheduler",
+      "key": "tracking",
+      "name": "tracking summoners",
+      "route": null,
+      "priority": "IMMEDIATE",
+      "state": "WAITING_CHILDREN",
+      "followingPid": null,
+      "queuedAt": 1755680400000,
+      "startedAt": 1755680400001,
+      "completedAt": null,
+      "phase": "TRACKING",
+      "currentItem": null,
+      "progress": {
+        "current": 0,
+        "total": 1
+      },
+      "children": [
+        102
+      ],
+      "items": {},
+      "itemLabels": {}
+    },
+    {
+      "pid": 102,
+      "ppid": 101,
+      "type": "SyncScheduler",
+      "key": "tracking:EUW1",
+      "name": "tracking shard=EUW1",
+      "route": "EUW1",
+      "priority": "IMMEDIATE",
+      "state": "RUNNING",
+      "followingPid": null,
+      "queuedAt": 1755680400000,
+      "startedAt": 1755680400001,
+      "completedAt": null,
+      "phase": "TRACKING",
+      "currentItem": null,
+      "progress": {
+        "current": 1,
+        "total": 7
+      },
+      "children": [],
+      "items": {},
+      "itemLabels": {}
+    }
+  ],
   "dispatchers": [
     {
       "id": "sync",
-      "queues": [{
-        "route": "EUW1",
-        "worker": {
-          "id": 1,
-          "state": "RUNNING",
-          "currentJob": {
-            "pid": 102,
-            "ppid": 101,
-            "type": "SyncScheduler",
-            "key": "match:EUW1:EUW1_6789012345",
-            "name": "match analysis id=EUW1_6789012345",
-            "route": "EUW1",
-            "priority": "BACKGROUND",
-            "state": "RUNNING",
-            "followingPid": null,
-            "queuedAt": 1755680400000,
-            "startedAt": 1755680400123,
-            "completedAt": null,
-            "phase": "PERSISTING",
-            "currentItem": "[124/128] Pushing CHALLENGER match JP1 - summoner#JP1 -> JP1_6789012345",
-            "progress": { "current": 100, "total": 1000 },
-            "items": {},
-            "itemLabels": {},
-            "children": []
+      "queues": [],
+      "runs": [
+        {
+          "id": "101",
+          "type": "TRACKING",
+          "state": "WAITING_CHILDREN",
+          "queuedAt": 1755680400000,
+          "startedAt": 1755680400001,
+          "progress": {
+            "current": 0,
+            "total": 1
           },
-          "queuedCount": 1,
-          "inFlight": 2,
-          "queuedJobs": []
+          "jobs": [
+            {
+              "pid": 102,
+              "ppid": 101,
+              "type": "SyncScheduler",
+              "key": "tracking:EUW1",
+              "name": "tracking shard=EUW1",
+              "route": "EUW1",
+              "priority": "IMMEDIATE",
+              "state": "RUNNING",
+              "followingPid": null,
+              "queuedAt": 1755680400000,
+              "startedAt": 1755680400001,
+              "completedAt": null,
+              "phase": "TRACKING",
+              "currentItem": null,
+              "progress": {
+                "current": 1,
+                "total": 7
+              },
+              "children": [],
+              "items": {},
+              "itemLabels": {}
+            }
+          ]
         }
-      }],
-      "runs": [{
-        "id": "101",
-        "type": "TRACKING",
-        "state": "RUNNING",
-        "queuedAt": 1755680400000,
-        "startedAt": 1755680400123,
-        "progress": { "current": 1, "total": 7 },
-        "jobs": []
-      }]
+      ]
     },
-    { "id": "riot", "queues": [], "runs": [] },
-    { "id": "compute", "queues": [], "runs": [] }
+    {
+      "id": "riot",
+      "queues": [],
+      "runs": []
+    },
+    {
+      "id": "compute",
+      "queues": [],
+      "runs": []
+    }
   ],
-  "process": { "cpu": 12.5, "memory": { "used": 1, "committed": 2, "max": 3 }, "threads": 42, "peakThreads": 48, "uptime": 3600000 },
-  "system": { "cpu": { "usage": 25.0, "cores": 8, "perCore": [10.0, 20.0] }, "memory": { "used": 1, "available": 2, "total": 3 }, "disk": { "used": 1, "available": 2, "total": 3 }, "network": { "receivedBytesPerSecond": 1000, "sentBytesPerSecond": 500 } },
-  "redis": { "keys": 100, "memoryUsed": 2048 },
+  "process": {
+    "cpu": 12.5,
+    "memory": {
+      "used": 1,
+      "committed": 2,
+      "max": 3
+    },
+    "threads": 42,
+    "peakThreads": 48,
+    "uptime": 3600000
+  },
+  "system": {
+    "cpu": {
+      "usage": 25.0,
+      "cores": 8,
+      "perCore": [
+        10.0,
+        20.0
+      ]
+    },
+    "memory": {
+      "used": 1,
+      "available": 2,
+      "total": 3
+    },
+    "disk": {
+      "used": 1,
+      "available": 2,
+      "total": 3
+    },
+    "network": {
+      "receivedBytesPerSecond": 1000,
+      "sentBytesPerSecond": 500
+    }
+  },
+  "redis": {
+    "keys": 100,
+    "memoryUsed": 2048
+  },
   "mongo": {
     "operations": {
       "intervalSeconds": 1,
-      "current": { "insert": 0.0, "query": 12.4, "update": 1.1, "delete": 0.0, "command": 0.3, "getmore": 0.8, "total": 14.6 },
-      "series": [{ "at": 1755680400000, "rates": { "insert": 0.0, "query": 12.4, "update": 1.1, "delete": 0.0, "command": 0.3, "getmore": 0.8, "total": 14.6 } }]
+      "current": {
+        "insert": 0.0,
+        "query": 12.4,
+        "update": 1.1,
+        "delete": 0.0,
+        "command": 0.3,
+        "getmore": 0.8,
+        "total": 14.6
+      },
+      "series": [
+        {
+          "at": 1755680400000,
+          "rates": {
+            "insert": 0.0,
+            "query": 12.4,
+            "update": 1.1,
+            "delete": 0.0,
+            "command": 0.3,
+            "getmore": 0.8,
+            "total": 14.6
+          }
+        }
+      ]
     },
     "performance": {
-      "hottestNow": { "name": "match", "opsPerSecond": 82.0, "ops": 82 },
-      "hottestRecent": { "name": "match", "opsPerSecond": 41.5, "ops": 415 },
+      "hottestNow": {
+        "name": "match",
+        "opsPerSecond": 82.0,
+        "ops": 82
+      },
+      "hottestRecent": {
+        "name": "match",
+        "opsPerSecond": 41.5,
+        "ops": 415
+      },
       "recentWindowSeconds": 10,
       "slowWindowSeconds": 300,
-      "avgMsByCommand": { "find": 12.3, "aggregate": 89.0 },
-      "collections": [{ "name": "match", "count": 120, "avgMs": 45.0, "maxMs": 890 }],
-      "slowest": [{
-        "command": "aggregate",
-        "collection": "match",
-        "durationMs": 890,
-        "at": 1755680400123,
-        "query": {
-          "aggregate": "beebot.match",
-          "pipeline": [{ "$match": { "region": "EUW1" } }, { "$limit": 1000 }]
+      "avgMsByCommand": {
+        "find": 12.3,
+        "aggregate": 89.0
+      },
+      "collections": [
+        {
+          "name": "match",
+          "count": 120,
+          "avgMs": 45.0,
+          "maxMs": 890
         }
-      }]
+      ],
+      "slowest": [
+        {
+          "command": "aggregate",
+          "collection": "match",
+          "durationMs": 890,
+          "at": 1755680400123,
+          "query": {
+            "aggregate": "beebot.match",
+            "pipeline": [
+              {
+                "$match": {
+                  "region": "EUW1"
+                }
+              },
+              {
+                "$limit": 1000
+              }
+            ]
+          }
+        }
+      ]
     },
     "connections": 5,
-    "memory": { "residentMb": 259, "virtualMb": 3710 }
+    "memory": {
+      "residentMb": 259,
+      "virtualMb": 3710
+    }
   }
 }
 ```

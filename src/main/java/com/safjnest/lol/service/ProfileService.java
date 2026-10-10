@@ -19,7 +19,7 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.SeasonUtils;

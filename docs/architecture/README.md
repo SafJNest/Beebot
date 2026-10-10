@@ -8,7 +8,7 @@ The initial analysis for the `beebot-servicies` branch is in
 [`services/README.md`](services/README.md): service boundaries, complete source
 inventory, shared response contracts, generic jobs/queues and extraction plan.
 [ADR-0016](adr/0016-service-boundaries-and-shared-core.md) is **proposed**, not
-accepted. The current package layout, API contracts and accepted ADRs remain in force.
+accepted. The Hive-only tranche is implemented under [ADR-0017](adr/0017-hive-job-runtime.md); all other service extraction remains proposed.
 
 ## Precedence
 
@@ -22,6 +22,9 @@ When documents disagree, use this order:
 An agent must report a contradiction. It must not resolve the contradiction by changing an ADR or expanding its task scope without approval from the main agent.
 
 ## Canonical package layout
+
+Hive has the independent root `com.hive`. The LoL/application entries below
+remain under `com.safjnest`; they are not part of the Hive artifact.
 
 ```text
 lol/model/summoner/
@@ -58,35 +61,32 @@ lol/model/
 lol/model/status/
   BotStatus
   LeagueMetrics
-  SchedulerStatus
-  QueueStatus
-  WorkerStatus
-  RunStatus
-  JobStatus
-  JobProgress
   JvmMetrics
   SystemMetrics
   RedisMetrics
 
-lol/queue/
-  QueueHandler
+com/hive/
+  Hive
+  HiveConfig
+  JobFuture
   Registry
   Router
-  job/
-    Job
-    JobPriority
-    JobState
-  scheduler/
-    AbstractScheduler
-    RiotScheduler
-    ComputeScheduler
-    SyncScheduler
-    DatabaseWorkerType
-    ChampionMatrixRequest
-  worker/
-    JobQueue
-    JobWorker
-    WorkerState
+  job/Job, JobPriority, JobState, ResultType
+  scheduler/AbstractScheduler
+  worker/JobQueue, JobWorker, WorkerState
+  status/JobStatus, JobProgress, WorkerStatus, QueueStatus, SchedulerStatus, RunStatus
+
+lol/queue/
+  QueueHandler
+
+lol/scheduler/
+  ComputeScheduler
+  SyncScheduler
+  DatabaseWorkerType
+  ChampionMatrixRequest
+
+r4j/scheduler/
+  RiotScheduler
 
 lol/tracker/
   Tracker
@@ -99,19 +99,22 @@ status/
 ```
 
 Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
-`lol.queue` owns the global in-memory registry plus the shared physical
-scheduler infrastructure. `QueueHandler` is the sole public submission API.
-`Job` is the registered data object. Riot,
-compute and Sync retain distinct workers and route-local priority queues; the
-registry tracks their logical parent/child tree and does not merge their queues.
+`com.hive` owns the JDK-only runtime mechanism and generic status records.
+`lol.queue.QueueHandler` composes one explicitly initialized runtime in App and
+is the application's sole submission facade. Independent Hive instances need
+no monolith and share no registry, context or dedup entries. The monolith uses
+one registry across Riot, compute and Sync to retain cross-scheduler trees.
+Physical queues remain scheduler-owned; Sync uses direct execution.
 
 Queue glossary:
 
-- `RiotScheduler` — outbound Riot work, one queue per `LeagueShard`;
-- `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
-- `SyncScheduler` — starts each tracking, rank, match, sample and participant refresh job immediately on its own virtual thread; Registry owns parent/child completion.
+- `r4j.scheduler.RiotScheduler`: outbound Riot work, one serial queue per shard;
+- `lol.scheduler.ComputeScheduler`: four serial workers PROFILE, PROFILE_2,
+  CHAMPION and MONGO, with domain placement/reservation policy;
+- `lol.scheduler.SyncScheduler`: immediate virtual-thread execution with
+  shard/global logical routes and no physical queue.
 
-Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
+Routing, priorities and insert-time placement are defined by [ADR-0017](adr/0017-hive-job-runtime.md), preserving local policy from ADR-0010. A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
 `MatchService` owns untracked match insertion and can only create a
 `tracked=false` document; it cannot replace a completed match. `Tracker` owns
 the normal RankProgress history completion and commits the single
@@ -157,9 +160,11 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md) — terminology superseded by ADR-0014
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
-- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — **current queue contract** (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — lifecycle contract amended by ADR-0017 (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
 - [ADR-0015: Contextual ranking projections](adr/0015-contextual-ranking.md) — **current ranking contract** (`RankService` → `CompetitiveService` → `LeaderboardService`, plus `ProfileRecordService` record indexes)
 - [ADR-0016: Service boundaries and shared core](adr/0016-service-boundaries-and-shared-core.md) — **proposed**, analysis only
+
+- [ADR-0017: Hive job runtime](adr/0017-hive-job-runtime.md) — **current infrastructure contract**, independent runtime and local adapters
 
 ## Developer handbook
 

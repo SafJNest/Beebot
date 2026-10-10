@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.service.RankService;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;

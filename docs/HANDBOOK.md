@@ -3,8 +3,9 @@
 > **Single operational entry point for making changes.** If you need to create a new command, endpoint, service, model, job, collection, query, cache or aggregate: start here. For architectural decisions see `AGENTS.md` and the ADRs; for the queue walk-through see `new-queue.md`; for Mongo migration see `mongo/README.md`.
 
 Service extraction analysis: [`architecture/services/README.md`](architecture/services/README.md).
-Its shared-contract and generic-job layouts are proposals under ADR-0016;
-the operational instructions below continue to describe the current runtime.
+Shared contracts and service separation remain proposals under ADR-0016.
+The Hive job extraction is accepted independently in ADR-0017; the instructions
+below describe its monolith composition.
 
 ## Table of Contents
 
@@ -58,12 +59,14 @@ Quick Style Rules (from `AGENTS.md`):
 
 **Runtime LoL:** MongoDB is the sole runtime storage (`beebot` / `beebot_test` with `App.isTesting()`). MariaDB only for `MongoMigration` backfill. Redis cache only (no queue/backlog). R4J for Riot.
 
-**Global scheduling:** `lol.queue` single registry — three separate physical schedulers, never shared:
+**Hive scheduling:** JDK-only `com.hive` runtime, composed explicitly by
+`lol.queue.QueueHandler` from App. One registry tracks all monolith schedulers;
+physical queues/workers remain separate. Sync uses direct execution:
 
 | Dispatcher | Route | Owner |
 |---|---|---|
 | `RiotScheduler` | one worker per `LeagueShard` | outbound Riot calls |
-| `ComputeScheduler` | `PROFILE` + `CHAMPION` | expensive Mongo computes |
+| `ComputeScheduler` | `PROFILE`, `PROFILE_2`, `CHAMPION`, `MONGO` | expensive Mongo computes |
 | `SyncScheduler` | each job starts immediately on its own virtual thread | tracking, rank, match, sample, participant refresh |
 
 ```
@@ -73,8 +76,10 @@ QueueHandler.immediate/normal/background → Router → Registry (dedup + parent
 ```
 
 - Riot and Compute priority: `IMMEDIATE > NORMAL > BACKGROUND`, promotion only if `requested.ordinal() < current`, never interrupting a running body. Sync jobs start immediately; their child work still uses the selected scheduler.
-- Dedup key = `scheduler:route:key`. Followers reuse the leader's `future`. `retain(job)` + `resume(job, callback)` for async callbacks.
-- `profileQueue()` does insert-time least-loaded between PROFILE/CHAMPION; heavy keys (`champion-stats-matrix:|champion-build:|champion-data-refresh:`) reserve `CHAMPION`.
+- Dedup identity = scheduler + logical route + key within one runtime; result contracts must be compatible. Followers receive the source result/failure without another physical execution. `retain(job)` + `resume(job, callback)` preserve callbacks and context.
+- Profile placement selects the least-loaded of four workers at insertion; heavy keys (`champion-stats-matrix:|champion-build:|champion-data-refresh:`) restrict profile placement to PROFILE/PROFILE_2.
+- Explicit job progress wins over direct-child counters. Parent priority is inherited only when more urgent than the child request.
+- Core classes do not register concrete schedulers or start threads at class load. Admission begins only after explicit application bootstrap.
 
 **Match ingestion (2 levels):** `MatchService.insert()` → `tracked=false` (identity seed + raw events). `Tracker` → invalidates cache + `RankService.refresh` from Riot for each participant → `tracked=true` single commit. OP.GG: raw card immediately + best-effort `{rank,lp}` snapshot; never gain/predecessor unless `tracked=true`.
 
@@ -85,6 +90,10 @@ QueueHandler.immediate/normal/background → Router → Registry (dedup + parent
 ## 3. Package Map and Naming
 
 ```
+com.hive              // independent JDK-only infrastructure root
+ ├─ job/, scheduler/, worker/, status/
+ └─ Hive, HiveConfig, Registry, Router
+
 com.safjnest
  ├─ commands/<categoria>/<sotto>        // JDA SlashCommand, name = lowercased class
  ├─ lol/
@@ -97,9 +106,11 @@ com.safjnest
  │   │   ├─ champion/  ChampionView, ChampionStatistics, Build...
  │   │   └─ Filter, ActivityFilter, ApiResult, ResponseMetadata, ChampionIndexable...
  │   ├─ service/       // cache + persist + compose + enqueue; Analyzer puro separato
- │   ├─ queue/         // QueueHandler, Registry, Router, job/, scheduler/, worker/
+ │   ├─ queue/         // application QueueHandler composition/submission
+ │   ├─ scheduler/     // ComputeScheduler, SyncScheduler, domain policies
  │   ├─ tracker/       // Tracker, TrackerScheduler
  │   └─ utils/         // ChampionUtils, LaneTypeUtils, GameQueueTypeUtils...
+ ├─ r4j/scheduler/     // RiotScheduler adapter
  ├─ spring/
  │   ├─ controller/    LolController, ChampionController, LeaderboardController, StatusController
  │   ├─ config/        LolApiConfig (Jackson MixIn + CORS)
@@ -362,22 +373,22 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
    ```java
    // Riot — per summoner
    QueueHandler.immediate(RiotScheduler.class, shard,
-     shard.name()+":summoner:"+puuid, "summoner puuid="+puuid, job -> {
+     shard.name()+":summoner:"+puuid, "summoner puuid="+puuid, Summoner.class, job -> {
        job.phase("FETCH"); job.trackItem(puuid);
        Summoner s = RiotApi.getSummonerByPuuid(puuid);
        if(s!=null){ job.done(puuid); return s; } else { job.missing(puuid); return null; }
      });
    // Compute — per aggregate
    QueueHandler.normal(ComputeScheduler.class, DatabaseWorkerType.PROFILE,
-     "my:" + puuid + ":" + filter.toSummonerKey(), "my puuid="+puuid, job -> {
+     "my:" + puuid + ":" + filter.toSummonerKey(), "my puuid="+puuid, Boolean.class, job -> {
        boolean ok = myService.generate(puuid, shard, filter);
        return ok;
      });
    // Stale
-   QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, key, name, work);
+   QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, key, name, Boolean.class, work);
    ```
    - `immediate/normal/background` = `IMMEDIATE/NORMAL/BACKGROUND`.
-   - Dedup key = `scheduler:route:key` — same key → same `Future`, no second entry. Failed → removed, retryable.
+   - Dedup identity = scheduler + logical route + key — compatible result token creates a follower PID/future, no second physical execution. Failure removes the active key, allowing retry.
    - `job.phase(String)`, `trackItem/trackItems`, `done/missing/failed`, `progress`.
 3. **Async callback (parent waiting for children):**
    ```java
@@ -385,7 +396,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
    asyncOp.thenAccept(v -> QueueHandler.resume(job, () -> { /* schedule figli */ }));
    ```
 4. **Diagnostics:** `GET /api/status` exposes Riot/Compute `dispatchers[].queues[].worker`, Sync jobs in `jobs[]`, and the derived `runs[]`. No hot-path logging — only on `onBodyFailed`.
-5. **RAM/weight:** max 2 concurrent Compute workers; `CHAMPION` reserved for heavy matrix (`champion-stats-matrix:`). Do not move work after `offer` (insert-time placement).
+5. **RAM/weight:** four serial Compute workers (`PROFILE`, `PROFILE_2`, `CHAMPION`, `MONGO`); heavy champion work reserves CHAMPION and restricts profile placement to the two profile workers. Do not move work after `offer`. This preserves actual baseline concurrency rather than the historical two-worker documentation.
 
 ---
 
@@ -554,11 +565,11 @@ Profile leaves expose `D` and `F` spell-cast maps whose values sum to `d` and `f
    static void myJob(){
      List<Summoner> accounts = MongoDB.findTrackedSummonerModels();
      Map<LeagueShard, List<Summoner>> byShard = groupByShard(accounts);
-     QueueHandler.immediate(SyncScheduler.class, null, "my-tracking", "my tracking", root -> {
+     QueueHandler.immediate(SyncScheduler.class, null, "my-tracking", "my tracking", Void.class, root -> {
        for(var e: byShard.entrySet()){
-         QueueHandler.immediate(SyncScheduler.class, e.getKey(), "my:"+e.getKey().name(), "my shard="+e.getKey().name(), shardJob -> {
+         QueueHandler.immediate(SyncScheduler.class, e.getKey(), "my:"+e.getKey().name(), "my shard="+e.getKey().name(), Void.class, shardJob -> {
            for(Summoner s: e.getValue()){
-             QueueHandler.immediate(SyncScheduler.class, e.getKey(), "my:"+s.puuid(), "my puuid="+s.puuid(), job -> { doWork(s, job); return null; });
+             QueueHandler.immediate(SyncScheduler.class, e.getKey(), "my:"+s.puuid(), "my puuid="+s.puuid(), Void.class, job -> { doWork(s, job); return null; });
            } return null; });
        } return null; });
    }
@@ -650,7 +661,7 @@ Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` �
 | `profile_statistics` | ~2-8 KB | leaves `champion×queue×lane`; no materialized `total`/`queueStats` |
 | Redis value | ~1-4 KB JSON | TTL declared by `RedisKey`, mget batch ≤100, pool 32 conn, circuit breaker 30s |
 | `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` at batch 100 | champion stats event batch is now 1,000; retained match map is roughly 8-15 MB if the documented 8-15 KB/match applies, plus cursor and one timeline parse; total heap has not been remeasured, no `List<Match>` in memory |
-| Compute worker | max 2 concurrent | `CHAMPION` reserved for heavy, PROFILE least-loaded |
+| Compute worker | four serial workers | heavy CHAMPION reservation; insert-time load balance, PROFILE/PROFILE_2 during reservation |
 
 ### Command / Class Names — Quick Lookup
 
@@ -708,7 +719,9 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
 - `src/main/java/com/safjnest/lol/service/ProfileService.java` + `ProfileAnalyzer.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java` + `MongoMigration.java`
-- `src/main/java/com/safjnest/lol/queue/QueueHandler.java` + `ComputeScheduler.java` + `SyncScheduler.java` + `RiotScheduler.java`
+- `src/main/java/com/safjnest/lol/queue/QueueHandler.java` + `com/hive/`
+- `src/main/java/com/safjnest/lol/scheduler/ComputeScheduler.java` + `SyncScheduler.java`
+- `src/main/java/com/safjnest/r4j/scheduler/RiotScheduler.java`
 - `src/main/java/com/safjnest/redis/RedisKey.java` + `RedisClient.java`
 - `src/main/java/com/safjnest/spring/controller/LolController.java` + `LolApiParameters.java` + `LolApiResponses.java`
 - `docs/architecture/profile-statistics-source-of-truth.md`

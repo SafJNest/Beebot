@@ -19,9 +19,9 @@ import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.job.Job;
-import com.safjnest.lol.queue.job.JobPriority;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.hive.job.Job;
+import com.hive.job.JobPriority;
+import com.safjnest.lol.scheduler.SyncScheduler;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.CacheInvalidationService;
 import com.safjnest.lol.service.RankService;
@@ -63,7 +63,7 @@ public class Tracker {
     private static final long timelineSnapshotInterval = TimeConstant.MINUTE * 5;
 
     static CompletableFuture<Void> retrieveSummoners() {
-        return QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", root -> {
+        return QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", Void.class, root -> {
             root.phase("TRACKING");
             BotLogger.info("[LPTracker] Started tracking summoners");
             List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
@@ -81,12 +81,12 @@ public class Tracker {
                 LeagueShard shard = entry.getKey();
                 List<com.safjnest.lol.model.summoner.Summoner> shardAccounts = entry.getValue();
                 QueueHandler.immediate(SyncScheduler.class, shard, "tracking:" + shard.name(),
-                    "tracking summoners shard=" + shard.name(), shardJob -> {
+                    "tracking summoners shard=" + shard.name(), Void.class, shardJob -> {
                         shardJob.phase("TRACKING");
                         for (com.safjnest.lol.model.summoner.Summoner account : shardAccounts) {
                             QueueHandler.immediate(SyncScheduler.class, shard,
                                 "tracking-summoner:" + shard.name() + ':' + account.puuid(),
-                                "tracking summoner puuid=" + account.puuid(), summonerJob -> {
+                                "tracking summoner puuid=" + account.puuid(), Void.class, summonerJob -> {
                                     retrieveSummoner(account, summonerJob);
                                     return null;
                                 });
@@ -243,7 +243,7 @@ public class Tracker {
         }
         return null;
     }
-    
+
     public static Match fromR4J(LOLMatch source) {
         return fromR4J(source, analyzeMatchBuild(source, source.getParticipants()));
     }
@@ -391,7 +391,7 @@ public class Tracker {
         if (matchData.containsKey("augments"))
             json.put("augments", matchData.get("augments").split(","));
 
-        if (matchData.containsKey("prismatics")) 
+        if (matchData.containsKey("prismatics"))
             json.put("prismatics", matchData.get("prismatics").split(","));
 
         return json.toString();
@@ -571,7 +571,7 @@ public class Tracker {
             }
 
             String itemsIds = participant.getItem0() + "," + participant.getItem1() + "," + participant.getItem2() + "," + participant.getItem3() + "," + participant.getItem4() + "," + participant.getItem5() + "," + participant.getItem6();
-            
+
 
             matchData.get(participant.getPuuid()).put("summoner_spells", participant.getSummoner1Id() + "," + participant.getSummoner2Id());
             matchData.get(participant.getPuuid()).put("items", itemsIds);
@@ -902,25 +902,25 @@ public class Tracker {
         String currentPatch = PatchUtils.getPatch();
         String previousPatch = PatchUtils.getPreviousPatch();
         String queueName = queue == null ? "ALL" : queue.name();
-    
+
         long[] splitRange = SeasonUtils.getCurrentSplitRange();
         List<LeagueShard> shards = LeagueShardUtils.getActives();
-        QueueHandler.background(SyncScheduler.class, null, "sample-games:" + queueName, "sample games", root -> {
+        QueueHandler.background(SyncScheduler.class, null, "sample-games:" + queueName, "sample games", Void.class, root -> {
             for (LeagueShard shard : shards) {
                 QueueHandler.background(SyncScheduler.class, shard, "sample-games:" + shard.name() + ":" + queueName,
-                    "sample games queue=" + queueName, task -> {
+                    "sample games queue=" + queueName, Void.class, task -> {
                 try {
                     task.phase("DISCOVERING");
                     long threshold = splitRange != null ? MongoDB.findLatestMatchTime(previousPatch, shard) : 0;
                     try { Thread.sleep(500); } catch (InterruptedException e) {}
-        
+
                     List<LeagueEntry> entries = RankService.getByTier(
                         shard, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 0);
-        
+
                     record MatchEntry(LeagueEntry entry, Summoner summoner, String matchId) {}
                     List<MatchEntry> allMatches = new ArrayList<>();
                     Set<String> seenMatchIds = new HashSet<>();
-        
+
                     for (LeagueEntry entry : entries) {
                         try {
                             RankService.saveEntry(shard, entry);

@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.lol.service.ChampionService.MatrixRefreshResult;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 

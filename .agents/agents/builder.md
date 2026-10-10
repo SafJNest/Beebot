@@ -23,7 +23,7 @@ model: inherit
    - command → `rsc/commands.json` + `commands/<cat>/MyCommand.java` + `LeagueMessage` (presentation stability)
    - endpoint → `spring/controller/*` + `LolApiParameters` + `LolApiResponses.from(ApiResult)` (canonical `lol.model`)
    - service → `lol/service/MyService.java` `constants→fields→public→//====→private`, `final`, no Lombok/Optional/DI
-   - queue → `QueueHandler.immediate/normal/background(RiotScheduler|ComputeScheduler|SyncScheduler, route, key, name, job->)`
+   - queue → `QueueHandler.immediate/normal/background(scheduler, route, key, name, Result.class, job->)`
    - mongo → `AbstractEntity` + `MongoDB.java` + `COLLECTION_NAMES` + create-only index
    - cache → `RedisKey` `los:<region>:<shard>:<puuid>:...:<filterKey>` 60s + `RedisClient` + breaker 30s
 5. Checklist §7: `explore/impact` + API sync + doc sync + `explain IXSCAN` + `QueueHandler` gate + naming + test `beebot_test`
@@ -33,10 +33,10 @@ model: inherit
 
 ## Quick reference (do not duplicate HANDBOOK)
 
-- Stack: Java 25, Spring 7, `QueueHandler`→`Registry`→`AbstractScheduler` (`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+- Stack: Java 25, Spring 7, application `QueueHandler`→per-instance JDK-only `com.hive` Registry/Router→`AbstractScheduler` (`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
 - Filter: `Filter.toSummonerKey()` → Base64Url, `profile_statistics_identity {puuid,filterKey}` unique, `profile_records {puuid,filterKey,metric}`
 - Cache: `RedisKey` `los:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>` + explicit invalidation on upsert
-- Gate: `lol.model` only success DTOs, `spring/dto` only `LolApiError`
+- Gate: `lol.model` domain success DTOs; generic Hive snapshots in `com.hive.status` (ADR-0017); `spring/dto` only `LolApiError`
 
 ## Expected output
 

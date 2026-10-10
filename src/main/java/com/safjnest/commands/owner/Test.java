@@ -13,10 +13,10 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
-import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.DatabaseWorkerType;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.safjnest.lol.scheduler.SyncScheduler;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.CompetitiveService;
 import com.safjnest.lol.service.LeaderboardService;
@@ -93,7 +93,7 @@ public class Test extends Command {
                 event.reply("Tracker scheduling " + (enabled ? "enabled" : "disabled") + ".");
             }
             case "log" -> event.reply("Riot scheduler logging "
-                + (RiotScheduler.toggleLogging() ? "enabled" : "disabled") + ".");
+                + (QueueHandler.scheduler(RiotScheduler.class).toggleLogging() ? "enabled" : "disabled") + ".");
             case "ranking" -> replyRankingStatus(event);
             case "13" -> printGuildCache(event);
             case "14" -> warmGuildCaches(event);
@@ -142,7 +142,7 @@ public class Test extends Command {
             return;
         }
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-regenerate:" + operation, "owner regenerate " + operation, job -> {
+            "owner-regenerate:" + operation, "owner regenerate " + operation, Void.class, job -> {
                 regenerate(operation);
                 return null;
             });
@@ -174,7 +174,7 @@ public class Test extends Command {
             return;
         }
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-audit:" + operation, "owner audit " + operation, job -> {
+            "owner-audit:" + operation, "owner audit " + operation, Void.class, job -> {
                 System.out.println("[Mastery records audit] " + MongoDB.masteryRecordsSpaceAudit().toJson());
                 return null;
             });
@@ -183,7 +183,7 @@ public class Test extends Command {
 
     private static void queueMigrationOperation(CommandEvent event, String operation, String label, Runnable migration) {
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-migration:" + operation, "owner migration " + operation, job -> {
+            "owner-migration:" + operation, "owner migration " + operation, Void.class, job -> {
                 migration.run();
                 return null;
             });
@@ -193,7 +193,7 @@ public class Test extends Command {
     private static void queueRankProgressMigration(CommandEvent event, String[] arguments) {
         String runId = arguments.length < 2 || arguments[1].isBlank() ? "rankprogress-v1" : arguments[1].trim();
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-migration:rankprogress:" + runId, "owner RankProgress migration " + runId, job -> {
+            "owner-migration:rankprogress:" + runId, "owner RankProgress migration " + runId, Void.class, job -> {
                 MongoMigration.migrateRankProgress(new MongoMigration.Options(false, 500_000, runId, true, 0));
                 return null;
             });
@@ -229,7 +229,7 @@ public class Test extends Command {
     private static void queueSampleGames(CommandEvent event, GameQueueType queue) {
         String queueName = queue == null ? "ALL" : queue.name();
         QueueHandler.background(SyncScheduler.class, null, "owner-sample-games:" + queueName,
-            "owner sample games " + queueName, job -> {
+            "owner sample games " + queueName, Void.class, job -> {
                 TrackerScheduler.retrieveSampleGames(queue);
                 return null;
             });
@@ -243,7 +243,7 @@ public class Test extends Command {
         }
         String puuid = arguments[1].trim();
         QueueHandler.background(SyncScheduler.class, null, "owner-fix-timeline:" + puuid,
-            "owner fix timeline " + puuid, job -> {
+            "owner fix timeline " + puuid, Void.class, job -> {
                 Filter filter = Filter.summoner(0, 0);
                 int total = MongoDB.countMatches(puuid, filter);
                 int[] counts = new int[3];
@@ -339,7 +339,7 @@ public class Test extends Command {
     private static void queueTimelinePatchRepair(String patch, LeagueShard shard) {
         QueueHandler.background(SyncScheduler.class, shard,
             "owner-fix-timeline-patch:" + patch + ":" + shard.name(),
-            "owner fix timeline patch=" + patch + " region=" + shard.name(), job -> {
+            "owner fix timeline patch=" + patch + " region=" + shard.name(), Void.class, job -> {
                 long total = MongoDB.countMatchesByPatch(patch, shard);
                 int progressTotal = (int) Math.min(Integer.MAX_VALUE, total);
                 int[] counts = new int[3];
@@ -428,7 +428,7 @@ public class Test extends Command {
         Filter countFilter = Filter.summoner(filter.timeStart(), filter.timeEnd()).setRegion(shard);
         String jobKey = "owner-test-matchups:" + shard.name() + ":" + puuid;
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, jobKey,
-            "owner test matchups " + shard.name() + " " + puuid, job -> {
+            "owner test matchups " + shard.name() + " " + puuid, String.class, job -> {
                 int matchesFound = MongoDB.countMatches(puuid, countFilter);
                 job.setProgressTotal(matchesFound);
                 job.phase("MATCHUPS");
@@ -448,7 +448,7 @@ public class Test extends Command {
     }
 
     private static void queueHighElo(CommandEvent event) {
-        QueueHandler.background(SyncScheduler.class, null, "owner-high-elo", "owner high elo retrieval", job -> {
+        QueueHandler.background(SyncScheduler.class, null, "owner-high-elo", "owner high elo retrieval", Void.class, job -> {
             TrackerScheduler.retrieveHighEloEntries();
             return null;
         });
@@ -456,7 +456,7 @@ public class Test extends Command {
     }
 
     private static void queueAllRanks(CommandEvent event) {
-        QueueHandler.background(SyncScheduler.class, null, "owner-all-ranks", "owner all rank retrieval", job -> {
+        QueueHandler.background(SyncScheduler.class, null, "owner-all-ranks", "owner all rank retrieval", Void.class, job -> {
             TrackerScheduler.retrieveAllEntries();
             return null;
         });
@@ -471,7 +471,7 @@ public class Test extends Command {
         String summonerName = arguments[1].trim();
         LeagueShard shard = GuildCache.getGuild(event.getGuild()).getLeagueShard(event.getChannel().getId());
         QueueHandler.background(SyncScheduler.class, shard, "owner-match-history:" + shard.name() + ":" + summonerName,
-            "owner match history " + summonerName, job -> {
+            "owner match history " + summonerName, Void.class, job -> {
                 no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = SummonerService.getRiotSummoner(summonerName, shard);
                 if (queues == null) MatchService.importHistory(summoner, null);
                 else for (GameQueueType queue : queues) MatchService.importHistory(summoner, queue);
@@ -481,8 +481,8 @@ public class Test extends Command {
     }
 
     private static void queueHighEloStatistics(CommandEvent event) {
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, "owner-high-elo-statistics",
-            "owner high elo statistics", job -> {
+        QueueHandler.background(SyncScheduler.class, null, "owner-high-elo-statistics",
+            "owner high elo statistics", Void.class, job -> {
                 new LeaderboardService().rebuildHighEloAndTrackedProfileStatistics();
                 return null;
             });

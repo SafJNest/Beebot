@@ -23,8 +23,8 @@ import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.DatabaseWorkerType;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
@@ -269,7 +269,7 @@ public class LeaderboardService {
     }
 
     public static void warmupIndexAsync() {
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index-warmup", "leaderboard index warmup", job -> {
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index-warmup", "leaderboard index warmup", Void.class, job -> {
             warmupIndex();
             return null;
         });
@@ -404,7 +404,7 @@ public class LeaderboardService {
                 continue;
             }
             QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index:" + key,
-                "leaderboard index " + key, job -> {
+                "leaderboard index " + key, Void.class, job -> {
                     rebuildIndex(segment);
                     return null;
                 });
@@ -448,7 +448,7 @@ public class LeaderboardService {
         Map<String, Long> stored = RedisClient.getHashLongs(key);
         if (!stored.isEmpty()) return divisions(stored);
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-counts:" + key,
-            "leaderboard counts " + key, job -> {
+            "leaderboard counts " + key, Void.class, job -> {
                 replaceCounts(queue, region);
                 return null;
             });

@@ -22,7 +22,7 @@ import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.lol.model.statistics.shared.MatchupStats;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;

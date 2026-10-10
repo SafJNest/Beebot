@@ -1,11 +1,12 @@
 # Separazione iniziale dei servizi
 
-Stato: proposta tecnica, solo analisi e documentazione. Data: 2026-10-10.
+Stato: separazione servizi proposta; infrastruttura Hive implementata sotto ADR-0017. Data: 2026-10-10.
 Baseline: branch `beebot-servicies`, commit `cef023bc`, working tree inizialmente pulito.
 
 L'obiettivo è preparare tre servizi nella stessa repository e un nucleo condiviso,
 estraibili successivamente in repository e artifact versionati separati. In questa
-fase non vengono spostati package, modificate dipendenze o introdotti processi.
+fase i processi e i DTO condivisi restano proposti. Solo il core Hive e i suoi
+adapter locali sono estratti, con wiring nel runtime attuale.
 
 ## Documenti
 
@@ -52,8 +53,10 @@ backfill e non diventa un servizio runtime.
 
 ## Package e build proposti
 
-Mantenere il namespace aziendale `com.safjnest`, anziché creare radici ambigue
-come `com.dto` o `com.job`. Sotto questa radice:
+Il core implementato usa la radice indipendente **`com.hive`**, come richiesto
+dall’utente. Non è un package `shared` e non dipende da `com.safjnest`.
+Gli altri namespace sotto descrivono solo la precedente proposta dei contratti
+e dei servizi, da decidere nelle rispettive tranche:
 
 ```text
 com.safjnest.shared
@@ -61,8 +64,10 @@ com.safjnest.shared
   dto.status                 # aggregati operativi esposti
   dto.http                   # schema errore HTTP, senza Spring
   dto.riot                   # soli dati del confine Spring ↔ R4J, da specificare
-  job.{scheduler,worker,status}
   http                       # riservato al futuro HttpBuilder/client
+
+com.hive                     # implementato: infrastruttura autonoma
+  job, scheduler, worker, status
 
 com.safjnest.bbot             # adapter e funzionalità del bot
 com.safjnest.r4j              # adapter Riot e policy del servizio
@@ -90,12 +95,14 @@ finali comuni, job/code generici e calcoli specifici dentro Spring/Mongo.
 Layout preciso, API interna R4J, rappresentazione degli enum e gestione dei
 job remoti richiedono una decisione prima della rispettiva implementazione.
 
+ADR-0017 accetta esclusivamente il core `com.hive` e i suoi adapter,
+preservando quattro worker compute e progresso esplicito prima dei figli.
 Le regole attuali in `AGENTS.md`, ADR-0001/0005/0007/0009/0011/0012/0014/0015
 restano vigenti. Spostare modelli fuori da `lol.model`, separare il registry
 globale o condividere lo schema di `LolApiError` richiede la loro sincronizzazione
 esplicita; nessun ADR accettato viene modificato da questa proposta.
 
-## Verifica di questa fase
+## Verifica della fase documentale originale
 
 Analisi su indice CodeGraph aggiornato, inventario completo dei sorgenti Java
 principali, esplorazione dei confini e impact di `QueueHandler`, `SummonerView`,
@@ -108,3 +115,10 @@ delle code restano invariati. La revisione della documentazione è soddisfatta
 con questi documenti e i rimandi negli indici; non occorre riscrivere gli endpoint
 o la guida Mongo per un target non implementato. Nessun test Maven, Mongo,
 Redis o Riot viene dichiarato eseguito in questa fase documentale.
+
+## Tranche Hive
+
+La specifica [job-queue.md](job-queue.md) descrive il risultato attuale.
+Il report [hive-validation.md](hive-validation.md) separa le prove offline
+e le review dalle integrazioni Mongo/Redis/Riot. Nessuna separazione dei processi
+o migrazione dei DTO di dominio viene dichiarata completata.

@@ -24,7 +24,7 @@ codegraph impact <symbol> # blast radius before editing
 | new HTTP endpoint | §5.2 | `spring/controller/*` + `LolApiParameters` + `LolApiResponses.from(ApiResult)` |
 | new service | §5.3 | `lol/service/MyService.java` constants→fields→public→//====→private |
 | new canonical model | §5.4 | `lol/model/<scope>/` only here, `Rank`/`Mastery`/`riotId:String`, no duplicate DTO |
-| new queue job | §5.5 | `QueueHandler.immediate/normal/background(RiotScheduler\|ComputeScheduler\|SyncScheduler, route, key, name, job->)` |
+| new queue job | §5.5 | `QueueHandler.immediate/normal/background(scheduler, route, key, name, Result.class, job->)` |
 | new collection/entity | §5.6 | `AbstractEntity` + `MongoDB.java` + `COLLECTION_NAMES` + create-only index `profile_statistics_identity` |
 | new query | §5.7 | `Filters.eq/and/in` + `Projections.include` + cursor batch, `explain IXSCAN` |
 | new cache | §5.8 | `RedisKey` `los:...:%s` + `RedisClient.get/set/delete`, 60s + breaker 30s |
@@ -32,6 +32,11 @@ codegraph impact <symbol> # blast radius before editing
 | Filter change | §5.10 | `Filter.java` + symmetric `toSummonerKey/toStateKey/toKey/genericKey` + `buildMatchFilter` |
 | periodic tracker | §5.11 | `TrackerScheduler` + `SyncScheduler` per shard |
 | new test | §5.12 | `src/test/java/...` + `beebot_test` + `explain` gate |
+
+Hive ADR-0017: core `com.hive` is JDK-only and per-instance. The monolith
+facade is initialized explicitly before API admission and shares one registry
+across Riot (`r4j.scheduler`), compute and Sync (`lol.scheduler`). Generic
+snapshots live in `com.hive.status`; run classification stays local.
 
 ## Defaults to apply from short requests
 
@@ -69,7 +74,7 @@ Before handing off, state which command/API/test contract was applied, whether s
 
 - `summoner._id=puuid`, `match._id=fullGameId`, `profile_statistics {puuid,filterKey}` unique, `match_events` zstd
 - `match_events` 15-40KB zstd, `profile_statistics` 2-8KB, Redis 1-4KB JSON
-- `ChampionStatistics` heap <30MB batch 100, Compute max 2 worker
+- `ChampionStatistics` heap <30MB batch 100, Compute four serial workers (PROFILE, PROFILE_2, CHAMPION, MONGO)
 
 ## Canonical files
 

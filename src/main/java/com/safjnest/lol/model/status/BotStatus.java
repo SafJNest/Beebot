@@ -1,5 +1,9 @@
 package com.safjnest.lol.model.status;
 
+import com.hive.status.SchedulerStatus;
+
+import com.hive.status.JobStatus;
+
 public record BotStatus(
     String status,
     LeagueMetrics league,

@@ -23,9 +23,9 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.record.RecordPage;
 import com.safjnest.lol.model.record.RecordsOverview;
 import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
+import com.safjnest.lol.scheduler.DatabaseWorkerType;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -243,7 +243,7 @@ public final class ProfileRecordService {
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_RECORD_ACCESS.of(), key, System.currentTimeMillis());
                 continue;
             }
-            QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "record-index:" + key, "record index " + key, job -> {
+            QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "record-index:" + key, "record index " + key, Void.class, job -> {
                 rebuildIndex(segment, key);
                 return null;
             });

@@ -10,8 +10,9 @@ import java.util.concurrent.CompletionException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.job.JobPriority;
+import com.hive.job.ResultType;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.hive.job.JobPriority;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -91,7 +92,7 @@ public final class MasteryService {
             JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return refreshRiotMasteriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
+        return QueueHandler.thenApply(refreshRiotMasteriesFromRiotAsync(puuid, shard, priority), entries -> {
             List<Mastery> masteries = toMasteries(entries);
             save(puuid, shard, masteries, false);
             return masteries;
@@ -101,10 +102,10 @@ public final class MasteryService {
     private static CompletableFuture<List<Mastery>> fetch(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return SummonerService.getSummonerAsync(puuid, shard).thenCompose(summoner -> {
+        return QueueHandler.thenCompose(SummonerService.getSummonerAsync(puuid, shard), summoner -> {
             if (summoner == null) return CompletableFuture.failedFuture(
                 new IllegalStateException("Summoner is not available for mastery persistence"));
-            return getRiotMasteriesAsync(puuid, shard).thenApplyAsync(entries -> {
+            return QueueHandler.thenApply(getRiotMasteriesAsync(puuid, shard), entries -> {
                 List<Mastery> masteries = toMasteries(entries);
                 save(puuid, shard, masteries, true);
                 return masteries;
@@ -146,11 +147,11 @@ public final class MasteryService {
     ) {
         return switch (priority) {
             case IMMEDIATE -> QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(ChampionMastery.class), ignored -> fetchMasteries(shard, puuid));
             case NORMAL -> QueueHandler.normal(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(ChampionMastery.class), ignored -> fetchMasteries(shard, puuid));
             case BACKGROUND -> QueueHandler.background(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(ChampionMastery.class), ignored -> fetchMasteries(shard, puuid));
         };
     }
 

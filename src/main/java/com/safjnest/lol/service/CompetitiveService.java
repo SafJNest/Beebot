@@ -12,7 +12,7 @@ import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;

@@ -27,10 +27,11 @@ import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.job.Job;
-import com.safjnest.lol.queue.job.JobPriority;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.hive.job.ResultType;
+import com.hive.job.Job;
+import com.hive.job.JobPriority;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.safjnest.lol.scheduler.SyncScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.MatchUtils;
@@ -91,7 +92,7 @@ public final class MatchService {
                 SyncScheduler.class,
                 shard,
                 "match:" + gameId,
-                "match analysis id=" + gameId,
+                "match analysis id=" + gameId, Match.class,
                 ignored -> insert(fetch(gameId, shard))
             );
     }
@@ -120,7 +121,7 @@ public final class MatchService {
 
         RegionShard region = shard.toRegionShard();
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
-            "match id=" + gameId, ignored -> {
+            "match id=" + gameId, LOLMatch.class, ignored -> {
             LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
             if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
             return match;
@@ -154,11 +155,11 @@ public final class MatchService {
         String gameId = MatchUtils.fullGameId(source);
         return switch (priority == null ? JobPriority.NORMAL : priority) {
             case IMMEDIATE -> QueueHandler.immediate(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, Match.class, ignored -> insert(source));
             case NORMAL -> QueueHandler.normal(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, Match.class, ignored -> insert(source));
             case BACKGROUND -> QueueHandler.background(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, Match.class, ignored -> insert(source));
         };
     }
 
@@ -182,7 +183,7 @@ public final class MatchService {
                 upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(rank), shard);
                 continue;
             }
-            RankService.refreshBackgroundAsync(puuid, shard).whenComplete((refreshed, failure) -> {
+            QueueHandler.whenComplete(RankService.refreshBackgroundAsync(puuid, shard), (refreshed, failure) -> {
                 if (failure != null) return;
                 upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(soloRank(refreshed)), shard);
             });
@@ -207,8 +208,8 @@ public final class MatchService {
         LOLTimeline cached = RedisClient.get(RedisKey.R4J_TIMELINE.of(region, gameId), LOLTimeline.class);
         if (cached != null) return cached;
 
-        return QueueHandler.<LOLTimeline>immediate(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
-            "timeline id=" + gameId, ignored -> {
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
+            "timeline id=" + gameId, LOLTimeline.class, ignored -> {
                 LOLTimeline timeline = RIOT_API.getLoLAPI().getMatchAPI().getTimeline(shard.toRegionShard(), gameId);
                 if (timeline != null) RedisClient.set(RedisKey.R4J_TIMELINE, timeline, region, gameId);
                 return timeline;
@@ -241,14 +242,14 @@ public final class MatchService {
     public static void queue(LeagueShard shard, String gameId) {
         if (!valid(gameId, shard)) return;
         QueueHandler.background(SyncScheduler.class, shard, "match:" + gameId,
-            "match fetch id=" + gameId, task -> fetchAndInsert(task, shard, gameId));
+            "match fetch id=" + gameId, Match.class, task -> fetchAndInsert(task, shard, gameId));
     }
 
     public static void queueRecentMatches(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, int limit) {
         if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null || limit < 1) return;
         String key = "recent-matches:" + summoner.getPlatform().name() + ':' + summoner.getPUUID();
         QueueHandler.background(SyncScheduler.class, summoner.getPlatform(), key,
-            "recent matches puuid=" + summoner.getPUUID(), task -> {
+            "recent matches puuid=" + summoner.getPUUID(), Void.class, task -> {
                 QueueHandler.retain(task);
                 getMatchlistAsync(summoner, null, 0, limit, 0, null).whenComplete((matchIds, failure) ->
                     QueueHandler.resume(task, () -> queueMissingMatches(summoner.getPlatform(), matchIds, failure)));
@@ -272,8 +273,8 @@ public final class MatchService {
             java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger(0);
             for (String matchId : matchIds) {
                 if (LeagueHandler.isMatchDBCached(matchId)) continue;
-                
-                fetchAsync(matchId, summoner.getPlatform()).whenComplete((match, failure) -> {
+
+                QueueHandler.whenComplete(fetchAsync(matchId, summoner.getPlatform()), (match, failure) -> {
                     if (failure != null) {
                         BotLogger.error("Match fetch failed: " + matchId + " message=" + failure.getMessage());
                         return;
@@ -420,7 +421,7 @@ public final class MatchService {
 
         String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
         return QueueHandler.immediate(RiotScheduler.class, summoner.getPlatform(), summoner.getPlatform().name() + ":match-list:" + id,
-            "match list puuid=" + summoner.getPUUID(), ignored -> {
+            "match list puuid=" + summoner.getPUUID(), ResultType.list(String.class), ignored -> {
                 MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();

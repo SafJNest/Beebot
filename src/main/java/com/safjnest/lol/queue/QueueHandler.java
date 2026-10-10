@@ -1,72 +1,97 @@
 package com.safjnest.lol.queue;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import com.safjnest.lol.queue.job.Job;
-import com.safjnest.lol.queue.job.JobPriority;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.hive.Hive;
+import com.hive.HiveConfig;
+import com.hive.job.Job;
+import com.hive.job.ResultType;
+import com.hive.job.JobPriority;
+import com.hive.scheduler.AbstractScheduler;
+import com.hive.status.JobStatus;
+import com.safjnest.lol.scheduler.ComputeScheduler;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.safjnest.lol.scheduler.SyncScheduler;
 
 public final class QueueHandler {
 
-    private static volatile boolean started;
+    private static volatile Hive runtime;
 
-    private QueueHandler() {
-    }
+    private QueueHandler() {}
 
     public static synchronized void start() {
-        if (started) return;
-        Router router = Router.global();
-        router.register(SyncScheduler.scheduler());
-        router.register(RiotScheduler.scheduler());
-        router.register(ComputeScheduler.scheduler());
-        started = true;
+        if (runtime != null) return;
+        Hive hive = new Hive(new HiveConfig("beebot", java.time.Clock.systemUTC(), 20, Integer.MAX_VALUE,
+            java.time.Duration.ofSeconds(30), (job, event) -> {}));
+        hive.register(new SyncScheduler(hive.registry()));
+        hive.register(new RiotScheduler(hive.registry()));
+        hive.register(new ComputeScheduler(hive.registry()));
+        runtime = hive;
     }
 
-    public static <T> CompletableFuture<T> immediate(Class<?> scheduler, Object route, String key, String name,
-        Function<Job<T>, T> work) {
-        return submit(scheduler, route, key, name, JobPriority.IMMEDIATE, work);
+    public static <R, T> CompletableFuture<T> immediate(Class<? extends AbstractScheduler<R>> scheduler, R route,
+        String key, String name, Class<T> resultType, Function<Job<T>, T> work) {
+        return immediate(scheduler, route, key, name, ResultType.of(resultType), work);
     }
 
-    public static <T> CompletableFuture<T> normal(Class<?> scheduler, Object route, String key, String name,
-        Function<Job<T>, T> work) {
-        return submit(scheduler, route, key, name, JobPriority.NORMAL, work);
+    public static <R, T> CompletableFuture<T> normal(Class<? extends AbstractScheduler<R>> scheduler, R route,
+        String key, String name, Class<T> resultType, Function<Job<T>, T> work) {
+        return normal(scheduler, route, key, name, ResultType.of(resultType), work);
     }
 
-    public static <T> CompletableFuture<T> background(Class<?> scheduler, Object route, String key, String name,
-        Function<Job<T>, T> work) {
-        return submit(scheduler, route, key, name, JobPriority.BACKGROUND, work);
+    public static <R, T> CompletableFuture<T> background(Class<? extends AbstractScheduler<R>> scheduler, R route,
+        String key, String name, Class<T> resultType, Function<Job<T>, T> work) {
+        return background(scheduler, route, key, name, ResultType.of(resultType), work);
     }
 
-    public static java.util.List<com.safjnest.lol.model.status.JobStatus> snapshot() {
-        return Registry.instance().snapshot();
+    public static <R, T> CompletableFuture<T> immediate(Class<? extends AbstractScheduler<R>> scheduler, R route,
+        String key, String name, ResultType<T> resultType, Function<Job<T>, T> work) {
+        return active().router().submit(scheduler, route, key, name, JobPriority.IMMEDIATE, resultType, work);
     }
 
-    public static java.util.List<com.safjnest.lol.model.status.JobStatus> statusSnapshot(int maxDepth) {
-        return Registry.instance().statusSnapshot(maxDepth);
+    public static <R, T> CompletableFuture<T> normal(Class<? extends AbstractScheduler<R>> scheduler, R route,
+        String key, String name, ResultType<T> resultType, Function<Job<T>, T> work) {
+        return active().router().submit(scheduler, route, key, name, JobPriority.NORMAL, resultType, work);
     }
 
-    public static java.util.List<com.safjnest.lol.model.status.JobStatus> statusSnapshot(int fullDepth, int nextDepthLimit) {
-        return Registry.instance().statusSnapshot(fullDepth, nextDepthLimit);
+    public static <R, T> CompletableFuture<T> background(Class<? extends AbstractScheduler<R>> scheduler, R route,
+        String key, String name, ResultType<T> resultType, Function<Job<T>, T> work) {
+        return active().router().submit(scheduler, route, key, name, JobPriority.BACKGROUND, resultType, work);
     }
 
-    public static void shutdown() {
-        Registry.instance().shutdown("Application shutdown");
+    public static <T> java.util.concurrent.CompletionStage<T> termination(CompletableFuture<T> future) {
+        return Hive.termination(future);
     }
 
-    public static void retain(Job<?> job) {
-        Registry.instance().retain(job);
+    public static List<JobStatus> snapshot() { return active().registry().snapshot(); }
+    public static List<JobStatus> statusSnapshot(int depth) { return active().registry().statusSnapshot(depth); }
+    public static List<JobStatus> statusSnapshot(int depth, int limit) { return active().registry().statusSnapshot(depth, limit); }
+    public static <R, S extends AbstractScheduler<R>> S scheduler(Class<S> type) { return active().router().scheduler(type); }
+    public static <T, U> CompletableFuture<U> thenApply(CompletableFuture<T> source, Function<T, U> callback) {
+        return active().thenApply(source, callback);
+    }
+    public static <T, U> CompletableFuture<U> thenCompose(CompletableFuture<T> source, Function<T, CompletableFuture<U>> callback) {
+        return active().thenCompose(source, callback);
+    }
+    public static <T> CompletableFuture<T> whenComplete(CompletableFuture<T> source, java.util.function.BiConsumer<T, Throwable> callback) {
+        return active().whenComplete(source, callback);
+    }
+    public static void retain(Job<?> job) { active().registry().retain(job); }
+    public static void resume(Job<?> job, Runnable callback) { active().registry().resume(job, callback); }
+    public static void cancel(Job<?> job) { active().registry().cancel(job); }
+
+    public static synchronized void shutdown() {
+        Hive hive = runtime;
+        if (hive != null) hive.close();
     }
 
-    public static void resume(Job<?> job, Runnable callback) {
-        Registry.instance().resume(job, callback);
-    }
+    // ============================================================================
 
-    private static <T> CompletableFuture<T> submit(Class<?> scheduler, Object route, String key, String name,
-        JobPriority priority, Function<Job<T>, T> work) {
-        start();
-        return Router.global().submit(scheduler, route, key, name, priority, work);
+    private static Hive active() {
+        Hive hive = runtime;
+        if (hive == null) throw new IllegalStateException("QueueHandler must be started explicitly before submission");
+        return hive;
     }
 }

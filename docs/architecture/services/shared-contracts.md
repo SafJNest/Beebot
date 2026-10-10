@@ -39,7 +39,7 @@ essere spostati nel servizio produttore.
 | Indexables | `ProfileIndexable`, `ChampionIndexable` | Soli campi URL/identità/filtri del risultato |
 | Metadata e parametri | `ResponseMetadata`, `ResponseMetadata.Pagination`, parte dati di `Filter`, `ActivityFilter` | Enum/value types e parametri di query necessari; separare default runtime e storage keys |
 | Esito applicativo | `ApiResult<T>` | `READY`, `PARTIAL`, `PENDING`, `NOT_FOUND`; non introdurre un envelope JSON nuovo |
-| Status operativo | `BotStatus`, `LeagueMetrics`, `JvmMetrics`, `SystemMetrics`, `RedisMetrics`, `MongoMetrics` e componenti `Mongo*` | Dati finali; raccolta delle metriche esclusa. DTO job in `shared.job.status` |
+| Status operativo | `BotStatus`, `LeagueMetrics`, `JvmMetrics`, `SystemMetrics`, `RedisMetrics`, `MongoMetrics` e componenti `Mongo*` | Dati finali; raccolta delle metriche esclusa. DTO job estratti in `com.hive.status` (ADR-0017) |
 | Errori HTTP | `LolApiError` | Schema `status/code/message/metadata` condivisibile senza dipendenze Spring; mapping e gestione eccezioni restano Spring |
 
 Le associazioni per famiglia sono un inventario iniziale, non la promessa che
@@ -195,3 +195,6 @@ Il contratto è estraibile quando compila senza dipendenze dei servizi, il JSON
 prodotto e consumato supera fixture di compatibilità e il bot usa lo stesso
 tipo canonico. Chi produce il risultato resta il solo owner del calcolo.
 Dettagli e ordine dei task nel [piano](migration-plan.md).
+
+La sola infrastruttura job è implementata in ADR-0017. Generic status Hive
+compila senza SDK/driver; questa proposta dei contratti di dominio resta tale.

@@ -14,9 +14,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
-import com.safjnest.lol.queue.job.JobPriority;
+import com.hive.job.ResultType;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.safjnest.lol.scheduler.SyncScheduler;
+import com.hive.job.JobPriority;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -94,8 +95,8 @@ public final class RankService {
 
         try {
             String id = queue.name() + ":" + tier.name() + ":" + page;
-            return QueueHandler.<List<LeagueEntry>>immediate(RiotScheduler.class, shard, shard.name() + ":league-tier:" + id,
-                "league tier " + id, ignored -> {
+            return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":league-tier:" + id,
+                "league tier " + id, ResultType.list(LeagueEntry.class), ignored -> {
                 List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI()
                     .getLeagueByTierDivision(shard, queue, tier, page);
                 return entries == null ? List.of() : entries;
@@ -154,7 +155,7 @@ public final class RankService {
     public static void enqueueRankEntries(boolean highElo, boolean allEntries) {
         List<TierDivisionType> highTiers = highElo ? highEloTiers() : List.of();
         List<TierDivisionType> allTiers = allEntries ? allEntryTiers() : List.of();
-        QueueHandler.background(SyncScheduler.class, null, "rank-entries", "RANK_ENTRIES", root -> {
+        QueueHandler.background(SyncScheduler.class, null, "rank-entries", "RANK_ENTRIES", Void.class, root -> {
             for (LeagueShard shard : LeagueShardUtils.getActives()) {
                 for (TierDivisionType tier : highTiers) for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR))
                     enqueueTier(shard, tier, queue, 0);
@@ -208,7 +209,7 @@ public final class RankService {
             JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(Map.of());
 
-        return refreshEntriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
+        return QueueHandler.thenApply(refreshEntriesFromRiotAsync(puuid, shard, priority), entries -> {
             Map<GameQueueType, Rank> ranks = toRanks(entries);
             saveEntries(puuid, shard, ranks);
             return ranks;
@@ -218,10 +219,10 @@ public final class RankService {
     private static CompletableFuture<Map<GameQueueType, Rank>> fetch(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(Map.of());
 
-        return SummonerService.getSummonerAsync(puuid, shard).thenCompose(summoner -> {
+        return QueueHandler.thenCompose(SummonerService.getSummonerAsync(puuid, shard), summoner -> {
             if (summoner == null) return CompletableFuture.failedFuture(
                 new IllegalStateException("Summoner is not available for rank persistence"));
-            return getEntriesAsync(puuid, shard).thenApplyAsync(entries -> {
+            return QueueHandler.thenApply(getEntriesAsync(puuid, shard), entries -> {
                 Map<GameQueueType, Rank> ranks = toRanks(entries);
                 saveEntries(puuid, shard, ranks);
                 return ranks;
@@ -231,7 +232,7 @@ public final class RankService {
 
     private static void enqueueTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue, int page) {
         String key = (page == 0 ? "rank-high:" : "rank-all:") + shard.name() + ':' + tier.name() + ':' + queue.name();
-        QueueHandler.background(SyncScheduler.class, shard, key, "rank entries tier=" + tier.name() + " queue=" + queue.name(), task -> {
+        QueueHandler.background(SyncScheduler.class, shard, key, "rank entries tier=" + tier.name() + " queue=" + queue.name(), Void.class, task -> {
             int currentPage = page;
             do {
                 task.phase("FETCHING");
@@ -303,11 +304,11 @@ public final class RankService {
     ) {
         return switch (priority) {
             case IMMEDIATE -> QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchEntries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(LeagueEntry.class), ignored -> fetchEntries(shard, puuid));
             case NORMAL -> QueueHandler.normal(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchEntries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(LeagueEntry.class), ignored -> fetchEntries(shard, puuid));
             case BACKGROUND -> QueueHandler.background(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchEntries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(LeagueEntry.class), ignored -> fetchEntries(shard, puuid));
         };
     }
 

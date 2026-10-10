@@ -1,192 +1,131 @@
-# Specifica iniziale di job e code generici
+# Hive: job e code generici
 
-Stato: proposta, basata su ADR-0014 e codice `cef023bc`.
-La libreria comune gestisce il meccanismo; ogni servizio configura la propria
-istanza e possiede routing, policy e funzioni da eseguire.
+Stato: infrastruttura implementata nel monolite, decisione mirata
+[ADR-0017](../adr/0017-hive-job-runtime.md). La separazione dei processi,
+i contratti DTO e le API inter-servizio di ADR-0016 restano proposte.
 
-## Base esistente e destinazioni
+## Mappa di estrazione e responsabilità
 
-| Componente attuale | Parte comune | Parte locale da isolare |
-|---|---|---|
-| `Job<T>` | Identità locale, priorità, nome/key/route validata, fase, item e progresso | Nessuna nomenclatura o shard di dominio; la funzione resta in memoria |
-| `JobPriority`, `JobState`, `WorkerState` | Priorità e lifecycle/worker state | Nessun enum Riot o Mongo |
-| `Registry` | Lifecycle, context, dedup, follower, parent/child, callback, future | Singleton obbligatorio e classificazione `runType` LoL |
-| `Router` | Registrazione, validazione, dispatch e promozione | `GLOBAL` obbligatorio e `BotLogger` |
-| `QueueHandler` | Unica superficie di submission, snapshot, retain/resume e shutdown | Registrazione automatica dei tre scheduler concreti |
-| `AbstractScheduler<R>` | Infrastruttura fisica e hook, registry per istanza | Scelta route, nomi, placement, policy e bootstrap |
-| `JobQueue` | Tre lane con ordinamento e promozione | Nessuna dipendenza di dominio |
-| `JobWorker<R>` | Drain, lifecycle e rilascio del worker | Configurazione thread/limiti locale |
-| `JobStatus`, `JobProgress`, `WorkerStatus`, `QueueStatus`, `SchedulerStatus` | Snapshot generici in `shared.job.status` | Aggregazione HTTP/processo resta locale |
-| `RunStatus` | Eventuale forma generica dei dati | Interpretazione tracking/sample/rank nelle proiezioni Spring |
-| `RiotScheduler` | Usa il core | R4J: shard, region, nomi, rate protection e logging |
-| `ComputeScheduler`, `DatabaseWorkerType`, `ChampionMatrixRequest` | Usano il core | Spring: domini, riserva champion, merge matrix/build, facade e filtri |
-| `SyncScheduler` | Meccanismo esecuzione diretta eventualmente estratto | Spring: route shard/global e attivazione di tracking/rank/match |
+| Componente precedente | Responsabilità | Destinazione | Chiamanti / modifica | Verifica |
+|---|---|---|---|---|
+| `lol.queue.job.Job` e stati | Dati e progresso | `com.hive.job` | Servizi, tracker, scheduler e comandi: import migrati | Outcome item, priorità, progresso esplicito |
+| `lol.queue.Registry` | Lifecycle/context/dedup/follower | `com.hive.Registry` | Runtime e scheduler: istanza esplicita, senza globale | Isolamento, figli/callback, cleanup, errore/cancellazione |
+| `lol.queue.Router` | Registrazione/dispatch/promozione | `com.hive.Router` | Hive e test: scheduler/route tipizzati, token risultato | Duplicati, route invalide, follower/promozione |
+| `lol.queue.QueueHandler` | Composizione applicativa e submission | resta facade `lol.queue.QueueHandler`; meccanismo in `com.hive.Hive` | App, servizi/tracker/comandi: bootstrap esplicito e un solo runtime | Nessun avvio implicito, admission/shutdown |
+| `AbstractScheduler` | Route validate, placement hook, queued/direct lifecycle | `com.hive.scheduler` | Concrete locali: registry/config espliciti | Mode diretto senza queue fisica, enqueue failure |
+| `JobQueue`/`JobWorker` | Lane e drain del body | `com.hive.worker` | Scheduler generico | FIFO, promozione, no preemption, worker release |
+| Snapshot job/queue/worker/scheduler/run | Dati generici | `com.hive.status` | BotStatus, StatusService, comandi: import migrati | Compatibilità JSON e limiti |
+| `Registry.runType` | Classificazione tracking/sample/rank | hook locale `lol.scheduler.SyncScheduler` | Snapshot scheduler e StatusService | Nessuna key LoL interpretata dal core |
+| `RiotScheduler` | Serializzazione per shard e log | `r4j.scheduler` | Fetch servizi/comandi: import migrati | Route/naming e protezioni conservati |
+| `ComputeScheduler`/`DatabaseWorkerType`/`ChampionMatrixRequest` | Policy dominio/Mongo | `lol.scheduler` | Facade/champion/profile/tracker: import migrati | Quattro worker, riserva, placement, merge |
+| `SyncScheduler` | Policy route shard/global | `lol.scheduler` | Tracker/rank/match/orchestratori | Virtual thread diretto e albero comune |
+| Continuation dei servizi | Persistenza e contesto | servizi locali + executor Hive posseduto | Rank/Mastery/Summoner async | Context retain/resume e shutdown |
 
-Il job core non importa `shared.dto.lol`, `lol.*`, SDK R4J, Mongo, JDA,
-Spring, Redis o `App`. Gli snapshot generici possono essere consumati dai DTO
-status applicativi; la dipendenza inversa non è ammessa. Il core usa il JDK,
-senza framework DI, connessioni o thread avviati prima del bootstrap esplicito.
+Il core dipende solo dal JDK. Nessun `lol.*`, R4J, Mongo/BSON, Redis/Jedis,
+Spring, JDA, App o BotLogger entra in Hive. Il risultato riutilizzabile non
+richiede un processo Beebot: i sorgenti core compilano indipendentemente e
+un POM autonomo `hive/pom.xml` produce il solo artifact Hive dagli stessi
+sorgenti canonici, senza copiare il core o trasformare i tre servizi in moduli.
+L'estrazione dei moduli dei tre servizi resta una fase successiva.
 
-## Composizione per istanza
+## Composizione e configurazione
 
-Ogni processo crea registry/router/scheduler e li chiude nel proprio lifecycle.
-In una fase monolite possono già esistere runtime distinti; la separazione
-deve però essere introdotta dopo i test sul cambiamento di parent/child.
-Un runtime possiede un solo registry: schedulers, handler e worker di quel
-runtime devono usare esattamente la stessa istanza.
+Ogni `Hive` possiede Registry, Router, scheduler registrati ed executor.
+`HiveConfig` definisce identità, Clock, limiti snapshot, timeout di shutdown
+ed osservazione; costruttori e hook scheduler definiscono validazione route,
+nomi, placement, worker e mode queued/direct. Non esiste un framework DI.
+Nessun core singleton e nessun thread/connessione viene avviato caricando classi.
 
-La configurazione necessaria comprende:
+Il monolite inizializza la facade da App prima di esporre API e tracker.
+Riot, compute e Sync condividono un Registry e conservano l'albero cross-scheduler.
+Due Hive indipendenti hanno PID, contesto, registry e dedup indipendenti.
+Submission prima del bootstrap o dopo shutdown fallisce esplicitamente.
 
-- Clock e identità dell'istanza per test e correlazione.
-- Scheduler registrati e validazione dei loro identificatori/route.
-- Strategia di esecuzione: queue con worker, oppure esecuzione diretta.
-- Route logica e placement fisico, con limiti di concorrenza/policy del servizio.
-- Nomi di scheduler, queue e thread; label/report di stato e logging attraverso hook.
-- Limiti snapshot, timeout di arresto ed eventuale admission policy.
+La submission lega lo stesso tipo R allo scheduler e alla route e un contratto
+`ResultType<T>` al risultato (`Class<T>` è la scorciatoia invariabile per scalari). Lo stesso scheduler/route/key attivo con un token
+incompatibile viene rifiutato; non si crea un follower con un cast pericoloso.
+Le chiavi sono identità strutturate, non concatenazioni ambigue di stringhe.
+`ResultType.list(Element.class)` identifica e verifica anche gli elementi
+delle liste; richieste List con elementi incompatibili non condividono un
+source. I contratti non sono wildcard che consentono un tipo risultato più
+stretto del token dichiarato.
 
-Non è necessario aggiungere un'interfaccia per ogni parametro. Costruttori,
-factory e hook esistenti possono bastare; il punto è eliminare le dipendenze
-obbligatorie verso i tre scheduler concreti e verso un singleton globale.
+Route logica e placement fisico restano distinti. La dedup usa la route logica;
+spostare la destinazione fisica all'inserimento non cambia l'identità del job.
+La proiezione HTTP mostra la route logica nel job e la queue fisica nel dispatcher.
 
-## Submission e routing
+## Implementazioni locali
 
-La superficie resta una sola: `immediate`, `normal`, `background` oppure
-una submission con priorità esplicita. La firma target deve associare lo stesso
-tipo `R` a scheduler e route; `Class<?> + Object` attuale non fornisce quella
-garanzia in compilazione, anche se la validazione runtime già rifiuta route errate.
+**Riot:** una queue seriale per LeagueShard valida; UNKNOWN è rifiutato. I nomi
+`r4j-<shard>-` e i log/toggle rimangono applicativi. La route platform shard
+non viene trasformata in routing region; SDK e servizi continuano a scegliere
+l'endpoint/region appropriati. Nessun cambiamento alla policy dei rate limit,
+a cache/cooldown Redis, ai namespace o ai TTL.
 
-Schema indicativo, non API Java già approvata:
+**Compute:** quattro queue/worker seriali PROFILE, PROFILE_2, CHAMPION, MONGO.
+La route PROFILE usa le load al momento dell'inserimento. Senza riserva può
+scegliere tra i quattro; una matrix/build/full refresh champion queued o running
+restringe la scelta a PROFILE/PROFILE_2. Nessun job già inserito migra.
+Matrix, build, key, filtri, merge e chiamate di calcolo/persistenza restano locali.
+Una matrix accetta richieste build finché non inizia; dopo `start()` lo snapshot
+è immutabile e una build arrivata dopo segue il proprio lavoro deduplicato.
 
-```text
-submit<T,R>(scheduler<R>, route:R, key, name, priority, work(Job<T>)) -> Future<T>
-```
+**Sync:** route shard o null globale, esecuzione immediata su virtual thread
+posseduto dal runtime. Nessuna queue equivalente a compute/Riot, nessun worker
+seriale per shard e nessun backlog Redis. Gli orchestratori che attendono figli
+compute usano Sync per evitare join sul worker seriale che stanno occupando.
 
-L'identificatore scheduler appartiene alla configurazione del runtime, non alla
-classe Java serializzata. Una migrazione iniziale può conservare la facade e
-la validazione esistenti; il target non deve richiedere `RiotScheduler.class`
-nel common né uno switch centrale tra scheduler noti.
+## Lifecycle e compatibilità
 
-Separare:
+- Registrazione e validazione precedono dispatch. Duplicati e route sconosciute
+  falliscono; nessuno switch centrale enumera i servizi concreti.
+- Dedup solo dei lavori attivi per scheduler/route/key nello stesso runtime.
+  Il riuso crea un PID follower senza seconda esecuzione fisica; risultato ed
+  errore provengono dal source. Il risultato terminale non diventa una cache.
+- IMMEDIATE > NORMAL > BACKGROUND, FIFO ordinario. Promozione del source queued
+  davanti alla lane urgente; nessuna preemption/duplicazione del body running.
+- Priorità child = più urgente fra richiesta e parent. Parent/child descrive
+  ownership, non un limite massimo di urgenza.
+- Il worker viene rilasciato quando il body termina; future/lifecycle attendono
+  figli e callback registrati. I figli già completati contano nel totale parent.
+- Parent riuscito con figli falliti: COMPLETED_WITH_ERRORS e risultato del body
+  riuscito. Errori del body/enqueue/callback sono eccezionali.
+- Retain/resume conserva e ripristina il contesto e rilascia anche in errore.
+  I servizi usano continuation possedute dal runtime invece del common pool.
+- I job di un altro registry non sono accettati anche quando hanno lo stesso PID.
+  Cleanup rimuove entry e key secondo lifecycle, senza storico persistente.
+- Progresso esplicito ha precedenza, anche sul parent. Contatori dei figli diretti
+  sono fallback. Fase/item/outcome done/missing/failed restano disponibili.
+- Status applicativo conserva tre livelli completi + massimo 100 job al quarto, e massimo
+  20 queued job per worker. Il cap generico totale è configurabile; il monolite
+  usa Integer.MAX_VALUE per preservare i primi tre livelli completi. Nessuna
+  mappa item senza limite nel payload pubblico.
 
-1. Route logica: contesto del job, parte dell'identità di dedup.
-2. Placement fisico: queue/worker scelto dallo scheduler all'inserimento.
-3. Priorità: lane del lavoro dentro quella queue.
+## Cancellazione e arresto
 
-Due job con lo stesso testo key su route diverse non si deduplicano. Il
-placement non cambia l'identità logica, non migra task già inseriti e non
-interpreta automaticamente platform/region o domini Mongo.
+`Hive.termination(future)` offre uno stage di sola lettura della terminazione
+logica effettiva. Il cleanup delle matrix locali si lega a quello stage, non
+alla cancellazione della view pubblica; cancellare una view non perde il merge
+con una matrix ancora attiva.
 
-## Configurazioni dei servizi
+La cancellazione della future del chiamante è distinta dalla cancellazione
+logica del job e dall'interruzione fisica del body. Non promette che un body
+running si sia fermato. La creazione di un follower che genererebbe un ciclo di dipendenze viene
+rifiutata; la dedup non deve trasformare due alberi attivi in un’attesa reciproca.
+Lo shutdown chiude admission e gli executor posseduti,
+cancella i lifecycle attivi e non riapre implicitamente il runtime. Callback
+late e follower non devono riattivare lavoro cancellato.
 
-| Policy | R4J | Spring/Mongo |
-|---|---|---|
-| Route | Platform shard o routing region secondo endpoint/limiter | Profile, champion, Mongo e altri tipi di operazione |
-| Placement | Serializzazione per route configurata; scope account/region da definire | Placement e riserva per carico/operazione |
-| Key | Operazione + identità + parametri canonici Riot | PUUID/filterKey, champion/filter, matrix patch/queue ecc. |
-| Nome | Label e nomi thread R4J | Label profili/champion/maintenance |
-| Protezioni | Rate limit SDK/Riot, cooldown/cache esterna | Memoria, batch, costi compute e writer Mongo |
-| Esito | Dati acquisiti o errore esterno | Persistenza, proiezioni e invalidazioni completate |
+I timeout sono configurati, non garanzie di terminazione per codice che ignora
+l'interruzione. Un crash JVM non esegue cleanup. Queue in memoria senza backlog
+durevole, retry persistito, broker, distributed dedup o exactly-once.
 
-Il core non contiene `PROFILE`, `CHAMPION`, `EUW1`, `EUROPE`, patch, collection,
-prefix di key champion o convenzioni di nome. `ChampionMatrixRequest` resta
-Spring: aggrega richieste di build/matrice del dominio e non è un job generico.
+## Confini futuri e verifiche
 
-La serializzazione per shard del `RiotScheduler` attuale non è una prova che
-ogni rate limit Riot abbia scope shard. La futura configurazione R4J deve
-esplicitare endpoint platform/region e scope del limiter, senza codificarli nel core.
+Una libreria comune non condivide memoria tra processi. Lambda, future e contesto
+ThreadLocal non attraversano HTTP. Correlazione remota, idempotenza writer,
+contratti di job remoto e retention dei risultati richiedono task/ADR successivi.
 
-## Invarianti da portare
-
-1. Registrazione prima del dispatch; scheduler sconosciuto o route invalida
-   falliscono esplicitamente.
-2. Dedup soltanto tra lavori attivi dello stesso runtime, scheduler, route e key;
-   il risultato completato non diventa una cache del registry.
-3. Un riuso crea un follower logico con collegamento al source; non esegue
-   una seconda funzione fisica e riceve il risultato/fallimento del source.
-4. `IMMEDIATE > NORMAL > BACKGROUND`; FIFO ordinario nella lane. La promozione
-   di un source queued lo mette davanti alla nuova lane. Il lavoro running
-   non viene interrotto o duplicato.
-5. Il contesto locale determina PPID. Il codice corrente eredita la priorità
-   più urgente tra parent e richiesta; un child può essere più urgente del parent.
-6. Terminare il body libera il worker fisico; la future può restare in
-   `WAITING_CHILDREN` finché figli e callback registrati terminano.
-7. Errori dei figli non cancellano i fratelli; un parent con body riuscito può
-   terminare `COMPLETED_WITH_ERRORS`. Questo stato non implica necessariamente
-   una future eccezionale: preservare/testare la distinzione.
-8. `retain` prima della conclusione del body protegge il callback; `resume`
-   ripristina il parent e rilascia il riferimento anche in errore.
-9. Le entry terminali vengono rimosse quando il lifecycle e i riferimenti
-   attivi sono esauriti. Il registry non è uno storico persistente.
-10. Il progresso mantiene fase, item corrente, totale e item terminali
-    done/missing/failed. Le snapshot pubbliche restano limitate e non espongono
-    mappe item senza limite.
-
-Il progresso dei parent presenta una discrepanza da risolvere: l'ADR descrive
-i figli diretti, mentre il codice preferisce il progresso esplicito se presente.
-Anche eventuali doppi aggiornamenti di un item devono essere caratterizzati:
-nessun miglioramento di semantica nascosto dentro uno spostamento di package.
-
-Gli snapshot attuali HTTP mostrano tre livelli completi e al massimo 100 job
-del quarto; la vista del worker limita i queued job a 20. Il nuovo core può
-rendere questi limiti configurabili, mentre Spring mantiene gli stessi default
-e payload per non cambiare `/api/status` durante l'estrazione.
-
-## Lifecycle, carico e arresto
-
-Il bootstrap deve registrare gli scheduler prima di accettare lavoro; tipi
-duplicati falliscono. L'arresto deve interrompere nuove submission, gestire
-queued/running/follower/callback e chiudere gli executor del solo runtime.
-L'attuale queue è in memoria e senza capacità massima esplicita: non dichiararla
-già bounded. La compatibilità iniziale conserva questa scelta; una capacity
-opzionale richiede una policy esplicita di rifiuto, non scarto silenzioso.
-
-Non attendere su una richiesta figlia destinata allo stesso worker seriale
-che il parent sta occupando: il port deve cercare questi join e mantenere il
-rilascio del worker o la composizione asincrona dove necessari. Non spostare
-continuation di persistenza su executor non posseduti dal servizio incidentalmente.
-
-Cancellazione di una future, cancellazione del job e interruzione del body
-non sono sinonimi. Deadline, watchdog e propagazione delle cancellazioni vanno
-specificati/testati prima di promettere che ogni task termina sempre. Un crash
-JVM o un body bloccato non esegue automaticamente il cleanup applicativo.
-
-## Confine tra processi
-
-Condividere la libreria non condivide la memoria. Ogni processo avrà PID/PPID,
-dedup, future, priorità e queue locali. `ThreadLocal`, lambda e `Class<?>`
-non attraversano HTTP. Il core non invia codice eseguibile né `Job<T>` sul wire.
-
-Per il primo confine HTTP, una richiesta Spring → R4J può essere rappresentata
-da un child locale il cui body resta aperto fino al risultato HTTP; R4J crea
-il proprio job locale. Correlation ID collega le due esecuzioni, senza fingere
-che il registry Spring possieda i figli interni del registry R4J.
-
-Se il servizio remoto risponderà prima del completamento, servirà un contratto
-di accettazione/stato/risultato e retention dei risultati; non è fornito
-dall'attuale registry che rimuove i terminali. Per identificare job remoti, una
-reference deve comprendere servizio, istanza/avvio e PID, oppure un ID globale
-equivalente, mai il solo PID numerico. La scelta è una decisione successiva.
-
-La priorità inviata è una richiesta: il servizio remoto la valida secondo
-la propria policy. Timeout HTTP non prova che il lavoro remoto sia stato
-cancellato; retry non garantisce esecuzione unica o scrittura unica. Dedup
-locale non basta tra repliche o dopo restart: idempotenza dei writer e, se
-richiesto, coordinamento multi-istanza costituiscono task separati.
-
-## Redis e persistenza delle code
-
-Redis resta cache/proiezione o protezione del servizio secondo ownership.
-Il job core iniziale non introduce backlog, pub/sub, Redis Streams, distributed
-lock, retry persistiti, serializzazione di lambda o garanzie exactly-once.
-La necessità di una coda durevole richiederebbe un contratto di comandi
-serializzabili e un ADR distinto. Il comportamento volatile di ADR-0014 viene
-preservato, salvo la separazione dei runtime formalmente accettata.
-
-## Verifica richiesta per l'implementazione
-
-I test devono dimostrare isolamento tra runtime, configurazione con route
-non LoL, dedup/follower, promozione, parent/child, errore e cancellazione,
-retain/resume, cleanup e arresto. Servono anche fixture status e test delle
-policy locali: platform/region R4J, placement/riserva/merge di Spring.
-`RouterTest` e `ChampionMatrixRequestTest` sono la base individuata nel progetto;
-non attestano da soli tutti questi casi. Nessun test è eseguito per questa proposta.
+API `/api/status`, domain payloads, schema Mongo, writer ordering, Redis e
+presentazione rimangono invariati. [hive-validation.md](hive-validation.md)
+registra test offline, indipendenza core, review e limiti delle prove live.
