@@ -9,13 +9,11 @@ import com.zaxxer.hikari.HikariDataSource;
 import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.utils.SettingsLoader;
 
-
 // TheAllHandler che gestisce connessioni e quuery a livello query e cose varie
 
 // abstract class DBHandler che ha il nome del database a cui si deve connettere
 
 // N classi che estendono DBHandler e implementano i metodi per le query
-
 
 public class DatabaseHandler {
     private static HikariDataSource dataSource; // shared pool

@@ -2,6 +2,9 @@ package com.safjnest.lol.model.rune;
 
 import java.util.HashMap;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 
 /**
  * This class is used to store the data of a rune page and all of its attributes.
@@ -88,6 +91,5 @@ public class PageRunes {
     public Rune getRune(String id){
         return runes.get(id);
     }
-
 
 }

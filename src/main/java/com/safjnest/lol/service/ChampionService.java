@@ -8,15 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.ChampionTierList;
 import com.safjnest.lol.model.ChampionTierSource;
-import com.safjnest.lol.model.ChampionView;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.ChampionIndexable;
-import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
@@ -24,22 +16,23 @@ import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.lol.model.statistics.shared.MatchupStats;
 import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.Build;
+import com.R4B.api.dto.ChampionIndexable;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.ChampionTierList;
+import com.R4B.api.dto.ChampionView;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.ResponseMetadata;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.lol.*;
 
 public class ChampionService {
 
@@ -56,7 +49,7 @@ public class ChampionService {
         StaticChampion champion = ChampionUtils.findChampion(championValue);
         if (champion == null) return ApiResult.notFound();
         GameQueueType selectedQueue = queue != null ? queue : GameQueueType.TEAM_BUILDER_RANKED_SOLO;
-        Filter filter = new Filter().setChampion(champion.getId()).setRank(rank).setRegion(region)
+        Filter filter = FilterDefaults.create().setChampion(champion.getId()).setRank(rank).setRegion(region)
             .setQueue(selectedQueue).setLane(role);
         if (patch != null) filter.setPatch(patch);
         String key = RedisKey.CHAMPION_PAGE.of(filter.champion(), filter.pageKey());
@@ -137,7 +130,7 @@ public class ChampionService {
             ChampionLeafStats leaf = entry.getValue().lanes.get(filter.lane() == null ? null : filter.lane().name());
             if (leaf == null && filter.lane() == null) leaf = entry.getValue().overall();
             if (leaf != null && leaf.games > 0) {
-                Filter championFilter = new Filter().setChampion(entry.getKey()).setLane(filter.lane()).setQueue(filter.queue()).setRank(filter.rank()).setRankBehavior(filter.rankBehavior()).setPatch(filter.patch()).setRegion(filter.region()).setPeriod(filter.timeStart(), filter.timeEnd());
+                Filter championFilter = FilterDefaults.create().setChampion(entry.getKey()).setLane(filter.lane()).setQueue(filter.queue()).setRank(filter.rank()).setRankBehavior(filter.rankBehavior()).setPatch(filter.patch()).setRegion(filter.region()).setPeriod(filter.timeStart(), filter.timeEnd());
                 result.put(entry.getKey(), ChampionAnalyzer.toChampionStatistics(championFilter, document, entry.getValue(), leaf));
             }
         }
@@ -196,7 +189,7 @@ public class ChampionService {
         GameQueueType queue
     ) {
         GameQueueType selectedQueue = queue != null ? queue : GameQueueType.TEAM_BUILDER_RANKED_SOLO;
-        Filter base = new Filter().setChampion(0).setLane(null).setRank(rank).setRegion(region).setQueue(selectedQueue);
+        Filter base = FilterDefaults.create().setChampion(0).setLane(null).setRank(rank).setRegion(region).setQueue(selectedQueue);
         if (patch != null) base.setPatch(patch);
         String key = tierListKey(base);
         ChampionTierList cached;
@@ -294,10 +287,10 @@ public class ChampionService {
         for (Map.Entry<Integer, Map<LaneType, Integer>> entry : gamesByChampion.entrySet()) {
             int totalGames = 0;
             for (int games : entry.getValue().values()) totalGames += games;
-            List<LaneType> roles = new ArrayList<>(LaneTypeUtils.playables());
+            List<LaneType> roles = new ArrayList<>(LaneType.playables());
             roles.sort(java.util.Comparator.comparingInt(
                 (LaneType role) -> -entry.getValue().getOrDefault(role, 0)
-            ).thenComparingInt(LaneTypeUtils::playableOrder));
+            ).thenComparingInt(LaneType::playableOrder));
             for (LaneType role : roles) {
                 int games = entry.getValue().getOrDefault(role, 0);
                 values.add(new ChampionIndexable(entry.getKey(), role, games,
@@ -309,7 +302,7 @@ public class ChampionService {
     }
 
     public void refresh() {
-        String patch = new Filter().patch();
+        String patch = FilterDefaults.create().patch();
         for (Filter filter : getBuildFilters(patch)) {
             try {
                 refreshBuild(filter);
@@ -331,9 +324,9 @@ public class ChampionService {
         regions.addAll(LeagueShardUtils.getActives());
         List<TierType> ranks = new ArrayList<>();
         ranks.add(null);
-        ranks.addAll(TierDivisionUtils.getHigherTiers(TierType.IRON));
+        ranks.addAll(TierType.getHigherTiers(TierType.IRON));
         for (LeagueShard region : regions) for (TierType rank : ranks)
-            filters.add(new Filter().setChampion(0).setLane(null).setQueue(queue).setRank(rank)
+            filters.add(FilterDefaults.create().setChampion(0).setLane(null).setQueue(queue).setRank(rank)
                 .setPatch(patch).setRegion(region));
         return filters;
     }
@@ -406,12 +399,12 @@ public class ChampionService {
 
     private void addBuildFilter(Map<String, Filter> filters, Filter filter, String patch) {
         if (filter == null || filter.champion() == 0 || !patch.equals(filter.patch())) return;
-        if (!GameQueueTypeUtils.hasLane(filter.queue())) filter.setLane(null);
+        if (!GameQueueType.hasLane(filter.queue())) filter.setLane(null);
         filters.put(filter.toKey(), filter);
     }
 
     static Filter statisticsFilter(Filter filter) {
-        return new Filter().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
+        return FilterDefaults.create().setPatch(filter.patch()).setQueue(filter.queue()).setRank(filter.rank())
             .setRankBehavior(filter.rankBehavior()).setRegion(filter.region()).setLane(filter.lane());
     }
 
@@ -419,7 +412,7 @@ public class ChampionService {
         if (filter == null || filter.champion() == 0) return List.of();
         List<LaneType> lanes = new ArrayList<>();
         lanes.add(null);
-        if (filter.queue() != null && GameQueueTypeUtils.hasLane(filter.queue())) lanes.addAll(LaneTypeUtils.playables());
+        if (filter.queue() != null && GameQueueType.hasLane(filter.queue())) lanes.addAll(LaneType.playables());
         lanes.add(LaneType.NONE);
         List<Filter> result = new ArrayList<>(lanes.size());
         for (LaneType lane : lanes) result.add(statisticsFilter(filter).setChampion(filter.champion()).setLane(lane));
@@ -444,16 +437,16 @@ public class ChampionService {
     private static List<Filter> tierFilters(Filter base) {
         if (base == null || base.queue() == null) return List.of();
         List<Filter> result = new ArrayList<>();
-        if (!GameQueueTypeUtils.hasLane(base.queue())) {
+        if (!GameQueueType.hasLane(base.queue())) {
             result.add(tierFilter(base, null));
             return result;
         }
-        for (LaneType lane : LaneTypeUtils.playables()) result.add(tierFilter(base, lane));
+        for (LaneType lane : LaneType.playables()) result.add(tierFilter(base, lane));
         return result;
     }
 
     private static Filter tierFilter(Filter source, LaneType lane) {
-        return new Filter().setChampion(0).setPatch(source.patch()).setQueue(source.queue()).setRank(source.rank())
+        return FilterDefaults.create().setChampion(0).setPatch(source.patch()).setQueue(source.queue()).setRank(source.rank())
             .setRegion(source.region()).setLane(lane);
     }
 

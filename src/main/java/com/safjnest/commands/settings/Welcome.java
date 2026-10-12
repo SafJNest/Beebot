@@ -32,7 +32,6 @@ public class Welcome extends SlashCommand{
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 
-
         if(welcome == null) {
             event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.WELCOME)).useComponentsV2().queue();
             return;

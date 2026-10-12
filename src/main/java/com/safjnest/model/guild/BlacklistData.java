@@ -1,7 +1,5 @@
 package com.safjnest.model.guild;
 
-
-
 import com.safjnest.sql.database.BotDB;
 
 public class BlacklistData {
@@ -11,7 +9,6 @@ public class BlacklistData {
     private int threshold;
     private String blackChannelId;
     private boolean blacklist_enabled;
-
 
     public BlacklistData(GuildData guildData) {
         this.guildData = guildData;

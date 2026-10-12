@@ -35,7 +35,6 @@ public class List extends SlashCommand {
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
@@ -72,7 +71,6 @@ public class List extends SlashCommand {
         java.util.List<QueryRecord> sounds = BotDB.getlistGuildSounds(event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
-        
 
         for(int i = 0; i < sounds.size() && i < 24; i++){
             QueryRecord sound = sounds.get(i);

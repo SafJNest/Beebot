@@ -46,7 +46,6 @@ public class Weather extends SlashCommand {
         this.weatherApiKey = SettingsLoader.getSettings().getJsonSettings().getWeatherApiKey();
     }
 
-
     @Override
     protected void execute(SlashCommandEvent event) {
         String locationString = event.getOption("location").getAsString();

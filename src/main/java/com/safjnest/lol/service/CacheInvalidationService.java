@@ -4,10 +4,9 @@ import java.util.List;
 
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.GameQueueType;
+import com.R4B.lol.MatchlistMatchType;
 
 public final class CacheInvalidationService {
 
@@ -38,7 +37,4 @@ public final class CacheInvalidationService {
         clearRedis(RedisKey.R4J_MATCH_LIST,
             summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
     }
-
-    // ============================================================================
-
 }

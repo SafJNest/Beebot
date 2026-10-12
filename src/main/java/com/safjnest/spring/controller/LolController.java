@@ -1,5 +1,6 @@
 package com.safjnest.spring.controller;
 
+import com.safjnest.lol.service.FilterDefaults;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,26 +15,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.ActivityFilter;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.model.match.LiveGame;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.MatchPage;
-import com.safjnest.lol.model.match.MatchOrder;
-import com.safjnest.lol.model.match.RankHistory;
-import com.safjnest.lol.model.match.RankHistoryQuery;
-import com.safjnest.lol.model.statistics.ProfileActivity;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.service.MatchService;
-import com.safjnest.lol.model.summoner.SummonerView;
+import com.R4B.api.dto.ActivityFilter;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.ResponseMetadata;
+import com.R4B.api.dto.match.LiveGame;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.MatchPage;
+import com.R4B.api.dto.match.RankHistory;
+import com.R4B.api.dto.match.RankHistoryQuery;
+import com.R4B.api.dto.statistics.ProfileActivity;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.api.dto.summoner.SummonerView;
+import com.R4B.lol.GameQueueType;
+import com.R4B.lol.LeagueShard;
+import com.R4B.lol.MatchOrder;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.SummonerService;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")
@@ -228,7 +228,7 @@ public class LolController {
             profileRecordService.get(
                 LolApiParameters.requiredText(puuid, "puuid"),
                 LolApiParameters.requiredShard(shardValue),
-                Filter.canonical()
+                FilterDefaults.canonical()
             ),
             "profile_records_pending",
             "Profile records are being prepared",

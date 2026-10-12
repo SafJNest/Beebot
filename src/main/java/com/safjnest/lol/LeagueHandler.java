@@ -1,5 +1,7 @@
 package com.safjnest.lol;
 
+import com.safjnest.r4j.RiotGateway;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -28,9 +30,14 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.riot.LeagueEntry;
+import com.R4B.api.dto.riot.RiotAccount;
+import com.R4B.api.dto.riot.SpectatorGameInfo;
+import com.R4B.api.dto.riot.SpectatorParticipant;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 import com.safjnest.lol.service.MasteryService;
 import com.safjnest.lol.service.RankService;
 import com.safjnest.lol.service.SummonerService;
@@ -38,9 +45,7 @@ import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
-import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -48,21 +53,9 @@ import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.HttpUtils;
 import com.safjnest.utils.SafJNest;
-import com.safjnest.utils.SettingsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import no.stelar7.api.r4j.basic.APICredentials;
-import no.stelar7.api.r4j.basic.calling.DataCall;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.cache.impl.EmptyCacheProvider;
-import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
-
 
 /**
  * This class is used to handle all the League of Legends related stuff
@@ -72,8 +65,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
  public class LeagueHandler {
 
-    private static R4J riotApi;
-
     private static String patch;
 
     private static String runesURL;
@@ -82,9 +73,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     private static ArrayList<Augment> augments = new ArrayList<>();
 
     static {
-
-        LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
-        DataCall.setCacheProvider(EmptyCacheProvider.INSTANCE);
+        RiotGateway.initialize();
         LeagueHandler.patch = PatchUtils.getPatch() + ".1";
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
@@ -102,10 +91,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static ArrayList<Augment> getAugments() {
         return augments;
-    }
-
-    public static R4J getRiotApi(){
-        return riotApi;
     }
 
     public static String convertSpellToId(String name) {
@@ -256,20 +241,11 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 //   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███
 //                                                                                              ███    ███
 
-
     public static String getFormattedSummonerName(Summoner s) {
         if (s.riotId() != null && !s.riotId().isBlank()) return s.riotId();
         String dbName = MongoDB.getSummonerNameById(s.puuid(), s.region());
         if (dbName != null) return dbName;
         RiotAccount account = SummonerService.getRiotAccount(s.puuid(), s.region());
-        if (account == null) return "";
-        return account.getName() + "#" + account.getTag();
-    }
-
-    public static String getFormattedSummonerName(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s) {
-        String dbName = MongoDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
-        if (dbName != null) return dbName;
-        RiotAccount account = SummonerService.getRiotAccountFromSummoner(s);
         if (account == null) return "";
         return account.getName() + "#" + account.getTag();
     }
@@ -315,7 +291,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         String tag = "";
         if (!args.contains("#")) {
             name = args;
-            tag = LeagueShardUtils.getRegionCode(guild.getLeagueShard(event.getChannel().getId()));
+            tag = LeagueShard.getRegionCode(guild.getLeagueShard(event.getChannel().getId()));
         } else {
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
@@ -327,7 +303,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
         GuildData guild = event.isFromGuild() ? GuildCache.getGuildOrPut(event.getGuild().getId()) : null;
-
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
 
@@ -351,7 +326,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         if (s != null) return s;
 
         String summoner = event.getOption("summoner").getAsString().replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
-        String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShardUtils.getRegionCode(shard);
+        String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShard.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
         String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
@@ -411,7 +386,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     private static String formatStatsByRank(Rank rank) {
-        if (rank.tier() == no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType.UNRANKED) return "";
+        if (rank.tier() == com.R4B.lol.TierDivisionType.UNRANKED) return "";
         int wins = rank.wins();
         int losses = rank.losses();
         int games = wins + losses;
@@ -434,7 +409,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
-        if (GameQueueTypeUtils.isCherry(type)) {
+        if (GameQueueType.isCherry(type)) {
             type = GameQueueType.RANKED_SOLO_5X5;
         }
         LeagueEntry def = null;
@@ -618,8 +593,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 //  ▄█████████▀    ███    ███   ███    █▀   ▀██████▀    ██████████   ███    ███  ▀█████▀
 //                 ███    ███                                        ███    ███
 
-
-
     public static String getBraveryBuildJSON(int level, String[] roles, String[] champions) {
         try {
             URL url = new URI("https://api2.ultimate-bravery.net/bo/api/ultimate-bravery/v1/classic/dataset").toURL();
@@ -678,6 +651,5 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 //     ▄█    ███   ███        ███▌    ▄ ███      ███
 //   ▄████████▀   ▄████▀      █████▄▄██ █▀      ▄████▀
 //                            ▀
-
 
 }

@@ -1,14 +1,12 @@
 package com.safjnest.lol.champion;
 
-import com.safjnest.lol.utils.NumberUtils;
-
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.riot.Item;
+import com.R4B.lol.*;
 
-import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -108,34 +106,33 @@ public record BuildSignature(
     }
 
     public String toCoreKey() {
-        String raw = BuildUtils.joinInts(starter) + "|" + suppItem + "|" + BuildUtils.joinInts(core);
-        return BuildUtils.toBase64(raw);
+        String raw = BuildValues.joinInts(starter) + "|" + suppItem + "|" + BuildValues.joinInts(core);
+        return BuildValues.toBase64(raw);
     }
 
     public String toKey() {
-        String raw = BuildUtils.joinInts(starter) + "|" + boots + "|" + suppItem + "|"
-                + BuildUtils.joinInts(core) + "|" + BuildUtils.joinInts(fullBuild) + "|"
-                + BuildUtils.joinInts(spellOrder) + "|" + BuildUtils.joinInts(prismatics) + "|"
-                + BuildUtils.joinInts(augments) + "|" + BuildUtils.joinInts(summonerSpells);
-        return BuildUtils.toBase64(raw);
+        String raw = BuildValues.joinInts(starter) + "|" + boots + "|" + suppItem + "|"
+                + BuildValues.joinInts(core) + "|" + BuildValues.joinInts(fullBuild) + "|"
+                + BuildValues.joinInts(spellOrder) + "|" + BuildValues.joinInts(prismatics) + "|"
+                + BuildValues.joinInts(augments) + "|" + BuildValues.joinInts(summonerSpells);
+        return BuildValues.toBase64(raw);
     }
 
     public static BuildSignature decode(String key) {
-        String[] parts = BuildUtils.fromBase64(key).split("\\|", -1);
+        String[] parts = BuildValues.fromBase64(key).split("\\|", -1);
         List<Integer> emptySkillOrder = new ArrayList<>(18);
         for (int level = 0; level < 18; level++) emptySkillOrder.add(0);
         return new BuildSignature(
-                parts.length > 0 ? BuildUtils.parseDashList(parts[0]) : List.of(),
+                parts.length > 0 ? BuildValues.parseDashList(parts[0]) : List.of(),
                 NumberUtils.parseInt(parts[1]),
                 NumberUtils.parseInt(parts[2]),
-                parts.length > 3 ? BuildUtils.parseDashList(parts[3]) : List.of(),
-                parts.length > 4 ? BuildUtils.parseDashList(parts[4]) : List.of(),
+                parts.length > 3 ? BuildValues.parseDashList(parts[3]) : List.of(),
+                parts.length > 4 ? BuildValues.parseDashList(parts[4]) : List.of(),
                 parts.length > 5 ? decodeSpellOrderSegment(parts[5]) : emptySkillOrder,
-                parts.length > 6 ? BuildUtils.parseDashList(parts[6]) : List.of(),
-                parts.length > 7 ? BuildUtils.parseDashList(parts[7]) : List.of(),
-                parts.length > 8 ? BuildUtils.parseDashList(parts[8]) : List.of());
+                parts.length > 6 ? BuildValues.parseDashList(parts[6]) : List.of(),
+                parts.length > 7 ? BuildValues.parseDashList(parts[7]) : List.of(),
+                parts.length > 8 ? BuildValues.parseDashList(parts[8]) : List.of());
     }
-
 
     /** Supports dash-separated ints or legacy 18-digit string without separators. */
     private static List<Integer> decodeSpellOrderSegment(String segment) {
@@ -145,7 +142,7 @@ public record BuildSignature(
             return emptySkillOrder;
         }
         if (segment.contains("-")) {
-            List<Integer> skillOrder = new ArrayList<>(BuildUtils.parseDashList(segment));
+            List<Integer> skillOrder = new ArrayList<>(BuildValues.parseDashList(segment));
             while (skillOrder.size() < 18) skillOrder.add(0);
             return skillOrder.size() > 18
                     ? new ArrayList<>(skillOrder.subList(0, 18))
@@ -195,7 +192,7 @@ public record BuildSignature(
             genericItem = id;
         }
 
-        if (trinket == null && (filter == null || !GameQueueTypeUtils.isCherry(filter.queue())))
+        if (trinket == null && (filter == null || !GameQueueType.isCherry(filter.queue())))
             trinket = 3340;
 
         List<Integer> result = new ArrayList<>();

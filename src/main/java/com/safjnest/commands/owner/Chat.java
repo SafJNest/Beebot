@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
-
 public class Chat extends Command {
 
     public Chat(){

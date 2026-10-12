@@ -1,18 +1,17 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.r4j.RiotGateway;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.R4B.api.dto.riot.Item;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.api.dto.riot.StaticSummonerSpell;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.JsonCodec;
-
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
-import no.stelar7.api.r4j.pojo.lol.staticdata.summonerspell.StaticSummonerSpell;
 
 public final class StaticDataService {
 
@@ -24,7 +23,7 @@ public final class StaticDataService {
     }
 
     public static Map<Integer, Item> getItems() {
-        return get(RedisKey.DDRAGON_ITEMS, ITEMS_TYPE, () -> LeagueHandler.getRiotApi().getDDragonAPI().getItems());
+        return get(RedisKey.DDRAGON_ITEMS, ITEMS_TYPE, () -> RiotGateway.items());
     }
 
     public static Item getItem(int id) {
@@ -33,7 +32,7 @@ public final class StaticDataService {
 
     public static Map<Integer, StaticChampion> getChampions() {
         return get(RedisKey.DDRAGON_CHAMPIONS, CHAMPIONS_TYPE,
-            () -> LeagueHandler.getRiotApi().getDDragonAPI().getChampions());
+            () -> RiotGateway.champions());
     }
 
     public static StaticChampion getChampion(int id) {
@@ -42,7 +41,7 @@ public final class StaticDataService {
 
     public static Map<Integer, StaticSummonerSpell> getSummonerSpells() {
         return get(RedisKey.DDRAGON_SUMMONER_SPELLS, SUMMONER_SPELLS_TYPE,
-            () -> LeagueHandler.getRiotApi().getDDragonAPI().getSummonerSpells());
+            () -> RiotGateway.summonerSpells());
     }
 
     public static StaticSummonerSpell getSummonerSpell(int id) {

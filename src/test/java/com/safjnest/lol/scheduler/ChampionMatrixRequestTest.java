@@ -1,5 +1,7 @@
 package com.safjnest.lol.scheduler;
 
+import com.R4B.api.dto.Filter;
+import com.safjnest.lol.service.FilterDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -13,8 +15,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-
-import com.safjnest.lol.model.Filter;
 
 public class ChampionMatrixRequestTest {
 
@@ -87,6 +87,6 @@ public class ChampionMatrixRequestTest {
     }
 
     private static Filter buildFilter(int champion) {
-        return new Filter().setChampion(champion);
+        return FilterDefaults.create().setChampion(champion);
     }
 }

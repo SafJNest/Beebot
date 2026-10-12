@@ -1,5 +1,6 @@
 package com.safjnest.lol.scheduler;
 
+import com.safjnest.lol.service.FilterDefaults;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -7,8 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.GameQueueType;
+import com.R4B.lol.LeagueShard;
 import com.safjnest.lol.queue.QueueHandler;
 import com.hive.scheduler.AbstractScheduler;
 import com.hive.job.Job;
@@ -19,9 +22,6 @@ import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType> {
 
@@ -60,7 +60,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         boolean rebuild
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null) return NOT_SCHEDULED;
-        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        Filter requestFilter = FilterDefaults.fromStateKey(filter.toStateKey());
         String key = "profile-records:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile records " + (rebuild ? "rebuild " : "") + "puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, JobPriority.NORMAL, key, name, Boolean.class,
@@ -121,7 +121,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         if (filter == null || filter.champion() == 0) return VOID;
         if (!statsMissing && !buildMissing) return VOID;
 
-        Filter snapshot = Filter.fromStateKey(filter.toStateKey());
+        Filter snapshot = FilterDefaults.fromStateKey(filter.toStateKey());
         if (statsMissing) return startChampionStatistics(snapshot, buildMissing);
         return startChampionBuild(snapshot).thenApply(ignored -> null);
     }
@@ -142,7 +142,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     }
 
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
-        String patch = new Filter().patch();
+        String patch = FilterDefaults.create().patch();
         String key = "champion-data-refresh:" + patch;
         return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key,
             "champion data refresh patch=" + patch, Void.class, ignored -> {
@@ -231,7 +231,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         if (summoner == null || summoner.puuid() == null || summoner.puuid().isBlank() || filter == null)
             return NOT_SCHEDULED;
 
-        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        Filter requestFilter = FilterDefaults.fromStateKey(filter.toStateKey());
         String puuid = summoner.puuid();
         LeagueShard shard = summoner.region();
         String key = "profile-statistics:" + puuid + ":" + requestFilter.toSummonerKey();
@@ -249,7 +249,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return NOT_SCHEDULED;
 
-        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        Filter requestFilter = FilterDefaults.fromStateKey(filter.toStateKey());
         String key = "profile-matchups:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile matchups puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, priority, key, name, Boolean.class,
@@ -264,7 +264,7 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     ) {
         if (puuid == null || puuid.isBlank() || shard == null || filter == null)
             return NOT_SCHEDULED;
-        Filter requestFilter = Filter.fromStateKey(filter.toStateKey());
+        Filter requestFilter = FilterDefaults.fromStateKey(filter.toStateKey());
         String key = "profile-activity:" + puuid + ":" + requestFilter.toSummonerKey();
         String name = "profile activity puuid=" + puuid;
         return submit(DatabaseWorkerType.PROFILE, priority, key, name, Boolean.class,

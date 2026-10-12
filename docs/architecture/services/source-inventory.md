@@ -1,12 +1,14 @@
 # Inventario dei sorgenti per file
 
-Stato: inventario baseline del 2026-10-10 (`cef023bc`), con destinazioni Hive
-aggiornate da ADR-0017. I conteggi storici non includono i nuovi file core;
-le altre destinazioni restano proposte. Le righe delle code riportano il
+Stato: inventario storico del 2026-10-10 (`cef023bc`), con tranche Hive
+ADR-0017 e R4B ADR-0018. I conteggi storici non sono un census corrente.
+Il [manifest operativo R4B](r4b-inventory.md) descrive endpoint, tipi SDK,
+consumatori e conversioni della tranche; le future separazioni restano proposte. Le righe delle code riportano il
 percorso attuale dopo il port, mantenendo il census originale come riferimento.
 
 Elenco completo dei 424 file Java principali restituiti da CodeGraph aggiornato.
-I percorsi sono quelli attuali; nessun file è stato spostato. Destinazioni e
+I percorsi vengono riallineati alle estrazioni accettate; il census numerico
+resta storico e non comprende tutti i nuovi adapter/contratti di acquisizione. Destinazioni e
 azioni sono una proposta di ownership per famiglia, non una verifica funzionale
 di ogni metodo. `Da qualificare` richiede un consumatore o una decisione prima
 di condividere il tipo. `Comune DTO + split` condivide la forma finale, non
@@ -215,89 +217,89 @@ nell'inventario per area, non sono destinati al comune per default.
 | [lol/champion/ChampionBuildProvider.java](../../../src/main/java/com/safjnest/lol/champion/ChampionBuildProvider.java) | Spring | Provider/record/firma di calcolo build o statistiche |
 | [lol/champion/ChampionStatsData.java](../../../src/main/java/com/safjnest/lol/champion/ChampionStatsData.java) | Spring | Provider/record/firma di calcolo build o statistiche |
 | [lol/champion/ChampionStatsProvider.java](../../../src/main/java/com/safjnest/lol/champion/ChampionStatsProvider.java) | Spring | Provider/record/firma di calcolo build o statistiche |
-| [lol/champion/RuneSignature.java](../../../src/main/java/com/safjnest/lol/champion/RuneSignature.java) | Comune DTO + split | Forma rune esposta da Build/LiveGame; parsing/key nel produttore |
+| [com/R4B/AB/DTO/RuneSignature.java](../../../src/main/java/com/R4B/AB/DTO/RuneSignature.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/message/LeagueEventHandler.java](../../../src/main/java/com/safjnest/lol/message/LeagueEventHandler.java) | Bbot | Presentazione/adapter Discord invariato |
 | [lol/message/LeagueMessage.java](../../../src/main/java/com/safjnest/lol/message/LeagueMessage.java) | Bbot | Presentazione/adapter Discord invariato |
 | [lol/message/LeagueMessageParameter.java](../../../src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java) | Bbot | Presentazione/adapter Discord invariato |
 | [lol/message/LeagueMessageType.java](../../../src/main/java/com/safjnest/lol/message/LeagueMessageType.java) | Bbot | Presentazione/adapter Discord invariato |
-| [lol/model/ActivityFilter.java](../../../src/main/java/com/safjnest/lol/model/ActivityFilter.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/ApiResult.java](../../../src/main/java/com/safjnest/lol/model/ApiResult.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/ActivityFilter.java](../../../src/main/java/com/R4B/AB/DTO/ActivityFilter.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/ApiResult.java](../../../src/main/java/com/R4B/AB/DTO/ApiResult.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/Augment.java](../../../src/main/java/com/safjnest/lol/model/Augment.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
-| [lol/model/Build.java](../../../src/main/java/com/safjnest/lol/model/Build.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/ChampionIndexable.java](../../../src/main/java/com/safjnest/lol/model/ChampionIndexable.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/ChampionStatistics.java](../../../src/main/java/com/safjnest/lol/model/ChampionStatistics.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/ChampionTierList.java](../../../src/main/java/com/safjnest/lol/model/ChampionTierList.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/Build.java](../../../src/main/java/com/R4B/AB/DTO/Build.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/ChampionIndexable.java](../../../src/main/java/com/R4B/AB/DTO/ChampionIndexable.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/ChampionStatistics.java](../../../src/main/java/com/R4B/AB/DTO/ChampionStatistics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/ChampionTierList.java](../../../src/main/java/com/R4B/AB/DTO/ChampionTierList.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/ChampionTierSource.java](../../../src/main/java/com/safjnest/lol/model/ChampionTierSource.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/ChampionView.java](../../../src/main/java/com/safjnest/lol/model/ChampionView.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/Filter.java](../../../src/main/java/com/safjnest/lol/model/Filter.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
+| [com/R4B/AB/DTO/ChampionView.java](../../../src/main/java/com/R4B/AB/DTO/ChampionView.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/Filter.java](../../../src/main/java/com/R4B/AB/DTO/Filter.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/PlayerChampionStats.java](../../../src/main/java/com/safjnest/lol/model/PlayerChampionStats.java) | Bbot | Aggregato usato per presentazione bot; qualificare calcolo remoto |
-| [lol/model/ProfileIndexable.java](../../../src/main/java/com/safjnest/lol/model/ProfileIndexable.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/ResponseMetadata.java](../../../src/main/java/com/safjnest/lol/model/ResponseMetadata.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/ProfileIndexable.java](../../../src/main/java/com/R4B/AB/DTO/ProfileIndexable.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/ResponseMetadata.java](../../../src/main/java/com/R4B/AB/DTO/ResponseMetadata.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/competitive/CompetitiveEntry.java](../../../src/main/java/com/safjnest/lol/model/competitive/CompetitiveEntry.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/leaderboard/LeaderboardDistribution.java](../../../src/main/java/com/safjnest/lol/model/leaderboard/LeaderboardDistribution.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/leaderboard/LeaderboardPage.java](../../../src/main/java/com/safjnest/lol/model/leaderboard/LeaderboardPage.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/LiveGame.java](../../../src/main/java/com/safjnest/lol/model/match/LiveGame.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/match/Match.java](../../../src/main/java/com/safjnest/lol/model/match/Match.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/match/MatchOrder.java](../../../src/main/java/com/safjnest/lol/model/match/MatchOrder.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/MatchPage.java](../../../src/main/java/com/safjnest/lol/model/match/MatchPage.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/MatchResult.java](../../../src/main/java/com/safjnest/lol/model/match/MatchResult.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/Participant.java](../../../src/main/java/com/safjnest/lol/model/match/Participant.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/RankHistory.java](../../../src/main/java/com/safjnest/lol/model/match/RankHistory.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/RankHistoryMatch.java](../../../src/main/java/com/safjnest/lol/model/match/RankHistoryMatch.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/match/RankHistoryMetadata.java](../../../src/main/java/com/safjnest/lol/model/match/RankHistoryMetadata.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/RankHistoryQuery.java](../../../src/main/java/com/safjnest/lol/model/match/RankHistoryQuery.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/RankHistoryView.java](../../../src/main/java/com/safjnest/lol/model/match/RankHistoryView.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/match/RankProgress.java](../../../src/main/java/com/safjnest/lol/model/match/RankProgress.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/record/ProfileRecord.java](../../../src/main/java/com/safjnest/lol/model/record/ProfileRecord.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/record/ProfileRecordPage.java](../../../src/main/java/com/safjnest/lol/model/record/ProfileRecordPage.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/record/RecordMetric.java](../../../src/main/java/com/safjnest/lol/model/record/RecordMetric.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/record/RecordOrder.java](../../../src/main/java/com/safjnest/lol/model/record/RecordOrder.java) | Da qualificare | Parametro interno: comune solo se richiesto dal confine |
-| [lol/model/record/RecordOwner.java](../../../src/main/java/com/safjnest/lol/model/record/RecordOwner.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/record/RecordPage.java](../../../src/main/java/com/safjnest/lol/model/record/RecordPage.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/record/RecordsOverview.java](../../../src/main/java/com/safjnest/lol/model/record/RecordsOverview.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/leaderboard/LeaderboardDistribution.java](../../../src/main/java/com/R4B/AB/DTO/leaderboard/LeaderboardDistribution.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/leaderboard/LeaderboardPage.java](../../../src/main/java/com/R4B/AB/DTO/leaderboard/LeaderboardPage.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/LiveGame.java](../../../src/main/java/com/R4B/AB/DTO/match/LiveGame.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/Match.java](../../../src/main/java/com/R4B/AB/DTO/match/Match.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/LOL/MatchOrder.java](../../../src/main/java/com/R4B/LOL/MatchOrder.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/MatchPage.java](../../../src/main/java/com/R4B/AB/DTO/match/MatchPage.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/MatchResult.java](../../../src/main/java/com/R4B/AB/DTO/match/MatchResult.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/Participant.java](../../../src/main/java/com/R4B/AB/DTO/match/Participant.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/RankHistory.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistory.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/RankHistoryMatch.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistoryMatch.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/RankHistoryMetadata.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistoryMetadata.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/RankHistoryQuery.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistoryQuery.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/LOL/RankHistoryView.java](../../../src/main/java/com/R4B/LOL/RankHistoryView.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/match/RankProgress.java](../../../src/main/java/com/R4B/AB/DTO/match/RankProgress.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/record/ProfileRecord.java](../../../src/main/java/com/R4B/AB/DTO/record/ProfileRecord.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/record/ProfileRecordPage.java](../../../src/main/java/com/R4B/AB/DTO/record/ProfileRecordPage.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/LOL/RecordMetric.java](../../../src/main/java/com/R4B/LOL/RecordMetric.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/LOL/RecordOrder.java](../../../src/main/java/com/R4B/LOL/RecordOrder.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/LOL/RecordOwner.java](../../../src/main/java/com/R4B/LOL/RecordOwner.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/record/RecordPage.java](../../../src/main/java/com/R4B/AB/DTO/record/RecordPage.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/record/RecordsOverview.java](../../../src/main/java/com/R4B/AB/DTO/record/RecordsOverview.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/rune/PageRunes.java](../../../src/main/java/com/safjnest/lol/model/rune/PageRunes.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
 | [lol/model/rune/Rune.java](../../../src/main/java/com/safjnest/lol/model/rune/Rune.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
-| [lol/model/statistics/CanonicalQueue.java](../../../src/main/java/com/safjnest/lol/model/statistics/CanonicalQueue.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
+| [com/R4B/LOL/CanonicalQueue.java](../../../src/main/java/com/R4B/LOL/CanonicalQueue.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/statistics/ChampionStatsDocument.java](../../../src/main/java/com/safjnest/lol/model/statistics/ChampionStatsDocument.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/ProfileActivity.java](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileActivity.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/statistics/ProfileMatchupLeaf.java](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileMatchupLeaf.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/statistics/ProfileMatchups.java](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileMatchups.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/statistics/ProfileStatistics.java](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
+| [com/R4B/AB/DTO/statistics/ProfileActivity.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileActivity.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/statistics/ProfileMatchupLeaf.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileMatchupLeaf.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/statistics/ProfileMatchups.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileMatchups.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/statistics/ProfileStatistics.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileStatistics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/statistics/ProfileStatisticsRow.java](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileStatisticsRow.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [lol/model/statistics/shared/ChampionLeafStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ChampionLeafStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [lol/model/statistics/shared/ChampionNode.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ChampionNode.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [lol/model/statistics/shared/ChampionStatsScope.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ChampionStatsScope.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/shared/LeafStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/LeafStats.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/statistics/shared/LeafStats.java](../../../src/main/java/com/R4B/AB/DTO/statistics/shared/LeafStats.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/statistics/shared/MatchupStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/MatchupStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/shared/ProfileLeafStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ProfileLeafStats.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
+| [com/R4B/AB/DTO/statistics/shared/ProfileLeafStats.java](../../../src/main/java/com/R4B/AB/DTO/statistics/shared/ProfileLeafStats.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/model/statistics/shared/TrendStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/TrendStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [lol/model/statistics/shared/WinLossStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/WinLossStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/status/BotStatus.java](../../../src/main/java/com/safjnest/lol/model/status/BotStatus.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/status/BotStatus.java](../../../src/main/java/com/R4B/AB/DTO/status/BotStatus.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/hive/status/JobProgress.java](../../../src/main/java/com/hive/status/JobProgress.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [com/hive/status/JobStatus.java](../../../src/main/java/com/hive/status/JobStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
-| [lol/model/status/JvmMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/JvmMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/LeagueMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/LeagueMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoCollectionPerformance.java](../../../src/main/java/com/safjnest/lol/model/status/MongoCollectionPerformance.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoHottestCollection.java](../../../src/main/java/com/safjnest/lol/model/status/MongoHottestCollection.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoMemoryMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/MongoMemoryMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/MongoMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoOperationRates.java](../../../src/main/java/com/safjnest/lol/model/status/MongoOperationRates.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoOperationSample.java](../../../src/main/java/com/safjnest/lol/model/status/MongoOperationSample.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoOperationsMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/MongoOperationsMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoPerformanceMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/MongoPerformanceMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/status/MongoSlowOperation.java](../../../src/main/java/com/safjnest/lol/model/status/MongoSlowOperation.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/status/JvmMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/JvmMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/LeagueMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/LeagueMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoCollectionPerformance.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoCollectionPerformance.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoHottestCollection.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoHottestCollection.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoMemoryMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoMemoryMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoOperationRates.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoOperationRates.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoOperationSample.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoOperationSample.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoOperationsMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoOperationsMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoPerformanceMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoPerformanceMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/status/MongoSlowOperation.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoSlowOperation.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/hive/status/QueueStatus.java](../../../src/main/java/com/hive/status/QueueStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
-| [lol/model/status/RedisMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/RedisMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/status/RedisMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/RedisMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/hive/status/RunStatus.java](../../../src/main/java/com/hive/status/RunStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [com/hive/status/SchedulerStatus.java](../../../src/main/java/com/hive/status/SchedulerStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
-| [lol/model/status/SystemMetrics.java](../../../src/main/java/com/safjnest/lol/model/status/SystemMetrics.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
+| [com/R4B/AB/DTO/status/SystemMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/SystemMetrics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/hive/status/WorkerStatus.java](../../../src/main/java/com/hive/status/WorkerStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
-| [lol/model/summoner/Mastery.java](../../../src/main/java/com/safjnest/lol/model/summoner/Mastery.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/summoner/Rank.java](../../../src/main/java/com/safjnest/lol/model/summoner/Rank.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/summoner/Summoner.java](../../../src/main/java/com/safjnest/lol/model/summoner/Summoner.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/summoner/SummonerLeaderboard.java](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerLeaderboard.java) | Comune DTO candidato | Dati o parametro del contratto; verificare chiusura dei tipi |
-| [lol/model/summoner/SummonerOverview.java](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerOverview.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
-| [lol/model/summoner/SummonerView.java](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerView.java) | Comune DTO + split | Forma finale comune; isolare metodi operativi/SDK/lookup |
+| [com/R4B/AB/DTO/summoner/Mastery.java](../../../src/main/java/com/R4B/AB/DTO/summoner/Mastery.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/summoner/Rank.java](../../../src/main/java/com/R4B/AB/DTO/summoner/Rank.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/summoner/Summoner.java](../../../src/main/java/com/R4B/AB/DTO/summoner/Summoner.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/summoner/SummonerLeaderboard.java](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerLeaderboard.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/summoner/SummonerOverview.java](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerOverview.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
+| [com/R4B/AB/DTO/summoner/SummonerView.java](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerView.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [lol/queue/QueueHandler.java](../../../src/main/java/com/safjnest/lol/queue/QueueHandler.java) | Applicazione | Composizione e facade; delega a Hive, bootstrap esplicito |
 | [com/hive/Registry.java](../../../src/main/java/com/hive/Registry.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/Router.java](../../../src/main/java/com/hive/Router.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
@@ -336,10 +338,10 @@ nell'inventario per area, non sono destinati al comune per default.
 | [lol/utils/BuildUtils.java](../../../src/main/java/com/safjnest/lol/utils/BuildUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
 | [lol/utils/ChampionBuildTimelineUtils.java](../../../src/main/java/com/safjnest/lol/utils/ChampionBuildTimelineUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [lol/utils/ChampionUtils.java](../../../src/main/java/com/safjnest/lol/utils/ChampionUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
-| [lol/utils/FilterCodec.java](../../../src/main/java/com/safjnest/lol/utils/FilterCodec.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
+| [com/R4B/LOL/FilterCodec.java](../../../src/main/java/com/R4B/LOL/FilterCodec.java) | R4B estratto | Helper puro unico; consumatori migrati |
 | [lol/utils/GameQueueTypeUtils.java](../../../src/main/java/com/safjnest/lol/utils/GameQueueTypeUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
 | [lol/utils/ItemUtils.java](../../../src/main/java/com/safjnest/lol/utils/ItemUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/KdaUtils.java](../../../src/main/java/com/safjnest/lol/utils/KdaUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
+| [com/R4B/LOL/KdaUtils.java](../../../src/main/java/com/R4B/LOL/KdaUtils.java) | R4B estratto | Helper puro unico; consumatori migrati |
 | [lol/utils/LaneTypeUtils.java](../../../src/main/java/com/safjnest/lol/utils/LaneTypeUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
 | [lol/utils/LeagueConstants.java](../../../src/main/java/com/safjnest/lol/utils/LeagueConstants.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
 | [lol/utils/LeagueMessageUtils.java](../../../src/main/java/com/safjnest/lol/utils/LeagueMessageUtils.java) | Bbot + split | Rendering bot; dipendenze dati da remotizzare |
@@ -347,7 +349,7 @@ nell'inventario per area, non sono destinati al comune per default.
 | [lol/utils/MatchMemoryUtils.java](../../../src/main/java/com/safjnest/lol/utils/MatchMemoryUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [lol/utils/MatchUtils.java](../../../src/main/java/com/safjnest/lol/utils/MatchUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [lol/utils/MatchupTimelineUtils.java](../../../src/main/java/com/safjnest/lol/utils/MatchupTimelineUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/NumberUtils.java](../../../src/main/java/com/safjnest/lol/utils/NumberUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
+| [com/R4B/LOL/NumberUtils.java](../../../src/main/java/com/R4B/LOL/NumberUtils.java) | R4B estratto | Helper puro unico; consumatori migrati |
 | [lol/utils/OPTUtils.java](../../../src/main/java/com/safjnest/lol/utils/OPTUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [lol/utils/ParticipantBuildCodec.java](../../../src/main/java/com/safjnest/lol/utils/ParticipantBuildCodec.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [lol/utils/PatchUtils.java](../../../src/main/java/com/safjnest/lol/utils/PatchUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
@@ -446,7 +448,7 @@ nell'inventario per area, non sono destinati al comune per default.
 | [spring/controller/ProfileIndexableController.java](../../../src/main/java/com/safjnest/spring/controller/ProfileIndexableController.java) | Spring | Server/controller/configurazione/parser/mapping HTTP |
 | [spring/controller/RecordsController.java](../../../src/main/java/com/safjnest/spring/controller/RecordsController.java) | Spring | Server/controller/configurazione/parser/mapping HTTP |
 | [spring/controller/StatusController.java](../../../src/main/java/com/safjnest/spring/controller/StatusController.java) | Spring | Server/controller/configurazione/parser/mapping HTTP |
-| [spring/dto/LolApiError.java](../../../src/main/java/com/safjnest/spring/dto/LolApiError.java) | Comune DTO candidato | Schema errore senza Spring; richiede sincronizzazione ADR |
+| [com/R4B/AB/DTO/LolApiError.java](../../../src/main/java/com/R4B/AB/DTO/LolApiError.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 
 ## sql — 8 file
 
@@ -517,7 +519,7 @@ di indipendenza operativa o chiusura transitive del contratto.
 | `ActivityFilter.java` | — |
 | `ApiResult.java` | — |
 | `Augment.java` | `com.safjnest.lol.utils.AugmentUtils` |
-| `Build.java` | `com.safjnest.lol.champion.RuneSignature`; `com.safjnest.lol.utils.BuildUtils`; `com.safjnest.utils.JsonCodec` |
+| `Build.java` | `com.R4B.AB.DTO.RuneSignature`; `com.safjnest.lol.utils.BuildUtils`; `com.safjnest.utils.JsonCodec` |
 | `ChampionIndexable.java` | `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `ChampionStatistics.java` | `com.safjnest.utils.JsonCodec`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `ChampionTierList.java` | `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
@@ -530,7 +532,7 @@ di indipendenza operativa o chiusura transitive del contratto.
 | `competitive/CompetitiveEntry.java` | `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `leaderboard/LeaderboardDistribution.java` | — |
 | `leaderboard/LeaderboardPage.java` | — |
-| `match/LiveGame.java` | `com.safjnest.lol.champion.RuneSignature`; `com.safjnest.lol.utils.ChampionUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameModeType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameType`; `no.stelar7.api.r4j.basic.constants.types.lol.MapType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.pojo.lol.shared.BannedChampion`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant` |
+| `match/LiveGame.java` | `com.R4B.AB.DTO.RuneSignature`; `com.safjnest.lol.utils.ChampionUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameModeType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameType`; `no.stelar7.api.r4j.basic.constants.types.lol.MapType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.pojo.lol.shared.BannedChampion`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant` |
 | `match/Match.java` | `org.json.JSONObject`; `com.safjnest.nosql.AbstractEntity`; `com.safjnest.lol.tracker.Tracker`; `com.safjnest.lol.utils.NumberUtils`; `com.safjnest.lol.utils.PatchUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType`; `no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch` |
 | `match/MatchOrder.java` | — |
 | `match/MatchPage.java` | — |
@@ -604,3 +606,147 @@ di indipendenza operativa o chiusura transitive del contratto.
 - Nessun alias o seconda copia del core in `lol.queue`; queue audio esclusa.
 
 La mappa funzionale dei chiamanti e test è in [job-queue.md](job-queue.md).
+
+## Sorgenti R4B correnti
+
+Il manifest aggiuntivo elenca i sorgenti canonici del nuovo artifact; il
+census storico sopra non viene presentato come conteggio attuale.
+
+| File canonico | Responsabilità |
+|---|---|
+| [com/R4B/AB/DTO/ActivityFilter.java](../../../src/main/java/com/R4B/AB/DTO/ActivityFilter.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ApiResult.java](../../../src/main/java/com/R4B/AB/DTO/ApiResult.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/Build.java](../../../src/main/java/com/R4B/AB/DTO/Build.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ChampionIndexable.java](../../../src/main/java/com/R4B/AB/DTO/ChampionIndexable.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ChampionStatistics.java](../../../src/main/java/com/R4B/AB/DTO/ChampionStatistics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ChampionTierList.java](../../../src/main/java/com/R4B/AB/DTO/ChampionTierList.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ChampionView.java](../../../src/main/java/com/R4B/AB/DTO/ChampionView.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/Filter.java](../../../src/main/java/com/R4B/AB/DTO/Filter.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/LolApiError.java](../../../src/main/java/com/R4B/AB/DTO/LolApiError.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ProfileIndexable.java](../../../src/main/java/com/R4B/AB/DTO/ProfileIndexable.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/ResponseMetadata.java](../../../src/main/java/com/R4B/AB/DTO/ResponseMetadata.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/RuneSignature.java](../../../src/main/java/com/R4B/AB/DTO/RuneSignature.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/TransportJson.java](../../../src/main/java/com/R4B/AB/DTO/TransportJson.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/leaderboard/LeaderboardDistribution.java](../../../src/main/java/com/R4B/AB/DTO/leaderboard/LeaderboardDistribution.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/leaderboard/LeaderboardPage.java](../../../src/main/java/com/R4B/AB/DTO/leaderboard/LeaderboardPage.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/LiveGame.java](../../../src/main/java/com/R4B/AB/DTO/match/LiveGame.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/Match.java](../../../src/main/java/com/R4B/AB/DTO/match/Match.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/MatchPage.java](../../../src/main/java/com/R4B/AB/DTO/match/MatchPage.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/MatchResult.java](../../../src/main/java/com/R4B/AB/DTO/match/MatchResult.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/Participant.java](../../../src/main/java/com/R4B/AB/DTO/match/Participant.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/RankHistory.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistory.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/RankHistoryMatch.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistoryMatch.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/RankHistoryMetadata.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistoryMetadata.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/RankHistoryQuery.java](../../../src/main/java/com/R4B/AB/DTO/match/RankHistoryQuery.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/match/RankProgress.java](../../../src/main/java/com/R4B/AB/DTO/match/RankProgress.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/record/ProfileRecord.java](../../../src/main/java/com/R4B/AB/DTO/record/ProfileRecord.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/record/ProfileRecordPage.java](../../../src/main/java/com/R4B/AB/DTO/record/ProfileRecordPage.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/record/RecordPage.java](../../../src/main/java/com/R4B/AB/DTO/record/RecordPage.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/record/RecordsOverview.java](../../../src/main/java/com/R4B/AB/DTO/record/RecordsOverview.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/riot/BannedChampion.java](../../../src/main/java/com/R4B/AB/DTO/riot/BannedChampion.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/BaseSpellData.java](../../../src/main/java/com/R4B/AB/DTO/riot/BaseSpellData.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Block.java](../../../src/main/java/com/R4B/AB/DTO/riot/Block.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/BlockItem.java](../../../src/main/java/com/R4B/AB/DTO/riot/BlockItem.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/ChampionBan.java](../../../src/main/java/com/R4B/AB/DTO/riot/ChampionBan.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/ChampionStats.java](../../../src/main/java/com/R4B/AB/DTO/riot/ChampionStats.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/DamageStats.java](../../../src/main/java/com/R4B/AB/DTO/riot/DamageStats.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Gold.java](../../../src/main/java/com/R4B/AB/DTO/riot/Gold.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Image.java](../../../src/main/java/com/R4B/AB/DTO/riot/Image.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Info.java](../../../src/main/java/com/R4B/AB/DTO/riot/Info.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/InventoryDataStats.java](../../../src/main/java/com/R4B/AB/DTO/riot/InventoryDataStats.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Item.java](../../../src/main/java/com/R4B/AB/DTO/riot/Item.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/LeagueEntry.java](../../../src/main/java/com/R4B/AB/DTO/riot/LeagueEntry.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/LeagueItem.java](../../../src/main/java/com/R4B/AB/DTO/riot/LeagueItem.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/LevelTip.java](../../../src/main/java/com/R4B/AB/DTO/riot/LevelTip.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/MatchParticipant.java](../../../src/main/java/com/R4B/AB/DTO/riot/MatchParticipant.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/MatchPerks.java](../../../src/main/java/com/R4B/AB/DTO/riot/MatchPerks.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/MatchTeam.java](../../../src/main/java/com/R4B/AB/DTO/riot/MatchTeam.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/MetaData.java](../../../src/main/java/com/R4B/AB/DTO/riot/MetaData.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/MiniSeries.java](../../../src/main/java/com/R4B/AB/DTO/riot/MiniSeries.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/ObjectiveStats.java](../../../src/main/java/com/R4B/AB/DTO/riot/ObjectiveStats.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Observer.java](../../../src/main/java/com/R4B/AB/DTO/riot/Observer.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Passive.java](../../../src/main/java/com/R4B/AB/DTO/riot/Passive.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/PerkSelection.java](../../../src/main/java/com/R4B/AB/DTO/riot/PerkSelection.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/PerkStyle.java](../../../src/main/java/com/R4B/AB/DTO/riot/PerkStyle.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Recommended.java](../../../src/main/java/com/R4B/AB/DTO/riot/Recommended.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/RiotAccount.java](../../../src/main/java/com/R4B/AB/DTO/riot/RiotAccount.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/RiotMatchData.java](../../../src/main/java/com/R4B/AB/DTO/riot/RiotMatchData.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/RiotTimelineData.java](../../../src/main/java/com/R4B/AB/DTO/riot/RiotTimelineData.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/Skin.java](../../../src/main/java/com/R4B/AB/DTO/riot/Skin.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/SpectatorGameCustomizationObject.java](../../../src/main/java/com/R4B/AB/DTO/riot/SpectatorGameCustomizationObject.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/SpectatorGameInfo.java](../../../src/main/java/com/R4B/AB/DTO/riot/SpectatorGameInfo.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/SpectatorParticipant.java](../../../src/main/java/com/R4B/AB/DTO/riot/SpectatorParticipant.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/SpectatorPerks.java](../../../src/main/java/com/R4B/AB/DTO/riot/SpectatorPerks.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/SpellVars.java](../../../src/main/java/com/R4B/AB/DTO/riot/SpellVars.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/StatPerk.java](../../../src/main/java/com/R4B/AB/DTO/riot/StatPerk.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/StaticChampion.java](../../../src/main/java/com/R4B/AB/DTO/riot/StaticChampion.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/StaticChampionSpell.java](../../../src/main/java/com/R4B/AB/DTO/riot/StaticChampionSpell.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/StaticChampionStats.java](../../../src/main/java/com/R4B/AB/DTO/riot/StaticChampionStats.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/StaticSummonerSpell.java](../../../src/main/java/com/R4B/AB/DTO/riot/StaticSummonerSpell.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/TimelineDamageData.java](../../../src/main/java/com/R4B/AB/DTO/riot/TimelineDamageData.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/TimelineFrame.java](../../../src/main/java/com/R4B/AB/DTO/riot/TimelineFrame.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/TimelineFrameEvent.java](../../../src/main/java/com/R4B/AB/DTO/riot/TimelineFrameEvent.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/TimelineParticipantFrame.java](../../../src/main/java/com/R4B/AB/DTO/riot/TimelineParticipantFrame.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/TimelineParticipantIdentity.java](../../../src/main/java/com/R4B/AB/DTO/riot/TimelineParticipantIdentity.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/riot/TimelinePosition.java](../../../src/main/java/com/R4B/AB/DTO/riot/TimelinePosition.java) | Dati acquisizione SDK indipendenti |
+| [com/R4B/AB/DTO/statistics/ProfileActivity.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileActivity.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/statistics/ProfileMatchupLeaf.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileMatchupLeaf.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/statistics/ProfileMatchups.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileMatchups.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/statistics/ProfileStatistics.java](../../../src/main/java/com/R4B/AB/DTO/statistics/ProfileStatistics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/statistics/shared/LeafStats.java](../../../src/main/java/com/R4B/AB/DTO/statistics/shared/LeafStats.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/statistics/shared/ProfileLeafStats.java](../../../src/main/java/com/R4B/AB/DTO/statistics/shared/ProfileLeafStats.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/BotStatus.java](../../../src/main/java/com/R4B/AB/DTO/status/BotStatus.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/JvmMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/JvmMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/LeagueMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/LeagueMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoCollectionPerformance.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoCollectionPerformance.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoHottestCollection.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoHottestCollection.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoMemoryMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoMemoryMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoOperationRates.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoOperationRates.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoOperationSample.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoOperationSample.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoOperationsMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoOperationsMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoPerformanceMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoPerformanceMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/MongoSlowOperation.java](../../../src/main/java/com/R4B/AB/DTO/status/MongoSlowOperation.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/RedisMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/RedisMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/status/SystemMetrics.java](../../../src/main/java/com/R4B/AB/DTO/status/SystemMetrics.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/summoner/Mastery.java](../../../src/main/java/com/R4B/AB/DTO/summoner/Mastery.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/summoner/Rank.java](../../../src/main/java/com/R4B/AB/DTO/summoner/Rank.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/summoner/Summoner.java](../../../src/main/java/com/R4B/AB/DTO/summoner/Summoner.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/summoner/SummonerLeaderboard.java](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerLeaderboard.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/summoner/SummonerOverview.java](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerOverview.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/AB/DTO/summoner/SummonerView.java](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerView.java) | Contratti finali, metadata/errori e componenti annidati |
+| [com/R4B/LOL/BuildValues.java](../../../src/main/java/com/R4B/LOL/BuildValues.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/BuildingType.java](../../../src/main/java/com/R4B/LOL/BuildingType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/CanonicalQueue.java](../../../src/main/java/com/R4B/LOL/CanonicalQueue.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/EventType.java](../../../src/main/java/com/R4B/LOL/EventType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/FilterCodec.java](../../../src/main/java/com/R4B/LOL/FilterCodec.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/GameModeType.java](../../../src/main/java/com/R4B/LOL/GameModeType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/GameQueueType.java](../../../src/main/java/com/R4B/LOL/GameQueueType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/GameType.java](../../../src/main/java/com/R4B/LOL/GameType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/KdaUtils.java](../../../src/main/java/com/R4B/LOL/KdaUtils.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/KillType.java](../../../src/main/java/com/R4B/LOL/KillType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/LaneType.java](../../../src/main/java/com/R4B/LOL/LaneType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/LeagueShard.java](../../../src/main/java/com/R4B/LOL/LeagueShard.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/LevelUpType.java](../../../src/main/java/com/R4B/LOL/LevelUpType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/MapType.java](../../../src/main/java/com/R4B/LOL/MapType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/MatchOrder.java](../../../src/main/java/com/R4B/LOL/MatchOrder.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/MatchlistMatchType.java](../../../src/main/java/com/R4B/LOL/MatchlistMatchType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/MonsterSubType.java](../../../src/main/java/com/R4B/LOL/MonsterSubType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/MonsterType.java](../../../src/main/java/com/R4B/LOL/MonsterType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/NumberUtils.java](../../../src/main/java/com/R4B/LOL/NumberUtils.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/RankHistoryView.java](../../../src/main/java/com/R4B/LOL/RankHistoryView.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/RecordMetric.java](../../../src/main/java/com/R4B/LOL/RecordMetric.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/RecordOrder.java](../../../src/main/java/com/R4B/LOL/RecordOrder.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/RecordOwner.java](../../../src/main/java/com/R4B/LOL/RecordOwner.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/Rectangle.java](../../../src/main/java/com/R4B/LOL/Rectangle.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/RegionShard.java](../../../src/main/java/com/R4B/LOL/RegionShard.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/RoleType.java](../../../src/main/java/com/R4B/LOL/RoleType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/SpellSlotType.java](../../../src/main/java/com/R4B/LOL/SpellSlotType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/SummonerSpellType.java](../../../src/main/java/com/R4B/LOL/SummonerSpellType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/TeamType.java](../../../src/main/java/com/R4B/LOL/TeamType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/TierDivisionType.java](../../../src/main/java/com/R4B/LOL/TierDivisionType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/TierType.java](../../../src/main/java/com/R4B/LOL/TierType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/TimelineDamageType.java](../../../src/main/java/com/R4B/LOL/TimelineDamageType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/TowerType.java](../../../src/main/java/com/R4B/LOL/TowerType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/TransformType.java](../../../src/main/java/com/R4B/LOL/TransformType.java) | Valori/enum/helper puri LoL |
+| [com/R4B/LOL/WardType.java](../../../src/main/java/com/R4B/LOL/WardType.java) | Valori/enum/helper puri LoL |

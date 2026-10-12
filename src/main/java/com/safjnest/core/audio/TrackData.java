@@ -12,8 +12,6 @@ public class TrackData {
         this.type = type;
     }
 
-
-
     public AudioType getType() {
         return type;
     }
@@ -45,9 +43,7 @@ public class TrackData {
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
     }
-    
 
-    
     public boolean isQueueable() {
         return type == AudioType.AUDIO;
     }

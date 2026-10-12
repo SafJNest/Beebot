@@ -9,29 +9,26 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.match.MatchResult;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.model.summoner.SummonerOverview;
-import com.safjnest.lol.model.summoner.SummonerView;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.R4B.api.dto.match.MatchResult;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.statistics.ProfileStatistics;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.api.dto.summoner.SummonerOverview;
+import com.R4B.api.dto.summoner.SummonerView;
+import com.R4B.lol.*;
 import com.safjnest.utils.TimeConstant;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class ProfileServiceTest {
 
     @Test
     public void exposesCanonicalSummonerViewData() {
         ProfileStatistics statistics = new ProfileStatistics(0);
-        statistics.add(match("top", LaneType.TOP), GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP);
-        statistics.add(match("none", LaneType.NONE), GameQueueType.ARAM, LaneType.NONE);
+        ProfileStatisticsAccumulator.of(statistics).add(match("top", LaneType.TOP), GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP);
+        ProfileStatisticsAccumulator.of(statistics).add(match("none", LaneType.NONE), GameQueueType.ARAM, LaneType.NONE);
 
-        SummonerView page = SummonerView.from(
-            new Summoner("puuid", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 27),
+        SummonerView page = SummonerProjection.view(
+            new Summoner("puuid", "Name#TAG", com.R4B.lol.LeagueShard.EUW1, 10, 27),
             Map.of(GameQueueType.RANKED_FLEX_SR, new Rank(TierDivisionType.BRONZE_II, 15, 76, 131)),
             statistics,
             List.of(),

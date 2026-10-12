@@ -1,5 +1,6 @@
 package com.safjnest.spring.controller;
 
+import com.safjnest.lol.service.FilterDefaults;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Locale;
@@ -10,23 +11,14 @@ import java.util.StringJoiner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.model.ActivityFilter;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.RankHistoryQuery;
-import com.safjnest.lol.model.match.RankHistoryView;
-import com.safjnest.lol.model.match.MatchOrder;
-import com.safjnest.lol.model.record.RecordMetric;
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.SeasonUtils;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import com.R4B.api.dto.ActivityFilter;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.match.RankHistoryQuery;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.lol.*;
 
 public final class LolApiParameters {
 
@@ -66,7 +58,7 @@ public final class LolApiParameters {
         GameQueueType queue = value == null || value.isBlank()
             ? GameQueueType.RANKED_SOLO_5X5
             : optionalQueue(value);
-        GameQueueType canonical = GameQueueTypeUtils.canonicalQueue(queue);
+        GameQueueType canonical = GameQueueType.canonicalQueue(queue);
         if (canonical == GameQueueType.RANKED_SOLO_5X5 || canonical == GameQueueType.RANKED_FLEX_SR) return canonical;
         throw invalid("queue", "must be RANKED_SOLO_5X5, RANKED_FLEX_SR or TEAM_BUILDER_RANKED_SOLO");
     }
@@ -138,7 +130,7 @@ public final class LolApiParameters {
         GameQueueType queue = optionalQueue(queueValue);
         LaneType role = role(roleValue);
         validateRole(queue, role);
-        ActivityFilter filter = new ActivityFilter();
+        ActivityFilter filter = FilterDefaults.activity();
         filter.setQueue(queue);
         filter.setLane(role);
         filter.setMinGames(minGames(minGamesValue));
@@ -152,7 +144,7 @@ public final class LolApiParameters {
         if (end < 0) throw invalid("end", "must be greater than or equal to 0");
         if (start != 0 && end != 0 && end < start) throw invalid("end", "must be greater than or equal to start");
         if (champion < 0) throw invalid("champion", "must be greater than or equal to 0");
-        Filter filter = start == 0 && end == 0 ? Filter.canonical() : Filter.summoner(start, end);
+        Filter filter = start == 0 && end == 0 ? FilterDefaults.canonical() : Filter.summoner(start, end);
         return filter.setQueue(queue).setChampion(champion);
     }
 
@@ -176,7 +168,7 @@ public final class LolApiParameters {
         }
 
         Filter filter = allSeasons ? Filter.summoner(0, 0) : season == null
-            ? Filter.canonical()
+            ? FilterDefaults.canonical()
             : Filter.summoner(season.start(), season.end());
         return filter.setQueue(queue).setPatch(patch);
     }
@@ -197,14 +189,14 @@ public final class LolApiParameters {
     public static LaneType role(String value) {
         if (value == null || value.isBlank()) return null;
         LaneType role = parseEnum(value, LaneType.class, "role");
-        if (!LaneTypeUtils.playables().contains(role)) {
+        if (!LaneType.playables().contains(role)) {
             throw invalid("role", "must be one of: TOP, JUNGLE, MID, BOT, UTILITY");
         }
         return role;
     }
 
     public static void validateRole(GameQueueType queue, LaneType role) {
-        if (role != null && !GameQueueTypeUtils.hasLane(queue)) {
+        if (role != null && !GameQueueType.hasLane(queue)) {
             throw invalid("role", "is not supported by the selected queue");
         }
     }
@@ -212,10 +204,10 @@ public final class LolApiParameters {
     public static LaneType matchLane(String value, GameQueueType queue) {
         if (value == null || value.isBlank()) return null;
         LaneType lane = parseEnum(value, LaneType.class, "lane");
-        if (!LaneTypeUtils.playables().contains(lane)) {
+        if (!LaneType.playables().contains(lane)) {
             throw invalid("lane", "must be one of: TOP, JUNGLE, MID, BOT, UTILITY");
         }
-        if (!GameQueueTypeUtils.hasLane(queue)) throw invalid("lane", "is not supported by the selected queue");
+        if (!GameQueueType.hasLane(queue)) throw invalid("lane", "is not supported by the selected queue");
         return lane;
     }
 

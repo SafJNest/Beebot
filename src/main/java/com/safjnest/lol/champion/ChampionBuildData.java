@@ -1,5 +1,5 @@
 package com.safjnest.lol.champion;
-
+import com.R4B.api.dto.RuneSignature;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 
 import java.util.List;

@@ -16,9 +16,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
+import com.R4B.lol.LeagueShard;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -28,7 +28,6 @@ import com.safjnest.sql.AbstractDB;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.sql.QueryRecord;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
@@ -81,7 +80,6 @@ public class BotDB extends AbstractDB {
         return sounds;
     }
 
-
     public static List<QueryRecord> getlistGuildSounds(String guild_id) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC");
     }
@@ -93,8 +91,6 @@ public class BotDB extends AbstractDB {
     public static List<QueryRecord> getlistGuildSounds(String guild_id, String orderBy) {
         return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY " + orderBy +" ASC ");
     }
-
-
 
     public static List<QueryRecord> getGuildRandomSound(String guild_id){
         return instance.query("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
@@ -284,8 +280,6 @@ public class BotDB extends AbstractDB {
         return instance.query("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.user_id = " + user_id + " AND (MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%');");
     }
 
-
-
     public static boolean insertSoundBoard(String name, Attachment attachment, String guild_id, String user_id, String... sound_ids) {
         if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
 
@@ -319,8 +313,6 @@ public class BotDB extends AbstractDB {
                 e.printStackTrace();
                 return false;
             }
-
-
 
             System.out.println("INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
             instance.query(stmt, "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
@@ -431,15 +423,12 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery(query);
     }
 
-
     public static List<QueryRecord> getUsersByExp(String guild_id, int limit) {
         if (limit == 0) {
             return instance.query("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC;");
         }
         return instance.query("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC limit " + limit + ";");
     }
-
-
 
     public static boolean toggleLevelUp(String guild_id, boolean toggle) {
         return instance.defaultQuery("INSERT INTO guild(guild_id, exp_enabled) VALUES ('" + guild_id + "', '" + (toggle ? "1" : "0") + "') ON DUPLICATE KEY UPDATE exp_enabled = '" + (toggle ? "1" : "0") + "';");
@@ -448,7 +437,6 @@ public class BotDB extends AbstractDB {
     public static boolean toggleBlacklist(String guild_id, boolean toggle) {
         return instance.defaultQuery("UPDATE guild SET blacklist_enabled = " + (toggle ? 1 : 0) + " WHERE guild_id = '" + guild_id + "';");
     }
-
 
     public static boolean setPrefix(String guild_id, String prefix) {
         return instance.defaultQuery("INSERT INTO guild(guild_id, prefix)" + "VALUES('" + guild_id + "','" + prefix +"') ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';");
@@ -518,7 +506,6 @@ public class BotDB extends AbstractDB {
     public static QueryRecord getGlobalGreet(String user_id) {
         return instance.lineQuery("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND greeting.guild_id = '0' LIMIT 1;");
     }
-
 
     public static boolean setAlertMessage(String ID, String message) {
         Connection c = instance.getConnection();
@@ -730,7 +717,6 @@ public class BotDB extends AbstractDB {
 
     }
 
-
     public static String insertChannelData(String guild_id, String channel_id) {
         String id = "0";
 
@@ -782,7 +768,6 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("DELETE FROM channel WHERE id = '" + ID + "';");
     }
 
-
     public static String insertUserData(String guild_id, String user_id) {
         String id = "0";
 
@@ -830,7 +815,6 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT experience, level, messages FROM member WHERE user_id = '" + id + "' AND guild_id = '" + id2 + "'");
     }
 
-
     public static List<QueryRecord> getAliases(String user_id) {
         return instance.query("SELECT id, name, command FROM alias WHERE user_id = '" + user_id + "';");
     }
@@ -869,8 +853,6 @@ public class BotDB extends AbstractDB {
     public static boolean deleteAlias(String toDelete) {
         return instance.defaultQuery("DELETE FROM alias WHERE id = '" + toDelete + "';");
     }
-
-
 
     public static HashMap<String, List<QueryRecord>> getCustomCommandData(String guild_id) {
         HashMap<String, List<QueryRecord>> commandData = new HashMap<>();
@@ -995,7 +977,6 @@ public class BotDB extends AbstractDB {
             + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) AS dislikes;");
     }
 
-
     public static boolean setLikeDislike(String sound_id, String user_id, int value) {
         return instance.defaultQuery("INSERT INTO sound_interactions(sound_id, user_id, value) VALUES('" + sound_id + "', '" + user_id + "', '" + value + "') ON DUPLICATE KEY UPDATE value = '" + value + "';", "UPDATE sound SET likes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1), dislikes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) WHERE id = '" + sound_id + "';");
     }
@@ -1008,13 +989,6 @@ public class BotDB extends AbstractDB {
                        "WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';";
         return instance.lineQuery(query);
     }
-
-
-   
-
-
-
-
 
     public static int createPlaylist(String name, String user_id) {
         int id = 0;
@@ -1185,7 +1159,6 @@ public class BotDB extends AbstractDB {
             }
         }
     }
-
 
     public static boolean playlistExixtes(String name, String user_id) {
         return !instance.query("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();
@@ -1427,9 +1400,6 @@ public class BotDB extends AbstractDB {
     public static String getMutedRole(String valueOf) {
         return instance.lineQuery("SELECT action_role FROM automated_action WHERE action = 1 AND guild_id = '" + valueOf + "';").get("action_role");
     }
-
-
-
 
     /**
      * @deprecated

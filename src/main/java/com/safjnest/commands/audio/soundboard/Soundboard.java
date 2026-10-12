@@ -28,7 +28,6 @@ public class Soundboard extends SlashCommand{
         this.category = commandData.getCategory();
         this.aliases = commandData.getAliases();
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();

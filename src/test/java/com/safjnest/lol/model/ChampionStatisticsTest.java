@@ -1,4 +1,9 @@
 package com.safjnest.lol.model;
+import com.safjnest.lol.service.ChampionStatisticsCodec;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -8,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class ChampionStatisticsTest {
 
@@ -27,11 +30,11 @@ public class ChampionStatisticsTest {
             null
         );
 
-        String json = source.toJson();
-        ChampionStatistics decoded = ChampionStatistics.fromJson(json);
+        String json = ChampionStatisticsCodec.toJson(source);
+        ChampionStatistics decoded = ChampionStatisticsCodec.fromJson(json);
 
         assertTrue(json.contains("\"412\""));
         assertEquals(source, decoded);
-        assertNull(ChampionStatistics.fromJson("not-json"));
+        assertNull(ChampionStatisticsCodec.fromJson("not-json"));
     }
 }

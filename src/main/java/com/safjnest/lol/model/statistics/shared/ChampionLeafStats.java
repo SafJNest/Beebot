@@ -1,7 +1,9 @@
 package com.safjnest.lol.model.statistics.shared;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.shared.LeafStats;
 
 public class ChampionLeafStats extends LeafStats {
 
@@ -36,9 +38,8 @@ public class ChampionLeafStats extends LeafStats {
         return result;
     }
 
-    @Override
     public void merge(LeafStats other) {
-        super.merge(other);
+        com.safjnest.lol.service.LeafStatsAccumulator.of(this).merge(other);
         if (other instanceof ChampionLeafStats o) {
             csm += o.csm;
             csmGames += o.csmGames;

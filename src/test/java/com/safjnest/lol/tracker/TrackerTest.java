@@ -3,11 +3,9 @@ package com.safjnest.lol.tracker;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-import com.safjnest.lol.model.match.RankProgress;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.lol.*;
 import com.safjnest.lol.utils.RankProgressUtils;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class TrackerTest {
 

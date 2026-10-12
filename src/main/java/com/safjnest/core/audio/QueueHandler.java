@@ -176,8 +176,6 @@ public class QueueHandler {
         return thumbnailURL;
     }
 
-
-
     public static EmbedBuilder getQueueEmbed(Guild guild) {
         return getQueueEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
     }
@@ -425,7 +423,6 @@ public class QueueHandler {
         }
     }
 
-
     public static void sendEmbed(CommandEvent event) {
         QueueMessage message = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getMessage();
         EmbedType type = message != null ? message.getType() : EmbedType.PLAYER;
@@ -479,11 +476,6 @@ public class QueueHandler {
         }
     }
 
-    
-
-
-    
-
     public static List<MessageTopLevelComponent> getButtons(Guild guild, EmbedType type) {
         switch (type) {
             case PLAYER:
@@ -514,7 +506,6 @@ public class QueueHandler {
         return getEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getMessage().getType());
     }
 
-
     public static MessageEmbed getPlaylistEmbed(Member author, AudioPlaylist playlist, String playlistLink) {
         EmbedBuilder eb = new EmbedBuilder();
 
@@ -538,8 +529,6 @@ public class QueueHandler {
 
         return eb.build();
     }
-
-    
 
     public static MessageEmbed getSkipEmbed(Guild guild, Member author) {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();

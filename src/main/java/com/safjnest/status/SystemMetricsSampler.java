@@ -11,11 +11,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.R4B.api.dto.status.JvmMetrics;
+import com.R4B.api.dto.status.MongoMetrics;
+import com.R4B.api.dto.status.RedisMetrics;
+import com.R4B.api.dto.status.SystemMetrics;
 import com.safjnest.App;
-import com.safjnest.lol.model.status.JvmMetrics;
-import com.safjnest.lol.model.status.MongoMetrics;
-import com.safjnest.lol.model.status.RedisMetrics;
-import com.safjnest.lol.model.status.SystemMetrics;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.utils.log.BotLogger;
 

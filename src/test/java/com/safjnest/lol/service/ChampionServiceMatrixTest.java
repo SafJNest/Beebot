@@ -11,13 +11,9 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.Filter;
+import com.R4B.api.dto.Filter;
+import com.R4B.lol.*;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.LaneTypeUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class ChampionServiceMatrixTest {
 
@@ -29,7 +25,7 @@ public class ChampionServiceMatrixTest {
 
         assertEquals(
             (LeagueShardUtils.getActives().size() + 1)
-                * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1),
+                * (TierType.getHigherTiers(TierType.IRON).size() + 1),
             filters.size());
         boolean hasGlobal = false;
         for (Filter filter : filters) {
@@ -51,7 +47,7 @@ public class ChampionServiceMatrixTest {
 
         assertNull(filter.lane());
         assertEquals((LeagueShardUtils.getActives().size() + 1)
-                * (TierDivisionUtils.getHigherTiers(TierType.IRON).size() + 1),
+                * (TierType.getHigherTiers(TierType.IRON).size() + 1),
             ChampionService.matrixFilters("15.14", GameQueueType.ARAM).size());
     }
 
@@ -72,7 +68,7 @@ public class ChampionServiceMatrixTest {
 
     @Test
     public void statisticsFilterAndCachesPreserveRankBehavior() {
-        Filter filter = new Filter().setChampion(10).setPatch("15.14").setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+        Filter filter = FilterDefaults.create().setChampion(10).setPatch("15.14").setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setRank(TierType.EMERALD).setRankBehavior(Filter.RankBehavior.EXACT).setPeriod(100, 200);
 
         Filter statistics = ChampionService.statisticsFilter(filter);
@@ -81,7 +77,7 @@ public class ChampionServiceMatrixTest {
         assertEquals(Filter.RankBehavior.EXACT, statistics.rankBehavior());
         assertEquals(7, cached.size());
         assertTrue(cached.stream().anyMatch(value -> value.lane() == null));
-        assertTrue(cached.stream().anyMatch(value -> value.lane() == no.stelar7.api.r4j.basic.constants.types.lol.LaneType.NONE));
+        assertTrue(cached.stream().anyMatch(value -> value.lane() == com.R4B.lol.LaneType.NONE));
         for (Filter value : cached) {
             assertEquals(Filter.RankBehavior.EXACT, value.rankBehavior());
         }

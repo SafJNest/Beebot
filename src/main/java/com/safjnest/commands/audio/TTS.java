@@ -219,7 +219,6 @@ public class TTS extends SlashCommand{
             eb.setTitle("Playing now:");
             eb.setColor(Bot.getColor());
 
-
             if (commandEvent != null) {
                 eb.setDescription(commandEvent.getArgs());
                 eb.setThumbnail(commandEvent.getSelfUser().getAvatarUrl());

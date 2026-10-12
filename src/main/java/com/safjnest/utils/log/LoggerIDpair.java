@@ -9,7 +9,6 @@ public class LoggerIDpair {
         CHANNEL
     }
 
-
     private final String ID;
     private final IDType type;
 

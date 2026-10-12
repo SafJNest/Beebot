@@ -1,4 +1,5 @@
 package com.safjnest.mongo;
+import com.safjnest.nosql.writer.SummonerWriter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -17,16 +18,13 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.Test;
 
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecordParser;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 /**
  * UNIT U5 — nullable DTO null-vs-empty contract (U1-U4 approved behavior kept).
@@ -211,9 +209,9 @@ public class SummonerWarmingTest {
     public void snapshotOmitsNullPieces() throws Exception {
         Summoner identity = new Summoner("puuid-snapshot", "Name#TAG", LeagueShard.EUW1, 1, 1);
 
-        Method method = Summoner.class.getSuperclass().getDeclaredMethod("snapshotValues");
+        Method method = SummonerWriter.class.getDeclaredMethod("snapshotValues");
         method.setAccessible(true);
-        Map<String, Object> values = (Map<String, Object>) method.invoke(identity);
+        Map<String, Object> values = (Map<String, Object>) method.invoke(SummonerWriter.existing(identity));
 
         assertFalse(values.containsKey("ranks"));
         assertFalse(values.containsKey("masteries"));

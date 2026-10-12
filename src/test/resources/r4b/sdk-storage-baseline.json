@@ -1,0 +1,1580 @@
+{
+  "com.R4B.AB.DTO.riot.LeagueEntry": {
+    "rank": "sample",
+    "hotStreak": true,
+    "miniSeries": {
+      "losses": 7,
+      "progress": "sample",
+      "target": 7,
+      "wins": 7
+    },
+    "wins": 7,
+    "veteran": true,
+    "losses": 7,
+    "summonerId": "sample",
+    "puuid": "sample",
+    "inactive": true,
+    "freshBlood": true,
+    "leaguePoints": 7,
+    "queueType": "CUSTOM",
+    "tier": "sample",
+    "leagueId": "sample"
+  },
+  "com.R4B.AB.DTO.riot.LeagueItem": {
+    "rank": "sample",
+    "hotStreak": true,
+    "miniSeries": {
+      "losses": 7,
+      "progress": "sample",
+      "target": 7,
+      "wins": 7
+    },
+    "wins": 7,
+    "veteran": true,
+    "losses": 7,
+    "summonerId": "sample",
+    "puuid": "sample",
+    "inactive": true,
+    "freshBlood": true,
+    "leaguePoints": 7
+  },
+  "com.R4B.AB.DTO.riot.MiniSeries": {
+    "losses": 7,
+    "progress": "sample",
+    "target": 7,
+    "wins": 7
+  },
+  "com.R4B.AB.DTO.riot.ChampionBan": {
+    "championId": 7,
+    "pickTurn": 7
+  },
+  "com.R4B.AB.DTO.riot.ChampionStats": {
+    "abilityPower": 7,
+    "abilityHaste": 7,
+    "armor": 7,
+    "armorPen": 7,
+    "armorPenPercent": 7,
+    "attackDamage": 7,
+    "attackSpeed": 7,
+    "bonusArmorPenPercent": 7,
+    "bonusMagicPenPercent": 7,
+    "ccReduction": 7,
+    "cooldownReduction": 7,
+    "health": 7,
+    "healthMax": 7,
+    "healthRegen": 7,
+    "lifesteal": 7,
+    "magicPen": 7,
+    "magicPenPercent": 7,
+    "magicResist": 7,
+    "movementSpeed": 7,
+    "omnivamp": 7,
+    "physicalVamp": 7,
+    "power": 7,
+    "powerMax": 7,
+    "powerRegen": 7,
+    "spellVamp": 7
+  },
+  "com.R4B.AB.DTO.riot.DamageStats": {
+    "magicDamageDone": 7,
+    "magicDamageDoneToChampions": 7,
+    "magicDamageTaken": 7,
+    "physicalDamageDone": 7,
+    "physicalDamageDoneToChampions": 7,
+    "physicalDamageTaken": 7,
+    "totalDamageDone": 7,
+    "totalDamageDoneToChampions": 7,
+    "totalDamageTaken": 7,
+    "trueDamageDone": 7,
+    "trueDamageDoneToChampions": 7,
+    "trueDamageTaken": 7
+  },
+  "com.R4B.AB.DTO.riot.RiotMatchData": {
+    "gameCreation": 11,
+    "gameDuration": 7,
+    "gameId": 11,
+    "gameMode": "CLASSIC",
+    "gameName": "sample",
+    "gameStartTimestamp": 11,
+    "gameEndTimestamp": 11,
+    "gameType": "CUSTOM_GAME",
+    "gameVersion": "sample",
+    "mapId": "UNKNOWN",
+    "participants": [
+      {
+        "allInPings": 7,
+        "assistMePings": 7,
+        "assists": 7,
+        "baitPings": 7,
+        "baronKills": 7,
+        "basicPings": 7,
+        "bountyLevel": 7,
+        "challenges": {},
+        "champExperience": 7,
+        "champLevel": 7,
+        "championId": 7,
+        "championName": "sample",
+        "championTransform": 7,
+        "commandPings": 7,
+        "consumablesPurchased": 7,
+        "damageDealtToBuildings": 7,
+        "damageDealtToObjectives": 7,
+        "damageDealtToTurrets": 7,
+        "damageSelfMitigated": 7,
+        "dangerPings": 7,
+        "deaths": 7,
+        "detectorWardsPlaced": 7,
+        "doubleKills": 7,
+        "dragonKills": 7,
+        "eligibleForProgression": true,
+        "enemyMissingPings": 7,
+        "enemyVisionPings": 7,
+        "firstBloodAssist": true,
+        "firstBloodKill": true,
+        "firstTowerAssist": true,
+        "firstTowerKill": true,
+        "gameEndedInEarlySurrender": true,
+        "gameEndedInSurrender": true,
+        "getBackPings": 7,
+        "goldEarned": 7,
+        "goldSpent": 7,
+        "holdPings": 7,
+        "individualPosition": "MID",
+        "inhibitorKills": 7,
+        "inhibitorTakedowns": 7,
+        "inhibitorsLost": 7,
+        "item0": 7,
+        "item1": 7,
+        "item2": 7,
+        "item3": 7,
+        "item4": 7,
+        "item5": 7,
+        "item6": 7,
+        "itemsPurchased": 7,
+        "killingSprees": 7,
+        "kills": 7,
+        "lane": "MID",
+        "largestCriticalStrike": 7,
+        "largestKillingSpree": 7,
+        "largestMultiKill": 7,
+        "longestTimeSpentLiving": 7,
+        "magicDamageDealt": 7,
+        "magicDamageDealtToChampions": 7,
+        "magicDamageTaken": 7,
+        "needVisionPings": 7,
+        "neutralMinionsKilled": 7,
+        "nexusKills": 7,
+        "nexusLost": 7,
+        "nexusTakedowns": 7,
+        "objectivesStolen": 7,
+        "objectivesStolenAssists": 7,
+        "onMyWayPings": 7,
+        "participantId": 7,
+        "pentaKills": 7,
+        "perks": {
+          "statPerks": {
+            "defense": 7,
+            "flex": 7,
+            "offense": 7
+          },
+          "styles": [
+            {
+              "description": "sample",
+              "selections": [
+                {
+                  "perk": 7,
+                  "var1": 7,
+                  "var2": 7,
+                  "var3": 7
+                }
+              ],
+              "style": 7
+            }
+          ]
+        },
+        "physicalDamageDealt": 7,
+        "physicalDamageDealtToChampions": 7,
+        "physicalDamageTaken": 7,
+        "placement": 7,
+        "playerAugment1": 7,
+        "playerAugment2": 7,
+        "playerAugment3": 7,
+        "playerAugment4": 7,
+        "playerAugment5": 7,
+        "playerAugment6": 7,
+        "playerSubteamId": 7,
+        "profileIcon": 7,
+        "pushPings": 7,
+        "puuid": "sample",
+        "quadraKills": 7,
+        "riotIdName": "sample",
+        "riotIdGameName": "sample",
+        "riotIdTagline": "sample",
+        "role": "DUO",
+        "roleBoundItem": 7,
+        "sightWardsBoughtInGame": 7,
+        "spell1Casts": 7,
+        "spell2Casts": 7,
+        "spell3Casts": 7,
+        "spell4Casts": 7,
+        "subteamPlacement": 7,
+        "summoner1Casts": 7,
+        "summoner1Id": 7,
+        "summoner2Casts": 7,
+        "summoner2Id": 7,
+        "summonerId": "sample",
+        "summonerLevel": 7,
+        "teamEarlySurrendered": true,
+        "teamId": "SUBTEAM",
+        "teamPosition": "MID",
+        "timeCCingOthers": 7,
+        "timePlayed": 7,
+        "totalAllyJungleMinionsKilled": 7,
+        "totalDamageDealt": 7,
+        "totalDamageDealtToChampions": 7,
+        "totalDamageShieldedOnTeammates": 7,
+        "totalDamageTaken": 7,
+        "totalEnemyJungleMinionsKilled": 7,
+        "totalHeal": 7,
+        "totalHealsOnTeammates": 7,
+        "totalMinionsKilled": 7,
+        "totalTimeCCDealt": 7,
+        "totalTimeSpentDead": 7,
+        "totalUnitsHealed": 7,
+        "tripleKills": 7,
+        "trueDamageDealt": 7,
+        "trueDamageDealtToChampions": 7,
+        "trueDamageTaken": 7,
+        "turretKills": 7,
+        "turretTakedowns": 7,
+        "turretsLost": 7,
+        "unrealKills": 7,
+        "visionClearedPings": 7,
+        "visionScore": 7,
+        "visionWardsBoughtInGame": 7,
+        "wardsKilled": 7,
+        "wardsPlaced": 7,
+        "win": true
+      }
+    ],
+    "platformId": "UNKNOWN",
+    "queueId": "CUSTOM",
+    "teams": [
+      {
+        "bans": [
+          {
+            "championId": 7,
+            "pickTurn": 7
+          }
+        ],
+        "objectives": {
+          "sample": {
+            "first": true,
+            "kills": 7
+          }
+        },
+        "teamId": "SUBTEAM",
+        "win": true
+      }
+    ],
+    "tournamentCode": "sample"
+  },
+  "com.R4B.AB.DTO.riot.RiotTimelineData": {
+    "frameInterval": 7,
+    "frames": [
+      {
+        "events": [
+          {
+            "buildingType": "INHIBITOR_BUILDING",
+            "type": "ASCENDED_EVENT",
+            "killType": "KILL_ACE",
+            "laneType": "MID",
+            "levelUpType": "EVOLVE",
+            "assistingParticipantIds": [
+              7
+            ],
+            "victimDamageDealt": [
+              {
+                "basic": true,
+                "magicDamage": 7,
+                "name": "sample",
+                "participantId": 7,
+                "physicalDamage": 7,
+                "spellName": "sample",
+                "spellSlot": "INVALID",
+                "trueDamage": 7,
+                "type": "MINION"
+              }
+            ],
+            "victimDamageReceived": [
+              {
+                "basic": true,
+                "magicDamage": 7,
+                "name": "sample",
+                "participantId": 7,
+                "physicalDamage": 7,
+                "spellName": "sample",
+                "spellSlot": "INVALID",
+                "trueDamage": 7,
+                "type": "MINION"
+              }
+            ],
+            "monsterSubType": "UNKNOWN",
+            "monsterType": "ATAKHAN",
+            "killerTeamId": "SUBTEAM",
+            "teamId": "SUBTEAM",
+            "winningTeam": "SUBTEAM",
+            "position": {
+              "x": 7,
+              "y": 7
+            },
+            "towerType": "BASE_TURRET",
+            "transformType": "ASSASSIN",
+            "wardType": "BLUE_TRINKET",
+            "actualStartTime": 7,
+            "afterId": 7,
+            "beforeId": 7,
+            "bounty": 7,
+            "creatorId": 7,
+            "goldGain": 7,
+            "itemId": 7,
+            "killStreakLength": 7,
+            "killerId": 7,
+            "level": 7,
+            "multiKillLength": 7,
+            "participantId": 7,
+            "shutdownBounty": 7,
+            "skillSlot": 7,
+            "victimId": 7,
+            "gameId": 11,
+            "realTimestamp": 11,
+            "timestamp": 11
+          }
+        ],
+        "participantFrames": {
+          "sample": {
+            "championStats": {
+              "abilityPower": 7,
+              "abilityHaste": 7,
+              "armor": 7,
+              "armorPen": 7,
+              "armorPenPercent": 7,
+              "attackDamage": 7,
+              "attackSpeed": 7,
+              "bonusArmorPenPercent": 7,
+              "bonusMagicPenPercent": 7,
+              "ccReduction": 7,
+              "cooldownReduction": 7,
+              "health": 7,
+              "healthMax": 7,
+              "healthRegen": 7,
+              "lifesteal": 7,
+              "magicPen": 7,
+              "magicPenPercent": 7,
+              "magicResist": 7,
+              "movementSpeed": 7,
+              "omnivamp": 7,
+              "physicalVamp": 7,
+              "power": 7,
+              "powerMax": 7,
+              "powerRegen": 7,
+              "spellVamp": 7
+            },
+            "currentGold": 7,
+            "damageStats": {
+              "magicDamageDone": 7,
+              "magicDamageDoneToChampions": 7,
+              "magicDamageTaken": 7,
+              "physicalDamageDone": 7,
+              "physicalDamageDoneToChampions": 7,
+              "physicalDamageTaken": 7,
+              "totalDamageDone": 7,
+              "totalDamageDoneToChampions": 7,
+              "totalDamageTaken": 7,
+              "trueDamageDone": 7,
+              "trueDamageDoneToChampions": 7,
+              "trueDamageTaken": 7
+            },
+            "goldPerSecond": 7,
+            "jungleMinionsKilled": 7,
+            "level": 7,
+            "minionsKilled": 7,
+            "participantId": 7,
+            "position": {
+              "x": 7,
+              "y": 7
+            },
+            "timeEnemySpentControlled": 7,
+            "totalGold": 7,
+            "xp": 7
+          }
+        },
+        "timestamp": 11
+      }
+    ],
+    "gameId": 11,
+    "participants": [
+      {
+        "participantId": 7,
+        "puuid": "sample"
+      }
+    ]
+  },
+  "com.R4B.AB.DTO.riot.MatchParticipant": {
+    "allInPings": 7,
+    "assistMePings": 7,
+    "assists": 7,
+    "baitPings": 7,
+    "baronKills": 7,
+    "basicPings": 7,
+    "bountyLevel": 7,
+    "challenges": {},
+    "champExperience": 7,
+    "champLevel": 7,
+    "championId": 7,
+    "championName": "sample",
+    "championTransform": 7,
+    "commandPings": 7,
+    "consumablesPurchased": 7,
+    "damageDealtToBuildings": 7,
+    "damageDealtToObjectives": 7,
+    "damageDealtToTurrets": 7,
+    "damageSelfMitigated": 7,
+    "dangerPings": 7,
+    "deaths": 7,
+    "detectorWardsPlaced": 7,
+    "doubleKills": 7,
+    "dragonKills": 7,
+    "eligibleForProgression": true,
+    "enemyMissingPings": 7,
+    "enemyVisionPings": 7,
+    "firstBloodAssist": true,
+    "firstBloodKill": true,
+    "firstTowerAssist": true,
+    "firstTowerKill": true,
+    "gameEndedInEarlySurrender": true,
+    "gameEndedInSurrender": true,
+    "getBackPings": 7,
+    "goldEarned": 7,
+    "goldSpent": 7,
+    "holdPings": 7,
+    "individualPosition": "MID",
+    "inhibitorKills": 7,
+    "inhibitorTakedowns": 7,
+    "inhibitorsLost": 7,
+    "item0": 7,
+    "item1": 7,
+    "item2": 7,
+    "item3": 7,
+    "item4": 7,
+    "item5": 7,
+    "item6": 7,
+    "itemsPurchased": 7,
+    "killingSprees": 7,
+    "kills": 7,
+    "lane": "MID",
+    "largestCriticalStrike": 7,
+    "largestKillingSpree": 7,
+    "largestMultiKill": 7,
+    "longestTimeSpentLiving": 7,
+    "magicDamageDealt": 7,
+    "magicDamageDealtToChampions": 7,
+    "magicDamageTaken": 7,
+    "needVisionPings": 7,
+    "neutralMinionsKilled": 7,
+    "nexusKills": 7,
+    "nexusLost": 7,
+    "nexusTakedowns": 7,
+    "objectivesStolen": 7,
+    "objectivesStolenAssists": 7,
+    "onMyWayPings": 7,
+    "participantId": 7,
+    "pentaKills": 7,
+    "perks": {
+      "statPerks": {
+        "defense": 7,
+        "flex": 7,
+        "offense": 7
+      },
+      "styles": [
+        {
+          "description": "sample",
+          "selections": [
+            {
+              "perk": 7,
+              "var1": 7,
+              "var2": 7,
+              "var3": 7
+            }
+          ],
+          "style": 7
+        }
+      ]
+    },
+    "physicalDamageDealt": 7,
+    "physicalDamageDealtToChampions": 7,
+    "physicalDamageTaken": 7,
+    "placement": 7,
+    "playerAugment1": 7,
+    "playerAugment2": 7,
+    "playerAugment3": 7,
+    "playerAugment4": 7,
+    "playerAugment5": 7,
+    "playerAugment6": 7,
+    "playerSubteamId": 7,
+    "profileIcon": 7,
+    "pushPings": 7,
+    "puuid": "sample",
+    "quadraKills": 7,
+    "riotIdName": "sample",
+    "riotIdGameName": "sample",
+    "riotIdTagline": "sample",
+    "role": "DUO",
+    "roleBoundItem": 7,
+    "sightWardsBoughtInGame": 7,
+    "spell1Casts": 7,
+    "spell2Casts": 7,
+    "spell3Casts": 7,
+    "spell4Casts": 7,
+    "subteamPlacement": 7,
+    "summoner1Casts": 7,
+    "summoner1Id": 7,
+    "summoner2Casts": 7,
+    "summoner2Id": 7,
+    "summonerId": "sample",
+    "summonerLevel": 7,
+    "teamEarlySurrendered": true,
+    "teamId": "SUBTEAM",
+    "teamPosition": "MID",
+    "timeCCingOthers": 7,
+    "timePlayed": 7,
+    "totalAllyJungleMinionsKilled": 7,
+    "totalDamageDealt": 7,
+    "totalDamageDealtToChampions": 7,
+    "totalDamageShieldedOnTeammates": 7,
+    "totalDamageTaken": 7,
+    "totalEnemyJungleMinionsKilled": 7,
+    "totalHeal": 7,
+    "totalHealsOnTeammates": 7,
+    "totalMinionsKilled": 7,
+    "totalTimeCCDealt": 7,
+    "totalTimeSpentDead": 7,
+    "totalUnitsHealed": 7,
+    "tripleKills": 7,
+    "trueDamageDealt": 7,
+    "trueDamageDealtToChampions": 7,
+    "trueDamageTaken": 7,
+    "turretKills": 7,
+    "turretTakedowns": 7,
+    "turretsLost": 7,
+    "unrealKills": 7,
+    "visionClearedPings": 7,
+    "visionScore": 7,
+    "visionWardsBoughtInGame": 7,
+    "wardsKilled": 7,
+    "wardsPlaced": 7,
+    "win": true
+  },
+  "com.R4B.AB.DTO.riot.MatchPerks": {
+    "statPerks": {
+      "defense": 7,
+      "flex": 7,
+      "offense": 7
+    },
+    "styles": [
+      {
+        "description": "sample",
+        "selections": [
+          {
+            "perk": 7,
+            "var1": 7,
+            "var2": 7,
+            "var3": 7
+          }
+        ],
+        "style": 7
+      }
+    ]
+  },
+  "com.R4B.AB.DTO.riot.MatchTeam": {
+    "bans": [
+      {
+        "championId": 7,
+        "pickTurn": 7
+      }
+    ],
+    "objectives": {
+      "sample": {
+        "first": true,
+        "kills": 7
+      }
+    },
+    "teamId": "SUBTEAM",
+    "win": true
+  },
+  "com.R4B.AB.DTO.riot.ObjectiveStats": {
+    "first": true,
+    "kills": 7
+  },
+  "com.R4B.AB.DTO.riot.PerkSelection": {
+    "perk": 7,
+    "var1": 7,
+    "var2": 7,
+    "var3": 7
+  },
+  "com.R4B.AB.DTO.riot.PerkStyle": {
+    "description": "sample",
+    "selections": [
+      {
+        "perk": 7,
+        "var1": 7,
+        "var2": 7,
+        "var3": 7
+      }
+    ],
+    "style": 7
+  },
+  "com.R4B.AB.DTO.riot.StatPerk": {
+    "defense": 7,
+    "flex": 7,
+    "offense": 7
+  },
+  "com.R4B.AB.DTO.riot.TimelineDamageData": {
+    "basic": true,
+    "magicDamage": 7,
+    "name": "sample",
+    "participantId": 7,
+    "physicalDamage": 7,
+    "spellName": "sample",
+    "spellSlot": "INVALID",
+    "trueDamage": 7,
+    "type": "MINION"
+  },
+  "com.R4B.AB.DTO.riot.TimelineFrame": {
+    "events": [
+      {
+        "buildingType": "INHIBITOR_BUILDING",
+        "type": "ASCENDED_EVENT",
+        "killType": "KILL_ACE",
+        "laneType": "MID",
+        "levelUpType": "EVOLVE",
+        "assistingParticipantIds": [
+          7
+        ],
+        "victimDamageDealt": [
+          {
+            "basic": true,
+            "magicDamage": 7,
+            "name": "sample",
+            "participantId": 7,
+            "physicalDamage": 7,
+            "spellName": "sample",
+            "spellSlot": "INVALID",
+            "trueDamage": 7,
+            "type": "MINION"
+          }
+        ],
+        "victimDamageReceived": [
+          {
+            "basic": true,
+            "magicDamage": 7,
+            "name": "sample",
+            "participantId": 7,
+            "physicalDamage": 7,
+            "spellName": "sample",
+            "spellSlot": "INVALID",
+            "trueDamage": 7,
+            "type": "MINION"
+          }
+        ],
+        "monsterSubType": "UNKNOWN",
+        "monsterType": "ATAKHAN",
+        "killerTeamId": "SUBTEAM",
+        "teamId": "SUBTEAM",
+        "winningTeam": "SUBTEAM",
+        "position": {
+          "x": 7,
+          "y": 7
+        },
+        "towerType": "BASE_TURRET",
+        "transformType": "ASSASSIN",
+        "wardType": "BLUE_TRINKET",
+        "actualStartTime": 7,
+        "afterId": 7,
+        "beforeId": 7,
+        "bounty": 7,
+        "creatorId": 7,
+        "goldGain": 7,
+        "itemId": 7,
+        "killStreakLength": 7,
+        "killerId": 7,
+        "level": 7,
+        "multiKillLength": 7,
+        "participantId": 7,
+        "shutdownBounty": 7,
+        "skillSlot": 7,
+        "victimId": 7,
+        "gameId": 11,
+        "realTimestamp": 11,
+        "timestamp": 11
+      }
+    ],
+    "participantFrames": {
+      "sample": {
+        "championStats": {
+          "abilityPower": 7,
+          "abilityHaste": 7,
+          "armor": 7,
+          "armorPen": 7,
+          "armorPenPercent": 7,
+          "attackDamage": 7,
+          "attackSpeed": 7,
+          "bonusArmorPenPercent": 7,
+          "bonusMagicPenPercent": 7,
+          "ccReduction": 7,
+          "cooldownReduction": 7,
+          "health": 7,
+          "healthMax": 7,
+          "healthRegen": 7,
+          "lifesteal": 7,
+          "magicPen": 7,
+          "magicPenPercent": 7,
+          "magicResist": 7,
+          "movementSpeed": 7,
+          "omnivamp": 7,
+          "physicalVamp": 7,
+          "power": 7,
+          "powerMax": 7,
+          "powerRegen": 7,
+          "spellVamp": 7
+        },
+        "currentGold": 7,
+        "damageStats": {
+          "magicDamageDone": 7,
+          "magicDamageDoneToChampions": 7,
+          "magicDamageTaken": 7,
+          "physicalDamageDone": 7,
+          "physicalDamageDoneToChampions": 7,
+          "physicalDamageTaken": 7,
+          "totalDamageDone": 7,
+          "totalDamageDoneToChampions": 7,
+          "totalDamageTaken": 7,
+          "trueDamageDone": 7,
+          "trueDamageDoneToChampions": 7,
+          "trueDamageTaken": 7
+        },
+        "goldPerSecond": 7,
+        "jungleMinionsKilled": 7,
+        "level": 7,
+        "minionsKilled": 7,
+        "participantId": 7,
+        "position": {
+          "x": 7,
+          "y": 7
+        },
+        "timeEnemySpentControlled": 7,
+        "totalGold": 7,
+        "xp": 7
+      }
+    },
+    "timestamp": 11
+  },
+  "com.R4B.AB.DTO.riot.TimelineFrameEvent": {
+    "buildingType": "INHIBITOR_BUILDING",
+    "type": "ASCENDED_EVENT",
+    "killType": "KILL_ACE",
+    "laneType": "MID",
+    "levelUpType": "EVOLVE",
+    "assistingParticipantIds": [
+      7
+    ],
+    "victimDamageDealt": [
+      {
+        "basic": true,
+        "magicDamage": 7,
+        "name": "sample",
+        "participantId": 7,
+        "physicalDamage": 7,
+        "spellName": "sample",
+        "spellSlot": "INVALID",
+        "trueDamage": 7,
+        "type": "MINION"
+      }
+    ],
+    "victimDamageReceived": [
+      {
+        "basic": true,
+        "magicDamage": 7,
+        "name": "sample",
+        "participantId": 7,
+        "physicalDamage": 7,
+        "spellName": "sample",
+        "spellSlot": "INVALID",
+        "trueDamage": 7,
+        "type": "MINION"
+      }
+    ],
+    "monsterSubType": "UNKNOWN",
+    "monsterType": "ATAKHAN",
+    "killerTeamId": "SUBTEAM",
+    "teamId": "SUBTEAM",
+    "winningTeam": "SUBTEAM",
+    "position": {
+      "x": 7,
+      "y": 7
+    },
+    "towerType": "BASE_TURRET",
+    "transformType": "ASSASSIN",
+    "wardType": "BLUE_TRINKET",
+    "actualStartTime": 7,
+    "afterId": 7,
+    "beforeId": 7,
+    "bounty": 7,
+    "creatorId": 7,
+    "goldGain": 7,
+    "itemId": 7,
+    "killStreakLength": 7,
+    "killerId": 7,
+    "level": 7,
+    "multiKillLength": 7,
+    "participantId": 7,
+    "shutdownBounty": 7,
+    "skillSlot": 7,
+    "victimId": 7,
+    "gameId": 11,
+    "realTimestamp": 11,
+    "timestamp": 11
+  },
+  "com.R4B.AB.DTO.riot.TimelineParticipantFrame": {
+    "championStats": {
+      "abilityPower": 7,
+      "abilityHaste": 7,
+      "armor": 7,
+      "armorPen": 7,
+      "armorPenPercent": 7,
+      "attackDamage": 7,
+      "attackSpeed": 7,
+      "bonusArmorPenPercent": 7,
+      "bonusMagicPenPercent": 7,
+      "ccReduction": 7,
+      "cooldownReduction": 7,
+      "health": 7,
+      "healthMax": 7,
+      "healthRegen": 7,
+      "lifesteal": 7,
+      "magicPen": 7,
+      "magicPenPercent": 7,
+      "magicResist": 7,
+      "movementSpeed": 7,
+      "omnivamp": 7,
+      "physicalVamp": 7,
+      "power": 7,
+      "powerMax": 7,
+      "powerRegen": 7,
+      "spellVamp": 7
+    },
+    "currentGold": 7,
+    "damageStats": {
+      "magicDamageDone": 7,
+      "magicDamageDoneToChampions": 7,
+      "magicDamageTaken": 7,
+      "physicalDamageDone": 7,
+      "physicalDamageDoneToChampions": 7,
+      "physicalDamageTaken": 7,
+      "totalDamageDone": 7,
+      "totalDamageDoneToChampions": 7,
+      "totalDamageTaken": 7,
+      "trueDamageDone": 7,
+      "trueDamageDoneToChampions": 7,
+      "trueDamageTaken": 7
+    },
+    "goldPerSecond": 7,
+    "jungleMinionsKilled": 7,
+    "level": 7,
+    "minionsKilled": 7,
+    "participantId": 7,
+    "position": {
+      "x": 7,
+      "y": 7
+    },
+    "timeEnemySpentControlled": 7,
+    "totalGold": 7,
+    "xp": 7
+  },
+  "com.R4B.AB.DTO.riot.TimelineParticipantIdentity": {
+    "participantId": 7,
+    "puuid": "sample"
+  },
+  "com.R4B.AB.DTO.riot.TimelinePosition": {
+    "x": 7,
+    "y": 7
+  },
+  "com.R4B.AB.DTO.riot.BannedChampion": {
+    "championId": 7,
+    "pickTurn": 7,
+    "teamId": 7
+  },
+  "com.R4B.AB.DTO.riot.BaseSpellData": {
+    "cooldown": [
+      0.5
+    ],
+    "cooldownBurn": "sample",
+    "cost": [
+      7
+    ],
+    "costBurn": "sample",
+    "costType": "sample",
+    "description": "sample",
+    "effect": [
+      [
+        0.5
+      ]
+    ],
+    "effectBurn": [
+      "sample"
+    ],
+    "image": {
+      "full": "sample",
+      "group": "sample",
+      "sprite": "sample",
+      "h": 7,
+      "w": 7,
+      "x": 7,
+      "y": 7
+    },
+    "key": "sample",
+    "leveltip": {
+      "effect": [
+        "sample"
+      ],
+      "label": [
+        "sample"
+      ]
+    },
+    "maxrank": 7,
+    "name": "sample",
+    "range": null,
+    "rangeBurn": "sample",
+    "resource": "sample",
+    "tooltip": "sample",
+    "vars": [
+      {
+        "coeff": null,
+        "dyn": "sample",
+        "key": "sample",
+        "link": "sample",
+        "ranksWith": "sample"
+      }
+    ]
+  },
+  "com.R4B.AB.DTO.riot.Observer": {
+    "encryptionKey": "sample"
+  },
+  "com.R4B.AB.DTO.riot.SpectatorGameCustomizationObject": {
+    "category": "sample",
+    "content": "sample"
+  },
+  "com.R4B.AB.DTO.riot.SpectatorGameInfo": {
+    "bannedChampions": [
+      {
+        "championId": 7,
+        "pickTurn": 7,
+        "teamId": 7
+      }
+    ],
+    "gameId": 11,
+    "gameLength": 11,
+    "gameMode": "CLASSIC",
+    "gameQueueConfigId": "CUSTOM",
+    "gameStartTime": 11,
+    "gameType": "CUSTOM_GAME",
+    "mapId": "UNKNOWN",
+    "observers": {
+      "encryptionKey": "sample"
+    },
+    "participants": [
+      {
+        "championId": 7,
+        "profileIconId": 11,
+        "spell1Id": "UNKNOWN",
+        "spell2Id": "UNKNOWN",
+        "summonerId": "sample",
+        "puuid": "sample",
+        "riotId": "sample",
+        "teamId": "SUBTEAM",
+        "bot": true,
+        "perks": {
+          "perkIds": [
+            7
+          ],
+          "perkStyle": 7,
+          "perkSubStyle": 7
+        },
+        "gameCustomizationObjects": [
+          {
+            "category": "sample",
+            "content": "sample"
+          }
+        ]
+      }
+    ],
+    "platformId": "UNKNOWN"
+  },
+  "com.R4B.AB.DTO.riot.SpectatorParticipant": {
+    "championId": 7,
+    "profileIconId": 11,
+    "spell1Id": "UNKNOWN",
+    "spell2Id": "UNKNOWN",
+    "summonerId": "sample",
+    "puuid": "sample",
+    "riotId": "sample",
+    "teamId": "SUBTEAM",
+    "bot": true,
+    "perks": {
+      "perkIds": [
+        7
+      ],
+      "perkStyle": 7,
+      "perkSubStyle": 7
+    },
+    "gameCustomizationObjects": [
+      {
+        "category": "sample",
+        "content": "sample"
+      }
+    ]
+  },
+  "com.R4B.AB.DTO.riot.SpectatorPerks": {
+    "perkIds": [
+      7
+    ],
+    "perkStyle": 7,
+    "perkSubStyle": 7
+  },
+  "com.R4B.AB.DTO.riot.Block": {
+    "items": [
+      {
+        "count": 7,
+        "id": 7
+      }
+    ],
+    "recMath": true,
+    "type": "sample"
+  },
+  "com.R4B.AB.DTO.riot.BlockItem": {
+    "count": 7,
+    "id": 7
+  },
+  "com.R4B.AB.DTO.riot.Info": {
+    "attack": 7,
+    "defense": 7,
+    "difficulty": 7,
+    "magic": 7
+  },
+  "com.R4B.AB.DTO.riot.Passive": {
+    "description": "sample",
+    "image": {
+      "full": "sample",
+      "group": "sample",
+      "sprite": "sample",
+      "h": 7,
+      "w": 7,
+      "x": 7,
+      "y": 7
+    },
+    "name": "sample"
+  },
+  "com.R4B.AB.DTO.riot.Recommended": {
+    "blocks": [
+      {
+        "items": [
+          {
+            "count": 7,
+            "id": 7
+          }
+        ],
+        "recMath": true,
+        "type": "sample"
+      }
+    ],
+    "champion": "sample",
+    "map": "sample",
+    "mode": "sample",
+    "priority": true,
+    "title": "sample",
+    "type": "sample"
+  },
+  "com.R4B.AB.DTO.riot.Skin": {
+    "id": 7,
+    "name": "sample",
+    "num": 7
+  },
+  "com.R4B.AB.DTO.riot.StaticChampion": {
+    "allytips": [
+      "sample"
+    ],
+    "blurb": "sample",
+    "enemytips": [
+      "sample"
+    ],
+    "id": 7,
+    "image": {
+      "full": "sample",
+      "group": "sample",
+      "sprite": "sample",
+      "h": 7,
+      "w": 7,
+      "x": 7,
+      "y": 7
+    },
+    "info": {
+      "attack": 7,
+      "defense": 7,
+      "difficulty": 7,
+      "magic": 7
+    },
+    "key": "sample",
+    "lore": "sample",
+    "name": "sample",
+    "partype": "sample",
+    "passive": {
+      "description": "sample",
+      "image": {
+        "full": "sample",
+        "group": "sample",
+        "sprite": "sample",
+        "h": 7,
+        "w": 7,
+        "x": 7,
+        "y": 7
+      },
+      "name": "sample"
+    },
+    "recommended": [
+      {
+        "blocks": [
+          {
+            "items": [
+              {
+                "count": 7,
+                "id": 7
+              }
+            ],
+            "recMath": true,
+            "type": "sample"
+          }
+        ],
+        "champion": "sample",
+        "map": "sample",
+        "mode": "sample",
+        "priority": true,
+        "title": "sample",
+        "type": "sample"
+      }
+    ],
+    "skins": [
+      {
+        "id": 7,
+        "name": "sample",
+        "num": 7
+      }
+    ],
+    "spells": [
+      {
+        "cooldown": [
+          0.5
+        ],
+        "cooldownBurn": "sample",
+        "cost": [
+          7
+        ],
+        "costBurn": "sample",
+        "costType": "sample",
+        "description": "sample",
+        "effect": [
+          [
+            0.5
+          ]
+        ],
+        "effectBurn": [
+          "sample"
+        ],
+        "image": {
+          "full": "sample",
+          "group": "sample",
+          "sprite": "sample",
+          "h": 7,
+          "w": 7,
+          "x": 7,
+          "y": 7
+        },
+        "key": "sample",
+        "leveltip": {
+          "effect": [
+            "sample"
+          ],
+          "label": [
+            "sample"
+          ]
+        },
+        "maxrank": 7,
+        "name": "sample",
+        "range": null,
+        "rangeBurn": "sample",
+        "resource": "sample",
+        "tooltip": "sample",
+        "vars": [
+          {
+            "coeff": null,
+            "dyn": "sample",
+            "key": "sample",
+            "link": "sample",
+            "ranksWith": "sample"
+          }
+        ],
+        "altimages": [
+          {
+            "full": "sample",
+            "group": "sample",
+            "sprite": "sample",
+            "h": 7,
+            "w": 7,
+            "x": 7,
+            "y": 7
+          }
+        ]
+      }
+    ],
+    "stats": {
+      "armor": 0.5,
+      "armorperlevel": 0.5,
+      "attackdamage": 0.5,
+      "attackdamageperlevel": 0.5,
+      "attackrange": 0.5,
+      "attackspeed": 0.5,
+      "attackspeedperlevel": 0.5,
+      "crit": 0.5,
+      "critperlevel": 0.5,
+      "hp": 0.5,
+      "hpperlevel": 0.5,
+      "hpregen": 0.5,
+      "hpregenperlevel": 0.5,
+      "movespeed": 0.5,
+      "mp": 0.5,
+      "mpperlevel": 0.5,
+      "mpregen": 0.5,
+      "mpregenperlevel": 0.5,
+      "spellblock": 0.5,
+      "spellblockperlevel": 0.5
+    },
+    "tags": [
+      "sample"
+    ],
+    "title": "sample"
+  },
+  "com.R4B.AB.DTO.riot.StaticChampionSpell": {
+    "cooldown": [
+      0.5
+    ],
+    "cooldownBurn": "sample",
+    "cost": [
+      7
+    ],
+    "costBurn": "sample",
+    "costType": "sample",
+    "description": "sample",
+    "effect": [
+      [
+        0.5
+      ]
+    ],
+    "effectBurn": [
+      "sample"
+    ],
+    "image": {
+      "full": "sample",
+      "group": "sample",
+      "sprite": "sample",
+      "h": 7,
+      "w": 7,
+      "x": 7,
+      "y": 7
+    },
+    "key": "sample",
+    "leveltip": {
+      "effect": [
+        "sample"
+      ],
+      "label": [
+        "sample"
+      ]
+    },
+    "maxrank": 7,
+    "name": "sample",
+    "range": null,
+    "rangeBurn": "sample",
+    "resource": "sample",
+    "tooltip": "sample",
+    "vars": [
+      {
+        "coeff": null,
+        "dyn": "sample",
+        "key": "sample",
+        "link": "sample",
+        "ranksWith": "sample"
+      }
+    ],
+    "altimages": [
+      {
+        "full": "sample",
+        "group": "sample",
+        "sprite": "sample",
+        "h": 7,
+        "w": 7,
+        "x": 7,
+        "y": 7
+      }
+    ]
+  },
+  "com.R4B.AB.DTO.riot.StaticChampionStats": {
+    "armor": 0.5,
+    "armorperlevel": 0.5,
+    "attackdamage": 0.5,
+    "attackdamageperlevel": 0.5,
+    "attackrange": 0.5,
+    "attackspeed": 0.5,
+    "attackspeedperlevel": 0.5,
+    "crit": 0.5,
+    "critperlevel": 0.5,
+    "hp": 0.5,
+    "hpperlevel": 0.5,
+    "hpregen": 0.5,
+    "hpregenperlevel": 0.5,
+    "movespeed": 0.5,
+    "mp": 0.5,
+    "mpperlevel": 0.5,
+    "mpregen": 0.5,
+    "mpregenperlevel": 0.5,
+    "spellblock": 0.5,
+    "spellblockperlevel": 0.5
+  },
+  "com.R4B.AB.DTO.riot.InventoryDataStats": {
+    "FlatArmorMod": 0.5,
+    "FlatAttackSpeedMod": 0.5,
+    "FlatBlockMod": 0.5,
+    "FlatCritChanceMod": 0.5,
+    "FlatCritDamageMod": 0.5,
+    "FlatEXPBonus": 0.5,
+    "FlatEnergyPoolMod": 0.5,
+    "FlatEnergyRegenMod": 0.5,
+    "FlatHPPoolMod": 0.5,
+    "FlatHPRegenMod": 0.5,
+    "FlatMPPoolMod": 0.5,
+    "FlatMPRegenMod": 0.5,
+    "FlatMagicDamageMod": 0.5,
+    "FlatMovementSpeedMod": 0.5,
+    "FlatPhysicalDamageMod": 0.5,
+    "FlatSpellBlockMod": 0.5,
+    "PercentArmorMod": 0.5,
+    "PercentAttackSpeedMod": 0.5,
+    "PercentBlockMod": 0.5,
+    "PercentCritChanceMod": 0.5,
+    "PercentCritDamageMod": 0.5,
+    "PercentDodgeMod": 0.5,
+    "PercentEXPBonus": 0.5,
+    "PercentHPPoolMod": 0.5,
+    "PercentHPRegenMod": 0.5,
+    "PercentLifeStealMod": 0.5,
+    "PercentMPPoolMod": 0.5,
+    "PercentMPRegenMod": 0.5,
+    "PercentMagicDamageMod": 0.5,
+    "PercentMovementSpeedMod": 0.5,
+    "PercentPhysicalDamageMod": 0.5,
+    "PercentSpellBlockMod": 0.5,
+    "PercentSpellVampMod": 0.5
+  },
+  "com.R4B.AB.DTO.riot.Item": {
+    "effect": {
+      "sample": "sample"
+    },
+    "colloq": "sample",
+    "consumeOnFull": true,
+    "consumed": true,
+    "depth": 7,
+    "description": "sample",
+    "from": [
+      "sample"
+    ],
+    "gold": {
+      "base": 7,
+      "purchasable": true,
+      "sell": 7,
+      "total": 7
+    },
+    "group": "sample",
+    "hideFromAll": true,
+    "id": 7,
+    "image": {
+      "full": "sample",
+      "group": "sample",
+      "sprite": "sample",
+      "h": 7,
+      "w": 7,
+      "x": 7,
+      "y": 7
+    },
+    "inStore": true,
+    "into": [
+      "sample"
+    ],
+    "maps": {
+      "sample": true
+    },
+    "name": "sample",
+    "plaintext": "sample",
+    "requiredChampion": "sample",
+    "rune": {
+      "isRune": true,
+      "tier": "sample",
+      "type": "sample"
+    },
+    "specialRecipe": 7,
+    "stacks": 7,
+    "stats": {
+      "FlatArmorMod": 0.5,
+      "FlatAttackSpeedMod": 0.5,
+      "FlatBlockMod": 0.5,
+      "FlatCritChanceMod": 0.5,
+      "FlatCritDamageMod": 0.5,
+      "FlatEXPBonus": 0.5,
+      "FlatEnergyPoolMod": 0.5,
+      "FlatEnergyRegenMod": 0.5,
+      "FlatHPPoolMod": 0.5,
+      "FlatHPRegenMod": 0.5,
+      "FlatMPPoolMod": 0.5,
+      "FlatMPRegenMod": 0.5,
+      "FlatMagicDamageMod": 0.5,
+      "FlatMovementSpeedMod": 0.5,
+      "FlatPhysicalDamageMod": 0.5,
+      "FlatSpellBlockMod": 0.5,
+      "PercentArmorMod": 0.5,
+      "PercentAttackSpeedMod": 0.5,
+      "PercentBlockMod": 0.5,
+      "PercentCritChanceMod": 0.5,
+      "PercentCritDamageMod": 0.5,
+      "PercentDodgeMod": 0.5,
+      "PercentEXPBonus": 0.5,
+      "PercentHPPoolMod": 0.5,
+      "PercentHPRegenMod": 0.5,
+      "PercentLifeStealMod": 0.5,
+      "PercentMPPoolMod": 0.5,
+      "PercentMPRegenMod": 0.5,
+      "PercentMagicDamageMod": 0.5,
+      "PercentMovementSpeedMod": 0.5,
+      "PercentPhysicalDamageMod": 0.5,
+      "PercentSpellBlockMod": 0.5,
+      "PercentSpellVampMod": 0.5
+    },
+    "tags": [
+      "sample"
+    ]
+  },
+  "com.R4B.AB.DTO.riot.Gold": {
+    "base": 7,
+    "purchasable": true,
+    "sell": 7,
+    "total": 7
+  },
+  "com.R4B.AB.DTO.riot.Image": {
+    "full": "sample",
+    "group": "sample",
+    "sprite": "sample",
+    "h": 7,
+    "w": 7,
+    "x": 7,
+    "y": 7
+  },
+  "com.R4B.AB.DTO.riot.LevelTip": {
+    "effect": [
+      "sample"
+    ],
+    "label": [
+      "sample"
+    ]
+  },
+  "com.R4B.AB.DTO.riot.MetaData": {
+    "isRune": true,
+    "tier": "sample",
+    "type": "sample"
+  },
+  "com.R4B.AB.DTO.riot.SpellVars": {
+    "coeff": null,
+    "dyn": "sample",
+    "key": "sample",
+    "link": "sample",
+    "ranksWith": "sample"
+  },
+  "com.R4B.AB.DTO.riot.StaticSummonerSpell": {
+    "cooldown": [
+      0.5
+    ],
+    "cooldownBurn": "sample",
+    "cost": [
+      7
+    ],
+    "costBurn": "sample",
+    "costType": "sample",
+    "description": "sample",
+    "effect": [
+      [
+        0.5
+      ]
+    ],
+    "effectBurn": [
+      "sample"
+    ],
+    "image": {
+      "full": "sample",
+      "group": "sample",
+      "sprite": "sample",
+      "h": 7,
+      "w": 7,
+      "x": 7,
+      "y": 7
+    },
+    "key": "sample",
+    "leveltip": {
+      "effect": [
+        "sample"
+      ],
+      "label": [
+        "sample"
+      ]
+    },
+    "maxrank": 7,
+    "name": "sample",
+    "range": null,
+    "rangeBurn": "sample",
+    "resource": "sample",
+    "tooltip": "sample",
+    "vars": [
+      {
+        "coeff": null,
+        "dyn": "sample",
+        "key": "sample",
+        "link": "sample",
+        "ranksWith": "sample"
+      }
+    ],
+    "id": 7,
+    "modes": [
+      "sample"
+    ],
+    "summonerLevel": 7
+  },
+  "com.R4B.AB.DTO.riot.RiotAccount": {
+    "puuid": "sample",
+    "gameName": "sample",
+    "tagLine": "sample"
+  }
+}

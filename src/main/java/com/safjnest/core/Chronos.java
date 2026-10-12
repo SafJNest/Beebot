@@ -85,7 +85,6 @@ public class Chronos {
         return executorService.scheduleWithFixedDelay(task, initialDelay, delay, unit);
     }
 
-
     private static long computeInitialDelay(int hour, int minute, int second) {
         Calendar current = Calendar.getInstance();
         Calendar nextRun = (Calendar) current.clone();

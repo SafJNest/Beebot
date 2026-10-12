@@ -23,7 +23,6 @@ public class ExperienceSystem {
         return new Random().nextInt((MAX_EXPERIENCE - MIN_EXPERIENCE) + 1) + MAX_EXPERIENCE;
     }
 
-
     /**
      * This method is used to calculate the total experience that the user needs to
      * get to be level {@code lvl} from zero.
@@ -54,7 +53,6 @@ public class ExperienceSystem {
         return ExperienceSystem.getExpToReachLvlFromZero(lvl + 1) - ExperienceSystem.getExpToReachLvlFromZero(lvl);
     }
 
-
     /**
      * This method is used to calculate the level you would be with a given quantity of exp.
      * @param exp
@@ -75,7 +73,6 @@ public class ExperienceSystem {
         }
     }
 
-
     /**
      * This method is used to calculate the experience that the user needs to get level up.
      * <p>
@@ -93,7 +90,6 @@ public class ExperienceSystem {
     public static int getLvlUpPercentage(int lvl, int exp) {
         return Math.round((float)ExperienceSystem.getExpToLvlUp(lvl, exp)/(float)(getExpToReachLvl(lvl))*100);
     }
-
 
     public static int calculateExp(int exp, double modifer) {
         return exp + Math.round((float) ((double) getRandomExp() * modifer));

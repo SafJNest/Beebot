@@ -58,8 +58,7 @@ public class MoveUser extends SlashCommand{
             }
             channel = destGuy.getVoiceState().getChannel().asVoiceChannel();
         }
-        
-       
+
         event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
         event.reply(theGuy.getAsMention() + " moved in: " + channel.getName());
         event.deferReply(false).addContent(theGuy.getName() + " moved to " + channel.getName() + ".").queue();

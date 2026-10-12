@@ -5,21 +5,14 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.record.ProfileRecord;
-import com.safjnest.lol.model.record.RecordMetric;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.record.ProfileRecord;
+import com.R4B.lol.RecordMetric;
+import com.R4B.lol.TeamType;
 
 public final class ProfileRecordAnalyzer {
-
-    private ProfileRecordAnalyzer() {}
-
-    public static Accumulator accumulator(String puuid, Filter filter) {
-        return new Accumulator(puuid, filter);
-    }
 
     public static final class Accumulator {
         private final String puuid;
@@ -191,8 +184,6 @@ public final class ProfileRecordAnalyzer {
             return result;
         }
 
-        // ============================================================================
-
     private static Participant participant(Match match, String puuid) {
             if (match == null || match.participants == null || puuid == null) return null;
             for (Participant participant : match.participants)
@@ -230,5 +221,11 @@ public final class ProfileRecordAnalyzer {
             Object value = event.get(key);
             return value == null ? null : String.valueOf(value);
         }
+    }
+
+    private ProfileRecordAnalyzer() {}
+
+    public static Accumulator accumulator(String puuid, Filter filter) {
+        return new Accumulator(puuid, filter);
     }
 }

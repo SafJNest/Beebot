@@ -1,8 +1,11 @@
 package com.safjnest.lol.model.competitive;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.GameQueueType;
+import com.R4B.lol.LaneType;
+import com.R4B.lol.LeagueShard;
 
 public record CompetitiveEntry(
     String puuid,

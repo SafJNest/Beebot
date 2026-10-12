@@ -50,7 +50,6 @@ public class AlertMessage {
         alert.hasPrivateMessage() ? TextDisplay.of(alert.getPrivateMessage()) : TextDisplay.of("No private message is set")
       );
 
-
       Button sendChannel = Button.primary("alert-send-" + AlertSendType.CHANNEL.name(), AlertSendType.CHANNEL.name());
       Button sendPrivate = Button.primary("alert-send-" + AlertSendType.PRIVATE.name(), AlertSendType.PRIVATE.name());
       Button sendBoth = Button.primary("alert-send-" + AlertSendType.BOTH.name(), AlertSendType.BOTH.name());
@@ -122,12 +121,10 @@ public class AlertMessage {
       return containers;
     }
 
-
     private static Container getLevelUpChannel(GuildData guild, AlertData alert, ChannelData channel) {
       Builder builder = EntitySelectMenu.create("alert-levelchannel-" + alert.getID(), SelectTarget.CHANNEL).setPlaceholder("Select Channel").setChannelTypes(ChannelType.TEXT).setMaxValues(1);
       if (channel != null) 
         builder.setDefaultValues(DefaultValue.channel(channel.getRoomId()));
-      
 
       builder.build();
 
@@ -149,7 +146,6 @@ public class AlertMessage {
         channel.isExpSystemEnabled() ? Button.success("alert-togglechannel", "Enabled") : Button.danger("alert-togglechannel", "Disabled") ,
         channel.isExpSystemEnabled() ? TextDisplay.of("Experience enabled on this channel") : TextDisplay.of("Experience disabled on this channel")
       );
-
 
       children.add(modifier);
       children.add(Separator.createDivider(Spacing.SMALL));
@@ -173,7 +169,6 @@ public class AlertMessage {
 
       return Container.of(ActionRow.of(left, center, right, create)).withAccentColor(Bot.getColor());
     }
-
 
     private static Container getContainerError(GuildData guild, AlertData alert) {
       String errors = "";
@@ -217,7 +212,6 @@ public class AlertMessage {
         if (alert.getType() == type) button = button.asDisabled();
         buttons.add(button);
       }
-
 
       Collections.reverse(buttons);
       return Container.of((ActionRow.of(buttons))).withAccentColor(Bot.getColor());

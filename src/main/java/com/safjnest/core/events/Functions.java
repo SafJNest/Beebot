@@ -73,7 +73,6 @@ public class Functions {
             .ifPresent(cmd -> cmd.run(newEvent));
     }
 
-    
     public static void handleExperience(GuildData guildData, MessageReceivedEvent e) {
         TextChannel channel = null;
         try{
@@ -93,7 +92,6 @@ public class Functions {
         
         MemberData member = guildData.getMemberData(newGuy.getIdLong());
 
-
         int exp = member.getExperience();
         int currentLevel = member.getLevel();
         exp = ExperienceSystem.calculateExp(exp, modifier);
@@ -104,7 +102,6 @@ public class Functions {
             return;
         }
         member.setExpData(exp, lvl);
-
 
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
         if (reward != null && reward.isValid()) {
@@ -151,8 +148,6 @@ public class Functions {
                     });
                     break;
             }
-            
-
 
             RewardData toDelete = null;
             if ((toDelete = guildData.getLowerReward(lvl)) != null && toDelete.isTemporary()) {
@@ -261,7 +256,6 @@ public class Functions {
 
     }
 
-
     public static void givesRoles(User theGuy, Guild guild, String[] roles) {
         if (roles == null || roles.length == 0) {
             return;
@@ -281,7 +275,6 @@ public class Functions {
     public static void handleBlacklist(User badGuy, Guild guild) {
         MessageChannel channel = null;
         GuildData guildData = GuildCache.getGuildOrPut(guild.getId());
-
 
         int threshold = guildData.getThreshold();
         if(threshold == 0)
@@ -304,7 +297,6 @@ public class Functions {
         Button kick = Button.primary("kick-" + badGuy.getId(), "Kick");
         Button ban = Button.primary("ban-" + badGuy.getId(), "Ban");
         Button ignore = Button.primary("ignore-" + badGuy.getId(), "Ignore");
-
 
         kick = kick.withStyle(ButtonStyle.PRIMARY);
         ban = ban.withStyle(ButtonStyle.PRIMARY);
@@ -380,7 +372,6 @@ public class Functions {
         }
     }
 
-
     public static boolean isBotAlone(AudioChannel botChannel, AudioChannel channelLeave) {
         if((botChannel != null && channelLeave != null) && (botChannel.getId().equals(channelLeave.getId()))
         && (channelLeave.getMembers().stream().filter(member -> !member.getUser().isBot()).count() == 0)) {
@@ -396,7 +387,6 @@ public class Functions {
         PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().deleteMessage();
     }
 
-
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
         String sound_id = UserCache.getUser(theGuy.getId()).getGreet(guild.getId());
         if (sound_id == null || sound_id.isEmpty()) return;
@@ -408,7 +398,6 @@ public class Functions {
         PlayerManager pm = PlayerManager.get();
 
         String path = sound.getPath();
-
 
         pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
             @Override
@@ -461,6 +450,5 @@ public class Functions {
             alert.removeRole(role_id);
         });
     }
-
 
 }

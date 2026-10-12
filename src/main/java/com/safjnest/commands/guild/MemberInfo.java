@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.R4B.api.dto.summoner.Summoner;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -24,7 +25,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import com.safjnest.lol.model.summoner.Summoner;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -180,12 +180,6 @@ public class MemberInfo extends SlashCommand {
             return;
         }
 
-
-
-
-        
-
-        
         event.reply(createEmbed(event.getGuild(), mentionedMember).build());    
     }
 
@@ -199,7 +193,6 @@ public class MemberInfo extends SlashCommand {
         }
 
         Member mentionedMember = event.getGuild().getMember(user);
-        
 
         event.deferReply(false).addEmbeds(createEmbed(event.getGuild(), mentionedMember).build()).queue();
     }

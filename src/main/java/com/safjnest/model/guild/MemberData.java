@@ -116,8 +116,6 @@ public class MemberData {
         return BotDB.insertWarn(this.ID, reason);
     }
 
-
-
     @Override
     public String toString() {
         return "UserData{" +

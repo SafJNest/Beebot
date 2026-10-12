@@ -1,6 +1,9 @@
-# Specifica iniziale dei contratti condivisi
+# Contratti condivisi R4B
 
-Stato: proposta; nessuno spostamento implementato. Baseline: `cef023bc`.
+Stato: tranche accettata da ADR-0018, baseline implementativa `8a88645e`.
+La proposta generale di separazione ADR-0016 rimane tale oltre Hive/R4B.
+Inventario operativo: [r4b-inventory.md](r4b-inventory.md); evidenze e limiti
+sono registrati in [r4b-validation.md](r4b-validation.md).
 
 ## Criterio di inclusione
 
@@ -15,8 +18,8 @@ I nomi canonici rimangono `Summoner`, `Rank`, `Mastery`, `SummonerView`,
 il proprietario esistente, senza introdurre copie `SummonerDto`, `MatchDto`,
 `SummonerRank`, `ChampionMastery` o alias mantenuti in parallelo.
 
-Il package candidato è `com.safjnest.shared.dto.lol`, con sottopackage per
-ambito. Ogni classe di risposta comprende i propri componenti annidati che
+I package definitivi sono `com.R4B.AB.DTO`, con sottopackage per ambito,
+e `com.R4B.LOL` per enum, costanti e helper puri. Le maiuscole sono obbligatorie. Ogni classe di risposta comprende i propri componenti annidati che
 sono effettivamente serializzati. I componenti operativi annidati devono invece
 essere spostati nel servizio produttore.
 
@@ -67,9 +70,10 @@ overview.masteries: List<Mastery>
 overview.champions: Map<championId, {name, image}>
 ```
 
-Non basta estrarre il record `SummonerView`: `Summoner` contiene operazioni
-persistenti, `SummonerOverview.from` consulta `ChampionUtils`, e
-`ProfileStatistics` calcola aggregati. La sequenza corretta è:
+Nella baseline non bastava estrarre `SummonerView`: `Summoner` conteneva
+operazioni persistenti, `SummonerOverview.from` consultava `ChampionUtils` e
+`ProfileStatistics` calcolava aggregati. La separazione ora usa writer per
+composizione, `SummonerProjection` e accumulatori nel produttore. La sequenza corretta è:
 
 1. Conservare il tipo canonico e i campi finali.
 2. Portare scritture, accumulatori, lookup di dati statici e composizione al
@@ -79,8 +83,8 @@ persistenti, `SummonerOverview.from` consulta `ChampionUtils`, e
 
 L'ereditarietà da `AbstractEntity` deve cessare sul contratto estratto; update,
 upsert e dirty tracking restano in Spring su infrastruttura privata del writer.
-La scelta concreta di come conservare quelle operazioni è un task successivo,
-non una nuova gerarchia di entity/DTO introdotta da questa analisi.
+La migrazione locale conserva queste operazioni nel produttore, senza creare
+un secondo modello pubblico o una gerarchia parallela di entity/DTO.
 
 `userId`, tracking e altri campi oggi non pubblici non diventano automaticamente
 campi HTTP. Link/unlink/tracking del bot richiedono richieste al proprietario
@@ -103,8 +107,8 @@ JSON: non vanno rimossi o rinominati durante l'estrazione.
 `RuneSignature` costituisce un'eccezione all'esclusione del package champion:
 è il tipo di `RuneOption.configuration` e compare anche nei livegame.
 I suoi dati `primaryTree`, `keystone`, `primaryRunes`, `secondaryTree`,
-`secondaryRunes`, `statShards` vanno nel comune. Parsing `JSONObject`, chiavi
-di aggregazione e decode restano nel lato produttore, con un solo owner.
+`secondaryRunes`, `statShards` vanno nel comune. Parsing dei dati acquisiti e chiavi operative di aggregazione restano nel
+lato produttore, con un solo owner; nel comune rimane la forma dati serializzata.
 
 La decisione non implica condividere tutto `BuildUtils`: oggi dipende anche
 da `LeagueHandler` e tipi statici R4J. Convenienze pure eventualmente richieste
@@ -117,9 +121,9 @@ Molti contratti espongono `LeagueShard`, `GameQueueType`, `LaneType`,
 `TierType`, `TierDivisionType`, `TeamType`, `GameModeType`, `GameType`, `MapType`.
 Un comune che li importasse direttamente avrebbe ancora una dipendenza dal SDK.
 
-Target proposto: enum/value types posseduti dal contratto, con gli stessi valori
-JSON accettati oggi, e conversioni SDK soltanto in R4J. Una fase transitoria con
-gli enum SDK è possibile solo se dichiarata come incompleta. Non usare ordinali
+ADR-0018 assegna gli enum/value types a `com.R4B.LOL`, con gli stessi valori
+JSON accettati oggi, e conversioni SDK soltanto in R4J. Una dipendenza SDK
+residua fuori dall’integrazione R4J impedisce il completamento della tranche. Non usare ordinali
 sul wire e non confondere platform shard (`EUW1`) con routing region (`EUROPE`).
 Alias queue, queue canonica persistita e `CanonicalQueue` delle statistiche
 hanno significati distinti e vanno preservati, senza inventare un unico enum
@@ -178,7 +182,8 @@ che descrivono esattamente lo stesso valore senza perdere i dati richiesti.
 
 ## Futuro HttpBuilder/client
 
-Il package `shared.http` è riservato, non creato ora. Il client riutilizzabile
+Client HTTP e builder richieste sono rinviati a un task successivo; nessun
+package di trasporto futuro viene creato da questa tranche. Il client riutilizzabile
 si occuperà di URI/query encoding, headers, invio, timeout, body JSON e risultato
 HTTP tipizzato. Base URL, auth, endpoint e policy di retry arrivano dal chiamante.
 Non dipenderà da Spring, JDA o dal SDK Riot e non conterrà business logic.
@@ -196,5 +201,15 @@ prodotto e consumato supera fixture di compatibilità e il bot usa lo stesso
 tipo canonico. Chi produce il risultato resta il solo owner del calcolo.
 Dettagli e ordine dei task nel [piano](migration-plan.md).
 
-La sola infrastruttura job è implementata in ADR-0017. Generic status Hive
-compila senza SDK/driver; questa proposta dei contratti di dominio resta tale.
+Hive rimane sotto ADR-0017 e i suoi status generici sono riutilizzati senza
+copie. R4B è una tranche autonoma ADR-0018; processi separati, client HTTP,
+bootstrap applicativi indipendenti e trasporto tra servizi restano fuori scope.
+
+## Dati temporanei compatibili nel modello unico
+
+I container derivati in memoria `ProfileStatistics.total/queueStats/laneStats/
+championStats` e `ProfileLeafStats.reference` rimangono dati esclusi dal JSON
+con `@JsonIgnore`, per conservare il consumo bot/produttore dello stesso modello
+canonico. Il loro calcolo vive negli accumulatori del produttore; non implicano
+dipendenze a servizi, SDK, driver o bootstrap in R4B. Non si introducono copie
+pubbliche dei modelli né si pubblicano questi campi nel payload HTTP/storage.

@@ -3,9 +3,9 @@
 > **Single operational entry point for making changes.** If you need to create a new command, endpoint, service, model, job, collection, query, cache or aggregate: start here. For architectural decisions see `AGENTS.md` and the ADRs; for the queue walk-through see `new-queue.md`; for Mongo migration see `mongo/README.md`.
 
 Service extraction analysis: [`architecture/services/README.md`](architecture/services/README.md).
-Shared contracts and service separation remain proposals under ADR-0016.
-The Hive job extraction is accepted independently in ADR-0017; the instructions
-below describe its monolith composition.
+Service separation remains proposed under ADR-0016. Hive is accepted in ADR-0017;
+R4B shared contracts, LoL values/helpers and local consumer migration are accepted
+in ADR-0018. HTTP clients, request builders and separate processes are deferred.
 
 ## Table of Contents
 
@@ -49,7 +49,7 @@ Quick Style Rules (from `AGENTS.md`):
 - **JS:** Custom Elements as Java-like classes, order `static const → getter/setter → static factory → constructor → lifecycle → other`, no `#private`, `async/await` never `.then()`, `try/catch` in `connectedCallback`, `res.text()+DOMParser` where required, magic numbers in `static const`, single `innerHTML` via `parts[]`, CSS for state.
 - **Service layout** in every modified service: `1 constants → 2 fields/ctors → 3 public methods → 4 //==== separator ====` → 5 private methods. Only the separator as structural comment.
 - **Presentation stability:** changes to data/model/persistence/payload do not touch presentation (embed/view/field order/text/layout) unless a style refactor is explicitly requested.
-- **Canonical LoL:** `Summoner`, `Rank`, `Mastery`, `riotId:String`, `SummonerView`, `SummonerLeaderboard`, `Match`, `Participant`, `MatchResult`. Before adding new mapping logic use `ChampionUtils`, `LaneTypeUtils`, `GameQueueTypeUtils`, `LeagueShardUtils`, `TierDivisionUtils`, `LeagueHandler`.
+- **Canonical LoL:** `Summoner`, `Rank`, `Mastery`, `riotId:String`, `SummonerView`, `SummonerLeaderboard`, `Match`, `Participant`, `MatchResult`. Shared data belongs in `com.R4B.AB.DTO`, LoL enums/helpers in `com.R4B.LOL`; reuse their pure behavior. SDK conversion stays in `r4j`; application utilities retain presentation and runtime lookup.
 
 ---
 
@@ -83,7 +83,7 @@ QueueHandler.immediate/normal/background → Router → Registry (dedup + parent
 
 **Match ingestion (2 levels):** `MatchService.insert()` → `tracked=false` (identity seed + raw events). `Tracker` → invalidates cache + `RankService.refresh` from Riot for each participant → `tracked=true` single commit. OP.GG: raw card immediately + best-effort `{rank,lp}` snapshot; never gain/predecessor unless `tracked=true`.
 
-**HTTP API:** Thin Spring controllers (`LolController`, `ChampionController`, `LeaderboardController`, `StatusController`) return canonical `lol.model` models directly. Validation via `LolApiParameters`, mapping via `LolApiResponses.from(ApiResult)`. `ApiResult<T>` = `READY|PARTIAL|PENDING|NOT_FOUND` → `200|200|202|404`. Metadata always `{pagination, lastUpdate, refresh, filter}` except for `LiveGame` and `BotStatus`.
+**HTTP API:** Thin Spring controllers (`LolController`, `ChampionController`, `LeaderboardController`, `StatusController`) return canonical `com.R4B.AB.DTO` models directly. Validation via `LolApiParameters`, mapping via `LolApiResponses.from(ApiResult)`. `ApiResult<T>` = `READY|PARTIAL|PENDING|NOT_FOUND` → `200|200|202|404`. Metadata always `{pagination, lastUpdate, refresh, filter}` except for `LiveGame` and `BotStatus`.
 
 ---
 
@@ -94,36 +94,32 @@ com.hive              // independent JDK-only infrastructure root
  ├─ job/, scheduler/, worker/, status/
  └─ Hive, HiveConfig, Registry, Router
 
+com.R4B
+ ├─ AB/DTO/            // canonical shared request/response/error data
+ │   ├─ summoner/, match/, statistics/, leaderboard/, record/, status/
+ │   └─ Filter, ActivityFilter, ApiResult, ResponseMetadata, Build, RuneSignature...
+ └─ LOL/               // SDK-independent enums, constants and pure helpers
+
 com.safjnest
- ├─ commands/<categoria>/<sotto>        // JDA SlashCommand, name = lowercased class
+ ├─ commands/, core/   // JDA and bot presentation
  ├─ lol/
- │   ├─ model/                          // CANONICI — unico posto per success DTO
- │   │   ├─ summoner/  Summoner, Rank, Mastery, SummonerView, SummonerLeaderboard, SummonerOverview
- │   │   ├─ match/     Match, Participant, MatchResult, LiveGame, RankHistory...
- │   │   ├─ statistics/ ProfileStatistics, ProfileActivity, ProfileMatchups, Stats
- │   │   ├─ leaderboard/ LeaderboardPage, LeaderboardDistribution
- │   │   ├─ record/    ProfileRecord, ProfileRecordPage, RecordMetric...
- │   │   ├─ champion/  ChampionView, ChampionStatistics, Build...
- │   │   └─ Filter, ActivityFilter, ApiResult, ResponseMetadata, ChampionIndexable...
- │   ├─ service/       // cache + persist + compose + enqueue; Analyzer puro separato
+ │   ├─ model/         // producer-only storage/computation structures
+ │   ├─ service/       // cache + persist + compose + enqueue; analyzers separate
  │   ├─ queue/         // application QueueHandler composition/submission
  │   ├─ scheduler/     // ComputeScheduler, SyncScheduler, domain policies
  │   ├─ tracker/       // Tracker, TrackerScheduler
- │   └─ utils/         // ChampionUtils, LaneTypeUtils, GameQueueTypeUtils...
- ├─ r4j/scheduler/     // RiotScheduler adapter
- ├─ spring/
- │   ├─ controller/    LolController, ChampionController, LeaderboardController, StatusController
- │   ├─ config/        LolApiConfig (Jackson MixIn + CORS)
- │   └─ dto/           LolApiError (solo errori HTTP)
- ├─ nosql/             MongoDB, MongoMigration, AbstractEntity, NoSqlEntityExecutor
- ├─ redis/             RedisKey, RedisClient, RedisMemoryParser
- ├─ sql/               QueryRecord, QueryRecordParser, database/LeagueDB (solo migration)
- └─ status/            StatusService, SystemMetricsSampler, LeagueMetricsStore, SampledMetrics
+ │   └─ utils/         // presentation, runtime defaults, static lookup, producer codecs
+ ├─ r4j/               // SDK acquisition/conversion and RiotScheduler
+ ├─ spring/            // controllers, configuration, exception/status mapping
+ ├─ nosql/             // Mongo mapping/writes and application persistence infrastructure
+ ├─ redis/             // local Redis keys, pools, caches and metrics
+ ├─ sql/               // bot persistence and LeagueDB migration-only
+ └─ status/            // sampling and operational response production
 ```
 
 **Class/method names (binding conventions):**
 
-- Package `com.safjnest` + camelCase. Command class `Summoner` → name `summoner`; child `SummonerProfile` → name `profile` (via `replace(father) + toLowerCase`). JSON key identical.
+- Application package `com.safjnest`; shared roots exactly `com.R4B.AB.DTO` and `com.R4B.LOL` (uppercase). Command class `Summoner` → name `summoner`; child `SummonerProfile` → name `profile` (via `replace(father) + toLowerCase`). JSON key identical.
 - Controller method `profile/search/profileByName/matches/rankHistory/activity/matchups/records/match`. Service `get/generate/refresh/invalidate`.
 - Redis key pattern `beebot:lol:ls:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>` (actual value before resource). Java enum `RedisKey` `UPPER_SNAKE` with `of(args)`.
 - Mongo collection = table name (`summoner`, `match`, `match_events`, `profile_statistics`, `profile_activity`, `profile_matchups`, `profile_records`, `champion_builds`, `competitive`).
@@ -135,7 +131,7 @@ com.safjnest
 
 ### Filter — Single Key of an Aggregate
 
-`Filter` (`lol/model/Filter.java`) is the object that must not lose fields between UI → service → Mongo → Redis → queue:
+`Filter` (`com.R4B.AB.DTO.Filter`) is the object that must not lose fields between UI → service → Mongo → Redis → queue:
 
 | Field | default/canonical | notes |
 |---|---|---|
@@ -165,7 +161,7 @@ record ApiResult<T>(Status status, T payload, ResponseMetadata metadata)
 record ResponseMetadata(Pagination pagination, Long lastUpdate, Boolean refresh, Filter filter)
 ```
 
-`READY|PARTIAL` → `200`, `PENDING` → `202` with `LolApiError(202, code, message, metadata)`, `NOT_FOUND` → `404`. `refresh=true` means deduplicated job enqueued. `ProfileService.isStale` = `now - lastUpdate >= 30d + hashMod(puuid)*1d (0-14d)` && `lastSeenAt` within 60d.
+`READY|PARTIAL` → `200`, `PENDING` → `202` with `LolApiError(202, code, message, metadata)`, `NOT_FOUND` → `404`. `refresh=true` indicates available data requiring refresh; it does not itself prove a refresh job is running. `ProfileService.isStale` = `now - lastUpdate >= 30d + hashMod(puuid)*1d (0-14d)` && `lastSeenAt` within 60d.
 
 ### Read-through Cache
 
@@ -257,7 +253,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 
 ### 5.2 New HTTP Endpoint
 
-**When:** new data for the `League-OS` dashboard (Next.js) or external client. Thin controllers, return canonical `lol.model`.
+**When:** new data for the `League-OS` dashboard (Next.js) or external client. Thin controllers, return canonical `com.R4B.AB.DTO`.
 
 **Steps:**
 
@@ -337,18 +333,18 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 
 ### 5.4 New Canonical Model
 
-**When:** new domain concept. Success models **only** in `lol.model` (or `lol.model.<subpackage>`). Spring DTOs only for HTTP errors.
+**When:** new domain concept. Shared requests, success/error models and nested serialized components **only** in `com.R4B.AB.DTO`. Pure LoL enums/constants/helpers in `com.R4B.LOL`. `lol.model` retains producer-only storage/computation structures.
 
 **Steps:**
 
-1. **Choose package:** `lol/model/summoner` (identity), `lol/model/match` (match/participant), `lol/model/statistics` (filtered aggregates), `lol/model/leaderboard`, `lol/model/record`, `lol/model/champion`.
+1. **Choose package:** `com.R4B.AB.DTO` with scope subpackages for identity, match, statistics, leaderboard, records and champion data. LoL value types live in `com.R4B.LOL`; preserve all uppercase root segments.
 2. **Choose form:**
    - Immutable projection → `record MyView(Summoner summoner, Map<GameQueueType,Rank> ranks, ...) { static MyView from(...){...} }`
-   - Mutable filter/entity → `class Filter` fluent `setX()->this`, `AbstractEntity<MyEntity>` for persistence.
+   - Mutable contract → plain data class with fluent setters when needed. Shared DTOs never extend `AbstractEntity`; producers own persistence and dirty tracking.
 3. **Constraints from `AGENTS.md`:**
    - No `SummonerRank` / `ChampionMastery` alias — use `Rank` / `Mastery`.
    - `riotId` remains `String`, no `RiotId` record unless ADR.
-   - `TierDivisionUtils`, `ChampionUtils`, etc. before new mapping logic.
+   - R4B enums/helpers before new pure mapping logic; application composition/static lookup stays in the producer.
    - `@JsonInclude(NON_NULL)`, factory `from`/`of`, `Map.copyOf` / `List.copyOf`.
 4. **Jackson:** add MixIn in `LolApiConfig` if you need to ignore internal fields (`filter`, `filterKey`).
 5. **Check:** `docs/api/lol-api.md` + ADR if new JSON contract (ADR-0005/0006/0013).
@@ -700,7 +696,7 @@ long total = MongoDB.countLeaderboard(queue, region);
 Every change to model/service/persist/filter/command/embed/cache/API **must** pass:
 
 - [ ] **CodeGraph:** `codegraph status` up-to-date → `codegraph explore <symbol>` + `codegraph impact <symbol>` executed and blast radius verified before editing LoL code.
-- [ ] **API sync:** controller / `lol.model` / `docs/api/<scope>/*.md` + `docs/api/lol-api.md` aligned in the same task. If internal-only, explicit verification that no exposed endpoint changes.
+- [ ] **API sync:** controller / `com.R4B.AB.DTO` / `docs/api/<scope>/*.md` + `docs/api/lol-api.md` aligned in the same task. If internal-only, explicit verification that no exposed endpoint changes.
 - [ ] **Doc sync:** `docs/architecture/README.md` + ADR + `docs/mongo/*` + `HANDBOOK.md` updated or `handoff` with `no-doc-change` rationale.
 - [ ] **Stable presentation:** no restyling of embed/view/field order/text/layout unless explicitly requested.
 - [ ] **Indexes & explain:** `explain("executionStats")` IXSCAN + `collStats` ok before merge.
@@ -715,8 +711,8 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 
 ## Canonical Files to Open for Context
 
-- `src/main/java/com/safjnest/lol/model/Filter.java`
-- `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
+- `src/main/java/com/R4B/AB/DTO/Filter.java`
+- `src/main/java/com/R4B/AB/DTO/statistics/ProfileStatistics.java`
 - `src/main/java/com/safjnest/lol/service/ProfileService.java` + `ProfileAnalyzer.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java` + `MongoMigration.java`
 - `src/main/java/com/safjnest/lol/queue/QueueHandler.java` + `com/hive/`

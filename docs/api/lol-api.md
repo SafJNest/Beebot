@@ -54,7 +54,7 @@ Examples use `http://localhost:8080` as the base URL.
 
 - Endpoints are `GET`, except for explicit profile refresh which uses `POST`.
 - Enum and textual values are case-insensitive and are trimmed with `trim()`.
-- Success payloads use canonical models in `com.safjnest.lol.model`.
+- Success and error payload data use canonical models in `com.R4B.AB.DTO` (ADR-0018); shared LoL enums use `com.R4B.LOL`. JSON shapes and HTTP statuses are unchanged.
 - Object-root or paginated responses expose `metadata` on the same root,
   without a `data` envelope. The four keys are always present: `pagination`,
   `lastUpdate`, `refresh` and `filter`; non-applicable values are `null`.

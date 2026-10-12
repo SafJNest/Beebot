@@ -6,6 +6,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import com.R4B.api.dto.riot.StaticChampion;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -21,7 +22,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -91,7 +91,6 @@ public class UltimateBravery extends SlashCommand {
         event.getHook().sendMessageEmbeds(embed.build()).queue();
 	}
 
-
     public static EmbedBuilder createEmbed(String json) {
         JSONParser parser = new JSONParser();
 
@@ -114,9 +113,6 @@ public class UltimateBravery extends SlashCommand {
         String[] earlyItems = new String[6];
         String[] fullBuild = new String[6];
 
-
-
-
         try {
             JSONObject file = (JSONObject) parser.parse(json);
             JSONObject data = (JSONObject) file.get("data");
@@ -133,7 +129,6 @@ public class UltimateBravery extends SlashCommand {
 
             JSONObject itemSet = (JSONObject) data.get("itemSet");
             JSONArray blocks = (JSONArray) itemSet.get("blocks");
-
 
             JSONObject si = (JSONObject) blocks.get(0);
             JSONArray items = (JSONArray) si.get("items");
@@ -155,7 +150,6 @@ public class UltimateBravery extends SlashCommand {
                 JSONObject item = (JSONObject) items.get(i);
                 fullBuild[i] = (String) item.get("id");
             }
-
 
             JSONObject runes = (JSONObject) data.get("runes");
             runePrimaryStyle = LeagueHandler.convertRuneRootToId((String) runes.get("primaryStyle"));
@@ -181,7 +175,6 @@ public class UltimateBravery extends SlashCommand {
                 summonerSpells[dioporco] = LeagueHandler.convertSpellToId((String) k);
                 dioporco++;
             }
-
 
             String laneFormatName =  "";
             switch(role){
@@ -245,8 +238,7 @@ public class UltimateBravery extends SlashCommand {
             }
             eb.addField("**Full Build**", buildString, true);
             return eb;
-            
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;

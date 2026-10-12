@@ -7,12 +7,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 import com.safjnest.nosql.MongoDB;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class SummonerServiceTest {
 

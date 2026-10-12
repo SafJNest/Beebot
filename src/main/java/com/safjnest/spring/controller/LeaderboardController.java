@@ -5,10 +5,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.model.leaderboard.LeaderboardPage;
-import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
+
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.ResponseMetadata;
+import com.R4B.api.dto.leaderboard.LeaderboardDistribution;
+import com.R4B.api.dto.leaderboard.LeaderboardPage;
 import com.safjnest.lol.service.LeaderboardService;
 
 @RestController

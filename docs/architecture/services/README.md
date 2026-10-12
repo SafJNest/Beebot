@@ -1,12 +1,14 @@
 # Separazione iniziale dei servizi
 
-Stato: separazione servizi proposta; infrastruttura Hive implementata sotto ADR-0017. Data: 2026-10-10.
+Stato: separazione servizi proposta; Hive sotto ADR-0017, tranche R4B accettata sotto ADR-0018. Data: 2026-10-10.
 Baseline: branch `beebot-servicies`, commit `cef023bc`, working tree inizialmente pulito.
 
 L'obiettivo è preparare tre servizi nella stessa repository e un nucleo condiviso,
 estraibili successivamente in repository e artifact versionati separati. In questa
-fase i processi e i DTO condivisi restano proposti. Solo il core Hive e i suoi
-adapter locali sono estratti, con wiring nel runtime attuale.
+fase processi e client HTTP restano proposti. Hive e la tranche R4B hanno
+decisioni autonome; il wiring rimane nel monolite. R4B possiede i contratti
+`com.R4B.AB.DTO` e i valori/helper `com.R4B.LOL`, conservando nomi canonici,
+JSON, persistenza e presentazione.
 
 ## Documenti
 
@@ -22,6 +24,10 @@ adapter locali sono estratti, con wiring nel runtime attuale.
    test e decisioni ancora aperte.
 6. [ADR-0016 proposto](../adr/0016-service-boundaries-and-shared-core.md): registra
    il target senza sostituire gli ADR accettati.
+
+7. [ADR-0018 R4B](../adr/0018-r4b-shared-contracts.md): decisione mirata dei contratti.
+8. [Inventario R4B](r4b-inventory.md): endpoint, tipi, helper, conversioni e consumatori.
+9. [Verifiche R4B](r4b-validation.md): build separate, compatibilità e review effettive.
 
 ## Responsabilità target
 

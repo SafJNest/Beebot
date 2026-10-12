@@ -1,7 +1,8 @@
 # Inventario e confini del monolite
 
 Stato: analisi iniziale del 2026-10-10, baseline `cef023bc`.
-La tranche Hive è ora implementata secondo ADR-0017; tabelle numeriche e
+Hive è sotto ADR-0017 e la tranche R4B è accettata sotto ADR-0018; il
+[manifest R4B](r4b-inventory.md) documenta il nuovo confine. Tabelle numeriche e
 accoppiamenti qui sotto documentano la baseline precedente, non un nuovo census.
 Il target è descritto nel [documento principale](README.md).
 

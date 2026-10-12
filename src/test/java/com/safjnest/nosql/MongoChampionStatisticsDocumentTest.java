@@ -7,15 +7,13 @@ import static org.junit.Assert.assertTrue;
 import org.bson.Document;
 import org.junit.Test;
 
-import com.safjnest.lol.model.Filter;
+import com.R4B.api.dto.Filter;
+import com.R4B.lol.*;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.utils.JsonCodec;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class MongoChampionStatisticsDocumentTest {
 

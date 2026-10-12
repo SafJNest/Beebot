@@ -14,10 +14,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
 import com.hive.job.Job;
 import com.hive.job.JobPriority;
@@ -28,7 +24,6 @@ import com.safjnest.lol.service.RankService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.utils.MatchUtils;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
@@ -36,27 +31,24 @@ import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.KillType;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
-import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
-import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
-import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrame;
-import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
-import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineParticipantFrame;
-import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.api.dto.riot.Item;
+import com.R4B.api.dto.riot.LeagueEntry;
+import com.R4B.api.dto.riot.MatchParticipant;
+import com.R4B.api.dto.riot.PerkSelection;
+import com.R4B.api.dto.riot.RiotMatchData;
+import com.R4B.api.dto.riot.RiotTimelineData;
+import com.R4B.api.dto.riot.TimelineFrame;
+import com.R4B.api.dto.riot.TimelineFrameEvent;
+import com.R4B.api.dto.riot.TimelineParticipantFrame;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 
 public class Tracker {
 
@@ -66,9 +58,9 @@ public class Tracker {
         return QueueHandler.immediate(SyncScheduler.class, null, "tracking", "tracking summoners", Void.class, root -> {
             root.phase("TRACKING");
             BotLogger.info("[LPTracker] Started tracking summoners");
-            List<com.safjnest.lol.model.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
-            Map<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> accountsByShard = new LinkedHashMap<>();
-            for (com.safjnest.lol.model.summoner.Summoner account : accounts) {
+            List<com.R4B.api.dto.summoner.Summoner> accounts = MongoDB.findTrackedSummonerModels();
+            Map<LeagueShard, List<com.R4B.api.dto.summoner.Summoner>> accountsByShard = new LinkedHashMap<>();
+            for (com.R4B.api.dto.summoner.Summoner account : accounts) {
                 if (account == null || account.puuid() == null) continue;
                 LeagueShard shard = account.region();
                 if (shard == null || shard == LeagueShard.UNKNOWN) {
@@ -77,13 +69,13 @@ public class Tracker {
                 }
                 accountsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(account);
             }
-            for (Map.Entry<LeagueShard, List<com.safjnest.lol.model.summoner.Summoner>> entry : accountsByShard.entrySet()) {
+            for (Map.Entry<LeagueShard, List<com.R4B.api.dto.summoner.Summoner>> entry : accountsByShard.entrySet()) {
                 LeagueShard shard = entry.getKey();
-                List<com.safjnest.lol.model.summoner.Summoner> shardAccounts = entry.getValue();
+                List<com.R4B.api.dto.summoner.Summoner> shardAccounts = entry.getValue();
                 QueueHandler.immediate(SyncScheduler.class, shard, "tracking:" + shard.name(),
                     "tracking summoners shard=" + shard.name(), Void.class, shardJob -> {
                         shardJob.phase("TRACKING");
-                        for (com.safjnest.lol.model.summoner.Summoner account : shardAccounts) {
+                        for (com.R4B.api.dto.summoner.Summoner account : shardAccounts) {
                             QueueHandler.immediate(SyncScheduler.class, shard,
                                 "tracking-summoner:" + shard.name() + ':' + account.puuid(),
                                 "tracking summoner puuid=" + account.puuid(), Void.class, summonerJob -> {
@@ -98,7 +90,7 @@ public class Tracker {
         });
     }
 
-    private static void retrieveSummoner(com.safjnest.lol.model.summoner.Summoner account, Job<?> task) {
+    private static void retrieveSummoner(com.R4B.api.dto.summoner.Summoner account, Job<?> task) {
         try {
             Summoner summoner = null;
             try {
@@ -128,8 +120,8 @@ public class Tracker {
                 }
                 if (shard != summoner.getPlatform()) summoner = SummonerService.getRiotSummoner(summoner.getPUUID(), shard);
 
-                LOLMatch match = MatchService.fetch(currentMatchId, shard);
-                if (match == null || !GameQueueTypeUtils.isRankedSolo(match.getQueue())) {
+                RiotMatchData match = MatchService.fetch(currentMatchId, shard);
+                if (match == null || !GameQueueType.isRankedSolo(match.getQueue())) {
                     task.missing(account.puuid());
                     return;
                 }
@@ -157,7 +149,6 @@ public class Tracker {
 //    ███    █▀   ▀█   █▀    ███    █▀  █████▄▄██  ▀█████▀   ▀████████▀   ██████████
 //                                      ▀
 
-
 //     ▄███████▄ ███    █▄     ▄████████    ▄█    █▄
 //    ███    ███ ███    ███   ███    ███   ███    ███
 //    ███    ███ ███    ███   ███    █▀    ███    ███
@@ -172,13 +163,13 @@ public class Tracker {
         LeagueShard shard = MatchUtils.matchShard(matchId, fallbackShard);
         if (matchId == null || matchId.isBlank() || shard == null || MongoDB.hasMatch(matchId)) return;
 
-        LOLMatch match = MatchService.fetch(matchId, shard);
+        RiotMatchData match = MatchService.fetch(matchId, shard);
         if (match != null) MatchService.insert(match);
     }
 
-    private static Match trackMatch(LOLMatch source, String referencePuuid, String trackedSummoner, JobPriority priority) {
+    private static Match trackMatch(RiotMatchData source, String referencePuuid, String trackedSummoner, JobPriority priority) {
         if (source == null || source.getPlatform() == null || referencePuuid == null || referencePuuid.isBlank()) return null;
-        if (!GameQueueTypeUtils.isRankedSolo(source.getQueue()) || MatchUtils.isRemake(source)) return null;
+        if (!GameQueueType.isRankedSolo(source.getQueue()) || MatchUtils.isRemake(source)) return null;
 
         String currentFullGameId = MatchUtils.fullGameId(source);
         try {
@@ -207,7 +198,7 @@ public class Tracker {
                 ranks.add(progress.rank);
             }
 
-            match.rank = TierDivisionUtils.getAverageRank(ranks);
+            match.rank = TierDivisionType.getAverageRank(ranks);
             if (!MongoDB.upsertMatch(currentFullGameId, match, true)) return null;
             MatchService.invalidate(match);
             if (trackedSummoner != null && !trackedSummoner.isBlank())
@@ -225,11 +216,11 @@ public class Tracker {
     }
 
     private static Rank findRank(Map<GameQueueType, Rank> ranks, GameQueueType queue) {
-        GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
+        GameQueueType canonicalQueue = GameQueueType.canonicalQueue(queue);
         return ranks == null ? null : ranks.get(canonicalQueue);
     }
 
-    public static Match loadMatch(LOLMatch source) {
+    public static Match loadMatch(RiotMatchData source) {
         if (source == null) return null;
 
         HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(source, source.getParticipants());
@@ -244,22 +235,21 @@ public class Tracker {
         return null;
     }
 
-    public static Match fromR4J(LOLMatch source) {
+    public static Match fromR4J(RiotMatchData source) {
         return fromR4J(source, analyzeMatchBuild(source, source.getParticipants()));
     }
 
     public static Match fromR4J(
-            LOLMatch source,
+            RiotMatchData source,
             Map<String, HashMap<String, String>> matchData) {
         Match match = toCanonicalMatch(source, matchData);
         if (matchData != null && matchData.get("match") != null) {
             match.eventData = new JSONObject(createJSONEvents(matchData.get("match"))).toMap();
-            match.restoreEvents();
         }
         return match;
     }
 
-    private static Match toCanonicalMatch(LOLMatch source, Map<String, HashMap<String, String>> matchData) {
+    private static Match toCanonicalMatch(RiotMatchData source, Map<String, HashMap<String, String>> matchData) {
         Match match = new Match();
         match.gameId = source.getPlatform().name() + "_" + source.getGameId();
         match.leagueShard = source.getPlatform();
@@ -272,9 +262,9 @@ public class Tracker {
             HashMap<String, String> participantData = matchData == null ? null : matchData.get(participant.getPuuid());
             match.participants.add(toCanonicalParticipant(participant, participantData));
         }
-        if (source.getTeams() != null) for (no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam team : source.getTeams()) {
+        if (source.getTeams() != null) for (com.R4B.api.dto.riot.MatchTeam team : source.getTeams()) {
             List<Integer> bans = new ArrayList<>();
-            if (team.getBans() != null) for (no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan ban : team.getBans()) bans.add(ban.getChampionId());
+            if (team.getBans() != null) for (com.R4B.api.dto.riot.ChampionBan ban : team.getBans()) bans.add(ban.getChampionId());
             if (team.getTeamId() != null) match.bans.put(team.getTeamId(), bans);
         }
         return match;
@@ -355,13 +345,11 @@ public class Tracker {
 //  ████████▀     ▄████▀   █▀   █████▄▄██
 //                              ▀
 
-
     public static String createJSONBuild(HashMap<String, String> matchData) {
         JSONObject json = new JSONObject();
         JSONObject build = new JSONObject();
 
         JSONObject runes = new JSONObject();
-
 
         build.put("starter", matchData.getOrDefault("starter", "").split(","));
         build.put("build", matchData.getOrDefault("build", "").split(","));
@@ -547,8 +535,7 @@ public class Tracker {
         snapshots.put(snapshot);
     }
 
-
-    public static HashMap<String, HashMap<String, String>> analyzeMatchBuild(LOLMatch match, List<MatchParticipant> participants) {
+    public static HashMap<String, HashMap<String, String>> analyzeMatchBuild(RiotMatchData match, List<MatchParticipant> participants) {
         Map<Integer, Item> items = StaticDataService.getItems();
 
         HashMap<String, HashMap<String, String>> matchData = new HashMap<>();
@@ -572,11 +559,10 @@ public class Tracker {
 
             String itemsIds = participant.getItem0() + "," + participant.getItem1() + "," + participant.getItem2() + "," + participant.getItem3() + "," + participant.getItem4() + "," + participant.getItem5() + "," + participant.getItem6();
 
-
             matchData.get(participant.getPuuid()).put("summoner_spells", participant.getSummoner1Id() + "," + participant.getSummoner2Id());
             matchData.get(participant.getPuuid()).put("items", itemsIds);
 
-            if (GameQueueTypeUtils.isCherry(match.getQueue())) {
+            if (GameQueueType.isCherry(match.getQueue())) {
                 String augmentList = "";
                 if (participant.getPlayerAugment1() != 0) augmentList = participant.getPlayerAugment1() + "";
                 if (participant.getPlayerAugment2() != 0) augmentList += "," + participant.getPlayerAugment2();
@@ -616,12 +602,12 @@ public class Tracker {
 
         }
 
-        LOLTimeline timeline = MatchService.getTimeline(match);
+        RiotTimelineData timeline = MatchService.getTimeline(match);
         long gameDuration = match.getGameDuration() == null ? Long.MAX_VALUE : match.getGameDuration().longValue() * 1000L;
         return analyzeTimelineEventData(matchData, participants, timeline, items, gameDuration);
     }
 
-    public static Map<String, Object> rebuildTimelineEvents(LOLTimeline timeline) {
+    public static Map<String, Object> rebuildTimelineEvents(RiotTimelineData timeline) {
         if (timeline == null || timeline.getFrames() == null || timeline.getFrames().isEmpty()
                 || timeline.getParticipants() == null || timeline.getParticipants().isEmpty()) return null;
 
@@ -642,7 +628,7 @@ public class Tracker {
     private static HashMap<String, HashMap<String, String>> analyzeTimelineEventData(
             HashMap<String, HashMap<String, String>> matchData,
             List<MatchParticipant> participants,
-            LOLTimeline timeline,
+            RiotTimelineData timeline,
             Map<Integer, Item> items,
             long gameDuration) {
         if (timeline == null || timeline.getFrames() == null || timeline.getParticipants() == null) return null;
@@ -956,7 +942,7 @@ public class Tracker {
                             matchLabel = me.entry().getTier() + " match " + shard + " - "
                                 + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId();
                             task.currentItem("Fetching " + matchLabel);
-                            LOLMatch match = MatchService.fetch(me.matchId(), me.summoner().getPlatform());
+                            RiotMatchData match = MatchService.fetch(me.matchId(), me.summoner().getPlatform());
                             if (match == null) {
                                 task.currentItem("Missing " + matchLabel);
                                 task.missing(me.matchId());

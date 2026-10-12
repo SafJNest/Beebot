@@ -1,0 +1,23 @@
+{
+  "no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery": {
+    "championLevel": 7,
+    "chestGranted": true,
+    "championPoints": 100000,
+    "championPointsSinceLastLevel": 11,
+    "playerId": "sample",
+    "championPointsUntilNextLevel": 11,
+    "tokensEarned": 7,
+    "championId": 412,
+    "lastPlayTime": 11
+  },
+  "no.stelar7.api.r4j.pojo.lol.summoner.Summoner": {
+    "profileIconId": 1234,
+    "name": "Name",
+    "summonerLevel": 500,
+    "accountId": "sample",
+    "puuid": "puuid-42",
+    "id": "sample",
+    "revisionDate": 11,
+    "platform": "EUW1"
+  }
+}

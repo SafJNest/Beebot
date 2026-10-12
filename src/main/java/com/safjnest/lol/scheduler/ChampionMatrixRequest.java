@@ -1,11 +1,12 @@
 package com.safjnest.lol.scheduler;
+import com.safjnest.lol.service.FilterDefaults;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import com.safjnest.lol.model.Filter;
+import com.R4B.api.dto.Filter;
 import com.safjnest.lol.service.ChampionService;
 
 final class ChampionMatrixRequest {
@@ -21,7 +22,7 @@ final class ChampionMatrixRequest {
     synchronized boolean tryAddBuild(Filter filter) {
         if (filter == null) return true;
         if (running) return false;
-        buildFilters.putIfAbsent(filter.toKey(), Filter.fromStateKey(filter.toStateKey()));
+        buildFilters.putIfAbsent(filter.toKey(), FilterDefaults.fromStateKey(filter.toStateKey()));
         return true;
     }
 

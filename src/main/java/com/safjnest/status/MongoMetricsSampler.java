@@ -3,12 +3,12 @@ package com.safjnest.status;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.safjnest.lol.model.status.MongoMemoryMetrics;
-import com.safjnest.lol.model.status.MongoMetrics;
-import com.safjnest.lol.model.status.MongoOperationRates;
-import com.safjnest.lol.model.status.MongoOperationSample;
-import com.safjnest.lol.model.status.MongoOperationsMetrics;
-import com.safjnest.lol.model.status.MongoPerformanceMetrics;
+import com.R4B.api.dto.status.MongoMemoryMetrics;
+import com.R4B.api.dto.status.MongoMetrics;
+import com.R4B.api.dto.status.MongoOperationRates;
+import com.R4B.api.dto.status.MongoOperationSample;
+import com.R4B.api.dto.status.MongoOperationsMetrics;
+import com.R4B.api.dto.status.MongoPerformanceMetrics;
 import com.safjnest.nosql.MongoCommandMonitor;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.nosql.MongoServerStatusSnapshot;

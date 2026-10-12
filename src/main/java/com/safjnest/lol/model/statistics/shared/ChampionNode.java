@@ -3,6 +3,10 @@ package com.safjnest.lol.model.statistics.shared;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+
 public class ChampionNode {
 
     public long bans;

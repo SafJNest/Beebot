@@ -9,7 +9,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.junit.Test;
 
-import com.safjnest.lol.utils.BuildUtils;
+import com.R4B.lol.BuildValues;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 
 public class BuildSignatureTest {
@@ -66,24 +66,24 @@ public class BuildSignatureTest {
         );
 
         assertEquals("3340|3006|3865|3078-3031|3078-3031-3031|1-2|440001|9001|4-14",
-            BuildUtils.fromBase64(signature.toKey()));
+            BuildValues.fromBase64(signature.toKey()));
         BuildSignature decoded = BuildSignature.decode(signature.toKey());
         assertEquals(signature.starter(), decoded.starter());
         assertEquals(signature.core(), decoded.core());
         assertEquals(signature.fullBuild(), decoded.fullBuild());
         assertEquals(signature.spellOrder(), decoded.spellOrder().subList(0, 2));
         assertEquals(18, decoded.spellOrder().size());
-        assertEquals("3340|3865|3078-3031", BuildUtils.fromBase64(signature.toCoreKey()));
+        assertEquals("3340|3865|3078-3031", BuildValues.fromBase64(signature.toCoreKey()));
     }
 
     @Test
     public void decodesLegacyUnseparatedSkillOrderWithoutChangingKeyFields() {
-        String oldKey = BuildUtils.toBase64("3340|3006|3865|3078-3031|3078|123412341234123412|440001|9001|4-14");
+        String oldKey = BuildValues.toBase64("3340|3006|3865|3078-3031|3078|123412341234123412|440001|9001|4-14");
 
         BuildSignature decoded = BuildSignature.decode(oldKey);
 
         assertEquals(List.of(1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2), decoded.spellOrder());
         assertEquals("3340|3006|3865|3078-3031|3078|1-2-3-4-1-2-3-4-1-2-3-4-1-2-3-4-1-2|440001|9001|4-14",
-            BuildUtils.fromBase64(decoded.toKey()));
+            BuildValues.fromBase64(decoded.toKey()));
     }
 }

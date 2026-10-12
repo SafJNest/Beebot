@@ -22,8 +22,6 @@ public class TwitchData extends AlertData {
         this.roleId = roleId;
     }
 
-
-
     public static TwitchData createTwitchData(String guild_id, String streamerId, String message, String privateMessage, String channel, AlertSendType sendType, String roleId) {
         int id = BotDB.createAlert(guild_id, message, privateMessage, channel, sendType, AlertType.TWITCH);
         BotDB.createTwitchData(String.valueOf(id), streamerId, roleId);
@@ -45,7 +43,6 @@ public class TwitchData extends AlertData {
         }
         return result;
     }
-
 
     @Override
     public AlertKey<String> getKey() {

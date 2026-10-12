@@ -19,11 +19,7 @@ import java.util.Objects;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.lol.*;
 
 public class QueryRecord extends HashMap<String, Object> {
 

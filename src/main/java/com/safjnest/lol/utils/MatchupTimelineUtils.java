@@ -6,7 +6,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.safjnest.lol.model.match.Match;
+import com.R4B.api.dto.match.Match;
 
 public final class MatchupTimelineUtils {
 
@@ -16,7 +16,7 @@ public final class MatchupTimelineUtils {
 
     public static Data read(Match match) {
         if (match == null) return Data.empty();
-        Object rawEvents = match.events != null ? match.events : match.eventData;
+        Object rawEvents = match.eventData;
         return read(rawEvents);
     }
 

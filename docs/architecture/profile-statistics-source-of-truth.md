@@ -578,8 +578,8 @@ Before modifying this flow verify:
 
 ### Canonical files to open to recover context
 
-- `src/main/java/com/safjnest/lol/model/Filter.java`
-- `src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java`
+- `src/main/java/com/R4B/AB/DTO/Filter.java`
+- `src/main/java/com/R4B/AB/DTO/statistics/ProfileStatistics.java`
 - `src/main/java/com/safjnest/lol/service/ProfileService.java`
 - `src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java`
 - `src/main/java/com/safjnest/nosql/MongoDB.java`
@@ -587,7 +587,7 @@ Before modifying this flow verify:
 - `src/main/java/com/safjnest/lol/tracker/Tracker.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessage.java`
-- `src/main/java/com/safjnest/lol/model/summoner/SummonerOverview.java`
+- `src/main/java/com/R4B/AB/DTO/summoner/SummonerOverview.java`
 - `docs/mongo/01-db-structure.md`
 - `docs/architecture/adr/0004-profile-statistics-refresh-queue.md`
 - `docs/architecture/adr/0010-database-refresh-queue.md`

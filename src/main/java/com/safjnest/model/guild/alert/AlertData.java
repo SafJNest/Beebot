@@ -158,7 +158,6 @@ public class AlertData {
         return this.roles != null;
     }
 
-
     /**
      * The method first removes the role from the local roles map, 
      * using the provided role ID.
@@ -196,8 +195,6 @@ public class AlertData {
     public boolean terminator4LaRinascita() {
         return BotDB.deleteAlert(String.valueOf(this.ID));
     }
-
-
 
     public int getID() {
         return ID;
@@ -316,7 +313,6 @@ public class AlertData {
                     , true);
         
         eb.addField("Send type", "```" + this.sendType.getName() + "```", true);
-        
 
         if (this.type == AlertType.WELCOME) {
             if (this.getRoles() == null) {
@@ -332,10 +328,8 @@ public class AlertData {
             }
         }
 
-
         return eb;
     }
-
 
     public AlertKey<?> getKey() {
         return new AlertKey<>(this.type);
@@ -351,5 +345,4 @@ public class AlertData {
         return (RewardData) this;
     }
 
-    
 }

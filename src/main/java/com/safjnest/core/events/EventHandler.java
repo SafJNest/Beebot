@@ -51,7 +51,6 @@ public class EventHandler extends ListenerAdapter {
         Guild guild = e.getGuild();
         User self = e.getJDA().getSelfUser();
         User userJoined = e.getMember().getUser();
-        
 
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
@@ -69,7 +68,6 @@ public class EventHandler extends ListenerAdapter {
             Functions.handleGreetSound(channelJoined, userJoined, guild);
         }
     }
-
 
     @Override
     public void onMessageReceived(MessageReceivedEvent e) {

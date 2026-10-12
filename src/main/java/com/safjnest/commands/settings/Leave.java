@@ -12,7 +12,6 @@ import com.safjnest.utils.CommandsLoader;
 
 public class Leave extends SlashCommand {
 
-
     public Leave(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 

@@ -1,8 +1,11 @@
 package com.safjnest.lol.model;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 
 public record ChampionTierSource(
     boolean ready,

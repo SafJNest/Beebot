@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Shared DTO placement and producer operations: amended by ADR-0018; wire contract unchanged
 - Amended: 2026-09-29
 - Service ownership superseded by ADR-0012; public HTTP contract remains in force
 

@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.R4B.api.dto.riot.StaticChampion;
 import com.safjnest.lol.service.StaticDataService;
 
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class ChampionUtils {
 

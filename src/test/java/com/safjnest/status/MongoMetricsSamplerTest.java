@@ -7,8 +7,8 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.status.MongoMetrics;
-import com.safjnest.lol.model.status.MongoOperationSample;
+import com.R4B.api.dto.status.MongoMetrics;
+import com.R4B.api.dto.status.MongoOperationSample;
 
 public class MongoMetricsSamplerTest {
 

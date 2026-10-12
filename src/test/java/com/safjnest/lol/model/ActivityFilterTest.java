@@ -1,4 +1,9 @@
 package com.safjnest.lol.model;
+import com.safjnest.lol.service.FilterDefaults;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -8,7 +13,7 @@ public class ActivityFilterTest {
 
     @Test
     public void defaultsToAllQueuesAndRolesWithFiveMinimumGames() {
-        ActivityFilter filter = new ActivityFilter();
+        ActivityFilter filter = FilterDefaults.activity();
 
         assertEquals(5, filter.minGames());
         assertEquals(null, filter.queue());
@@ -19,17 +24,17 @@ public class ActivityFilterTest {
 
     @Test
     public void minimumGamesDoesNotChangeAggregationIdentity() {
-        ActivityFilter first = new ActivityFilter().setMinGames(5);
-        ActivityFilter second = new ActivityFilter().setMinGames(20);
+        ActivityFilter first = FilterDefaults.activity().setMinGames(5);
+        ActivityFilter second = FilterDefaults.activity().setMinGames(20);
 
         assertEquals(first.toSummonerKey(), second.toSummonerKey());
     }
 
     @Test
     public void aggregationFilterKeepsGlobalFilterFields() {
-        ActivityFilter source = new ActivityFilter();
-        source.setQueue(no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType.RANKED_FLEX_SR);
-        source.setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.TOP);
+        ActivityFilter source = FilterDefaults.activity();
+        source.setQueue(com.R4B.lol.GameQueueType.RANKED_FLEX_SR);
+        source.setLane(com.R4B.lol.LaneType.TOP);
         source.setPatch("14.10");
         source.setMinGames(8);
 

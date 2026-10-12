@@ -1,13 +1,13 @@
 package com.safjnest.lol.utils;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import com.R4B.api.dto.riot.RiotMatchData;
+import com.R4B.lol.*;
 
 public final class MatchUtils {
 
     private MatchUtils() {}
 
-    public static String fullGameId(LOLMatch match) {
+    public static String fullGameId(RiotMatchData match) {
         return match == null || match.getPlatform() == null ? null : match.getPlatform().name() + "_" + match.getGameId();
     }
 
@@ -20,7 +20,7 @@ public final class MatchUtils {
         }
     }
 
-    public static boolean isRemake(LOLMatch match) {
+    public static boolean isRemake(RiotMatchData match) {
         return match != null && match.getGameDuration() != null && match.getGameDuration() <= 330;
     }
 }

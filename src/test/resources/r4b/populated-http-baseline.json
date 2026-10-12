@@ -1,0 +1,173 @@
+{
+  "profile" : {
+    "summoner" : {
+      "puuid" : "puuid-42",
+      "riotId" : "Name#TAG",
+      "region" : "EUW1",
+      "level" : 500,
+      "icon" : 1234
+    },
+    "ranks" : {
+      "RANKED_SOLO_5X5" : {
+        "tier" : "MASTER_I",
+        "lp" : 501,
+        "wins" : 25,
+        "losses" : 10
+      }
+    },
+    "overview" : {
+      "statistics" : {
+        "timeStart" : 1000,
+        "timeEnd" : 2000,
+        "lastUpdate" : 3000,
+        "oldestMatchAt" : 0,
+        "newestMatchAt" : 0,
+        "champions" : {
+          "412" : {
+            "RANKED_SOLO" : {
+              "UTILITY" : {
+                "games" : 3,
+                "wins" : 2,
+                "kills" : 9,
+                "deaths" : 4,
+                "assists" : 11,
+                "blueGames" : 0,
+                "blueWins" : 0,
+                "redGames" : 0,
+                "redWins" : 0,
+                "damage" : 0,
+                "damageBuilding" : 0,
+                "healing" : 0,
+                "vision" : 0,
+                "ward" : 0,
+                "wardKilled" : 0,
+                "cs" : 0,
+                "gold" : 0,
+                "lpGain" : 0,
+                "doubles" : 0,
+                "triples" : 0,
+                "quadruples" : 0,
+                "pentas" : 0,
+                "q" : 0,
+                "w" : 0,
+                "e" : 0,
+                "r" : 0,
+                "d" : 15,
+                "f" : 10,
+                "playtime" : 0,
+                "lastPlayedAt" : 0,
+                "killParticipationSum" : 0.0,
+                "deathShareSum" : 0.0,
+                "goldDiffAt15Sum" : 0.0,
+                "goldDiffAt15Games" : 0,
+                "csDiffAt15Sum" : 0.0,
+                "csDiffAt15Games" : 0,
+                "xpDiffAt15Sum" : 0.0,
+                "xpDiffAt15Games" : 0,
+                "killDiffAt15Sum" : 0.0,
+                "killDiffAt15Games" : 0,
+                "levelDiffAt15Sum" : 0.0,
+                "levelDiffAt15Games" : 0,
+                "plateDiffAt15Sum" : 0.0,
+                "plateDiffAt15Games" : 0,
+                "D" : {
+                  "4" : 15
+                },
+                "F" : {
+                  "14" : 10
+                }
+              }
+            }
+          }
+        },
+        "pings" : { },
+        "spellOne" : { },
+        "spellTwo" : { }
+      },
+      "masteries" : [ {
+        "championId" : 412,
+        "level" : 7,
+        "points" : 100000
+      } ],
+      "champions" : {
+        "412" : {
+          "name" : "Thresh",
+          "image" : "thresh.png"
+        }
+      }
+    },
+    "metadata" : {
+      "pagination" : null,
+      "lastUpdate" : 3000,
+      "refresh" : true,
+      "filter" : null
+    }
+  },
+  "profileLeaf" : {
+    "games" : 3,
+    "wins" : 2,
+    "kills" : 9,
+    "deaths" : 4,
+    "assists" : 11,
+    "blueGames" : 0,
+    "blueWins" : 0,
+    "redGames" : 0,
+    "redWins" : 0,
+    "damage" : 0,
+    "damageBuilding" : 0,
+    "healing" : 0,
+    "vision" : 0,
+    "ward" : 0,
+    "wardKilled" : 0,
+    "cs" : 0,
+    "gold" : 0,
+    "lpGain" : 0,
+    "doubles" : 0,
+    "triples" : 0,
+    "quadruples" : 0,
+    "pentas" : 0,
+    "q" : 0,
+    "w" : 0,
+    "e" : 0,
+    "r" : 0,
+    "d" : 15,
+    "f" : 10,
+    "playtime" : 0,
+    "lastPlayedAt" : 0,
+    "killParticipationSum" : 0.0,
+    "deathShareSum" : 0.0,
+    "goldDiffAt15Sum" : 0.0,
+    "goldDiffAt15Games" : 0,
+    "csDiffAt15Sum" : 0.0,
+    "csDiffAt15Games" : 0,
+    "xpDiffAt15Sum" : 0.0,
+    "xpDiffAt15Games" : 0,
+    "killDiffAt15Sum" : 0.0,
+    "killDiffAt15Games" : 0,
+    "levelDiffAt15Sum" : 0.0,
+    "levelDiffAt15Games" : 0,
+    "plateDiffAt15Sum" : 0.0,
+    "plateDiffAt15Games" : 0,
+    "D" : {
+      "4" : 15
+    },
+    "F" : {
+      "14" : 10
+    }
+  },
+  "runeOption" : {
+    "id" : "rune-key",
+    "configuration" : {
+      "primaryTree" : 8000,
+      "keystone" : 8005,
+      "primaryRunes" : [ 9111, 9104, 8014 ],
+      "secondaryTree" : 8100,
+      "secondaryRunes" : [ 8139, 8135 ],
+      "statShards" : [ 5008, 5008, 5002 ]
+    },
+    "matches" : 3,
+    "wins" : 2,
+    "winrate" : 0.6666666666666666,
+    "pickrate" : 0.5
+  }
+}

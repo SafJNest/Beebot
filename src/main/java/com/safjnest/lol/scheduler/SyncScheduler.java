@@ -1,8 +1,7 @@
 package com.safjnest.lol.scheduler;
 
+import com.R4B.lol.*;
 import com.hive.scheduler.AbstractScheduler;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class SyncScheduler extends AbstractScheduler<LeagueShard> {
 

@@ -1,5 +1,6 @@
 package com.safjnest.lol.message;
 
+import com.safjnest.lol.service.ProfileMatchupsAnalyzer;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -14,22 +15,8 @@ import java.util.stream.Collectors;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.ChampionStatistics.LaneStat;
-import com.safjnest.lol.model.ChampionStatistics.Matchup;
-import com.safjnest.lol.model.match.LiveGame;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.shared.LeafStats;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
-import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueMessageUtils;
@@ -61,16 +48,24 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.summoner.Summoner;
+
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.ChampionStatistics.LaneStat;
+import com.R4B.api.dto.ChampionStatistics.Matchup;
+import com.R4B.api.dto.match.LiveGame;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.api.dto.riot.LeagueEntry;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.api.dto.statistics.ProfileStatistics;
+import com.R4B.api.dto.statistics.shared.LeafStats;
+import com.R4B.api.dto.statistics.shared.ProfileLeafStats;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 
 public class LeagueMessage {
 
@@ -167,7 +162,7 @@ public class LeagueMessage {
         }
 
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons(ButtonStyle.SECONDARY, parameter.getQueueType()));
-        if (parameter.getQueueType() == null || GameQueueTypeUtils.hasLane(parameter.getQueueType()))
+        if (parameter.getQueueType() == null || GameQueueType.hasLane(parameter.getQueueType()))
             rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
         rows.add(ActionRow.of(
             StringSelectMenu.create(BUTTON_ID_PREFIX + "-tier")
@@ -483,7 +478,6 @@ public class LeagueMessage {
         buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
         index++;
 
-
         return buttons;
     }
 
@@ -539,7 +533,7 @@ public class LeagueMessage {
 
     public static List<String> getMatchIds(Summoner s, GameQueueType queue, int index) {
         List<String> gameIds = new ArrayList<>();
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner riotSummoner = SummonerService.getRiotSummoner(s.puuid(), s.region());
+        com.R4B.api.dto.summoner.Summoner riotSummoner = SummonerService.getRiotSummoner(s.puuid(), s.region());
         List<String> allIds = riotSummoner == null ? List.of() : MatchService.getRecentIds(riotSummoner, queue, index);
 
         for (String gameId : allIds) {
@@ -581,7 +575,6 @@ public class LeagueMessage {
             else
                 red.add(participantString);
         }
-
 
         String kda = me.kda;
         String content = "";
@@ -990,7 +983,7 @@ public class LeagueMessage {
     }
 
     private static boolean isRankedSolo(Match match) {
-        return match != null && GameQueueTypeUtils.isRankedSolo(match.queue);
+        return match != null && GameQueueType.isRankedSolo(match.queue);
     }
 
     private static String getOpggMatchTitle(Match match, Participant participant, List<QueryRecord> result) {
@@ -1318,7 +1311,6 @@ public class LeagueMessage {
 
         Button settings = Button.primary("lol-change-" + parameter.getChampionId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
 
-
         Button championButton = Button.secondary("lol-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
         if (champion != null) {
             championButton = Button.secondary("lol-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
@@ -1363,12 +1355,11 @@ public class LeagueMessage {
         else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (parameter.getQueueType() == null || GameQueueTypeUtils.hasLane(parameter.getQueueType())) rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
+        if (parameter.getQueueType() == null || GameQueueType.hasLane(parameter.getQueueType())) rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
 
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons(ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(ActionRow.of(profile, generic, opgg, champions, matchups));
-
 
         if (parameter.getMessageType().hasPageButtons()) {
             Button leftPage = Button.secondary("lol-leftpage-" + parameter.getOffset(), "Previous Page");
@@ -1530,7 +1521,7 @@ public class LeagueMessage {
             return eb;
         }
 
-        boolean arena = GameQueueTypeUtils.isCherry(parameter.getQueueType());
+        boolean arena = GameQueueType.isCherry(parameter.getQueueType());
         String championString = " with " + statistics.championStats.size() + " different champions";
         if (parameter.isShowChampion()) {
             StaticChampion champion = ChampionUtils.getChampion(parameter.getChampionId());
@@ -1661,7 +1652,7 @@ public class LeagueMessage {
             + statistics.championStats.size() + " different champions");
         ProfileMatchups matchups = PROFILE_SERVICE.getMatchups(summoner.region(), summoner.puuid(), parameter.toFilter());
         if (matchups == null) ComputeScheduler.startProfileMatchups(summoner.puuid(), summoner.region(), parameter.toFilter());
-        else eb = LeagueMessageUtils.buildMatchups("matchups", eb, toLegacyMatchups(matchups.aggregateMatchups()));
+        else eb = LeagueMessageUtils.buildMatchups("matchups", eb, toLegacyMatchups(ProfileMatchupsAnalyzer.aggregateMatchups(matchups)));
         return eb;
     }
 

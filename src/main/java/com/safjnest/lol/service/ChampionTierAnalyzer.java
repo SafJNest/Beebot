@@ -10,15 +10,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.IntFunction;
 
-import com.safjnest.lol.model.ChampionTierList;
+import com.R4B.api.dto.ChampionTierList;
+import com.R4B.api.dto.ChampionView;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.riot.StaticChampion;
 import com.safjnest.lol.model.ChampionTierSource;
-import com.safjnest.lol.model.ChampionView;
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.TierMathUtils;
 import com.safjnest.lol.utils.TierMathUtils.Moments;
-
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public final class ChampionTierAnalyzer {
 
@@ -35,6 +34,8 @@ public final class ChampionTierAnalyzer {
         return analyze(filters, sources, ChampionTierAnalyzer::champion);
     }
 
+    // ============================================================================
+
     static List<ChampionTierList.Role> analyze(
             List<Filter> filters,
             Map<String, ChampionTierSource> sources,
@@ -50,8 +51,6 @@ public final class ChampionTierAnalyzer {
         }
         return roles;
     }
-
-    // ============================================================================
 
     private static List<ChampionTierList.Champion> analyzeRole(
             Filter filter,
@@ -440,5 +439,4 @@ public final class ChampionTierAnalyzer {
         List<ChampionTierSource.Matchup> matchups,
         double adjustedWinrate
     ) {}
-
 }

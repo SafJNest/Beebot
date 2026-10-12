@@ -9,7 +9,6 @@ import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
@@ -21,11 +20,9 @@ import com.safjnest.utils.SafJNest;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.lol.*;
 
 public class Champions extends SlashCommand {
 
@@ -81,7 +78,7 @@ public class Champions extends SlashCommand {
         else
             parameter.setQueueType(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
 
-        if (event.getOption("role") != null && GameQueueTypeUtils.hasLane(parameter.getQueueType()))
+        if (event.getOption("role") != null && GameQueueType.hasLane(parameter.getQueueType()))
             parameter.setLaneType(LaneType.valueOf(event.getOption("role").getAsString()));
 
         if (event.getOption("patch") != null)

@@ -35,7 +35,6 @@ public class BotLogger {
         sendLog("INFO", formatLog(message, values));
     }
 
-
     /**
      * Yellow
      */
@@ -98,7 +97,6 @@ public class BotLogger {
             }
         } catch (Exception ignored) {}
     }
-
 
     private static String formatLog(String message, LoggerIDpair... values) {
         String formattedMessage = message;

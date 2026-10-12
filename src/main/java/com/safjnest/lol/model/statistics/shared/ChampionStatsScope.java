@@ -1,12 +1,11 @@
 package com.safjnest.lol.model.statistics.shared;
 
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.utils.FilterCodec;
+import com.safjnest.lol.service.FilterDefaults;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
 import com.safjnest.lol.utils.PatchUtils;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public record ChampionStatsScope(
     GameQueueType queue,
@@ -50,7 +49,7 @@ public record ChampionStatsScope(
     }
 
     public Filter toFilter() {
-        return new Filter()
+        return FilterDefaults.create()
             .setQueue(queue)
             .setRank(rank)
             .setRankBehavior(rankBehavior)

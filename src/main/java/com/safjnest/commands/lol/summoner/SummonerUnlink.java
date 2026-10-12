@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 1.3
  */
 public class SummonerUnlink extends SlashCommand {
-    
 
     /**
      * Constructor

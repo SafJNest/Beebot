@@ -58,9 +58,6 @@ public class TwitchMessage extends SlashCommand {
         
         TwitchData twitch = gs.getTwitchdata(streamerId);
 
-
-
-
         if(twitch == null) {
             event.deferReply(true).addContent("This guild doesn't have a twitch subscription for this streamer.").queue();
             return;

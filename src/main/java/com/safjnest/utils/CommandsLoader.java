@@ -87,7 +87,6 @@ public class CommandsLoader {
     public static List<String> getAllCommandsNames(String userId) {
         List<String> filteredCommandsLIST = new ArrayList<>();
 
-
         for (BotCommand command : commands.values()) {
             if (command.isPresent() && (!command.isHidden() || PermissionHandler.isUntouchable(userId))) {
                 filteredCommandsLIST.add(command.getName());

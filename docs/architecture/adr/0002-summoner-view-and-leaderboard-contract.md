@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Shared DTO placement and producer operations: amended by ADR-0018; wire contract unchanged
 
 ## Context
 
@@ -18,7 +19,7 @@ Summoner -> SummonerView -> SummonerLeaderboard
 
 `SummonerView` is the complete profile projection. `SummonerLeaderboard` contains leaderboard position data and exactly one `SummonerView`; it must not duplicate summoner identity fields.
 
-`SummonerView.from(...)` is the single factory for assembling profile data. Overview parsing is centralized in `SummonerOverview.from(...)` or `LeaderboardSummonerOverview.from(...)`, according to the existing data contract. The factory consumes existing `ProfileStatistics`, `Rank`, mastery and champion data.
+`lol.service.SummonerProjection.view(...)` is the single producer for assembling profile data (ADR-0018). Overview composition and champion lookup are centralized in `SummonerProjection.from(...)`, consuming existing `ProfileStatistics`, `Rank`, mastery and champion data. `SummonerView` and `SummonerOverview` are the shared data contracts; they do not perform runtime lookup or accumulation.
 
 The leaderboard reuses the complete view in the first phase. If a view section is not ready, `DatabaseTracker` submits the missing statistics refresh (profile-logical, insert-time channel assignment); the leaderboard request returns `PENDING` until the complete page can be assembled. The profile request keeps the available view as `PARTIAL`; neither flow performs sequential Riot fetches during the request.
 

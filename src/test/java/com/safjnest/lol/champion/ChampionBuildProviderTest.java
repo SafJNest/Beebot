@@ -1,11 +1,11 @@
 package com.safjnest.lol.champion;
 
+import com.safjnest.lol.service.FilterDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.util.Map;
 
-import com.safjnest.lol.model.Filter;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryRecordParser;
 import org.junit.Test;
@@ -21,7 +21,7 @@ public class ChampionBuildProviderTest {
     public void skipsBuildRecordWithoutTimeline() {
         QueryRecord record = QueryRecordParser.fromMap(Map.of("build", "{\"build\":{},\"skill_order\":[]}"));
 
-        assertNull(ChampionBuildProvider.parse(record, new Filter()));
+        assertNull(ChampionBuildProvider.parse(record, FilterDefaults.create()));
     }
 
 }

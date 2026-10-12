@@ -52,8 +52,6 @@ public abstract class AbstractCache<K, V> {
         expireTimes.put(getValueType(), unit.toNanos(duration));
     }
 
-
-
     @SuppressWarnings("unchecked")
     protected void put(K key, V value) {
         Class<?> type = value.getClass();
@@ -65,7 +63,6 @@ public abstract class AbstractCache<K, V> {
         cache.put(key, value);
         countMap.put(key, 1);
     }
-    
 
     protected V get(K key) {
         Object value = cache.getIfPresent(key);
@@ -104,9 +101,6 @@ public abstract class AbstractCache<K, V> {
                 .toList();
     }
 
-
-
-
     protected void invalidate(K key) {
         cache.invalidate(key);
     }
@@ -124,9 +118,6 @@ public abstract class AbstractCache<K, V> {
         return null;
     }
 
-
-
-
     protected ConcurrentMap<Object,Object> asMap() {
         return cache.asMap();
     }
@@ -136,9 +127,6 @@ public abstract class AbstractCache<K, V> {
         cache.invalidate(oldestKey);
         countMap.remove(oldestKey);
     }
-
-
-
 
     protected int getTypeLimit(Class<?> type) {
         return typeLimits.getOrDefault(type, Integer.MAX_VALUE);
@@ -156,8 +144,6 @@ public abstract class AbstractCache<K, V> {
                 })
                 .orElse(0L);
     }
-
-
 
     protected abstract Class<K> getKeyType();
     protected abstract Class<V> getValueType();

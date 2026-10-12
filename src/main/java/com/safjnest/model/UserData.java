@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.LeagueShard;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
@@ -15,7 +16,6 @@ import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.log.LoggerIDpair;
 
 import net.dv8tion.jda.api.entities.User;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public class UserData {
     
@@ -37,7 +37,6 @@ public class UserData {
         guildGreetIds = new HashMap<>();
     }
 
-
     /* -------------------------------------------------------------------------- */
 
     public String getName() {
@@ -54,7 +53,6 @@ public class UserData {
     public String getId() {
         return USER_ID;
     }
-
 
 //     ▄████████  ▄█        ▄████████    ▄████████ 
 //    ███    ███ ███       ███    ███   ███    ███ 
@@ -97,7 +95,6 @@ public class UserData {
         getAliases().remove(toDelete);
         return BotDB.deleteAlias(toDelete);
     }
-
 
 //     ▄██████▄     ▄████████    ▄████████    ▄████████     ███     
 //    ███    ███   ███    ███   ███    ███   ███    ███ ▀█████████▄ 
@@ -176,7 +173,6 @@ public class UserData {
         return guildGreetIds != null ? guildGreetIds : new HashMap<>();
     }
 
-
 //   ▄█          ▄████████    ▄████████    ▄██████▄  ███    █▄     ▄████████ 
 //  ███         ███    ███   ███    ███   ███    ███ ███    ███   ███    ███ 
 //  ███         ███    █▀    ███    ███   ███    █▀  ███    ███   ███    █▀  
@@ -198,7 +194,6 @@ public class UserData {
     private void checkRiotAccounts() {
         if (riotAccounts == null) retriveRiotAccounts();
     }
-
 
     public Map<String, Summoner> getRiotAccounts() {
         checkRiotAccounts();

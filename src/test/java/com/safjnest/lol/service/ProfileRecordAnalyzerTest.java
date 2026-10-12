@@ -9,23 +9,18 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.record.ProfileRecord;
-import com.safjnest.lol.model.record.RecordMetric;
-import com.safjnest.lol.model.summoner.Mastery;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.api.dto.record.ProfileRecord;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.lol.*;
 
 public class ProfileRecordAnalyzerTest {
 
     @Test
     public void keepsTheBestParticipantRecordAndOmitsIndividualGameShared() {
-        ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", Filter.canonical());
+        ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", FilterDefaults.canonical());
         accumulator.accept(match("one", 1_000, 2_000, 20));
         accumulator.accept(match("two", 2_000, 5_500, 31));
 
@@ -55,7 +50,7 @@ public class ProfileRecordAnalyzerTest {
             )
         );
 
-        ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", Filter.canonical());
+        ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", FilterDefaults.canonical());
         accumulator.accept(match);
         List<ProfileRecord> records = accumulator.finish();
 
@@ -77,7 +72,7 @@ public class ProfileRecordAnalyzerTest {
             "champion_kills", List.of(Map.of("timestamp", 320L, "killer", 1, "kill_type", "first_blood"))
         );
 
-        ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", Filter.canonical());
+        ProfileRecordAnalyzer.Accumulator accumulator = ProfileRecordAnalyzer.accumulator("puuid", FilterDefaults.canonical());
         accumulator.accept(match);
 
         assertEquals(320, record(accumulator.finish(), RecordMetric.FIRST_KILL_TIME).value);

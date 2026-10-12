@@ -19,7 +19,6 @@ public class Twitch extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();

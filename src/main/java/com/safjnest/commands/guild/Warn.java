@@ -69,7 +69,6 @@ public class Warn extends SlashCommand {
             eb.setDescription("**Reason:** " + reason);
         }
 
-
         event.reply(eb.build());
     }
 
@@ -94,7 +93,6 @@ public class Warn extends SlashCommand {
         if (!reason.isEmpty()) {
             eb.setDescription("**Reason:** " + reason);
         }
-
 
         event.replyEmbeds(eb.build()).queue();
     }

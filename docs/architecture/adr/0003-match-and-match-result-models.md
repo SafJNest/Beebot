@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Shared DTO placement and producer operations: amended by ADR-0018; wire contract unchanged
 
 ## Context
 

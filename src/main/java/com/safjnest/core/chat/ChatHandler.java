@@ -69,7 +69,6 @@ public class ChatHandler {
         omegleChannels.get(channel.getId()).getHook().editOriginalEmbeds(eb.build()).queue();
     }
 
-
     public static void sendConnectedEmbed(TextChannel channel, TextChannel otherChannel) {        
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Connected!");

@@ -3,13 +3,12 @@ package com.safjnest.lol.utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.R4B.lol.*;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 
 public class LeagueShardUtils {
 
@@ -32,25 +31,6 @@ public class LeagueShardUtils {
 
     public static String getRegionFlag(LeagueShard shard) {
         return CustomEmojiHandler.getFormattedEmoji(shard.getRealmValue().toUpperCase() + "_server");
-    }
-
-    public static String getRegionCode(LeagueShard shard) {
-        return switch (shard) {
-            case NA1, JP1, BR1, TR1, SG2, PH2, TW2, VN2, TH2 -> shard.getValue();
-            case KR, RU -> shard.getRealmValue() + "1";
-            default -> shard.getRealmValue();
-        };
-    }
-
-    public static RegionShard getAccountRegion(LeagueShard shard) {
-        return switch (shard) {
-            case VN2, OC1, SG2, PH2, TH2, TW2 -> RegionShard.ASIA;
-            default -> shard.toRegionShard();
-        };
-    }
-
-    public static String cacheRegion(LeagueShard shard) {
-        return shard.toRegionShard().name();
     }
 
     public static String leaderboardScope(LeagueShard shard) {

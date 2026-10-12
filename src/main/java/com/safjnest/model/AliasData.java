@@ -30,7 +30,6 @@ public class AliasData {
     public String getCommand() {
         return command;
     }
-    
 
     public String getBaseCommand() {
         return command.split(" ")[0];

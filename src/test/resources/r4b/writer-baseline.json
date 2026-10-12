@@ -1,0 +1,66 @@
+{
+  "summonerPending": [
+    {
+      "type": "set",
+      "path": "ranks.RANKED_SOLO_5X5",
+      "value": {
+        "tier": "DIAMOND_II",
+        "lp": 60,
+        "wins": 10,
+        "losses": 8
+      }
+    },
+    {
+      "type": "set",
+      "path": "tracking",
+      "value": true
+    },
+    {
+      "type": "unset",
+      "path": "userId"
+    },
+    {
+      "type": "set",
+      "path": "tracking",
+      "value": false
+    }
+  ],
+  "matchPending": [
+    {
+      "type": "set",
+      "path": "patch",
+      "value": null
+    },
+    {
+      "type": "unset",
+      "path": "patchMajor"
+    },
+    {
+      "type": "setArrayElementField",
+      "path": "participants",
+      "keyField": "puuid",
+      "keyValue": "p42",
+      "targetField": "rankProgress",
+      "value": {
+        "lp": 501,
+        "rank": "MASTER_I"
+      }
+    }
+  ],
+  "summonerUserId": null,
+  "summonerTracking": false,
+  "summonerRanks": {
+    "RANKED_SOLO_5X5": {
+      "tier": "DIAMOND_II",
+      "lp": 60,
+      "wins": 10,
+      "losses": 8
+    },
+    "RANKED_FLEX_SR": {
+      "tier": "GOLD_II",
+      "lp": 30,
+      "wins": 12,
+      "losses": 9
+    }
+  }
+}

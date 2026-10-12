@@ -26,7 +26,6 @@ public class Play extends SlashCommand{
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new PlaySound(father), new PlayYoutube(father));

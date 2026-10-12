@@ -10,8 +10,10 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.riot.RiotTimelineData;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.lol.*;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.scheduler.DatabaseWorkerType;
@@ -40,9 +42,7 @@ import com.safjnest.utils.CommandsLoader;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
+
 import org.json.JSONObject;
 
 public class Test extends Command {
@@ -266,7 +266,7 @@ public class Test extends Command {
                         MatchMemoryUtils.release(match);
                         return true;
                     }
-                    LOLTimeline timeline = null;
+                    RiotTimelineData timeline = null;
                     try {
                         if (match.leagueShard == null) {
                             counts[1]++;
@@ -360,7 +360,7 @@ public class Test extends Command {
                         return;
                     }
 
-                    LOLTimeline timeline = null;
+                    RiotTimelineData timeline = null;
                     try {
                         timeline = MatchService.getTimeline(gameId, shard);
                         if (timeline == null) {
@@ -472,7 +472,7 @@ public class Test extends Command {
         LeagueShard shard = GuildCache.getGuild(event.getGuild()).getLeagueShard(event.getChannel().getId());
         QueueHandler.background(SyncScheduler.class, shard, "owner-match-history:" + shard.name() + ":" + summonerName,
             "owner match history " + summonerName, Void.class, job -> {
-                no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = SummonerService.getRiotSummoner(summonerName, shard);
+                com.R4B.api.dto.summoner.Summoner summoner = SummonerService.getRiotSummoner(summonerName, shard);
                 if (queues == null) MatchService.importHistory(summoner, null);
                 else for (GameQueueType queue : queues) MatchService.importHistory(summoner, queue);
                 return null;

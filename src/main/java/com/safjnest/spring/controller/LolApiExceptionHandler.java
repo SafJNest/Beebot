@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.safjnest.spring.dto.LolApiError;
+import com.R4B.api.dto.LolApiError;
 
 @RestControllerAdvice
 public class LolApiExceptionHandler {

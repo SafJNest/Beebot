@@ -61,4 +61,4 @@ saved.
 
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
-- Success model: [`ChampionIndexable`](../../../src/main/java/com/safjnest/lol/model/ChampionIndexable.java)
+- Success model: [`ChampionIndexable`](../../../src/main/java/com/R4B/AB/DTO/ChampionIndexable.java)

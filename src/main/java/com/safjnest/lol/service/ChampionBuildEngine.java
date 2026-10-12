@@ -3,10 +3,10 @@ package com.safjnest.lol.service;
 import com.safjnest.lol.champion.BuildSignature;
 import com.safjnest.lol.champion.ChampionBuildData;
 import com.safjnest.lol.champion.ChampionBuildProvider;
-import com.safjnest.lol.champion.RuneSignature;
-import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.utils.BuildUtils;
+import com.R4B.api.dto.Build;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.RuneSignature;
+import com.R4B.lol.BuildValues;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 import com.safjnest.nosql.MongoDB;
@@ -26,6 +26,254 @@ final class ChampionBuildEngine {
     private static final int SLOT_COUNT = 4;
     private static final int AUGMENT_SLOT_COUNT = 4;
     private static final int MAX_ABILITY_SLOT = 4;
+
+    static final class BuildAccumulator {
+
+        private final Filter filter;
+        private final Map<String, int[]> coreBuilds = new LinkedHashMap<>();
+        private final Map<String, List<Integer>> coreBuildItems = new LinkedHashMap<>();
+        private final Map<String, TimingStats> coreBuildTimes = new LinkedHashMap<>();
+        private final Map<Integer, int[]> coreItems = new LinkedHashMap<>();
+        private final Map<Integer, TimingStats> coreItemTimes = new LinkedHashMap<>();
+        private final Map<String, int[]> starters = new LinkedHashMap<>();
+        private final Map<Integer, int[]> boots = new LinkedHashMap<>();
+        private final Map<Integer, TimingStats> bootTimes = new LinkedHashMap<>();
+        private final Map<Integer, int[]> supportItems = new LinkedHashMap<>();
+        private final Map<Integer, TimingStats> supportTimes = new LinkedHashMap<>();
+        private final Map<Integer, int[]> roleBoundItems = new LinkedHashMap<>();
+        private final Map<Integer, TimingStats> roleBoundTimes = new LinkedHashMap<>();
+        private final Map<Integer, Map<Integer, int[]>> slots = new LinkedHashMap<>();
+        private final Map<Integer, Map<Integer, TimingStats>> slotTimes = new LinkedHashMap<>();
+        private final RuneOptionAccumulator runes = new RuneOptionAccumulator();
+        private final Map<String, int[]> summonerSpells = new LinkedHashMap<>();
+        private final SkillOrderTrie skillOrders = new SkillOrderTrie();
+        private final Map<Integer, int[]> prismatics = new LinkedHashMap<>();
+        private final Map<Integer, TimingStats> prismaticTimes = new LinkedHashMap<>();
+        private final Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
+        private final Map<String, Integer> parseRejections = new LinkedHashMap<>();
+        private int sourceRecords;
+        private int games;
+        private int wins;
+
+        private BuildAccumulator(Filter filter) {
+            this.filter = filter;
+        }
+
+        Filter filter() {
+            return filter;
+        }
+
+        void clear() {
+            MatchMemoryUtils.release(coreBuilds);
+            MatchMemoryUtils.release(coreBuildItems);
+            MatchMemoryUtils.release(coreBuildTimes);
+            MatchMemoryUtils.release(coreItems);
+            MatchMemoryUtils.release(coreItemTimes);
+            MatchMemoryUtils.release(starters);
+            MatchMemoryUtils.release(boots);
+            MatchMemoryUtils.release(bootTimes);
+            MatchMemoryUtils.release(supportItems);
+            MatchMemoryUtils.release(supportTimes);
+            MatchMemoryUtils.release(roleBoundItems);
+            MatchMemoryUtils.release(roleBoundTimes);
+            MatchMemoryUtils.release(slots);
+            MatchMemoryUtils.release(slotTimes);
+            runes.clear();
+            MatchMemoryUtils.release(summonerSpells);
+            skillOrders.clear();
+            MatchMemoryUtils.release(prismatics);
+            MatchMemoryUtils.release(prismaticTimes);
+            MatchMemoryUtils.release(augments);
+            MatchMemoryUtils.release(parseRejections);
+            sourceRecords = 0;
+            games = 0;
+            wins = 0;
+        }
+    }
+
+    static final class RuneOptionAccumulator {
+
+        private final Map<String, int[]> values = new LinkedHashMap<>();
+        private final Map<String, RuneSignature> configurations = new LinkedHashMap<>();
+        private final Map<String, Map<RuneSignature, int[]>> completeShardVariants = new LinkedHashMap<>();
+
+        void add(RuneSignature signature, boolean win) {
+            String key = signature.toKey();
+            ChampionBuildEngine.add(values, key, win);
+            configurations.putIfAbsent(key, signature);
+            if (signature.statShards().size() == 3)
+                ChampionBuildEngine.add(completeShardVariants.computeIfAbsent(key, ignored -> new LinkedHashMap<>()),
+                    signature, win);
+        }
+
+        List<Build.RuneOption> toOptions(int totalGames) {
+            List<Map.Entry<String, int[]>> entries = sortedByGames(values, String::compareTo);
+
+            List<Build.RuneOption> result = new ArrayList<>();
+            for (Map.Entry<String, int[]> entry : entries) {
+                int matches = entry.getValue()[0];
+                int wins = entry.getValue()[1];
+                result.add(new Build.RuneOption(entry.getKey(), bestSignature(entry.getKey()), matches, wins,
+                    rate(wins, matches), rate(matches, totalGames)));
+            }
+            return result;
+        }
+
+        private RuneSignature bestSignature(String key) {
+            RuneSignature best = configurations.get(key);
+            int[] bestStats = null;
+            Map<RuneSignature, int[]> variants = completeShardVariants.get(key);
+            if (variants == null) return best;
+            for (Map.Entry<RuneSignature, int[]> entry : variants.entrySet()) {
+                if (bestStats == null || isBetter(entry, best, bestStats)) {
+                    best = entry.getKey();
+                    bestStats = entry.getValue();
+                }
+            }
+            return best;
+        }
+
+        private static boolean isBetter(Map.Entry<RuneSignature, int[]> candidate, RuneSignature current,
+                                        int[] currentStats) {
+            int[] candidateStats = candidate.getValue();
+            int winrate = Double.compare(rate(candidateStats[1], candidateStats[0]),
+                rate(currentStats[1], currentStats[0]));
+            if (winrate != 0) return winrate > 0;
+            if (candidateStats[0] != currentStats[0]) return candidateStats[0] > currentStats[0];
+            return candidate.getKey().statShardsKey().compareTo(current.statShardsKey()) < 0;
+        }
+
+        void clear() {
+            MatchMemoryUtils.release(values);
+            MatchMemoryUtils.release(configurations);
+            MatchMemoryUtils.release(completeShardVariants);
+        }
+    }
+
+    private static final class TimingStats {
+        private double sum;
+        private int count;
+
+        private void add(double value) {
+            sum += value;
+            count++;
+        }
+    }
+
+    static final class SkillOrderTrie {
+
+        private final SkillOrderNode root = new SkillOrderNode();
+
+        void add(List<Integer> order, boolean win) {
+            add(order, win, List.of());
+        }
+
+        void add(List<Integer> order, boolean win, List<ChampionBuildTimelineUtils.SkillUpgrade> upgrades) {
+            if (order == null || order.isEmpty()) return;
+
+            SkillOrderNode current = root;
+            int depth = 0;
+            for (Integer ability : order) {
+                if (ability == null || ability < 1 || ability > MAX_ABILITY_SLOT) break;
+                current = current.children.computeIfAbsent(ability, ignored -> new SkillOrderNode());
+                depth++;
+                if (upgrades != null && depth <= upgrades.size()) {
+                    ChampionBuildTimelineUtils.SkillUpgrade upgrade = upgrades.get(depth - 1);
+                    if (upgrade.skillSlot() == ability && upgrade.championLevel() != null)
+                        current.times.computeIfAbsent(upgrade.championLevel(), ignored -> new TimingStats())
+                            .add(upgrade.timestampMillis() / 1000.0);
+                }
+            }
+            if (depth == 0) return;
+
+            current.matches++;
+            if (win) current.wins++;
+        }
+
+        List<Build.SkillOrderOption> toOptions(int totalGames) {
+            int targetDepth = deepestObservedDepth(root, 0);
+            if (targetDepth == 0) return List.of();
+
+            List<SkillOrderCandidate> candidates = new ArrayList<>();
+            collectCandidates(root, new ArrayList<>(), new ArrayList<>(), 0, 0, targetDepth, candidates);
+            candidates.sort((left, right) -> {
+                int support = Integer.compare(right.matches(), left.matches());
+                if (support != 0) return support;
+                int exact = Integer.compare(right.exactMatches(), left.exactMatches());
+                return exact != 0 ? exact : left.id().compareTo(right.id());
+            });
+
+            List<Build.SkillOrderOption> result = new ArrayList<>();
+            for (SkillOrderCandidate candidate : candidates)
+                result.add(new Build.SkillOrderOption(candidate.id(), candidate.order(), candidate.matches(),
+                    candidate.wins(), rate(candidate.wins(), candidate.matches()), rate(candidate.matches(), totalGames),
+                    candidate.timedOrder()));
+            return result;
+        }
+
+        void clear() {
+            root.clear();
+        }
+
+        private static int deepestObservedDepth(SkillOrderNode node, int depth) {
+            int result = node.matches > 0 ? depth : 0;
+            for (SkillOrderNode child : node.children.values())
+                result = Math.max(result, deepestObservedDepth(child, depth + 1));
+            return result;
+        }
+
+        private static void collectCandidates(SkillOrderNode node, List<Integer> order,
+                                              List<SkillOrderNode> path, int prefixMatches,
+                                              int prefixWins, int targetDepth,
+                                              List<SkillOrderCandidate> candidates) {
+            int matches = prefixMatches + node.matches;
+            int wins = prefixWins + node.wins;
+            if (order.size() == targetDepth) {
+                if (node.matches > 0) candidates.add(new SkillOrderCandidate(BuildValues.joinInts(order),
+                    List.copyOf(order), matches, wins, node.matches, skillTimings(order, path)));
+                return;
+            }
+
+            for (Map.Entry<Integer, SkillOrderNode> entry : node.children.entrySet()) {
+                order.add(entry.getKey());
+                path.add(entry.getValue());
+                collectCandidates(entry.getValue(), order, path, matches, wins, targetDepth, candidates);
+                path.remove(path.size() - 1);
+                order.remove(order.size() - 1);
+            }
+        }
+
+        private static List<Build.SkillTiming> skillTimings(List<Integer> order, List<SkillOrderNode> path) {
+            List<Build.SkillTiming> result = new ArrayList<>();
+            for (int index = 0; index < path.size(); index++) {
+                SkillOrderNode node = path.get(index);
+                for (Map.Entry<Integer, TimingStats> timing : node.times.entrySet()) {
+                    TimingStats stats = timing.getValue();
+                    result.add(new Build.SkillTiming(timing.getKey(), order.get(index),
+                        stats.sum / stats.count, stats.count));
+                }
+            }
+            result.sort(Comparator.comparing(Build.SkillTiming::level, Comparator.nullsLast(Integer::compareTo))
+                .thenComparingInt(Build.SkillTiming::abilitySlot));
+            return List.copyOf(result);
+        }
+    }
+
+    private static final class SkillOrderNode {
+
+        private final Map<Integer, SkillOrderNode> children = new LinkedHashMap<>();
+        private final Map<Integer, TimingStats> times = new LinkedHashMap<>();
+        private int matches;
+        private int wins;
+
+        private void clear() {
+            for (SkillOrderNode child : children.values()) child.clear();
+            children.clear();
+            times.clear();
+            matches = 0;
+            wins = 0;
+        }
+    }
 
     private ChampionBuildEngine() {}
 
@@ -162,133 +410,10 @@ final class ChampionBuildEngine {
         ));
     }
 
-    static final class BuildAccumulator {
-
-        private final Filter filter;
-        private final Map<String, int[]> coreBuilds = new LinkedHashMap<>();
-        private final Map<String, List<Integer>> coreBuildItems = new LinkedHashMap<>();
-        private final Map<String, TimingStats> coreBuildTimes = new LinkedHashMap<>();
-        private final Map<Integer, int[]> coreItems = new LinkedHashMap<>();
-        private final Map<Integer, TimingStats> coreItemTimes = new LinkedHashMap<>();
-        private final Map<String, int[]> starters = new LinkedHashMap<>();
-        private final Map<Integer, int[]> boots = new LinkedHashMap<>();
-        private final Map<Integer, TimingStats> bootTimes = new LinkedHashMap<>();
-        private final Map<Integer, int[]> supportItems = new LinkedHashMap<>();
-        private final Map<Integer, TimingStats> supportTimes = new LinkedHashMap<>();
-        private final Map<Integer, int[]> roleBoundItems = new LinkedHashMap<>();
-        private final Map<Integer, TimingStats> roleBoundTimes = new LinkedHashMap<>();
-        private final Map<Integer, Map<Integer, int[]>> slots = new LinkedHashMap<>();
-        private final Map<Integer, Map<Integer, TimingStats>> slotTimes = new LinkedHashMap<>();
-        private final RuneOptionAccumulator runes = new RuneOptionAccumulator();
-        private final Map<String, int[]> summonerSpells = new LinkedHashMap<>();
-        private final SkillOrderTrie skillOrders = new SkillOrderTrie();
-        private final Map<Integer, int[]> prismatics = new LinkedHashMap<>();
-        private final Map<Integer, TimingStats> prismaticTimes = new LinkedHashMap<>();
-        private final Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
-        private final Map<String, Integer> parseRejections = new LinkedHashMap<>();
-        private int sourceRecords;
-        private int games;
-        private int wins;
-
-        private BuildAccumulator(Filter filter) {
-            this.filter = filter;
-        }
-
-        Filter filter() {
-            return filter;
-        }
-
-        void clear() {
-            MatchMemoryUtils.release(coreBuilds);
-            MatchMemoryUtils.release(coreBuildItems);
-            MatchMemoryUtils.release(coreBuildTimes);
-            MatchMemoryUtils.release(coreItems);
-            MatchMemoryUtils.release(coreItemTimes);
-            MatchMemoryUtils.release(starters);
-            MatchMemoryUtils.release(boots);
-            MatchMemoryUtils.release(bootTimes);
-            MatchMemoryUtils.release(supportItems);
-            MatchMemoryUtils.release(supportTimes);
-            MatchMemoryUtils.release(roleBoundItems);
-            MatchMemoryUtils.release(roleBoundTimes);
-            MatchMemoryUtils.release(slots);
-            MatchMemoryUtils.release(slotTimes);
-            runes.clear();
-            MatchMemoryUtils.release(summonerSpells);
-            skillOrders.clear();
-            MatchMemoryUtils.release(prismatics);
-            MatchMemoryUtils.release(prismaticTimes);
-            MatchMemoryUtils.release(augments);
-            MatchMemoryUtils.release(parseRejections);
-            sourceRecords = 0;
-            games = 0;
-            wins = 0;
-        }
-    }
-
-    static final class RuneOptionAccumulator {
-
-        private final Map<String, int[]> values = new LinkedHashMap<>();
-        private final Map<String, RuneSignature> configurations = new LinkedHashMap<>();
-        private final Map<String, Map<RuneSignature, int[]>> completeShardVariants = new LinkedHashMap<>();
-
-        void add(RuneSignature signature, boolean win) {
-            String key = signature.toKey();
-            ChampionBuildEngine.add(values, key, win);
-            configurations.putIfAbsent(key, signature);
-            if (signature.statShards().size() == 3)
-                ChampionBuildEngine.add(completeShardVariants.computeIfAbsent(key, ignored -> new LinkedHashMap<>()),
-                    signature, win);
-        }
-
-        List<Build.RuneOption> toOptions(int totalGames) {
-            List<Map.Entry<String, int[]>> entries = sortedByGames(values, String::compareTo);
-
-            List<Build.RuneOption> result = new ArrayList<>();
-            for (Map.Entry<String, int[]> entry : entries) {
-                int matches = entry.getValue()[0];
-                int wins = entry.getValue()[1];
-                result.add(new Build.RuneOption(entry.getKey(), bestSignature(entry.getKey()), matches, wins,
-                    rate(wins, matches), rate(matches, totalGames)));
-            }
-            return result;
-        }
-
-        private RuneSignature bestSignature(String key) {
-            RuneSignature best = configurations.get(key);
-            int[] bestStats = null;
-            Map<RuneSignature, int[]> variants = completeShardVariants.get(key);
-            if (variants == null) return best;
-            for (Map.Entry<RuneSignature, int[]> entry : variants.entrySet()) {
-                if (bestStats == null || isBetter(entry, best, bestStats)) {
-                    best = entry.getKey();
-                    bestStats = entry.getValue();
-                }
-            }
-            return best;
-        }
-
-        private static boolean isBetter(Map.Entry<RuneSignature, int[]> candidate, RuneSignature current,
-                                        int[] currentStats) {
-            int[] candidateStats = candidate.getValue();
-            int winrate = Double.compare(rate(candidateStats[1], candidateStats[0]),
-                rate(currentStats[1], currentStats[0]));
-            if (winrate != 0) return winrate > 0;
-            if (candidateStats[0] != currentStats[0]) return candidateStats[0] > currentStats[0];
-            return candidate.getKey().statShardsKey().compareTo(current.statShardsKey()) < 0;
-        }
-
-        void clear() {
-            MatchMemoryUtils.release(values);
-            MatchMemoryUtils.release(configurations);
-            MatchMemoryUtils.release(completeShardVariants);
-        }
-    }
-
     private static void addCore(ChampionBuildData.Game game, Map<String, int[]> builds,
                                 Map<String, List<Integer>> buildItems, Map<Integer, int[]> items) {
         BuildSignature signature = game.signature();
-        String key = BuildUtils.joinInts(signature.core());
+        String key = BuildValues.joinInts(signature.core());
         add(builds, key, game.win());
         buildItems.putIfAbsent(key, signature.core());
         for (Integer item : signature.core()) add(items, item, game.win());
@@ -309,11 +434,11 @@ final class ChampionBuildEngine {
             addTime(itemTimes, item, acquiredAt);
             completedAt = Math.max(completedAt, acquiredAt);
         }
-        if (complete) addTime(buildTimes, BuildUtils.joinInts(core), completedAt);
+        if (complete) addTime(buildTimes, BuildValues.joinInts(core), completedAt);
     }
 
     private static void addStarter(ChampionBuildData.Game game, Map<String, int[]> values) {
-        add(values, BuildUtils.joinInts(game.signature().starter()), game.win());
+        add(values, BuildValues.joinInts(game.signature().starter()), game.win());
     }
 
     private static void addTimedItem(ChampionBuildData.Game game, int item, Map<Integer, int[]> values,
@@ -356,7 +481,7 @@ final class ChampionBuildEngine {
 
     private static void addSummonerSpells(ChampionBuildData.Game game, Map<String, int[]> values) {
         if (!game.signature().summonerSpells().isEmpty())
-            add(values, BuildUtils.joinInts(game.signature().summonerSpells()), game.win());
+            add(values, BuildValues.joinInts(game.signature().summonerSpells()), game.win());
     }
 
     private static void addSkillOrder(ChampionBuildData.Game game, SkillOrderTrie values) {
@@ -487,137 +612,12 @@ final class ChampionBuildEngine {
 
     private static List<Integer> parseIds(String key) {
         if (key == null || key.isBlank()) return List.of();
-        try { return BuildUtils.parseDashList(key); }
+        try { return BuildValues.parseDashList(key); }
         catch (RuntimeException ignored) { return List.of(); }
     }
 
     private static double rate(int numerator, int denominator) {
         return denominator > 0 ? (double) numerator / denominator : 0;
-    }
-
-    private static final class TimingStats {
-        private double sum;
-        private int count;
-
-        private void add(double value) {
-            sum += value;
-            count++;
-        }
-    }
-
-    static final class SkillOrderTrie {
-
-        private final SkillOrderNode root = new SkillOrderNode();
-
-        void add(List<Integer> order, boolean win) {
-            add(order, win, List.of());
-        }
-
-        void add(List<Integer> order, boolean win, List<ChampionBuildTimelineUtils.SkillUpgrade> upgrades) {
-            if (order == null || order.isEmpty()) return;
-
-            SkillOrderNode current = root;
-            int depth = 0;
-            for (Integer ability : order) {
-                if (ability == null || ability < 1 || ability > MAX_ABILITY_SLOT) break;
-                current = current.children.computeIfAbsent(ability, ignored -> new SkillOrderNode());
-                depth++;
-                if (upgrades != null && depth <= upgrades.size()) {
-                    ChampionBuildTimelineUtils.SkillUpgrade upgrade = upgrades.get(depth - 1);
-                    if (upgrade.skillSlot() == ability && upgrade.championLevel() != null)
-                        current.times.computeIfAbsent(upgrade.championLevel(), ignored -> new TimingStats())
-                            .add(upgrade.timestampMillis() / 1000.0);
-                }
-            }
-            if (depth == 0) return;
-
-            current.matches++;
-            if (win) current.wins++;
-        }
-
-        List<Build.SkillOrderOption> toOptions(int totalGames) {
-            int targetDepth = deepestObservedDepth(root, 0);
-            if (targetDepth == 0) return List.of();
-
-            List<SkillOrderCandidate> candidates = new ArrayList<>();
-            collectCandidates(root, new ArrayList<>(), new ArrayList<>(), 0, 0, targetDepth, candidates);
-            candidates.sort((left, right) -> {
-                int support = Integer.compare(right.matches(), left.matches());
-                if (support != 0) return support;
-                int exact = Integer.compare(right.exactMatches(), left.exactMatches());
-                return exact != 0 ? exact : left.id().compareTo(right.id());
-            });
-
-            List<Build.SkillOrderOption> result = new ArrayList<>();
-            for (SkillOrderCandidate candidate : candidates)
-                result.add(new Build.SkillOrderOption(candidate.id(), candidate.order(), candidate.matches(),
-                    candidate.wins(), rate(candidate.wins(), candidate.matches()), rate(candidate.matches(), totalGames),
-                    candidate.timedOrder()));
-            return result;
-        }
-
-        void clear() {
-            root.clear();
-        }
-
-        private static int deepestObservedDepth(SkillOrderNode node, int depth) {
-            int result = node.matches > 0 ? depth : 0;
-            for (SkillOrderNode child : node.children.values())
-                result = Math.max(result, deepestObservedDepth(child, depth + 1));
-            return result;
-        }
-
-        private static void collectCandidates(SkillOrderNode node, List<Integer> order,
-                                              List<SkillOrderNode> path, int prefixMatches,
-                                              int prefixWins, int targetDepth,
-                                              List<SkillOrderCandidate> candidates) {
-            int matches = prefixMatches + node.matches;
-            int wins = prefixWins + node.wins;
-            if (order.size() == targetDepth) {
-                if (node.matches > 0) candidates.add(new SkillOrderCandidate(BuildUtils.joinInts(order),
-                    List.copyOf(order), matches, wins, node.matches, skillTimings(order, path)));
-                return;
-            }
-
-            for (Map.Entry<Integer, SkillOrderNode> entry : node.children.entrySet()) {
-                order.add(entry.getKey());
-                path.add(entry.getValue());
-                collectCandidates(entry.getValue(), order, path, matches, wins, targetDepth, candidates);
-                path.remove(path.size() - 1);
-                order.remove(order.size() - 1);
-            }
-        }
-
-        private static List<Build.SkillTiming> skillTimings(List<Integer> order, List<SkillOrderNode> path) {
-            List<Build.SkillTiming> result = new ArrayList<>();
-            for (int index = 0; index < path.size(); index++) {
-                SkillOrderNode node = path.get(index);
-                for (Map.Entry<Integer, TimingStats> timing : node.times.entrySet()) {
-                    TimingStats stats = timing.getValue();
-                    result.add(new Build.SkillTiming(timing.getKey(), order.get(index),
-                        stats.sum / stats.count, stats.count));
-                }
-            }
-            result.sort(Comparator.comparing(Build.SkillTiming::level, Comparator.nullsLast(Integer::compareTo))
-                .thenComparingInt(Build.SkillTiming::abilitySlot));
-            return List.copyOf(result);
-        }
-    }
-
-    private static final class SkillOrderNode {
-
-        private final Map<Integer, SkillOrderNode> children = new LinkedHashMap<>();
-        private final Map<Integer, TimingStats> times = new LinkedHashMap<>();
-        private int matches;
-        private int wins;
-
-        private void clear() {
-            for (SkillOrderNode child : children.values()) child.clear();
-            children.clear();
-            times.clear();
-            matches = 0;
-            wins = 0;
-        }
     }
 
     private record SkillOrderCandidate(String id, List<Integer> order, int matches, int wins, int exactMatches,

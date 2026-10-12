@@ -1,9 +1,9 @@
 package com.safjnest.status;
 
-import com.safjnest.lol.model.status.JvmMetrics;
-import com.safjnest.lol.model.status.MongoMetrics;
-import com.safjnest.lol.model.status.RedisMetrics;
-import com.safjnest.lol.model.status.SystemMetrics;
+import com.R4B.api.dto.status.JvmMetrics;
+import com.R4B.api.dto.status.MongoMetrics;
+import com.R4B.api.dto.status.RedisMetrics;
+import com.R4B.api.dto.status.SystemMetrics;
 
 record SampledMetrics(
     JvmMetrics jvm,

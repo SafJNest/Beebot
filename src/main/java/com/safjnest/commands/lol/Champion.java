@@ -1,5 +1,6 @@
 package com.safjnest.commands.lol;
 
+import com.safjnest.lol.service.FilterDefaults;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,12 +10,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.Build.SlotOption;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.ChampionStatistics.LaneStat;
-import com.safjnest.lol.model.ChampionStatistics.Matchup;
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.BuildUtils;
@@ -34,11 +29,15 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+
+import com.R4B.api.dto.Build;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.Build.SlotOption;
+import com.R4B.api.dto.ChampionStatistics.LaneStat;
+import com.R4B.api.dto.ChampionStatistics.Matchup;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.lol.*;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -113,10 +112,10 @@ public class Champion extends SlashCommand {
             queue = GameQueueType.valueOf(event.getOption("queue").getAsString());
 
         LaneType lane = null;
-        if (event.getOption("role") != null && GameQueueTypeUtils.hasLane(queue))
+        if (event.getOption("role") != null && GameQueueType.hasLane(queue))
             lane = LaneType.valueOf(event.getOption("role").getAsString());
 
-        Filter filter = new Filter()
+        Filter filter = FilterDefaults.create()
             .setChampion(champion.getId())
             .setLane(lane)
             .setQueue(queue);
@@ -219,7 +218,7 @@ public class Champion extends SlashCommand {
         eb.addField("Build", build.games() + " games `" + String.format("%.2f", build.winrate() * 100) + "% WR`", false);
         addSummonerSpells(eb, build);
 
-        if (GameQueueTypeUtils.isCherry(filter.queue())) {
+        if (GameQueueType.isCherry(filter.queue())) {
             eb.addField("Augment Options", formatAugments(build.augments()), true);
             eb.addField("Prismatic Options", formatPrismatics(build.prismatics()), true);
             addItemFields(eb, build);

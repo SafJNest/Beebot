@@ -19,7 +19,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 1.3
  */
 public class SummonerTrack extends SlashCommand {
-    
 
     public SummonerTrack(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();

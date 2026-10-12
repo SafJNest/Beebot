@@ -1,0 +1,20 @@
+{
+  "revision": "8a88645e5ecd9da75102f2ab5bc4eed6c3aaf5bd",
+  "httpFixtures": 90,
+  "populatedFixtures": 3,
+  "producer": "Baseline HEAD compiled offline; real LolApiConfig HTTP mapper",
+  "excludedInternalTypes": [
+    "Augment",
+    "CompetitiveEntry",
+    "ChampionNode",
+    "ProfileMatchups.Metric",
+    "ChampionLeafStats",
+    "MatchupStats",
+    "TrendStats",
+    "WinLossStats"
+  ],
+  "classNames": "Remapped to R4B canonical owners; JSON payloads unmodified",
+  "sdkVersion": "2.8.1",
+  "sdkStorageFixtures": 46,
+  "sdkStorageProducer": "SDK instances with populated nested fields serialized using baseline JsonCodec FIELD ANY"
+}

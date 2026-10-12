@@ -1,10 +1,9 @@
 package com.safjnest.r4j.scheduler;
 
 import com.safjnest.utils.log.BotLogger;
+import com.R4B.lol.*;
 import com.hive.Registry;
 import com.hive.scheduler.AbstractScheduler;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class RiotScheduler extends AbstractScheduler<LeagueShard> {
 

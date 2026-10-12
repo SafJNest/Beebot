@@ -32,6 +32,15 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - Champion builds use final participant fields for item identity and batch-loaded `match_events` for attributed purchase and skill-upgrade times. If a timeline exists but a particular event is ambiguous or absent, final-inventory counts remain, without a time sample for that item. The same rule applies when build aggregation runs as part of a champion statistics refresh.
 - Champion-build Mongo documents carry a root `buildVersion`; reads and freshness checks ignore documents from older aggregation generations so the normal API request schedules their rebuild.
 
+## R4B contract boundary
+
+Shared LoL data now belongs to `com.R4B.AB.DTO`; shared enums/helpers belong
+to `com.R4B.LOL` (ADR-0018). Mongo mapping, query/write ownership and producer
+operations remain application code. Shared `Summoner`/`Match` do not inherit
+`AbstractEntity`. This extraction does not authorize document-schema, index,
+Redis-key/TTL or bot-presentation changes. HTTP serialization remains distinct
+from storage serialization; internal storage fields are not made public.
+
 ## Code structure
 
 LoL Mongo/NoSQL persistence lives in package `com.safjnest.nosql` and has these main files:
@@ -62,7 +71,7 @@ Operational: `docs/HANDBOOK.md` §6 + this README + `08-query-inventory.md` + `1
 - Match: _id = full Riot match ID, for example EUW1_123.
 - Competitive: `_id` is BSON `Binary` with the first 16 SHA-256 bytes of the UTF-8 canonical key `puuid:queue`; `puuid`, `queue`, `region`, `mmr`, `primary`, optional `otpChampionId` and `lastUpdate` are the projection fields. Riot tier is not persisted.
 - Match: `region` is the sole shard field; `patchMajor` is derived from `patch` and used in filters.
-- R4J enum: name().
+- LoL enums: R4B `name()` strings retain the R4J 2.8.1 names. Historical filter ordinal encodings retain their value ordering (ADR-0018).
 - Ban: bans.BLUE and bans.RED, always present even if empty.
 - Participant: flat fields; no mega-nested build field.
 - Events: `match_events` collection, JSON payload with checksum and original size; the collection is created with `block_compressor=zstd`.

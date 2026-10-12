@@ -1,0 +1,1501 @@
+{
+  "com.R4B.AB.DTO.RuneSignature": {
+    "primaryTree": 7,
+    "keystone": 7,
+    "primaryRunes": [],
+    "secondaryTree": 7,
+    "secondaryRunes": [],
+    "statShards": []
+  },
+  "com.R4B.AB.DTO.ApiResult": {
+    "status": "READY",
+    "payload": null,
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.ApiResult$Status": "READY",
+  "com.R4B.AB.DTO.Build": {
+    "games": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "coreBuilds": [],
+    "coreItems": [],
+    "starters": [],
+    "boots": [],
+    "supportItems": [],
+    "roleBoundItems": [],
+    "slots": [],
+    "runes": [],
+    "summonerSpells": [],
+    "skillOrders": [],
+    "prismatics": [],
+    "augments": []
+  },
+  "com.R4B.AB.DTO.Build$CoreBuildOption": {
+    "id": "sample",
+    "items": [],
+    "matches": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5,
+    "averageCompletionTimeSeconds": 0.5,
+    "timedMatches": 7
+  },
+  "com.R4B.AB.DTO.Build$Option": {
+    "id": "sample",
+    "matches": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5,
+    "averagePurchaseTimeSeconds": 0.5,
+    "timedMatches": 7,
+    "spell1": 0,
+    "spell2": 0
+  },
+  "com.R4B.AB.DTO.Build$RuneOption": {
+    "id": "sample",
+    "configuration": {
+      "primaryTree": 7,
+      "keystone": 7,
+      "primaryRunes": [],
+      "secondaryTree": 7,
+      "secondaryRunes": [],
+      "statShards": []
+    },
+    "matches": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5
+  },
+  "com.R4B.AB.DTO.Build$SkillOrderOption": {
+    "id": "sample",
+    "order": [],
+    "matches": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5,
+    "timedOrder": []
+  },
+  "com.R4B.AB.DTO.Build$SkillTiming": {
+    "level": 7,
+    "abilitySlot": 7,
+    "averageUpgradeTimeSeconds": 0.5,
+    "timedMatches": 7
+  },
+  "com.R4B.AB.DTO.Build$SlotOption": {
+    "itemId": 7,
+    "matches": 7,
+    "winrate": 0.5,
+    "spell1": 0,
+    "spell2": 7
+  },
+  "com.R4B.AB.DTO.ChampionIndexable": {
+    "champion": 7,
+    "role": "MID",
+    "games": 7,
+    "indexable": true,
+    "lastUpdate": 11
+  },
+  "com.R4B.AB.DTO.ChampionStatistics": {
+    "overview": {
+      "games": 7,
+      "picks": 7,
+      "bans": 7,
+      "wins": 7,
+      "winrate": 0.5,
+      "pickrate": 0.5,
+      "banrate": 0.5,
+      "kda": 0.5,
+      "csPerMinute": 0.5,
+      "goldPerMinute": 0.5,
+      "damageProfile": {
+        "physical": 0.5,
+        "magic": 0.5,
+        "trueDamage": 0.5
+      }
+    },
+    "laneStats": [],
+    "matchups": {},
+    "laneSynergies": [],
+    "powerCurve": [],
+    "trend": {
+      "previousPatch": "sample",
+      "games": 7,
+      "winrate": 0.5,
+      "deltaWinrate": 0.5
+    }
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$DamageProfile": {
+    "physical": 0.5,
+    "magic": 0.5,
+    "trueDamage": 0.5
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$LaneStat": {
+    "lane": "MID",
+    "games": 7,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$LaneSynergy": {
+    "allyChampion": 7,
+    "allyLane": "MID",
+    "matches": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5,
+    "goldDiffAt15": 0.5,
+    "csDiffAt15": 0.5,
+    "kda": 0.5,
+    "goldPerMinute": 0.5,
+    "killParticipation": 0.5,
+    "deathShare": 0.5,
+    "xpDiffAt15": 0.5,
+    "killDiffAt15": 0.5,
+    "levelDiffAt15": 0.5,
+    "turretPlateDiffAt15": 0.5,
+    "adjustedWinrate": 0.5,
+    "weightedDelta": 0.5,
+    "matchupScore": 0.5,
+    "tier": "sample",
+    "reliable": true,
+    "goldDiffAt15Games": 11,
+    "csDiffAt15Games": 11,
+    "xpDiffAt15Games": 11,
+    "killDiffAt15Games": 11,
+    "levelDiffAt15Games": 11,
+    "turretPlateDiffAt15Games": 11
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$Matchup": {
+    "matches": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "deltaWinrate": 0.5,
+    "goldDiffAt15": 7,
+    "csDiffAt15": 0.5,
+    "soloKillRate": 0.5,
+    "killParticipation": 0.5,
+    "opponentBanRate": 0.5,
+    "metricGames": 7,
+    "kda": 0.5,
+    "goldPerMinute": 0.5,
+    "deathShare": 0.5,
+    "xpDiffAt15": 0.5,
+    "killDiffAt15": 0.5,
+    "levelDiffAt15": 0.5,
+    "turretPlateDiffAt15": 0.5,
+    "adjustedWinrate": 0.5,
+    "weightedDelta": 0.5,
+    "matchupScore": 0.5,
+    "tier": "sample",
+    "reliable": true,
+    "goldDiffAt15Games": 11,
+    "csDiffAt15Games": 11,
+    "xpDiffAt15Games": 11,
+    "killDiffAt15Games": 11,
+    "levelDiffAt15Games": 11,
+    "turretPlateDiffAt15Games": 11
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$Overview": {
+    "games": 7,
+    "picks": 7,
+    "bans": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5,
+    "banrate": 0.5,
+    "kda": 0.5,
+    "csPerMinute": 0.5,
+    "goldPerMinute": 0.5,
+    "damageProfile": {
+      "physical": 0.5,
+      "magic": 0.5,
+      "trueDamage": 0.5
+    }
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$PowerCurvePoint": {
+    "durationBucket": "sample",
+    "games": 7,
+    "wins": 7,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.ChampionStatistics$Trend": {
+    "previousPatch": "sample",
+    "games": 7,
+    "winrate": 0.5,
+    "deltaWinrate": 0.5
+  },
+  "com.R4B.AB.DTO.ChampionTierList": {
+    "roles": [],
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.ChampionTierList$Champion": {
+    "champion": {
+      "id": 7,
+      "name": "sample",
+      "image": "sample"
+    },
+    "eligibleForRole": true,
+    "tier": "sample",
+    "tierScore": 0.5,
+    "stats": {
+      "games": 7,
+      "picks": 7,
+      "bans": 7,
+      "wins": 7,
+      "winrate": 0.5,
+      "pickrate": 0.5,
+      "banrate": 0.5
+    },
+    "counters": [],
+    "strongAgainst": []
+  },
+  "com.R4B.AB.DTO.ChampionTierList$Matchup": {
+    "champion": {
+      "id": 7,
+      "name": "sample",
+      "image": "sample"
+    },
+    "games": 7,
+    "wins": 7,
+    "losses": 7,
+    "winrate": 0.5,
+    "adjustedWinrate": 0.5,
+    "weightedDelta": 0.5
+  },
+  "com.R4B.AB.DTO.ChampionTierList$Role": {
+    "role": "MID",
+    "champions": []
+  },
+  "com.R4B.AB.DTO.ChampionTierList$Statistics": {
+    "games": 7,
+    "picks": 7,
+    "bans": 7,
+    "wins": 7,
+    "winrate": 0.5,
+    "pickrate": 0.5,
+    "banrate": 0.5
+  },
+  "com.R4B.AB.DTO.ChampionView": {
+    "champion": {
+      "id": 7,
+      "name": "sample",
+      "image": "sample"
+    },
+    "stats": {
+      "overview": {
+        "games": 7,
+        "picks": 7,
+        "bans": 7,
+        "wins": 7,
+        "winrate": 0.5,
+        "pickrate": 0.5,
+        "banrate": 0.5,
+        "kda": 0.5,
+        "csPerMinute": 0.5,
+        "goldPerMinute": 0.5,
+        "damageProfile": {
+          "physical": 0.5,
+          "magic": 0.5,
+          "trueDamage": 0.5
+        }
+      },
+      "laneStats": [],
+      "matchups": {},
+      "laneSynergies": [],
+      "powerCurve": [],
+      "trend": {
+        "previousPatch": "sample",
+        "games": 7,
+        "winrate": 0.5,
+        "deltaWinrate": 0.5
+      }
+    },
+    "build": {
+      "games": 7,
+      "wins": 7,
+      "winrate": 0.5,
+      "coreBuilds": [],
+      "coreItems": [],
+      "starters": [],
+      "boots": [],
+      "supportItems": [],
+      "roleBoundItems": [],
+      "slots": [],
+      "runes": [],
+      "summonerSpells": [],
+      "skillOrders": [],
+      "prismatics": [],
+      "augments": []
+    },
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.ChampionView$Champion": {
+    "id": 7,
+    "name": "sample",
+    "image": "sample"
+  },
+  "com.R4B.AB.DTO.ProfileIndexable": {
+    "riotId": "sample",
+    "region": "sample"
+  },
+  "com.R4B.AB.DTO.ResponseMetadata": {
+    "pagination": {
+      "page": 7,
+      "pageSize": 7,
+      "limit": 7,
+      "offset": 7,
+      "total": 11,
+      "pages": 11,
+      "hasMore": true
+    },
+    "lastUpdate": 11,
+    "refresh": true,
+    "filter": null
+  },
+  "com.R4B.AB.DTO.ResponseMetadata$Pagination": {
+    "page": 7,
+    "pageSize": 7,
+    "limit": 7,
+    "offset": 7,
+    "total": 11,
+    "pages": 11,
+    "hasMore": true
+  },
+  "com.R4B.AB.DTO.leaderboard.LeaderboardDistribution": {
+    "entries": []
+  },
+  "com.R4B.AB.DTO.leaderboard.LeaderboardDistribution$Entry": {
+    "key": "sample",
+    "players": 11
+  },
+  "com.R4B.AB.DTO.leaderboard.LeaderboardPage": {
+    "page": 7,
+    "pageSize": 7,
+    "total": 11,
+    "pages": 11,
+    "summoners": [],
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.match.LiveGame": {
+    "notInGame": true,
+    "gameId": 11,
+    "startedAt": 11,
+    "gameLength": 11,
+    "platform": "UNKNOWN",
+    "queue": "CUSTOM",
+    "mode": "CLASSIC",
+    "type": "CUSTOM_GAME",
+    "map": "UNKNOWN",
+    "bans": {},
+    "participants": []
+  },
+  "com.R4B.AB.DTO.match.LiveGame$Participant": {
+    "puuid": "sample",
+    "riotId": "sample",
+    "championId": 7,
+    "icon": 11,
+    "team": "SUBTEAM",
+    "summonerSpell1": 7,
+    "summonerSpell2": 7,
+    "runes": {
+      "primaryTree": 7,
+      "keystone": 7,
+      "primaryRunes": [],
+      "secondaryTree": 7,
+      "secondaryRunes": [],
+      "statShards": []
+    },
+    "profileOverview": {
+      "summoner": {
+        "puuid": "sample",
+        "riotId": "sample",
+        "region": "UNKNOWN",
+        "level": 7,
+        "icon": 7
+      },
+      "ranks": {},
+      "masteries": [],
+      "championStats": {}
+    }
+  },
+  "com.R4B.AB.DTO.match.LiveGame$ProfileOverview": {
+    "summoner": {
+      "puuid": "sample",
+      "riotId": "sample",
+      "region": "UNKNOWN",
+      "level": 7,
+      "icon": 7
+    },
+    "ranks": {},
+    "masteries": [],
+    "championStats": {}
+  },
+  "com.R4B.AB.DTO.match.Match": {
+    "id": 7,
+    "gameId": "sample",
+    "leagueShard": "UNKNOWN",
+    "queue": "CUSTOM",
+    "rank": "CHALLENGER",
+    "lastUpdate": 11,
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    },
+    "bans": {},
+    "timeStart": 11,
+    "timeEnd": 11,
+    "patch": "sample",
+    "participants": [],
+    "events": {}
+  },
+  "com.R4B.AB.DTO.match.MatchPage": {
+    "items": [],
+    "limit": 7,
+    "offset": 7,
+    "total": 11,
+    "hasMore": true,
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.match.MatchResult": {
+    "gameId": "sample",
+    "queue": "CUSTOM",
+    "timeStart": 11,
+    "timeEnd": 11,
+    "win": true,
+    "kda": "sample",
+    "championId": 7,
+    "lane": "MID",
+    "damage": 7,
+    "cs": 7,
+    "gold": 7,
+    "vision": 7,
+    "teamKills": 7,
+    "items": [],
+    "summonerSpells": [],
+    "primaryRunes": [],
+    "secondaryRunes": [],
+    "statsRunes": [],
+    "participants": []
+  },
+  "com.R4B.AB.DTO.match.Participant": {
+    "id": 7,
+    "summonerId": 7,
+    "matchId": 7,
+    "win": true,
+    "kda": "sample",
+    "kills": 7,
+    "deaths": 7,
+    "assists": 7,
+    "champion": 7,
+    "lane": "MID",
+    "team": "SUBTEAM",
+    "roleQuestId": 7,
+    "rankProgress": {
+      "rank": "CHALLENGER_I",
+      "lp": 7,
+      "gain": 7,
+      "previousRank": "CHALLENGER_I",
+      "previousLp": 7
+    },
+    "damage": 7,
+    "damageTaken": 7,
+    "damageBuilding": 7,
+    "healing": 7,
+    "cs": 7,
+    "goldEarned": 7,
+    "ward": 7,
+    "wardKilled": 7,
+    "visionScore": 7,
+    "pings": {},
+    "subTeam": 7,
+    "subTeamPlacement": 7,
+    "puuid": "sample",
+    "riotId": "sample",
+    "riotTag": "sample",
+    "championLevel": 7,
+    "doubles": 7,
+    "triples": 7,
+    "quadruples": 7,
+    "pentas": 7,
+    "item0": 7,
+    "item1": 7,
+    "item2": 7,
+    "item3": 7,
+    "item4": 7,
+    "item5": 7,
+    "item6": 7,
+    "turretKills": 7,
+    "q": 7,
+    "w": 7,
+    "e": 7,
+    "r": 7,
+    "d": 7,
+    "f": 7,
+    "summonerSpell1": 7,
+    "summonerSpell2": 7,
+    "primaryRunes": [],
+    "secondaryRunes": [],
+    "statsRunes": [],
+    "skillOrder": [],
+    "augments": [],
+    "starterItems": [],
+    "buildPath": [],
+    "boots": 7,
+    "supportItem": 7
+  },
+  "com.R4B.AB.DTO.match.RankHistory": {
+    "items": [],
+    "total": 11,
+    "metadata": {
+      "view": "sample",
+      "season": 7,
+      "patch": "sample",
+      "requestedTimeStart": 11,
+      "requestedTimeEnd": 11,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.match.RankHistoryMatch": {
+    "gameId": "sample",
+    "queue": "CUSTOM",
+    "patch": "sample",
+    "timeStart": 11,
+    "timeEnd": 11,
+    "win": true,
+    "lane": "MID",
+    "puuid": "sample",
+    "champion": 7,
+    "enemyChampion": 7,
+    "enemyPuuid": "sample",
+    "duoChampion": 7,
+    "duoPuuid": "sample",
+    "duoEnemyChampion": 7,
+    "duoEnemyPuuid": "sample",
+    "rankProgress": {
+      "rank": "CHALLENGER_I",
+      "lp": 7,
+      "gain": 7,
+      "previousRank": "CHALLENGER_I",
+      "previousLp": 7
+    }
+  },
+  "com.R4B.AB.DTO.match.RankHistoryMetadata": {
+    "view": "sample",
+    "season": 7,
+    "patch": "sample",
+    "requestedTimeStart": 11,
+    "requestedTimeEnd": 11,
+    "filter": null
+  },
+  "com.R4B.AB.DTO.match.RankProgress": {
+    "rank": "CHALLENGER_I",
+    "lp": 7,
+    "gain": 7,
+    "previousRank": "CHALLENGER_I",
+    "previousLp": 7
+  },
+  "com.R4B.AB.DTO.record.ProfileRecord": {
+    "puuid": "sample",
+    "riotId": "sample",
+    "icon": 7,
+    "filterKey": "sample",
+    "metric": "KILLS",
+    "value": 11,
+    "score": 11,
+    "matchId": "sample",
+    "occurredAt": 11,
+    "championId": 7,
+    "region": "UNKNOWN",
+    "mmr": 7,
+    "team": "SUBTEAM",
+    "actorPuuid": "sample",
+    "gameShared": true,
+    "globalRanking": 11,
+    "regionRanking": 11,
+    "lastUpdate": 11,
+    "masteryLevel": 7
+  },
+  "com.R4B.AB.DTO.record.ProfileRecordPage": {
+    "records": {},
+    "lastUpdate": 11,
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.record.RecordPage": {
+    "metric": "KILLS",
+    "records": [],
+    "limit": 7,
+    "offset": 7,
+    "total": 11,
+    "hasMore": true,
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.record.RecordsOverview": {
+    "records": {},
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity": {
+    "filter": null,
+    "coverage": {
+      "games": 11,
+      "oldestMatchAt": 11,
+      "newestMatchAt": 11,
+      "calculatedAt": 11
+    },
+    "summary": {
+      "games": 11,
+      "wins": 11,
+      "losses": 11,
+      "winrate": 0.5,
+      "gamesPerDay": 0.5,
+      "mostActiveDay": {
+        "day": 7,
+        "games": 11,
+        "wins": 11,
+        "losses": 11,
+        "share": 0.5,
+        "winrate": 0.5
+      },
+      "bestWinrateSlot": {
+        "rank": 7,
+        "day": 7,
+        "startHour": 7,
+        "endHour": 7,
+        "games": 11,
+        "wins": 11,
+        "losses": 11,
+        "winrate": 0.5
+      },
+      "favoriteQueue": {
+        "queue": "CUSTOM",
+        "games": 11,
+        "wins": 11,
+        "losses": 11,
+        "share": 0.5,
+        "winrate": 0.5
+      },
+      "sessionCount": 11,
+      "averageSessionDurationMs": 11,
+      "sessionDurationStdDevMs": 11
+    },
+    "heatmap": {
+      "days": [],
+      "hours": [],
+      "cells": []
+    },
+    "bestTimeWindows": [],
+    "dailyActivity": [],
+    "hourlyTrend": [],
+    "queueActivity": [],
+    "recentSessions": [],
+    "insights": [],
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$Coverage": {
+    "games": 11,
+    "oldestMatchAt": 11,
+    "newestMatchAt": 11,
+    "calculatedAt": 11
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$DayActivity": {
+    "day": 7,
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "share": 0.5,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$Heatmap": {
+    "days": [],
+    "hours": [],
+    "cells": []
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$HeatmapCell": {
+    "day": 7,
+    "hour": 7,
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$HourActivity": {
+    "hour": 7,
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "share": 0.5,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$Insight": {
+    "code": "sample",
+    "values": {}
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$QueueActivity": {
+    "queue": "CUSTOM",
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "share": 0.5,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$Session": {
+    "start": 11,
+    "end": 11,
+    "durationMs": 11,
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "winrate": 0.5,
+    "queues": [],
+    "championIds": []
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$Summary": {
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "winrate": 0.5,
+    "gamesPerDay": 0.5,
+    "mostActiveDay": {
+      "day": 7,
+      "games": 11,
+      "wins": 11,
+      "losses": 11,
+      "share": 0.5,
+      "winrate": 0.5
+    },
+    "bestWinrateSlot": {
+      "rank": 7,
+      "day": 7,
+      "startHour": 7,
+      "endHour": 7,
+      "games": 11,
+      "wins": 11,
+      "losses": 11,
+      "winrate": 0.5
+    },
+    "favoriteQueue": {
+      "queue": "CUSTOM",
+      "games": 11,
+      "wins": 11,
+      "losses": 11,
+      "share": 0.5,
+      "winrate": 0.5
+    },
+    "sessionCount": 11,
+    "averageSessionDurationMs": 11,
+    "sessionDurationStdDevMs": 11
+  },
+  "com.R4B.AB.DTO.statistics.ProfileActivity$TimeWindow": {
+    "rank": 7,
+    "day": 7,
+    "startHour": 7,
+    "endHour": 7,
+    "games": 11,
+    "wins": 11,
+    "losses": 11,
+    "winrate": 0.5
+  },
+  "com.R4B.AB.DTO.statistics.ProfileMatchupLeaf": {
+    "games": 11,
+    "wins": 11,
+    "kills": 11,
+    "deaths": 11,
+    "assists": 11,
+    "blueGames": 11,
+    "blueWins": 11,
+    "redGames": 11,
+    "redWins": 11,
+    "damage": 11,
+    "damageBuilding": 11,
+    "damageTaken": 11,
+    "healing": 11,
+    "vision": 11,
+    "ward": 11,
+    "wardKilled": 11,
+    "cs": 11,
+    "gold": 11,
+    "lpGain": 11,
+    "championLevelTotal": 11,
+    "doubles": 11,
+    "triples": 11,
+    "quadruples": 11,
+    "pentas": 11,
+    "q": 11,
+    "w": 11,
+    "e": 11,
+    "r": 11,
+    "d": 11,
+    "f": 11,
+    "arenaFirst": 11,
+    "arenaSecond": 11,
+    "arenaThird": 11,
+    "arenaPlacementSum": 11,
+    "playtime": 11,
+    "lastPlayedAt": 11,
+    "killParticipationSum": 0.5,
+    "deathShareSum": 0.5,
+    "goldDiffAt15Sum": 0.5,
+    "goldDiffAt15Games": 11,
+    "csDiffAt15Sum": 0.5,
+    "csDiffAt15Games": 11,
+    "xpDiffAt15Sum": 0.5,
+    "xpDiffAt15Games": 11,
+    "killDiffAt15Sum": 0.5,
+    "killDiffAt15Games": 11,
+    "levelDiffAt15Sum": 0.5,
+    "levelDiffAt15Games": 11,
+    "plateDiffAt15Sum": 0.5,
+    "plateDiffAt15Games": 11,
+    "isOtp": true,
+    "adjustedWinrate": 0.5,
+    "weightedDelta": 0.5,
+    "matchupScore": 0.5,
+    "tier": "sample",
+    "reliable": true,
+    "kda": 0.5,
+    "goldPerMinute": 0.5,
+    "killParticipation": 0.5,
+    "deathShare": 0.5,
+    "goldDiffAt15": 0.5,
+    "csDiffAt15": 0.5,
+    "xpDiffAt15": 0.5,
+    "killDiffAt15": 0.5,
+    "levelDiffAt15": 0.5,
+    "turretPlateDiffAt15": 0.5,
+    "matchups": {},
+    "D": {},
+    "F": {}
+  },
+  "com.R4B.AB.DTO.statistics.ProfileMatchups": {
+    "filter": null,
+    "timeStart": 11,
+    "timeEnd": 11,
+    "lastUpdate": 11,
+    "champions": {},
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.statistics.ProfileStatistics": {
+    "timeStart": 11,
+    "timeEnd": 11,
+    "lastUpdate": 11,
+    "oldestMatchAt": 11,
+    "newestMatchAt": 11,
+    "champions": {},
+    "pings": {},
+    "spellOne": {},
+    "spellTwo": {}
+  },
+  "com.R4B.AB.DTO.statistics.shared.LeafStats": {
+    "games": 11,
+    "wins": 11,
+    "kills": 11,
+    "deaths": 11,
+    "assists": 11
+  },
+  "com.R4B.AB.DTO.statistics.shared.ProfileLeafStats": {
+    "games": 11,
+    "wins": 11,
+    "kills": 11,
+    "deaths": 11,
+    "assists": 11,
+    "blueGames": 11,
+    "blueWins": 11,
+    "redGames": 11,
+    "redWins": 11,
+    "damage": 11,
+    "damageBuilding": 11,
+    "damageTaken": 11,
+    "healing": 11,
+    "vision": 11,
+    "ward": 11,
+    "wardKilled": 11,
+    "cs": 11,
+    "gold": 11,
+    "lpGain": 11,
+    "championLevelTotal": 11,
+    "doubles": 11,
+    "triples": 11,
+    "quadruples": 11,
+    "pentas": 11,
+    "q": 11,
+    "w": 11,
+    "e": 11,
+    "r": 11,
+    "d": 11,
+    "f": 11,
+    "arenaFirst": 11,
+    "arenaSecond": 11,
+    "arenaThird": 11,
+    "arenaPlacementSum": 11,
+    "playtime": 11,
+    "lastPlayedAt": 11,
+    "killParticipationSum": 0.5,
+    "deathShareSum": 0.5,
+    "goldDiffAt15Sum": 0.5,
+    "goldDiffAt15Games": 11,
+    "csDiffAt15Sum": 0.5,
+    "csDiffAt15Games": 11,
+    "xpDiffAt15Sum": 0.5,
+    "xpDiffAt15Games": 11,
+    "killDiffAt15Sum": 0.5,
+    "killDiffAt15Games": 11,
+    "levelDiffAt15Sum": 0.5,
+    "levelDiffAt15Games": 11,
+    "plateDiffAt15Sum": 0.5,
+    "plateDiffAt15Games": 11,
+    "isOtp": true,
+    "adjustedWinrate": 0.5,
+    "weightedDelta": 0.5,
+    "matchupScore": 0.5,
+    "tier": "sample",
+    "reliable": true,
+    "kda": 0.5,
+    "goldPerMinute": 0.5,
+    "killParticipation": 0.5,
+    "deathShare": 0.5,
+    "goldDiffAt15": 0.5,
+    "csDiffAt15": 0.5,
+    "xpDiffAt15": 0.5,
+    "killDiffAt15": 0.5,
+    "levelDiffAt15": 0.5,
+    "turretPlateDiffAt15": 0.5,
+    "D": {},
+    "F": {}
+  },
+  "com.R4B.AB.DTO.status.BotStatus": {
+    "status": "sample",
+    "league": {
+      "gamesAnalyzed": 11,
+      "totalSummoners": 11,
+      "totalMasteries": 11,
+      "ranksByQueue": {}
+    },
+    "dispatchers": [],
+    "jobs": [],
+    "process": {
+      "cpu": 0.5,
+      "memory": {
+        "used": 11,
+        "committed": 11,
+        "max": 11
+      },
+      "threads": 7,
+      "peakThreads": 7,
+      "uptime": 11
+    },
+    "system": {
+      "cpu": {
+        "usage": 0.5,
+        "cores": 7,
+        "perCore": []
+      },
+      "memory": {
+        "used": 11,
+        "available": 11,
+        "total": 11
+      },
+      "disk": {
+        "used": 11,
+        "available": 11,
+        "total": 11
+      },
+      "network": {
+        "receivedBytesPerSecond": 11,
+        "sentBytesPerSecond": 11
+      }
+    },
+    "redis": {
+      "keys": 11,
+      "memoryUsed": 11
+    },
+    "mongo": {
+      "operations": {
+        "intervalSeconds": 7,
+        "current": {
+          "insert": 0.5,
+          "query": 0.5,
+          "update": 0.5,
+          "delete": 0.5,
+          "command": 0.5,
+          "getmore": 0.5,
+          "total": 0.5
+        },
+        "series": []
+      },
+      "performance": {
+        "hottestNow": {
+          "name": "sample",
+          "opsPerSecond": 0.5,
+          "ops": 11
+        },
+        "hottestRecent": {
+          "name": "sample",
+          "opsPerSecond": 0.5,
+          "ops": 11
+        },
+        "recentWindowSeconds": 7,
+        "slowWindowSeconds": 7,
+        "avgMsByCommand": {},
+        "collections": [],
+        "slowest": []
+      },
+      "connections": 11,
+      "memory": {
+        "residentMb": 11,
+        "virtualMb": 11
+      }
+    }
+  },
+  "com.R4B.AB.DTO.status.JvmMetrics": {
+    "cpu": 0.5,
+    "memory": {
+      "used": 11,
+      "committed": 11,
+      "max": 11
+    },
+    "threads": 7,
+    "peakThreads": 7,
+    "uptime": 11
+  },
+  "com.R4B.AB.DTO.status.JvmMetrics$Memory": {
+    "used": 11,
+    "committed": 11,
+    "max": 11
+  },
+  "com.R4B.AB.DTO.status.LeagueMetrics": {
+    "gamesAnalyzed": 11,
+    "totalSummoners": 11,
+    "totalMasteries": 11,
+    "ranksByQueue": {}
+  },
+  "com.R4B.AB.DTO.status.MongoCollectionPerformance": {
+    "name": "sample",
+    "count": 11,
+    "avgMs": 0.5,
+    "maxMs": 11
+  },
+  "com.R4B.AB.DTO.status.MongoHottestCollection": {
+    "name": "sample",
+    "opsPerSecond": 0.5,
+    "ops": 11
+  },
+  "com.R4B.AB.DTO.status.MongoMemoryMetrics": {
+    "residentMb": 11,
+    "virtualMb": 11
+  },
+  "com.R4B.AB.DTO.status.MongoMetrics": {
+    "operations": {
+      "intervalSeconds": 7,
+      "current": {
+        "insert": 0.5,
+        "query": 0.5,
+        "update": 0.5,
+        "delete": 0.5,
+        "command": 0.5,
+        "getmore": 0.5,
+        "total": 0.5
+      },
+      "series": []
+    },
+    "performance": {
+      "hottestNow": {
+        "name": "sample",
+        "opsPerSecond": 0.5,
+        "ops": 11
+      },
+      "hottestRecent": {
+        "name": "sample",
+        "opsPerSecond": 0.5,
+        "ops": 11
+      },
+      "recentWindowSeconds": 7,
+      "slowWindowSeconds": 7,
+      "avgMsByCommand": {},
+      "collections": [],
+      "slowest": []
+    },
+    "connections": 11,
+    "memory": {
+      "residentMb": 11,
+      "virtualMb": 11
+    }
+  },
+  "com.R4B.AB.DTO.status.MongoOperationRates": {
+    "insert": 0.5,
+    "query": 0.5,
+    "update": 0.5,
+    "delete": 0.5,
+    "command": 0.5,
+    "getmore": 0.5,
+    "total": 0.5
+  },
+  "com.R4B.AB.DTO.status.MongoOperationSample": {
+    "at": 11,
+    "rates": {
+      "insert": 0.5,
+      "query": 0.5,
+      "update": 0.5,
+      "delete": 0.5,
+      "command": 0.5,
+      "getmore": 0.5,
+      "total": 0.5
+    }
+  },
+  "com.R4B.AB.DTO.status.MongoOperationsMetrics": {
+    "intervalSeconds": 7,
+    "current": {
+      "insert": 0.5,
+      "query": 0.5,
+      "update": 0.5,
+      "delete": 0.5,
+      "command": 0.5,
+      "getmore": 0.5,
+      "total": 0.5
+    },
+    "series": []
+  },
+  "com.R4B.AB.DTO.status.MongoPerformanceMetrics": {
+    "hottestNow": {
+      "name": "sample",
+      "opsPerSecond": 0.5,
+      "ops": 11
+    },
+    "hottestRecent": {
+      "name": "sample",
+      "opsPerSecond": 0.5,
+      "ops": 11
+    },
+    "recentWindowSeconds": 7,
+    "slowWindowSeconds": 7,
+    "avgMsByCommand": {},
+    "collections": [],
+    "slowest": []
+  },
+  "com.R4B.AB.DTO.status.MongoSlowOperation": {
+    "command": "sample",
+    "collection": "sample",
+    "durationMs": 11,
+    "at": 11,
+    "query": {}
+  },
+  "com.R4B.AB.DTO.status.RedisMetrics": {
+    "keys": 11,
+    "memoryUsed": 11
+  },
+  "com.R4B.AB.DTO.status.SystemMetrics": {
+    "cpu": {
+      "usage": 0.5,
+      "cores": 7,
+      "perCore": []
+    },
+    "memory": {
+      "used": 11,
+      "available": 11,
+      "total": 11
+    },
+    "disk": {
+      "used": 11,
+      "available": 11,
+      "total": 11
+    },
+    "network": {
+      "receivedBytesPerSecond": 11,
+      "sentBytesPerSecond": 11
+    }
+  },
+  "com.R4B.AB.DTO.status.SystemMetrics$Cpu": {
+    "usage": 0.5,
+    "cores": 7,
+    "perCore": []
+  },
+  "com.R4B.AB.DTO.status.SystemMetrics$Disk": {
+    "used": 11,
+    "available": 11,
+    "total": 11
+  },
+  "com.R4B.AB.DTO.status.SystemMetrics$Memory": {
+    "used": 11,
+    "available": 11,
+    "total": 11
+  },
+  "com.R4B.AB.DTO.status.SystemMetrics$Network": {
+    "receivedBytesPerSecond": 11,
+    "sentBytesPerSecond": 11
+  },
+  "com.R4B.AB.DTO.summoner.Mastery": {
+    "championId": 7,
+    "level": 7,
+    "points": 7
+  },
+  "com.R4B.AB.DTO.summoner.Rank": {
+    "tier": "CHALLENGER_I",
+    "lp": 7,
+    "wins": 7,
+    "losses": 7,
+    "globalRanking": 11,
+    "regionRanking": 11
+  },
+  "com.R4B.AB.DTO.summoner.Summoner": {
+    "puuid": "sample",
+    "riotId": "sample",
+    "region": "UNKNOWN",
+    "level": 7,
+    "icon": 7
+  },
+  "com.R4B.AB.DTO.summoner.SummonerLeaderboard": {
+    "position": 11,
+    "summoner": {
+      "summoner": {
+        "puuid": "sample",
+        "riotId": "sample",
+        "region": "UNKNOWN",
+        "level": 7,
+        "icon": 7
+      },
+      "ranks": {},
+      "overview": {
+        "statistics": {
+          "timeStart": 11,
+          "timeEnd": 11,
+          "lastUpdate": 11,
+          "oldestMatchAt": 11,
+          "newestMatchAt": 11,
+          "champions": {},
+          "pings": {},
+          "spellOne": {},
+          "spellTwo": {}
+        },
+        "masteries": [],
+        "champions": {}
+      },
+      "metadata": {
+        "pagination": {
+          "page": 7,
+          "pageSize": 7,
+          "limit": 7,
+          "offset": 7,
+          "total": 11,
+          "pages": 11,
+          "hasMore": true
+        },
+        "lastUpdate": 11,
+        "refresh": true,
+        "filter": null
+      }
+    }
+  },
+  "com.R4B.AB.DTO.summoner.SummonerOverview": {
+    "statistics": {
+      "timeStart": 11,
+      "timeEnd": 11,
+      "lastUpdate": 11,
+      "oldestMatchAt": 11,
+      "newestMatchAt": 11,
+      "champions": {},
+      "pings": {},
+      "spellOne": {},
+      "spellTwo": {}
+    },
+    "masteries": [],
+    "champions": {}
+  },
+  "com.R4B.AB.DTO.summoner.SummonerOverview$Champion": {
+    "name": "sample",
+    "image": "sample"
+  },
+  "com.R4B.AB.DTO.summoner.SummonerView": {
+    "summoner": {
+      "puuid": "sample",
+      "riotId": "sample",
+      "region": "UNKNOWN",
+      "level": 7,
+      "icon": 7
+    },
+    "ranks": {},
+    "overview": {
+      "statistics": {
+        "timeStart": 11,
+        "timeEnd": 11,
+        "lastUpdate": 11,
+        "oldestMatchAt": 11,
+        "newestMatchAt": 11,
+        "champions": {},
+        "pings": {},
+        "spellOne": {},
+        "spellTwo": {}
+      },
+      "masteries": [],
+      "champions": {}
+    },
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  },
+  "com.R4B.AB.DTO.LolApiError": {
+    "status": 7,
+    "code": "sample",
+    "message": "sample",
+    "metadata": {
+      "pagination": {
+        "page": 7,
+        "pageSize": 7,
+        "limit": 7,
+        "offset": 7,
+        "total": 11,
+        "pages": 11,
+        "hasMore": true
+      },
+      "lastUpdate": 11,
+      "refresh": true,
+      "filter": null
+    }
+  }
+}

@@ -4,7 +4,7 @@
 - Owner: Main agent
 - Date: 2026-10-10
 - Scope: analisi iniziale sul branch `beebot-servicies`
-- Implementation: solo infrastruttura job/code implementata separatamente in ADR-0017; tutte le altre migrazioni restano proposte
+- Implementation: Hive accettato separatamente in ADR-0017; contratti R4B accettati separatamente in ADR-0018. Processi, client HTTP e moduli applicativi restano proposti.
 
 ## Contesto
 
@@ -26,8 +26,9 @@ build/statistiche restano nel proprietario Spring/Mongo.
    e cache/proiezioni Redis del dominio; richiede i dati esterni a R4J.
 4. Il nucleo comune contiene i contratti canonici necessari a richieste/risposte
    e il core generico job/code. Un futuro package HTTP contiene soltanto trasporto.
-5. La radice proposta è `com.safjnest.shared`, con `dto`, `job` e futuro `http`.
-   Un modulo Maven shared iniziale e tre moduli applicativi mantengono la stessa repository.
+5. Le radici accettate dalle tranche autonome sono `com.hive` (ADR-0017) e
+   `com.R4B.AB.DTO` / `com.R4B.LOL` (ADR-0018). Client HTTP e moduli
+   applicativi restano proposti; non introdurre `shared` come nuovo wrapper.
 6. Le strutture finali restano uniche e conservano i nomi canonici e il JSON.
    Separare i metodi persistenti/calcolo/SDK prima di trasferire i tipi.
 7. Job runtime, registry e dedup appartengono alla singola istanza del servizio.
@@ -51,8 +52,9 @@ build/statistiche restano nel proprietario Spring/Mongo.
 
 Questo ADR **non è accettato** e non sostituisce alcun ADR attuale.
 [ADR-0017](0017-hive-job-runtime.md) accetta esclusivamente Hive e il wiring
-del monolite, con core `com.hive`. Non accetta i DTO comuni,
-i processi separati, i moduli applicativi o i confini HTTP di questa proposta.
+del monolite, con core `com.hive`. ADR-0018 accetta soltanto i DTO comuni,
+i valori/helper LoL e la migrazione dei consumatori locali. Nessuna delle due
+tranche accetta processi separati, moduli applicativi o confini HTTP remoti.
 Prima di implementarlo devono essere aggiornate esplicitamente le regole
 pertinenti in `AGENTS.md` e le decisioni sulla collocazione dei modelli
 (ADR-0001/0005/0007), sulla ownership dei servizi/persistenza

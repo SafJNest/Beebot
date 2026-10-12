@@ -8,14 +8,11 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.statistics.CanonicalQueue;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.lol.*;
 import com.safjnest.sql.QueryRecord;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class LeagueMessageOpggTitleTest {
 

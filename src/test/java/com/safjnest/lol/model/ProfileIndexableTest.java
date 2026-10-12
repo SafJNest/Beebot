@@ -1,10 +1,12 @@
 package com.safjnest.lol.model;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 import com.safjnest.utils.JsonCodec;
 
 public class ProfileIndexableTest {

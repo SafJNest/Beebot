@@ -2,6 +2,9 @@ package com.safjnest.lol.model;
 
 import java.util.Map;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 import com.safjnest.lol.utils.AugmentUtils;
 
 /**

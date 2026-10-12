@@ -12,9 +12,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
 import com.safjnest.lol.champion.ChampionStatsData;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
 
 public class MatchMemoryUtilsTest {
 
@@ -37,14 +37,14 @@ public class MatchMemoryUtilsTest {
 
         Match match = new Match();
         match.eventData = eventData;
-        match.events = events;
+        match.eventData = events.toMap();
         match.bans = (Map) bans;
         match.participants = participants;
 
         MatchMemoryUtils.release(match);
 
         assertNull(match.eventData);
-        assertNull(match.events);
+        assertNull(match.eventData);
         assertNull(match.bans);
         assertNull(match.participants);
         assertEquals(0, eventData.size());

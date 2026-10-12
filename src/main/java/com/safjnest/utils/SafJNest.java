@@ -26,7 +26,6 @@ import org.json.simple.parser.JSONParser;
 
 import java.time.format.DateTimeFormatter;
 
-
 /**
  * Classe ufficiale della <a href="https://github.com/SafJNest">SafJNest Corporation</a>
  * <p>
@@ -159,7 +158,6 @@ public class SafJNest extends Thread {
     public static double abs(double x) {
         return x>0?x:-x;
     }
-
 
     /**
      * @Deprecated
@@ -317,7 +315,6 @@ public class SafJNest extends Thread {
         if(n == 1) return 1;
         return n * factorial(n - 1);
     }
-
 
     public static String findSimilarWord(String input, ArrayList<String> arr) {
         double maxSimilarity = 0;

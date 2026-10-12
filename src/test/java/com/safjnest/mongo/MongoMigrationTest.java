@@ -9,12 +9,10 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.summoner.Rank;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 import com.safjnest.nosql.MongoMigration;
 import com.safjnest.sql.QueryRecord;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class MongoMigrationTest {
 

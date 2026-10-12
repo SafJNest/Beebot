@@ -58,7 +58,6 @@ import net.dv8tion.jda.api.utils.FileUpload;
 
 import com.safjnest.core.cache.managers.GuildCache;
 
-
 public class EventButtonHandler extends ListenerAdapter {
 
     public record ButtonData(String value1, String value2, boolean active) {}
@@ -115,7 +114,6 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
 
-
         event.deferEdit().queue();
 
         /* like this
@@ -169,7 +167,6 @@ public class EventButtonHandler extends ListenerAdapter {
     private void greet(ButtonInteractionEvent event) {
         Button clicked = event.getButton();
         String args = getButtonData(clicked).value1().trim();
-
 
         // if (!soundData.getUserId().equals(event.getUser().getCustomId())) {
         //     event.deferReply(true).addContent("You can only modify your own sounds").queue();
@@ -237,7 +234,6 @@ public class EventButtonHandler extends ListenerAdapter {
     private void playlist(ButtonInteractionEvent event) {
         String args = getButtonData(event.getButton()).value1().trim();
 
-
         ButtonData buttonData = getButtonData(event, "playlist-center");
         int page = Integer.parseInt(buttonData.value2().trim()) - 1;
         int playlistId = Integer.parseInt(buttonData.value1().trim());
@@ -257,10 +253,8 @@ public class EventButtonHandler extends ListenerAdapter {
         ButtonData buttonData = getButtonData(event.getButton());
         String args = buttonData.value1().trim();
 
-
         BotCommand command = Help.searchCommand(args, CommandsLoader.getCommandsData(event.getUser().getId()));
         List<MessageTopLevelComponent> rows = Help.getCommandButton(command);
-
 
         if (rows != null) event.getMessage().editMessageEmbeds(Help.getCommandHelp(command).build()).setComponents(rows).queue();
         else event.getMessage().editMessageEmbeds(Help.getCommandHelp(command).build()).queue();
@@ -269,7 +263,6 @@ public class EventButtonHandler extends ListenerAdapter {
     public void twitch(ButtonInteractionEvent event) {
         String args = getButtonData(event.getButton()).value1().trim();
         String streamerId = getButtonData(event.getButton()).value2().trim();
-
 
         TextInput messageInput = null, privateInput = null, channelInput = null, roleInput = null;
         Modal modal = null;
@@ -390,7 +383,6 @@ public class EventButtonHandler extends ListenerAdapter {
         }
     }
 
-
     public void soundplay (ButtonInteractionEvent event) {
         String args = getButtonData(event.getButton()).value1().trim();
         String soundId = getButtonData(event.getButton()).value2().trim();
@@ -499,7 +491,6 @@ public class EventButtonHandler extends ListenerAdapter {
         
         String args = getButtonData(clicked).value1().trim();
         String soundId = getButtonData(event, "sound-id").value2().trim();
-
 
         Sound soundData = SoundCache.getSoundById(soundId);
         int tagId = 0;
@@ -874,7 +865,6 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setColor(Bot.getColor());
         eb.setDescription("Total Sound: " + sounds.size());
 
-
         switch (args) {
 
             case "right":
@@ -959,7 +949,6 @@ public class EventButtonHandler extends ListenerAdapter {
             .queue();
     }
 
-
     private void banUserEvent(ButtonInteractionEvent event) {
         if(!event.getMember().hasPermission(Permission.BAN_MEMBERS)){
             event.deferReply().addContent("You don't have the permission to do that.").queue();
@@ -1025,7 +1014,6 @@ public class EventButtonHandler extends ListenerAdapter {
         event.getMessage().editMessageEmbeds(event.getMessage().getEmbeds().get(0)).setComponents().queue();
 
     }
-
 
     private void pardonUserEvent(ButtonInteractionEvent event) {
 

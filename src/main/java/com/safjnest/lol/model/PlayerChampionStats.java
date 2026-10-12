@@ -1,5 +1,8 @@
 package com.safjnest.lol.model;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 public class PlayerChampionStats {
 
     private static final double SCORE_WEIGHT_WINRATE = 2.0;

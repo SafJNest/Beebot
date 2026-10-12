@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
-- Amended: 2026-08-20
+- Amended: 2026-08-20; shared contract placement amended by ADR-0018 on 2026-10-10
 - Ownership of LeagueService and ProfileStatisticsService: superseded by ADR-0011 and ADR-0012
 
 ## Context
@@ -12,9 +12,9 @@ Profile, search, leaderboard and match responses currently duplicate domain data
 
 ## Decision
 
-`lol.model` owns all LoL domain and success-response models. Spring owns controllers, configuration and HTTP errors only.
+`com.R4B.AB.DTO` owns shared request, success/error models and serialized components; `com.R4B.LOL` owns shared values and pure helpers (ADR-0018). Spring owns controllers, configuration, exception/status mapping, persistence and producer logic. `lol.model` retains producer-only structures.
 
-Canonical model packages are:
+Historical application model packages before ADR-0018 were:
 
 - `lol/model/summoner` for summoner identity, ranks, mastery and views;
 - `lol/model/match` for complete matches, participants and lightweight results;
@@ -34,7 +34,7 @@ Controllers return canonical models directly. A new DTO is allowed only when an 
 ## Ownership
 
 - `SummonerService` owns construction of base summoner data from service/database records.
-- Canonical model factories own projection and field assembly.
+- Producing services own application projection, assembly and static-data lookup; shared factories perform only pure data construction.
 - `ProfileService` owns statistics persistence and refresh; `ProfileAnalyzer` is pure.
 - `DatabaseTracker` owns asynchronous database refresh dispatch and in-flight deduplication; `Tracker` owns only match lookup and match analysis queues.
 - `LeaderboardService` owns filtering, pagination, cache and distribution access.

@@ -9,7 +9,6 @@ import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 
-
 public class Stop extends SlashCommand {
 
     public Stop(){

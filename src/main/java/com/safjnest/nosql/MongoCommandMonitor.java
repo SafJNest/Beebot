@@ -15,14 +15,14 @@ import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.bson.Document;
 
+import com.R4B.api.dto.status.MongoCollectionPerformance;
+import com.R4B.api.dto.status.MongoHottestCollection;
+import com.R4B.api.dto.status.MongoPerformanceMetrics;
+import com.R4B.api.dto.status.MongoSlowOperation;
 import com.mongodb.event.CommandFailedEvent;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.CommandStartedEvent;
 import com.mongodb.event.CommandSucceededEvent;
-import com.safjnest.lol.model.status.MongoCollectionPerformance;
-import com.safjnest.lol.model.status.MongoHottestCollection;
-import com.safjnest.lol.model.status.MongoPerformanceMetrics;
-import com.safjnest.lol.model.status.MongoSlowOperation;
 
 public final class MongoCommandMonitor implements CommandListener {
 

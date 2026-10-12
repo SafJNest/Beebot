@@ -23,7 +23,6 @@ public class Search extends SlashCommand{
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         this.children = new SlashCommand[]{

@@ -1,8 +1,9 @@
 # Piano iniziale di estrazione
 
 Stato: piano servizi proposto; fase 0 documentata e tranche job/code della fase 3
-implementata anticipatamente con decisione mirata ADR-0017. Le altre fasi
-restano proposte, senza accettazione integrale di ADR-0016.
+implementata anticipatamente con decisione mirata ADR-0017. La tranche
+contratti e consumatori locali è accettata autonomamente in ADR-0018 come R4B.
+Client HTTP, processi e moduli applicativi restano proposti.
 
 ## Ordine delle fasi
 
@@ -94,7 +95,7 @@ senza far passare una compilazione o test statici per validazione dei servizi re
 
 | Decisione | Proposta iniziale | Necessaria prima di |
 |---|---|---|
-| Namespace/artifact | `com.safjnest.shared` e quattro moduli Maven | Spostamento dei package/build |
+| Namespace/artifact | Hive `com.hive`; R4B `com.R4B.AB.DTO` / `com.R4B.LOL`; artifact autonomi dai sorgenti canonici | Tranche accettate 0017/0018; moduli applicativi rinviati |
 | Enum LoL sul wire | Tipi del contratto con valori JSON compatibili; mapping SDK in R4J | DTO indipendenti da R4J |
 | Entity operative | Metodi persistenti privati del writer, stesso modello canonico di dati | Estrazione `Summoner`/`Match` |
 | Compute/progresso | Caratterizzare e risolvere le discrepanze registrate | Port scheduler/registry |
@@ -133,3 +134,13 @@ ADR-0017 conserva il codice verificato: quattro worker compute e progresso
 esplicito prima dei contatori figli. Il core vive in `com.hive`, i concreti
 in `r4j.scheduler` e `lol.scheduler`; App compone un solo runtime condiviso.
 DTO dominio, moduli dei servizi e trasporto restano fasi indipendenti.
+
+## Decisione della tranche R4B
+
+ADR-0018 autorizza contratti, componenti serializzati, enum/helper LoL e la
+migrazione completa dei consumatori locali. Non introduce client HTTP, builder
+richieste, processi distinti o una riscrittura Hive. I servizi continuano a
+comporsi localmente, con SDK dietro adapter `r4j` e firme indipendenti.
+La chiusura deve compilare senza SDK fuori dagli adapter, oltre alla build
+autonoma R4B. [Inventario](r4b-inventory.md) e [verifiche](r4b-validation.md)
+descrivono la tranche effettiva; le future fasi 4–7 restano proposte.

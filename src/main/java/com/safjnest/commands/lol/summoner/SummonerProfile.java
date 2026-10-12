@@ -2,10 +2,10 @@ package com.safjnest.commands.lol.summoner;
 
 import java.util.Arrays;
 
+import com.R4B.api.dto.summoner.Summoner;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
@@ -58,7 +58,6 @@ public class SummonerProfile extends SlashCommand {
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or link an account using `/summoner link`").queue();
             return;
         }
-
 
         LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.puuid(), new LeagueMessageParameter(LeagueMessageType.PROFILE));
 	}

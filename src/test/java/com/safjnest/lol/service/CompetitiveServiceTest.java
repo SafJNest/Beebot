@@ -9,13 +9,8 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.safjnest.lol.model.competitive.CompetitiveEntry;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.utils.TierDivisionUtils;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 
 public class CompetitiveServiceTest {
 
@@ -38,12 +33,12 @@ public class CompetitiveServiceTest {
 
     @Test
     public void exactDivisionRangeIsDerivedFromMmr() {
-        TierDivisionUtils.MmrRange range = TierDivisionUtils.getMmrRange(TierDivisionType.GOLD_IV);
+        TierDivisionType.MmrRange range = TierDivisionType.getMmrRange(TierDivisionType.GOLD_IV);
 
         assertEquals(1200, range.minimum());
         assertEquals(Integer.valueOf(1300), range.maximum());
-        assertEquals(TierDivisionType.GOLD_IV, TierDivisionUtils.getDivisionFromMmr(1200));
-        assertEquals(TierDivisionType.GOLD_III, TierDivisionUtils.getDivisionFromMmr(1300));
+        assertEquals(TierDivisionType.GOLD_IV, TierDivisionType.getDivisionFromMmr(1200));
+        assertEquals(TierDivisionType.GOLD_III, TierDivisionType.getDivisionFromMmr(1300));
     }
 
     @Test

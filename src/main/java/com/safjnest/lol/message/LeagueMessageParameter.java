@@ -1,20 +1,18 @@
 package com.safjnest.lol.message;
 
+import com.safjnest.lol.service.FilterDefaults;
 import java.util.List;
 
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.lol.*;
 
 public class LeagueMessageParameter {
     private LeagueMessageType messageType;
@@ -86,7 +84,7 @@ public class LeagueMessageParameter {
                 String[] pageParts = button.getCustomId().split("-", 4);
                 offset = Integer.parseInt(value);
                 if (pageParts.length == 4) {
-                    try { applyFilter(Filter.fromStateKey(pageParts[3])); }
+                    try { applyFilter(FilterDefaults.fromStateKey(pageParts[3])); }
                     catch (RuntimeException ignored) { }
                 }
             }
@@ -114,9 +112,9 @@ public class LeagueMessageParameter {
         if (messageType == LeagueMessageType.PROFILE || messageType == LeagueMessageType.OVERVIEW
             || messageType == LeagueMessageType.MATCHUP || messageType == LeagueMessageType.OVERVIEW_CHAMPIONS
             || messageType == LeagueMessageType.OVERVIEW_OPGG) {
-            return Filter.canonical();
+            return FilterDefaults.canonical();
         }
-        return new Filter();
+        return FilterDefaults.create();
     }
 
     private void applyFilter(Filter value) {
@@ -175,7 +173,7 @@ public class LeagueMessageParameter {
     public int getShowingChampion() { return showChampion ? getChampionId() : 0; }
 
     public boolean isDuo() {
-        return filter.lane() == LaneType.BOT || filter.lane() == LaneType.UTILITY || GameQueueTypeUtils.isCherry(filter.queue());
+        return filter.lane() == LaneType.BOT || filter.lane() == LaneType.UTILITY || GameQueueType.isCherry(filter.queue());
     }
 
     public long getTimeStart() { return filter.timeStart(); }

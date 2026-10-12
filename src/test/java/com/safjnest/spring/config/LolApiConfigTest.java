@@ -1,5 +1,6 @@
 package com.safjnest.spring.config;
 
+import com.safjnest.lol.service.SummonerProjection;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -12,19 +13,15 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.lol.champion.RuneSignature;
-import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.ChampionView;
-import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.SummonerView;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.api.dto.Build;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.ChampionView;
+import com.R4B.api.dto.ResponseMetadata;
+import com.R4B.api.dto.RuneSignature;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 
 public class LolApiConfigTest {
 
@@ -62,10 +59,10 @@ public class LolApiConfigTest {
     @Test
     public void serializesSummonerFieldsWithoutDirtyState() throws Exception {
         ObjectMapper mapper = apiMapper();
-        Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
+        Summoner summoner = new Summoner("puuid-42", "Name#TAG", com.R4B.lol.LeagueShard.EUW1, 500, 1234);
 
         String summonerJson = mapper.writeValueAsString(summoner);
-        String viewJson = mapper.writeValueAsString(SummonerView.from(summoner, Map.of(), null, List.of()));
+        String viewJson = mapper.writeValueAsString(SummonerProjection.view(summoner, Map.of(), null, List.of()));
 
         assertFalse(summonerJson.contains("\"summonerId\""));
         assertTrue(summonerJson.contains("\"puuid\":\"puuid-42\""));
@@ -85,9 +82,9 @@ public class LolApiConfigTest {
     @Test
     public void serializesRanksAsCanonicalQueueObjectWithoutEmbeddedQueue() throws Exception {
         ObjectMapper mapper = apiMapper();
-        Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
+        Summoner summoner = new Summoner("puuid-42", "Name#TAG", com.R4B.lol.LeagueShard.EUW1, 500, 1234);
 
-        String json = mapper.writeValueAsString(SummonerView.from(summoner,
+        String json = mapper.writeValueAsString(SummonerProjection.view(summoner,
             Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(TierDivisionType.MASTER_I, 500, 10, 5)), null, List.of()));
 
         assertTrue(json.contains("\"ranks\":{\"RANKED_SOLO_5X5\":{"));
@@ -100,7 +97,7 @@ public class LolApiConfigTest {
         ObjectMapper mapper = apiMapper();
         Match match = Match.hydrated();
         match.gameId = "EUW1_123";
-        match.leagueShard = no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1;
+        match.leagueShard = com.R4B.lol.LeagueShard.EUW1;
 
         String json = mapper.writeValueAsString(match);
 

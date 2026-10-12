@@ -10,7 +10,6 @@ import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.nosql.MongoMigration;
 import com.safjnest.spring.SpringServer;
 import com.safjnest.status.SystemMetricsSampler;
 import com.safjnest.utils.SafJNest;

@@ -37,5 +37,5 @@ receives a new timestamp if added again.
 ## Owner
 
 - Controller: [`ProfileIndexableController`](../../../src/main/java/com/safjnest/spring/controller/ProfileIndexableController.java)
-- Service: [`ProfileIndexableService`](../../../src/main/java/com/safjnest/lol/service/ProfileIndexableService.java)
-- Success model: [`ProfileIndexable`](../../../src/main/java/com/safjnest/lol/model/ProfileIndexable.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
+- Success model: [`ProfileIndexable`](../../../src/main/java/com/R4B/AB/DTO/ProfileIndexable.java)

@@ -64,7 +64,6 @@ public class TrackScheduler extends AudioEventAdapter {
         this.lastMessageSent = null;
     }
 
-
     public LinkedList<AudioTrack> getQueue() {
         return queue;
     }
@@ -101,8 +100,6 @@ public class TrackScheduler extends AudioEventAdapter {
         return unshuffledQueue != null;
     }
 
-
-
     public boolean canPlay() {
         return (currentTrackIndex == -1) || !isQueuePaused;
     }
@@ -134,7 +131,6 @@ public class TrackScheduler extends AudioEventAdapter {
         isForced = (type != AudioType.AUDIO);
         play(track, isForced);
     }
-
 
     public void queue(AudioTrack track) {
         queue.offer(track);
@@ -180,8 +176,6 @@ public class TrackScheduler extends AudioEventAdapter {
             unshuffledQueue = null;
         }
     }
-
-
 
     public void pause(boolean pause) {
         if (player.getPlayingTrack() == null) return;
@@ -240,8 +234,6 @@ public class TrackScheduler extends AudioEventAdapter {
         return null;
     }
 
-    
-
     public void setMessage(QueueMessage message) {
         lastMessageSent = message;
     }
@@ -257,14 +249,9 @@ public class TrackScheduler extends AudioEventAdapter {
         }
     }
 
-
     public boolean isQueueable(AudioTrack track) {
         return track.getUserData(TrackData.class) != null && track.getUserData(TrackData.class).isQueueable();
     }
-
-
-
-
 
     @Override
     public void onPlayerPause(AudioPlayer player) {
@@ -357,17 +344,11 @@ public class TrackScheduler extends AudioEventAdapter {
         BotLogger.error("Track stuck: " + track.getInfo().title + " | " + thresholdMs + "ms");
     }
 
-    
-
-
-
-
     @Override
     public String toString() {
         return "TrackScheduler [currentTrackIndex=" + currentTrackIndex + ", isRepeat=" + isRepeat + ", isForced=" 
             + isForced + ", isQueuePaused=" + isQueuePaused + ",\nqueue(" + queue.size() + ")=" + queue.toString() +"]";
     }
-
 
 	public void movePosition(int seconds) {
 		movePosition((long) (seconds * 1000));
@@ -394,7 +375,6 @@ public class TrackScheduler extends AudioEventAdapter {
         }
         return sb.toString();
     }
-    
 
     private long estimateFileSize(VideoInfo video, Format format) {
         int bitrate = format instanceof AudioFormat ? ((AudioFormat)format).averageBitrate() : format.bitrate();

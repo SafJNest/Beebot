@@ -9,10 +9,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.utils.TierDivisionUtils;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 
 public class LeaderboardServiceTest {
 
@@ -35,10 +33,10 @@ public class LeaderboardServiceTest {
 
     @Test
     public void onlyMasterAndAboveSegmentsArePermanent() {
-        assertTrue(TierDivisionUtils.isHighElo(TierDivisionType.MASTER_I));
-        assertTrue(TierDivisionUtils.isHighElo(TierDivisionType.GRANDMASTER_I));
-        assertTrue(TierDivisionUtils.isHighElo(TierDivisionType.CHALLENGER_I));
-        assertFalse(TierDivisionUtils.isHighElo(TierDivisionType.DIAMOND_I));
+        assertTrue(TierDivisionType.isHighElo(TierDivisionType.MASTER_I));
+        assertTrue(TierDivisionType.isHighElo(TierDivisionType.GRANDMASTER_I));
+        assertTrue(TierDivisionType.isHighElo(TierDivisionType.CHALLENGER_I));
+        assertFalse(TierDivisionType.isHighElo(TierDivisionType.DIAMOND_I));
     }
 
     @Test

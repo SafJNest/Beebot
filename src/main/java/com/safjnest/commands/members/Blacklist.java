@@ -44,7 +44,6 @@ public class Blacklist extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-
         commandData.setThings(this);
     }
 
