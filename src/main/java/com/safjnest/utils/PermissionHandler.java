@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
-
 /**
  * This class handles all matters related to discord permissions.
  * It also stores the discord tags of the members that have special permissions.

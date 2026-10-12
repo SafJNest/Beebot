@@ -1,4 +1,8 @@
 package com.safjnest.lol.model;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.safjnest.lol.service.BuildCodec;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -6,8 +10,6 @@ import static org.junit.Assert.assertNull;
 import java.util.List;
 
 import org.junit.Test;
-
-import com.safjnest.lol.champion.RuneSignature;
 
 public class BuildTest {
 
@@ -29,13 +31,13 @@ public class BuildTest {
             0.5
         );
 
-        String json = source.toJson();
+        String json = BuildCodec.toJson(source);
         assertEquals('{', json.charAt(0));
-        assertEquals(source, Build.fromJson(json));
-        Build legacy = Build.fromJson(json.replace(",\"roleBoundItems\":[]", "")
+        assertEquals(source, BuildCodec.fromJson(json));
+        Build legacy = BuildCodec.fromJson(json.replace(",\"roleBoundItems\":[]", "")
             .replace(",\"timedOrder\":[]", ""));
         assertEquals(List.of(), legacy.roleBoundItemOptions());
         assertEquals(List.of(), legacy.skillOrders().get(0).timedOrder());
-        assertNull(Build.fromJson("not-json"));
+        assertNull(BuildCodec.fromJson("not-json"));
     }
 }

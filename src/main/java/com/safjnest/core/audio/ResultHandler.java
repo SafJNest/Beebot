@@ -29,7 +29,6 @@ public class ResultHandler implements AudioLoadResultHandler {
 
     private final ReplyType replyType;
     private final PlayTiming playbackTiming;
-    
 
     public ResultHandler(CommandEvent commandEvent, boolean isSearch, PlayTiming playbackTiming) {
         this.commandEvent = commandEvent;
@@ -56,7 +55,6 @@ public class ResultHandler implements AudioLoadResultHandler {
         this.ts = pm.getGuildMusicManager(guild).getTrackScheduler();
         this.replyType = replyType;
     }
-
 
     private void sendEmbed() {
         if(commandEvent != null) QueueHandler.sendEmbed(commandEvent, EmbedType.PLAYER);
@@ -111,7 +109,6 @@ public class ResultHandler implements AudioLoadResultHandler {
         else if(slashCommandEvent != null) 
             pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, true, args, playbackTiming, replyType));
     }
-
 
     private void queue(AudioTrack track, PlayTiming playbackTiming, int seconds) {
         if(seconds != -1)
@@ -197,10 +194,8 @@ public class ResultHandler implements AudioLoadResultHandler {
                 break;
         }
 
-
     }
 
-    
     @Override
     public void trackLoaded(AudioTrack track) {
         track.setUserData(new TrackData(AudioType.AUDIO));

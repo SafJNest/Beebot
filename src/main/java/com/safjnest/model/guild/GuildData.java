@@ -1,7 +1,5 @@
 package com.safjnest.model.guild;
 
-
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +11,7 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.log.LoggerIDpair;
+import com.R4B.lol.*;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.model.guild.alert.AlertData;
@@ -26,9 +25,6 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
-
 
 /**
  * Class that stores all the settings for a guild.
@@ -44,14 +40,12 @@ public class GuildData {
 
     private String prefix;
 
-
     private boolean experience;
 
     private String voice;
     private String language;
 
     private String mutedRoleId;
-
 
     private BlacklistData blacklistData;
 
@@ -131,7 +125,6 @@ public class GuildData {
     public boolean isExperienceEnabled() {
         return experience;
     }
-
 
     public synchronized boolean setPrefix(String prefix) {
         boolean result = BotDB.updatePrefix(String.valueOf(ID), prefix);
@@ -449,8 +442,6 @@ public class GuildData {
             .collect(Collectors.toMap(TwitchData::getKey, twitch -> twitch, (a, b) -> a, HashMap::new));
     }
 
-
-
 //  ▀█████████▄   ▄█          ▄████████  ▄████████    ▄█   ▄█▄  ▄█        ▄█     ▄████████     ███
 //    ███    ███ ███         ███    ███ ███    ███   ███ ▄███▀ ███       ███    ███    ███ ▀█████████▄
 //    ███    ███ ███         ███    ███ ███    █▀    ███▐██▀   ███       ███▌   ███    █▀     ▀███▀▀██
@@ -470,7 +461,6 @@ public class GuildData {
         this.blacklistData = new BlacklistData(threshold, blackChannelId, true, this);
         return this.blacklistData.update();
     }
-
 
     public int getThreshold() {
         return getBlacklistData().getThreshold();
@@ -495,7 +485,6 @@ public class GuildData {
     public boolean setBlacklistEnabled(boolean blacklist_enabled) {
         return getBlacklistData().setBlacklistEnabled(blacklist_enabled);
     }
-
 
 //   ▄████████    ▄█    █▄       ▄████████ ███▄▄▄▄   ███▄▄▄▄      ▄████████  ▄█
 //  ███    ███   ███    ███     ███    ███ ███▀▀▀██▄ ███▀▀▀██▄   ███    ███ ███
@@ -543,7 +532,6 @@ public class GuildData {
         }
         return toDelete.terminator5LaRivolta();
     }
-
 
     public Boolean getExpSystemRoom(String id){
         return getChannelData(id).isExpSystemEnabled();
@@ -653,7 +641,6 @@ public class GuildData {
         return null;
     }
 
-
     public boolean isBlackListCached() {
         return this.blacklistData != null;
     }
@@ -661,6 +648,5 @@ public class GuildData {
     public boolean isAlertsCached() {
         return this.alerts != null;
     }
-
 
 }

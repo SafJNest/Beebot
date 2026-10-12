@@ -24,8 +24,6 @@ public class Greet extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
@@ -40,10 +38,4 @@ public class Greet extends SlashCommand{
         
     }
 
-    
-
-    
-
-    
-   
 }

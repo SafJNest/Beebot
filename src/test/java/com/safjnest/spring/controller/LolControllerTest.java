@@ -1,5 +1,6 @@
 package com.safjnest.spring.controller;
 
+import com.safjnest.lol.service.FilterDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -13,15 +14,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.model.match.MatchOrder;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.ResponseMetadata;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.lol.*;
 import com.safjnest.lol.utils.SeasonUtils;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class LolControllerTest {
 
@@ -114,7 +112,7 @@ public class LolControllerTest {
 
     @Test
     public void shouldParseProfileMatchupsFilterDefaults() {
-        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(0, 0, null, null, null, 5);
+        com.R4B.api.dto.ActivityFilter filter = LolApiParameters.matchupsFilter(0, 0, null, null, null, 5);
 
         assertNull(filter.queue());
         assertNull(filter.patch());
@@ -124,7 +122,7 @@ public class LolControllerTest {
 
     @Test
     public void shouldParseProfileMatchupsFilterValues() {
-        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+        com.R4B.api.dto.ActivityFilter filter = LolApiParameters.matchupsFilter(
             0, 0, "ranked_flex_sr", "14.10", "top", 8);
 
         assertEquals(GameQueueType.RANKED_FLEX_SR, filter.queue());
@@ -135,7 +133,7 @@ public class LolControllerTest {
 
     @Test
     public void shouldPreferStartAndEndOverPatch() {
-        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+        com.R4B.api.dto.ActivityFilter filter = LolApiParameters.matchupsFilter(
             1711929600000L, 1714521600000L, null, "14.10", null, 5);
 
         assertEquals(1711929600000L, filter.timeStart());
@@ -147,7 +145,7 @@ public class LolControllerTest {
     public void shouldUseEndOfTodayWhenOnlyStartIsProvided() {
         long expectedEnd = LocalDate.now(ZoneId.systemDefault()).plusDays(1)
             .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1;
-        com.safjnest.lol.model.ActivityFilter filter = LolApiParameters.matchupsFilter(
+        com.R4B.api.dto.ActivityFilter filter = LolApiParameters.matchupsFilter(
             expectedEnd - 1000, 0, null, "14.10", null, 5);
 
         assertEquals(expectedEnd - 1000, filter.timeStart());
@@ -196,10 +194,10 @@ public class LolControllerTest {
 
         assertEquals(HttpStatus.OK, ready.getStatusCode());
         assertEquals(HttpStatus.ACCEPTED, pending.getStatusCode());
-        ResponseMetadata metadata = ((com.safjnest.spring.dto.LolApiError) LolApiResponses.from(
-                ApiResult.pending(new ResponseMetadata(null, null, true, Filter.canonical())),
+        ResponseMetadata metadata = ((com.R4B.api.dto.LolApiError) LolApiResponses.from(
+                ApiResult.pending(new ResponseMetadata(null, null, true, FilterDefaults.canonical())),
                 "pending", "Pending", "Not found").getBody()).metadata();
-        assertEquals(Filter.canonical().toSummonerKey(), metadata.filter().toSummonerKey());
+        assertEquals(FilterDefaults.canonical().toSummonerKey(), metadata.filter().toSummonerKey());
         try {
             LolApiResponses.from(ApiResult.notFound(), "pending", "Pending", "Not found");
             throw new AssertionError("Expected not found");

@@ -71,8 +71,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     
         if(toPlay == null)
             toPlay = sounds.get((int)(Math.random() * sounds.size()));
-    
-        
+
         return getSoundById(toPlay.get("id"));
 
     }
@@ -121,7 +120,6 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return searchSound(regex, null);
     } 
 
-    
     public static List<Sound> searchSound(String regex, String author) {
         List<QueryRecord> result = author == null ? BotDB.extremeSoundResearch(regex) : BotDB.extremeSoundResearch(regex, author);
         List<String> soundIds = new ArrayList<>();

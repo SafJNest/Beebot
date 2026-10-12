@@ -17,21 +17,16 @@ import org.bson.types.ObjectId;
 import org.junit.Test;
 
 import com.mongodb.client.model.WriteModel;
-
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.api.dto.statistics.ProfileStatistics;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecordParser;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class MongoDBTest {
 
@@ -110,7 +105,7 @@ public class MongoDBTest {
 
     @Test
     public void summonerUsesPuuidAsIdentityAndOmitsLegacyFields() {
-        Summoner summoner = new Summoner("puuid-42", "Name#TAG", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 500, 1234);
+        Summoner summoner = new Summoner("puuid-42", "Name#TAG", com.R4B.lol.LeagueShard.EUW1, 500, 1234);
 
         Document document = MongoDB.toDocument(summoner);
 

@@ -1,12 +1,12 @@
 package com.safjnest.lol.champion;
 
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-
 import java.util.List;
 import java.util.Map;
+
+import com.R4B.lol.LaneType;
+import com.R4B.lol.LeagueShard;
+import com.R4B.lol.TeamType;
+import com.R4B.lol.TierType;
 
 public final class ChampionStatsData {
 

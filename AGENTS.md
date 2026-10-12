@@ -4,7 +4,7 @@
 
 This repository contains Shopify integrations, Java services, GraphQL integrations, Algolia, MySQL/MariaDB, Redis, Express and LoL API code.
 
-Java code uses the `com.safjnest` package. LoL domain models belong under `com.safjnest.lol.model`; Spring owns controllers, configuration and HTTP errors only.
+Application code uses `com.safjnest`. Shared LoL contracts belong under `com.R4B.AB.DTO`; shared LoL enums, constants and pure helpers belong under `com.R4B.LOL` (ADR-0018). Spring owns controllers, configuration, HTTP mapping and producer/persistence logic. Generic job contracts remain under `com.hive.status`.
 
 Primary stack:
 
@@ -72,12 +72,22 @@ The separator is the only structural comment required. Remove comments that do n
 - `Participant` is the complete global participant model.
 - `MatchResult` is the lightweight match projection used by lists and overviews.
 
-Use existing utilities before adding new mapping logic, especially `ChampionUtils`, `LaneTypeUtils`, `GameQueueTypeUtils`, `LeagueShardUtils`, `TierDivisionUtils` and `LeagueHandler`.
+Use existing R4B enums and helpers before adding pure mapping logic. Application utilities own presentation, runtime defaults and static-data lookup only. SDK objects and conversions belong under `com.safjnest.r4j`; other consumers use independent contracts.
+
+## Hive job infrastructure
+
+- `com.hive` owns generic jobs, registry, routing, scheduler/worker mechanisms and status records (ADR-0017). It depends only on the JDK. Generic status records are the narrow exception to the LoL success-model package rule.
+- Runtime instances own their registry, scheduler registration and executors explicitly; no core singleton or class-loading bootstrap. All monolith schedulers share the application runtime registry.
+- `lol.queue.QueueHandler` is the application submission facade. Initialize it from App before API/tracker admission; submission must not initialize a runtime implicitly.
+- Riot adapters live in `r4j.scheduler`; compute and Sync adapters in `lol.scheduler`. Domain route, placement, matrix/build merge, logging, SDK/Redis/Mongo ownership and run classification stay outside Hive.
+- Preserve the four compute workers and explicit-progress-first behavior. Use typed scheduler/route submission and explicit result contracts where sharing active keys.
+- Domain API payloads, storage, Redis namespaces/TTLs and presentation remain unchanged by infrastructure extraction. ADR-0016 remains proposed beyond the Hive and R4B tranches (ADR-0017/0018).
 
 ## API boundaries
 
-- Domain and API success models belong in `lol.model`.
-- Spring DTOs are restricted to HTTP errors and infrastructure-specific representations.
+- Shared request, success/error data and serialized components belong in `com.R4B.AB.DTO`; LoL values and pure shared behavior belong in `com.R4B.LOL`.
+- `lol.model` retains producer-only computation/storage structures. Shared contracts must not inherit persistent entities or depend on SDK, Mongo/BSON, Spring, JDA, Redis, bootstrap or application logging.
+- HTTP error data is shared; Spring retains exception/status mapping. Keep the HTTP JSON profile distinct from storage serialization.
 - Do not create a second DTO for a concept already represented by a canonical model.
 - Controllers should return canonical models directly unless an accepted ADR documents an HTTP-only wrapper.
 

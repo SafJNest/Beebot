@@ -1,4 +1,6 @@
 package com.safjnest.lol.model;
+import com.safjnest.lol.service.FilterDefaults;
+import com.safjnest.lol.service.ProfileMatchupsAnalyzer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -9,24 +11,20 @@ import java.util.List;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.ProfileMatchupLeaf;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.utils.JsonCodec;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 public class ProfileMatchupsTest {
 
     @Test
     public void persistsMatchupsInsideTheirChampionQueuePositionLeaf() {
-        ProfileMatchups matchups = ProfileMatchups.from(List.of(
+        ProfileMatchups matchups = ProfileMatchupsAnalyzer.from(List.of(
             match("top", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("mid", 200, 1, LaneType.MID, 2, LaneType.MID, false)
         ), "puuid", filter());
@@ -43,7 +41,7 @@ public class ProfileMatchupsTest {
 
     @Test
     public void canonicalizesEquivalentRankedSoloQueues() {
-        ProfileMatchups matchups = ProfileMatchups.from(List.of(
+        ProfileMatchups matchups = ProfileMatchupsAnalyzer.from(List.of(
             match("current", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("legacy", 200, 1, LaneType.TOP, 2, LaneType.TOP, false,
                 GameQueueType.RANKED_SOLO_5X5, "14.10")
@@ -54,7 +52,7 @@ public class ProfileMatchupsTest {
 
     @Test
     public void assignsMissingPositionToUnknownLeaf() {
-        ProfileMatchups matchups = ProfileMatchups.from(List.of(
+        ProfileMatchups matchups = ProfileMatchupsAnalyzer.from(List.of(
             match("arena", 100, 1, LaneType.NONE, 2, LaneType.NONE, true, GameQueueType.CHERRY, "14.10")
         ), "puuid", allQueuesFilter());
 
@@ -63,11 +61,11 @@ public class ProfileMatchupsTest {
 
     @Test
     public void minimumGamesGroupsSmallLeafMatchupsUnderOthers() {
-        ProfileMatchups matchups = ProfileMatchups.from(List.of(
+        ProfileMatchups matchups = ProfileMatchupsAnalyzer.withMinGames(ProfileMatchupsAnalyzer.from(List.of(
             match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("two", 200, 1, LaneType.TOP, 2, LaneType.TOP, true),
             match("three", 300, 1, LaneType.TOP, 3, LaneType.TOP, false)
-        ), "puuid", filter()).withMinGames(2);
+        ), "puuid", filter()), 2);
 
         ProfileMatchupLeaf leaf = matchups.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
         assertEquals(3, leaf.games);
@@ -79,7 +77,7 @@ public class ProfileMatchupsTest {
 
     @Test
     public void serializesOnlyKeyedRawAccumulators() {
-        ProfileMatchups matchups = ProfileMatchups.from(
+        ProfileMatchups matchups = ProfileMatchupsAnalyzer.from(
             List.of(match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true)), "puuid", filter());
 
         String json = JsonCodec.toJson(matchups);
@@ -108,7 +106,7 @@ public class ProfileMatchupsTest {
     public void aggregatesFifteenMinuteLaneAndDuoDifferencesWithCorrectSigns() {
         Match match = duoMatchWithTimeline();
         assertEquals(Integer.valueOf(3000), MatchupTimelineUtils.read(match).snapshots().get("puuid").gold());
-        ProfileMatchups profile = ProfileMatchups.from(List.of(match), "puuid", filter());
+        ProfileMatchups profile = ProfileMatchupsAnalyzer.from(List.of(match), "puuid", filter());
         ProfileMatchupLeaf leaf = profile.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("BOT");
 
         ProfileLeafStats matchup = leaf.matchups.get("4");
@@ -129,7 +127,7 @@ public class ProfileMatchupsTest {
 
     @Test
     public void roundTripsThroughSharedJsonCodec() {
-        ProfileMatchups source = ProfileMatchups.from(
+        ProfileMatchups source = ProfileMatchupsAnalyzer.from(
             List.of(match("one", 100, 1, LaneType.TOP, 2, LaneType.TOP, true)), "puuid", filter());
 
         ProfileMatchups decoded = JsonCodec.fromJson(JsonCodec.toJson(source), ProfileMatchups.class);
@@ -142,7 +140,7 @@ public class ProfileMatchupsTest {
     }
 
     private static Filter filter() {
-        return new Filter()
+        return FilterDefaults.create()
             .setChampion(0)
             .setLane(null)
             .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)

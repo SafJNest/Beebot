@@ -3,14 +3,13 @@ package com.safjnest.commands.owner;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
+import com.R4B.lol.*;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.lol.service.ChampionService.MatrixRefreshResult;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class ChampionStats extends Command {
 

@@ -1,9 +1,12 @@
 package com.safjnest.lol.model;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
+
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 
 public class ApiResultTest {
 

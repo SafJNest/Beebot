@@ -10,14 +10,12 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.ProfileMatchupLeaf;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.statistics.ProfileMatchupLeaf;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.api.dto.statistics.shared.ProfileLeafStats;
+import com.R4B.lol.*;
 import com.safjnest.utils.JsonCodec;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class MatchupRankingAnalyzerTest {
 
@@ -37,7 +35,7 @@ public class MatchupRankingAnalyzerTest {
         assertTrue(ranked.matchups().get(1).matchupScore() >= 2);
         assertNull(raw.matchups().get(1).tier());
         assertNull(raw.matchups().get(1).matchupScore());
-        ChampionStatistics decoded = ChampionStatistics.fromJson(JsonCodec.toJson(ranked));
+        ChampionStatistics decoded = ChampionStatisticsCodec.fromJson(JsonCodec.toJson(ranked));
         assertEquals("S+", decoded.matchups().get(1).tier());
         assertEquals(ranked.matchups().get(1).xpDiffAt15(), decoded.matchups().get(1).xpDiffAt15());
 
@@ -111,7 +109,7 @@ public class MatchupRankingAnalyzerTest {
     @Test
     public void profileRanksMatchupsAndSynergiesSeparatelyAndKeepsSpecialRowsAtTheEnd() {
         ProfileMatchups raw = profile();
-        ProfileMatchups projected = raw.withMinGames(2);
+        ProfileMatchups projected = ProfileMatchupsAnalyzer.withMinGames(raw, 2);
         MatchupRankingAnalyzer.rank(projected);
 
         ProfileMatchupLeaf rawLeaf = raw.champions().get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");

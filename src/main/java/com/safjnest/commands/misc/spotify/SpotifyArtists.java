@@ -1,6 +1,5 @@
 package com.safjnest.commands.misc.spotify;
 
-
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;

@@ -1,0 +1,10 @@
+R4B — Riot 4 Beebot
+
+Some LoL value definitions and acquisition data structures are adapted from
+R4J 2.8.1 by stelar7, licensed under the Apache License, Version 2.0.
+Copyright 2017 stelar7.
+Source: https://github.com/stelar7/R4J/tree/2.8.1
+
+R4B changes package placement, removes SDK/service dependencies, separates
+acquisition from data processing, and adds Beebot's pure shared behavior.
+The unchanged upstream license is included in R4J-LICENSE.md.

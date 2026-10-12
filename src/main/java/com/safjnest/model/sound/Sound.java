@@ -204,8 +204,6 @@ public class Sound {
     public boolean dislike(String userId) {
         return dislike(userId, true);
     }
-    
-
 
     public boolean like(String userId, boolean like) {
         boolean result = BotDB.setLikeDislike(this.ID, userId, (like ? 1 : 0));
@@ -231,12 +229,10 @@ public class Sound {
         return BotDB.hasInterectedSound(this.ID, userId).getAsBoolean("dislike");
     }
 
-
     @Override
     public String toString() {
         return "ID: " + ID;
     }
 
 }
-
 

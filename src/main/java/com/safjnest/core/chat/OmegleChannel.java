@@ -79,7 +79,6 @@ public class OmegleChannel {
         this.namePool = new ArrayList<>(staticNamePool);
     }
 
-
     public String getAnonymousName(String userId) {
         if (!anonymousNames.containsKey(userId)) {
             String name;
@@ -166,6 +165,5 @@ public class OmegleChannel {
     public void setInteraction(InteractionHook interaction) {
         this.hook = interaction;
     }
-
 
 }

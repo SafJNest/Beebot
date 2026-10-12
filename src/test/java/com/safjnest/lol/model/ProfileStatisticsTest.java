@@ -1,5 +1,7 @@
 package com.safjnest.lol.model;
 
+import com.safjnest.lol.service.ProfileStatisticsAccumulator;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -10,24 +12,20 @@ import java.util.List;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
 
 public class ProfileStatisticsTest {
 
     @Test
     public void persistsOnlyCanonicalLeavesWithoutDerivedFields() throws Exception {
         ProfileStatistics statistics = new ProfileStatistics();
-        statistics.add(match(GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP, 12, 900), "puuid", null);
-        statistics.finish();
+        ProfileStatisticsAccumulator.of(statistics).add(match(GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP, 12, 900), "puuid", null);
+        ProfileStatisticsAccumulator.of(statistics).finish();
 
         String json = new ObjectMapper().writeValueAsString(statistics);
         assertTrue(json.contains("\"champions\""));
@@ -46,8 +44,8 @@ public class ProfileStatisticsTest {
     @Test
     public void aggregatesChampionLevelAndOmitsMissingDamageTaken() throws Exception {
         ProfileStatistics statistics = new ProfileStatistics();
-        statistics.add(match(GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP, 18, null), "puuid", null);
-        statistics.finish();
+        ProfileStatisticsAccumulator.of(statistics).add(match(GameQueueType.TEAM_BUILDER_RANKED_SOLO, LaneType.TOP, 18, null), "puuid", null);
+        ProfileStatisticsAccumulator.of(statistics).finish();
 
         ProfileLeafStats leaf = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
         assertEquals(Long.valueOf(18), leaf.championLevelTotal);
@@ -63,7 +61,7 @@ public class ProfileStatisticsTest {
     @Test
     public void assignsUnavailableLaneToUnknownLeaf() {
         ProfileStatistics statistics = new ProfileStatistics();
-        statistics.add(match(GameQueueType.RANKED_SOLO_5X5, LaneType.NONE, 10, 0), "puuid", null);
+        ProfileStatisticsAccumulator.of(statistics).add(match(GameQueueType.RANKED_SOLO_5X5, LaneType.NONE, 10, 0), "puuid", null);
 
         assertEquals(1, statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("UNKNOWN").games);
     }
@@ -71,9 +69,9 @@ public class ProfileStatisticsTest {
     @Test
     public void persistsArenaFieldsOnlyOnArenaLeaf() throws Exception {
         ProfileStatistics statistics = new ProfileStatistics();
-        statistics.add(match(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 18, 100), "puuid", null);
-        statistics.add(arenaMatch(GameQueueType.CHERRY, LaneType.NONE, 18, 100, 3), "puuid", null);
-        statistics.finish();
+        ProfileStatisticsAccumulator.of(statistics).add(match(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 18, 100), "puuid", null);
+        ProfileStatisticsAccumulator.of(statistics).add(arenaMatch(GameQueueType.CHERRY, LaneType.NONE, 18, 100, 3), "puuid", null);
+        ProfileStatisticsAccumulator.of(statistics).finish();
 
         ProfileLeafStats ranked = statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP");
         ProfileLeafStats arena = statistics.champions.get(1).get(CanonicalQueue.ARENA).get("UNKNOWN");
@@ -86,11 +84,11 @@ public class ProfileStatisticsTest {
     @Test
     public void marksOnlyTheDominantChampionAsOtpForQueueAcrossRoles() throws Exception {
         ProfileStatistics statistics = new ProfileStatistics();
-        for (int index = 0; index < 40; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 1, 18, 100), "puuid", null);
-        for (int index = 0; index < 31; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.JUNGLE, 1, 18, 100), "puuid", null);
-        for (int index = 0; index < 14; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 2, 18, 100), "puuid", null);
-        for (int index = 0; index < 15; index++) statistics.add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 3, 18, 100), "puuid", null);
-        statistics.finish();
+        for (int index = 0; index < 40; index++) ProfileStatisticsAccumulator.of(statistics).add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 1, 18, 100), "puuid", null);
+        for (int index = 0; index < 31; index++) ProfileStatisticsAccumulator.of(statistics).add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.JUNGLE, 1, 18, 100), "puuid", null);
+        for (int index = 0; index < 14; index++) ProfileStatisticsAccumulator.of(statistics).add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 2, 18, 100), "puuid", null);
+        for (int index = 0; index < 15; index++) ProfileStatisticsAccumulator.of(statistics).add(championMatch(GameQueueType.RANKED_SOLO_5X5, LaneType.TOP, 3, 18, 100), "puuid", null);
+        ProfileStatisticsAccumulator.of(statistics).finish();
 
         assertEquals(Boolean.TRUE, statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("TOP").isOtp);
         assertEquals(Boolean.TRUE, statistics.champions.get(1).get(CanonicalQueue.RANKED_SOLO).get("JUNGLE").isOtp);

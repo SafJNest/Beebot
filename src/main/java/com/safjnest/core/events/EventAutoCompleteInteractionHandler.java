@@ -28,9 +28,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
+import com.R4B.api.dto.riot.Item;
+import com.R4B.lol.*;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Augment;
@@ -113,7 +113,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("custom-build"))
             name = "custom_build";
 
-        
         switch (name) {
             case "play":
                 choices = playSound(e);
@@ -210,7 +209,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     }
 
-
     private ArrayList<Choice> userSound(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
@@ -231,7 +229,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
     } 
-
 
     private ArrayList<Choice> help(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
@@ -257,7 +254,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;    
     }
 
-    
     private ArrayList<Choice> champion(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         List<String> champions = ChampionUtils.getChampionsNames();
@@ -278,7 +274,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
     }
-
 
     private ArrayList<Choice> augment(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
@@ -320,7 +315,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;
     }
 
-
     private ArrayList<Choice> soundboardSound(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
@@ -347,7 +341,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> greet(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-
         List<QueryRecord> sounds = null;
         if (isFocused) sounds = BotDB.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue());
         else sounds = BotDB.getlistGuildSounds(e.getGuild().getId(), 25);
@@ -360,7 +353,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
     }
-
 
     private ArrayList<Choice> tts(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
@@ -381,7 +373,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
     }
-
 
     private ArrayList<Choice> jump(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
@@ -404,7 +395,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
     }
-
 
     private ArrayList<Choice> alert(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
@@ -437,7 +427,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;
     }
 
-
     private ArrayList<Choice> rewardsLevel(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
         GuildData guildData = GuildCache.getGuildOrPut(e.getGuild().getId());
@@ -449,7 +438,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             if (data.getType() == AlertType.REWARD)
                 levels.add(String.valueOf(((RewardData) data).getLevel()));
         }
-
 
         if (isFocused) {
             for (String level : levels) {
@@ -465,7 +453,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;
     
     }
-
 
     private ArrayList<Choice> rewardRole(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
@@ -498,7 +485,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
     }
-
 
     private ArrayList<Choice> personalSummoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
@@ -553,7 +539,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 choices.add(new Choice(user.getDisplayName(), user.getLogin()));
         }
 
-
         return choices;
 
     }
@@ -567,7 +552,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             else if (item.getMaps().get("33")) items.put(item.getName().replaceAll("<.+?>", "") + " (SWARM)", item.getId() + "");
             else items.put(item.getName().replaceAll("<.+?>", ""), item.getId() + ""); 
         }
-        
 
         if (isFocused) {
             List<String> keys = new ArrayList<>(items.keySet());
@@ -585,7 +569,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             for (int i = 0; i < keys.size() && i < MAX_CHOICES; i++)
                 choices.add(new Choice(keys.get(i), items.get(keys.get(i))));
         }
-          
 
         return choices;
     }
@@ -594,7 +577,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         List<QueryRecord> playlists = BotDB.getPlaylistsWithSize(e.getUser().getId());
-        
 
         if (isFocused) {
             int i = 0;
@@ -617,7 +599,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 i++;
             }
         }
-          
 
         return choices;
     }

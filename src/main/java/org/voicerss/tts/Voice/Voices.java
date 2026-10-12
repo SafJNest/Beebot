@@ -62,7 +62,6 @@ public class Voices {
 
     public static final String[] array = {"Lukas"};
 
-
   }
 
   public static class German_Switzerland {
@@ -86,7 +85,6 @@ public class Voices {
 
     public static final String[] array = {"Evie", "Isla", "Jack", "Zoe"};
   }
-
 
   public static class English_Canada {
     public static final String id = "en-ca";
@@ -153,7 +151,6 @@ public class Voices {
     public static final String Jose = "Jose";
 
     public static final String[] array = {"Juana", "Silvia", "Teresa", "Jose"};
-
 
   }
 
@@ -264,7 +261,6 @@ public class Voices {
 
     public static final String[] array = {"Daan"};
   }
-
 
   public static class Polish {
     public static final String id = "pl-pl";
@@ -510,7 +506,6 @@ public class Voices {
     public static final String[] array = {"Chi"};
   }
 }
-
 
 /* Location:              C:\Users\leona\Desktop\voicerss_tts.jar!\com\voicerss\tts\Voices.class
  * Java compiler version: 5 (49.0)

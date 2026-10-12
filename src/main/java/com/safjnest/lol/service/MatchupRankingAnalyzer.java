@@ -6,15 +6,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.ProfileMatchupLeaf;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.statistics.ProfileMatchupLeaf;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.api.dto.statistics.shared.ProfileLeafStats;
+import com.R4B.lol.CanonicalQueue;
+import com.R4B.lol.LaneType;
 import com.safjnest.lol.utils.TierMathUtils;
 import com.safjnest.lol.utils.TierMathUtils.Moments;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public final class MatchupRankingAnalyzer {
 
@@ -54,6 +53,8 @@ public final class MatchupRankingAnalyzer {
         }
         return profile;
     }
+
+    // ============================================================================
 
     private static Map<Integer, ChampionStatistics.Matchup> rankChampionMatchups(ChampionStatistics statistics) {
         Map<Integer, ChampionStatistics.Matchup> source = statistics.matchups();

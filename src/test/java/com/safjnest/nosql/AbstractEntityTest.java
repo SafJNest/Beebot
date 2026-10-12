@@ -1,4 +1,6 @@
 package com.safjnest.nosql;
+import com.safjnest.nosql.writer.SummonerWriter;
+import com.safjnest.nosql.writer.MatchWriter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,14 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 
 class AbstractEntityTest {
 
@@ -125,11 +124,12 @@ class AbstractEntityTest {
             return true;
         });
 
-        Summoner summoner = new Summoner("puuid", "name#tag", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 10, 1);
-        summoner.setRank(GameQueueType.RANKED_FLEX_SR,
+        Summoner summoner = new Summoner("puuid", "name#tag", com.R4B.lol.LeagueShard.EUW1, 10, 1);
+        SummonerWriter summonerWriter = new SummonerWriter(summoner);
+        summonerWriter.setRank(GameQueueType.RANKED_FLEX_SR,
                 new Rank(TierDivisionType.DIAMOND_IV, 50, 10, 5));
 
-        assertTrue(summoner.update());
+        assertTrue(summonerWriter.update());
         assertEquals("set", operations.get(0).get("type"));
         assertEquals("ranks.RANKED_FLEX_SR", operations.get(0).get("path"));
     }
@@ -147,9 +147,10 @@ class AbstractEntityTest {
         Match match = Match.hydrated();
         match.gameId = "EUW1_123";
         match.leagueShard = LeagueShard.EUW1;
-        match.setParticipant(participant).setParticipantField(participant.puuid, "champion", 42);
+        MatchWriter matchWriter = MatchWriter.existing(match);
+        matchWriter.setParticipant(participant).setParticipantField(participant.puuid, "champion", 42);
 
-        assertTrue(match.update());
+        assertTrue(matchWriter.update());
         assertEquals("replaceOrAppendArrayElement", operations.get(0).get("type"));
         assertEquals("participants", operations.get(0).get("path"));
         assertEquals("puuid", operations.get(0).get("keyField"));
@@ -169,7 +170,7 @@ class AbstractEntityTest {
         match.leagueShard = LeagueShard.EUW1;
         match.patch = "14.2.1";
 
-        assertTrue(match.upsert());
+        assertTrue(new MatchWriter(match).upsert());
         List<String> paths = new ArrayList<>();
         Object patchMajor = null;
         for (Map<String, Object> operation : operations) {

@@ -10,7 +10,12 @@ import java.util.stream.Collectors;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.model.PlayerChampionStats;
-import com.safjnest.lol.model.summoner.Mastery;
+import com.R4B.api.dto.riot.MatchParticipant;
+import com.R4B.api.dto.riot.PerkSelection;
+import com.R4B.api.dto.riot.PerkStyle;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.lol.*;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
 
@@ -19,15 +24,8 @@ import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
-import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
-import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LeagueMessageUtils {
-
 
     public static String formatAdvancedData(PlayerChampionStats championStats, Mastery mastery) {
       StaticChampion champion = ChampionUtils.getChampion(championStats.getChampion());
@@ -43,7 +41,6 @@ public class LeagueMessageUtils {
       return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.level() : 0) + "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
-
 
     public static String getPosition(Map<?, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
         int personalStatValue = Integer.parseInt(personalStats.get(statKey));
@@ -129,7 +126,6 @@ public class LeagueMessageUtils {
         return ActionRow.of(top, jungle, mid, adc, support);
     }
 
-
     public static EmbedBuilder buildMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, long[]> data) {  
         List<Map.Entry<Integer, long[]>> worstMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
@@ -194,7 +190,6 @@ public class LeagueMessageUtils {
     public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
         return getOpggQueueTypeButtons(ButtonStyle.SECONDARY, queue);
     }
-
 
     public static MessageTopLevelComponent getOpggQueueTypeButtons(ButtonStyle defaultStyle, GameQueueType queue) {
         GameQueueType currentGameQueueType = GameQueueType.CHERRY;

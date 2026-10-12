@@ -10,19 +10,16 @@ import java.util.Set;
 
 import org.bson.Document;
 
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.summoner.Rank;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 import com.safjnest.lol.service.CompetitiveService;
 import com.safjnest.lol.service.LeaderboardService;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public final class MongoMigration {
 
@@ -578,7 +575,7 @@ public final class MongoMigration {
         TierDivisionType tier = row.getAsEnum("rank", TierDivisionType.class);
         if (queue == null || tier == null) throw new IllegalArgumentException("Migrated rank queue and tier are required puuid=" + puuid);
         ranksByPuuid.computeIfAbsent(puuid, ignored -> new LinkedHashMap<>()).put(
-            GameQueueTypeUtils.canonicalQueue(queue),
+            GameQueueType.canonicalQueue(queue),
             new Rank(tier, row.getAsInt("lp"), row.getAsInt("wins"), row.getAsInt("losses"))
         );
     }

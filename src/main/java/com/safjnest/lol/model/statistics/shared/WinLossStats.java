@@ -1,5 +1,6 @@
 package com.safjnest.lol.model.statistics.shared;
 
+import com.R4B.api.dto.*;
 public class WinLossStats {
 
     public long games;

@@ -2,12 +2,12 @@ package com.safjnest.commands.lol.summoner;
 
 import java.util.Arrays;
 
+import com.R4B.api.dto.summoner.Summoner;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
@@ -43,7 +43,6 @@ public class SummonerOverview extends SlashCommand {
       commandData.setThings(this);
     }
 
-
   @Override
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
@@ -58,7 +57,5 @@ public class SummonerOverview extends SlashCommand {
     String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.puuid()) != null ? event.getAuthor().getId() : null;
     LeagueMessage.send(event, userId, summoner, summoner.puuid(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
 	}
-
-
 
 }

@@ -1,6 +1,7 @@
 package com.safjnest.lol.champion;
-
-import com.safjnest.lol.model.Filter;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.RuneSignature;
+import com.safjnest.lol.service.RuneSignatureCodec;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
@@ -64,7 +65,7 @@ public final class ChampionBuildProvider {
                 skillUpgrades
             );
             JSONObject runesObject = full.optJSONObject("runes");
-            RuneSignature runes = runesObject == null ? null : RuneSignature.from(runesObject);
+            RuneSignature runes = runesObject == null ? null : RuneSignatureCodec.from(runesObject);
             Map<Integer, Long> itemTimes = new LinkedHashMap<>();
             for (ChampionBuildTimelineUtils.ItemEvent item : itemEvents)
                 itemTimes.put(item.itemId(), item.timestampMillis());

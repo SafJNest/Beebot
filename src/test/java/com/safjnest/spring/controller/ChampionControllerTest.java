@@ -6,12 +6,10 @@ import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.bind.annotation.GetMapping;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import com.R4B.lol.*;
+
+import org.springframework.web.bind.annotation.GetMapping;
 
 public class ChampionControllerTest {
 

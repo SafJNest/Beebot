@@ -107,9 +107,6 @@ public class BotCommand {
         this.arguments = arguments;
     }
 
-
-
-
     public List<BotCommand> getChildren() {
         return children;
     }
@@ -131,8 +128,6 @@ public class BotCommand {
         return father;
     }
 
-
-
     public List<OptionData> getOptions() {
         return options;
     }
@@ -140,8 +135,6 @@ public class BotCommand {
     public void setOptions(List<OptionData> options) {
         this.options = options;
     }
-
-
 
     public Permission[] getBotPermissions() {
         return botPermissions;
@@ -151,12 +144,9 @@ public class BotCommand {
         return userPermissions;
     }
 
-
-
     public boolean isHidden() {
         return hidden;
     }
-
 
     public boolean isText() {
         return text;
@@ -181,7 +171,6 @@ public class BotCommand {
     public boolean onlySlash() {
         return isSlash() && !isText();
     }
-
 
     public void setThings(SlashCommand command) {
         Class<?> clazz = command.getClass();

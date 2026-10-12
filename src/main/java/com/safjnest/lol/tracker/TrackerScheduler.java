@@ -2,14 +2,13 @@ package com.safjnest.lol.tracker;
 
 import java.util.concurrent.TimeUnit;
 
+import com.R4B.lol.GameQueueType;
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.service.RankService;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class TrackerScheduler {
 

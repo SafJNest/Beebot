@@ -202,8 +202,6 @@ public class ServerInfo extends SlashCommand {
             return;
         }
 
-
-
         event.reply(createEmbed(guild).build());
     }
 

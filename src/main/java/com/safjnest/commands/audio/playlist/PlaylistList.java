@@ -13,7 +13,6 @@ import com.safjnest.utils.CommandsLoader;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 
-
 public class PlaylistList extends SlashCommand{
     public PlaylistList(String father) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();

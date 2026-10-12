@@ -21,9 +21,9 @@ model: inherit
 3. Identify section: 5.1 command / 5.2 endpoint / 5.3 service / 5.4 model / 5.5 queue / 5.6 mongo / 5.7 query / 5.8 redis / 5.9 analyzer / 5.10 filter / 5.11 tracker / 5.12 test
 4. Apply copy-paste steps + existing patterns:
    - command → `rsc/commands.json` + `commands/<cat>/MyCommand.java` + `LeagueMessage` (presentation stability)
-   - endpoint → `spring/controller/*` + `LolApiParameters` + `LolApiResponses.from(ApiResult)` (canonical `lol.model`)
+   - endpoint → `spring/controller/*` + `LolApiParameters` + `LolApiResponses.from(ApiResult)` (canonical `com.R4B.AB.DTO`)
    - service → `lol/service/MyService.java` `constants→fields→public→//====→private`, `final`, no Lombok/Optional/DI
-   - queue → `QueueHandler.immediate/normal/background(RiotScheduler|ComputeScheduler|SyncScheduler, route, key, name, job->)`
+   - queue → `QueueHandler.immediate/normal/background(scheduler, route, key, name, Result.class, job->)`
    - mongo → `AbstractEntity` + `MongoDB.java` + `COLLECTION_NAMES` + create-only index
    - cache → `RedisKey` `los:<region>:<shard>:<puuid>:...:<filterKey>` 60s + `RedisClient` + breaker 30s
 5. Checklist §7: `explore/impact` + API sync + doc sync + `explain IXSCAN` + `QueueHandler` gate + naming + test `beebot_test`
@@ -33,10 +33,10 @@ model: inherit
 
 ## Quick reference (do not duplicate HANDBOOK)
 
-- Stack: Java 25, Spring 7, `QueueHandler`→`Registry`→`AbstractScheduler` (`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+- Stack: Java 25, Spring 7, application `QueueHandler`→per-instance JDK-only `com.hive` Registry/Router→`AbstractScheduler` (`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
 - Filter: `Filter.toSummonerKey()` → Base64Url, `profile_statistics_identity {puuid,filterKey}` unique, `profile_records {puuid,filterKey,metric}`
 - Cache: `RedisKey` `los:<region>:<shard>:<puuid>:summoner:statistics:<filterKey>` + explicit invalidation on upsert
-- Gate: `lol.model` only success DTOs, `spring/dto` only `LolApiError`
+- Gate: shared request/success/error DTOs in `com.R4B.AB.DTO`, values/helpers in `com.R4B.LOL` (ADR-0018); producer-only structures in `lol.model`; generic Hive snapshots in `com.hive.status` (ADR-0017)
 
 ## Expected output
 

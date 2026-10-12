@@ -10,13 +10,11 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.ChampionTierList;
 import com.safjnest.lol.model.ChampionTierSource;
-import com.safjnest.lol.model.ChampionView;
-import com.safjnest.lol.model.Filter;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import com.R4B.api.dto.ChampionTierList;
+import com.R4B.api.dto.ChampionView;
+import com.R4B.api.dto.Filter;
+import com.R4B.lol.*;
 
 public class ChampionTierAnalyzerTest {
 
@@ -178,7 +176,7 @@ public class ChampionTierAnalyzerTest {
     }
 
     private Filter filter(LaneType lane) {
-        return new Filter().setChampion(0).setPatch("15.14").setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+        return FilterDefaults.create().setChampion(0).setPatch("15.14").setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setLane(lane).setRank(null).setRegion(null);
     }
 

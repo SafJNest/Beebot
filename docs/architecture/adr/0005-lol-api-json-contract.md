@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-14
+- Shared Java contract placement: amended by ADR-0018; JSON remains unchanged
 
 ## Context
 
@@ -56,7 +57,7 @@ thresholds.
 This amendment extends the 2026-08-27 profile-statistics leaf contract with
 the spell-cast maps and the complete, additive matchup/synergy breakdowns above.
 
-Success payloads use canonical models from `lol.model`. Spring retains only HTTP error models.
+Success and error payload data use canonical models from `com.R4B.AB.DTO` (ADR-0018). Spring retains HTTP mapping and exception handling. The R4B transport JSON profile preserves HTTP exclusions independently of storage serialization.
 
 Profile exposes the complete `SummonerView` shape. Leaderboard exposes page metadata and rows of `SummonerLeaderboard`, each with the same nested `summoner` view.
 

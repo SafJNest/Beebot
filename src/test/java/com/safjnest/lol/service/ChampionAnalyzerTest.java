@@ -12,19 +12,14 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import com.safjnest.lol.champion.ChampionStatsData;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.Filter;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.Filter;
+import com.R4B.lol.*;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.lol.model.statistics.shared.MatchupStats;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class ChampionAnalyzerTest {
 
@@ -165,7 +160,7 @@ public class ChampionAnalyzerTest {
     }
 
     private static Filter filter(LeagueShard region, TierType rank) {
-        return new Filter()
+        return FilterDefaults.create()
             .setPatch("15.14")
             .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setRegion(region)

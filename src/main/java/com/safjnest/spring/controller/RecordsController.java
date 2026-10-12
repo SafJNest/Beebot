@@ -1,15 +1,15 @@
 package com.safjnest.spring.controller;
 
+import com.safjnest.lol.service.FilterDefaults;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.record.RecordMetric;
-import com.safjnest.lol.model.record.RecordPage;
-import com.safjnest.lol.model.record.RecordsOverview;
+import com.R4B.api.dto.record.RecordPage;
+import com.R4B.api.dto.record.RecordsOverview;
+import com.R4B.lol.RecordMetric;
 import com.safjnest.lol.service.ProfileRecordService;
 
 @RestController
@@ -26,7 +26,7 @@ public class RecordsController {
     public RecordsOverview overview(
             @RequestParam(name = "region", required = false) String regionValue
     ) {
-        return profileRecordService.getGlobalOverview(Filter.canonical(), LolApiParameters.region(regionValue));
+        return profileRecordService.getGlobalOverview(FilterDefaults.canonical(), LolApiParameters.region(regionValue));
     }
 
     @GetMapping("/HIGHEST_MASTERY/{champion}")
@@ -37,7 +37,7 @@ public class RecordsController {
             @RequestParam(name = "offset", defaultValue = "0") int offset
     ) {
         return profileRecordService.getGlobalPage(
-            Filter.canonical(),
+            FilterDefaults.canonical(),
             RecordMetric.HIGHEST_MASTERY,
             LolApiParameters.region(regionValue),
             LolApiParameters.champion(championValue),
@@ -55,7 +55,7 @@ public class RecordsController {
     ) {
         RecordMetric metric = LolApiParameters.recordMetric(metricValue);
         return profileRecordService.getGlobalPage(
-            Filter.canonical(),
+            FilterDefaults.canonical(),
             metric,
             LolApiParameters.region(regionValue),
             LolApiParameters.matchLimit(limit),

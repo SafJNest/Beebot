@@ -1,5 +1,6 @@
 package com.safjnest.lol.model.statistics.shared;
 
+import com.R4B.api.dto.*;
 public class MatchupStats extends WinLossStats {
 
     public long goldDiff;

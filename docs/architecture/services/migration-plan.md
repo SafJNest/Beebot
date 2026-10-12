@@ -1,0 +1,146 @@
+# Piano iniziale di estrazione
+
+Stato: piano servizi proposto; fase 0 documentata e tranche job/code della fase 3
+implementata anticipatamente con decisione mirata ADR-0017. La tranche
+contratti e consumatori locali è accettata autonomamente in ADR-0018 come R4B.
+Client HTTP, processi e moduli applicativi restano proposti.
+
+## Ordine delle fasi
+
+| Fase | Lavoro | Gate di completamento |
+|---|---|---|
+| 0 — Analisi | Inventario, DTO, job, ownership e dipendenze | Documenti presenti, conflitti registrati, nessuna modifica runtime |
+| 1 — Decisione e baseline | Definire layout, accettare/sincronizzare la decisione architetturale e caratterizzare comportamento vigente | Regole/ADR allineati; risolte discrepanze compute/progresso; fixture JSON e test lifecycle |
+| 2 — Contratti comuni | Separare metodi operativi dai modelli canonici e trasferire DTO/dipendenze di dati | Contratti compilano senza servizi/SDK/driver; JSON compatibile; nessun DTO duplicato |
+| 3 — Job/code comuni | Hive per istanza, core generico e adapter locali implementati nel monolite | Evidenze e review in hive-validation.md; processi ancora condivisi |
+| 4 — Build autonome | Parent Maven e moduli shared/bbot/r4j/spring, dipendenze e risorse locali | Tre bootstrap e artifact avviabili senza avviare gli altri |
+| 5 — Confine R4J | API interna e client Spring, fetch/cache SDK nel servizio R4J | Spring senza SDK Riot; R4J senza Mongo/JDA; errori/timeout/limiter verificati |
+| 6 — Confine Bbot | Client verso Spring e conversione dei comandi/maintenance alle API del proprietario | Bot senza accesso LoL diretto a Mongo/Riot; embed e comandi compatibili |
+| 7 — Repository separate | Pubblicazione dei comuni, versioni e release indipendenti | Contratti e build già isolati; smoke test tra versioni supportate |
+
+L'estrazione di DTO e job può iniziare mantenendo un processo unico per ridurre
+il numero di variabili. Le loro dipendenze vanno comunque isolate fin da subito.
+Il passaggio a processi distinti cambia il contesto parent/child e richiede
+il gate di correlazione/error handling, non un semplice cambio di import.
+
+## Prima tranche dei contratti
+
+1. Stabilizzare serializzazione e rappresentazione dei valori/enum necessari.
+2. Partire da `ResponseMetadata`, valori semplici e DTO senza side effect
+   (`Mastery`, indexables e wrapper/pagine compatibili con la loro chiusura di tipi).
+3. Preparare `SummonerView`/`SummonerOverview`: rimuovere dipendenze da persistenza,
+   lookup statici e accumulatori dalla chiusura `Summoner`/statistiche.
+4. Preparare `Build` e `ChampionView`/`ChampionStatistics`: shape rune comune,
+   calcolo privato Spring, distinzione tra codec HTTP e codec storage.
+5. Estrarre match/livegame/history, activity/matchups, records, leaderboard e
+   status rispettando lo stesso proprietario canonico.
+
+Un wrapper con pochi campi non è estraibile prima dei suoi tipi annidati.
+Non lasciare classi duplicate nei vecchi package “temporaneamente” senza
+un gate esplicito; i consumatori cambiano import nella stessa tranche.
+Gli adapter privati possono convertire SDK/BSON verso il modello canonico.
+
+## Prima tranche dei job
+
+1. Caratterizzare `Registry`, `Router`, `JobQueue`, worker e callback, compresi
+   fallimento di enqueue, parent con progresso proprio, follower e shutdown.
+2. Rendere esplicita l'istanza runtime mantenendo tutti gli scheduler del primo
+   port sullo stesso registry, finché il confine di processo non viene introdotto.
+3. Estrarre core e snapshot generici; spostare startup, logging e `runType`
+   nei proprietari applicativi.
+4. Applicare un adapter R4J e un adapter compute/Sync con le policy correnti
+   concordate; nessuna riscrittura opportunistica del routing.
+5. Separare i runtime con la build autonoma e la correlazione dei confini HTTP.
+
+Non includere nel primo task job un broker durevole, distributed dedup,
+retry persistiti, nuovo autoscaling o cambiamento del numero di worker.
+
+## Operazioni interne da coprire prima del taglio del bot
+
+Le API GET pubbliche non coprono tutte le operazioni del bot. Link/unlink,
+abilitazione tracking, import match/history, OP.GG, comandi owner di rigenerazione,
+repair, toggle/logging e letture operative devono essere inventariati per chiamante
+e trasformati in richieste al servizio proprietario, con controllo delle autorizzazioni.
+
+La specifica interna dovrà elencare per ciascuna operazione input, output,
+idempotenza, priorità ammessa, completamento e progresso. I comandi Discord
+mantengono permessi, help, cooldown e presentazione; non diventano un accesso
+remoto arbitrario a query Mongo o codice eseguibile.
+
+## Checklist per ogni tranche
+
+- CodeGraph aggiornato; explore/impact mirati prima di modificare codice.
+- Un solo writer per dato/proiezione e una sola classe canonica per contratto.
+- Compile del modulo interessato e test mirati al comportamento modificato.
+- Fixture HTTP prodotte con il mapper di trasporto e consumate dai client:
+  profile ready/partial/pending, livegame assente/presente, match, build/statistics,
+  records, leaderboard, status, errori e liste.
+- Validare null/assenze e map keys, enum/alias, campi nascosti e named properties.
+- Test job: due runtime senza interferenze, route custom, dedup/follower,
+  priorità/promozione, parent/child, retain/resume, errori, cleanup e shutdown.
+- Test adapter: placement compute concordato, riserva/merge champion e routing
+  R4J platform/region con rate protection.
+- Review dei join e delle continuation; nessun calcolo costoso sul thread HTTP.
+- Smoke test di ciascun servizio con gli altri spenti, poi integrazione HTTP con
+  timeout, indisponibilità, `202`, risposte vuote e failure di persistenza.
+- Mongo/Redis live solo nelle tranche che cambiano accesso/ownership, riportando
+  separatamente test offline, fixture e prova runtime.
+- API e documentazione sincronizzate; nessuna modifica della presentazione non richiesta.
+
+Non introdurre nuove librerie se JDK, Jackson e infrastruttura già presenti
+soddisfano il requisito. I controlli devono seguire il rischio della tranche,
+senza far passare una compilazione o test statici per validazione dei servizi reali.
+
+## Decisioni da chiudere al momento opportuno
+
+| Decisione | Proposta iniziale | Necessaria prima di |
+|---|---|---|
+| Namespace/artifact | Hive `com.hive`; R4B `com.R4B.AB.DTO` / `com.R4B.LOL`; artifact autonomi dai sorgenti canonici | Tranche accettate 0017/0018; moduli applicativi rinviati |
+| Enum LoL sul wire | Tipi del contratto con valori JSON compatibili; mapping SDK in R4J | DTO indipendenti da R4J |
+| Entity operative | Metodi persistenti privati del writer, stesso modello canonico di dati | Estrazione `Summoner`/`Match` |
+| Compute/progresso | Caratterizzare e risolvere le discrepanze registrate | Port scheduler/registry |
+| API R4J | DTO neutralizzati, copertura di tutte le operazioni necessarie | Trasferimento fetch al processo R4J |
+| Completamento remoto | Iniziare con risultato HTTP quando compatibile con durata/timeout | Confine di processo; acceptance/polling solo se necessario |
+| Redis | Client/pool per servizio, cataloghi chiavi posseduti separatamente | Bootstrap indipendenti |
+| Invalidazione cache raw dopo insert | Chiamata idempotente al proprietario R4J se ancora richiesta | Rimozione delle scritture Redis incrociate |
+| Status | Metriche locali; aggregazione/correlazione esplicita | Status di tre processi |
+| Repliche/durabilità | Nessuna garanzia nuova nella prima estrazione | Scaling multi-istanza o backlog durevole |
+
+Con Redis condiviso fisicamente si può mantenere il namespace attuale nella
+fase transitoria; i writer delle chiavi devono comunque essere distinti.
+Un cambio di namespace/TTL richiede un piano di invalidazione/rebuild, non
+una modifica implicita nella separazione dei servizi.
+
+## Versioning successivo
+
+Finché sono nella stessa repository, parent e moduli possono condividere
+la versione esistente senza inventare subito versioni divergenti. Con artifact
+pubblicati, le versioni dei comuni saranno pin espliciti: modifiche additive
+compatibili, modifiche breaking coordinate con i consumatori e fixture tra
+le versioni supportate. Una rename Java può essere breaking per i binari
+anche a JSON invariato. Non scegliere ora registry, pipeline o repository remoti.
+
+## Consegna di questa fase
+
+La fase 0 è documentale. Nessun endpoint, JSON, command/embed, documento Mongo,
+chiave Redis, libreria Maven o package Java viene modificato. Handbook, indice
+architetturale e README ricevono soltanto un rimando alla proposta; i documenti
+API/Mongo sono stati riesaminati e restano la descrizione del runtime corrente.
+Disallineamenti preesistenti sono registrati nell'inventario.
+
+## Decisione della tranche job/code
+
+ADR-0017 conserva il codice verificato: quattro worker compute e progresso
+esplicito prima dei contatori figli. Il core vive in `com.hive`, i concreti
+in `r4j.scheduler` e `lol.scheduler`; App compone un solo runtime condiviso.
+DTO dominio, moduli dei servizi e trasporto restano fasi indipendenti.
+
+## Decisione della tranche R4B
+
+ADR-0018 autorizza contratti, componenti serializzati, enum/helper LoL e la
+migrazione completa dei consumatori locali. Non introduce client HTTP, builder
+richieste, processi distinti o una riscrittura Hive. I servizi continuano a
+comporsi localmente, con SDK dietro adapter `r4j` e firme indipendenti.
+La chiusura deve compilare senza SDK fuori dagli adapter, oltre alla build
+autonoma R4B. [Inventario](r4b-inventory.md) e [verifiche](r4b-validation.md)
+descrivono la tranche effettiva; le future fasi 4–7 restano proposte.

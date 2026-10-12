@@ -34,4 +34,4 @@ fields. Full detail is in
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
 - Parser: [`LolApiParameters`](../../../src/main/java/com/safjnest/spring/controller/LolApiParameters.java)
-- Success model: [`SummonerView`](../../../src/main/java/com/safjnest/lol/model/summoner/SummonerView.java)
+- Success model: [`SummonerView`](../../../src/main/java/com/R4B/AB/DTO/summoner/SummonerView.java)

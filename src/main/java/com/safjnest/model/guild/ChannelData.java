@@ -1,11 +1,10 @@
 package com.safjnest.model.guild;
 
+import com.R4B.lol.*;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.log.LoggerIDpair;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 /**
  * Class that stores all the settings for a guild.
@@ -82,7 +81,6 @@ public class ChannelData {
         }
         return result;
     }
-
 
     public double getExperienceModifier() {
         return experienceModifier;

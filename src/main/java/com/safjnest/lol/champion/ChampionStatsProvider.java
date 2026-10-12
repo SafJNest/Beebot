@@ -8,14 +8,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.bson.Document;
-import com.safjnest.lol.model.Filter;
+
+import com.R4B.api.dto.Filter;
+import com.R4B.lol.*;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.lol.utils.MatchMemoryUtils;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class ChampionStatsProvider {
 

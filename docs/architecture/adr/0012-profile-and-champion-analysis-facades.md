@@ -5,6 +5,11 @@
 - Date: 2026-08-01
 - Amended: 2026-09-29
 
+Infrastructure update: [ADR-0017](0017-hive-job-runtime.md) extracts the JDK-only
+mechanism to Hive and preserves the actual four-worker compute topology.
+Historical queue class/package descriptions below are retained for context;
+domain, cache and persistence ownership remains unchanged.
+
 ## Context
 
 Profile and champion reads were split across page, aggregate, activity,

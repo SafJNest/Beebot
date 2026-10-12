@@ -24,7 +24,6 @@ public class Move extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
@@ -36,7 +35,6 @@ public class Move extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        
 
     }
 }

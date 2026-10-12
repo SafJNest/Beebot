@@ -1,5 +1,7 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.r4j.RiotGateway;
+import com.safjnest.lol.tracker.Tracker;
 import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
@@ -12,47 +14,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.MatchOrder;
-import com.safjnest.lol.model.match.MatchPage;
-import com.safjnest.lol.model.match.MatchResult;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.match.RankHistory;
-import com.safjnest.lol.model.match.RankHistoryMatch;
-import com.safjnest.lol.model.match.RankHistoryMetadata;
-import com.safjnest.lol.model.match.RankHistoryQuery;
-import com.safjnest.lol.model.match.RankHistoryView;
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.summoner.Rank;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.MatchPage;
+import com.R4B.api.dto.match.MatchResult;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.match.RankHistory;
+import com.R4B.api.dto.match.RankHistoryMatch;
+import com.R4B.api.dto.match.RankHistoryMetadata;
+import com.R4B.api.dto.match.RankHistoryQuery;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.api.dto.riot.RiotMatchData;
+import com.R4B.api.dto.riot.RiotTimelineData;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.job.Job;
-import com.safjnest.lol.queue.job.JobPriority;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
-import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.hive.job.ResultType;
+import com.hive.job.Job;
+import com.hive.job.JobPriority;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.safjnest.lol.scheduler.SyncScheduler;
 import com.safjnest.lol.utils.MatchUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
-import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.utils.log.BotLogger;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
-import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 
 public final class MatchService {
 
@@ -61,24 +52,20 @@ public final class MatchService {
     private static final TypeReference<List<String>> MATCH_IDS_TYPE = new TypeReference<List<String>>() {};
     private static final TypeReference<List<RankHistoryMatch>> RANK_HISTORY_TYPE = new TypeReference<>() {};
 
-    private static final no.stelar7.api.r4j.impl.R4J RIOT_API = com.safjnest.lol.LeagueHandler.getRiotApi();
-
     private MatchService() {
     }
 
     public static Match find(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return null;
 
-        Match cached = RedisClient.get(RedisKey.MATCH_DETAIL.of(LeagueShardUtils.cacheRegion(shard), shard.name(), gameId), Match.class);
+        Match cached = RedisClient.get(RedisKey.MATCH_DETAIL.of(LeagueShard.cacheRegion(shard), shard.name(), gameId), Match.class);
         if (cached != null) {
-            cached.restoreEvents();
             return cached;
         }
 
         Match stored = MongoDB.findMatch(gameId);
         if (stored != null) {
-            stored.restoreEvents();
-            RedisClient.set(RedisKey.MATCH_DETAIL, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), gameId);
+            RedisClient.set(RedisKey.MATCH_DETAIL, stored, LeagueShard.cacheRegion(shard), shard.name(), gameId);
         }
         return stored;
     }
@@ -91,7 +78,7 @@ public final class MatchService {
                 SyncScheduler.class,
                 shard,
                 "match:" + gameId,
-                "match analysis id=" + gameId,
+                "match analysis id=" + gameId, Match.class,
                 ignored -> insert(fetch(gameId, shard))
             );
     }
@@ -104,7 +91,7 @@ public final class MatchService {
         }
     }
 
-    public static LOLMatch fetch(String gameId, LeagueShard shard) {
+    public static RiotMatchData fetch(String gameId, LeagueShard shard) {
         try {
             return fetchAsync(gameId, shard).join();
         } catch (CompletionException exception) {
@@ -112,22 +99,22 @@ public final class MatchService {
         }
     }
 
-    public static CompletableFuture<LOLMatch> fetchAsync(String gameId, LeagueShard shard) {
+    public static CompletableFuture<RiotMatchData> fetchAsync(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
 
-        LOLMatch cached = getCachedR4JMatch(gameId, shard);
+        RiotMatchData cached = getCachedR4JMatch(gameId, shard);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         RegionShard region = shard.toRegionShard();
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
-            "match id=" + gameId, ignored -> {
-            LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
+            "match id=" + gameId, RiotMatchData.class, ignored -> {
+            RiotMatchData match = RiotGateway.match(region, gameId);
             if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
             return match;
         });
     }
 
-    public static Match insert(LOLMatch source) {
+    public static Match insert(RiotMatchData source) {
         if (source == null || source.getPlatform() == null) return null;
         String fullGameId = MatchUtils.fullGameId(source);
         cacheR4JMatch(source);
@@ -136,7 +123,7 @@ public final class MatchService {
             return null;
         }
 
-        Match match = Match.fromR4J(source);
+        Match match = Tracker.fromR4J(source);
         if (match == null) return null;
         localRanking(match);
         boolean inserted = MongoDB.insertMatch(match);
@@ -149,16 +136,16 @@ public final class MatchService {
         return inserted ? match : find(fullGameId, source.getPlatform());
     }
 
-    public static CompletableFuture<Match> insertAsync(LOLMatch source, JobPriority priority) {
+    public static CompletableFuture<Match> insertAsync(RiotMatchData source, JobPriority priority) {
         if (source == null || source.getPlatform() == null) return CompletableFuture.completedFuture(null);
         String gameId = MatchUtils.fullGameId(source);
         return switch (priority == null ? JobPriority.NORMAL : priority) {
             case IMMEDIATE -> QueueHandler.immediate(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, Match.class, ignored -> insert(source));
             case NORMAL -> QueueHandler.normal(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, Match.class, ignored -> insert(source));
             case BACKGROUND -> QueueHandler.background(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, Match.class, ignored -> insert(source));
         };
     }
 
@@ -182,40 +169,40 @@ public final class MatchService {
                 upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(rank), shard);
                 continue;
             }
-            RankService.refreshBackgroundAsync(puuid, shard).whenComplete((refreshed, failure) -> {
+            QueueHandler.whenComplete(RankService.refreshBackgroundAsync(puuid, shard), (refreshed, failure) -> {
                 if (failure != null) return;
                 upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(soloRank(refreshed)), shard);
             });
         }
     }
 
-    public static void cacheR4JMatch(LOLMatch match) {
+    public static void cacheR4JMatch(RiotMatchData match) {
         if (match == null || match.getPlatform() == null) return;
 
         String gameId = match.getPlatform().name() + "_" + match.getGameId();
         RedisClient.set(RedisKey.R4J_MATCH, match, match.getPlatform().toRegionShard().name(), gameId);
     }
 
-    public static LOLTimeline getTimeline(LOLMatch match) {
+    public static RiotTimelineData getTimeline(RiotMatchData match) {
         if (match == null || match.getPlatform() == null) return null;
         return getTimeline(MatchUtils.fullGameId(match), match.getPlatform());
     }
 
-    public static LOLTimeline getTimeline(String gameId, LeagueShard shard) {
+    public static RiotTimelineData getTimeline(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return null;
         String region = shard.toRegionShard().name();
-        LOLTimeline cached = RedisClient.get(RedisKey.R4J_TIMELINE.of(region, gameId), LOLTimeline.class);
+        RiotTimelineData cached = RedisClient.get(RedisKey.R4J_TIMELINE.of(region, gameId), RiotTimelineData.class);
         if (cached != null) return cached;
 
-        return QueueHandler.<LOLTimeline>immediate(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
-            "timeline id=" + gameId, ignored -> {
-                LOLTimeline timeline = RIOT_API.getLoLAPI().getMatchAPI().getTimeline(shard.toRegionShard(), gameId);
+        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
+            "timeline id=" + gameId, RiotTimelineData.class, ignored -> {
+                RiotTimelineData timeline = RiotGateway.timeline(shard.toRegionShard(), gameId);
                 if (timeline != null) RedisClient.set(RedisKey.R4J_TIMELINE, timeline, region, gameId);
                 return timeline;
             }).join();
     }
 
-    public static void clearTimelineCache(LOLMatch match) {
+    public static void clearTimelineCache(RiotMatchData match) {
         if (match == null || match.getPlatform() == null) return;
         clearTimelineCache(MatchUtils.fullGameId(match), match.getPlatform());
     }
@@ -241,14 +228,14 @@ public final class MatchService {
     public static void queue(LeagueShard shard, String gameId) {
         if (!valid(gameId, shard)) return;
         QueueHandler.background(SyncScheduler.class, shard, "match:" + gameId,
-            "match fetch id=" + gameId, task -> fetchAndInsert(task, shard, gameId));
+            "match fetch id=" + gameId, Match.class, task -> fetchAndInsert(task, shard, gameId));
     }
 
-    public static void queueRecentMatches(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, int limit) {
+    public static void queueRecentMatches(com.R4B.api.dto.summoner.Summoner summoner, int limit) {
         if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null || limit < 1) return;
         String key = "recent-matches:" + summoner.getPlatform().name() + ':' + summoner.getPUUID();
         QueueHandler.background(SyncScheduler.class, summoner.getPlatform(), key,
-            "recent matches puuid=" + summoner.getPUUID(), task -> {
+            "recent matches puuid=" + summoner.getPUUID(), Void.class, task -> {
                 QueueHandler.retain(task);
                 getMatchlistAsync(summoner, null, 0, limit, 0, null).whenComplete((matchIds, failure) ->
                     QueueHandler.resume(task, () -> queueMissingMatches(summoner.getPlatform(), matchIds, failure)));
@@ -256,7 +243,7 @@ public final class MatchService {
             });
     }
 
-    public static void importHistory(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, GameQueueType queue) {
+    public static void importHistory(com.R4B.api.dto.summoner.Summoner summoner, GameQueueType queue) {
         if (summoner == null || summoner.getPlatform() == null) return;
         try {
             List<String> matchIds = new ArrayList<>();
@@ -272,8 +259,8 @@ public final class MatchService {
             java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger(0);
             for (String matchId : matchIds) {
                 if (LeagueHandler.isMatchDBCached(matchId)) continue;
-                
-                fetchAsync(matchId, summoner.getPlatform()).whenComplete((match, failure) -> {
+
+                QueueHandler.whenComplete(fetchAsync(matchId, summoner.getPlatform()), (match, failure) -> {
                     if (failure != null) {
                         BotLogger.error("Match fetch failed: " + matchId + " message=" + failure.getMessage());
                         return;
@@ -344,7 +331,7 @@ public final class MatchService {
     public static void invalidate(String gameId, LeagueShard shard) {
         if (!valid(gameId, shard)) return;
         CacheInvalidationService.clearRedis(
-            RedisKey.MATCH_DETAIL, LeagueShardUtils.cacheRegion(shard), shard.name(), gameId);
+            RedisKey.MATCH_DETAIL, LeagueShard.cacheRegion(shard), shard.name(), gameId);
     }
 
     public static void invalidate(Match match) {
@@ -355,12 +342,12 @@ public final class MatchService {
             if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
             CacheInvalidationService.clearRedis(
                 RedisKey.SUMMONER_DATA,
-                LeagueShardUtils.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid);
+                LeagueShard.cacheRegion(match.leagueShard), match.leagueShard.name(), participant.puuid);
         }
     }
 
     public static List<String> getRecentIds(
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            com.R4B.api.dto.summoner.Summoner summoner,
             GameQueueType queue,
             int index) {
         if (summoner == null || index < 0) return List.of();
@@ -372,7 +359,7 @@ public final class MatchService {
     }
 
     public static void invalidateMatchlist(
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            com.R4B.api.dto.summoner.Summoner summoner,
             GameQueueType queue,
             int index) {
         if (summoner == null || index < 0) return;
@@ -382,7 +369,7 @@ public final class MatchService {
     }
 
     public static List<String> getMatchlist(
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            com.R4B.api.dto.summoner.Summoner summoner,
             GameQueueType queue,
             int index,
             int count,
@@ -404,7 +391,7 @@ public final class MatchService {
     }
 
     public static CompletableFuture<List<String>> getMatchlistAsync(
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            com.R4B.api.dto.summoner.Summoner summoner,
             GameQueueType queue,
             int index,
             int count,
@@ -420,9 +407,8 @@ public final class MatchService {
 
         String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
         return QueueHandler.immediate(RiotScheduler.class, summoner.getPlatform(), summoner.getPlatform().name() + ":match-list:" + id,
-            "match list puuid=" + summoner.getPUUID(), ignored -> {
-                MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
-                List<String> values = builder.get();
+            "match list puuid=" + summoner.getPUUID(), ResultType.list(String.class), ignored -> {
+                List<String> values = RiotGateway.matchIds(summoner, queue, index, requestedCount, startTime, type);
                 if (values == null) return List.of();
                 RedisClient.set(RedisKey.R4J_MATCH_LIST, values,
                     summoner.getPlatform().name(), summoner.getPUUID(), requestKey, index);
@@ -435,7 +421,7 @@ public final class MatchService {
     }
 
     public static List<QueryRecord> getSummonerData(String puuid, LeagueShard shard) {
-        String key = RedisKey.SUMMONER_DATA.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        String key = RedisKey.SUMMONER_DATA.of(LeagueShard.cacheRegion(shard), shard.name(), puuid);
         List<QueryRecord> cached = RedisClient.get(key, new TypeReference<List<QueryRecord>>() {});
         if (cached != null) return cached;
 
@@ -446,8 +432,19 @@ public final class MatchService {
             Long.MAX_VALUE,
             GameQueueType.TEAM_BUILDER_RANKED_SOLO
         );
-        RedisClient.set(RedisKey.SUMMONER_DATA, result, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        RedisClient.set(RedisKey.SUMMONER_DATA, result, LeagueShard.cacheRegion(shard), shard.name(), puuid);
         return result;
+    }
+
+    public static String matchListRequestKey(
+            GameQueueType queue,
+            int count,
+            long startTime,
+            MatchlistMatchType type) {
+        return "queue=" + (queue == null ? "null" : queue.name())
+            + ":count=" + count
+            + ":startTime=" + startTime
+            + ":type=" + (type == null ? "null" : type.name());
     }
 
     // ============================================================================
@@ -458,7 +455,7 @@ public final class MatchService {
 
     private static void localRanking(Match match) {
         if (match == null || match.rank != null || match.leagueShard == null || match.participants == null || match.queue == null) return;
-        GameQueueType queue = GameQueueTypeUtils.rankedCanonicalQueue(match.queue);
+        GameQueueType queue = GameQueueType.rankedCanonicalQueue(match.queue);
         List<TierDivisionType> tiers = new ArrayList<>();
         for (Participant participant : match.participants) {
             if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
@@ -469,7 +466,7 @@ public final class MatchService {
             participant.rankProgress = RankProgressUtils.snapshot(rank);
             if (rank.tier() != null) tiers.add(rank.tier());
         }
-        if (!tiers.isEmpty()) match.setRank(TierDivisionUtils.getAverageRank(tiers));
+        if (!tiers.isEmpty()) match.setRank(TierDivisionType.getAverageRank(tiers));
     }
 
     private static void upsertRankProgress(List<String> gameIds, String puuid, RankProgress progress, LeagueShard shard) {
@@ -510,7 +507,7 @@ public final class MatchService {
             String puuid,
             LeagueShard shard,
             SeasonUtils.SeasonRange season) {
-        String cacheRegion = LeagueShardUtils.cacheRegion(shard);
+        String cacheRegion = LeagueShard.cacheRegion(shard);
         String key = RedisKey.SUMMONER_RANK_HISTORY.of(cacheRegion, shard.name(), puuid, season.season());
         List<RankHistoryMatch> cached = RedisClient.get(key, RANK_HISTORY_TYPE);
         if (cached != null) return cached;
@@ -527,7 +524,7 @@ public final class MatchService {
             long timeEnd,
             GameQueueType queue,
             String patch) {
-        return match != null && GameQueueTypeUtils.canonicalQueue(queue) == GameQueueTypeUtils.canonicalQueue(match.queue())
+        return match != null && GameQueueType.canonicalQueue(queue) == GameQueueType.canonicalQueue(match.queue())
             && match.timeStart() >= timeStart && match.timeStart() <= timeEnd
             && (patch == null || patch.equals(match.patch()));
     }
@@ -539,7 +536,7 @@ public final class MatchService {
     }
 
     private static boolean isRankHistoryQueue(GameQueueType queue) {
-        GameQueueType canonical = GameQueueTypeUtils.canonicalQueue(queue);
+        GameQueueType canonical = GameQueueType.canonicalQueue(queue);
         return canonical == GameQueueType.RANKED_SOLO_5X5 || canonical == GameQueueType.RANKED_FLEX_SR;
     }
 
@@ -584,35 +581,10 @@ public final class MatchService {
         long timeEnd
     ) {}
 
-    private static MatchListBuilder matchListBuilder(
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
-            GameQueueType queue,
-            int index,
-            int count,
-            long startTime,
-            MatchlistMatchType type) {
-        MatchListBuilder builder = summoner.getLeagueGames().withBeginIndex(index);
-        if (count > 0) builder = builder.withCount(count);
-        if (startTime > 0) builder = builder.withStartTime(startTime);
-        if (type != null) builder = builder.withType(type);
-        return queue == null ? builder : builder.withQueue(queue);
-    }
-
-    public static String matchListRequestKey(
-            GameQueueType queue,
-            int count,
-            long startTime,
-            MatchlistMatchType type) {
-        return "queue=" + (queue == null ? "null" : queue.name())
-            + ":count=" + count
-            + ":startTime=" + startTime
-            + ":type=" + (type == null ? "null" : type.name());
-    }
-
-    private static LOLMatch getCachedR4JMatch(String gameId, LeagueShard shard) {
+    private static RiotMatchData getCachedR4JMatch(String gameId, LeagueShard shard) {
         return RedisClient.get(
             RedisKey.R4J_MATCH.of(shard.toRegionShard().name(), gameId),
-            LOLMatch.class
+            RiotMatchData.class
         );
     }
 }

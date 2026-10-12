@@ -5,10 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.lol.model.statistics.CanonicalQueue;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import com.R4B.api.dto.statistics.shared.ProfileLeafStats;
+import com.R4B.lol.*;
 
 public final class OPTUtils {
     private static final int MIN_GAMES = 20;
@@ -72,7 +70,7 @@ public final class OPTUtils {
     }
 
     private static boolean playableLane(String value) {
-        try { return LaneTypeUtils.playables().contains(LaneType.valueOf(value)); }
+        try { return LaneType.playables().contains(LaneType.valueOf(value)); }
         catch (RuntimeException ignored) { return false; }
     }
 

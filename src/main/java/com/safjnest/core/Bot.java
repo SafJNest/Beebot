@@ -174,27 +174,23 @@ public class Bot {
             new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
             new Permissions(), new Nickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
 
-        
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
             new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
             new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
         );
         
         Collections.addAll(commandsList, new Leaderboard(), new Test(), new ChampionStats(), new TrackerStatus(), new ListGuild());
-        
-    
+
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
-
 
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), 
             new Livegame(),
             new Champion(), new Opgg(),
             new Region(), new UltimateBravery(), new Item()
         );
-    
 
         Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
@@ -204,7 +200,6 @@ public class Bot {
             new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode(), new Champions()
         );
 
-        
         Collections.addAll(slashCommandsList, new Disconnect(), 
             new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
             new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
@@ -212,8 +207,6 @@ public class Bot {
         );
 
         Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
-        
-
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
@@ -230,7 +223,6 @@ public class Bot {
         jda.addEventListener(new EventComponentsHandler());
         jda.addEventListener(new LeagueEventHandler());
     }
-
 
     public void distruzione_demoniaca() {
         jda.shutdown();

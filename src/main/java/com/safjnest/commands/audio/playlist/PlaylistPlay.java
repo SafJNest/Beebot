@@ -17,7 +17,6 @@ import com.safjnest.utils.CommandsLoader;
 import com.safjnest.core.audio.*;
 import com.safjnest.core.audio.types.*;
 
-
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -70,7 +69,6 @@ public class PlaylistPlay extends SlashCommand {
             return;
         }
 
-        
         QueryRecord playlist = BotDB.getPlaylist(event.getUser().getId(), playlistId);
         List<QueryRecord> playlistTracks = BotDB.getPlaylistTracks(playlistId, null, null);
 
@@ -82,7 +80,6 @@ public class PlaylistPlay extends SlashCommand {
         List<AudioTrack> tracksFinal = new ArrayList<>();
         for(QueryRecord trackToLoad : playlistTracks) 
             tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
-        
 
         SafjAudioPlaylist audioPlaylist = new SafjAudioPlaylist(playlist.get("name"), tracksFinal, null);
         (new ResultHandler(event, false, "", timing, ReplyType.MODIFY)).playlistLoaded(audioPlaylist);

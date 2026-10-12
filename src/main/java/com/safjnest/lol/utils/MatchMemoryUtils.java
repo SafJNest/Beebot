@@ -10,8 +10,8 @@ import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.R4B.api.dto.match.Match;
 import com.safjnest.lol.champion.ChampionStatsData;
-import com.safjnest.lol.model.match.Match;
 
 public final class MatchMemoryUtils {
 
@@ -38,11 +38,9 @@ public final class MatchMemoryUtils {
 
     private static void release(Match match, Set<Object> seen) {
         if (!seen.add(match)) return;
-        release(match.events, seen);
         release(match.eventData, seen);
         release(match.bans, seen);
         release(match.participants, seen);
-        match.events = null;
         match.eventData = null;
         match.bans = null;
         match.participants = null;

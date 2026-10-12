@@ -3,10 +3,10 @@ package com.safjnest.lol.service;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.safjnest.lol.champion.RuneSignature;
+import com.R4B.api.dto.Build;
+import com.R4B.api.dto.RuneSignature;
 import com.safjnest.lol.champion.BuildSignature;
 import com.safjnest.lol.champion.ChampionBuildData;
-import com.safjnest.lol.model.Build;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 
 import java.util.ArrayList;
@@ -166,11 +166,11 @@ public class ChampionBuildEngineTest {
         assertEquals(2, build.skillOrders().get(0).timedOrder().size());
         assertEquals(1, build.skillOrders().get(0).timedOrder().get(0).level().intValue());
         assertEquals(60, build.skillOrders().get(0).timedOrder().get(0).averageUpgradeTimeSeconds(), 0.001);
-        String json = build.toJson();
+        String json = BuildCodec.toJson(build);
         assertTrue(json.contains("averagePurchaseTimeSeconds"));
         assertTrue(json.contains("averageCompletionTimeSeconds"));
         assertTrue(json.contains("timedOrder"));
-        assertEquals(build, Build.fromJson(json));
+        assertEquals(build, BuildCodec.fromJson(json));
     }
 
     @Test

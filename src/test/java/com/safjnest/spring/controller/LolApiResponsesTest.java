@@ -8,8 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.spring.dto.LolApiError;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.LolApiError;
 
 public class LolApiResponsesTest {
 

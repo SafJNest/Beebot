@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
 public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
 
     protected String PREFIX;
@@ -30,8 +29,6 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
     protected K getPrefixedKey(K k) {
         return (K) (PREFIX + "-" + k);
     }
-
-    
 
     @Override
     public void put(K key, V value) {
@@ -64,7 +61,6 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
         return super.get(getPrefixedKey(key)) != null;
     }
 
-
     @SuppressWarnings("unchecked")
     public Collection<K> keySet() {
         return super.keySet().stream()
@@ -82,7 +78,6 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
         });
         return map;
     }
-
 
     @Override
     public long expiresAfter(K key) {

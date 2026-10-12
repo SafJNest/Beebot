@@ -1,5 +1,10 @@
 package com.safjnest.lol.model;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
+
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -7,8 +12,6 @@ import org.junit.Test;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.TrendStats;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class ChampionLeafStatsTest {
 

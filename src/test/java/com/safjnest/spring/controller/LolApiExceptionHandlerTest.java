@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.spring.dto.LolApiError;
+import com.R4B.api.dto.LolApiError;
 
 public class LolApiExceptionHandlerTest {
 

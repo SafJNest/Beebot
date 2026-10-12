@@ -9,13 +9,8 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.junit.Test;
 
-import com.safjnest.lol.model.summoner.Rank;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 
 public class MongoLeaderboardTest {
 

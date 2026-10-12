@@ -55,8 +55,6 @@ public class SearchSound extends SlashCommand {
         commandData.setThings(this);
     }
 
-   
-
 	@Override
 	protected void execute(SlashCommandEvent event) {
         String query = event.getOption("query").getAsString();
@@ -115,7 +113,6 @@ public class SearchSound extends SlashCommand {
         event.replyEmbeds(eb.build())
              .addComponents(ActionRow.of(mb.build())).queue();
 
-        
     } 
 
     private class MenuListener extends ListenerAdapter {

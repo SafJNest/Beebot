@@ -1,5 +1,13 @@
 package com.safjnest.lol.model;
 
+import com.safjnest.lol.service.ProfileActivityAnalyzer;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.lol.*;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -8,12 +16,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.statistics.ProfileActivity;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-
 public class ProfileActivityTest {
 
     @Test
@@ -21,7 +23,7 @@ public class ProfileActivityTest {
         long first = Instant.parse("2026-07-27T10:00:00Z").toEpochMilli();
         long second = Instant.parse("2026-07-27T11:00:00Z").toEpochMilli();
         long third = Instant.parse("2026-07-27T15:00:00Z").toEpochMilli();
-        ProfileActivity activity = ProfileActivity.from(List.of(
+        ProfileActivity activity = ProfileActivityAnalyzer.from(List.of(
             match("one", first, first + 30 * 60 * 1000L, true, GameQueueType.TEAM_BUILDER_RANKED_SOLO, 1),
             match("two", second, second + 30 * 60 * 1000L, false, GameQueueType.TEAM_BUILDER_RANKED_SOLO, 2),
             match("three", third, third + 30 * 60 * 1000L, true, GameQueueType.ARAM, 3)

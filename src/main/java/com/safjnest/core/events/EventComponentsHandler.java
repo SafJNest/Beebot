@@ -1,6 +1,5 @@
 package com.safjnest.core.events;
 
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +81,6 @@ import net.dv8tion.jda.api.modals.Modal;
       }
     }
 
-
     private void spotify(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       List<Object> oldTimeMsgInfo = SpotifyMessage.getMsgInfo(event.getMessage());
       String userId = (String) oldTimeMsgInfo.get(0);
@@ -96,7 +94,6 @@ import net.dv8tion.jda.api.modals.Modal;
         currentIndex = 0;
       }
 
-      
       switch (innerType) {
         case "left":
           if (currentIndex > 0)
@@ -121,7 +118,6 @@ import net.dv8tion.jda.api.modals.Modal;
       );
     }
 
-
     private void alert(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       String alertId = "";
       int rewardLevel = 0;
@@ -142,8 +138,6 @@ import net.dv8tion.jda.api.modals.Modal;
           channelData = guild.getChannelData(menu.getDefaultValues().get(0).getId());
         }
       }
-
-
 
       EntitySelectInteractionEvent entityEvent;
       Modal modal;

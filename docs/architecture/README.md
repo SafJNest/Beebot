@@ -2,6 +2,16 @@
 
 This directory is the source of truth for the LoL domain and API refactor.
 
+## Service separation proposal
+
+The initial analysis for the `beebot-servicies` branch is in
+[`services/README.md`](services/README.md): service boundaries, complete source
+inventory, shared response contracts, generic jobs/queues and extraction plan.
+[ADR-0016](adr/0016-service-boundaries-and-shared-core.md) remains **proposed**
+for separate services, HTTP clients and application modules. Hive is accepted
+under [ADR-0017](adr/0017-hive-job-runtime.md); shared contracts and LoL types
+are accepted independently as R4B under [ADR-0018](adr/0018-r4b-shared-contracts.md).
+
 ## Precedence
 
 When documents disagree, use this order:
@@ -15,95 +25,74 @@ An agent must report a contradiction. It must not resolve the contradiction by c
 
 ## Canonical package layout
 
+Hive has the independent root `com.hive`. R4B has the exact independent roots
+`com.R4B.AB.DTO` and `com.R4B.LOL`. Shared response roots and serialized components belong in R4B,
+while producer-only computation/storage structures remain `com.safjnest.lol.model`.
+Application queue, scheduler, tracker and service code remains `com.safjnest`.
+The current source destinations and SDK conversions are recorded in
+[`services/r4b-inventory.md`](services/r4b-inventory.md).
+
 ```text
-lol/model/summoner/
-  Summoner
-  Rank
-  Mastery
-  SummonerOverview
-  SummonerView
-  SummonerLeaderboard
+com/R4B/AB/DTO/
+  summoner/ Summoner, Rank, Mastery, SummonerOverview, SummonerView, SummonerLeaderboard
+  match/ Match, Participant, MatchResult, MatchPage, LiveGame, RankHistory...
+  statistics/ ProfileStatistics, ProfileActivity, ProfileMatchups, ProfileMatchupLeaf
+  statistics/shared/ LeafStats, ProfileLeafStats
+  leaderboard/ LeaderboardPage, LeaderboardDistribution
+  record/ ProfileRecord, ProfileRecordPage, RecordPage, RecordsOverview
+  status/ BotStatus, LeagueMetrics, JvmMetrics, SystemMetrics, RedisMetrics, MongoMetrics...
+  riot/ SDK-independent acquisition data and nested components
+  Filter, ActivityFilter, ApiResult, ResponseMetadata, LolApiError, TransportJson
+  Build, ChampionStatistics, ChampionView, ChampionTierList, RuneSignature, indexables
 
-lol/model/match/
-  Match
-  Participant
-  MatchResult
-  LiveGame
+com/R4B/LOL/
+  SDK-compatible LoL enums, CanonicalQueue, ordering/record/query values
+  FilterCodec, KdaUtils, NumberUtils, map bounds
 
-lol/model/leaderboard/
-  LeaderboardPage
-  LeaderboardDistribution
+com/hive/
+  Hive, HiveConfig, JobFuture, Registry, Router
+  job/, scheduler/, worker/, status/
 
-lol/model/statistics/
-  ProfileStatistics
-  ProfileActivity
-  ProfileMatchups
-  shared/LeafStats
-  shared/ProfileLeafStats
-  shared/ChampionLeafStats
-  ChampionStatsDocument
-  ProfileStatisticsRow
+com/safjnest/lol/
+  model/ producer-only storage/computation structures
+  service/ producers, analyzers, accumulators, projections, storage codecs, FilterDefaults
+  queue/ QueueHandler
+  scheduler/ ComputeScheduler, SyncScheduler, DatabaseWorkerType, ChampionMatrixRequest
+  tracker/ Tracker, TrackerScheduler
 
-lol/model/
-  ChampionView
+com/safjnest/r4j/
+  RiotGateway
+  scheduler/ RiotScheduler
 
-lol/model/status/
-  BotStatus
-  LeagueMetrics
-  SchedulerStatus
-  QueueStatus
-  WorkerStatus
-  RunStatus
-  JobStatus
-  JobProgress
-  JvmMetrics
-  SystemMetrics
-  RedisMetrics
+com/safjnest/nosql/
+  MongoDB, MongoMigration, application persistence infrastructure
+  writer/ SummonerWriter, MatchWriter
 
-lol/queue/
-  QueueHandler
-  Registry
-  Router
-  job/
-    Job
-    JobPriority
-    JobState
-  scheduler/
-    AbstractScheduler
-    RiotScheduler
-    ComputeScheduler
-    SyncScheduler
-    DatabaseWorkerType
-    ChampionMatrixRequest
-  worker/
-    JobQueue
-    JobWorker
-    WorkerState
-
-lol/tracker/
-  Tracker
-  TrackerScheduler
-
-status/
-  StatusService
-  SystemMetricsSampler
-  LeagueMetricsStore
+com/safjnest/status/
+  sampling and operational response composition
 ```
 
-Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
-`lol.queue` owns the global in-memory registry plus the shared physical
-scheduler infrastructure. `QueueHandler` is the sole public submission API.
-`Job` is the registered data object. Riot,
-compute and Sync retain distinct workers and route-local priority queues; the
-registry tracks their logical parent/child tree and does not merge their queues.
+R4B owns shared request, success/error data and LoL value types. Spring owns
+controllers, configuration, exception/status mapping, persistence and response
+production. Shared DTOs do not own Mongo operations, dirty tracking, SDK
+conversion, accumulators, static lookup or application defaults. HTTP transport
+serialization preserves the existing exclusions independently of storage.
+`com.hive` owns the JDK-only runtime mechanism and generic status records.
+`lol.queue.QueueHandler` composes one explicitly initialized runtime in App and
+is the application's sole submission facade. Independent Hive instances need
+no monolith and share no registry, context or dedup entries. The monolith uses
+one registry across Riot, compute and Sync to retain cross-scheduler trees.
+Physical queues remain scheduler-owned; Sync uses direct execution.
 
 Queue glossary:
 
-- `RiotScheduler` — outbound Riot work, one queue per `LeagueShard`;
-- `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
-- `SyncScheduler` — starts each tracking, rank, match, sample and participant refresh job immediately on its own virtual thread; Registry owns parent/child completion.
+- `r4j.scheduler.RiotScheduler`: outbound Riot work, one serial queue per shard;
+- `lol.scheduler.ComputeScheduler`: four serial workers PROFILE, PROFILE_2,
+  CHAMPION and MONGO, with domain placement/reservation policy;
+- `lol.scheduler.SyncScheduler`: immediate virtual-thread execution with
+  shard/global logical routes and no physical queue.
 
-Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
+Routing, priorities and insert-time placement are defined by [ADR-0017](adr/0017-hive-job-runtime.md), preserving local policy from ADR-0010. A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
 `MatchService` owns untracked match insertion and can only create a
 `tracked=false` document; it cannot replace a completed match. `Tracker` owns
 the normal RankProgress history completion and commits the single
@@ -149,8 +138,12 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md) — terminology superseded by ADR-0014
 - [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
 - [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
-- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — **current queue contract** (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
+- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — lifecycle contract amended by ADR-0017 (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
 - [ADR-0015: Contextual ranking projections](adr/0015-contextual-ranking.md) — **current ranking contract** (`RankService` → `CompetitiveService` → `LeaderboardService`, plus `ProfileRecordService` record indexes)
+- [ADR-0016: Service boundaries and shared core](adr/0016-service-boundaries-and-shared-core.md) — **proposed**, analysis only
+
+- [ADR-0017: Hive job runtime](adr/0017-hive-job-runtime.md) — **current infrastructure contract**, independent runtime and local adapters
+- [ADR-0018: R4B shared contracts](adr/0018-r4b-shared-contracts.md) — **current shared-contract boundary**, exact namespaces, SDK-free consumers and compatible JSON
 
 ## Developer handbook
 

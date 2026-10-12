@@ -13,25 +13,24 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.ResponseMetadata;
-import com.safjnest.lol.model.record.ProfileRecord;
-import com.safjnest.lol.model.record.ProfileRecordPage;
-import com.safjnest.lol.model.record.RecordMetric;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.record.RecordPage;
-import com.safjnest.lol.model.record.RecordsOverview;
-import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.ResponseMetadata;
+import com.R4B.api.dto.record.ProfileRecord;
+import com.R4B.api.dto.record.ProfileRecordPage;
+import com.R4B.api.dto.record.RecordPage;
+import com.R4B.api.dto.record.RecordsOverview;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.LeagueShard;
+import com.R4B.lol.RecordMetric;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
+import com.safjnest.lol.scheduler.DatabaseWorkerType;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class ProfileRecordService {
 
@@ -98,7 +97,7 @@ public final class ProfileRecordService {
 
     public boolean updateMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
         if (puuid == null || puuid.isBlank() || shard == null) return false;
-        Filter filter = Filter.canonical();
+        Filter filter = FilterDefaults.canonical();
         List<ProfileRecord> previous = MongoDB.findProfileRecords(puuid, filter, RecordMetric.HIGHEST_MASTERY);
         List<ProfileRecord> records = new ArrayList<>();
         long now = System.currentTimeMillis();
@@ -115,7 +114,7 @@ public final class ProfileRecordService {
         if (shard == null) return 0;
         int[] refreshed = new int[1];
         MongoDB.forEachMasterySummonerBatch(shard, summoners -> {
-            for (com.safjnest.lol.model.summoner.Summoner summoner : summoners)
+            for (com.R4B.api.dto.summoner.Summoner summoner : summoners)
                 if (updateMasteries(summoner.puuid(), shard, summoner.masteries())) refreshed[0]++;
         });
         return refreshed[0];
@@ -243,7 +242,7 @@ public final class ProfileRecordService {
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_RECORD_ACCESS.of(), key, System.currentTimeMillis());
                 continue;
             }
-            QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "record-index:" + key, "record index " + key, job -> {
+            QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "record-index:" + key, "record index " + key, Void.class, job -> {
                 rebuildIndex(segment, key);
                 return null;
             });

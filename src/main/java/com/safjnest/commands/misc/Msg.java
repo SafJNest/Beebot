@@ -59,7 +59,6 @@ public class Msg extends SlashCommand {
             
         }
 
-        
         eb.setTitle(title);
         
         eb.setThumbnail(thumb);

@@ -7,13 +7,9 @@ import java.util.Properties;
 
 import com.safjnest.core.Bot;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.nosql.MongoMigration;
 import com.safjnest.spring.SpringServer;
 import com.safjnest.status.SystemMetricsSampler;
 import com.safjnest.utils.SafJNest;
@@ -30,16 +26,16 @@ public class App {
 
     public static void main(String args[]) {
         SafJNest.bee();
-        
+
         new BotLogger("Beebot", null);
 
         settings = SettingsLoader.getSettings();
 
+        QueueHandler.start();
         runSpring();
-        
+
         TwitchClient.init();
         SystemMetricsSampler.start();
-        QueueHandler.start();
         LeaderboardService.warmupIndexAsync();
 
         bot = new Bot();
@@ -77,9 +73,6 @@ public class App {
         }
         bot.distruzione_demoniaca();
         QueueHandler.shutdown();
-        SyncScheduler.shutdown();
-        ComputeScheduler.shutdown();
-        RiotScheduler.shutdown();
         MongoDB.close();
     }
 

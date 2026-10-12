@@ -1,10 +1,23 @@
 package com.safjnest.lol.model.status;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.api.dto.status.BotStatus;
+import com.R4B.api.dto.status.LeagueMetrics;
+import com.R4B.api.dto.status.MongoCollectionPerformance;
+import com.R4B.api.dto.status.MongoHottestCollection;
+import com.R4B.api.dto.status.MongoMemoryMetrics;
+import com.R4B.api.dto.status.MongoMetrics;
+import com.R4B.api.dto.status.MongoOperationRates;
+import com.R4B.api.dto.status.MongoOperationSample;
+import com.R4B.api.dto.status.MongoOperationsMetrics;
+import com.R4B.api.dto.status.MongoPerformanceMetrics;
+import com.R4B.api.dto.status.MongoSlowOperation;
 import com.safjnest.utils.JsonCodec;
 
 public class MongoMetricsSnapshotTest {

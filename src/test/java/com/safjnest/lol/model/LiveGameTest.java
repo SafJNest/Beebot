@@ -1,5 +1,7 @@
 package com.safjnest.lol.model;
 
+import com.safjnest.lol.service.LiveGameProjection;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -11,16 +13,16 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.match.LiveGame;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.match.LiveGame;
+import com.R4B.api.dto.riot.SpectatorGameInfo;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 import com.safjnest.utils.JsonCodec;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 
 public class LiveGameTest {
 
@@ -74,13 +76,13 @@ public class LiveGameTest {
         thirdChampionStats.reference = 64;
         thirdChampionStats.games = 8;
         LiveGame.ProfileOverview overview = new LiveGame.ProfileOverview(
-            new Summoner("puuid-1", "Player#EUW", no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard.EUW1, 100, 29),
+            new Summoner("puuid-1", "Player#EUW", com.R4B.lol.LeagueShard.EUW1, 100, 29),
             Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(null, 50, 10, 5)),
             List.of(new Mastery(157, 7, 200_000)),
             List.of(playedChampionStats, secondChampionStats, thirdChampionStats)
         );
 
-        LiveGame game = LiveGame.fromR4J(source, Map.of("puuid-1", overview));
+        LiveGame game = LiveGameProjection.fromR4J(source, Map.of("puuid-1", overview));
 
         assertFalse(game.notInGame());
         assertEquals(Long.valueOf(42), game.gameId());

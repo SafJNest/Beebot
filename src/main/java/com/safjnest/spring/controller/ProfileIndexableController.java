@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.safjnest.lol.model.ProfileIndexable;
+import com.R4B.api.dto.ProfileIndexable;
 import com.safjnest.lol.service.ProfileService;
 
 @RestController

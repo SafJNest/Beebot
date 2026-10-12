@@ -1,73 +1,15 @@
 package com.safjnest.lol.utils;
 
-import java.util.Arrays;
 import java.util.List;
 
+import com.R4B.lol.*;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.SafJNest;
 
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-
 public class GameQueueTypeUtils {
 
-  private static final List<GameQueueType> QUEUES_WITHOUT_LANE = Arrays.asList(
-    GameQueueType.CHERRY,
-    GameQueueType.ULTBOOK,
-    GameQueueType.URF,
-    GameQueueType.ALL_RANDOM_URF,
-    GameQueueType.DOOMBOTS_V2,
-    GameQueueType.ONEFORALL_5X5,
-    GameQueueType.ARAM,
-    GameQueueType.ARAM_CLASH,
-    GameQueueType.NEXUS_BLITZ,
-    GameQueueType.STRAWBERRY
-  );
-  private static final List<GameQueueType> LEADERBOARD_QUEUES = List.of(
-    GameQueueType.RANKED_SOLO_5X5,
-    GameQueueType.RANKED_FLEX_SR
-  );
-
-  private static final List<GameQueueType> RANKED_QUEUES = List.of(
-    GameQueueType.RANKED_SOLO_5X5,
-    GameQueueType.RANKED_FLEX_SR,
-    GameQueueType.RANKED_PREMADE_5X5
-  );
-
-  public static boolean hasLane(GameQueueType queue) {
-    return !QUEUES_WITHOUT_LANE.contains(queue);
-  }
-
-  public static boolean isCherry(GameQueueType queue) {
-    return queue == GameQueueType.CHERRY;
-  }
-
-  public static GameQueueType canonicalQueue(GameQueueType queue) {
-    return queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO
-        ? GameQueueType.RANKED_SOLO_5X5
-        : queue;
-  }
-
-  public static GameQueueType rankedCanonicalQueue(GameQueueType queue) {
-    GameQueueType canonical = canonicalQueue(queue);
-    if (canonical == null) return null;
-    if (!RANKED_QUEUES.contains(canonical) || canonical == GameQueueType.RANKED_SOLO_5X5) return GameQueueType.RANKED_SOLO_5X5;
-    return canonical;
-  }
-
-  public static GameQueueType defaultQueue(GameQueueType queue) {
-    return queue == null ? GameQueueType.RANKED_SOLO_5X5 : queue;
-  }
-
-  public static boolean isRankedSolo(GameQueueType queue) {
-    return canonicalQueue(queue) == GameQueueType.RANKED_SOLO_5X5;
-  }
-
-  public static List<GameQueueType> leaderboardQueues() {
-    return LEADERBOARD_QUEUES;
-  }
-
   public static List<GameQueueType> profileRebuildQueues() {
-    return LEADERBOARD_QUEUES;
+    return GameQueueType.leaderboardQueues();
   }
 
   public static String prettyName(GameQueueType queue) {

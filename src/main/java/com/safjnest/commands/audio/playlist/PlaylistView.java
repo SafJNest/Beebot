@@ -77,7 +77,6 @@ public class PlaylistView extends SlashCommand{
         return ActionRow.of(left, center, right);
     }
 
-
     @Override
     protected void execute(SlashCommandEvent event) {
         event.deferReply(true).queue();

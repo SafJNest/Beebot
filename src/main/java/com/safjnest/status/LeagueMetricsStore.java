@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 
+import com.R4B.api.dto.status.LeagueMetrics;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.safjnest.lol.model.status.LeagueMetrics;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;

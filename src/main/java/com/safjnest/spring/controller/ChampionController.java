@@ -6,11 +6,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.service.ChampionService;
 
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.lol.GameQueueType;
+import com.R4B.lol.LaneType;
+import com.safjnest.lol.service.ChampionService;
 
 @RestController
 @RequestMapping("/api/lol")

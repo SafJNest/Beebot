@@ -77,7 +77,6 @@ class TwitchEventsHandler {
             privateMessage = privateMessage.replace("#streamer", streamer.getDisplayName());
 
             Role role = (twitchData.getStreamerRole()!= null && !twitchData.getStreamerRole().isBlank()) ? guild.getRoleById(twitchData.getStreamerRole()) : null;
-            
 
             final String finalMessage = message;
             final String finalPrivateMessage = privateMessage;

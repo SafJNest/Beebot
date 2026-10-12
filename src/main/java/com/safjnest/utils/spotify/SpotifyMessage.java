@@ -104,12 +104,9 @@ public class SpotifyMessage {
         return List.of(userId, type, currentIndex, timeRange);
     }
 
-
-
     public static Container getButtonComponents(SpotifyMessageType type, String userId, SpotifyTimeRange timeRange) throws IOException {
         return getButtonComponents(type, userId, 0, timeRange);
     }
-
 
     public static Container getButtonComponents(SpotifyMessageType type, String userId, int index, SpotifyTimeRange timeRange) throws IOException {    
         Button left = Button.primary("spotify-left", " ")
@@ -122,7 +119,6 @@ public class SpotifyMessage {
         Button right = Button.primary("spotify-right", " ")
             .withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-
         Button albumsButton = Button.primary(SpotifyMessageType.ALBUMS.toButtonId(), SpotifyMessageType.ALBUMS.getLabel())
             .withEmoji(CustomEmojiHandler.getRichEmoji("playlist"));
 
@@ -131,7 +127,6 @@ public class SpotifyMessage {
 
         Button authorsButton = Button.primary(SpotifyMessageType.ARTISTS.toButtonId(), SpotifyMessageType.ARTISTS.getLabel())
             .withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
-
 
         StringSelectMenu timeRangeMenu = StringSelectMenu.create("spotify-time_range-" + timeRange.getLabel())
             .setPlaceholder(timeRange.getDisplayLabel())
@@ -171,7 +166,6 @@ public class SpotifyMessage {
             .withAccentColor(Bot.getColor());
     }
 
-
     public static List<Container> build(String userId, SpotifyMessageType type, int index, SpotifyTimeRange timeRange) {
         List<?> items = SpotifyHandler.getTopItems(type, userId, ITEM_LIMIT, index, timeRange);
         Container body = null, buttons = null;
@@ -184,8 +178,6 @@ public class SpotifyMessage {
 
         return List.of(body, buttons);
     }
-
-    
 
     @SuppressWarnings("unchecked")
     public static Container getMainContent(String userId, SpotifyMessageType type, int index, List<?> items) throws IOException {
@@ -211,7 +203,6 @@ public class SpotifyMessage {
                     .withAccentColor(Bot.getColor());
         }
     }
-
 
     private static <T> Container getSpotifyContainer(int startIndex, List<T> items, Function<T, Section> rowBuilder) {
         List<ContainerChildComponent> children = new ArrayList<>();

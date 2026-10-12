@@ -9,7 +9,6 @@ import com.safjnest.core.events.EventUtils;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.SafJNest;
@@ -26,12 +25,9 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.modals.Modal;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import com.safjnest.lol.model.summoner.Summoner;
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 
 public class LeagueEventHandler extends EventButtonHandler {
 
@@ -134,7 +130,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             }
             case "queue" -> {
                 parameter.setQueueType(!active ? GameQueueType.valueOf(content) : null);
-                if (parameter.getQueueType() != null && !GameQueueTypeUtils.hasLane(parameter.getQueueType()))
+                if (parameter.getQueueType() != null && !GameQueueType.hasLane(parameter.getQueueType()))
                     parameter.setLaneType(null);
                 parameter.setOffset(0);
             }

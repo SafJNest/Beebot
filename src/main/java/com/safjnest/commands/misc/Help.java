@@ -30,7 +30,6 @@ import net.dv8tion.jda.api.components.buttons.Button;
  */
 public class Help extends SlashCommand {
 
-
     public Help() {
         this.name = this.getClass().getSimpleName().toLowerCase();
 
@@ -50,7 +49,6 @@ public class Help extends SlashCommand {
 
         commandData.setThings(this);
     }
-
 
     public static EmbedBuilder getGenericHelp(String guildId, String userId) {
         String prefix = GuildCache.getGuildOrPut(guildId).getPrefix();
@@ -102,7 +100,6 @@ public class Help extends SlashCommand {
         eb.setFooter("Sorry if things don't work, Beebot was made for fun by only 2 people.", null);
         eb.setColor(Bot.getColor());
         eb.setAuthor(Bot.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", Bot.getJDA().getSelfUser().getAvatarUrl());
-
 
         return eb;
     }
@@ -217,7 +214,6 @@ public class Help extends SlashCommand {
         eb.setColor(Bot.getColor());
         eb.setAuthor(Bot.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", Bot.getJDA().getSelfUser().getAvatarUrl());
 
-
         return eb;
     }
 
@@ -225,7 +221,6 @@ public class Help extends SlashCommand {
         commandName = commandName.toLowerCase();
 
         String probablyFather = commandName.split(" ")[0];
-
 
         if(!commands.containsKey(probablyFather.toLowerCase())) {
             return null;

@@ -8,6 +8,8 @@ import java.util.List;
 import org.json.JSONArray;
 import org.junit.Test;
 
+import com.R4B.lol.BuildValues;
+
 public class BuildUtilsTest {
 
     @Test
@@ -20,7 +22,7 @@ public class BuildUtilsTest {
 
     @Test
     public void keepsDashSeparatedKeyEncoding() {
-        assertEquals(List.of(1, 20, 300), BuildUtils.parseDashList("1-20-300"));
-        assertEquals("1-20-300", BuildUtils.joinInts(List.of(1, 20, 300)));
+        assertEquals(List.of(1, 20, 300), BuildValues.parseDashList("1-20-300"));
+        assertEquals("1-20-300", BuildValues.joinInts(List.of(1, 20, 300)));
     }
 }

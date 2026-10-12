@@ -75,7 +75,5 @@ public class SoundboardCreate extends SlashCommand{
         List<Sound> sounds = SoundCache.getSoundsByIds(soundIDs.toArray(new String[0]));
         SoundEmbed.composeSoundboard(event, soundboardName, sounds).queue();
 
-        
-
     }    
 }

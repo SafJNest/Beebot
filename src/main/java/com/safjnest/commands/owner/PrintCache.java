@@ -1,11 +1,10 @@
 package com.safjnest.commands.owner;
 
-
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.R4B.api.dto.summoner.Summoner;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
@@ -23,7 +22,6 @@ import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import com.safjnest.lol.model.summoner.Summoner;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -176,7 +174,6 @@ public class PrintCache extends Command {
         }
     }
 
-
     private void printUsers() {
         ArrayList<String> cache = new ArrayList<>();
 
@@ -196,7 +193,6 @@ public class PrintCache extends Command {
                 lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3) + "\n";
             }
 
-
             msg += "**" + ud.getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                 + "GlobalGreet: " + ud.getGlobalGreet() + "\n"
                 + "GuildGreet: " + ud.getGreets().size() + "\n"
@@ -205,8 +201,6 @@ public class PrintCache extends Command {
             cache.add(msg);
             msg = "";
         }
-
-
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getMaxSize() + "\n"
             + "Total Users: " + UserCache.getInstance().getSize() + " / " + UserCache.getInstance().getMaxSize() + "\n"
@@ -221,7 +215,6 @@ public class PrintCache extends Command {
         }
 
     }
-
 
     private void printSounds() {
         ArrayList<String> cache = new ArrayList<>();
@@ -258,7 +251,6 @@ public class PrintCache extends Command {
         for(String s : cache){
             channel.sendMessage(s).queue();
         }
-
 
     }
 }

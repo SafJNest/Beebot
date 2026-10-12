@@ -14,7 +14,6 @@ public class SpotifyAlbum {
     private String imageUrl;
     private int playCount;
 
-
     public SpotifyAlbum(String name, String artist, List<SpotifyTrack> tracks) {
         this.name = name;
         this.artist = artist;

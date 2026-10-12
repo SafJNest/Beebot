@@ -15,7 +15,6 @@ import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -173,7 +172,6 @@ public class PlaySound extends SlashCommand{
 
             sound.increaseUserPlays(author.getId());
             sound.setTrack(track);
-
 
             if (commandEvent != null) 
                 commandEvent.getChannel().sendMessageEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();

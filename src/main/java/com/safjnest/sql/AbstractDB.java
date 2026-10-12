@@ -136,7 +136,6 @@ public abstract class AbstractDB {
         catch (Exception e) { return new QueryRecord(); }
     }
 
-
     /**
      * Method used for returning a single {@link com.safjnest.sql.QueryRecord row} from a query.
      * @param stmt
@@ -147,7 +146,6 @@ public abstract class AbstractDB {
         try { return query(stmt, query).get(0); } 
         catch (Exception e) { return null;}
     }
-
 
     /**
      * Run one or more queries using the default statement
@@ -171,7 +169,6 @@ public abstract class AbstractDB {
             }
         }.queueFuture();
     }
-
 
     /**
      * Run one or more queries with a specific statement

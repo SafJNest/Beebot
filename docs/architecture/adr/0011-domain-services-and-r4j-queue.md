@@ -6,6 +6,11 @@
 - Amended: 2026-08-19
 - Terminology: superseded by ADR-0014 (`RiotScheduler`, `Job` and `QueueHandler`)
 
+Infrastructure update: [ADR-0017](0017-hive-job-runtime.md) extracts the JDK-only
+mechanism to Hive and preserves the actual four-worker compute topology.
+Historical queue class/package descriptions below are retained for context;
+domain, cache and persistence ownership remains unchanged.
+
 ## Context
 
 `LeagueService` concentrated summoner identity, rank, mastery, match, cache,

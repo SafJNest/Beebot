@@ -35,7 +35,6 @@ public class Summoner extends SlashCommand {
 
         this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
-
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
@@ -53,7 +52,7 @@ public class Summoner extends SlashCommand {
     @Override
     protected void execute(CommandEvent event) {
         String args = event.getArgs();
-        com.safjnest.lol.model.summoner.Summoner s = null;
+        com.R4B.api.dto.summoner.Summoner s = null;
         User theGuy = null;
 
         if (args.equals("")) theGuy = event.getAuthor();

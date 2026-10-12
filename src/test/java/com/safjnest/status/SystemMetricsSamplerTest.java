@@ -7,7 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.safjnest.lol.model.status.SystemMetrics;
+import com.R4B.api.dto.status.SystemMetrics;
 
 public class SystemMetricsSamplerTest {
 

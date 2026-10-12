@@ -1,10 +1,8 @@
 package com.safjnest.lol.utils;
 
-import com.safjnest.lol.model.match.RankProgress;
-import com.safjnest.lol.model.summoner.Rank;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import com.R4B.api.dto.match.RankProgress;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.lol.*;
 
 public final class RankProgressUtils {
 
@@ -42,7 +40,7 @@ public final class RankProgressUtils {
     }
 
     public static int calculateGain(GameQueueType queue, RankProgress current, RankProgress previous) {
-        if (!GameQueueTypeUtils.isRankedSolo(queue) || !hasCurrentSnapshot(current) || !hasCurrentSnapshot(previous)) return 0;
+        if (!GameQueueType.isRankedSolo(queue) || !hasCurrentSnapshot(current) || !hasCurrentSnapshot(previous)) return 0;
         if (current.rank == TierDivisionType.UNRANKED) return 0;
         if (previous.rank == TierDivisionType.UNRANKED) return current.lp;
 

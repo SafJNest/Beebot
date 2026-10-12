@@ -1,5 +1,8 @@
 package com.safjnest.lol.model.rune;
 
+import com.R4B.api.dto.*;
+import com.R4B.api.dto.statistics.*;
+import com.R4B.api.dto.statistics.shared.*;
 /**
  * This class is used to store the data of a rune and all of its attributes.
  * 
@@ -75,6 +78,5 @@ public class Rune {
     public String getLongDesc(){
         return longDesc;
     }
-
 
 }

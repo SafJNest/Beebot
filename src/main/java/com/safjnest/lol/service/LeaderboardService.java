@@ -11,20 +11,21 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.safjnest.lol.model.ApiResult;
-import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.competitive.CompetitiveEntry;
-import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
-import com.safjnest.lol.model.leaderboard.LeaderboardPage;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
-import com.safjnest.lol.model.summoner.SummonerLeaderboard;
-import com.safjnest.lol.model.summoner.SummonerView;
+import com.R4B.api.dto.ApiResult;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.leaderboard.LeaderboardDistribution;
+import com.R4B.api.dto.leaderboard.LeaderboardPage;
+import com.R4B.api.dto.statistics.ProfileStatistics;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.api.dto.summoner.Rank;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.api.dto.summoner.SummonerLeaderboard;
+import com.R4B.api.dto.summoner.SummonerView;
+import com.R4B.lol.*;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
-import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.scheduler.DatabaseWorkerType;
+import com.safjnest.lol.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
@@ -34,11 +35,6 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.log.BotLogger;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import org.bson.types.Binary;
 
 public class LeaderboardService {
@@ -62,7 +58,7 @@ public class LeaderboardService {
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
         if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
 
-        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(GameQueueTypeUtils.defaultQueue(queue));
+        GameQueueType selectedQueue = GameQueueType.canonicalQueue(GameQueueType.defaultQueue(queue));
         String selectedRegion = LeagueShardUtils.defaultRegion(region);
         String rankKey = rank == null ? LeagueConstants.ALL : rank.name();
         String roleKey = role == null ? LeagueConstants.ALL : role.name();
@@ -80,7 +76,7 @@ public class LeaderboardService {
         long total = findLeaderboardCount(rank, selectedQueue, selectedRegion, role, otpChampionId);
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
-        Filter filter = Filter.canonical();
+        Filter filter = FilterDefaults.canonical();
         Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
         Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
         for (Summoner summoner : summoners) {
@@ -113,7 +109,7 @@ public class LeaderboardService {
             Map<GameQueueType, Rank> ranks = rankings.getOrDefault(summoner.puuid(), Map.of(selectedQueue, rankValue));
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
             List<Mastery> masteries = summoner.masteries();
-            SummonerView view = SummonerView.from(
+            SummonerView view = SummonerProjection.view(
                 summoner,
                 ranks,
                 statistics,
@@ -132,7 +128,7 @@ public class LeaderboardService {
     }
 
     public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
-        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(GameQueueTypeUtils.defaultQueue(queue));
+        GameQueueType selectedQueue = GameQueueType.canonicalQueue(GameQueueType.defaultQueue(queue));
         String selectedRegion = LeagueShardUtils.defaultRegion(region);
         String key = RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(
             selectedQueue.name(), selectedRegion
@@ -152,7 +148,7 @@ public class LeaderboardService {
 
     public LeaderboardDistribution getTopRegions(GameQueueType queue, TierType rank) {
         requireRank(rank);
-        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(GameQueueTypeUtils.defaultQueue(queue));
+        GameQueueType selectedQueue = GameQueueType.canonicalQueue(GameQueueType.defaultQueue(queue));
         String key = RedisKey.LEADERBOARD_TOP_REGIONS.of(
             selectedQueue.name(), rank.name()
         );
@@ -170,7 +166,7 @@ public class LeaderboardService {
     }
 
     public void rebuildHighEloAndTrackedProfileStatistics() {
-        Filter filter = Filter.canonical();
+        Filter filter = FilterDefaults.canonical();
         Set<String> processedPuuids = new HashSet<>();
 
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
@@ -229,7 +225,7 @@ public class LeaderboardService {
             result.put(subject.puuid(), enriched);
             if (subject.region() == null) continue;
             for (Map.Entry<GameQueueType, Rank> entry : subject.ranks().entrySet()) {
-                GameQueueType queue = entry.getKey() == null ? null : GameQueueTypeUtils.canonicalQueue(entry.getKey());
+                GameQueueType queue = entry.getKey() == null ? null : GameQueueType.canonicalQueue(entry.getKey());
                 Rank rank = entry.getValue();
                 if (queue == null || rank == null || rank.tier() == null || rank.tier() == TierDivisionType.UNRANKED) continue;
                 String globalSegment = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(queue.name(), LeagueShardUtils.leaderboardScope(null), rank.tier().name());
@@ -263,24 +259,19 @@ public class LeaderboardService {
         return Map.copyOf(immutable);
     }
 
-    static void updateIndex(CompetitiveEntry previous, CompetitiveEntry next) {
-        applyIndexChange(previous, -1);
-        applyIndexChange(next, 1);
-    }
-
     public static void warmupIndexAsync() {
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index-warmup", "leaderboard index warmup", job -> {
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index-warmup", "leaderboard index warmup", Void.class, job -> {
             warmupIndex();
             return null;
         });
     }
 
     public static void warmupIndex() {
-        for (GameQueueType queue : GameQueueTypeUtils.leaderboardQueues()) {
+        for (GameQueueType queue : GameQueueType.leaderboardQueues()) {
             replaceCounts(queue, null);
             List<LeagueShard> regions = MongoDB.findCompetitiveRankingRegions(queue);
             for (LeagueShard region : regions) replaceCounts(queue, region);
-            for (TierDivisionType tier : TierDivisionUtils.descendingRankedDivisions()) if (TierDivisionUtils.isHighElo(tier)) {
+            for (TierDivisionType tier : TierDivisionType.descendingRankedDivisions()) if (TierDivisionType.isHighElo(tier)) {
                 rebuildIndex(new RankSegment(queue, tier, null));
                 for (LeagueShard region : regions) rebuildIndex(new RankSegment(queue, tier, region));
             }
@@ -308,6 +299,11 @@ public class LeaderboardService {
     public record IndexStatus(long segments, long memoryBytes, List<SegmentStatus> values) {}
 
     // ============================================================================
+
+    static void updateIndex(CompetitiveEntry previous, CompetitiveEntry next) {
+        applyIndexChange(previous, -1);
+        applyIndexChange(next, 1);
+    }
 
     private static long findLeaderboardCount(
         TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId
@@ -369,9 +365,9 @@ public class LeaderboardService {
 
     private static void applyIndexChange(CompetitiveEntry entry, long delta) {
         if (entry == null) return;
-        TierDivisionType tier = TierDivisionUtils.getDivisionFromMmr(entry.mmr());
+        TierDivisionType tier = TierDivisionType.getDivisionFromMmr(entry.mmr());
         if (tier == TierDivisionType.UNRANKED) return;
-        GameQueueType queue = GameQueueTypeUtils.canonicalQueue(entry.queue());
+        GameQueueType queue = GameQueueType.canonicalQueue(entry.queue());
         List<String> scopes = new ArrayList<>(2);
         scopes.add(LeagueShardUtils.leaderboardScope(null));
         if (entry.region() != null) scopes.add(LeagueShardUtils.leaderboardScope(entry.region()));
@@ -391,20 +387,20 @@ public class LeaderboardService {
         if (segments.isEmpty()) return;
         Map<RankSegment, String> keys = new LinkedHashMap<>();
         for (RankSegment segment : segments) keys.put(segment, RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(
-            GameQueueTypeUtils.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name()));
+            GameQueueType.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name()));
         Set<String> existing = RedisClient.existingSortedSets(new ArrayList<>(keys.values()));
         for (Map.Entry<RankSegment, String> entry : keys.entrySet()) {
             RankSegment segment = entry.getKey();
             String key = entry.getValue();
             if (existing.contains(key)) {
                 RedisClient.expire(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT,
-                    GameQueueTypeUtils.canonicalQueue(segment.queue()).name(),
+                    GameQueueType.canonicalQueue(segment.queue()).name(),
                     LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name());
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
                 continue;
             }
             QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index:" + key,
-                "leaderboard index " + key, job -> {
+                "leaderboard index " + key, Void.class, job -> {
                     rebuildIndex(segment);
                     return null;
                 });
@@ -413,7 +409,7 @@ public class LeaderboardService {
 
     private static void rebuildIndex(RankSegment segment) {
         String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(
-            GameQueueTypeUtils.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name());
+            GameQueueType.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name());
         CompletableFuture<Boolean> created = new CompletableFuture<>();
         CompletableFuture<Boolean> existing = INDEX_BUILDS.putIfAbsent(key, created);
         if (existing != null) {
@@ -424,7 +420,7 @@ public class LeaderboardService {
             boolean built = RedisClient.buildSortedSet(
                 RedisKey.CONTEXTUAL_LEADERBOARD_BUILD, new Object[] { java.util.UUID.randomUUID() },
                 RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT,
-                new Object[] { GameQueueTypeUtils.canonicalQueue(segment.queue()).name(),
+                new Object[] { GameQueueType.canonicalQueue(segment.queue()).name(),
                     LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name() },
                 entries -> MongoDB.forEachCompetitiveRankingSegment(
                     segment.queue(), segment.tier(), segment.region(), entry ->
@@ -444,11 +440,11 @@ public class LeaderboardService {
 
     private static Map<TierDivisionType, Long> counts(GameQueueType queue, LeagueShard region) {
         String key = RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(
-            GameQueueTypeUtils.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region));
+            GameQueueType.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region));
         Map<String, Long> stored = RedisClient.getHashLongs(key);
         if (!stored.isEmpty()) return divisions(stored);
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-counts:" + key,
-            "leaderboard counts " + key, job -> {
+            "leaderboard counts " + key, Void.class, job -> {
                 replaceCounts(queue, region);
                 return null;
             });
@@ -460,13 +456,13 @@ public class LeaderboardService {
         for (Map.Entry<TierDivisionType, Long> entry : MongoDB.findCompetitiveRankCounts(queue, region).entrySet())
             values.put(entry.getKey().name(), entry.getValue());
         RedisClient.replaceHash(RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(
-            GameQueueTypeUtils.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region)), values);
+            GameQueueType.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region)), values);
     }
 
     static Long absoluteRanking(Map<TierDivisionType, Long> counts, TierDivisionType tier, Long withinDivision) {
         if (counts == null || withinDivision == null || !counts.containsKey(tier)) return null;
         long higher = 0;
-        for (TierDivisionType division : TierDivisionUtils.descendingRankedDivisions()) {
+        for (TierDivisionType division : TierDivisionType.descendingRankedDivisions()) {
             if (division == tier) break;
             higher += counts.getOrDefault(division, 0L);
         }
@@ -483,7 +479,7 @@ public class LeaderboardService {
     }
 
     private static byte[] member(String puuid, GameQueueType queue) {
-        Binary id = MongoDB.competitiveId(puuid, GameQueueTypeUtils.canonicalQueue(queue).name());
+        Binary id = MongoDB.competitiveId(puuid, GameQueueType.canonicalQueue(queue).name());
         return id.getData();
     }
 

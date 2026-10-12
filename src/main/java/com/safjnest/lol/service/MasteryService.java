@@ -1,5 +1,7 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.r4j.RiotGateway;
+
 import static com.safjnest.utils.ValidationUtils.valid;
 
 import java.util.ArrayList;
@@ -8,25 +10,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.safjnest.lol.model.summoner.Mastery;
+import com.R4B.api.dto.summoner.Mastery;
+import com.R4B.lol.*;
 import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.queue.scheduler.RiotScheduler;
-import com.safjnest.lol.queue.job.JobPriority;
-import com.safjnest.lol.utils.LeagueShardUtils;
+import com.hive.job.ResultType;
+import com.safjnest.r4j.scheduler.RiotScheduler;
+import com.hive.job.JobPriority;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
-
 public final class MasteryService {
 
     private static final TypeReference<List<Mastery>> MASTERIES_TYPE = new TypeReference<List<Mastery>>() {};
-    private static final TypeReference<List<ChampionMastery>> RIOT_MASTERIES_TYPE =
-        new TypeReference<List<ChampionMastery>>() {};
-
-    private static final no.stelar7.api.r4j.impl.R4J RIOT_API = com.safjnest.lol.LeagueHandler.getRiotApi();
     private static final ProfileRecordService PROFILE_RECORD_SERVICE = new ProfileRecordService();
 
     private MasteryService() {
@@ -39,7 +35,7 @@ public final class MasteryService {
         if (cached != null) return cached;
 
         List<Mastery> stored = query(puuid, shard);
-        if (stored != null) RedisClient.set(RedisKey.SUMMONER_MASTERIES, stored, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        if (stored != null) RedisClient.set(RedisKey.SUMMONER_MASTERIES, stored, LeagueShard.cacheRegion(shard), shard.name(), puuid);
         return stored;
     }
 
@@ -74,15 +70,15 @@ public final class MasteryService {
     // ============================================================================
 
     private static List<Mastery> cache(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.SUMMONER_MASTERIES.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), MASTERIES_TYPE);
+        return RedisClient.get(RedisKey.SUMMONER_MASTERIES.of(LeagueShard.cacheRegion(shard), shard.name(), puuid), MASTERIES_TYPE);
     }
 
     private static List<Mastery> query(String puuid, LeagueShard shard) {
         return MongoDB.findMasteries(puuid, shard);
     }
 
-    private static List<ChampionMastery> cacheRiotMasteries(String puuid, LeagueShard shard) {
-        return RedisClient.get(RedisKey.R4J_CHAMPION_MASTERIES.of(shard.name(), puuid), RIOT_MASTERIES_TYPE);
+    private static List<Mastery> cacheRiotMasteries(String puuid, LeagueShard shard) {
+        return RiotGateway.cachedMasteries(shard, puuid);
     }
 
     private static CompletableFuture<List<Mastery>> refreshAsync(
@@ -91,7 +87,7 @@ public final class MasteryService {
             JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return refreshRiotMasteriesFromRiotAsync(puuid, shard, priority).thenApplyAsync(entries -> {
+        return QueueHandler.thenApply(refreshRiotMasteriesFromRiotAsync(puuid, shard, priority), entries -> {
             List<Mastery> masteries = toMasteries(entries);
             save(puuid, shard, masteries, false);
             return masteries;
@@ -101,10 +97,10 @@ public final class MasteryService {
     private static CompletableFuture<List<Mastery>> fetch(String puuid, LeagueShard shard) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(List.of());
 
-        return SummonerService.getSummonerAsync(puuid, shard).thenCompose(summoner -> {
+        return QueueHandler.thenCompose(SummonerService.getSummonerAsync(puuid, shard), summoner -> {
             if (summoner == null) return CompletableFuture.failedFuture(
                 new IllegalStateException("Summoner is not available for mastery persistence"));
-            return getRiotMasteriesAsync(puuid, shard).thenApplyAsync(entries -> {
+            return QueueHandler.thenApply(getRiotMasteriesAsync(puuid, shard), entries -> {
                 List<Mastery> masteries = toMasteries(entries);
                 save(puuid, shard, masteries, true);
                 return masteries;
@@ -112,25 +108,25 @@ public final class MasteryService {
         });
     }
 
-    private static CompletableFuture<List<ChampionMastery>> getRiotMasteriesAsync(String puuid, LeagueShard shard) {
-        List<ChampionMastery> cached = cacheRiotMasteries(puuid, shard);
+    private static CompletableFuture<List<Mastery>> getRiotMasteriesAsync(String puuid, LeagueShard shard) {
+        List<Mastery> cached = cacheRiotMasteries(puuid, shard);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         return getRiotMasteriesFromRiotAsync(puuid, shard);
     }
 
-    private static CompletableFuture<List<ChampionMastery>> getRiotMasteriesFromRiotAsync(String puuid, LeagueShard shard) {
+    private static CompletableFuture<List<Mastery>> getRiotMasteriesFromRiotAsync(String puuid, LeagueShard shard) {
         return fetchRiotMasteriesAsync(puuid, shard, "masteries");
     }
 
-    private static CompletableFuture<List<ChampionMastery>> refreshRiotMasteriesFromRiotAsync(
+    private static CompletableFuture<List<Mastery>> refreshRiotMasteriesFromRiotAsync(
             String puuid,
             LeagueShard shard,
             JobPriority priority) {
         return fetchRiotMasteriesAsync(puuid, shard, "masteries-refresh", priority);
     }
 
-    private static CompletableFuture<List<ChampionMastery>> fetchRiotMasteriesAsync(
+    private static CompletableFuture<List<Mastery>> fetchRiotMasteriesAsync(
         String puuid,
         LeagueShard shard,
         String operation
@@ -138,7 +134,7 @@ public final class MasteryService {
         return fetchRiotMasteriesAsync(puuid, shard, operation, JobPriority.IMMEDIATE);
     }
 
-    private static CompletableFuture<List<ChampionMastery>> fetchRiotMasteriesAsync(
+    private static CompletableFuture<List<Mastery>> fetchRiotMasteriesAsync(
         String puuid,
         LeagueShard shard,
         String operation,
@@ -146,18 +142,17 @@ public final class MasteryService {
     ) {
         return switch (priority) {
             case IMMEDIATE -> QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(Mastery.class), ignored -> fetchMasteries(shard, puuid));
             case NORMAL -> QueueHandler.normal(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(Mastery.class), ignored -> fetchMasteries(shard, puuid));
             case BACKGROUND -> QueueHandler.background(RiotScheduler.class, shard, shard.name() + ':' + operation + ':' + puuid,
-                operation + " puuid=" + puuid, ignored -> fetchMasteries(shard, puuid));
+                operation + " puuid=" + puuid, ResultType.list(Mastery.class), ignored -> fetchMasteries(shard, puuid));
         };
     }
 
-    private static List<ChampionMastery> fetchMasteries(LeagueShard shard, String puuid) {
-            List<ChampionMastery> masteries = RIOT_API.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
+    private static List<Mastery> fetchMasteries(LeagueShard shard, String puuid) {
+            List<Mastery> masteries = RiotGateway.masteries(shard, puuid);
             if (masteries == null) throw new IllegalStateException("Riot returned no mastery result");
-            RedisClient.set(RedisKey.R4J_CHAMPION_MASTERIES, masteries, shard.name(), puuid);
             return masteries;
     }
 
@@ -167,19 +162,8 @@ public final class MasteryService {
         if (!PROFILE_RECORD_SERVICE.updateMasteries(puuid, shard, masteries)) {
             throw new IllegalStateException("Mastery records could not be updated");
         }
-        RedisClient.set(RedisKey.SUMMONER_MASTERIES, masteries, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        RedisClient.set(RedisKey.SUMMONER_MASTERIES, masteries, LeagueShard.cacheRegion(shard), shard.name(), puuid);
         if (invalidateProfile) ProfileService.invalidate(puuid, shard);
     }
-
-    private static List<Mastery> toMasteries(List<ChampionMastery> entries) {
-        List<Mastery> masteries = new ArrayList<>();
-        if (entries == null) return masteries;
-
-        for (ChampionMastery entry : entries) {
-            if (entry != null) masteries.add(new Mastery(
-                entry.getChampionId(), entry.getChampionLevel(), entry.getChampionPoints()));
-        }
-        return masteries;
-    }
-
+    private static List<Mastery> toMasteries(List<Mastery> entries) { return entries == null ? new ArrayList<>() : new ArrayList<>(entries); }
 }

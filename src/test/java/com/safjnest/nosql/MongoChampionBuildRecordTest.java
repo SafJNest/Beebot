@@ -1,5 +1,7 @@
 package com.safjnest.nosql;
 
+import com.R4B.lol.*;
+import com.safjnest.lol.service.FilterDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -10,8 +12,7 @@ import org.bson.Document;
 import org.junit.Test;
 
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.lol.model.Filter;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -71,7 +72,7 @@ public class MongoChampionBuildRecordTest {
             .append("participants", List.of(participant));
 
         List<QueryRecord> records = MongoDB.championBuildRecords(match,
-            new Filter().setChampion(1).setLane(null).setQueue(GameQueueType.CHERRY).setRank(null));
+            FilterDefaults.create().setChampion(1).setLane(null).setQueue(GameQueueType.CHERRY).setRank(null));
 
         assertEquals(1, records.size());
         JSONObject build = new JSONObject(records.get(0).get("build"));
@@ -84,7 +85,7 @@ public class MongoChampionBuildRecordTest {
         Document match = new Document("_id", "EUW1_3").append("participants", List.of(participant));
 
         assertEquals(0, MongoDB.championBuildRecords(match,
-            new Filter().setLane(null).setQueue(GameQueueType.CHERRY).setRank(null)).size());
+            FilterDefaults.create().setLane(null).setQueue(GameQueueType.CHERRY).setRank(null)).size());
     }
 
     @Test

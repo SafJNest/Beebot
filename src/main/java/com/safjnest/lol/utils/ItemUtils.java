@@ -5,9 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.R4B.api.dto.riot.Item;
 import com.safjnest.lol.service.StaticDataService;
-
-import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
 public class ItemUtils {
 

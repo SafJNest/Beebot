@@ -1,9 +1,10 @@
 package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import com.safjnest.lol.model.summoner.Summoner;
+
+import com.R4B.api.dto.riot.StaticChampion;
+import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.lol.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -198,7 +199,6 @@ public class EventModalInteractionHandler extends ListenerAdapter {
           }
         }
 
-
         String publicMessage = event.getValue("alert-message-public") != null ? event.getValue("alert-message-public").getAsString() : null;
         String privateMessage = event.getValue("alert-message-private") != null ? event.getValue("alert-message-private").getAsString() : null;
 
@@ -238,8 +238,6 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
     }
 
-
-
     private void champion(ModalInteractionEvent event) {
         String champoString = event.getValue("champion-change").getAsString();
 
@@ -250,7 +248,6 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         champoString = SafJNest.findSimilarWord(champoString, championsName);
         StaticChampion newChampion = ChampionUtils.getChampion(champoString);
 
-
         if (newChampion == null) {
             event.deferReply().setEphemeral(true).addContent("Cannot find the champion you are looking for").queue();
             return;
@@ -258,7 +255,6 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
         String puuid = "";
         String region = "";
-
 
         for (Button b : EventUtils.getButtons(event.getMessage().getComponents())) {
             if (b.getCustomId().startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-center-")) {
@@ -270,8 +266,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event.getMessage().getComponents()));
         parameter.setChampion(newChampion);
         parameter.setShowChampion(true);
-        
-        
+
         event.deferEdit().queue();
         String user_id = SummonerService.getUserId(puuid, LeagueShard.valueOf(region));
         if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";

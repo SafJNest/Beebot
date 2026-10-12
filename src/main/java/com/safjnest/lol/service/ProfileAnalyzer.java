@@ -2,50 +2,25 @@ package com.safjnest.lol.service;
 
 import java.util.List;
 
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.model.statistics.ProfileActivity;
-import com.safjnest.lol.model.statistics.ProfileMatchups;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.KdaUtils;
+import com.R4B.api.dto.Filter;
+import com.R4B.api.dto.match.Match;
+import com.R4B.api.dto.match.Participant;
+import com.R4B.api.dto.statistics.ProfileActivity;
+import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.api.dto.statistics.ProfileStatistics;
+import com.R4B.lol.*;
 
 public final class ProfileAnalyzer {
-
-    private ProfileAnalyzer() {}
-
-    public static ProfileActivity activity(List<Match> matches, String puuid, Filter filter) {
-        return ProfileActivity.from(matches == null ? List.of() : matches, puuid, filter);
-    }
-
-    public static ProfileMatchups matchups(List<Match> matches, String puuid, Filter filter) {
-        return ProfileMatchups.from(matches == null ? List.of() : matches, puuid, filter)
-            .withLastUpdate(System.currentTimeMillis());
-    }
-
-    public static ProfileRefreshAccumulator refreshAccumulator(
-        String puuid,
-        Filter statisticsFilter,
-        Filter activityFilter,
-        Filter matchupsFilter
-    ) {
-        return new ProfileRefreshAccumulator(puuid, statisticsFilter, activityFilter, matchupsFilter);
-    }
-
-    public static MatchupsAccumulator matchupsAccumulator(String puuid, Filter filter) {
-        return new MatchupsAccumulator(puuid, filter);
-    }
 
     public static final class MatchupsAccumulator {
         private final String puuid;
         private final Filter filter;
-        private final ProfileMatchups.Accumulator matchups;
+        private final ProfileMatchupsAnalyzer.Accumulator matchups;
 
         private MatchupsAccumulator(String puuid, Filter filter) {
             this.puuid = puuid;
             this.filter = filter;
-            matchups = ProfileMatchups.accumulator(filter);
+            matchups = ProfileMatchupsAnalyzer.accumulator(filter);
         }
 
         public void accept(Match match) {
@@ -64,8 +39,8 @@ public final class ProfileAnalyzer {
         private final String puuid;
         private final Filter statisticsFilter;
         private final ProfileStatistics statistics;
-        private final ProfileActivity.Accumulator activity;
-        private final ProfileMatchups.Accumulator matchups;
+        private final ProfileActivityAnalyzer.Accumulator activity;
+        private final ProfileMatchupsAnalyzer.Accumulator matchups;
 
         private ProfileRefreshAccumulator(
             String puuid,
@@ -76,20 +51,20 @@ public final class ProfileAnalyzer {
             this.puuid = puuid;
             this.statisticsFilter = statisticsFilter;
             statistics = new ProfileStatistics(statisticsFilter == null ? 0 : statisticsFilter.timeStart());
-            activity = ProfileActivity.accumulator(puuid, activityFilter);
-            matchups = ProfileMatchups.accumulator(matchupsFilter);
+            activity = ProfileActivityAnalyzer.accumulator(puuid, activityFilter);
+            matchups = ProfileMatchupsAnalyzer.accumulator(matchupsFilter);
         }
 
         public void accept(Match match) {
             ProfileMatchContext context = ProfileMatchContext.from(match, puuid, statisticsFilter);
             activity.accept(match, context.player());
             if (!context.isCanonical()) return;
-            statistics.accumulate(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
+            ProfileStatisticsAccumulator.of(statistics).accumulate(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
             matchups.accept(match, context.player(), context.teamKills(), context.enemyTeamKills(), context.arena());
         }
 
         public ProfileRefresh finish() {
-            statistics.finish();
+            ProfileStatisticsAccumulator.of(statistics).finish();
             return new ProfileRefresh(
                 statistics,
                 activity.finish(),
@@ -98,11 +73,37 @@ public final class ProfileAnalyzer {
         }
     }
 
+    private ProfileAnalyzer() {}
+
+    public static ProfileActivity activity(List<Match> matches, String puuid, Filter filter) {
+        return ProfileActivityAnalyzer.from(matches == null ? List.of() : matches, puuid, filter);
+    }
+
+    public static ProfileMatchups matchups(List<Match> matches, String puuid, Filter filter) {
+        return ProfileMatchupsAnalyzer.from(matches == null ? List.of() : matches, puuid, filter)
+            .withLastUpdate(System.currentTimeMillis());
+    }
+
+    public static ProfileRefreshAccumulator refreshAccumulator(
+        String puuid,
+        Filter statisticsFilter,
+        Filter activityFilter,
+        Filter matchupsFilter
+    ) {
+        return new ProfileRefreshAccumulator(puuid, statisticsFilter, activityFilter, matchupsFilter);
+    }
+
+    public static MatchupsAccumulator matchupsAccumulator(String puuid, Filter filter) {
+        return new MatchupsAccumulator(puuid, filter);
+    }
+
     public record ProfileRefresh(
         ProfileStatistics statistics,
         ProfileActivity activity,
         ProfileMatchups matchups
     ) {}
+
+    // ============================================================================
 
     private record ProfileMatchContext(
         Match match,
@@ -115,16 +116,14 @@ public final class ProfileAnalyzer {
 
         private static ProfileMatchContext from(Match match, String puuid, Filter filter) {
             Participant player = participant(match, puuid);
-            if (player == null || !ProfileStatistics.matchesFilter(match, player, filter))
+            if (player == null || !ProfileStatisticsAccumulator.matchesFilter(match, player, filter))
                 return new ProfileMatchContext(match, player, false, false, 0, 0);
-            boolean arena = GameQueueTypeUtils.isCherry(match.queue);
+            boolean arena = GameQueueType.isCherry(match.queue);
             int teamKills = kills(match, player, arena, false);
             int enemyTeamKills = arena ? 0 : kills(match, player, false, true);
             return new ProfileMatchContext(match, player, true, arena, teamKills, enemyTeamKills);
         }
     }
-
-    // ============================================================================
 
     private static Participant participant(Match match, String puuid) {
         if (match == null || match.participants == null || puuid == null) return null;

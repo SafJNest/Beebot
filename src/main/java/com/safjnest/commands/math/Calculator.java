@@ -1,6 +1,5 @@
 package com.safjnest.commands.math;
 
-
 import java.util.Arrays;
 import java.util.Stack;
 

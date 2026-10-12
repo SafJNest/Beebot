@@ -27,7 +27,6 @@ public class RewardData extends AlertData{
         this.temporary = temporary;
     }
 
-
     public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, String[] roles, int level, boolean temporary) {
         int id = BotDB.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.REWARD);
         HashMap<Integer, String> rolesMap = roles != null ? BotDB.createRolesAlert(String.valueOf(id), roles) : new HashMap<>();
@@ -38,7 +37,6 @@ public class RewardData extends AlertData{
     public int getLevel() {
         return level;
     }
-
 
     /**
      * A reward is temporary if it is removed when a higher level reward is achieved
@@ -61,7 +59,6 @@ public class RewardData extends AlertData{
         List<String> roleNames = this.getRoles().values().stream()
             .map(role -> "@" + guild.getRoleById(role).getName())
             .collect(Collectors.toList());
-
 
         String sampleText = super.getMessage();
         sampleText = sampleText.replace("#user", "@sunyx");
@@ -104,13 +101,9 @@ public class RewardData extends AlertData{
         return eb;
     }
 
-
-
-
     @Override
     public AlertKey<Integer> getKey() {
         return new AlertKey<>(AlertType.REWARD, this.level);
     }
-    
 
 }

@@ -5,7 +5,7 @@ import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 
-import com.safjnest.lol.model.status.LeagueMetrics;
+import com.R4B.api.dto.status.LeagueMetrics;
 
 public class LeagueMetricsStoreTest {
 

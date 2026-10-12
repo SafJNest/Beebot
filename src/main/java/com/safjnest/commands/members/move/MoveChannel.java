@@ -71,8 +71,7 @@ public class MoveChannel extends SlashCommand{
             oldChannel = event.getMember().getVoiceState().getChannel().asVoiceChannel();
             destGuys = channel.getMembers();
         }
-        
-        
+
         theGuys = event.getGuild().getVoiceChannelById(event.getOption("room").getAsChannel().getId()).getMembers();
         for(Member member : theGuys){
             event.getGuild().moveVoiceMember(member, channel).queue();
@@ -84,7 +83,6 @@ public class MoveChannel extends SlashCommand{
             }
         }
 
-        
         event.deferReply(false).addContent("Moved  "+theGuys.size() +" users in:        "+ channel.getName() + ".").queue();
 
     }
