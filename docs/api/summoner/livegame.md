@@ -127,5 +127,5 @@ level and other canonical Summoner data.
 
 ## Owner
 
-`LolController`, `SummonerService`, `lol.queue.scheduler.RiotScheduler` (via `QueueHandler`), `RedisKey.SPECTATOR_CURRENT`
+`LolController`, `SummonerService`, `com.safjnest.s4b.scheduler.RiotScheduler` (via `QueueHandler`), `RedisKey.SPECTATOR_CURRENT`
 and `LiveGame`.

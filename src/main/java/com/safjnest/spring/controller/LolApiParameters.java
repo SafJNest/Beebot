@@ -1,6 +1,6 @@
 package com.safjnest.spring.controller;
 
-import com.safjnest.lol.service.FilterDefaults;
+import com.safjnest.spring.lol.service.FilterDefaults;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Locale;
@@ -11,9 +11,9 @@ import java.util.StringJoiner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.LeagueConstants;
-import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.spring.lol.utils.ChampionUtils;
+import com.safjnest.spring.lol.utils.LeagueConstants;
+import com.safjnest.spring.lol.utils.SeasonUtils;
 import com.R4B.api.dto.ActivityFilter;
 import com.R4B.api.dto.Filter;
 import com.R4B.api.dto.match.RankHistoryQuery;

@@ -1,0 +1,45 @@
+package com.safjnest.spring.lol.message;
+
+public enum LeagueMessageType {
+  PROFILE("Profile", false),
+  OPGG("OPgg", true, 5),
+  LIVEGAME("Live Game", false),
+  OVERVIEW("Overview", false),
+  MATCHUP("Matchups", false),
+  @Deprecated
+  OVERVIEW_PING("Pings", false),
+  @Deprecated
+  OVERVIEW_OBJECTIVES("Objectives", false),
+  OVERVIEW_CHAMPIONS("Champions", true, 10),
+  OVERVIEW_OPGG("OPgg", true, 5),
+  CHAMPIONS_BY_WINRATE("Champions by Winrate", true, 10),
+  CHAMPIONS_BY_PICKRATE("Champions by Pickrate", true, 10),
+  CHAMPIONS_BY_BANRATE("Champions by Banrate", true, 10);
+
+  private String label;
+  private boolean hasPageButton;
+  private int pageItem;
+
+  private LeagueMessageType(String label, boolean hasPageButton) {
+    this.label = label;
+    this.hasPageButton = hasPageButton;
+  }
+
+  private LeagueMessageType(String label, boolean hasPageButton, int pageItem) {
+    this.label = label;
+    this.hasPageButton = hasPageButton;
+    this.pageItem = pageItem;
+  }
+
+  public String getLabel() {
+    return this.label;
+  }
+
+  public boolean hasPageButtons() {
+    return this.hasPageButton;
+  }
+
+  public int getPageItem() {
+    return this.pageItem;
+  }
+}

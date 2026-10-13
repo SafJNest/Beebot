@@ -1,0 +1,61 @@
+package com.safjnest.spring.lol.tracker;
+
+import java.util.concurrent.TimeUnit;
+
+import com.R4B.lol.GameQueueType;
+import com.safjnest.App;
+import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.spring.lol.scheduler.ComputeScheduler;
+import com.safjnest.spring.lol.service.RankService;
+import com.safjnest.utils.TimeConstant;
+import com.safjnest.utils.log.BotLogger;
+
+public final class TrackerScheduler {
+
+    private static final long TRACKING_INTERVAL = TimeConstant.MINUTE * 10;
+
+    private static volatile boolean started;
+    private static volatile boolean cronScheduled;
+
+    private TrackerScheduler() {}
+
+    public static synchronized void start() {
+        if (started) return;
+        started = true;
+        scheduleIfEnabled();
+    }
+
+    public static synchronized void scheduleIfEnabled() {
+        if (cronScheduled || !App.tracking()) return;
+        cronScheduled = true;
+
+        ChronoTask track = TrackerScheduler::retrieveSummoners;
+        track.scheduleAtFixedRate(0, TRACKING_INTERVAL, TimeUnit.MILLISECONDS);
+
+        ChronoTask retrieveHighEloEntries = TrackerScheduler::retrieveHighEloEntries;
+        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+    }
+
+    public static void retrieveSummoners() {
+        long nextUpdate = System.currentTimeMillis() + TRACKING_INTERVAL;
+        Tracker.retrieveSummoners().whenComplete((ignored, failure) -> {
+            BotLogger.info("[LPTracker] Tracking finished. Next update at " + new java.util.Date(nextUpdate));
+        });
+    }
+
+    public static void retrieveSampleGames(GameQueueType queue) {
+        Tracker.retrieveSampleGames(queue);
+    }
+
+    public static void retrieveHighEloEntries() {
+        RankService.enqueueRankEntries(true, false);
+    }
+
+    public static void retrieveAllEntries() {
+        RankService.enqueueRankEntries(false, true);
+    }
+
+    public static void refreshChampionData() {
+        ComputeScheduler.enqueueChampionDataRefresh();
+    }
+}

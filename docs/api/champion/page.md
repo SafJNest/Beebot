@@ -2,12 +2,12 @@
 
 ## Endpoint
 
-`GET /api/lol/champion/{champion}`
+`GET /api/spring/lol/champion/{champion}`
 
 ## Fetch
 
 ```bash
-curl --get 'http://localhost:8080/api/lol/champion/Thresh' \
+curl --get 'http://localhost:8080/api/spring/lol/champion/Thresh' \
   --data-urlencode 'patch=14.10' \
   --data-urlencode 'rank=EMERALD' \
   --data-urlencode 'region=EUW1' \
@@ -402,5 +402,5 @@ and statistics timestamps; all global variants remain available.
 ## Owner
 
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
-- Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
+- Service: [`ChampionService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/R4B/api/dto/ChampionView.java)

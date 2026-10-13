@@ -13,8 +13,8 @@ Client HTTP, processi e moduli applicativi restano proposti.
 | 1 — Decisione e baseline | Definire layout, accettare/sincronizzare la decisione architetturale e caratterizzare comportamento vigente | Regole/ADR allineati; risolte discrepanze compute/progresso; fixture JSON e test lifecycle |
 | 2 — Contratti comuni | Separare metodi operativi dai modelli canonici e trasferire DTO/dipendenze di dati | Contratti compilano senza servizi/SDK/driver; JSON compatibile; nessun DTO duplicato |
 | 3 — Job/code comuni | Hive per istanza, core generico e adapter locali implementati nel monolite | Evidenze e review in hive-validation.md; processi ancora condivisi |
-| 4 — Build autonome | Parent Maven e moduli shared/bbot/r4j/spring, dipendenze e risorse locali | Tre bootstrap e artifact avviabili senza avviare gli altri |
-| 5 — Confine R4J | API interna e client Spring, fetch/cache SDK nel servizio R4J | Spring senza SDK Riot; R4J senza Mongo/JDA; errori/timeout/limiter verificati |
+| 4 — Confini package | S4B sotto `com.safjnest.s4b`; API LoL, dominio, tracker, Mongo e runtime sotto `com.safjnest.spring` nello stesso root POM | Ownership isolata; nessun cambiamento al JSON o al bootstrap |
+| 5 — Confine HTTP S4B | API interna S4B e client in lol-service, fetch/cache SDK sotto S4B | lol-service senza SDK Riot; S4B senza Mongo/JDA; errori/timeout/limiter verificati |
 | 6 — Confine Bbot | Client verso Spring e conversione dei comandi/maintenance alle API del proprietario | Bot senza accesso LoL diretto a Mongo/Riot; embed e comandi compatibili |
 | 7 — Repository separate | Pubblicazione dei comuni, versioni e release indipendenti | Contratti e build già isolati; smoke test tra versioni supportate |
 
@@ -99,7 +99,7 @@ senza far passare una compilazione o test statici per validazione dei servizi re
 | Enum LoL sul wire | Tipi del contratto con valori JSON compatibili; mapping SDK in R4J | DTO indipendenti da R4J |
 | Entity operative | Metodi persistenti privati del writer, stesso modello canonico di dati | Estrazione `Summoner`/`Match` |
 | Compute/progresso | Caratterizzare e risolvere le discrepanze registrate | Port scheduler/registry |
-| API R4J | DTO neutralizzati, copertura di tutte le operazioni necessarie | Trasferimento fetch al processo R4J |
+| API S4B | Contratti R4B SDK-independent, copertura delle operazioni Riot e static-data | Trasferimento fetch al processo S4B |
 | Completamento remoto | Iniziare con risultato HTTP quando compatibile con durata/timeout | Confine di processo; acceptance/polling solo se necessario |
 | Redis | Client/pool per servizio, cataloghi chiavi posseduti separatamente | Bootstrap indipendenti |
 | Invalidazione cache raw dopo insert | Chiamata idempotente al proprietario R4J se ancora richiesta | Rimozione delle scritture Redis incrociate |
@@ -113,12 +113,11 @@ una modifica implicita nella separazione dei servizi.
 
 ## Versioning successivo
 
-Finché sono nella stessa repository, parent e moduli possono condividere
-la versione esistente senza inventare subito versioni divergenti. Con artifact
-pubblicati, le versioni dei comuni saranno pin espliciti: modifiche additive
-compatibili, modifiche breaking coordinate con i consumatori e fixture tra
-le versioni supportate. Una rename Java può essere breaking per i binari
-anche a JSON invariato. Non scegliere ora registry, pipeline o repository remoti.
+S4B è pubblicato su JitPack al commit `e4424d6`; Beebot lo pinna a quel commit.
+Gli altri artifact resteranno non pubblicati finché il loro build autonomo non
+compila. Le modifiche additive devono restare compatibili; quelle breaking
+vanno coordinate con i consumatori e verificate con fixture tra le versioni
+supportate. Una rename Java può essere breaking per i binari anche a JSON invariato.
 
 ## Consegna di questa fase
 
@@ -132,7 +131,7 @@ Disallineamenti preesistenti sono registrati nell'inventario.
 
 ADR-0017 conserva il codice verificato: quattro worker compute e progresso
 esplicito prima dei contatori figli. Il core vive in `com.hive`, i concreti
-in `r4j.scheduler` e `lol.scheduler`; App compone un solo runtime condiviso.
+in `s4b.scheduler` e `spring.lol.scheduler`; Spring compone un solo runtime condiviso.
 DTO dominio, moduli dei servizi e trasporto restano fasi indipendenti.
 
 ## Decisione della tranche R4B
@@ -144,3 +143,10 @@ comporsi localmente, con SDK dietro adapter `r4j` e firme indipendenti.
 La chiusura deve compilare senza SDK fuori dagli adapter, oltre alla build
 autonoma R4B. [Inventario](r4b-inventory.md) e [verifiche](r4b-validation.md)
 descrivono la tranche effettiva; le future fasi 4–7 restano proposte.
+
+## Confine S4B
+
+La specifica [s4b-service-spec.md](s4b-service-spec.md) registra il target
+concordato e la tranche attuale: gateway e scheduler sotto il package S4B nel
+root POM. Le API interne, il client lol-service, il taglio del processo, il
+runtime Hive e la pool Redis indipendenti restano tranche successive.

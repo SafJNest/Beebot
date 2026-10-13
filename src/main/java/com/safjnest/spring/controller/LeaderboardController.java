@@ -10,7 +10,7 @@ import com.R4B.api.dto.ApiResult;
 import com.R4B.api.dto.ResponseMetadata;
 import com.R4B.api.dto.leaderboard.LeaderboardDistribution;
 import com.R4B.api.dto.leaderboard.LeaderboardPage;
-import com.safjnest.lol.service.LeaderboardService;
+import com.safjnest.spring.lol.service.LeaderboardService;
 
 @RestController
 @RequestMapping("/api/lol")

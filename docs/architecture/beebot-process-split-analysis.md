@@ -30,13 +30,13 @@ La separazione desiderata è coerente con gli owner di prodotto, ma non coincide
 - `src/main/java/com/safjnest/App.java`: entrypoint unico; avvia `SpringServer`, `QueueHandler`, warmup leaderboard, `TwitchClient`, sampler e `Bot`; chiude gli scheduler e Mongo.
 - `src/main/java/com/safjnest/core/Bot.java` e `src/main/java/com/safjnest/commands/**`: JDA, registrazione comandi, listener/eventi, audio e presentation Discord. I comandi LoL invocano direttamente `LeagueHandler`, servizi LoL, `MongoDB` e in alcuni casi Redis.
 - `src/main/java/com/safjnest/spring/SpringServer.java`, `spring/config/LolApiConfig.java`, `spring/controller/**`: server HTTP Spring MVC attuale. Le route includono profili, match, champion, leaderboard, records, status e training.
-- `src/main/java/com/safjnest/lol/LeagueHandler.java`: inizializza R4J e contiene anche metodi di presentazione/integrazione Discord, dati statici, rune/augment, conversioni e accessi a Mongo. È uno dei principali nodi da decomporre.
-- `src/main/java/com/safjnest/lol/service/**`: servizi domain/cache/persistence/Riot. Le classi sono già separate per area, ma non per processo né per dipendenza.
-- `src/main/java/com/safjnest/lol/queue/**`: `QueueHandler`, `Router`, `Registry`, `Job`, `RiotScheduler`, `ComputeScheduler` e `SyncScheduler`. Scheduler e registry sono process-local.
-- `src/main/java/com/safjnest/lol/tracker/**`: tracker, trigger periodico, elaborazione e ingestion dei match.
-- `src/main/java/com/safjnest/nosql/MongoDB.java`: singolo accesso Mongo runtime; `MongoMigration`/`LeagueDB` hanno il percorso storico di migrazione SQL.
+- `src/main/java/com/safjnest/spring/lol/LeagueHandler.java`: inizializza R4J e contiene anche metodi di presentazione/integrazione Discord, dati statici, rune/augment, conversioni e accessi a Mongo. È uno dei principali nodi da decomporre.
+- `src/main/java/com/safjnest/spring/spring/lol/service/**`: servizi domain/cache/persistence/Riot. Le classi sono già separate per area, ma non per processo né per dipendenza.
+- `src/main/java/com/safjnest/spring/spring/lol/queue/**`: `QueueHandler`, `Router`, `Registry`, `Job`, `RiotScheduler`, `ComputeScheduler` e `SyncScheduler`. Scheduler e registry sono process-local.
+- `src/main/java/com/safjnest/spring/spring/lol/tracker/**`: tracker, trigger periodico, elaborazione e ingestion dei match.
+- `src/main/java/com/safjnest/spring/nosql/MongoDB.java`: singolo accesso Mongo runtime; `MongoMigration`/`LeagueDB` hanno il percorso storico di migrazione SQL.
 - `src/main/java/com/safjnest/redis/RedisClient.java` e `RedisKey.java`: client e catalogo chiavi condivisi dall'app intera.
-- `src/main/java/com/safjnest/lol/model/**`: modelli canonicali LoL usati da servizi, persistence, controller ed embed. Molti tipi e enum sono attualmente R4J.
+- `src/main/java/com/safjnest/spring/spring/lol/model/**`: modelli canonicali LoL usati da servizi, persistence, controller ed embed. Molti tipi e enum sono attualmente R4J.
 
 Il POM radice è un singolo progetto Maven, compila per Java 25 e produce `jar-with-dependencies`. Tra le dipendenze nello stesso artefatto sono presenti JDA/audio, R4J, Mongo sync driver, Jedis, Spring MVC/Tomcat e il driver MariaDB usato dal percorso di migrazione. Non c'è ancora una distinzione di dipendenze tra API, worker e Discord.
 
@@ -57,7 +57,7 @@ Questi comportamenti vanno classificati esplicitamente durante lo split: un API 
 
 ### Flusso Discord
 
-I comandi League usano `LeagueHandler` e `com.safjnest.lol.service.*`; `LeagueMessage` compone modelli condivisi e rende embed JDA. La richiesta di isolare il bot richiede che la parte di rendering rimanga nel processo Discord mentre la ricerca e i dati LoL arrivino da client HTTP verso `lol-api`. Status, tracker, refresh e operazioni owner attualmente leggono anche code e dati interni: necessitano endpoint API appropriati o vanno trattati come funzioni amministrative specifiche, non come accesso al database dal bot.
+I comandi League usano `LeagueHandler` e `com.safjnest.spring.lol.service.*`; `LeagueMessage` compone modelli condivisi e rende embed JDA. La richiesta di isolare il bot richiede che la parte di rendering rimanga nel processo Discord mentre la ricerca e i dati LoL arrivino da client HTTP verso `lol-api`. Status, tracker, refresh e operazioni owner attualmente leggono anche code e dati interni: necessitano endpoint API appropriati o vanno trattati come funzioni amministrative specifiche, non come accesso al database dal bot.
 
 ## 3. Classi multi-responsabilità e flussi di scrittura
 
@@ -369,10 +369,10 @@ Prometheus può iniziare nella fase 4 o 5 per misurare i processi estratti, ma v
 ## 16. Riferimenti al codice e decisioni già registrate
 
 - `src/main/java/com/safjnest/App.java`, `spring/SpringServer.java`, `spring/config/LolApiConfig.java`: processo unico, avvio manuale Tomcat/Spring MVC, CORS pubblico attuale.
-- `src/main/java/com/safjnest/lol/LeagueHandler.java`: R4J statico e coupling con Discord, Mongo e dati LoL.
-- `src/main/java/com/safjnest/lol/service/{SummonerService,RankService,MasteryService,MatchService,ProfileService,ChampionService,LeaderboardService,CompetitiveService}.java`: accessi incrociati oggi descritti.
-- `src/main/java/com/safjnest/lol/tracker/{Tracker,TrackerScheduler}.java` e `lol/queue/{QueueHandler,Registry}.java`, `lol/queue/scheduler/{RiotScheduler,SyncScheduler,ComputeScheduler}.java`: tracking e code process-local.
-- `src/main/java/com/safjnest/nosql/MongoDB.java`, `nosql/{AbstractEntity,NoSqlEntityExecutor,MongoCommandMonitor}.java`: persistence/mapping/monitor.
+- `src/main/java/com/safjnest/spring/lol/LeagueHandler.java`: R4J statico e coupling con Discord, Mongo e dati LoL.
+- `src/main/java/com/safjnest/spring/spring/lol/service/{SummonerService,RankService,MasteryService,MatchService,ProfileService,ChampionService,LeaderboardService,CompetitiveService}.java`: accessi incrociati oggi descritti.
+- `src/main/java/com/safjnest/spring/spring/lol/tracker/{Tracker,TrackerScheduler}.java` e `spring/lol/queue/{QueueHandler,Registry}.java`, `spring/lol/queue/scheduler/{RiotScheduler,SyncScheduler,ComputeScheduler}.java`: tracking e code process-local.
+- `src/main/java/com/safjnest/spring/nosql/MongoDB.java`, `nosql/{AbstractEntity,NoSqlEntityExecutor,MongoCommandMonitor}.java`: persistence/mapping/monitor.
 - `src/main/java/com/safjnest/redis/{RedisClient,RedisKey}.java`: pool hardcoded, fallback e catalogo TTL/namespace.
 - `src/main/java/com/safjnest/spring/controller/**`: API pubbliche correnti e superficie da mantenere compatibile.
 - `docs/architecture/adr/0001-canonical-lol-model-boundaries.md`, `0005-lol-api-json-contract.md`, `0007-unified-api-result-and-parameters.md`, `0008-endpoint-cache-and-async-lookups.md`, `0009-mongo-persistence-and-migration.md`, `0010-database-refresh-queue.md`, `0011-domain-services-and-r4j-queue.md`, `0012-profile-and-champion-analysis-facades.md`, `0014-global-job-scheduler.md`, `0015-contextual-ranking.md`: invarianti esistenti da rispettare o aggiornare esplicitamente.

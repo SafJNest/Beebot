@@ -215,5 +215,5 @@ The `200` response adds root `metadata` with the match `lastUpdate` and
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Service: [`MatchService`](../../../src/main/java/com/safjnest/lol/service/MatchService.java) — `getDetail`
+- Service: [`MatchService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/MatchService.java) — `getDetail`
 - Success model: [`Match`](../../../src/main/java/com/R4B/api/dto/match/Match.java)

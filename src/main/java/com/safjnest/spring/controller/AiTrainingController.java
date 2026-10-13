@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.safjnest.nosql.MongoDB;
+import com.safjnest.spring.nosql.MongoDB;
 import com.safjnest.utils.JsonCodec;
 
 @RestController

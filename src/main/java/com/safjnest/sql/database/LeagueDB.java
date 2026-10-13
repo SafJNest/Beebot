@@ -17,7 +17,7 @@ import com.R4B.api.dto.match.Match;
 import com.R4B.api.dto.match.Participant;
 import com.R4B.api.dto.match.RankProgress;
 import com.R4B.lol.*;
-import com.safjnest.lol.utils.ParticipantBuildCodec;
+import com.safjnest.spring.lol.utils.ParticipantBuildCodec;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.utils.SettingsLoader;
 

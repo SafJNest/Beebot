@@ -1,6 +1,6 @@
 package com.safjnest.spring.controller;
 
-import com.safjnest.lol.service.FilterDefaults;
+import com.safjnest.spring.lol.service.FilterDefaults;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.R4B.api.dto.record.RecordPage;
 import com.R4B.api.dto.record.RecordsOverview;
 import com.R4B.lol.RecordMetric;
-import com.safjnest.lol.service.ProfileRecordService;
+import com.safjnest.spring.lol.service.ProfileRecordService;
 
 @RestController
 @RequestMapping("/api/lol/records")

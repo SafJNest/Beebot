@@ -211,31 +211,31 @@ nell'inventario per area, non sono destinati al comune per default.
 
 | File attuale | Destinazione proposta | Azione/confine |
 |---|---|---|
-| [lol/LeagueHandler.java](../../../src/main/java/com/safjnest/lol/LeagueHandler.java) | Da separare | Bot/Riot/statici/Mongo mescolati; escluso dal comune |
-| [lol/champion/BuildSignature.java](../../../src/main/java/com/safjnest/lol/champion/BuildSignature.java) | Spring | Provider/record/firma di calcolo build o statistiche |
-| [lol/champion/ChampionBuildData.java](../../../src/main/java/com/safjnest/lol/champion/ChampionBuildData.java) | Spring | Provider/record/firma di calcolo build o statistiche |
-| [lol/champion/ChampionBuildProvider.java](../../../src/main/java/com/safjnest/lol/champion/ChampionBuildProvider.java) | Spring | Provider/record/firma di calcolo build o statistiche |
-| [lol/champion/ChampionStatsData.java](../../../src/main/java/com/safjnest/lol/champion/ChampionStatsData.java) | Spring | Provider/record/firma di calcolo build o statistiche |
-| [lol/champion/ChampionStatsProvider.java](../../../src/main/java/com/safjnest/lol/champion/ChampionStatsProvider.java) | Spring | Provider/record/firma di calcolo build o statistiche |
+| [lol/LeagueHandler.java](../../../src/main/java/com/safjnest/spring/lol/LeagueHandler.java) | Da separare | Bot/Riot/statici/Mongo mescolati; escluso dal comune |
+| [spring/lol/champion/BuildSignature.java](../../../src/main/java/com/safjnest/spring/spring/lol/champion/BuildSignature.java) | Spring | Provider/record/firma di calcolo build o statistiche |
+| [spring/lol/champion/ChampionBuildData.java](../../../src/main/java/com/safjnest/spring/spring/lol/champion/ChampionBuildData.java) | Spring | Provider/record/firma di calcolo build o statistiche |
+| [spring/lol/champion/ChampionBuildProvider.java](../../../src/main/java/com/safjnest/spring/spring/lol/champion/ChampionBuildProvider.java) | Spring | Provider/record/firma di calcolo build o statistiche |
+| [spring/lol/champion/ChampionStatsData.java](../../../src/main/java/com/safjnest/spring/spring/lol/champion/ChampionStatsData.java) | Spring | Provider/record/firma di calcolo build o statistiche |
+| [spring/lol/champion/ChampionStatsProvider.java](../../../src/main/java/com/safjnest/spring/spring/lol/champion/ChampionStatsProvider.java) | Spring | Provider/record/firma di calcolo build o statistiche |
 | [com/R4B/api/dto/RuneSignature.java](../../../src/main/java/com/R4B/api/dto/RuneSignature.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/message/LeagueEventHandler.java](../../../src/main/java/com/safjnest/lol/message/LeagueEventHandler.java) | Bbot | Presentazione/adapter Discord invariato |
-| [lol/message/LeagueMessage.java](../../../src/main/java/com/safjnest/lol/message/LeagueMessage.java) | Bbot | Presentazione/adapter Discord invariato |
-| [lol/message/LeagueMessageParameter.java](../../../src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java) | Bbot | Presentazione/adapter Discord invariato |
-| [lol/message/LeagueMessageType.java](../../../src/main/java/com/safjnest/lol/message/LeagueMessageType.java) | Bbot | Presentazione/adapter Discord invariato |
+| [spring/lol/message/LeagueEventHandler.java](../../../src/main/java/com/safjnest/spring/spring/lol/message/LeagueEventHandler.java) | Bbot | Presentazione/adapter Discord invariato |
+| [spring/lol/message/LeagueMessage.java](../../../src/main/java/com/safjnest/spring/spring/lol/message/LeagueMessage.java) | Bbot | Presentazione/adapter Discord invariato |
+| [spring/lol/message/LeagueMessageParameter.java](../../../src/main/java/com/safjnest/spring/spring/lol/message/LeagueMessageParameter.java) | Bbot | Presentazione/adapter Discord invariato |
+| [spring/lol/message/LeagueMessageType.java](../../../src/main/java/com/safjnest/spring/spring/lol/message/LeagueMessageType.java) | Bbot | Presentazione/adapter Discord invariato |
 | [com/R4B/api/dto/ActivityFilter.java](../../../src/main/java/com/R4B/api/dto/ActivityFilter.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/ApiResult.java](../../../src/main/java/com/R4B/api/dto/ApiResult.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/Augment.java](../../../src/main/java/com/safjnest/lol/model/Augment.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
+| [spring/lol/model/Augment.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/Augment.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
 | [com/R4B/api/dto/Build.java](../../../src/main/java/com/R4B/api/dto/Build.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/ChampionIndexable.java](../../../src/main/java/com/R4B/api/dto/ChampionIndexable.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/ChampionStatistics.java](../../../src/main/java/com/R4B/api/dto/ChampionStatistics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/ChampionTierList.java](../../../src/main/java/com/R4B/api/dto/ChampionTierList.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/ChampionTierSource.java](../../../src/main/java/com/safjnest/lol/model/ChampionTierSource.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/ChampionTierSource.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/ChampionTierSource.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [com/R4B/api/dto/ChampionView.java](../../../src/main/java/com/R4B/api/dto/ChampionView.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/Filter.java](../../../src/main/java/com/R4B/api/dto/Filter.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/PlayerChampionStats.java](../../../src/main/java/com/safjnest/lol/model/PlayerChampionStats.java) | Bbot | Aggregato usato per presentazione bot; qualificare calcolo remoto |
+| [spring/lol/model/PlayerChampionStats.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/PlayerChampionStats.java) | Bbot | Aggregato usato per presentazione bot; qualificare calcolo remoto |
 | [com/R4B/api/dto/ProfileIndexable.java](../../../src/main/java/com/R4B/api/dto/ProfileIndexable.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/ResponseMetadata.java](../../../src/main/java/com/R4B/api/dto/ResponseMetadata.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/competitive/CompetitiveEntry.java](../../../src/main/java/com/safjnest/lol/model/competitive/CompetitiveEntry.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/competitive/CompetitiveEntry.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/competitive/CompetitiveEntry.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [com/R4B/api/dto/leaderboard/LeaderboardDistribution.java](../../../src/main/java/com/R4B/api/dto/leaderboard/LeaderboardDistribution.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/leaderboard/LeaderboardPage.java](../../../src/main/java/com/R4B/api/dto/leaderboard/LeaderboardPage.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/match/LiveGame.java](../../../src/main/java/com/R4B/api/dto/match/LiveGame.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
@@ -257,23 +257,23 @@ nell'inventario per area, non sono destinati al comune per default.
 | [com/R4B/lol/RecordOwner.java](../../../src/main/java/com/R4B/lol/RecordOwner.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/record/RecordPage.java](../../../src/main/java/com/R4B/api/dto/record/RecordPage.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/record/RecordsOverview.java](../../../src/main/java/com/R4B/api/dto/record/RecordsOverview.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/rune/PageRunes.java](../../../src/main/java/com/safjnest/lol/model/rune/PageRunes.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
-| [lol/model/rune/Rune.java](../../../src/main/java/com/safjnest/lol/model/rune/Rune.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
+| [spring/lol/model/rune/PageRunes.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/rune/PageRunes.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
+| [spring/lol/model/rune/Rune.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/rune/Rune.java) | Da qualificare | Dati statici/bot: contratto solo se scambiato tra servizi |
 | [com/R4B/lol/CanonicalQueue.java](../../../src/main/java/com/R4B/lol/CanonicalQueue.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/statistics/ChampionStatsDocument.java](../../../src/main/java/com/safjnest/lol/model/statistics/ChampionStatsDocument.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/ChampionStatsDocument.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/ChampionStatsDocument.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [com/R4B/api/dto/statistics/ProfileActivity.java](../../../src/main/java/com/R4B/api/dto/statistics/ProfileActivity.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/statistics/ProfileMatchupLeaf.java](../../../src/main/java/com/R4B/api/dto/statistics/ProfileMatchupLeaf.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/statistics/ProfileMatchups.java](../../../src/main/java/com/R4B/api/dto/statistics/ProfileMatchups.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/statistics/ProfileStatistics.java](../../../src/main/java/com/R4B/api/dto/statistics/ProfileStatistics.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/statistics/ProfileStatisticsRow.java](../../../src/main/java/com/safjnest/lol/model/statistics/ProfileStatisticsRow.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/shared/ChampionLeafStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ChampionLeafStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/shared/ChampionNode.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ChampionNode.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/shared/ChampionStatsScope.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/ChampionStatsScope.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/ProfileStatisticsRow.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/ProfileStatisticsRow.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/shared/ChampionLeafStats.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/shared/ChampionLeafStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/shared/ChampionNode.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/shared/ChampionNode.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/shared/ChampionStatsScope.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/shared/ChampionStatsScope.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [com/R4B/api/dto/statistics/shared/LeafStats.java](../../../src/main/java/com/R4B/api/dto/statistics/shared/LeafStats.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/statistics/shared/MatchupStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/MatchupStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/shared/MatchupStats.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/shared/MatchupStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [com/R4B/api/dto/statistics/shared/ProfileLeafStats.java](../../../src/main/java/com/R4B/api/dto/statistics/shared/ProfileLeafStats.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/model/statistics/shared/TrendStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/TrendStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
-| [lol/model/statistics/shared/WinLossStats.java](../../../src/main/java/com/safjnest/lol/model/statistics/shared/WinLossStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/shared/TrendStats.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/shared/TrendStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
+| [spring/lol/model/statistics/shared/WinLossStats.java](../../../src/main/java/com/safjnest/spring/spring/lol/model/statistics/shared/WinLossStats.java) | Spring | Storage/intermedio/calcolo; non DTO finale comune |
 | [com/R4B/api/dto/status/BotStatus.java](../../../src/main/java/com/R4B/api/dto/status/BotStatus.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/hive/status/JobProgress.java](../../../src/main/java/com/hive/status/JobProgress.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
 | [com/hive/status/JobStatus.java](../../../src/main/java/com/hive/status/JobStatus.java) | Hive implementato | Snapshot generico; proiezioni applicative locali, JSON invariato |
@@ -300,63 +300,63 @@ nell'inventario per area, non sono destinati al comune per default.
 | [com/R4B/api/dto/summoner/SummonerLeaderboard.java](../../../src/main/java/com/R4B/api/dto/summoner/SummonerLeaderboard.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/summoner/SummonerOverview.java](../../../src/main/java/com/R4B/api/dto/summoner/SummonerOverview.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 | [com/R4B/api/dto/summoner/SummonerView.java](../../../src/main/java/com/R4B/api/dto/summoner/SummonerView.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
-| [lol/queue/QueueHandler.java](../../../src/main/java/com/safjnest/lol/queue/QueueHandler.java) | Applicazione | Composizione e facade; delega a Hive, bootstrap esplicito |
+| [spring/lol/queue/QueueHandler.java](../../../src/main/java/com/safjnest/spring/spring/lol/queue/QueueHandler.java) | Applicazione | Composizione e facade; delega a Hive, bootstrap esplicito |
 | [com/hive/Registry.java](../../../src/main/java/com/hive/Registry.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/Router.java](../../../src/main/java/com/hive/Router.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/job/Job.java](../../../src/main/java/com/hive/job/Job.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/job/JobPriority.java](../../../src/main/java/com/hive/job/JobPriority.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/job/JobState.java](../../../src/main/java/com/hive/job/JobState.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/scheduler/AbstractScheduler.java](../../../src/main/java/com/hive/scheduler/AbstractScheduler.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
-| [lol/scheduler/ChampionMatrixRequest.java](../../../src/main/java/com/safjnest/lol/scheduler/ChampionMatrixRequest.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [lol/scheduler/ComputeScheduler.java](../../../src/main/java/com/safjnest/lol/scheduler/ComputeScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [lol/scheduler/DatabaseWorkerType.java](../../../src/main/java/com/safjnest/lol/scheduler/DatabaseWorkerType.java) | Spring | Adapter/policy compute o Sync; non comune |
-| [r4j/scheduler/RiotScheduler.java](../../../src/main/java/com/safjnest/r4j/scheduler/RiotScheduler.java) | R4J | Adapter routing e naming Riot sopra il core comune |
-| [lol/scheduler/SyncScheduler.java](../../../src/main/java/com/safjnest/lol/scheduler/SyncScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [spring/lol/scheduler/ChampionMatrixRequest.java](../../../src/main/java/com/safjnest/spring/spring/lol/scheduler/ChampionMatrixRequest.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [spring/lol/scheduler/ComputeScheduler.java](../../../src/main/java/com/safjnest/spring/spring/lol/scheduler/ComputeScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [spring/lol/scheduler/DatabaseWorkerType.java](../../../src/main/java/com/safjnest/spring/spring/lol/scheduler/DatabaseWorkerType.java) | Spring | Adapter/policy compute o Sync; non comune |
+| [s4b/scheduler/RiotScheduler.java](../../../src/main/java/com/safjnest/s4b/scheduler/RiotScheduler.java) | S4B | Queue seriali Riot per shard sopra il core comune |
+| [spring/lol/scheduler/SyncScheduler.java](../../../src/main/java/com/safjnest/spring/spring/lol/scheduler/SyncScheduler.java) | Spring | Adapter/policy compute o Sync; non comune |
 | [com/hive/worker/JobQueue.java](../../../src/main/java/com/hive/worker/JobQueue.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/worker/JobWorker.java](../../../src/main/java/com/hive/worker/JobWorker.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
 | [com/hive/worker/WorkerState.java](../../../src/main/java/com/hive/worker/WorkerState.java) | Hive implementato | Meccanismo generico JDK-only per istanza (ADR-0017) |
-| [lol/service/CacheInvalidationService.java](../../../src/main/java/com/safjnest/lol/service/CacheInvalidationService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ChampionAnalyzer.java](../../../src/main/java/com/safjnest/lol/service/ChampionAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ChampionBuildEngine.java](../../../src/main/java/com/safjnest/lol/service/ChampionBuildEngine.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ChampionService.java](../../../src/main/java/com/safjnest/lol/service/ChampionService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ChampionTierAnalyzer.java](../../../src/main/java/com/safjnest/lol/service/ChampionTierAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/CompetitiveService.java](../../../src/main/java/com/safjnest/lol/service/CompetitiveService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/LeaderboardService.java](../../../src/main/java/com/safjnest/lol/service/LeaderboardService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/MasteryService.java](../../../src/main/java/com/safjnest/lol/service/MasteryService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
-| [lol/service/MatchService.java](../../../src/main/java/com/safjnest/lol/service/MatchService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
-| [lol/service/MatchupRankingAnalyzer.java](../../../src/main/java/com/safjnest/lol/service/MatchupRankingAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ProfileAnalyzer.java](../../../src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ProfileRecordAnalyzer.java](../../../src/main/java/com/safjnest/lol/service/ProfileRecordAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ProfileRecordService.java](../../../src/main/java/com/safjnest/lol/service/ProfileRecordService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/ProfileService.java](../../../src/main/java/com/safjnest/lol/service/ProfileService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
-| [lol/service/RankService.java](../../../src/main/java/com/safjnest/lol/service/RankService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
-| [lol/service/StaticDataService.java](../../../src/main/java/com/safjnest/lol/service/StaticDataService.java) | R4J + client | Acquisizione/cache statica in R4J; consumatori tramite contratto |
-| [lol/service/SummonerService.java](../../../src/main/java/com/safjnest/lol/service/SummonerService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
-| [lol/tracker/Tracker.java](../../../src/main/java/com/safjnest/lol/tracker/Tracker.java) | Spring | Tracking/completamento dati; fetch mediante client R4J |
-| [lol/tracker/TrackerScheduler.java](../../../src/main/java/com/safjnest/lol/tracker/TrackerScheduler.java) | Spring | Tracking/completamento dati; fetch mediante client R4J |
-| [lol/utils/AugmentUtils.java](../../../src/main/java/com/safjnest/lol/utils/AugmentUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/BuildUtils.java](../../../src/main/java/com/safjnest/lol/utils/BuildUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
-| [lol/utils/ChampionBuildTimelineUtils.java](../../../src/main/java/com/safjnest/lol/utils/ChampionBuildTimelineUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/ChampionUtils.java](../../../src/main/java/com/safjnest/lol/utils/ChampionUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
+| [spring/lol/service/CacheInvalidationService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/CacheInvalidationService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ChampionAnalyzer.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ChampionAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ChampionBuildEngine.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ChampionBuildEngine.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ChampionService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ChampionService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ChampionTierAnalyzer.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ChampionTierAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/CompetitiveService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/CompetitiveService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/LeaderboardService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/LeaderboardService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/MasteryService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/MasteryService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
+| [spring/lol/service/MatchService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/MatchService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
+| [spring/lol/service/MatchupRankingAnalyzer.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/MatchupRankingAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ProfileAnalyzer.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ProfileRecordAnalyzer.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileRecordAnalyzer.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ProfileRecordService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileRecordService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/ProfileService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileService.java) | Spring | Dominio/calcolo/persistenza/proiezione o invalidazione LoL |
+| [spring/lol/service/RankService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/RankService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
+| [spring/lol/service/StaticDataService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/StaticDataService.java) | R4J + client | Acquisizione/cache statica in R4J; consumatori tramite contratto |
+| [spring/lol/service/SummonerService.java](../../../src/main/java/com/safjnest/spring/spring/lol/service/SummonerService.java) | Spring + split R4J | Writer/read-through dominio in Spring; acquisizione SDK in R4J |
+| [spring/lol/tracker/Tracker.java](../../../src/main/java/com/safjnest/spring/spring/lol/tracker/Tracker.java) | Spring | Tracking/completamento dati; fetch mediante client R4J |
+| [spring/lol/tracker/TrackerScheduler.java](../../../src/main/java/com/safjnest/spring/spring/lol/tracker/TrackerScheduler.java) | Spring | Tracking/completamento dati; fetch mediante client R4J |
+| [spring/lol/utils/AugmentUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/AugmentUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/BuildUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/BuildUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
+| [spring/lol/utils/ChampionBuildTimelineUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/ChampionBuildTimelineUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/ChampionUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/ChampionUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
 | [com/R4B/lol/FilterCodec.java](../../../src/main/java/com/R4B/lol/FilterCodec.java) | R4B estratto | Helper puro unico; consumatori migrati |
-| [lol/utils/GameQueueTypeUtils.java](../../../src/main/java/com/safjnest/lol/utils/GameQueueTypeUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
-| [lol/utils/ItemUtils.java](../../../src/main/java/com/safjnest/lol/utils/ItemUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/GameQueueTypeUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/GameQueueTypeUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
+| [spring/lol/utils/ItemUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/ItemUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [com/R4B/lol/KdaUtils.java](../../../src/main/java/com/R4B/lol/KdaUtils.java) | R4B estratto | Helper puro unico; consumatori migrati |
-| [lol/utils/LaneTypeUtils.java](../../../src/main/java/com/safjnest/lol/utils/LaneTypeUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
-| [lol/utils/LeagueConstants.java](../../../src/main/java/com/safjnest/lol/utils/LeagueConstants.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
-| [lol/utils/LeagueMessageUtils.java](../../../src/main/java/com/safjnest/lol/utils/LeagueMessageUtils.java) | Bbot + split | Rendering bot; dipendenze dati da remotizzare |
-| [lol/utils/LeagueShardUtils.java](../../../src/main/java/com/safjnest/lol/utils/LeagueShardUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
-| [lol/utils/MatchMemoryUtils.java](../../../src/main/java/com/safjnest/lol/utils/MatchMemoryUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/MatchUtils.java](../../../src/main/java/com/safjnest/lol/utils/MatchUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/MatchupTimelineUtils.java](../../../src/main/java/com/safjnest/lol/utils/MatchupTimelineUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/LaneTypeUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/LaneTypeUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
+| [spring/lol/utils/LeagueConstants.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/LeagueConstants.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
+| [spring/lol/utils/LeagueMessageUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/LeagueMessageUtils.java) | Bbot + split | Rendering bot; dipendenze dati da remotizzare |
+| [spring/lol/utils/LeagueShardUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/LeagueShardUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
+| [spring/lol/utils/MatchMemoryUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/MatchMemoryUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/MatchUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/MatchUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/MatchupTimelineUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/MatchupTimelineUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 | [com/R4B/lol/NumberUtils.java](../../../src/main/java/com/R4B/lol/NumberUtils.java) | R4B estratto | Helper puro unico; consumatori migrati |
-| [lol/utils/OPTUtils.java](../../../src/main/java/com/safjnest/lol/utils/OPTUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/ParticipantBuildCodec.java](../../../src/main/java/com/safjnest/lol/utils/ParticipantBuildCodec.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/PatchUtils.java](../../../src/main/java/com/safjnest/lol/utils/PatchUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
-| [lol/utils/RankProgressUtils.java](../../../src/main/java/com/safjnest/lol/utils/RankProgressUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
-| [lol/utils/SeasonUtils.java](../../../src/main/java/com/safjnest/lol/utils/SeasonUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
-| [lol/utils/TierDivisionUtils.java](../../../src/main/java/com/safjnest/lol/utils/TierDivisionUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
-| [lol/utils/TierMathUtils.java](../../../src/main/java/com/safjnest/lol/utils/TierMathUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/OPTUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/OPTUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/ParticipantBuildCodec.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/ParticipantBuildCodec.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/PatchUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/PatchUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
+| [spring/lol/utils/RankProgressUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/RankProgressUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
+| [spring/lol/utils/SeasonUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/SeasonUtils.java) | Da qualificare | Riuso delle sole parti pure richieste; nessun utils globale |
+| [spring/lol/utils/TierDivisionUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/TierDivisionUtils.java) | Da separare | Semantica/calcolo, SDK/statici e presentazione mescolati |
+| [spring/lol/utils/TierMathUtils.java](../../../src/main/java/com/safjnest/spring/spring/lol/utils/TierMathUtils.java) | Spring | Calcolo/parser/normalizzazione/gestione memoria interni |
 
 ## model — 35 file
 
@@ -402,12 +402,12 @@ nell'inventario per area, non sono destinati al comune per default.
 
 | File attuale | Destinazione proposta | Azione/confine |
 |---|---|---|
-| [nosql/AbstractEntity.java](../../../src/main/java/com/safjnest/nosql/AbstractEntity.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
-| [nosql/MongoCommandMonitor.java](../../../src/main/java/com/safjnest/nosql/MongoCommandMonitor.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
-| [nosql/MongoDB.java](../../../src/main/java/com/safjnest/nosql/MongoDB.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
-| [nosql/MongoMigration.java](../../../src/main/java/com/safjnest/nosql/MongoMigration.java) | Tooling migration | MariaDB → Mongo; fuori dal runtime comune |
-| [nosql/MongoServerStatusSnapshot.java](../../../src/main/java/com/safjnest/nosql/MongoServerStatusSnapshot.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
-| [nosql/NoSqlEntityExecutor.java](../../../src/main/java/com/safjnest/nosql/NoSqlEntityExecutor.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
+| [nosql/AbstractEntity.java](../../../src/main/java/com/safjnest/spring/nosql/AbstractEntity.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
+| [nosql/MongoCommandMonitor.java](../../../src/main/java/com/safjnest/spring/nosql/MongoCommandMonitor.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
+| [nosql/MongoDB.java](../../../src/main/java/com/safjnest/spring/nosql/MongoDB.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
+| [nosql/MongoMigration.java](../../../src/main/java/com/safjnest/spring/nosql/MongoMigration.java) | Tooling migration | MariaDB → Mongo; fuori dal runtime comune |
+| [nosql/MongoServerStatusSnapshot.java](../../../src/main/java/com/safjnest/spring/nosql/MongoServerStatusSnapshot.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
+| [nosql/NoSqlEntityExecutor.java](../../../src/main/java/com/safjnest/spring/nosql/NoSqlEntityExecutor.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
 
 ## org.voicerss.tts — 10 file
 
@@ -467,12 +467,12 @@ nell'inventario per area, non sono destinati al comune per default.
 
 | File attuale | Destinazione proposta | Azione/confine |
 |---|---|---|
-| [status/LeagueMetricsStore.java](../../../src/main/java/com/safjnest/status/LeagueMetricsStore.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
-| [status/MongoMetricsSampler.java](../../../src/main/java/com/safjnest/status/MongoMetricsSampler.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
-| [status/SampledMetrics.java](../../../src/main/java/com/safjnest/status/SampledMetrics.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
-| [status/StatusRates.java](../../../src/main/java/com/safjnest/status/StatusRates.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
-| [status/StatusService.java](../../../src/main/java/com/safjnest/status/StatusService.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
-| [status/SystemMetricsSampler.java](../../../src/main/java/com/safjnest/status/SystemMetricsSampler.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
+| [status/LeagueMetricsStore.java](../../../src/main/java/com/safjnest/spring/status/LeagueMetricsStore.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
+| [status/MongoMetricsSampler.java](../../../src/main/java/com/safjnest/spring/status/MongoMetricsSampler.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
+| [status/SampledMetrics.java](../../../src/main/java/com/safjnest/spring/status/SampledMetrics.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
+| [status/StatusRates.java](../../../src/main/java/com/safjnest/spring/status/StatusRates.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
+| [status/StatusService.java](../../../src/main/java/com/safjnest/spring/status/StatusService.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
+| [status/SystemMetricsSampler.java](../../../src/main/java/com/safjnest/spring/status/SystemMetricsSampler.java) | Locale + Spring | Sampling locale e aggregazione esplicita; non DTO/core job |
 
 ## utils — 26 file
 
@@ -518,33 +518,33 @@ di indipendenza operativa o chiusura transitive del contratto.
 |---|---|
 | `ActivityFilter.java` | — |
 | `ApiResult.java` | — |
-| `Augment.java` | `com.safjnest.lol.utils.AugmentUtils` |
-| `Build.java` | `com.R4B.api.dto.RuneSignature`; `com.safjnest.lol.utils.BuildUtils`; `com.safjnest.utils.JsonCodec` |
+| `Augment.java` | `com.safjnest.spring.lol.utils.AugmentUtils` |
+| `Build.java` | `com.R4B.api.dto.RuneSignature`; `com.safjnest.spring.lol.utils.BuildUtils`; `com.safjnest.utils.JsonCodec` |
 | `ChampionIndexable.java` | `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `ChampionStatistics.java` | `com.safjnest.utils.JsonCodec`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `ChampionTierList.java` | `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `ChampionTierSource.java` | — |
 | `ChampionView.java` | — |
-| `Filter.java` | `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType`; `com.safjnest.lol.utils.FilterCodec`; `com.safjnest.lol.utils.NumberUtils`; `com.safjnest.lol.utils.PatchUtils`; `com.safjnest.lol.utils.SeasonUtils` |
+| `Filter.java` | `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType`; `com.safjnest.spring.lol.utils.FilterCodec`; `com.safjnest.spring.lol.utils.NumberUtils`; `com.safjnest.spring.lol.utils.PatchUtils`; `com.safjnest.spring.lol.utils.SeasonUtils` |
 | `PlayerChampionStats.java` | — |
 | `ProfileIndexable.java` | — |
 | `ResponseMetadata.java` | — |
 | `competitive/CompetitiveEntry.java` | `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `leaderboard/LeaderboardDistribution.java` | — |
 | `leaderboard/LeaderboardPage.java` | — |
-| `match/LiveGame.java` | `com.R4B.api.dto.RuneSignature`; `com.safjnest.lol.utils.ChampionUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameModeType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameType`; `no.stelar7.api.r4j.basic.constants.types.lol.MapType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.pojo.lol.shared.BannedChampion`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant` |
-| `match/Match.java` | `org.json.JSONObject`; `com.safjnest.nosql.AbstractEntity`; `com.safjnest.lol.tracker.Tracker`; `com.safjnest.lol.utils.NumberUtils`; `com.safjnest.lol.utils.PatchUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType`; `no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch` |
+| `match/LiveGame.java` | `com.R4B.api.dto.RuneSignature`; `com.safjnest.spring.lol.utils.ChampionUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameModeType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.GameType`; `no.stelar7.api.r4j.basic.constants.types.lol.MapType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.pojo.lol.shared.BannedChampion`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo`; `no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant` |
+| `match/Match.java` | `org.json.JSONObject`; `com.safjnest.spring.nosql.AbstractEntity`; `com.safjnest.spring.lol.tracker.Tracker`; `com.safjnest.spring.lol.utils.NumberUtils`; `com.safjnest.spring.lol.utils.PatchUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType`; `no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch` |
 | `match/MatchOrder.java` | — |
 | `match/MatchPage.java` | — |
 | `match/MatchResult.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
 | `match/Participant.java` | `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
 | `match/RankHistory.java` | — |
-| `match/RankHistoryMatch.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `com.safjnest.lol.utils.LaneTypeUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
+| `match/RankHistoryMatch.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `com.safjnest.spring.lol.utils.LaneTypeUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
 | `match/RankHistoryMetadata.java` | — |
 | `match/RankHistoryQuery.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType` |
 | `match/RankHistoryView.java` | — |
 | `match/RankProgress.java` | `no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType` |
-| `record/ProfileRecord.java` | `com.safjnest.lol.utils.TierDivisionUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
+| `record/ProfileRecord.java` | `com.safjnest.spring.lol.utils.TierDivisionUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
 | `record/ProfileRecordPage.java` | — |
 | `record/RecordMetric.java` | — |
 | `record/RecordOrder.java` | — |
@@ -557,20 +557,20 @@ di indipendenza operativa o chiusura transitive del contratto.
 | `statistics/ChampionStatsDocument.java` | — |
 | `statistics/ProfileActivity.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType` |
 | `statistics/ProfileMatchupLeaf.java` | — |
-| `statistics/ProfileMatchups.java` | `com.safjnest.lol.utils.MatchupTimelineUtils`; `com.safjnest.lol.utils.MatchupTimelineUtils.Data`; `com.safjnest.lol.utils.MatchupTimelineUtils.Snapshot`; `com.safjnest.lol.utils.GameQueueTypeUtils`; `com.safjnest.lol.utils.KdaUtils`; `com.safjnest.lol.utils.LaneTypeUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
-| `statistics/ProfileStatistics.java` | `com.safjnest.lol.utils.GameQueueTypeUtils`; `com.safjnest.lol.utils.KdaUtils`; `com.safjnest.lol.utils.OPTUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType` |
+| `statistics/ProfileMatchups.java` | `com.safjnest.spring.lol.utils.MatchupTimelineUtils`; `com.safjnest.spring.lol.utils.MatchupTimelineUtils.Data`; `com.safjnest.spring.lol.utils.MatchupTimelineUtils.Snapshot`; `com.safjnest.spring.lol.utils.GameQueueTypeUtils`; `com.safjnest.spring.lol.utils.KdaUtils`; `com.safjnest.spring.lol.utils.LaneTypeUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType` |
+| `statistics/ProfileStatistics.java` | `com.safjnest.spring.lol.utils.GameQueueTypeUtils`; `com.safjnest.spring.lol.utils.KdaUtils`; `com.safjnest.spring.lol.utils.OPTUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.LaneType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType` |
 | `statistics/ProfileStatisticsRow.java` | — |
 | `statistics/shared/ChampionLeafStats.java` | — |
 | `statistics/shared/ChampionNode.java` | — |
-| `statistics/shared/ChampionStatsScope.java` | `com.safjnest.lol.utils.FilterCodec`; `com.safjnest.lol.utils.PatchUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType` |
+| `statistics/shared/ChampionStatsScope.java` | `com.safjnest.spring.lol.utils.FilterCodec`; `com.safjnest.spring.lol.utils.PatchUtils`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType`; `no.stelar7.api.r4j.basic.constants.types.lol.TierType` |
 | `statistics/shared/LeafStats.java` | — |
 | `statistics/shared/MatchupStats.java` | — |
-| `statistics/shared/ProfileLeafStats.java` | `com.safjnest.lol.utils.KdaUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
+| `statistics/shared/ProfileLeafStats.java` | `com.safjnest.spring.lol.utils.KdaUtils`; `no.stelar7.api.r4j.basic.constants.types.lol.TeamType` |
 | `statistics/shared/TrendStats.java` | — |
 | `statistics/shared/WinLossStats.java` | — |
 | `status/BotStatus.java` | — |
 | `status/JobProgress.java` | — |
-| `status/JobStatus.java` | `com.safjnest.lol.queue.job.JobPriority`; `com.safjnest.lol.queue.job.JobState` |
+| `status/JobStatus.java` | `com.safjnest.spring.lol.queue.job.JobPriority`; `com.safjnest.spring.lol.queue.job.JobState` |
 | `status/JvmMetrics.java` | — |
 | `status/LeagueMetrics.java` | — |
 | `status/MongoCollectionPerformance.java` | — |
@@ -584,15 +584,15 @@ di indipendenza operativa o chiusura transitive del contratto.
 | `status/MongoSlowOperation.java` | — |
 | `status/QueueStatus.java` | — |
 | `status/RedisMetrics.java` | — |
-| `status/RunStatus.java` | `com.safjnest.lol.queue.job.JobState` |
+| `status/RunStatus.java` | `com.safjnest.spring.lol.queue.job.JobState` |
 | `status/SchedulerStatus.java` | — |
 | `status/SystemMetrics.java` | — |
-| `status/WorkerStatus.java` | `com.safjnest.lol.queue.worker.WorkerState` |
+| `status/WorkerStatus.java` | `com.safjnest.spring.lol.queue.worker.WorkerState` |
 | `summoner/Mastery.java` | — |
 | `summoner/Rank.java` | `no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType` |
-| `summoner/Summoner.java` | `com.safjnest.lol.utils.GameQueueTypeUtils`; `com.safjnest.nosql.AbstractEntity`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType` |
+| `summoner/Summoner.java` | `com.safjnest.spring.lol.utils.GameQueueTypeUtils`; `com.safjnest.spring.nosql.AbstractEntity`; `no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard`; `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType` |
 | `summoner/SummonerLeaderboard.java` | — |
-| `summoner/SummonerOverview.java` | `com.safjnest.lol.utils.ChampionUtils` |
+| `summoner/SummonerOverview.java` | `com.safjnest.spring.lol.utils.ChampionUtils` |
 | `summoner/SummonerView.java` | `no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType` |
 
 ## Aggiunte Hive rispetto al census baseline

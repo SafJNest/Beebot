@@ -1,6 +1,6 @@
 package com.safjnest.spring.config;
 
-import com.safjnest.lol.service.SummonerProjection;
+import com.safjnest.spring.lol.service.SummonerProjection;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

@@ -18,7 +18,7 @@ Profile statistics and champion statistics/builds are expensive Mongo calculatio
 
 ## Decision
 
-`DatabaseTracker`, under `com.safjnest.lol.queue`, owns asynchronous database
+`DatabaseTracker`, under the historical `com.safjnest.lol.queue` package, owns asynchronous database
 calculation dispatch. It extends `AbstractQueueScheduler` and configures:
 
 - fixed channels `PROFILE` and `CHAMPION`, each with shared priority lanes

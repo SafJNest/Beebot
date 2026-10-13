@@ -6,10 +6,10 @@ import java.util.Collections;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.message.LeagueMessage;
-import com.safjnest.lol.message.LeagueMessageParameter;
-import com.safjnest.lol.message.LeagueMessageType;
+import com.safjnest.spring.lol.LeagueHandler;
+import com.safjnest.spring.lol.message.LeagueMessage;
+import com.safjnest.spring.lol.message.LeagueMessageParameter;
+import com.safjnest.spring.lol.message.LeagueMessageType;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 

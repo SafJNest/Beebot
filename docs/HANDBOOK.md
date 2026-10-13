@@ -60,7 +60,7 @@ Quick Style Rules (from `AGENTS.md`):
 **Runtime LoL:** MongoDB is the sole runtime storage (`beebot` / `beebot_test` with `App.isTesting()`). MariaDB only for `MongoMigration` backfill. Redis cache only (no queue/backlog). R4J for Riot.
 
 **Hive scheduling:** JDK-only `com.hive` runtime, composed explicitly by
-`lol.queue.QueueHandler` from App. One registry tracks all monolith schedulers;
+`spring.lol.queue.QueueHandler` from App. One registry tracks all monolith schedulers;
 physical queues/workers remain separate. Sync uses direct execution:
 
 | Dispatcher | Route | Owner |
@@ -102,19 +102,10 @@ com.R4B
 
 com.safjnest
  ├─ commands/, core/   // JDA and bot presentation
- ├─ lol/
- │   ├─ model/         // producer-only storage/computation structures
- │   ├─ service/       // cache + persist + compose + enqueue; analyzers separate
- │   ├─ queue/         // application QueueHandler composition/submission
- │   ├─ scheduler/     // ComputeScheduler, SyncScheduler, domain policies
- │   ├─ tracker/       // Tracker, TrackerScheduler
- │   └─ utils/         // presentation, runtime defaults, static lookup, producer codecs
- ├─ r4j/               // SDK acquisition/conversion and RiotScheduler
- ├─ spring/            // controllers, configuration, exception/status mapping
- ├─ nosql/             // Mongo mapping/writes and application persistence infrastructure
- ├─ redis/             // local Redis keys, pools, caches and metrics
- ├─ sql/               // bot persistence and LeagueDB migration-only
- └─ status/            // sampling and operational response production
+ ├─ spring/            // public API, LoL domain, tracker, Mongo and status
+ ├─ s4b/               // Riot SDK acquisition/conversion and RiotScheduler only
+ ├─ redis/             // shared low-level Redis client for the monolith tranche
+ └─ sql/               // bot persistence and LeagueDB migration-only
 ```
 
 **Class/method names (binding conventions):**
@@ -242,10 +233,10 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
      }
    }
    ```
-4. **Message/embed:** add `LeagueMessageType.MYCOMMAND` + handler in `lol/message/LeagueMessage.java` — reuse existing `LeagueEventHandler`, do not duplicate rendering. If new embed: extend `LeagueMessage` following the `SummonerProfile` pattern (fields already present in `SummonerView`, do not automatically expose every new aggregate field).
+4. **Message/embed:** add `LeagueMessageType.MYCOMMAND` + handler in `spring/lol/message/LeagueMessage.java` — reuse existing `LeagueEventHandler`, do not duplicate rendering. If new embed: extend `LeagueMessage` following the `SummonerProfile` pattern (fields already present in `SummonerView`, do not automatically expose every new aggregate field).
 5. **Autocomplete/search:** reuse `SummonerService.search/autocomplete` (Redis `SUMMONER_SEARCH`, max 25).
 6. **Check RAM/weight:** each command lives in memory as a `SlashCommand` singleton; options < 25. No new thread — `deferReply` + async `LeagueMessage`.
-7. **Test:** `src/test/java/com/safjnest/lol/message/LeagueMessageOpggTitleTest.java` as reference + manual `!mycommand` on test guild.
+7. **Test:** `src/test/java/com/safjnest/spring/spring/lol/message/LeagueMessageOpggTitleTest.java` as reference + manual `!mycommand` on test guild.
 
 **Antipattern:** do not call `R4J` directly from the command; do not create `SummonerDocument`; do not put computation logic in the command — delegate to `lol/service`.
 
@@ -281,7 +272,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
    ```
    - Validation **always** via `LolApiParameters.*` (case-insensitive enum + `trim()`, patch regex `\d+\.\d+`, cross-validation of view/season/patch/time).
    - Paginated: build `ResponseMetadata(new Pagination(null,null,limit,offset,total,null,hasMore), lastUpdate, refresh, filter)` + `page.withMetadata(metadata)`.
-3. **Service:** create `lol/service/MyService.java` with layout `constants → fields/ctors → public → //==== → private`. No `@Service` DI — `new MyService()` in the controller.
+3. **Service:** create `spring/lol/service/MyService.java` with layout `constants → fields/ctors → public → //==== → private`. No `@Service` DI — `new MyService()` in the controller.
 4. **Jackson:** if the new model needs a `MixIn`, register it in `LolApiConfig.configureMessageConverters` (already ignores `ChampionStatistics.filter`, etc.).
 5. **Errors:** do not create success DTOs; only `LolApiError(status,code,message,metadata)` for `202/400/404`. Exceptions via `ResponseStatusException`.
 6. **Docs:** add `docs/api/<scope>/my.md` with the template (endpoint + curl + params + 200 JSON + alt states + owner file:line). Update `docs/api/lol-api.md` index + `docs/architecture/README.md` if new ADR.
@@ -297,7 +288,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 
 **Steps:**
 
-1. **Create `src/main/java/com/safjnest/lol/service/MyService.java`:**
+1. **Create `src/main/java/com/safjnest/spring/spring/lol/service/MyService.java`:**
    ```java
    public final class MyService {
      // 1. constants
@@ -490,7 +481,7 @@ Same for `SUMMONER_ACTIVITY`, `SUMMONER_MATCHUPS`, `SUMMONER_OVERVIEW`, `SUMMONE
 **Steps:**
 
 1. **Define identity:** `puuid + filter.toSummonerKey()` (or `puuid+metric` for `profile_records`). Document in `docs/architecture/profile-statistics-source-of-truth.md`.
-2. **Create pure Analyzer `lol/service/MyAnalyzer.java`:**
+2. **Create pure Analyzer `spring/lol/service/MyAnalyzer.java`:**
    ```java
    public final class MyAnalyzer {
      private MyAnalyzer(){}
@@ -550,7 +541,7 @@ Profile leaves expose `D` and `F` spell-cast maps whose values sum to `d` and `f
 
 **Steps:**
 
-1. **Add in `lol/tracker/TrackerScheduler.java`:**
+1. **Add in `spring/lol/tracker/TrackerScheduler.java`:**
    ```java
    ChronoTask myTask = TrackerScheduler::myJob;
    myTask.scheduleAtFixedRate(0, TimeConstant.MINUTE*10, TimeUnit.MILLISECONDS);
@@ -713,11 +704,11 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 
 - `src/main/java/com/R4B/api/dto/Filter.java`
 - `src/main/java/com/R4B/api/dto/statistics/ProfileStatistics.java`
-- `src/main/java/com/safjnest/lol/service/ProfileService.java` + `ProfileAnalyzer.java`
-- `src/main/java/com/safjnest/nosql/MongoDB.java` + `MongoMigration.java`
-- `src/main/java/com/safjnest/lol/queue/QueueHandler.java` + `com/hive/`
-- `src/main/java/com/safjnest/lol/scheduler/ComputeScheduler.java` + `SyncScheduler.java`
-- `src/main/java/com/safjnest/r4j/scheduler/RiotScheduler.java`
+- `src/main/java/com/safjnest/spring/spring/lol/service/ProfileService.java` + `ProfileAnalyzer.java`
+- `src/main/java/com/safjnest/spring/nosql/MongoDB.java` + `MongoMigration.java`
+- `src/main/java/com/safjnest/spring/spring/lol/queue/QueueHandler.java` + `com/hive/`
+- `src/main/java/com/safjnest/spring/spring/lol/scheduler/ComputeScheduler.java` + `SyncScheduler.java`
+- `src/main/java/com/safjnest/s4b/scheduler/RiotScheduler.java`
 - `src/main/java/com/safjnest/redis/RedisKey.java` + `RedisClient.java`
 - `src/main/java/com/safjnest/spring/controller/LolController.java` + `LolApiParameters.java` + `LolApiResponses.java`
 - `docs/architecture/profile-statistics-source-of-truth.md`

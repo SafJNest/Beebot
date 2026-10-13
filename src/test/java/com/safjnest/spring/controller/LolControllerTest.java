@@ -1,6 +1,6 @@
 package com.safjnest.spring.controller;
 
-import com.safjnest.lol.service.FilterDefaults;
+import com.safjnest.spring.lol.service.FilterDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -19,7 +19,7 @@ import com.R4B.api.dto.Filter;
 import com.R4B.api.dto.ResponseMetadata;
 import com.R4B.api.dto.statistics.ProfileMatchups;
 import com.R4B.lol.*;
-import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.spring.lol.utils.SeasonUtils;
 
 public class LolControllerTest {
 

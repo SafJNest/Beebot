@@ -6,6 +6,15 @@
 - Scope: analisi iniziale sul branch `beebot-servicies`
 - Implementation: Hive accettato separatamente in ADR-0017; contratti R4B accettati separatamente in ADR-0018. Processi, client HTTP e moduli applicativi restano proposti.
 
+## Decisione di ownership e package 2026-10-13
+
+L'ownership è confermata dall'utente: Bbot conserva i domini Discord; Spring
+possiede API LoL, dominio, tracker, Mongo e proiezioni; S4B possiede solo
+acquisizione Riot, SDK, routing, rate protection, queue Riot e cache raw Riot.
+Nel monolite i package applicativi Spring vivono sotto
+`com.safjnest.spring`; S4B resta sotto `com.safjnest.s4b`. Questa decisione
+non anticipa client HTTP, bootstrap o processi separati, che restano proposti.
+
 ## Contesto
 
 Il monolite avvia Discord, Spring, Riot scheduling, Mongo, Redis e calcoli LoL

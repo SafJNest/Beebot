@@ -6,12 +6,12 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.queue.QueueHandler;
-import com.safjnest.lol.service.LeaderboardService;
+import com.safjnest.spring.lol.queue.QueueHandler;
+import com.safjnest.spring.lol.service.LeaderboardService;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.nosql.MongoDB;
+import com.safjnest.spring.nosql.MongoDB;
 import com.safjnest.spring.SpringServer;
-import com.safjnest.status.SystemMetricsSampler;
+import com.safjnest.spring.status.SystemMetricsSampler;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;

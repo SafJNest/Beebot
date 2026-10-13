@@ -6,7 +6,7 @@ import com.R4B.lol.*;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.spring.lol.utils.LeagueShardUtils;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;

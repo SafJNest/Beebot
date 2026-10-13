@@ -5,6 +5,14 @@
 - Date: 2026-07-17
 - Approved: 2026-07-18, main-agent approval after the full implementation request
 
+## Amendment 2026-10-13: Spring package ownership
+
+Spring owns LoL domain services, tracking, Mongo persistence and public API
+composition under `com.safjnest.spring`. S4B owns Riot acquisition only and
+does not persist Mongo or apply LoL tracking/domain policy. This changes Java
+package ownership only; Mongo schemas, writers, API payloads and job behavior
+remain governed by the decisions below.
+
 ## Amendment 2026-07-27
 
 The `match` document uses the full Riot match ID directly in `_id` and `region` as the sole shard field. `fullGameId`, `gameId`, `game_id` and `leagueShard` are mapping residues and are not persisted. `patch` keeps the full version, while `patchMajor` keeps the first two segments, for example `14.2`, and is the field used by Mongo filters. The `raw-v6-match-schema` migration also normalizes already present matches without rewriting participants or events. The HTTP contract remains unchanged: `Match` continues to be the canonical response model.
@@ -121,7 +129,9 @@ Mongo will use:
 `ProfileService` are the LoL cache-aware runtime boundaries (ADR-0011 / ADR-0012).
 Runtime Mongo persistence is exposed directly via `MongoDB`; `LeagueDB` is confined to the migration read path.
 
-Spring continues to own only controllers, HTTP configuration and error models. `QueryRecord` is the common projection container; complex objects use the already existing LoL models.
+Spring owns controllers, HTTP configuration, error models, domain services,
+tracking and Mongo persistence. `QueryRecord` is the common projection
+container; complex objects use the already existing LoL models.
 
 ## Serialization rules
 

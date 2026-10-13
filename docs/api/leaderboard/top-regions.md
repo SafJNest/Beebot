@@ -50,5 +50,5 @@ Mongo snapshot `leaderboard_aggregates` or regenerated from `competitive`.
 ## Owner
 
 - Controller: [`LeaderboardController`](../../../src/main/java/com/safjnest/spring/controller/LeaderboardController.java)
-- Service: [`LeaderboardService`](../../../src/main/java/com/safjnest/lol/service/LeaderboardService.java)
+- Service: [`LeaderboardService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/LeaderboardService.java)
 - Success model: [`LeaderboardDistribution`](../../../src/main/java/com/R4B/api/dto/leaderboard/LeaderboardDistribution.java)

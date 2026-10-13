@@ -1,0 +1,202 @@
+package com.safjnest.spring.lol.service;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+import java.util.Map;
+
+import org.json.JSONObject;
+import org.junit.Test;
+
+import com.safjnest.spring.lol.champion.ChampionStatsData;
+import com.R4B.api.dto.ChampionStatistics;
+import com.R4B.api.dto.Filter;
+import com.R4B.lol.*;
+import com.safjnest.spring.lol.model.statistics.ChampionStatsDocument;
+import com.safjnest.spring.lol.model.statistics.shared.ChampionLeafStats;
+import com.safjnest.spring.lol.model.statistics.shared.ChampionNode;
+import com.safjnest.spring.lol.model.statistics.shared.ChampionStatsScope;
+import com.safjnest.spring.lol.model.statistics.shared.MatchupStats;
+
+public class ChampionAnalyzerTest {
+
+    @Test
+    public void greaterOrEqualMatrixBucketIncludesHigherRanks() {
+        ChampionStatsData.RawMatch match = rawMatch(LeagueShard.EUW1, TierType.CHALLENGER);
+        Filter emerald = filter(LeagueShard.EUW1, TierType.EMERALD);
+        Filter challenger = filter(LeagueShard.EUW1, TierType.CHALLENGER);
+
+        assertTrue(ChampionAnalyzer.matchesMatrixFilter(emerald, match));
+        assertTrue(ChampionAnalyzer.matchesMatrixFilter(challenger, match));
+    }
+
+    @Test
+    public void matrixBucketRejectsLowerRanksAndOtherRegions() {
+        ChampionStatsData.RawMatch goldMatch = rawMatch(LeagueShard.EUW1, TierType.GOLD);
+        Filter diamond = filter(LeagueShard.EUW1, TierType.DIAMOND);
+        Filter euw = filter(LeagueShard.EUW1, TierType.EMERALD);
+        Filter na = filter(LeagueShard.NA1, TierType.EMERALD);
+
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(diamond, goldMatch));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(euw, goldMatch));
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(na, goldMatch));
+    }
+
+    @Test
+    public void exactRankBucketDoesNotAccumulateHigherRanks() {
+        ChampionStatsData.RawMatch match = rawMatch(LeagueShard.EUW1, TierType.CHALLENGER);
+        Filter exactMaster = filter(LeagueShard.EUW1, TierType.MASTER)
+            .setRankBehavior(Filter.RankBehavior.EXACT);
+
+        assertFalse(ChampionAnalyzer.matchesMatrixFilter(exactMaster, match));
+    }
+
+    @Test
+    public void skipsChampionStatsMatchWithoutTimeline() {
+        ChampionStatsData.RawMatch match = new ChampionStatsData.RawMatch("EUW1_2",
+            new ChampionStatsData.MatchMeta(Map.of(), null, 1, 2, LeagueShard.EUW1, TierType.EMERALD),
+            List.of(new ChampionStatsData.RawParticipant(10, LaneType.TOP, true, TeamType.BLUE,
+                "EUW1_2", "1/0/0", 100, 10_000, "player")));
+
+        assertNull(ChampionAnalyzer.parse(match));
+    }
+
+    @Test
+    public void rawBucketsRollUpRankAndRegionWithoutChampionIdCollisions() {
+        ChampionAnalyzer.RawMatrix raw = new ChampionAnalyzer.RawMatrix();
+        raw.addBase(game("EUW_GOLD", true), metadata(LeagueShard.EUW1, TierType.GOLD));
+        raw.addBase(game("EUW_MASTER", false), metadata(LeagueShard.EUW1, TierType.MASTER));
+        raw.addBase(game("NA_MASTER", true), metadata(LeagueShard.NA1, TierType.MASTER));
+
+        ChampionAnalyzer.RawProjection globalGold = raw.project(filter(null, TierType.GOLD));
+        ChampionAnalyzer.RawProjection euwGold = raw.project(filter(LeagueShard.EUW1, TierType.GOLD));
+        ChampionAnalyzer.RawProjection euwDiamond = raw.project(filter(LeagueShard.EUW1, TierType.DIAMOND));
+
+        assertEquals(3, globalGold.totalGames());
+        assertEquals(3, globalGold.pickWin().get(10)[0]);
+        assertEquals(2, euwGold.totalGames());
+        assertEquals(2, euwGold.pickWin().get(10)[0]);
+        assertEquals(1, euwDiamond.totalGames());
+        assertEquals(1, euwDiamond.pickWin().get(10)[0]);
+        assertTrue(globalGold.matchupRaw().get(10).containsKey(999_999));
+        assertTrue(globalGold.synergyRaw().get(20).keySet().stream()
+            .anyMatch(value -> value.champion() == 30 && value.lane() == LaneType.UTILITY));
+    }
+
+    @Test
+    public void rawBucketsKeepNullLaneAndRealLaneSeparate() {
+        ChampionAnalyzer.RawMatrix raw = new ChampionAnalyzer.RawMatrix();
+        ChampionStatsData.Game game = new ChampionStatsData.Game("EUW_NULL", Map.of(), 0, 600_000,
+            List.of(
+                player(10, LaneType.TOP, true, TeamType.BLUE),
+                player(999_999, LaneType.TOP, false, TeamType.RED),
+                player(777_777, null, true, TeamType.BLUE)),
+            new ChampionStatsData.MatchData(Map.of(), Map.of(), false));
+        raw.addBase(game, metadata(LeagueShard.EUW1, TierType.EMERALD));
+
+        ChampionAnalyzer.RawProjection allLanes = raw.project(filter(LeagueShard.EUW1, TierType.EMERALD));
+        ChampionAnalyzer.RawProjection top = raw.project(filter(LeagueShard.EUW1, TierType.EMERALD)
+            .setLane(LaneType.TOP));
+
+        assertEquals(1, allLanes.pickWin().get(777_777)[0]);
+        assertFalse(top.pickWin().containsKey(777_777));
+        assertEquals(1, top.pickWin().get(10)[0]);
+    }
+
+    @Test
+    public void matchupUsesTheOpponentBanRate() {
+        Filter filter = filter(LeagueShard.EUW1, TierType.EMERALD).setChampion(10).setLane(LaneType.TOP);
+        ChampionStatsDocument document = new ChampionStatsDocument(ChampionStatsScope.from(filter), 100, 10, null);
+        ChampionNode champion = new ChampionNode(1);
+        ChampionLeafStats leaf = new ChampionLeafStats();
+        leaf.games = 20;
+        leaf.wins = 12;
+        MatchupStats matchup = new MatchupStats();
+        matchup.games = 8;
+        matchup.wins = 5;
+        leaf.matchups.put(20, matchup);
+        champion.lanes.put(LaneType.TOP.name(), leaf);
+        document.champions.put(10, champion);
+        document.champions.put(20, new ChampionNode(7));
+
+        ChampionStatistics statistics = ChampionAnalyzer.toChampionStatistics(filter, document, champion, leaf);
+
+        assertEquals(0.7, statistics.matchups().get(20).opponentBanRate(), 0.001);
+    }
+
+    @Test
+    public void parsesFifteenMinuteSnapshotAndLaneEventsByPuuid() {
+        List<ChampionStatsData.Player> players = List.of(
+            eventPlayer(10, "own", LaneType.TOP, TeamType.BLUE),
+            eventPlayer(20, "enemy", LaneType.TOP, TeamType.RED)
+        );
+        ChampionStatsData.MatchData data = ChampionAnalyzer.parseEventData(players, new JSONObject("""
+            {
+              "participants":{"1":"own","2":"enemy"},
+              "snapshots":[{"timestamp":899900,"minute":15,"participants":{
+                "1":{"total_gold":5000,"cs":100,"xp":6000,"level":12},
+                "2":{"total_gold":4500,"cs":90,"xp":5500,"level":11}
+              }}],
+              "champion_kills":[
+                {"timestamp":900000,"killer":1,"victim":2,"assists":[]},
+                {"timestamp":900001,"killer":2,"victim":1,"assists":[]}
+              ],
+              "turret_plate_events":[
+                {"timestamp":900000,"killer":0,"team":"BLUE","lane":"TOP"},
+                {"timestamp":900000,"killer":1,"team":"BLUE","lane":"TOP"}
+              ]
+            }
+            """));
+
+        assertEquals(Integer.valueOf(6000), data.snapshots().get("own").xp());
+        assertEquals(Integer.valueOf(12), data.snapshots().get("own").level());
+        assertEquals(1, data.eventMetrics().get("own").killsAt15());
+        assertEquals(0, data.eventMetrics().get("enemy").killsAt15());
+        assertEquals(2, data.eventMetrics().get("own").platesAt15());
+        assertTrue(data.eventMetrics().get("own").available());
+    }
+
+    private static Filter filter(LeagueShard region, TierType rank) {
+        return FilterDefaults.create()
+            .setPatch("15.14")
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+            .setRegion(region)
+            .setRank(rank);
+    }
+
+    private static ChampionStatsData.RawMatch rawMatch(LeagueShard region, TierType rank) {
+        return new ChampionStatsData.RawMatch(
+            "EUW1_1",
+            new ChampionStatsData.MatchMeta(Map.of(), Map.of(), 1, 2, region, rank),
+            List.of());
+    }
+
+    private static ChampionStatsData.MatchMeta metadata(LeagueShard region, TierType rank) {
+        return new ChampionStatsData.MatchMeta(Map.of(), null, 0, 600_000, region, rank);
+    }
+
+    private static ChampionStatsData.Game game(String id, boolean win) {
+        return new ChampionStatsData.Game(id, Map.of(), 0, 600_000,
+            List.of(
+                player(10, LaneType.TOP, win, TeamType.BLUE),
+                player(999_999, LaneType.TOP, !win, TeamType.RED),
+                player(20, LaneType.BOT, win, TeamType.BLUE),
+                player(30, LaneType.UTILITY, win, TeamType.BLUE),
+                player(40, LaneType.BOT, !win, TeamType.RED),
+                player(50, LaneType.UTILITY, !win, TeamType.RED)),
+            new ChampionStatsData.MatchData(Map.of(), Map.of(), false));
+    }
+
+    private static ChampionStatsData.Player player(int champion, LaneType lane, boolean win, TeamType team) {
+        return new ChampionStatsData.Player(champion, lane, win, team, "match", 0, 600_000,
+            "1/2/3", 100, 10_000, String.valueOf(champion));
+    }
+
+    private static ChampionStatsData.Player eventPlayer(int champion, String puuid, LaneType lane, TeamType team) {
+        return new ChampionStatsData.Player(champion, lane, team == TeamType.BLUE, team, "timeline", 0, 1_800_000,
+            "2/1/3", 100, 10_000, puuid);
+    }
+}

@@ -180,7 +180,7 @@ from `coverage.calculatedAt`. If the value is stale, the response remains `200` 
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileService.java)
 - Success model: [`ProfileActivity`](../../../src/main/java/com/R4B/api/dto/statistics/ProfileActivity.java)
-- Match query: [`MongoDB.findProfileStatisticsMatches`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
+- Match query: [`MongoDB.findProfileStatisticsMatches`](../../../src/main/java/com/safjnest/spring/nosql/MongoDB.java)
 - Persistence: Redis `SUMMONER_ACTIVITY(puuid, filterKey)` and Mongo collection `profile_activity` with the same `{ puuid, filterKey }` identity.

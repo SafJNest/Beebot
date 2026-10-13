@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import com.R4B.lol.*;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.lol.client.LolApiClient;
+import com.safjnest.spring.lol.client.LolApiClient;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 

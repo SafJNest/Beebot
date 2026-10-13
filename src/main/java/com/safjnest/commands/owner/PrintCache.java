@@ -12,7 +12,7 @@ import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.spring.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;

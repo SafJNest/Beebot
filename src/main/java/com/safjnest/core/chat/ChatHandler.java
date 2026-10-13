@@ -24,7 +24,7 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import rx.internal.util.SynchronizedQueue;
 
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.spring.lol.utils.ChampionUtils;
 import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.TimeConstant;
 

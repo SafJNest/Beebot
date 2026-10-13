@@ -12,8 +12,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.R4B.api.dto.riot.Item;
 import com.R4B.api.dto.riot.StaticChampion;
 import com.R4B.api.dto.riot.StaticSummonerSpell;
-import com.safjnest.lol.service.StaticDataService;
-import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.spring.lol.service.StaticDataService;
+import com.safjnest.spring.lol.utils.PatchUtils;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.HttpUtils;
 

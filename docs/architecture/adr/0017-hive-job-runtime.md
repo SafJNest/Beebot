@@ -3,6 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-10-10
+- Amended: 2026-10-13 — Spring owns application composition and Compute/Sync; S4B owns RiotScheduler
 - Scope: generic job/queue extraction and current monolith wiring only
 - Supersedes: infrastructure/package and inaccurate compute/progress clauses of ADR-0014; corresponding historical topology clauses of ADR-0010/0011
 
@@ -24,7 +25,7 @@ Registry, Router, schedulers and executors. No core singleton, application
 bootstrap, SDK, database, Redis, Spring, JDA or BotLogger dependency is allowed.
 Loading a class must not start workers or instantiate concrete schedulers.
 
-Keep the application submission facade at `com.safjnest.lol.queue.QueueHandler`.
+Keep the application submission facade at `com.safjnest.spring.lol.queue.QueueHandler`.
 It composes one runtime explicitly from App and rejects submission before
 bootstrap or after shutdown. It delegates to the same infrastructure used by
 standalone Hive instances; there is no second dispatcher. All three monolith
@@ -45,14 +46,14 @@ scheduler lookup; no domain interpretation belongs in the core.
 
 Local implementation destinations, chosen by responsibility:
 
-- `com.safjnest.r4j.scheduler.RiotScheduler`: outbound shard queues, names and
+- `com.safjnest.s4b.scheduler.RiotScheduler`: outbound shard queues, names and
   BotLogger hooks. Existing SDK rate protection and Redis owners stay local.
-- `com.safjnest.lol.scheduler.ComputeScheduler`, `DatabaseWorkerType` and
+- `com.safjnest.spring.lol.scheduler.ComputeScheduler`, `DatabaseWorkerType` and
   `ChampionMatrixRequest`: Mongo/domain placement, heavy champion reservation,
   filter snapshots, merge and compute/persistence calls.
-- `com.safjnest.lol.scheduler.SyncScheduler`: shard/global route policy over
+- `com.safjnest.spring.lol.scheduler.SyncScheduler`: shard/global route policy over
   generic direct virtual-thread execution. Sync has no physical queue.
-- `com.safjnest.status`: application aggregation of generic Hive snapshots.
+- `com.safjnest.spring.status`: application aggregation of generic Hive snapshots.
   Compatibility run classification is the local SyncScheduler projection hook;
   Hive accepts a classifier without interpreting any LoL key.
 

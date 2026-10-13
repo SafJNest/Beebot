@@ -8,18 +8,18 @@
 
 ## Context
 
-Profile, search, leaderboard and match responses currently duplicate domain data in `lol.model`, `spring.dto` and mapper-specific nested records.
+Profile, search, leaderboard and match responses currently duplicate domain data in `spring.lol.model`, `spring.dto` and mapper-specific nested records.
 
 ## Decision
 
-`com.R4B.api.dto` owns shared request, success/error models and serialized components; `com.R4B.lol` owns shared values and pure helpers (ADR-0018). Spring owns controllers, configuration, exception/status mapping, persistence and producer logic. `lol.model` retains producer-only structures.
+`com.R4B.api.dto` owns shared request, success/error models and serialized components; `com.R4B.lol` owns shared values and pure helpers (ADR-0018). Spring owns controllers, configuration, exception/status mapping, persistence and producer logic. `spring.lol.model` retains producer-only structures.
 
 Historical application model packages before ADR-0018 were:
 
-- `lol/model/summoner` for summoner identity, ranks, mastery and views;
-- `lol/model/match` for complete matches, participants and lightweight results;
-- `lol/model/leaderboard` for pages and aggregates;
-- `lol/model/statistics` for reusable statistics aggregates.
+- `spring/lol/model/summoner` for summoner identity, ranks, mastery and views;
+- `spring/lol/model/match` for complete matches, participants and lightweight results;
+- `spring/lol/model/leaderboard` for pages and aggregates;
+- `spring/lol/model/statistics` for reusable statistics aggregates.
 
 Controllers return canonical models directly. A new DTO is allowed only when an accepted ADR documents an HTTP-only concern that cannot belong to the domain model.
 

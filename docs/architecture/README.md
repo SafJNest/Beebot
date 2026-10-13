@@ -7,6 +7,10 @@ This directory is the source of truth for the LoL domain and API refactor.
 The initial analysis for the `beebot-servicies` branch is in
 [`services/README.md`](services/README.md): service boundaries, complete source
 inventory, shared response contracts, generic jobs/queues and extraction plan.
+The S4B service target and its first internal API contract are specified in
+[`services/s4b-service-spec.md`](services/s4b-service-spec.md).
+The corresponding public LoL service boundary is specified in
+[`services/lol-service-spec.md`](services/lol-service-spec.md).
 [ADR-0016](adr/0016-service-boundaries-and-shared-core.md) remains **proposed**
 for separate services, HTTP clients and application modules. Hive is accepted
 under [ADR-0017](adr/0017-hive-job-runtime.md); shared contracts and LoL types
@@ -27,9 +31,10 @@ An agent must report a contradiction. It must not resolve the contradiction by c
 
 Hive has the independent root `com.hive`. R4B has the exact independent roots
 `com.R4B.api.dto` and `com.R4B.lol`. Shared response roots and serialized components belong in R4B,
-while producer-only computation/storage structures remain `com.safjnest.lol.model`.
-Application queue, scheduler, tracker and service code remains `com.safjnest`.
-The current source destinations and SDK conversions are recorded in
+while producer-only computation/storage structures remain `com.safjnest.spring.lol.model`.
+Application API, domain, tracker, Mongo and service code belongs under
+`com.safjnest.spring`; S4B owns only Riot integration. The current source
+destinations and SDK conversions are recorded in
 [`services/r4b-inventory.md`](services/r4b-inventory.md).
 
 ```text
@@ -53,22 +58,22 @@ com/hive/
   Hive, HiveConfig, JobFuture, Registry, Router
   job/, scheduler/, worker/, status/
 
-com/safjnest/lol/
+com/safjnest/spring/lol/
   model/ producer-only storage/computation structures
   service/ producers, analyzers, accumulators, projections, storage codecs, FilterDefaults
-  queue/ QueueHandler
+  queue/ Spring-owned QueueHandler composition/submission
   scheduler/ ComputeScheduler, SyncScheduler, DatabaseWorkerType, ChampionMatrixRequest
   tracker/ Tracker, TrackerScheduler
 
-com/safjnest/r4j/
+com/safjnest/s4b/
   RiotGateway
   scheduler/ RiotScheduler
 
-com/safjnest/nosql/
+com/safjnest/spring/nosql/
   MongoDB, MongoMigration, application persistence infrastructure
   writer/ SummonerWriter, MatchWriter
 
-com/safjnest/status/
+com/safjnest/spring/status/
   sampling and operational response composition
 ```
 
@@ -78,7 +83,7 @@ production. Shared DTOs do not own Mongo operations, dirty tracking, SDK
 conversion, accumulators, static lookup or application defaults. HTTP transport
 serialization preserves the existing exclusions independently of storage.
 `com.hive` owns the JDK-only runtime mechanism and generic status records.
-`lol.queue.QueueHandler` composes one explicitly initialized runtime in App and
+`spring.lol.queue.QueueHandler` composes one explicitly initialized runtime in App and
 is the application's sole submission facade. Independent Hive instances need
 no monolith and share no registry, context or dedup entries. The monolith uses
 one registry across Riot, compute and Sync to retain cross-scheduler trees.
@@ -86,10 +91,10 @@ Physical queues remain scheduler-owned; Sync uses direct execution.
 
 Queue glossary:
 
-- `r4j.scheduler.RiotScheduler`: outbound Riot work, one serial queue per shard;
-- `lol.scheduler.ComputeScheduler`: four serial workers PROFILE, PROFILE_2,
+- `com.safjnest.s4b.scheduler.RiotScheduler`: S4B-owned outbound Riot work, one serial queue per shard;
+- `spring.lol.scheduler.ComputeScheduler`: four serial workers PROFILE, PROFILE_2,
   CHAMPION and MONGO, with domain placement/reservation policy;
-- `lol.scheduler.SyncScheduler`: immediate virtual-thread execution with
+- `spring.lol.scheduler.SyncScheduler`: immediate virtual-thread execution with
   shard/global logical routes and no physical queue.
 
 Routing, priorities and insert-time placement are defined by [ADR-0017](adr/0017-hive-job-runtime.md), preserving local policy from ADR-0010. A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).

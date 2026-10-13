@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.R4B.api.dto.status.BotStatus;
-import com.safjnest.status.StatusService;
+import com.safjnest.spring.status.StatusService;
 
 @RestController
 @RequestMapping("/api")

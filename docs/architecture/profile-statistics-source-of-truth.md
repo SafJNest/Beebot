@@ -580,13 +580,13 @@ Before modifying this flow verify:
 
 - `src/main/java/com/R4B/api/dto/Filter.java`
 - `src/main/java/com/R4B/api/dto/statistics/ProfileStatistics.java`
-- `src/main/java/com/safjnest/lol/service/ProfileService.java`
-- `src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java`
-- `src/main/java/com/safjnest/nosql/MongoDB.java`
-- `src/main/java/com/safjnest/lol/queue/QueueHandler.java` + `lol/queue/scheduler/ComputeScheduler.java`
-- `src/main/java/com/safjnest/lol/tracker/Tracker.java`
-- `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
-- `src/main/java/com/safjnest/lol/message/LeagueMessage.java`
+- `src/main/java/com/safjnest/spring/spring/lol/service/ProfileService.java`
+- `src/main/java/com/safjnest/spring/spring/lol/service/ProfileAnalyzer.java`
+- `src/main/java/com/safjnest/spring/nosql/MongoDB.java`
+- `src/main/java/com/safjnest/spring/spring/lol/queue/QueueHandler.java` + `spring/lol/queue/scheduler/ComputeScheduler.java`
+- `src/main/java/com/safjnest/spring/spring/lol/tracker/Tracker.java`
+- `src/main/java/com/safjnest/spring/spring/lol/message/LeagueMessageParameter.java`
+- `src/main/java/com/safjnest/spring/spring/lol/message/LeagueMessage.java`
 - `src/main/java/com/R4B/api/dto/summoner/SummonerOverview.java`
 - `docs/mongo/01-db-structure.md`
 - `docs/architecture/adr/0004-profile-statistics-refresh-queue.md`

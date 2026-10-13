@@ -47,5 +47,5 @@ synchronous Riot calls.
 ## Owner
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
-- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileService.java)
 - Success model: [`SummonerView`](../../../src/main/java/com/R4B/api/dto/summoner/SummonerView.java)

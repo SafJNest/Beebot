@@ -13,7 +13,7 @@ Champion statistics and builds are already persisted by the existing champion re
 
 ## Decision
 
-Expose `GET /api/lol/champion/{champion}` through `ChampionController` and `ChampionService`.
+Expose `GET /api/spring/lol/champion/{champion}` through `ChampionController` and `ChampionService`.
 
 The request accepts optional `rank`, `region`, `queue` and `role` parameters. Missing rank and region mean that those dimensions are not filtered. Missing queue selects `TEAM_BUILDER_RANKED_SOLO`. A supplied rank keeps the existing minimum-tier behavior of `Filter`.
 

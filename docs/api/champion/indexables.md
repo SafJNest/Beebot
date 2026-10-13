@@ -2,12 +2,12 @@
 
 ## Endpoint
 
-`GET /api/lol/champion/indexables`
+`GET /api/spring/lol/champion/indexables`
 
 ## Fetch
 
 ```bash
-curl 'http://localhost:8080/api/lol/champion/indexables'
+curl 'http://localhost:8080/api/spring/lol/champion/indexables'
 ```
 
 The endpoint accepts no parameters and reads the projection for the current
@@ -60,5 +60,5 @@ saved.
 ## Owner
 
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
-- Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
+- Service: [`ChampionService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/ChampionService.java)
 - Success model: [`ChampionIndexable`](../../../src/main/java/com/R4B/api/dto/ChampionIndexable.java)

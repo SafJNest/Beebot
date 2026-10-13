@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.R4B.api.dto.ProfileIndexable;
-import com.safjnest.lol.service.ProfileService;
+import com.safjnest.spring.lol.service.ProfileService;
 
 @RestController
 @RequestMapping("/api/lol")

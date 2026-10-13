@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-10-10
-- Amended: 2026-10-12 — user-selected lowercase packages `com.R4B.api.dto` / `com.R4B.lol`
+- Amended: 2026-10-13 — S4B owns Riot SDK acquisition and raw Riot cache policy under `com.safjnest.s4b`
 - Scope: shared data contracts, LoL value types/helpers and migration of local consumers
 - Amends: model placement in ADR-0001/0002/0003/0005/0006/0007 and the shared-contract tranche of ADR-0016
 
@@ -16,7 +16,7 @@ enums, constants and service-independent helpers. Only `R4B` remains uppercase. 
 replace the original uppercase roots from the 2026-10-10 brief; source and
 consumer packages follow this later decision. Canonical names such as `Summoner`, `Rank`, `Mastery`, `Match`,
 `Participant` and `SummonerView` remain unique; no parallel aliases or DTO copies
-are retained in `com.safjnest.lol.model`.
+are retained in `com.safjnest.spring.lol.model`.
 
 R4B compiles independently of the monolith, SDK R4J, Spring, JDA, Mongo/BSON,
 Jedis, application loggers and bootstrap. Necessary JSON dependencies are
@@ -29,11 +29,14 @@ duplicate sources.
 
 R4B owns data and pure LoL behavior. The producing application owns Mongo
 reads/writes, dirty tracking, accumulators, response composition, runtime
-defaults, static-data lookup, tracking, cache/rebuild/scheduling policies and
-conversion of stored records. Persistence operations cease to be superclass
-behavior of shared contracts. SDK acquisition and conversion stay under
-`com.safjnest.r4j`; signatures consumed by the other components use independent
-types. Raw acquisition data may have a distinct contract when it represents
+defaults, tracking, domain rebuild/scheduling policies and conversion of stored
+records. S4B owns Riot SDK acquisition, SDK conversion, Riot rate protection,
+Riot acquisition queues and raw Riot cache policy under `com.safjnest.s4b`.
+The current package tranche remains in the Beebot repository, root POM and
+monolith process; the internal HTTP boundary and process extraction are later
+tranches. Persistence operations cease to be superclass behavior of shared
+contracts. Signatures consumed by other components use independent types. Raw
+acquisition data may have a distinct contract when it represents
 different data from an analyzed `Match`; it must not become a competing public
 profile or match model.
 

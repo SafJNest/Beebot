@@ -59,5 +59,5 @@ client can request `GET /profile/{puuid}` again.
 ## Owner
 
 `SummonerService.refreshAsync`, `SummonerService.refresh`,
-`lol.queue.scheduler.RiotScheduler`, `ProfileService` and `lol.queue.scheduler.ComputeScheduler` (via `QueueHandler`). The
+`com.safjnest.s4b.scheduler.RiotScheduler`, `ProfileService` and `lol.queue.scheduler.ComputeScheduler` (via `QueueHandler`). The
 queue package refactor does not change endpoint, payload or presentation.

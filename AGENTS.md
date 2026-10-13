@@ -72,21 +72,21 @@ The separator is the only structural comment required. Remove comments that do n
 - `Participant` is the complete global participant model.
 - `MatchResult` is the lightweight match projection used by lists and overviews.
 
-Use existing R4B enums and helpers before adding pure mapping logic. Application utilities own presentation, runtime defaults and static-data lookup only. SDK objects and conversions belong under `com.safjnest.r4j`; other consumers use independent contracts.
+Use existing R4B enums and helpers before adding pure mapping logic. Application utilities own presentation, runtime defaults and static-data lookup only. SDK objects and conversions belong under `com.safjnest.s4b`; other consumers use independent contracts.
 
 ## Hive job infrastructure
 
 - `com.hive` owns generic jobs, registry, routing, scheduler/worker mechanisms and status records (ADR-0017). It depends only on the JDK. Generic status records are the narrow exception to the LoL success-model package rule.
 - Runtime instances own their registry, scheduler registration and executors explicitly; no core singleton or class-loading bootstrap. All monolith schedulers share the application runtime registry.
-- `lol.queue.QueueHandler` is the application submission facade. Initialize it from App before API/tracker admission; submission must not initialize a runtime implicitly.
-- Riot adapters live in `r4j.scheduler`; compute and Sync adapters in `lol.scheduler`. Domain route, placement, matrix/build merge, logging, SDK/Redis/Mongo ownership and run classification stay outside Hive.
+- `spring.lol.queue.QueueHandler` is the Spring application submission facade. Initialize it from App before API/tracker admission; submission must not initialize a runtime implicitly.
+- Riot adapters live in `s4b.scheduler`; Compute, Sync, tracker and domain code live under `spring.lol`. Spring composes the monolith Hive registry per ADR-0017. S4B owns only Riot SDK access, Riot scheduling and Riot acquisition/cache policy; Spring owns Mongo, public APIs, domain calculations, tracking and domain projections. Hive remains domain-independent.
 - Preserve the four compute workers and explicit-progress-first behavior. Use typed scheduler/route submission and explicit result contracts where sharing active keys.
 - Domain API payloads, storage, Redis namespaces/TTLs and presentation remain unchanged by infrastructure extraction. ADR-0016 remains proposed beyond the Hive and R4B tranches (ADR-0017/0018).
 
 ## API boundaries
 
 - Shared request, success/error data and serialized components belong in `com.R4B.api.dto`; LoL values and pure shared behavior belong in `com.R4B.lol`.
-- `lol.model` retains producer-only computation/storage structures. Shared contracts must not inherit persistent entities or depend on SDK, Mongo/BSON, Spring, JDA, Redis, bootstrap or application logging.
+- `spring.lol.model` retains producer-only computation/storage structures. Shared contracts must not inherit persistent entities or depend on SDK, Mongo/BSON, Spring, JDA, Redis, bootstrap or application logging.
 - HTTP error data is shared; Spring retains exception/status mapping. Keep the HTTP JSON profile distinct from storage serialization.
 - Do not create a second DTO for a concept already represented by a canonical model.
 - Controllers should return canonical models directly unless an accepted ADR documents an HTTP-only wrapper.

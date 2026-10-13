@@ -5,7 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.spring.lol.LeagueHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -42,12 +42,12 @@ public class Augment extends SlashCommand {
     @Override
 	protected void execute(SlashCommandEvent event) {
         String aug = event.getOption("augment").getAsString();
-        com.safjnest.lol.model.Augment augment = null;
+        com.safjnest.spring.lol.model.Augment augment = null;
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Bot.getColor());
         
-        for(com.safjnest.lol.model.Augment a : LeagueHandler.getAugments()){
+        for(com.safjnest.spring.lol.model.Augment a : LeagueHandler.getAugments()){
             if(a.id().equalsIgnoreCase(aug)){
                     augment = a;
                     break;

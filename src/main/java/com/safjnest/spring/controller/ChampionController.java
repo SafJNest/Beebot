@@ -15,8 +15,8 @@ import com.R4B.api.dto.ChampionStatistics;
 import com.R4B.api.dto.Filter;
 import com.R4B.lol.GameQueueType;
 import com.R4B.lol.LaneType;
-import com.safjnest.lol.service.ChampionService;
-import com.safjnest.lol.scheduler.ComputeScheduler;
+import com.safjnest.spring.lol.service.ChampionService;
+import com.safjnest.spring.lol.scheduler.ComputeScheduler;
 
 @RestController
 @RequestMapping("/api/lol")
@@ -127,7 +127,7 @@ public class ChampionController {
     }
 
     private static int championId(String championValue) {
-        var champion = com.safjnest.lol.utils.ChampionUtils.findChampion(championValue);
+        var champion = com.safjnest.spring.lol.utils.ChampionUtils.findChampion(championValue);
         if (champion == null) throw new org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.NOT_FOUND, "Champion not found");
         return champion.getId();

@@ -25,7 +25,7 @@ import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.core.chat.ChatHandler;
-import com.safjnest.lol.message.LeagueMessage;
+import com.safjnest.spring.lol.message.LeagueMessage;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Sound;

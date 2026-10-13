@@ -29,17 +29,17 @@ or concurrent Riot requests for the same shard.
   match-derived Mongo reads;
 - `ProfileService` owns profile-page composition and its `SUMMONER_OVERVIEW` cache.
 
-`R4JQueue`, under `com.safjnest.lol.queue`, owns outbound Riot scheduling. It
-extends `AbstractQueueScheduler` with one channel and virtual-thread worker per
-`LeagueShard`. Shared priorities are `IMMEDIATE` and `BACKGROUND` (former high
-and low). Callers build a `QueueRequest` via `R4JQueue.request(...)` and submit
-through `R4JQueue.schedule`. Shared `QueueTask` instances carry the key,
-readable name, shard route, priority, supplier and completion future.
-`R4JQueue` deduplicates an in-flight request by shard, operation and canonical
-resource id. An immediate request runs before queued background work but never
-interrupts a request already in flight. A successful, null or failed request is
-removed after completion; Redis and Mongo remain the only cache and persistence
-owners.
+Historically, `R4JQueue` under `com.safjnest.lol.queue` owned outbound Riot
+scheduling. That implementation was superseded by ADR-0017; the current Riot
+lane is `com.safjnest.s4b.scheduler.RiotScheduler`, which extends Hive's
+generic scheduler with one serial queue per `LeagueShard`. The former queue's
+priorities, keying and deduplication details below are retained as historical
+context only.
+
+The former queue deduplicated an in-flight request by shard, operation and
+canonical resource id. An immediate request ran before queued background work
+but never interrupted a request already in flight. A completed request was
+removed; Redis and Mongo remained external to the old queue implementation.
 
 The canonical match identifier is always the full Riot ID, for example
 `EUW1_6789012345`. Numeric IDs are neither accepted nor exposed by the match

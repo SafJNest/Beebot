@@ -1,0 +1,43 @@
+package com.safjnest.spring.lol.scheduler;
+import com.safjnest.spring.lol.service.FilterDefaults;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import com.R4B.api.dto.Filter;
+import com.safjnest.spring.lol.service.ChampionService;
+
+final class ChampionMatrixRequest {
+
+    private final Map<String, Filter> buildFilters;
+    private CompletableFuture<ChampionService.MatrixRefreshResult> future;
+    private boolean running;
+
+    ChampionMatrixRequest() {
+        buildFilters = new HashMap<>();
+    }
+
+    synchronized boolean tryAddBuild(Filter filter) {
+        if (filter == null) return true;
+        if (running) return false;
+        buildFilters.putIfAbsent(filter.toKey(), FilterDefaults.fromStateKey(filter.toStateKey()));
+        return true;
+    }
+
+    synchronized List<Filter> startAndGetBuildFilters() {
+        running = true;
+        return List.copyOf(buildFilters.values());
+    }
+
+    synchronized void setFuture(CompletableFuture<ChampionService.MatrixRefreshResult> value, java.util.concurrent.CompletionStage<?> termination, Runnable cleanup) {
+        future = value;
+        termination.whenComplete((result, failure) -> cleanup.run());
+    }
+
+    synchronized CompletableFuture<ChampionService.MatrixRefreshResult> future() {
+        return future;
+    }
+
+}

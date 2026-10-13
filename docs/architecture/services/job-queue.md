@@ -11,14 +11,14 @@ i contratti DTO e le API inter-servizio di ADR-0016 restano proposte.
 | `lol.queue.job.Job` e stati | Dati e progresso | `com.hive.job` | Servizi, tracker, scheduler e comandi: import migrati | Outcome item, priorità, progresso esplicito |
 | `lol.queue.Registry` | Lifecycle/context/dedup/follower | `com.hive.Registry` | Runtime e scheduler: istanza esplicita, senza globale | Isolamento, figli/callback, cleanup, errore/cancellazione |
 | `lol.queue.Router` | Registrazione/dispatch/promozione | `com.hive.Router` | Hive e test: scheduler/route tipizzati, token risultato | Duplicati, route invalide, follower/promozione |
-| `lol.queue.QueueHandler` | Composizione applicativa e submission | resta facade `lol.queue.QueueHandler`; meccanismo in `com.hive.Hive` | App, servizi/tracker/comandi: bootstrap esplicito e un solo runtime | Nessun avvio implicito, admission/shutdown |
+| `spring.lol.queue.QueueHandler` | Composizione applicativa Spring e submission | `com.safjnest.spring.lol.queue.QueueHandler`; meccanismo in `com.hive.Hive` | App, servizi/tracker/comandi: bootstrap esplicito e un solo runtime | Nessun avvio implicito, admission/shutdown |
 | `AbstractScheduler` | Route validate, placement hook, queued/direct lifecycle | `com.hive.scheduler` | Concrete locali: registry/config espliciti | Mode diretto senza queue fisica, enqueue failure |
 | `JobQueue`/`JobWorker` | Lane e drain del body | `com.hive.worker` | Scheduler generico | FIFO, promozione, no preemption, worker release |
 | Snapshot job/queue/worker/scheduler/run | Dati generici | `com.hive.status` | BotStatus, StatusService, comandi: import migrati | Compatibilità JSON e limiti |
-| `Registry.runType` | Classificazione tracking/sample/rank | hook locale `lol.scheduler.SyncScheduler` | Snapshot scheduler e StatusService | Nessuna key LoL interpretata dal core |
-| `RiotScheduler` | Serializzazione per shard e log | `r4j.scheduler` | Fetch servizi/comandi: import migrati | Route/naming e protezioni conservati |
-| `ComputeScheduler`/`DatabaseWorkerType`/`ChampionMatrixRequest` | Policy dominio/Mongo | `lol.scheduler` | Facade/champion/profile/tracker: import migrati | Quattro worker, riserva, placement, merge |
-| `SyncScheduler` | Policy route shard/global | `lol.scheduler` | Tracker/rank/match/orchestratori | Virtual thread diretto e albero comune |
+| `Registry.runType` | Classificazione tracking/sample/rank | hook locale `spring.lol.scheduler.SyncScheduler` | Snapshot scheduler e StatusService | Nessuna key LoL interpretata dal core |
+| `RiotScheduler` | Serializzazione per shard e log | `com.safjnest.s4b.scheduler` | Fetch servizi/comandi: import migrati | Route/naming e protezioni conservati |
+| `ComputeScheduler`/`DatabaseWorkerType`/`ChampionMatrixRequest` | Policy dominio/Mongo | `spring.lol.scheduler` | Facade/champion/profile/tracker: import migrati | Quattro worker, riserva, placement, merge |
+| `SyncScheduler` | Policy route shard/global | `spring.lol.scheduler` | Tracker/rank/match/orchestratori | Virtual thread diretto e albero comune |
 | Continuation dei servizi | Persistenza e contesto | servizi locali + executor Hive posseduto | Rank/Mastery/Summoner async | Context retain/resume e shutdown |
 
 Il core dipende solo dal JDK. Nessun `lol.*`, R4J, Mongo/BSON, Redis/Jedis,

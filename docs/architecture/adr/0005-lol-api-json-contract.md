@@ -82,7 +82,7 @@ Rank distribution and top-regions remain non-paginated and continue using their 
 
 ### Amendment 2026-09-28: response-only matchup and synergy tiers
 
-`GET /api/lol/champion/{champion}` and
+`GET /api/spring/lol/champion/{champion}` and
 `GET /api/lol/{shard}/profile/{puuid}/matchups` enrich relation rows only in
 the HTTP projection. Mongo documents, Redis cache values and Discord-facing
 domain reads remain raw. The projection adds `adjustedWinrate`,

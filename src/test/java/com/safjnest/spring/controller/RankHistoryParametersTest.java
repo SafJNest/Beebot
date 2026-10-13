@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.R4B.api.dto.match.RankHistoryQuery;
 import com.R4B.lol.MatchOrder;
 import com.R4B.lol.RankHistoryView;
-import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.spring.lol.utils.SeasonUtils;
 
 public class RankHistoryParametersTest {
 

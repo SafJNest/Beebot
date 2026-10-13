@@ -1,7 +1,7 @@
 # Hive job runtime
 
 `com.hive` owns the JDK-only mechanism. The application facade
-`lol.queue.QueueHandler` explicitly composes one runtime from App before opening
+`spring.lol.queue.QueueHandler` explicitly composes one runtime from App before opening
 API/tracker admission. Registry and Router are per-instance; the monolith
 shares one registry across Riot, compute and Sync. A scheduler owns its own
 physical queues and workers. Sync uses direct execution without a physical queue.
@@ -53,7 +53,7 @@ fallback. Priority inheritance selects the more urgent parent/request priority.
 Compute profile placement selects the least loaded of its four workers at
 insertion. While champion matrix/build/refresh work reserves CHAMPION, profile
 work chooses only PROFILE or PROFILE_2. Heavy work and all filter/key/merge
-interpretation remain in the concrete `lol.scheduler` adapter. Riot lives in
+interpretation remain in the concrete `spring.lol.scheduler` adapter. Riot lives in
 `r4j.scheduler`, with existing SDK protection and external-cache ownership.
 
 Future cancellation does not automatically interrupt a job body. Explicit job

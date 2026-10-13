@@ -43,11 +43,11 @@ from storage serialization; internal storage fields are not made public.
 
 ## Code structure
 
-LoL Mongo/NoSQL persistence lives in package `com.safjnest.nosql` and has these main files:
+LoL Mongo/NoSQL persistence lives in package `com.safjnest.spring.nosql` and has these main files:
 
-- `src/main/java/com/safjnest/nosql/MongoDB.java`: URI, database, collection, query, mapping and runtime writes;
-- `src/main/java/com/safjnest/nosql/MongoMigration.java`: batchable MariaDB → Mongo backfill;
-- `src/main/java/com/safjnest/nosql/AbstractEntity.java` and `NoSqlEntityExecutor.java`: common infrastructure for entities persisted in NoSQL.
+- `src/main/java/com/safjnest/spring/nosql/MongoDB.java`: URI, database, collection, query, mapping and runtime writes;
+- `src/main/java/com/safjnest/spring/nosql/MongoMigration.java`: batchable MariaDB → Mongo backfill;
+- `src/main/java/com/safjnest/spring/nosql/AbstractEntity.java` and `NoSqlEntityExecutor.java`: common infrastructure for entities persisted in NoSQL.
 
 SQL adapters used exclusively by the backfill remain separate in package `com.safjnest.sql`:
 

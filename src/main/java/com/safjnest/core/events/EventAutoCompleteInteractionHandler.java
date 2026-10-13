@@ -22,7 +22,7 @@ import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
-import com.safjnest.nosql.MongoDB;
+import com.safjnest.spring.nosql.MongoDB;
 import com.safjnest.model.guild.alert.AlertData;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
@@ -32,11 +32,11 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import com.R4B.api.dto.riot.Item;
 import com.R4B.lol.*;
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.Augment;
-import com.safjnest.lol.service.SummonerService;
-import com.safjnest.lol.service.StaticDataService;
-import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.spring.lol.LeagueHandler;
+import com.safjnest.spring.lol.model.Augment;
+import com.safjnest.spring.lol.service.SummonerService;
+import com.safjnest.spring.lol.service.StaticDataService;
+import com.safjnest.spring.lol.utils.ChampionUtils;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;

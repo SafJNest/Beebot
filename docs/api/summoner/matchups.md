@@ -301,7 +301,7 @@ persisted payload and `refresh=true`, then queues only the low-priority matchup 
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
 - Parameters: [`LolApiParameters`](../../../src/main/java/com/safjnest/spring/controller/LolApiParameters.java)
-- Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
+- Service: [`ProfileService`](../../../src/main/java/com/safjnest/spring/spring/lol/service/ProfileService.java)
 - Model: [`ProfileMatchups`](../../../src/main/java/com/R4B/api/dto/statistics/ProfileMatchups.java)
 - Redis: `SUMMONER_MATCHUPS(puuid, filterKey)`, TTL 12 hours
 - Mongo: collection `profile_matchups`, identity `{ puuid, filterKey }`

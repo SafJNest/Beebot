@@ -14,9 +14,9 @@ outside `com.safjnest`, without a `shared` wrapper. It is an independent
 namespace, not a workaround for compiling the current monolith.
 
 - Generic mechanism: `com.hive`, with job/scheduler/worker/status subpackages.
-- Application composition/submission: `com.safjnest.lol.queue.QueueHandler`.
-- Riot adapter: `com.safjnest.r4j.scheduler.RiotScheduler`.
-- Compute/Sync/domain merge: `com.safjnest.lol.scheduler`.
+- Application composition/submission: `com.safjnest.spring.lol.queue.QueueHandler`.
+- Riot adapter: `com.safjnest.s4b.scheduler.RiotScheduler`.
+- Compute/Sync/domain merge: `com.safjnest.spring.lol.scheduler`.
 - Monolith has one explicitly owned registry shared by all three schedulers;
   independent Hive instances share neither context nor deduplication.
 - Standalone build: `hive/pom.xml`, coordinates `com.hive:hive:1.0`.

@@ -42,10 +42,10 @@ import com.R4B.lol.TierDivisionType;
 import com.R4B.lol.TeamType;
 import com.safjnest.spring.config.LolApiConfig;
 import com.safjnest.utils.JsonCodec;
-import com.safjnest.nosql.AbstractEntity;
-import com.safjnest.nosql.writer.SummonerWriter;
-import com.safjnest.nosql.writer.MatchWriter;
-import com.safjnest.nosql.MongoDB;
+import com.safjnest.spring.nosql.AbstractEntity;
+import com.safjnest.spring.nosql.writer.SummonerWriter;
+import com.safjnest.spring.nosql.writer.MatchWriter;
+import com.safjnest.spring.nosql.MongoDB;
 import com.safjnest.sql.QueryRecordParser;
 
 public class R4BIntegrationContractTest {

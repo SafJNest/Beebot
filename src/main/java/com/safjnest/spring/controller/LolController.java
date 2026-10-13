@@ -1,6 +1,6 @@
 package com.safjnest.spring.controller;
 
-import com.safjnest.lol.service.FilterDefaults;
+import com.safjnest.spring.lol.service.FilterDefaults;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.lol.service.MatchService;
+import com.safjnest.spring.lol.service.MatchService;
 import com.R4B.api.dto.ActivityFilter;
 import com.R4B.api.dto.ApiResult;
 import com.R4B.api.dto.Filter;
@@ -34,11 +34,11 @@ import com.R4B.api.dto.summoner.Mastery;
 import com.R4B.lol.GameQueueType;
 import com.R4B.lol.LeagueShard;
 import com.R4B.lol.MatchOrder;
-import com.safjnest.lol.service.ProfileRecordService;
-import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.service.SummonerService;
-import com.safjnest.lol.service.MasteryService;
-import com.safjnest.nosql.MongoDB;
+import com.safjnest.spring.lol.service.ProfileRecordService;
+import com.safjnest.spring.lol.service.ProfileService;
+import com.safjnest.spring.lol.service.SummonerService;
+import com.safjnest.spring.lol.service.MasteryService;
+import com.safjnest.spring.nosql.MongoDB;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")

@@ -36,9 +36,9 @@ Examples use `http://localhost:8080` as the base URL.
 
 ### Champion
 
-- [Champion page](champion/page.md) — `GET /api/lol/champion/{champion}`
+- [Champion page](champion/page.md) — `GET /api/spring/lol/champion/{champion}`
 - [Champion tier list](champion/tier-list.md) — `GET /api/lol/champions/tier-list`
-- [Champion indexables](champion/indexables.md) — `GET /api/lol/champion/indexables`
+- [Champion indexables](champion/indexables.md) — `GET /api/spring/lol/champion/indexables`
 
 ### Leaderboard
 
