@@ -34,7 +34,7 @@ La separazione desiderata è coerente con gli owner di prodotto, ma non coincide
 - `src/main/java/com/safjnest/spring/spring/lol/service/**`: servizi domain/cache/persistence/Riot. Le classi sono già separate per area, ma non per processo né per dipendenza.
 - `src/main/java/com/safjnest/spring/spring/lol/queue/**`: `QueueHandler`, `Router`, `Registry`, `Job`, `RiotScheduler`, `ComputeScheduler` e `SyncScheduler`. Scheduler e registry sono process-local.
 - `src/main/java/com/safjnest/spring/spring/lol/tracker/**`: tracker, trigger periodico, elaborazione e ingestion dei match.
-- `src/main/java/com/safjnest/spring/nosql/MongoDB.java`: singolo accesso Mongo runtime; `MongoMigration`/`LeagueDB` hanno il percorso storico di migrazione SQL.
+- `src/main/java/com/safjnest/spring/nosql/MongoDB.java`: singolo accesso Mongo runtime; il precedente percorso di migrazione SQL (`MongoMigration`/`LeagueDB`) è stato rimosso.
 - `src/main/java/com/safjnest/redis/RedisClient.java` e `RedisKey.java`: client e catalogo chiavi condivisi dall'app intera.
 - `src/main/java/com/safjnest/spring/spring/lol/model/**`: modelli canonicali LoL usati da servizi, persistence, controller ed embed. Molti tipi e enum sono attualmente R4J.
 
@@ -138,7 +138,7 @@ beebot-discord ──HTTP + lol-contracts──> lol-api ──> lol-persistence
 | `lol-api.jar` | Spring Boot, controller pubblici e privati, validazione input, auth, response composition/read, cache read model, client HTTP verso worker, repository in sola lettura per i flussi normali | JDA, R4J, tracker/scheduler interno Riot, scritture compute |
 | `beebot.jar` (`beebot-discord`) | JDA, comandi/eventi, audio, embed/rendering, client HTTP `lol-api`, configurazione URL e credenziale bot→API | Mongo, Redis LoL, R4J, repository, servizi LoL interni |
 
-`LeagueDB` e `MongoMigration` restano in un tool/modulo di migrazione separato e non vanno trascinati in `lol-api` o `beebot`. Per ora non è necessario consegnare un settimo processo migration: può restare un profilo/tool non avviato nei runtime.
+`LeagueDB` e `MongoMigration` non sono più mantenuti nel repository runtime. Un'eventuale nuova migrazione dei dati richiede un tool separato e una decisione esplicita; non rientra nei processi `lol-service` o Beebot.
 
 ### Dipendenze Maven finali
 
@@ -358,7 +358,7 @@ Prometheus può iniziare nella fase 4 o 5 per misurare i processi estratti, ma v
 
 ## 15. Compatibilità da mantenere e classi da rimuovere
 
-**Quasi invariate all'inizio:** analyzer puri e modelli statistici; canonical Mongo identities; full match ID; Redis read cache schema e TTL finché sono condivisi; response pubbliche, `202`/`PARTIAL` e embed; `LeagueDB` limitato alla migrazione.
+**Quasi invariate all'inizio:** analyzer puri e modelli statistici; canonical Mongo identities; full match ID; Redis read cache schema e TTL finché sono condivisi; response pubbliche, `202`/`PARTIAL` e embed. La vecchia migrazione LoL da MariaDB non è più inclusa.
 
 **Da spezzare:** `LeagueHandler`, `MongoDB`, `SummonerService`, `RankService`, `MasteryService`, `MatchService`, `ProfileService`, `ChampionService`, `LeaderboardService`, `CompetitiveService`, `Tracker` solo secondo la tabella owner (non necessariamente una classe nuova per ogni metodo).
 

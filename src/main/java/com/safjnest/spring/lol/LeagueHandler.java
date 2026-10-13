@@ -44,7 +44,6 @@ import com.safjnest.spring.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.spring.nosql.MongoDB;
 import com.safjnest.utils.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -76,61 +75,28 @@ import net.dv8tion.jda.api.entities.User;
         return runesHandler;
     }
 
-    public static boolean isMatchDBCached(String gameId) {
-        return MongoDB.hasMatch(gameId);
-    }
-
     public static ArrayList<Augment> getAugments() {
         return augments;
     }
 
     public static String convertSpellToId(String name) {
-        String id = "";
-        switch (name) {
-            case "Flash":
-                id = "4";
-            break;
-            case "Heal":
-                id = "7";
-            break;
-            case "Barrier":
-                id = "21";
-            break;
-            case "Ghost":
-                id = "6";
-            break;
-            case "Exhaust":
-                id = "3";
-            break;
-            case "Teleport":
-                id = "12";
-            break;
-            case "Ignite":
-                id = "14";
-            break;
-            case "Cleanse":
-                id = "1";
-            break;
-            case "Smite":
-                id = "11";
-            break;
-            case "Mark":
-                id = "32";
-            break;
-            case "Dash":
-                id = "30";
-            break;
-            case "Clarity":
-                id = "13";
-            break;
-            case "Garrison":
-                id = "17";
-            break;
-            case "To the King!":
-                id = "31";
-            break;
-        }
-        return id;
+        return switch (name) {
+            case "Flash" -> "4";
+            case "Heal" -> "7";
+            case "Barrier" -> "21";
+            case "Ghost" -> "6";
+            case "Exhaust" -> "3";
+            case "Teleport" -> "12";
+            case "Ignite" -> "14";
+            case "Cleanse" -> "1";
+            case "Smite" -> "11";
+            case "Mark" -> "32";
+            case "Dash" -> "30";
+            case "Clarity" -> "13";
+            case "Garrison" -> "17";
+            case "To the King!" -> "31";
+            default -> "";
+        };
     }
 
     public static String getSpellName(int id) {

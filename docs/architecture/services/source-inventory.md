@@ -398,14 +398,13 @@ nell'inventario per area, non sono destinati al comune per default.
 | [model/spotify/SpotifyTrackStreaming.java](../../../src/main/java/com/safjnest/model/spotify/SpotifyTrackStreaming.java) | Bbot | Guild/user/audio/Spotify e presentazione del bot |
 | [model/util/ColorDeserializer.java](../../../src/main/java/com/safjnest/model/util/ColorDeserializer.java) | Bbot | Guild/user/audio/Spotify e presentazione del bot |
 
-## nosql — 6 file
+## nosql — 5 file
 
 | File attuale | Destinazione proposta | Azione/confine |
 |---|---|---|
 | [nosql/AbstractEntity.java](../../../src/main/java/com/safjnest/spring/nosql/AbstractEntity.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
 | [nosql/MongoCommandMonitor.java](../../../src/main/java/com/safjnest/spring/nosql/MongoCommandMonitor.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
 | [nosql/MongoDB.java](../../../src/main/java/com/safjnest/spring/nosql/MongoDB.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
-| [nosql/MongoMigration.java](../../../src/main/java/com/safjnest/spring/nosql/MongoMigration.java) | Tooling migration | MariaDB → Mongo; fuori dal runtime comune |
 | [nosql/MongoServerStatusSnapshot.java](../../../src/main/java/com/safjnest/spring/nosql/MongoServerStatusSnapshot.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
 | [nosql/NoSqlEntityExecutor.java](../../../src/main/java/com/safjnest/spring/nosql/NoSqlEntityExecutor.java) | Spring | Persistenza Mongo/monitoraggio o entity executor |
 
@@ -450,7 +449,7 @@ nell'inventario per area, non sono destinati al comune per default.
 | [spring/controller/StatusController.java](../../../src/main/java/com/safjnest/spring/controller/StatusController.java) | Spring | Server/controller/configurazione/parser/mapping HTTP |
 | [com/R4B/api/dto/LolApiError.java](../../../src/main/java/com/R4B/api/dto/LolApiError.java) | R4B estratto | Contratto/valore canonico unico; operazioni nel produttore (ADR-0018) |
 
-## sql — 8 file
+## sql — 7 file
 
 | File attuale | Destinazione proposta | Azione/confine |
 |---|---|---|
@@ -459,7 +458,6 @@ nell'inventario per area, non sono destinati al comune per default.
 | [sql/QueryRecord.java](../../../src/main/java/com/safjnest/sql/QueryRecord.java) | Da qualificare | Helper query già misto SQL/Mongo; non risposta pubblica |
 | [sql/QueryRecordParser.java](../../../src/main/java/com/safjnest/sql/QueryRecordParser.java) | Da qualificare | Helper query già misto SQL/Mongo; non risposta pubblica |
 | [sql/database/BotDB.java](../../../src/main/java/com/safjnest/sql/database/BotDB.java) | Bbot | Persistenza relazionale del rispettivo dominio |
-| [sql/database/LeagueDB.java](../../../src/main/java/com/safjnest/sql/database/LeagueDB.java) | Tooling migration | SQL storico LoL; nessun runtime fallback |
 | [sql/database/SpotifyDB.java](../../../src/main/java/com/safjnest/sql/database/SpotifyDB.java) | Bbot | Persistenza relazionale del rispettivo dominio |
 | [sql/database/WebsiteDB.java](../../../src/main/java/com/safjnest/sql/database/WebsiteDB.java) | Bbot | Persistenza relazionale del rispettivo dominio |
 

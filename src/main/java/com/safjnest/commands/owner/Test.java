@@ -34,7 +34,6 @@ import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
-import com.safjnest.spring.nosql.MongoMigration;
 import com.safjnest.spring.nosql.MongoDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -54,10 +53,6 @@ public class Test extends Command {
         "profiles", "competitive", "aggregates", "records", "mastery-records", "champions", "indexables", "all"
     );
     private static final List<String> AUDIT_OPERATIONS = List.of("mastery-records");
-    private static final List<String> MIGRATION_OPERATIONS = List.of(
-        "all", "tracked", "ranks", "fix-tracked", "rankprogress [runId]"
-    );
-
     public Test() {
         this.name = this.getClass().getSimpleName().toLowerCase();
 
@@ -81,8 +76,8 @@ public class Test extends Command {
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
                 + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
-                + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
-                + "] | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
+                + " | audit <" + String.join("|", AUDIT_OPERATIONS)
+                + "> | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -122,13 +117,11 @@ public class Test extends Command {
             case "highstats" -> queueHighEloStatistics(event);
             case "regenerate", "regen" -> queueRegeneration(event, arguments);
             case "audit" -> queueAudit(event, arguments);
-            case "migrate" -> queueMigration(event, arguments);
             case "fix-timeline" -> queueTimelineRepair(event, arguments);
             case "fix-timeline-patch" -> queueTimelinePatchRepair(event, arguments);
             case "test-matchups" -> queueMatchupRegeneration(event, arguments);
             default -> event.reply("Usage: !test regenerate <"
-                + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS)
-                + "] | !test fix-timeline <puuid> | !test fix-timeline-patch <patch>"
+                + String.join("|", REGENERATION_OPERATIONS) + "> | !test fix-timeline <puuid> | !test fix-timeline-patch <patch>"
                 + " | !test test-matchups <puuid> <shard>.");
         }
     }
@@ -149,24 +142,6 @@ public class Test extends Command {
         event.reply("Regeneration " + operation + " queued.");
     }
 
-    private static void queueMigration(CommandEvent event, String[] arguments) {
-        String migrationInput = arguments.length < 2 ? "" : arguments[1].trim();
-        if (migrationInput.isBlank()) {
-            queueMigrationOperation(event, "all", "Full Mongo migration", MongoMigration::migrateAll);
-            return;
-        }
-        String[] migrationArguments = migrationInput.split("\\s+", 2);
-        String migration = migrationArguments[0].toLowerCase();
-        switch (migration) {
-            case "all" -> queueMigrationOperation(event, "all", "Full Mongo migration", MongoMigration::migrateAll);
-            case "tracked" -> queueMigrationOperation(event, "tracked", "Tracked RankProgress recovery", MongoMigration::migrateTrackedRankProgress);
-            case "ranks" -> queueMigrationOperation(event, "ranks", "Rank migration", MongoMigration::migrateRanks);
-            case "fix-tracked" -> queueMigrationOperation(event, "fix-tracked", "Tracked RankProgress rebuild", MongoMigration::rebuildTrackedRankProgress);
-            case "rankprogress" -> queueRankProgressMigration(event, migrationArguments);
-            default -> event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
-        }
-    }
-
     private static void queueAudit(CommandEvent event, String[] arguments) {
         String operation = arguments.length < 2 ? "" : arguments[1].trim().toLowerCase();
         if (!AUDIT_OPERATIONS.contains(operation)) {
@@ -179,25 +154,6 @@ public class Test extends Command {
                 return null;
             });
         event.reply("Audit " + operation + " queued.");
-    }
-
-    private static void queueMigrationOperation(CommandEvent event, String operation, String label, Runnable migration) {
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-migration:" + operation, "owner migration " + operation, Void.class, job -> {
-                migration.run();
-                return null;
-            });
-        event.reply(label + " queued.");
-    }
-
-    private static void queueRankProgressMigration(CommandEvent event, String[] arguments) {
-        String runId = arguments.length < 2 || arguments[1].isBlank() ? "rankprogress-v1" : arguments[1].trim();
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-migration:rankprogress:" + runId, "owner RankProgress migration " + runId, Void.class, job -> {
-                MongoMigration.migrateRankProgress(new MongoMigration.Options(false, 500_000, runId, true, 0));
-                return null;
-            });
-        event.reply("RankProgress migration queued: run=" + runId + ".");
     }
 
     private static void printGuildCache(CommandEvent event) {

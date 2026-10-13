@@ -57,8 +57,8 @@ comune ── non dipende da ──> servizi
 
 Non è previsto accesso LoL diretto del bot a Mongo o Riot nel target. Il bot
 continua a possedere i suoi dati guild/audio/utenti: “solo bot” non elimina
-la persistenza necessaria a quei domini. `LeagueDB` resta uno strumento di
-backfill e non diventa un servizio runtime.
+la persistenza necessaria a quei domini. Il reader LoL MariaDB e il comando
+di migrazione sono stati rimossi; non fanno parte dei runtime dei servizi.
 
 ## Package e build proposti
 

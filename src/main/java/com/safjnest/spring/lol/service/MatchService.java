@@ -258,7 +258,7 @@ public final class MatchService {
             int total = matchIds.size();
             java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger(0);
             for (String matchId : matchIds) {
-                if (LeagueHandler.isMatchDBCached(matchId)) continue;
+                if (MongoDB.hasMatch(matchId)) continue;
 
                 QueueHandler.whenComplete(fetchAsync(matchId, summoner.getPlatform()), (match, failure) -> {
                     if (failure != null) {

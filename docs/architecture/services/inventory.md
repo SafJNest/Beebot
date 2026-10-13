@@ -27,10 +27,10 @@ esplicita questa distinzione e copre anche le classi non destinate al comune.
 | `core` | 39 | Bbot; valutare separatamente `Chronos` |
 | `lol` | 146 | Suddivisione dettagliata sotto |
 | `model` | 35 | Bbot; configurazione globale da dividere per servizio |
-| `nosql` | 6 | Spring/Mongo; migration come tooling separato |
+| `nosql` | 5 | Spring/Mongo; il vecchio tooling di migrazione è stato rimosso |
 | `redis` | 3 | Adapter Redis candidati al riuso, policy locali |
 | `spring` | 13 | Spring; schema errore candidato al comune |
-| `sql` | 8 | Bbot per domini propri; `LeagueDB` per migration |
+| `sql` | 7 | Bbot per domini propri; nessun reader SQL LoL dedicato |
 | `status` | 6 | Raccolta locale nei servizi e composizione in Spring |
 | `utils` | 26 | Bbot oppure parti pure da qualificare; non spostamento globale |
 | `org.voicerss.tts` | 10 | Bbot/audio |

@@ -924,7 +924,7 @@ public class Tracker {
                                 try { Thread.sleep(500); } catch (InterruptedException e) {}
                             }
                             for (String matchId : matchIds) {
-                                if (LeagueHandler.isMatchDBCached(matchId)) continue;
+                                if (MongoDB.hasMatch(matchId)) continue;
                                 if (!seenMatchIds.add(matchId)) continue;
                                 allMatches.add(new MatchEntry(entry, summoner, matchId));
                             }

@@ -70,7 +70,7 @@ com/safjnest/s4b/
   scheduler/ RiotScheduler
 
 com/safjnest/spring/nosql/
-  MongoDB, MongoMigration, application persistence infrastructure
+  MongoDB, application persistence infrastructure
   writer/ SummonerWriter, MatchWriter
 
 com/safjnest/spring/status/

@@ -102,6 +102,11 @@ The repository already contains canonical LoL models, Redis as cache and service
 
 The first migration covers only `league_of_legends`. Other MariaDB domains will be handled in separate ADRs after the LoL cutover.
 
+The one-time `MongoMigration`/`LeagueDB` implementation and its owner command
+have since been removed from the runtime repository. This ADR records the
+historical storage decision; it does not imply that a migration command remains
+available. Any further data transfer requires separately scoped tooling.
+
 The operational strategy is:
 
 1. `MongoMigration` reads MariaDB with checkpoint and high-water mark;
