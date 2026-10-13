@@ -4,7 +4,7 @@
 
 This repository contains Shopify integrations, Java services, GraphQL integrations, Algolia, MySQL/MariaDB, Redis, Express and LoL API code.
 
-Application code uses `com.safjnest`. Shared LoL contracts belong under `com.R4B.AB.DTO`; shared LoL enums, constants and pure helpers belong under `com.R4B.LOL` (ADR-0018). Spring owns controllers, configuration, HTTP mapping and producer/persistence logic. Generic job contracts remain under `com.hive.status`.
+Application code uses `com.safjnest`. Shared LoL contracts belong under `com.R4B.api.dto`; shared LoL enums, constants and pure helpers belong under `com.R4B.lol` (ADR-0018). Spring owns controllers, configuration, HTTP mapping and producer/persistence logic. Generic job contracts remain under `com.hive.status`.
 
 Primary stack:
 
@@ -85,7 +85,7 @@ Use existing R4B enums and helpers before adding pure mapping logic. Application
 
 ## API boundaries
 
-- Shared request, success/error data and serialized components belong in `com.R4B.AB.DTO`; LoL values and pure shared behavior belong in `com.R4B.LOL`.
+- Shared request, success/error data and serialized components belong in `com.R4B.api.dto`; LoL values and pure shared behavior belong in `com.R4B.lol`.
 - `lol.model` retains producer-only computation/storage structures. Shared contracts must not inherit persistent entities or depend on SDK, Mongo/BSON, Spring, JDA, Redis, bootstrap or application logging.
 - HTTP error data is shared; Spring retains exception/status mapping. Keep the HTTP JSON profile distinct from storage serialization.
 - Do not create a second DTO for a concept already represented by a canonical model.

@@ -24,13 +24,8 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.lol.service.ChampionService;
-import com.safjnest.lol.service.MatchService;
-import com.safjnest.lol.service.SummonerService;
-import com.safjnest.lol.service.ProfileService;
-import com.safjnest.lol.scheduler.ComputeScheduler;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.DateHandler;
 import com.safjnest.utils.SafJNest;
@@ -57,7 +52,6 @@ import com.R4B.api.dto.match.LiveGame;
 import com.R4B.api.dto.match.Match;
 import com.R4B.api.dto.match.Participant;
 import com.R4B.api.dto.match.RankProgress;
-import com.R4B.api.dto.riot.LeagueEntry;
 import com.R4B.api.dto.riot.StaticChampion;
 import com.R4B.api.dto.statistics.ProfileMatchups;
 import com.R4B.api.dto.statistics.ProfileStatistics;
@@ -65,28 +59,23 @@ import com.R4B.api.dto.statistics.shared.LeafStats;
 import com.R4B.api.dto.statistics.shared.ProfileLeafStats;
 import com.R4B.api.dto.summoner.Mastery;
 import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.api.dto.summoner.Rank;
 import com.R4B.lol.*;
 
 public class LeagueMessage {
 
     public static final String BUTTON_ID_PREFIX = "lol";
-    private static final ProfileService PROFILE_SERVICE = new ProfileService();
-    private static final ChampionService CHAMPION_SERVICE = new ChampionService();
 
     private static Object[] build(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
         List<MessageTopLevelComponent> components = new ArrayList<>();
-        if (summoner != null
-                && parameter.getMessageType() != LeagueMessageType.LIVEGAME
-                && parameter.getMessageType() != LeagueMessageType.OPGG)
-            LeagueHandler.updateSummonerMongo(summoner);
         switch (parameter.getMessageType()) {
             case PROFILE:
                 embed = getSummonerEmbed(summoner, parameter).build();
                 components = getSummonerButtons(summoner, userId, parameter);
                 break;
             case LIVEGAME:
-                LiveGame liveGame = SummonerService.getLiveGame(summoner.puuid(), summoner.region());
+                LiveGame liveGame = LolApiClient.getLiveGame(summoner.puuid(), summoner.region());
                 if (liveGame == null) liveGame = LiveGame.empty();
                 List<LiveGame.Participant> users = liveGame.participants();
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
@@ -118,7 +107,7 @@ public class LeagueMessage {
             case CHAMPIONS_BY_WINRATE:
             case CHAMPIONS_BY_PICKRATE:
             case CHAMPIONS_BY_BANRATE:
-                List<ChampionStatistics> champions = CHAMPION_SERVICE.getStatisticsAll(parameter.toFilter()).values().stream().toList();
+                List<ChampionStatistics> champions = LolApiClient.getChampionStatistics(parameter.toFilter());
                 embed = buildEmbedChampions(parameter, champions);
                 components = getChampionsButtons(parameter);
                 break;
@@ -305,21 +294,23 @@ public class LeagueMessage {
     }
 
     private static List<Match> getOpggMatches(Summoner summoner, LeagueMessageParameter parameter) {
+        var page = LolApiClient.getMatches(
+            summoner.puuid(), summoner.region(), parameter.getQueueType(),
+            parameter.getMessageType().getPageItem(), parameter.getOffset(), 0, 0,
+            com.R4B.lol.MatchOrder.DESC, null, null, null);
+        if (page == null) return List.of();
         List<Match> matches = new ArrayList<>();
-        int limit = parameter.getMessageType().getPageItem();
-        List<String> gameIds = getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset());
-        for (int position = 0; position < gameIds.size(); position++) {
-            if (matches.size() >= limit) break;
-            Match match = MatchService.get(gameIds.get(position), summoner.region());
+        for (var result : page.items()) {
+            Match match = LolApiClient.getMatch(result.gameId(), summoner.region());
             if (match != null) matches.add(match);
+            if (matches.size() >= parameter.getMessageType().getPageItem()) break;
         }
-        MatchService.upsertRankProgress(matches, summoner.region());
         return matches;
     }
 
     private static Match getSelectedOpggMatch(Summoner summoner, LeagueMessageParameter parameter) {
         String selectedMatchId = parameter.getSelectedMatchId();
-        return selectedMatchId == null ? null : MatchService.get(selectedMatchId, summoner.region());
+        return selectedMatchId == null ? null : LolApiClient.getMatch(selectedMatchId, summoner.region());
     }
 
     @SuppressWarnings("unchecked")
@@ -373,7 +364,7 @@ public class LeagueMessage {
         String centerName = parameter.getMessageType() == LeagueMessageType.OPGG
             ? getStoredRiotId(s)
             : (s.name().isBlank()
-                ? SummonerService.getRiotAccount(s.puuid(), s.region()).getName()
+                ? LeagueHandler.getFormattedSummonerName(s)
                 : s.name());
         Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.puuid() + "#" + s.region().name(), centerName);
         center = center.asDisabled();
@@ -533,8 +524,9 @@ public class LeagueMessage {
 
     public static List<String> getMatchIds(Summoner s, GameQueueType queue, int index) {
         List<String> gameIds = new ArrayList<>();
-        com.R4B.api.dto.summoner.Summoner riotSummoner = SummonerService.getRiotSummoner(s.puuid(), s.region());
-        List<String> allIds = riotSummoner == null ? List.of() : MatchService.getRecentIds(riotSummoner, queue, index);
+        com.R4B.api.dto.match.MatchPage page = LolApiClient.getMatches(
+            s.puuid(), s.region(), queue, 100, index, 0, 0, com.R4B.lol.MatchOrder.DESC, null, null, null);
+        List<String> allIds = page == null ? List.of() : page.items().stream().map(match -> match.gameId).toList();
 
         for (String gameId : allIds) {
             if (gameId.split("_")[0].equalsIgnoreCase(s.region().toString()))
@@ -1052,7 +1044,7 @@ public class LeagueMessage {
 
     private static EmbedBuilder getCanonicalOpggEmbed(Summoner summoner, LeagueMessageParameter parameter, List<Match> matches) {
         LeagueShard shard = summoner.region();
-        List<QueryRecord> queryResult = MatchService.getSummonerData(summoner.puuid(), summoner.region());
+        List<QueryRecord> queryResult = List.of();
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(getOpggRiotId(summoner, matches), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1072,7 +1064,7 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getCanonicalOpggEmbedMatch(Summoner summoner, Match match) {
-        List<QueryRecord> queryResult = MatchService.getSummonerData(summoner.puuid(), summoner.region());
+        List<QueryRecord> queryResult = List.of();
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(getOpggRiotId(summoner, List.of(match)), null, LeagueHandler.getSummonerProfilePic(summoner));
         embed.setColor(Bot.getColor());
@@ -1095,7 +1087,7 @@ public class LeagueMessage {
 
     private static String getStoredRiotId(Summoner summoner) {
         if (summoner.riotId() != null && !summoner.riotId().isBlank()) return summoner.riotId();
-        String riotId = MongoDB.findSummonerName(summoner.puuid(), summoner.region());
+        String riotId = LeagueHandler.getFormattedSummonerName(summoner);
         return riotId == null || riotId.isBlank() ? summoner.puuid() : riotId;
     }
 
@@ -1180,7 +1172,8 @@ public class LeagueMessage {
                     int i = 0;
 
                     for (LiveGame.Participant participant : spectators) {
-                        Summoner s = SummonerService.get(participant.puuid(), summoner.region());
+                        var participantProfile = LolApiClient.getProfile(participant.puuid(), summoner.region());
+                        Summoner s = participantProfile == null ? null : participantProfile.summoner();
                         String mastery = LeagueHandler.getMasteryByChamp(s, participant.championId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
                         String sum = " **" + participant.riotId() + "**";
@@ -1207,13 +1200,13 @@ public class LeagueMessage {
                         String championIcon = ChampionUtils.getFormattedEmojiByChampion(participant.championId());
 
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
-                        LeagueEntry entry = LeagueHandler.getEntry(game.queue(), participant.puuid(), summoner.region());
+                        Rank entry = LeagueHandler.getEntry(game.queue(), participant.puuid(), summoner.region());
                         if (entry != null) {
-                            int wins = entry.getWins();
-                            int losses = entry.getLosses();
+                            int wins = entry.wins();
+                            int losses = entry.losses();
                             double winrate = (Double.valueOf(wins) / Double.valueOf(wins + losses)) * 100;
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + TierDivisionUtils.getFormattedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
-                            entryName = GameQueueTypeUtils.prettyName(entry.getQueueType());
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.tier().getTier()) + "\n`" + entry.tier().prettyName() + " " + entry.lp() + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
+                            entryName = GameQueueTypeUtils.prettyName(game.queue());
                         }
 
                         String field = championIcon + "**" + participant.riotId() + "**" + stats + "\n";
@@ -1285,13 +1278,16 @@ public class LeagueMessage {
             }
             case OVERVIEW_OPGG -> {
                 Filter filter = parameter.toFilter();
-                matches = MongoDB.getMatches(
-                    puuid,
-                    filter,
-                    parameter.getMessageType().getPageItem(),
-                    parameter.getOffset()
-                );
-                eb = getChampionOPGG(eb, matches, summoner, puuid, parameter);
+                var matchPage = LolApiClient.getMatches(
+                    puuid, summoner.region(), filter.queue(), parameter.getMessageType().getPageItem(), parameter.getOffset(),
+                    filter.timeStart(), filter.timeEnd(), com.R4B.lol.MatchOrder.DESC,
+                    filter.champion() == 0 ? null : String.valueOf(filter.champion()), filter.lane(), filter.patch());
+                matches = new ArrayList<>();
+                if (matchPage != null) for (var result : matchPage.items()) {
+                    Match match = LolApiClient.getMatch(result.gameId(), summoner.region());
+                    if (match != null) matches.add(match);
+                }
+                eb = getChampionOPGG(eb, matches, summoner, parameter, matchPage == null ? 0 : matchPage.total());
             }
             default -> {
             }
@@ -1392,12 +1388,7 @@ public class LeagueMessage {
 
     private static ProfileStatistics profileStatistics(Summoner summoner, LeagueMessageParameter parameter) {
         Filter filter = parameter.toFilter();
-        ProfileStatistics statistics = PROFILE_SERVICE.getStatistics(summoner.puuid(), summoner.region(), filter);
-        if (statistics == null) {
-            Summoner saved = SummonerService.find(summoner.puuid(), summoner.region());
-            if (saved != null) ComputeScheduler.startProfileStatistics(saved, filter);
-        }
-        return statistics;
+        return LolApiClient.getProfileStatistics(summoner.puuid(), summoner.region(), filter);
     }
 
     private static EmbedBuilder addLegacyProfileStats(
@@ -1650,9 +1641,12 @@ public class LeagueMessage {
         }
         eb.setDescription("Summoner has played **" + statistics.total.games + "** games with "
             + statistics.championStats.size() + " different champions");
-        ProfileMatchups matchups = PROFILE_SERVICE.getMatchups(summoner.region(), summoner.puuid(), parameter.toFilter());
-        if (matchups == null) ComputeScheduler.startProfileMatchups(summoner.puuid(), summoner.region(), parameter.toFilter());
-        else eb = LeagueMessageUtils.buildMatchups("matchups", eb, toLegacyMatchups(ProfileMatchupsAnalyzer.aggregateMatchups(matchups)));
+        Filter filter = parameter.toFilter();
+        ProfileMatchups matchups = LolApiClient.getMatchups(
+            summoner.puuid(), summoner.region(), filter.timeStart(), filter.timeEnd(), filter.queue(),
+            filter.patch(), filter.lane(), 5);
+        if (matchups != null) eb = LeagueMessageUtils.buildMatchups(
+            "matchups", eb, toLegacyMatchups(ProfileMatchupsAnalyzer.aggregateMatchups(matchups)));
         return eb;
     }
 
@@ -1698,13 +1692,12 @@ public class LeagueMessage {
         return value == null ? 0 : value;
     }
 
-    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, String puuid, LeagueMessageParameter parameter) {
-        List<QueryRecord> queryResult = MatchService.getSummonerData(s.puuid(), s.region());
+    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, LeagueMessageParameter parameter, long totalMatches) {
+        List<QueryRecord> queryResult = List.of();
         for (Match match : matches)
             eb = getOpggEmbedMatchPreview(eb, match, s, queryResult);
 
-        int totalPages = MongoDB.countMatches(puuid, parameter.toFilter());
-        int pages = (int) Math.ceil((double) totalPages / 5);
+        int pages = (int) Math.ceil((double) totalMatches / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
         eb.setThumbnail(null);

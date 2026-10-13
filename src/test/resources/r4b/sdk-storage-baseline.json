@@ -1,5 +1,5 @@
 {
-  "com.R4B.AB.DTO.riot.LeagueEntry": {
+  "com.R4B.api.dto.riot.LeagueEntry": {
     "rank": "sample",
     "hotStreak": true,
     "miniSeries": {
@@ -20,7 +20,7 @@
     "tier": "sample",
     "leagueId": "sample"
   },
-  "com.R4B.AB.DTO.riot.LeagueItem": {
+  "com.R4B.api.dto.riot.LeagueItem": {
     "rank": "sample",
     "hotStreak": true,
     "miniSeries": {
@@ -38,17 +38,17 @@
     "freshBlood": true,
     "leaguePoints": 7
   },
-  "com.R4B.AB.DTO.riot.MiniSeries": {
+  "com.R4B.api.dto.riot.MiniSeries": {
     "losses": 7,
     "progress": "sample",
     "target": 7,
     "wins": 7
   },
-  "com.R4B.AB.DTO.riot.ChampionBan": {
+  "com.R4B.api.dto.riot.ChampionBan": {
     "championId": 7,
     "pickTurn": 7
   },
-  "com.R4B.AB.DTO.riot.ChampionStats": {
+  "com.R4B.api.dto.riot.ChampionStats": {
     "abilityPower": 7,
     "abilityHaste": 7,
     "armor": 7,
@@ -75,7 +75,7 @@
     "powerRegen": 7,
     "spellVamp": 7
   },
-  "com.R4B.AB.DTO.riot.DamageStats": {
+  "com.R4B.api.dto.riot.DamageStats": {
     "magicDamageDone": 7,
     "magicDamageDoneToChampions": 7,
     "magicDamageTaken": 7,
@@ -89,7 +89,7 @@
     "trueDamageDoneToChampions": 7,
     "trueDamageTaken": 7
   },
-  "com.R4B.AB.DTO.riot.RiotMatchData": {
+  "com.R4B.api.dto.riot.RiotMatchData": {
     "gameCreation": 11,
     "gameDuration": 7,
     "gameId": 11,
@@ -279,7 +279,7 @@
     ],
     "tournamentCode": "sample"
   },
-  "com.R4B.AB.DTO.riot.RiotTimelineData": {
+  "com.R4B.api.dto.riot.RiotTimelineData": {
     "frameInterval": 7,
     "frames": [
       {
@@ -420,7 +420,7 @@
       }
     ]
   },
-  "com.R4B.AB.DTO.riot.MatchParticipant": {
+  "com.R4B.api.dto.riot.MatchParticipant": {
     "allInPings": 7,
     "assistMePings": 7,
     "assists": 7,
@@ -575,7 +575,7 @@
     "wardsPlaced": 7,
     "win": true
   },
-  "com.R4B.AB.DTO.riot.MatchPerks": {
+  "com.R4B.api.dto.riot.MatchPerks": {
     "statPerks": {
       "defense": 7,
       "flex": 7,
@@ -596,7 +596,7 @@
       }
     ]
   },
-  "com.R4B.AB.DTO.riot.MatchTeam": {
+  "com.R4B.api.dto.riot.MatchTeam": {
     "bans": [
       {
         "championId": 7,
@@ -612,17 +612,17 @@
     "teamId": "SUBTEAM",
     "win": true
   },
-  "com.R4B.AB.DTO.riot.ObjectiveStats": {
+  "com.R4B.api.dto.riot.ObjectiveStats": {
     "first": true,
     "kills": 7
   },
-  "com.R4B.AB.DTO.riot.PerkSelection": {
+  "com.R4B.api.dto.riot.PerkSelection": {
     "perk": 7,
     "var1": 7,
     "var2": 7,
     "var3": 7
   },
-  "com.R4B.AB.DTO.riot.PerkStyle": {
+  "com.R4B.api.dto.riot.PerkStyle": {
     "description": "sample",
     "selections": [
       {
@@ -634,12 +634,12 @@
     ],
     "style": 7
   },
-  "com.R4B.AB.DTO.riot.StatPerk": {
+  "com.R4B.api.dto.riot.StatPerk": {
     "defense": 7,
     "flex": 7,
     "offense": 7
   },
-  "com.R4B.AB.DTO.riot.TimelineDamageData": {
+  "com.R4B.api.dto.riot.TimelineDamageData": {
     "basic": true,
     "magicDamage": 7,
     "name": "sample",
@@ -650,7 +650,7 @@
     "trueDamage": 7,
     "type": "MINION"
   },
-  "com.R4B.AB.DTO.riot.TimelineFrame": {
+  "com.R4B.api.dto.riot.TimelineFrame": {
     "events": [
       {
         "buildingType": "INHIBITOR_BUILDING",
@@ -779,7 +779,7 @@
     },
     "timestamp": 11
   },
-  "com.R4B.AB.DTO.riot.TimelineFrameEvent": {
+  "com.R4B.api.dto.riot.TimelineFrameEvent": {
     "buildingType": "INHIBITOR_BUILDING",
     "type": "ASCENDED_EVENT",
     "killType": "KILL_ACE",
@@ -845,7 +845,7 @@
     "realTimestamp": 11,
     "timestamp": 11
   },
-  "com.R4B.AB.DTO.riot.TimelineParticipantFrame": {
+  "com.R4B.api.dto.riot.TimelineParticipantFrame": {
     "championStats": {
       "abilityPower": 7,
       "abilityHaste": 7,
@@ -901,20 +901,20 @@
     "totalGold": 7,
     "xp": 7
   },
-  "com.R4B.AB.DTO.riot.TimelineParticipantIdentity": {
+  "com.R4B.api.dto.riot.TimelineParticipantIdentity": {
     "participantId": 7,
     "puuid": "sample"
   },
-  "com.R4B.AB.DTO.riot.TimelinePosition": {
+  "com.R4B.api.dto.riot.TimelinePosition": {
     "x": 7,
     "y": 7
   },
-  "com.R4B.AB.DTO.riot.BannedChampion": {
+  "com.R4B.api.dto.riot.BannedChampion": {
     "championId": 7,
     "pickTurn": 7,
     "teamId": 7
   },
-  "com.R4B.AB.DTO.riot.BaseSpellData": {
+  "com.R4B.api.dto.riot.BaseSpellData": {
     "cooldown": [
       0.5
     ],
@@ -967,14 +967,14 @@
       }
     ]
   },
-  "com.R4B.AB.DTO.riot.Observer": {
+  "com.R4B.api.dto.riot.Observer": {
     "encryptionKey": "sample"
   },
-  "com.R4B.AB.DTO.riot.SpectatorGameCustomizationObject": {
+  "com.R4B.api.dto.riot.SpectatorGameCustomizationObject": {
     "category": "sample",
     "content": "sample"
   },
-  "com.R4B.AB.DTO.riot.SpectatorGameInfo": {
+  "com.R4B.api.dto.riot.SpectatorGameInfo": {
     "bannedChampions": [
       {
         "championId": 7,
@@ -1020,7 +1020,7 @@
     ],
     "platformId": "UNKNOWN"
   },
-  "com.R4B.AB.DTO.riot.SpectatorParticipant": {
+  "com.R4B.api.dto.riot.SpectatorParticipant": {
     "championId": 7,
     "profileIconId": 11,
     "spell1Id": "UNKNOWN",
@@ -1044,14 +1044,14 @@
       }
     ]
   },
-  "com.R4B.AB.DTO.riot.SpectatorPerks": {
+  "com.R4B.api.dto.riot.SpectatorPerks": {
     "perkIds": [
       7
     ],
     "perkStyle": 7,
     "perkSubStyle": 7
   },
-  "com.R4B.AB.DTO.riot.Block": {
+  "com.R4B.api.dto.riot.Block": {
     "items": [
       {
         "count": 7,
@@ -1061,17 +1061,17 @@
     "recMath": true,
     "type": "sample"
   },
-  "com.R4B.AB.DTO.riot.BlockItem": {
+  "com.R4B.api.dto.riot.BlockItem": {
     "count": 7,
     "id": 7
   },
-  "com.R4B.AB.DTO.riot.Info": {
+  "com.R4B.api.dto.riot.Info": {
     "attack": 7,
     "defense": 7,
     "difficulty": 7,
     "magic": 7
   },
-  "com.R4B.AB.DTO.riot.Passive": {
+  "com.R4B.api.dto.riot.Passive": {
     "description": "sample",
     "image": {
       "full": "sample",
@@ -1084,7 +1084,7 @@
     },
     "name": "sample"
   },
-  "com.R4B.AB.DTO.riot.Recommended": {
+  "com.R4B.api.dto.riot.Recommended": {
     "blocks": [
       {
         "items": [
@@ -1104,12 +1104,12 @@
     "title": "sample",
     "type": "sample"
   },
-  "com.R4B.AB.DTO.riot.Skin": {
+  "com.R4B.api.dto.riot.Skin": {
     "id": 7,
     "name": "sample",
     "num": 7
   },
-  "com.R4B.AB.DTO.riot.StaticChampion": {
+  "com.R4B.api.dto.riot.StaticChampion": {
     "allytips": [
       "sample"
     ],
@@ -1272,7 +1272,7 @@
     ],
     "title": "sample"
   },
-  "com.R4B.AB.DTO.riot.StaticChampionSpell": {
+  "com.R4B.api.dto.riot.StaticChampionSpell": {
     "cooldown": [
       0.5
     ],
@@ -1336,7 +1336,7 @@
       }
     ]
   },
-  "com.R4B.AB.DTO.riot.StaticChampionStats": {
+  "com.R4B.api.dto.riot.StaticChampionStats": {
     "armor": 0.5,
     "armorperlevel": 0.5,
     "attackdamage": 0.5,
@@ -1358,7 +1358,7 @@
     "spellblock": 0.5,
     "spellblockperlevel": 0.5
   },
-  "com.R4B.AB.DTO.riot.InventoryDataStats": {
+  "com.R4B.api.dto.riot.InventoryDataStats": {
     "FlatArmorMod": 0.5,
     "FlatAttackSpeedMod": 0.5,
     "FlatBlockMod": 0.5,
@@ -1393,7 +1393,7 @@
     "PercentSpellBlockMod": 0.5,
     "PercentSpellVampMod": 0.5
   },
-  "com.R4B.AB.DTO.riot.Item": {
+  "com.R4B.api.dto.riot.Item": {
     "effect": {
       "sample": "sample"
     },
@@ -1479,13 +1479,13 @@
       "sample"
     ]
   },
-  "com.R4B.AB.DTO.riot.Gold": {
+  "com.R4B.api.dto.riot.Gold": {
     "base": 7,
     "purchasable": true,
     "sell": 7,
     "total": 7
   },
-  "com.R4B.AB.DTO.riot.Image": {
+  "com.R4B.api.dto.riot.Image": {
     "full": "sample",
     "group": "sample",
     "sprite": "sample",
@@ -1494,7 +1494,7 @@
     "x": 7,
     "y": 7
   },
-  "com.R4B.AB.DTO.riot.LevelTip": {
+  "com.R4B.api.dto.riot.LevelTip": {
     "effect": [
       "sample"
     ],
@@ -1502,19 +1502,19 @@
       "sample"
     ]
   },
-  "com.R4B.AB.DTO.riot.MetaData": {
+  "com.R4B.api.dto.riot.MetaData": {
     "isRune": true,
     "tier": "sample",
     "type": "sample"
   },
-  "com.R4B.AB.DTO.riot.SpellVars": {
+  "com.R4B.api.dto.riot.SpellVars": {
     "coeff": null,
     "dyn": "sample",
     "key": "sample",
     "link": "sample",
     "ranksWith": "sample"
   },
-  "com.R4B.AB.DTO.riot.StaticSummonerSpell": {
+  "com.R4B.api.dto.riot.StaticSummonerSpell": {
     "cooldown": [
       0.5
     ],
@@ -1572,7 +1572,7 @@
     ],
     "summonerLevel": 7
   },
-  "com.R4B.AB.DTO.riot.RiotAccount": {
+  "com.R4B.api.dto.riot.RiotAccount": {
     "puuid": "sample",
     "gameName": "sample",
     "tagLine": "sample"

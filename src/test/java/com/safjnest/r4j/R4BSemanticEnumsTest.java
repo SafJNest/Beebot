@@ -23,7 +23,7 @@ public class R4BSemanticEnumsTest {
         "types.lol.GameType", "types.lol.MapType", "types.lol.MatchlistMatchType",
         "types.KillType", "types.lol.SummonerSpellType", "types.lol.TimelineDamageType",
         "types.lol.BuildingType", "types.lol.TowerType", "types.lol.EventType",
-        "types.lol.LeaguePositionType", "types.lol.WardType", "types.lol.MonsterType",
+        "types.lol.WardType", "types.lol.MonsterType",
         "types.lol.MonsterSubType", "types.lol.LevelUpType", "types.lol.SpellSlotType",
         "types.TransformType"
     );
@@ -153,7 +153,7 @@ public class R4BSemanticEnumsTest {
     }
 
     private static Class<?> shared(String family) throws ClassNotFoundException {
-        return Class.forName("com.R4B.LOL." + family.substring(family.lastIndexOf('.') + 1));
+        return Class.forName("com.R4B.lol." + family.substring(family.lastIndexOf('.') + 1));
     }
 
     private static Object constant(Class<?> type, String name) throws ReflectiveOperationException {

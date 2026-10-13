@@ -66,7 +66,7 @@ public class MongoDBTest {
         assertFalse(savedParticipant.containsKey("lp"));
         assertFalse(savedParticipant.containsKey("gain"));
         assertFalse(savedParticipant.containsKey("build"));
-        assertFalse(savedParticipant.containsKey("id"));
+        assertEquals(0, savedParticipant.getInteger("id").intValue());
         assertFalse(savedParticipant.containsKey("summonerId"));
         assertFalse(savedParticipant.containsKey("matchId"));
         assertFalse(savedParticipant.containsKey("legacyParticipantId"));

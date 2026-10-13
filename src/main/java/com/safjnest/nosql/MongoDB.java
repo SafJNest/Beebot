@@ -3022,14 +3022,14 @@ public final class MongoDB {
         if (record == null) return null;
         try {
             Object value = switch (type.getName()) {
-                case "com.R4B.AB.DTO.summoner.Summoner" -> readSummoner(record);
-                case "com.R4B.AB.DTO.summoner.Rank" -> readRank(record);
-                case "com.R4B.AB.DTO.summoner.Mastery" -> readMastery(record);
-                case "com.R4B.AB.DTO.match.Participant" -> readParticipant(record);
-                case "com.R4B.AB.DTO.match.Match" -> readMatch(record);
-                case "com.R4B.AB.DTO.match.MatchResult" -> readMatchResult(record);
-                case "com.R4B.AB.DTO.statistics.ProfileStatistics" -> readProfileStatistics(QueryRecordParser.toDocument(record));
-                case "com.R4B.AB.DTO.Build" -> readBuild(QueryRecordParser.toDocument(record));
+                case "com.R4B.api.dto.summoner.Summoner" -> readSummoner(record);
+                case "com.R4B.api.dto.summoner.Rank" -> readRank(record);
+                case "com.R4B.api.dto.summoner.Mastery" -> readMastery(record);
+                case "com.R4B.api.dto.match.Participant" -> readParticipant(record);
+                case "com.R4B.api.dto.match.Match" -> readMatch(record);
+                case "com.R4B.api.dto.match.MatchResult" -> readMatchResult(record);
+                case "com.R4B.api.dto.statistics.ProfileStatistics" -> readProfileStatistics(QueryRecordParser.toDocument(record));
+                case "com.R4B.api.dto.Build" -> readBuild(QueryRecordParser.toDocument(record));
                 default -> readStructured(QueryRecordParser.toDocument(record), type);
             };
             return type.cast(value);

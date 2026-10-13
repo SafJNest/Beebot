@@ -7,7 +7,7 @@ L'obiettivo è preparare tre servizi nella stessa repository e un nucleo condivi
 estraibili successivamente in repository e artifact versionati separati. In questa
 fase processi e client HTTP restano proposti. Hive e la tranche R4B hanno
 decisioni autonome; il wiring rimane nel monolite. R4B possiede i contratti
-`com.R4B.AB.DTO` e i valori/helper `com.R4B.LOL`, conservando nomi canonici,
+`com.R4B.api.dto` e i valori/helper `com.R4B.lol`, conservando nomi canonici,
 JSON, persistenza e presentazione.
 
 ## Documenti

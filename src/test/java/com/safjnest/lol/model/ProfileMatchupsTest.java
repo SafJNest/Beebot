@@ -99,7 +99,8 @@ public class ProfileMatchupsTest {
         assertTrue(json.contains("\"levelDiffAt15Sum\":0.0"));
         assertTrue(json.contains("\"levelDiffAt15Games\":0"));
         assertTrue(json.contains("\"plateDiffAt15Sum\":0.0"));
-        assertTrue(json.contains("\"plateDiffAt15Games\":0"));
+        assertTrue("Preserve the existing zero plate-difference sample for a matched opponent",
+            json.contains("\"plateDiffAt15Games\":1"));
     }
 
     @Test
@@ -203,7 +204,7 @@ public class ProfileMatchupsTest {
             participant("enemy", 4, LaneType.BOT, TeamType.RED, false),
             participant("enemy-ally", 5, LaneType.UTILITY, TeamType.RED, false)
         );
-        match.events = new JSONObject("""
+        match.eventData = new JSONObject("""
             {
               "participants":{"1":"puuid","2":"ally","3":"enemy","4":"enemy-ally"},
               "snapshots":[{"timestamp":900000,"minute":15,"participants":{
@@ -223,7 +224,7 @@ public class ProfileMatchupsTest {
                 {"timestamp":900000,"team":"RED","lane":"BOT"}
               ]
             }
-            """);
+            """).toMap();
         return match;
     }
 }

@@ -403,4 +403,4 @@ and statistics timestamps; all global variants remain available.
 
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
-- Success model: [`ChampionView`](../../../src/main/java/com/R4B/AB/DTO/ChampionView.java)
+- Success model: [`ChampionView`](../../../src/main/java/com/R4B/api/dto/ChampionView.java)

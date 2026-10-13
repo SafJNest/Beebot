@@ -26,14 +26,14 @@ An agent must report a contradiction. It must not resolve the contradiction by c
 ## Canonical package layout
 
 Hive has the independent root `com.hive`. R4B has the exact independent roots
-`com.R4B.AB.DTO` and `com.R4B.LOL`. Shared response roots and serialized components belong in R4B,
+`com.R4B.api.dto` and `com.R4B.lol`. Shared response roots and serialized components belong in R4B,
 while producer-only computation/storage structures remain `com.safjnest.lol.model`.
 Application queue, scheduler, tracker and service code remains `com.safjnest`.
 The current source destinations and SDK conversions are recorded in
 [`services/r4b-inventory.md`](services/r4b-inventory.md).
 
 ```text
-com/R4B/AB/DTO/
+com/R4B/api/dto/
   summoner/ Summoner, Rank, Mastery, SummonerOverview, SummonerView, SummonerLeaderboard
   match/ Match, Participant, MatchResult, MatchPage, LiveGame, RankHistory...
   statistics/ ProfileStatistics, ProfileActivity, ProfileMatchups, ProfileMatchupLeaf
@@ -45,7 +45,7 @@ com/R4B/AB/DTO/
   Filter, ActivityFilter, ApiResult, ResponseMetadata, LolApiError, TransportJson
   Build, ChampionStatistics, ChampionView, ChampionTierList, RuneSignature, indexables
 
-com/R4B/LOL/
+com/R4B/lol/
   SDK-compatible LoL enums, CanonicalQueue, ordering/record/query values
   FilterCodec, KdaUtils, NumberUtils, map bounds
 

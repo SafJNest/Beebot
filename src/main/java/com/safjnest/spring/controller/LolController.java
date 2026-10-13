@@ -27,13 +27,18 @@ import com.R4B.api.dto.match.RankHistory;
 import com.R4B.api.dto.match.RankHistoryQuery;
 import com.R4B.api.dto.statistics.ProfileActivity;
 import com.R4B.api.dto.statistics.ProfileMatchups;
+import com.R4B.api.dto.statistics.ProfileStatistics;
+import com.R4B.api.dto.ChampionStatistics;
 import com.R4B.api.dto.summoner.SummonerView;
+import com.R4B.api.dto.summoner.Mastery;
 import com.R4B.lol.GameQueueType;
 import com.R4B.lol.LeagueShard;
 import com.R4B.lol.MatchOrder;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.service.MasteryService;
+import com.safjnest.nosql.MongoDB;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")
@@ -79,6 +84,22 @@ public class LolController {
         return profileResponse(result);
     }
 
+    @GetMapping("/profile/{puuid}/statistics")
+    public ResponseEntity<?> profileStatistics(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam("filter") String filterValue
+    ) {
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
+        Filter filter = Filter.fromStateKey(LolApiParameters.requiredText(filterValue, "filter")).setRegion(shard);
+        ProfileStatistics statistics = profileService.getStatistics(profilePuuid, shard, filter);
+        ApiResult<ProfileStatistics> result = statistics == null
+            ? ApiResult.pending(new ResponseMetadata(null, null, true, filter))
+            : ApiResult.ready(statistics, ResponseMetadata.ready(statistics.lastUpdate, filter));
+        return LolApiResponses.from(result, "profile_statistics_pending", "Profile statistics are being prepared", "Profile not found");
+    }
+
     @PostMapping("/profile/{puuid}/refresh")
     public ResponseEntity<Void> refreshProfile(
             @PathVariable("shard") String shardValue,
@@ -92,6 +113,23 @@ public class LolController {
 
         SummonerService.refresh(profilePuuid, shard);
         ProfileService.markManuallySeen(profilePuuid);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/profile/{puuid}/matches/refresh")
+    public ResponseEntity<Void> refreshMatches(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam(name = "queue", required = false) String queueValue,
+            @RequestParam(name = "offset", defaultValue = "0") int offset
+    ) {
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
+        GameQueueType queue = LolApiParameters.optionalQueue(queueValue);
+        if (offset < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Offset must be non-negative");
+        com.R4B.api.dto.summoner.Summoner summoner = SummonerService.getRiotSummoner(profilePuuid, shard);
+        if (summoner == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
+        MatchService.invalidateMatchlist(summoner, queue, offset);
         return ResponseEntity.noContent().build();
     }
 
@@ -234,6 +272,46 @@ public class LolController {
             "Profile records are being prepared",
             "Profile not found"
         );
+    }
+
+    @GetMapping("/profile/{puuid}/masteries")
+    public List<Mastery> masteries(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid
+    ) {
+        return MasteryService.get(
+            LolApiParameters.requiredText(puuid, "puuid"),
+            LolApiParameters.requiredShard(shardValue)
+        );
+    }
+
+    @GetMapping("/profile/{puuid}/owner")
+    public Map<String, String> owner(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid
+    ) {
+        String ownerId = SummonerService.getUserId(
+            LolApiParameters.requiredText(puuid, "puuid"),
+            LolApiParameters.requiredShard(shardValue)
+        );
+        if (ownerId == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Summoner owner not found");
+        return Map.of("userId", ownerId);
+    }
+
+    @PostMapping("/profile/{puuid}/tracking")
+    public ResponseEntity<Void> tracking(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam("userId") String userId,
+            @RequestParam("tracking") boolean tracking
+    ) {
+        String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
+        String ownerId = LolApiParameters.requiredText(userId, "userId");
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        if (!MongoDB.setSummonerTracking(profilePuuid, ownerId, tracking)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Summoner not found");
+        }
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/profile-by-name/{gameName}/{tagLine}")

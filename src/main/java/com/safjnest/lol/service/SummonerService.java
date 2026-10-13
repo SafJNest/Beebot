@@ -485,6 +485,13 @@ public final class SummonerService {
         LeagueShard shard = identity.region();
         Map<GameQueueType, Rank> foundRanks = RankService.find(puuid, shard);
         List<Mastery> foundMasteries = MasteryService.find(puuid, shard);
+        return hydrate(identity, foundRanks, foundMasteries);
+    }
+
+    private static CompletableFuture<Summoner> hydrate(Summoner identity,
+            Map<GameQueueType, Rank> foundRanks, List<Mastery> foundMasteries) {
+        String puuid = identity.puuid();
+        LeagueShard shard = identity.region();
         CompletableFuture<Map<GameQueueType, Rank>> ranksFuture = foundRanks != null
             ? CompletableFuture.completedFuture(foundRanks)
             : RankService.getAsync(puuid, shard);

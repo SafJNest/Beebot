@@ -22,7 +22,8 @@ public final class SummonerProjection {
         Map<Integer, Champion> championMap = new HashMap<>();
         if (champions != null) championMap.putAll(champions);
         Map<Integer, com.R4B.api.dto.statistics.shared.ProfileLeafStats> championStats = ProfileStatisticsAccumulator.of(aggregate).championStats();
-        for (Integer championId : championStats.keySet()) championMap.putIfAbsent(championId, champion(championId));
+        for (Integer championId : championStats.keySet())
+            if (championMap.get(championId) == null) championMap.put(championId, champion(championId));
 
         return new SummonerOverview(
             aggregate,

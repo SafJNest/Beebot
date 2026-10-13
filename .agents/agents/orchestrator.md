@@ -94,7 +94,7 @@ Decomposition (illustrative):
 |---|---|---|---|---|---|
 | U1 | `lol/event/LeagueEventListener.java`, `DomainEvent.java`, `SummonerKey.java` | event | — | true | new file, no ownership conflict |
 | U2 | `lol/service/MatchRecordAnalyzer.java` | service | — | true | new file, canonical model only |
-| U3 | `com/R4B/AB/DTO/ProfileStats.java`, `DeltaQuery.java` | model | — | true | shared data in `com.R4B.AB.DTO` (ADR-0018) |
+| U3 | `com/R4B/api/dto/ProfileStats.java`, `DeltaQuery.java` | model | — | true | shared data in `com.R4B.api.dto` (ADR-0018) |
 | U4 | `lol/service/DeltaQueryBuilder.java` | service | U3 | true | consumes shared data; operational logic stays in producer |
 | U5 | `MongoDB.bulkUpsertIfBetter`, `execute(DeltaQuery)`, `upsertChampionStatsDelta` | mongo | U3, U4 | false (one file) | `explain IXSCAN` mandatory |
 | U6 | `ProfileRecordService implements LeagueEventListener` | service | U1, U2, U5 | true | subscription pattern correct |

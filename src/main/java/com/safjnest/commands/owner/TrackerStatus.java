@@ -7,7 +7,7 @@ import com.hive.status.SchedulerStatus;
 import com.R4B.api.dto.status.BotStatus;
 import com.hive.status.QueueStatus;
 import com.hive.status.RunStatus;
-import com.safjnest.status.StatusService;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -30,7 +30,7 @@ public class TrackerStatus extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        BotStatus status = new StatusService().current();
+        BotStatus status = LolApiClient.getStatus();
         EmbedBuilder embed = new EmbedBuilder().setTitle("Request dispatchers").setColor(Bot.getColor());
         for (SchedulerStatus dispatcher : status.dispatchers()) {
             embed.addField(dispatcher.id(), queues(dispatcher) + runs(dispatcher), false);

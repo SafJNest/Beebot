@@ -12,7 +12,7 @@ Profile, search, leaderboard and match responses currently duplicate domain data
 
 ## Decision
 
-`com.R4B.AB.DTO` owns shared request, success/error models and serialized components; `com.R4B.LOL` owns shared values and pure helpers (ADR-0018). Spring owns controllers, configuration, exception/status mapping, persistence and producer logic. `lol.model` retains producer-only structures.
+`com.R4B.api.dto` owns shared request, success/error models and serialized components; `com.R4B.lol` owns shared values and pure helpers (ADR-0018). Spring owns controllers, configuration, exception/status mapping, persistence and producer logic. `lol.model` retains producer-only structures.
 
 Historical application model packages before ADR-0018 were:
 

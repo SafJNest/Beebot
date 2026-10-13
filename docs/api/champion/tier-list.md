@@ -140,4 +140,4 @@ Mongo tier-list collection.
 - Service and cache: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Analyzer: [`ChampionTierAnalyzer`](../../../src/main/java/com/safjnest/lol/service/ChampionTierAnalyzer.java)
 - Source projection: [`MongoDB`](../../../src/main/java/com/safjnest/nosql/MongoDB.java)
-- Success model: [`ChampionTierList`](../../../src/main/java/com/R4B/AB/DTO/ChampionTierList.java)
+- Success model: [`ChampionTierList`](../../../src/main/java/com/R4B/api/dto/ChampionTierList.java)

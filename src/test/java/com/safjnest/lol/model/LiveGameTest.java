@@ -82,7 +82,8 @@ public class LiveGameTest {
             List.of(playedChampionStats, secondChampionStats, thirdChampionStats)
         );
 
-        LiveGame game = LiveGameProjection.fromR4J(source, Map.of("puuid-1", overview));
+        LiveGame game = LiveGameProjection.fromR4J(source, Map.of("puuid-1", overview),
+            championId -> championId == 110 ? "Varus" : String.valueOf(championId));
 
         assertFalse(game.notInGame());
         assertEquals(Long.valueOf(42), game.gameId());
@@ -101,6 +102,7 @@ public class LiveGameTest {
         assertNull(game.participants().get(1).puuid());
         assertEquals(110, game.participants().get(1).championId());
         assertNotNull(game.participants().get(1).riotId());
+        assertEquals("Varus", game.participants().get(1).riotId());
         assertFalse("spectator-name-is-ignored".equals(game.participants().get(1).riotId()));
         assertNull(game.participants().get(1).icon());
         assertEquals(TeamType.RED, game.participants().get(1).team());

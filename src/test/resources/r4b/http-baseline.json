@@ -1,5 +1,5 @@
 {
-  "com.R4B.AB.DTO.RuneSignature": {
+  "com.R4B.api.dto.RuneSignature": {
     "primaryTree": 7,
     "keystone": 7,
     "primaryRunes": [],
@@ -7,7 +7,7 @@
     "secondaryRunes": [],
     "statShards": []
   },
-  "com.R4B.AB.DTO.ApiResult": {
+  "com.R4B.api.dto.ApiResult": {
     "status": "READY",
     "payload": null,
     "metadata": {
@@ -25,8 +25,8 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.ApiResult$Status": "READY",
-  "com.R4B.AB.DTO.Build": {
+  "com.R4B.api.dto.ApiResult$Status": "READY",
+  "com.R4B.api.dto.Build": {
     "games": 7,
     "wins": 7,
     "winrate": 0.5,
@@ -43,7 +43,7 @@
     "prismatics": [],
     "augments": []
   },
-  "com.R4B.AB.DTO.Build$CoreBuildOption": {
+  "com.R4B.api.dto.Build$CoreBuildOption": {
     "id": "sample",
     "items": [],
     "matches": 7,
@@ -53,7 +53,7 @@
     "averageCompletionTimeSeconds": 0.5,
     "timedMatches": 7
   },
-  "com.R4B.AB.DTO.Build$Option": {
+  "com.R4B.api.dto.Build$Option": {
     "id": "sample",
     "matches": 7,
     "wins": 7,
@@ -64,7 +64,7 @@
     "spell1": 0,
     "spell2": 0
   },
-  "com.R4B.AB.DTO.Build$RuneOption": {
+  "com.R4B.api.dto.Build$RuneOption": {
     "id": "sample",
     "configuration": {
       "primaryTree": 7,
@@ -79,7 +79,7 @@
     "winrate": 0.5,
     "pickrate": 0.5
   },
-  "com.R4B.AB.DTO.Build$SkillOrderOption": {
+  "com.R4B.api.dto.Build$SkillOrderOption": {
     "id": "sample",
     "order": [],
     "matches": 7,
@@ -88,27 +88,27 @@
     "pickrate": 0.5,
     "timedOrder": []
   },
-  "com.R4B.AB.DTO.Build$SkillTiming": {
+  "com.R4B.api.dto.Build$SkillTiming": {
     "level": 7,
     "abilitySlot": 7,
     "averageUpgradeTimeSeconds": 0.5,
     "timedMatches": 7
   },
-  "com.R4B.AB.DTO.Build$SlotOption": {
+  "com.R4B.api.dto.Build$SlotOption": {
     "itemId": 7,
     "matches": 7,
     "winrate": 0.5,
     "spell1": 0,
     "spell2": 7
   },
-  "com.R4B.AB.DTO.ChampionIndexable": {
+  "com.R4B.api.dto.ChampionIndexable": {
     "champion": 7,
     "role": "MID",
     "games": 7,
     "indexable": true,
     "lastUpdate": 11
   },
-  "com.R4B.AB.DTO.ChampionStatistics": {
+  "com.R4B.api.dto.ChampionStatistics": {
     "overview": {
       "games": 7,
       "picks": 7,
@@ -137,17 +137,17 @@
       "deltaWinrate": 0.5
     }
   },
-  "com.R4B.AB.DTO.ChampionStatistics$DamageProfile": {
+  "com.R4B.api.dto.ChampionStatistics$DamageProfile": {
     "physical": 0.5,
     "magic": 0.5,
     "trueDamage": 0.5
   },
-  "com.R4B.AB.DTO.ChampionStatistics$LaneStat": {
+  "com.R4B.api.dto.ChampionStatistics$LaneStat": {
     "lane": "MID",
     "games": 7,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.ChampionStatistics$LaneSynergy": {
+  "com.R4B.api.dto.ChampionStatistics$LaneSynergy": {
     "allyChampion": 7,
     "allyLane": "MID",
     "matches": 7,
@@ -176,7 +176,7 @@
     "levelDiffAt15Games": 11,
     "turretPlateDiffAt15Games": 11
   },
-  "com.R4B.AB.DTO.ChampionStatistics$Matchup": {
+  "com.R4B.api.dto.ChampionStatistics$Matchup": {
     "matches": 7,
     "wins": 7,
     "winrate": 0.5,
@@ -206,7 +206,7 @@
     "levelDiffAt15Games": 11,
     "turretPlateDiffAt15Games": 11
   },
-  "com.R4B.AB.DTO.ChampionStatistics$Overview": {
+  "com.R4B.api.dto.ChampionStatistics$Overview": {
     "games": 7,
     "picks": 7,
     "bans": 7,
@@ -223,19 +223,19 @@
       "trueDamage": 0.5
     }
   },
-  "com.R4B.AB.DTO.ChampionStatistics$PowerCurvePoint": {
+  "com.R4B.api.dto.ChampionStatistics$PowerCurvePoint": {
     "durationBucket": "sample",
     "games": 7,
     "wins": 7,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.ChampionStatistics$Trend": {
+  "com.R4B.api.dto.ChampionStatistics$Trend": {
     "previousPatch": "sample",
     "games": 7,
     "winrate": 0.5,
     "deltaWinrate": 0.5
   },
-  "com.R4B.AB.DTO.ChampionTierList": {
+  "com.R4B.api.dto.ChampionTierList": {
     "roles": [],
     "metadata": {
       "pagination": {
@@ -252,7 +252,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.ChampionTierList$Champion": {
+  "com.R4B.api.dto.ChampionTierList$Champion": {
     "champion": {
       "id": 7,
       "name": "sample",
@@ -273,7 +273,7 @@
     "counters": [],
     "strongAgainst": []
   },
-  "com.R4B.AB.DTO.ChampionTierList$Matchup": {
+  "com.R4B.api.dto.ChampionTierList$Matchup": {
     "champion": {
       "id": 7,
       "name": "sample",
@@ -286,11 +286,11 @@
     "adjustedWinrate": 0.5,
     "weightedDelta": 0.5
   },
-  "com.R4B.AB.DTO.ChampionTierList$Role": {
+  "com.R4B.api.dto.ChampionTierList$Role": {
     "role": "MID",
     "champions": []
   },
-  "com.R4B.AB.DTO.ChampionTierList$Statistics": {
+  "com.R4B.api.dto.ChampionTierList$Statistics": {
     "games": 7,
     "picks": 7,
     "bans": 7,
@@ -299,7 +299,7 @@
     "pickrate": 0.5,
     "banrate": 0.5
   },
-  "com.R4B.AB.DTO.ChampionView": {
+  "com.R4B.api.dto.ChampionView": {
     "champion": {
       "id": 7,
       "name": "sample",
@@ -366,16 +366,16 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.ChampionView$Champion": {
+  "com.R4B.api.dto.ChampionView$Champion": {
     "id": 7,
     "name": "sample",
     "image": "sample"
   },
-  "com.R4B.AB.DTO.ProfileIndexable": {
+  "com.R4B.api.dto.ProfileIndexable": {
     "riotId": "sample",
     "region": "sample"
   },
-  "com.R4B.AB.DTO.ResponseMetadata": {
+  "com.R4B.api.dto.ResponseMetadata": {
     "pagination": {
       "page": 7,
       "pageSize": 7,
@@ -389,7 +389,7 @@
     "refresh": true,
     "filter": null
   },
-  "com.R4B.AB.DTO.ResponseMetadata$Pagination": {
+  "com.R4B.api.dto.ResponseMetadata$Pagination": {
     "page": 7,
     "pageSize": 7,
     "limit": 7,
@@ -398,14 +398,14 @@
     "pages": 11,
     "hasMore": true
   },
-  "com.R4B.AB.DTO.leaderboard.LeaderboardDistribution": {
+  "com.R4B.api.dto.leaderboard.LeaderboardDistribution": {
     "entries": []
   },
-  "com.R4B.AB.DTO.leaderboard.LeaderboardDistribution$Entry": {
+  "com.R4B.api.dto.leaderboard.LeaderboardDistribution$Entry": {
     "key": "sample",
     "players": 11
   },
-  "com.R4B.AB.DTO.leaderboard.LeaderboardPage": {
+  "com.R4B.api.dto.leaderboard.LeaderboardPage": {
     "page": 7,
     "pageSize": 7,
     "total": 11,
@@ -426,7 +426,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.match.LiveGame": {
+  "com.R4B.api.dto.match.LiveGame": {
     "notInGame": true,
     "gameId": 11,
     "startedAt": 11,
@@ -439,7 +439,7 @@
     "bans": {},
     "participants": []
   },
-  "com.R4B.AB.DTO.match.LiveGame$Participant": {
+  "com.R4B.api.dto.match.LiveGame$Participant": {
     "puuid": "sample",
     "riotId": "sample",
     "championId": 7,
@@ -468,7 +468,7 @@
       "championStats": {}
     }
   },
-  "com.R4B.AB.DTO.match.LiveGame$ProfileOverview": {
+  "com.R4B.api.dto.match.LiveGame$ProfileOverview": {
     "summoner": {
       "puuid": "sample",
       "riotId": "sample",
@@ -480,7 +480,7 @@
     "masteries": [],
     "championStats": {}
   },
-  "com.R4B.AB.DTO.match.Match": {
+  "com.R4B.api.dto.match.Match": {
     "id": 7,
     "gameId": "sample",
     "leagueShard": "UNKNOWN",
@@ -508,7 +508,7 @@
     "participants": [],
     "events": {}
   },
-  "com.R4B.AB.DTO.match.MatchPage": {
+  "com.R4B.api.dto.match.MatchPage": {
     "items": [],
     "limit": 7,
     "offset": 7,
@@ -529,7 +529,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.match.MatchResult": {
+  "com.R4B.api.dto.match.MatchResult": {
     "gameId": "sample",
     "queue": "CUSTOM",
     "timeStart": 11,
@@ -550,7 +550,7 @@
     "statsRunes": [],
     "participants": []
   },
-  "com.R4B.AB.DTO.match.Participant": {
+  "com.R4B.api.dto.match.Participant": {
     "id": 7,
     "summonerId": 7,
     "matchId": 7,
@@ -616,7 +616,7 @@
     "boots": 7,
     "supportItem": 7
   },
-  "com.R4B.AB.DTO.match.RankHistory": {
+  "com.R4B.api.dto.match.RankHistory": {
     "items": [],
     "total": 11,
     "metadata": {
@@ -628,7 +628,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.match.RankHistoryMatch": {
+  "com.R4B.api.dto.match.RankHistoryMatch": {
     "gameId": "sample",
     "queue": "CUSTOM",
     "patch": "sample",
@@ -652,7 +652,7 @@
       "previousLp": 7
     }
   },
-  "com.R4B.AB.DTO.match.RankHistoryMetadata": {
+  "com.R4B.api.dto.match.RankHistoryMetadata": {
     "view": "sample",
     "season": 7,
     "patch": "sample",
@@ -660,14 +660,14 @@
     "requestedTimeEnd": 11,
     "filter": null
   },
-  "com.R4B.AB.DTO.match.RankProgress": {
+  "com.R4B.api.dto.match.RankProgress": {
     "rank": "CHALLENGER_I",
     "lp": 7,
     "gain": 7,
     "previousRank": "CHALLENGER_I",
     "previousLp": 7
   },
-  "com.R4B.AB.DTO.record.ProfileRecord": {
+  "com.R4B.api.dto.record.ProfileRecord": {
     "puuid": "sample",
     "riotId": "sample",
     "icon": 7,
@@ -688,7 +688,7 @@
     "lastUpdate": 11,
     "masteryLevel": 7
   },
-  "com.R4B.AB.DTO.record.ProfileRecordPage": {
+  "com.R4B.api.dto.record.ProfileRecordPage": {
     "records": {},
     "lastUpdate": 11,
     "metadata": {
@@ -706,7 +706,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.record.RecordPage": {
+  "com.R4B.api.dto.record.RecordPage": {
     "metric": "KILLS",
     "records": [],
     "limit": 7,
@@ -728,7 +728,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.record.RecordsOverview": {
+  "com.R4B.api.dto.record.RecordsOverview": {
     "records": {},
     "metadata": {
       "pagination": {
@@ -745,7 +745,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity": {
+  "com.R4B.api.dto.statistics.ProfileActivity": {
     "filter": null,
     "coverage": {
       "games": 11,
@@ -815,13 +815,13 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$Coverage": {
+  "com.R4B.api.dto.statistics.ProfileActivity$Coverage": {
     "games": 11,
     "oldestMatchAt": 11,
     "newestMatchAt": 11,
     "calculatedAt": 11
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$DayActivity": {
+  "com.R4B.api.dto.statistics.ProfileActivity$DayActivity": {
     "day": 7,
     "games": 11,
     "wins": 11,
@@ -829,12 +829,12 @@
     "share": 0.5,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$Heatmap": {
+  "com.R4B.api.dto.statistics.ProfileActivity$Heatmap": {
     "days": [],
     "hours": [],
     "cells": []
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$HeatmapCell": {
+  "com.R4B.api.dto.statistics.ProfileActivity$HeatmapCell": {
     "day": 7,
     "hour": 7,
     "games": 11,
@@ -842,7 +842,7 @@
     "losses": 11,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$HourActivity": {
+  "com.R4B.api.dto.statistics.ProfileActivity$HourActivity": {
     "hour": 7,
     "games": 11,
     "wins": 11,
@@ -850,11 +850,11 @@
     "share": 0.5,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$Insight": {
+  "com.R4B.api.dto.statistics.ProfileActivity$Insight": {
     "code": "sample",
     "values": {}
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$QueueActivity": {
+  "com.R4B.api.dto.statistics.ProfileActivity$QueueActivity": {
     "queue": "CUSTOM",
     "games": 11,
     "wins": 11,
@@ -862,7 +862,7 @@
     "share": 0.5,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$Session": {
+  "com.R4B.api.dto.statistics.ProfileActivity$Session": {
     "start": 11,
     "end": 11,
     "durationMs": 11,
@@ -873,7 +873,7 @@
     "queues": [],
     "championIds": []
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$Summary": {
+  "com.R4B.api.dto.statistics.ProfileActivity$Summary": {
     "games": 11,
     "wins": 11,
     "losses": 11,
@@ -909,7 +909,7 @@
     "averageSessionDurationMs": 11,
     "sessionDurationStdDevMs": 11
   },
-  "com.R4B.AB.DTO.statistics.ProfileActivity$TimeWindow": {
+  "com.R4B.api.dto.statistics.ProfileActivity$TimeWindow": {
     "rank": 7,
     "day": 7,
     "startHour": 7,
@@ -919,7 +919,7 @@
     "losses": 11,
     "winrate": 0.5
   },
-  "com.R4B.AB.DTO.statistics.ProfileMatchupLeaf": {
+  "com.R4B.api.dto.statistics.ProfileMatchupLeaf": {
     "games": 11,
     "wins": 11,
     "kills": 11,
@@ -990,7 +990,7 @@
     "D": {},
     "F": {}
   },
-  "com.R4B.AB.DTO.statistics.ProfileMatchups": {
+  "com.R4B.api.dto.statistics.ProfileMatchups": {
     "filter": null,
     "timeStart": 11,
     "timeEnd": 11,
@@ -1011,7 +1011,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.statistics.ProfileStatistics": {
+  "com.R4B.api.dto.statistics.ProfileStatistics": {
     "timeStart": 11,
     "timeEnd": 11,
     "lastUpdate": 11,
@@ -1022,14 +1022,14 @@
     "spellOne": {},
     "spellTwo": {}
   },
-  "com.R4B.AB.DTO.statistics.shared.LeafStats": {
+  "com.R4B.api.dto.statistics.shared.LeafStats": {
     "games": 11,
     "wins": 11,
     "kills": 11,
     "deaths": 11,
     "assists": 11
   },
-  "com.R4B.AB.DTO.statistics.shared.ProfileLeafStats": {
+  "com.R4B.api.dto.statistics.shared.ProfileLeafStats": {
     "games": 11,
     "wins": 11,
     "kills": 11,
@@ -1099,7 +1099,7 @@
     "D": {},
     "F": {}
   },
-  "com.R4B.AB.DTO.status.BotStatus": {
+  "com.R4B.api.dto.status.BotStatus": {
     "status": "sample",
     "league": {
       "gamesAnalyzed": 11,
@@ -1183,7 +1183,7 @@
       }
     }
   },
-  "com.R4B.AB.DTO.status.JvmMetrics": {
+  "com.R4B.api.dto.status.JvmMetrics": {
     "cpu": 0.5,
     "memory": {
       "used": 11,
@@ -1194,33 +1194,33 @@
     "peakThreads": 7,
     "uptime": 11
   },
-  "com.R4B.AB.DTO.status.JvmMetrics$Memory": {
+  "com.R4B.api.dto.status.JvmMetrics$Memory": {
     "used": 11,
     "committed": 11,
     "max": 11
   },
-  "com.R4B.AB.DTO.status.LeagueMetrics": {
+  "com.R4B.api.dto.status.LeagueMetrics": {
     "gamesAnalyzed": 11,
     "totalSummoners": 11,
     "totalMasteries": 11,
     "ranksByQueue": {}
   },
-  "com.R4B.AB.DTO.status.MongoCollectionPerformance": {
+  "com.R4B.api.dto.status.MongoCollectionPerformance": {
     "name": "sample",
     "count": 11,
     "avgMs": 0.5,
     "maxMs": 11
   },
-  "com.R4B.AB.DTO.status.MongoHottestCollection": {
+  "com.R4B.api.dto.status.MongoHottestCollection": {
     "name": "sample",
     "opsPerSecond": 0.5,
     "ops": 11
   },
-  "com.R4B.AB.DTO.status.MongoMemoryMetrics": {
+  "com.R4B.api.dto.status.MongoMemoryMetrics": {
     "residentMb": 11,
     "virtualMb": 11
   },
-  "com.R4B.AB.DTO.status.MongoMetrics": {
+  "com.R4B.api.dto.status.MongoMetrics": {
     "operations": {
       "intervalSeconds": 7,
       "current": {
@@ -1257,7 +1257,7 @@
       "virtualMb": 11
     }
   },
-  "com.R4B.AB.DTO.status.MongoOperationRates": {
+  "com.R4B.api.dto.status.MongoOperationRates": {
     "insert": 0.5,
     "query": 0.5,
     "update": 0.5,
@@ -1266,7 +1266,7 @@
     "getmore": 0.5,
     "total": 0.5
   },
-  "com.R4B.AB.DTO.status.MongoOperationSample": {
+  "com.R4B.api.dto.status.MongoOperationSample": {
     "at": 11,
     "rates": {
       "insert": 0.5,
@@ -1278,7 +1278,7 @@
       "total": 0.5
     }
   },
-  "com.R4B.AB.DTO.status.MongoOperationsMetrics": {
+  "com.R4B.api.dto.status.MongoOperationsMetrics": {
     "intervalSeconds": 7,
     "current": {
       "insert": 0.5,
@@ -1291,7 +1291,7 @@
     },
     "series": []
   },
-  "com.R4B.AB.DTO.status.MongoPerformanceMetrics": {
+  "com.R4B.api.dto.status.MongoPerformanceMetrics": {
     "hottestNow": {
       "name": "sample",
       "opsPerSecond": 0.5,
@@ -1308,18 +1308,18 @@
     "collections": [],
     "slowest": []
   },
-  "com.R4B.AB.DTO.status.MongoSlowOperation": {
+  "com.R4B.api.dto.status.MongoSlowOperation": {
     "command": "sample",
     "collection": "sample",
     "durationMs": 11,
     "at": 11,
     "query": {}
   },
-  "com.R4B.AB.DTO.status.RedisMetrics": {
+  "com.R4B.api.dto.status.RedisMetrics": {
     "keys": 11,
     "memoryUsed": 11
   },
-  "com.R4B.AB.DTO.status.SystemMetrics": {
+  "com.R4B.api.dto.status.SystemMetrics": {
     "cpu": {
       "usage": 0.5,
       "cores": 7,
@@ -1340,31 +1340,31 @@
       "sentBytesPerSecond": 11
     }
   },
-  "com.R4B.AB.DTO.status.SystemMetrics$Cpu": {
+  "com.R4B.api.dto.status.SystemMetrics$Cpu": {
     "usage": 0.5,
     "cores": 7,
     "perCore": []
   },
-  "com.R4B.AB.DTO.status.SystemMetrics$Disk": {
+  "com.R4B.api.dto.status.SystemMetrics$Disk": {
     "used": 11,
     "available": 11,
     "total": 11
   },
-  "com.R4B.AB.DTO.status.SystemMetrics$Memory": {
+  "com.R4B.api.dto.status.SystemMetrics$Memory": {
     "used": 11,
     "available": 11,
     "total": 11
   },
-  "com.R4B.AB.DTO.status.SystemMetrics$Network": {
+  "com.R4B.api.dto.status.SystemMetrics$Network": {
     "receivedBytesPerSecond": 11,
     "sentBytesPerSecond": 11
   },
-  "com.R4B.AB.DTO.summoner.Mastery": {
+  "com.R4B.api.dto.summoner.Mastery": {
     "championId": 7,
     "level": 7,
     "points": 7
   },
-  "com.R4B.AB.DTO.summoner.Rank": {
+  "com.R4B.api.dto.summoner.Rank": {
     "tier": "CHALLENGER_I",
     "lp": 7,
     "wins": 7,
@@ -1372,14 +1372,14 @@
     "globalRanking": 11,
     "regionRanking": 11
   },
-  "com.R4B.AB.DTO.summoner.Summoner": {
+  "com.R4B.api.dto.summoner.Summoner": {
     "puuid": "sample",
     "riotId": "sample",
     "region": "UNKNOWN",
     "level": 7,
     "icon": 7
   },
-  "com.R4B.AB.DTO.summoner.SummonerLeaderboard": {
+  "com.R4B.api.dto.summoner.SummonerLeaderboard": {
     "position": 11,
     "summoner": {
       "summoner": {
@@ -1421,7 +1421,7 @@
       }
     }
   },
-  "com.R4B.AB.DTO.summoner.SummonerOverview": {
+  "com.R4B.api.dto.summoner.SummonerOverview": {
     "statistics": {
       "timeStart": 11,
       "timeEnd": 11,
@@ -1436,11 +1436,11 @@
     "masteries": [],
     "champions": {}
   },
-  "com.R4B.AB.DTO.summoner.SummonerOverview$Champion": {
+  "com.R4B.api.dto.summoner.SummonerOverview$Champion": {
     "name": "sample",
     "image": "sample"
   },
-  "com.R4B.AB.DTO.summoner.SummonerView": {
+  "com.R4B.api.dto.summoner.SummonerView": {
     "summoner": {
       "puuid": "sample",
       "riotId": "sample",
@@ -1479,7 +1479,7 @@
       "filter": null
     }
   },
-  "com.R4B.AB.DTO.LolApiError": {
+  "com.R4B.api.dto.LolApiError": {
     "status": 7,
     "code": "sample",
     "message": "sample",

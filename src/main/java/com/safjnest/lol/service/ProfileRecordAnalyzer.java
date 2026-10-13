@@ -14,6 +14,12 @@ import com.R4B.lol.TeamType;
 
 public final class ProfileRecordAnalyzer {
 
+    private ProfileRecordAnalyzer() {}
+
+    public static Accumulator accumulator(String puuid, Filter filter) {
+        return new Accumulator(puuid, filter);
+    }
+
     public static final class Accumulator {
         private final String puuid;
         private final String filterKey;
@@ -51,6 +57,8 @@ public final class ProfileRecordAnalyzer {
             for (ProfileRecord record : result) record.lastUpdate = now;
             return result;
         }
+
+        // ============================================================================
 
         private void addFirstBlood(Match match, Participant player, List<Map<String, Object>> kills) {
             int playerId = participantId(match, player);
@@ -223,9 +231,4 @@ public final class ProfileRecordAnalyzer {
         }
     }
 
-    private ProfileRecordAnalyzer() {}
-
-    public static Accumulator accumulator(String puuid, Filter filter) {
-        return new Accumulator(puuid, filter);
-    }
 }

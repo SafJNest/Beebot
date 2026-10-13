@@ -219,19 +219,19 @@ public class SummonerWarmingTest {
     }
 
     @Test
-    public void hydrateSkipsRiotWhenPiecesPresent() throws Exception {
+    public void hydrationCompositionSkipsRiotWhenStoredPiecesArePresent() throws Exception {
         Summoner hydrated = Summoner.hydrated("puuid-full", "Name#TAG", LeagueShard.EUW1, 30, 500,
                 null, false, Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(TierDivisionType.GOLD_I, 75, 20, 10)),
                 List.of(new Mastery(157, 7, 250000)));
 
-        assertSame(hydrated, hydrate(hydrated));
+        assertSame(hydrated, hydrate(hydrated, hydrated.ranks(), hydrated.masteries()));
     }
 
     @Test
-    public void hydrateSkipsRiotForIdentityOnly() throws Exception {
+    public void hydrationCompositionKeepsIdentityWhenStoredPiecesAreEmpty() throws Exception {
         Summoner identity = new Summoner("puuid-identity", "Name#TAG", LeagueShard.EUW1, 30, 500);
 
-        assertSame(identity, hydrate(identity));
+        assertSame(identity, hydrate(identity, Map.of(), List.of()));
     }
 
     @Test
@@ -267,6 +267,15 @@ public class SummonerWarmingTest {
         method.setAccessible(true);
         CompletableFuture<Summoner> future =
                 (CompletableFuture<Summoner>) method.invoke(null, new Object[] { identity });
+        return future.get(HYDRATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Summoner hydrate(Summoner identity, Map<GameQueueType, Rank> ranks, List<Mastery> masteries)
+            throws Exception {
+        Method method = SummonerService.class.getDeclaredMethod("hydrate", Summoner.class, Map.class, List.class);
+        method.setAccessible(true);
+        CompletableFuture<Summoner> future = (CompletableFuture<Summoner>) method.invoke(null, identity, ranks, masteries);
         return future.get(HYDRATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 }

@@ -23,7 +23,7 @@ codegraph impact <symbol> # blast radius before editing
 | new Discord command | §5.1 | `rsc/commands.json` + `commands/<cat>/Mycommand.java` + `LeagueMessage` |
 | new HTTP endpoint | §5.2 | `spring/controller/*` + `LolApiParameters` + `LolApiResponses.from(ApiResult)` |
 | new service | §5.3 | `lol/service/MyService.java` constants→fields→public→//====→private |
-| new canonical model | §5.4 | `com.R4B.AB.DTO` contracts; `com.R4B.LOL` values/helpers; producer-only structures in `lol.model`, no duplicate DTO |
+| new canonical model | §5.4 | `com.R4B.api.dto` contracts; `com.R4B.lol` values/helpers; producer-only structures in `lol.model`, no duplicate DTO |
 | new queue job | §5.5 | `QueueHandler.immediate/normal/background(scheduler, route, key, name, Result.class, job->)` |
 | new collection/entity | §5.6 | `AbstractEntity` + `MongoDB.java` + `COLLECTION_NAMES` + create-only index `profile_statistics_identity` |
 | new query | §5.7 | `Filters.eq/and/in` + `Projections.include` + cursor batch, `explain IXSCAN` |
@@ -57,7 +57,7 @@ HTTP exclusions independently of the storage mapper. No HTTP client is added.
 
 ### HTTP APIs
 
-- Follow §5.2: choose the canonical controller, validate every path/query value through `LolApiParameters`, call the owning service, and return canonical `com.R4B.AB.DTO` data through `LolApiResponses`.
+- Follow §5.2: choose the canonical controller, validate every path/query value through `LolApiParameters`, call the owning service, and return canonical `com.R4B.api.dto` data through `LolApiResponses`.
 - Keep controllers thin; use `ApiResult` for ready/pending/error outcomes and the established `202/400/404` error shape. Preserve shard in shard-scoped routes and service/query/cache keys.
 - Update endpoint documentation and the API index in the same task. Review persistence/query indexes, cache invalidation, and API synchronization whenever the change affects those areas.
 
@@ -67,7 +67,7 @@ Before handing off, state which command/API/test contract was applied, whether s
 
 ## Mandatory checklist (HANDBOOK §7)
 
-- [ ] API sync: controller + `com.R4B.AB.DTO` + `docs/api/<scope>/*.md` in the same task
+- [ ] API sync: controller + `com.R4B.api.dto` + `docs/api/<scope>/*.md` in the same task
 - [ ] Doc sync: `HANDBOOK.md` + ADR + `docs/mongo` or explicit `no-doc-change`
 - [ ] Presentation stability: no embed/view restyle unless requested
 - [ ] Indexes & `explain("executionStats")` → `IXSCAN`, no `COLLSCAN`

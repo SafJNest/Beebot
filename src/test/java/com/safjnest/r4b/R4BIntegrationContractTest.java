@@ -34,15 +34,19 @@ import com.R4B.api.dto.statistics.shared.ProfileLeafStats;
 import com.R4B.api.dto.summoner.Rank;
 import com.R4B.api.dto.summoner.Summoner;
 import com.R4B.api.dto.summoner.SummonerView;
+import com.R4B.api.dto.summoner.Mastery;
 import com.R4B.lol.CanonicalQueue;
 import com.R4B.lol.GameQueueType;
 import com.R4B.lol.LeagueShard;
 import com.R4B.lol.TierDivisionType;
+import com.R4B.lol.TeamType;
 import com.safjnest.spring.config.LolApiConfig;
 import com.safjnest.utils.JsonCodec;
 import com.safjnest.nosql.AbstractEntity;
 import com.safjnest.nosql.writer.SummonerWriter;
 import com.safjnest.nosql.writer.MatchWriter;
+import com.safjnest.nosql.MongoDB;
+import com.safjnest.sql.QueryRecordParser;
 
 public class R4BIntegrationContractTest {
 
@@ -159,6 +163,38 @@ public class R4BIntegrationContractTest {
         Method method = AbstractEntity.class.getDeclaredMethod("pendingOperations", boolean.class);
         method.setAccessible(true);
         return method.invoke(writer, false);
+    }
+
+    @Test
+    public void roundTripsMongoIdentityAndMatchThroughCanonicalReader() {
+        Rank rank = new Rank(TierDivisionType.MASTER_I, 501, 25, 10);
+        Summoner original = Summoner.hydrated("puuid-42", "Name#TAG", LeagueShard.EUW1, 500, 1234,
+            "owner", true, Map.of(GameQueueType.RANKED_SOLO_5X5, rank), List.of(new Mastery(412, 7, 100000)));
+        Summoner decoded = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(original)), Summoner.class);
+        assertTrue(decoded != null);
+        assertEquals(original, decoded);
+        assertEquals("owner", decoded.userId());
+        assertTrue(decoded.tracking());
+        assertEquals(original.ranks(), decoded.ranks());
+        assertEquals(original.masteries(), decoded.masteries());
+
+        Match match = new Match();
+        match.gameId = "EUW1_123";
+        match.leagueShard = LeagueShard.EUW1;
+        match.queue = GameQueueType.RANKED_SOLO_5X5;
+        match.bans = Map.of(TeamType.BLUE, List.of(412), TeamType.RED, List.of(157));
+        Participant participant = new Participant();
+        participant.puuid = "puuid-42";
+        participant.champion = 412;
+        match.participants = List.of(participant);
+        Match restored = MongoDB.read(QueryRecordParser.fromDocument(MongoDB.toDocument(match)), Match.class);
+        assertTrue(restored != null);
+        assertEquals("EUW1_123", restored.gameId);
+        assertEquals(LeagueShard.EUW1, restored.leagueShard);
+        assertEquals(GameQueueType.RANKED_SOLO_5X5, restored.queue);
+        assertEquals(match.bans, restored.bans);
+        assertEquals("puuid-42", restored.participants.getFirst().puuid);
+        assertEquals(412, restored.participants.getFirst().champion);
     }
 
     private static JsonNode baseline(ObjectMapper mapper) throws Exception {

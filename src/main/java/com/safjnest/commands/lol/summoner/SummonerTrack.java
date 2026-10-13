@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
-import com.safjnest.nosql.MongoDB;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -57,7 +57,7 @@ public class SummonerTrack extends SlashCommand {
             return;
         }
 
-        if (!MongoDB.setSummonerTracking(account_id, event.getMember().getId(), track)) {
+        if (!LolApiClient.setTracking(account_id, data.getRiotAccounts().get(account_id).region(), event.getMember().getId(), track)) {
             event.deferReply(false).addContent("Something went wrong while updating tracking.").queue();
             return;
         }

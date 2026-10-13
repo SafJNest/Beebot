@@ -26,10 +26,6 @@ public class MatchMemoryUtilsTest {
         Map<String, Object> eventData = new LinkedHashMap<>();
         eventData.put("champion_kills", championKills);
 
-        JSONArray frames = new JSONArray();
-        frames.put(new JSONObject().put("events", new JSONArray().put(new JSONObject().put("killer", 1))));
-        JSONObject events = new JSONObject().put("frames", frames);
-
         Map<Object, List<Integer>> bans = new LinkedHashMap<>();
         List<Integer> blueBans = new ArrayList<>(List.of(1, 2, 3));
         bans.put("BLUE", blueBans);
@@ -37,24 +33,32 @@ public class MatchMemoryUtilsTest {
 
         Match match = new Match();
         match.eventData = eventData;
-        match.eventData = events.toMap();
         match.bans = (Map) bans;
         match.participants = participants;
 
         MatchMemoryUtils.release(match);
 
         assertNull(match.eventData);
-        assertNull(match.eventData);
         assertNull(match.bans);
         assertNull(match.participants);
         assertEquals(0, eventData.size());
         assertEquals(0, championKills.size());
         assertEquals(0, nestedEvent.size());
-        assertEquals(0, events.length());
-        assertEquals(0, frames.length());
         assertEquals(0, bans.size());
         assertEquals(0, blueBans.size());
         assertEquals(0, participants.size());
+    }
+
+    @Test
+    public void releasesNestedJsonTreesInProducerHelpers() {
+        JSONArray frames = new JSONArray();
+        frames.put(new JSONObject().put("events", new JSONArray().put(new JSONObject().put("killer", 1))));
+        JSONObject events = new JSONObject().put("frames", frames);
+
+        MatchMemoryUtils.release(events);
+
+        assertEquals(0, events.length());
+        assertEquals(0, frames.length());
     }
 
     @Test

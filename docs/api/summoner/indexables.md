@@ -38,4 +38,4 @@ receives a new timestamp if added again.
 
 - Controller: [`ProfileIndexableController`](../../../src/main/java/com/safjnest/spring/controller/ProfileIndexableController.java)
 - Service: [`ProfileService`](../../../src/main/java/com/safjnest/lol/service/ProfileService.java)
-- Success model: [`ProfileIndexable`](../../../src/main/java/com/R4B/AB/DTO/ProfileIndexable.java)
+- Success model: [`ProfileIndexable`](../../../src/main/java/com/R4B/api/dto/ProfileIndexable.java)

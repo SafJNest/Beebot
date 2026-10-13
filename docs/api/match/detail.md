@@ -216,4 +216,4 @@ The `200` response adds root `metadata` with the match `lastUpdate` and
 
 - Controller: [`LolController`](../../../src/main/java/com/safjnest/spring/controller/LolController.java)
 - Service: [`MatchService`](../../../src/main/java/com/safjnest/lol/service/MatchService.java) — `getDetail`
-- Success model: [`Match`](../../../src/main/java/com/R4B/AB/DTO/match/Match.java)
+- Success model: [`Match`](../../../src/main/java/com/R4B/api/dto/match/Match.java)

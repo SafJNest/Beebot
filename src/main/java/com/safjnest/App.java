@@ -16,6 +16,7 @@ import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.twitch.TwitchClient;
+import com.R4B.client.R4B;
 
 public class App {
 
@@ -56,6 +57,12 @@ public class App {
 
         try {
             springServer = SpringServer.start(port);
+            String apiBaseUrl = System.getProperty("r4b.api.base-url");
+            if (apiBaseUrl == null || apiBaseUrl.isBlank()) apiBaseUrl = System.getenv("R4B_API_BASE_URL");
+            if (apiBaseUrl == null || apiBaseUrl.isBlank()) {
+                apiBaseUrl = springProperties.getProperty("r4b.api.base-url", "http://127.0.0.1:" + port);
+            }
+            R4B.configure(apiBaseUrl);
             BotLogger.info("Spring API started on port " + port);
         } catch (Exception e) {
             BotLogger.error("Failed to start Spring API: " + e.getMessage());

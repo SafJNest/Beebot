@@ -14,7 +14,7 @@ logic was also exposed through multiple service methods with different names.
 
 ## Decision
 
-`com.R4B.AB.DTO.ApiResult<T>` is the only result type shared by LoL
+`com.R4B.api.dto.ApiResult<T>` is the only result type shared by LoL
 endpoints. It has four states:
 
 - `READY`: complete payload, HTTP 200;
@@ -42,7 +42,7 @@ matchups use `202` with metadata for the requested filter.
 
 ## Ownership and invariants
 
-- `ApiResult` belongs to `com.R4B.AB.DTO` (ADR-0018).
+- `ApiResult` belongs to `com.R4B.api.dto` (ADR-0018).
 - HTTP status mapping belongs to `spring.controller`.
 - HTTP parameter parsing belongs to `spring.controller`.
 - Redis and DB are read once per component before an optional compute fallback.

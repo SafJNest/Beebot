@@ -2,7 +2,9 @@
 
 Decisione: [ADR-0018](../adr/0018-r4b-shared-contracts.md).
 Baseline: branch `beebot-servicies`, HEAD `8a88645e`, working tree pulito.
-Nessun commit, push o PR appartiene a questa tranche.
+L’utente ha salvato la prima iterazione e la rinomina in `615dfaa7`.
+L’agente non esegue ulteriori commit, push o PR. La verifica finale segue
+i namespace scelti dall’utente `com.R4B.api.dto` e `com.R4B.lol`.
 
 ## Baseline verificata
 
@@ -10,9 +12,10 @@ Nessun commit, push o PR appartiene a questa tranche.
 - Sorgenti ufficiali del tag `2.8.1` confrontati con l'artifact realmente usato.
 - CodeGraph iniziale aggiornato: 525 file, 12.945 nodi, 34.117 archi.
 - Build baseline offline in checkout temporaneo indipendente dal working tree.
-- Probe del mapper HTTP baseline: 98 fixture JSON di radici/componenti; 94
-  fixture pubbliche nel gate persistente. Tre tipi interni
-  (`Augment`, `CompetitiveEntry`, `ChampionNode`) sono esclusi esplicitamente
+- Probe del mapper HTTP baseline: 98 fixture JSON di radici/componenti; 90
+  fixture pubbliche nel gate persistente. Sette tipi interni
+  (`Augment`, `CompetitiveEntry`, `ChampionNode`, `ChampionLeafStats`,
+  `MatchupStats`, `TrendStats`, `WinLossStats`) sono esclusi esplicitamente
   dal gate dei contratti pubblici, senza considerarli DTO da estrarre.
   Anche `ProfileMatchups.Metric`, enum privato del produttore, è escluso.
 
@@ -61,7 +64,10 @@ la copertura prevista e non costituiscono una dichiarazione di superamento.
 
 ## Limiti delle prove
 
-Nessuna prova runtime Mongo, Redis, Riot o Discord è eseguita dalla baseline
-offline o dai test di contratto. Non sono introdotti client HTTP, processi
+Nessuna prova runtime positiva Mongo, Redis, Riot o Discord è dimostrata
+dalla baseline offline o dai test di contratto. Un tentativo iniziale della
+suite completa ha eseguito il sampler Mongo dipendente dalla rete ed è stato
+interrotto; la verifica offline del limite serie usa ora un sampler isolato e
+la stessa operazione di append/troncamento, senza chiamare Mongo. Non sono introdotti client HTTP, processi
 distinti o una nuova queue. Il mantenimento del JSON non prova disponibilità
 dei servizi reali né l'uso degli indici su un database attivo.

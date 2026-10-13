@@ -27,7 +27,7 @@ build/statistiche restano nel proprietario Spring/Mongo.
 4. Il nucleo comune contiene i contratti canonici necessari a richieste/risposte
    e il core generico job/code. Un futuro package HTTP contiene soltanto trasporto.
 5. Le radici accettate dalle tranche autonome sono `com.hive` (ADR-0017) e
-   `com.R4B.AB.DTO` / `com.R4B.LOL` (ADR-0018). Client HTTP e moduli
+   `com.R4B.api.dto` / `com.R4B.lol` (ADR-0018). Client HTTP e moduli
    applicativi restano proposti; non introdurre `shared` come nuovo wrapper.
 6. Le strutture finali restano uniche e conservano i nomi canonici e il JSON.
    Separare i metodi persistenti/calcolo/SDK prima di trasferire i tipi.

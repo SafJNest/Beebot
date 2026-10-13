@@ -57,7 +57,7 @@ thresholds.
 This amendment extends the 2026-08-27 profile-statistics leaf contract with
 the spell-cast maps and the complete, additive matchup/synergy breakdowns above.
 
-Success and error payload data use canonical models from `com.R4B.AB.DTO` (ADR-0018). Spring retains HTTP mapping and exception handling. The R4B transport JSON profile preserves HTTP exclusions independently of storage serialization.
+Success and error payload data use canonical models from `com.R4B.api.dto` (ADR-0018). Spring retains HTTP mapping and exception handling. The R4B transport JSON profile preserves HTTP exclusions independently of storage serialization.
 
 Profile exposes the complete `SummonerView` shape. Leaderboard exposes page metadata and rows of `SummonerLeaderboard`, each with the same nested `summoner` view.
 

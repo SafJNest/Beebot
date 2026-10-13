@@ -3,16 +3,18 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-10-10
+- Amended: 2026-10-12 — user-selected lowercase packages `com.R4B.api.dto` / `com.R4B.lol`
 - Scope: shared data contracts, LoL value types/helpers and migration of local consumers
 - Amends: model placement in ADR-0001/0002/0003/0005/0006/0007 and the shared-contract tranche of ADR-0016
 
 ## Decision
 
 The user authorizes this extraction independently of the remaining service
-separation proposal. The exact roots are `com.R4B.AB.DTO` for request/response
-data, errors, metadata and serialized components, and `com.R4B.LOL` for LoL
-enums, constants and service-independent helpers. These uppercase names are
-intentional. Canonical names such as `Summoner`, `Rank`, `Mastery`, `Match`,
+separation proposal. The exact roots are `com.R4B.api.dto` for request/response
+data, errors, metadata and serialized components, and `com.R4B.lol` for LoL
+enums, constants and service-independent helpers. Only `R4B` remains uppercase. The user-selected `api.dto` and `lol`
+replace the original uppercase roots from the 2026-10-10 brief; source and
+consumer packages follow this later decision. Canonical names such as `Summoner`, `Rank`, `Mastery`, `Match`,
 `Participant` and `SummonerView` remain unique; no parallel aliases or DTO copies
 are retained in `com.safjnest.lol.model`.
 

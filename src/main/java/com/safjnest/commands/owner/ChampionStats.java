@@ -1,13 +1,13 @@
 package com.safjnest.commands.owner;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import com.R4B.lol.*;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.lol.service.ChampionService.MatrixRefreshResult;
-import com.safjnest.lol.scheduler.ComputeScheduler;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -49,7 +49,7 @@ public class ChampionStats extends Command {
             return;
         }
 
-        CompletableFuture<MatrixRefreshResult> future = ComputeScheduler.enqueueChampionStatsMatrix(patch, queue);
+        CompletableFuture<Map<String, Integer>> future = LolApiClient.refreshChampionStatistics(patch, queue);
         event.reply("Champion stats matrix queued for patch=" + patch + ", queue=" + queue.name());
         future.whenComplete((result, error) -> {
             if (error != null) {
@@ -57,9 +57,9 @@ public class ChampionStats extends Command {
                 return;
             }
             event.getChannel().sendMessage("Champion stats matrix completed: combinations="
-                + result.combinations() + ", skipped=" + result.skipped()
-                + ", generated=" + result.generated() + ", empty=" + result.empty()
-                + ", champions=" + result.persistedChampions()).queue();
+                + result.get("combinations") + ", skipped=" + result.get("skipped")
+                + ", generated=" + result.get("generated") + ", empty=" + result.get("empty")
+                + ", champions=" + result.get("champions")).queue();
         });
     }
 }

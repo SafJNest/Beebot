@@ -30,18 +30,13 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
-import com.R4B.api.dto.riot.LeagueEntry;
-import com.R4B.api.dto.riot.RiotAccount;
-import com.R4B.api.dto.riot.SpectatorGameInfo;
-import com.R4B.api.dto.riot.SpectatorParticipant;
 import com.R4B.api.dto.summoner.Mastery;
 import com.R4B.api.dto.summoner.Rank;
 import com.R4B.api.dto.summoner.Summoner;
+import com.R4B.api.dto.summoner.SummonerView;
+import com.R4B.api.dto.match.LiveGame;
 import com.R4B.lol.*;
-import com.safjnest.lol.service.MasteryService;
-import com.safjnest.lol.service.RankService;
-import com.safjnest.lol.service.SummonerService;
-import com.safjnest.lol.service.StaticDataService;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
@@ -50,8 +45,6 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisKey;
-import com.safjnest.utils.HttpUtils;
 import com.safjnest.utils.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -67,7 +60,6 @@ import net.dv8tion.jda.api.entities.User;
 
     private static String patch;
 
-    private static String runesURL;
 
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<Augment> augments = new ArrayList<>();
@@ -75,7 +67,6 @@ import net.dv8tion.jda.api.entities.User;
     static {
         RiotGateway.initialize();
         LeagueHandler.patch = PatchUtils.getPatch() + ".1";
-        LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
         loadRunes();
         loadAugments();
@@ -143,7 +134,7 @@ import net.dv8tion.jda.api.entities.User;
     }
 
     public static String getSpellName(int id) {
-        return StaticDataService.getSummonerSpell(LeagueMessageUtils.normalizeSpellId(id)).getName();
+        return LolApiClient.getSummonerSpell(LeagueMessageUtils.normalizeSpellId(id)).getName();
     }
 
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████
@@ -161,14 +152,7 @@ import net.dv8tion.jda.api.entities.User;
      */
     private static void loadRunes(){
         try {
-            String json = StaticDataService.getText(RedisKey.DDRAGON_RUNES, PatchUtils.getPatch(),
-                () -> {
-                    try {
-                        return HttpUtils.readUrl(runesURL);
-                    } catch (IOException exception) {
-                        throw new IllegalStateException(exception);
-                    }
-                });
+            String json = LolApiClient.getRunes();
             JSONParser parser = new JSONParser();
             JSONArray file = (JSONArray) parser.parse(json);
 
@@ -243,15 +227,15 @@ import net.dv8tion.jda.api.entities.User;
 
     public static String getFormattedSummonerName(Summoner s) {
         if (s.riotId() != null && !s.riotId().isBlank()) return s.riotId();
-        String dbName = MongoDB.getSummonerNameById(s.puuid(), s.region());
-        if (dbName != null) return dbName;
-        RiotAccount account = SummonerService.getRiotAccount(s.puuid(), s.region());
-        if (account == null) return "";
-        return account.getName() + "#" + account.getTag();
+        SummonerView profile = LolApiClient.getProfile(s.puuid(), s.region());
+        return profile == null || profile.summoner() == null ? "" : profile.summoner().riotId();
     }
 
     public static Summoner getSummonerFromDB(String userId){
-        return getSummonerByUserData(UserCache.getUser(userId));
+        Summoner linked = getSummonerByUserData(UserCache.getUser(userId));
+        if (linked == null) return null;
+        SummonerView profile = LolApiClient.getProfile(linked.puuid(), linked.region());
+        return profile == null ? null : profile.summoner();
     }
 
     public static Summoner getSummonerByUserData(UserData user){
@@ -297,8 +281,8 @@ import net.dv8tion.jda.api.entities.User;
             tag = args.split("#", 2)[1];
         }
         LeagueShard shard = guild.getLeagueShard(event.getChannel().getId());
-        String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
-        return puuid == null ? null : SummonerService.get(puuid, shard);
+        SummonerView profile = LolApiClient.getProfileByName(name, tag, shard);
+        return profile == null ? null : profile.summoner();
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
@@ -319,23 +303,13 @@ import net.dv8tion.jda.api.entities.User;
         LeagueShard guildShard = event.isFromGuild()  ? guild.getLeagueShard(event.getChannel().getId()) : LeagueShard.EUW1;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
-        if (event.getOption("summoner") != null) {
-            s = SummonerService.get(event.getOption("summoner").getAsString(), shard);
-        }
-
-        if (s != null) return s;
-
         String summoner = event.getOption("summoner").getAsString().replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
+        SummonerView profileByPuuid = LolApiClient.getProfile(summoner, shard);
+        if (profileByPuuid != null) return profileByPuuid.summoner();
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShard.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
-
-        String puuid = SummonerService.getPuuidByRiotId(name, tag, shard);
-        return puuid == null ? null : SummonerService.get(puuid, shard);
-    }
-
-    public static boolean updateSummonerMongo(Summoner summoner) {
-        if (summoner == null) return false;
-        return MongoDB.upsertSummoner(summoner, null);
+        SummonerView profile = LolApiClient.getProfileByName(name, tag, shard);
+        return profile == null ? null : profile.summoner();
     }
 
 //     ▄███████▄  ▄█   ▄████████
@@ -366,11 +340,8 @@ import net.dv8tion.jda.api.entities.User;
 //    ██████████  ▀█   █▀     ▄████▀     ███    ███  ▀█████▀
 //                                       ███    ███
 
-    private static final String QUEUE_COMMON_SOLO = "5v5 Ranked Solo";
-    private static final String QUEUE_COMMON_FLEX = "5v5 Ranked Flex Queue";
-
     public static String getSoloQStats(Summoner s) {
-        Rank rank = RankService.getByQueue(s.puuid(), s.region(), GameQueueType.RANKED_SOLO_5X5);
+        Rank rank = getRank(s, GameQueueType.RANKED_SOLO_5X5);
         String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
@@ -378,7 +349,7 @@ import net.dv8tion.jda.api.entities.User;
     }
 
     public static String getFlexStats(Summoner s) {
-        Rank rank = RankService.getByQueue(s.puuid(), s.region(), GameQueueType.RANKED_FLEX_SR);
+        Rank rank = getRank(s, GameQueueType.RANKED_FLEX_SR);
         String stats = rank != null ? formatStatsByRank(rank) : "";
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
@@ -396,52 +367,57 @@ import net.dv8tion.jda.api.entities.User;
             + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 
-    public static LeagueEntry getRankEntry(String puuid, LeagueShard shard) {
-        return RankService.getEntry(puuid, shard, QUEUE_COMMON_SOLO);
+    private static Rank getRank(Summoner summoner, GameQueueType queue) {
+        return getRank(summoner.puuid(), summoner.region(), queue);
     }
 
-    public static LeagueEntry getRankEntry(Summoner s) {
+    private static Rank getRank(String puuid, LeagueShard shard, GameQueueType queue) {
+        SummonerView profile = LolApiClient.getProfile(puuid, shard);
+        if (profile == null || profile.ranks() == null) return null;
+        return profile.ranks().get(GameQueueType.canonicalQueue(queue));
+    }
+
+    public static Rank getRankEntry(String puuid, LeagueShard shard) {
+        return getRank(puuid, shard, GameQueueType.RANKED_SOLO_5X5);
+    }
+
+    public static Rank getRankEntry(Summoner s) {
         return getRankEntry(s.puuid(), s.region());
     }
 
-    public static LeagueEntry getFlexEntry(String puuid, LeagueShard shard) {
-        return RankService.getEntry(puuid, shard, QUEUE_COMMON_FLEX);
+    public static Rank getFlexEntry(String puuid, LeagueShard shard) {
+        return getRank(puuid, shard, GameQueueType.RANKED_FLEX_SR);
     }
 
-    public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
+    public static Rank getEntry(GameQueueType type, String puuid, LeagueShard shard) {
         if (GameQueueType.isCherry(type)) {
             type = GameQueueType.RANKED_SOLO_5X5;
         }
-        LeagueEntry def = null;
-        for (LeagueEntry entry : RankService.getEntries(puuid, shard)) {
-            if (entry.getQueueType().equals(type)) {
-                return entry;
-            }
-            if (entry.getQueueType() == GameQueueType.RANKED_SOLO_5X5) {
-                def = entry;
-            }
-        }
-        return def;
+        Rank rank = getRank(puuid, shard, type);
+        return rank == null ? getRank(puuid, shard, GameQueueType.RANKED_SOLO_5X5) : rank;
     }
 
-    public static String getRankIcon(LeagueEntry entry) {
-
-        return entry != null ? CustomEmojiHandler.getFormattedEmoji(entry.getTier()) : CustomEmojiHandler.getFormattedEmoji("unranked");
+    public static String getRankIcon(Rank rank) {
+        return rank != null && rank.tier() != TierDivisionType.UNRANKED
+            ? CustomEmojiHandler.getFormattedEmoji(rank.tier().getTier())
+            : CustomEmojiHandler.getFormattedEmoji("unranked");
     }
 
     public static String getMastery(Summoner s, int nChamp) {
-        List<Mastery> list = MasteryService.get(s.puuid(), s.region());
+        List<Mastery> list = LolApiClient.getMasteries(s.puuid(), s.region());
+        if (list == null) return "";
         if (nChamp < 1 || nChamp > list.size()) {
             return "";
         }
         Mastery mastery = list.get(nChamp - 1);
         DecimalFormat df = new DecimalFormat("#,##0", new DecimalFormatSymbols(Locale.US));
         try {
+            String championName = LolApiClient.getChampion(mastery.championId()).getName();
             int level = mastery.level() >= 10 ? 10 : mastery.level();
             return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
-                + CustomEmojiHandler.getFormattedEmoji(StaticDataService.getChampion(mastery.championId()).getName())
+                + CustomEmojiHandler.getFormattedEmoji(championName)
                 + " **[" + mastery.level() + "]** "
-                + StaticDataService.getChampion(mastery.championId()).getName()
+                + championName
                 + " " + df.format(mastery.points())
                 + " points";
         } catch (Exception e) {
@@ -451,7 +427,9 @@ import net.dv8tion.jda.api.entities.User;
 
     public static HashMap<Integer, Mastery> getMastery(Summoner s) {
         HashMap<Integer, Mastery> masteries = new HashMap<>();
-        for (Mastery mastery : MasteryService.get(s.puuid(), s.region())) {
+        List<Mastery> values = LolApiClient.getMasteries(s.puuid(), s.region());
+        if (values == null) return masteries;
+        for (Mastery mastery : values) {
             masteries.put(mastery.championId(), mastery);
         }
         return masteries;
@@ -459,7 +437,9 @@ import net.dv8tion.jda.api.entities.User;
 
     public static String getMasteryByChamp(Summoner s, int champId) {
         if (s == null) return "";
-        for (Mastery mastery : MasteryService.get(s.puuid(), s.region())) {
+        List<Mastery> values = LolApiClient.getMasteries(s.puuid(), s.region());
+        if (values == null) return "";
+        for (Mastery mastery : values) {
             if (mastery.championId() == champId) {
                 try {
                     return formatMasteryLine(mastery);
@@ -472,7 +452,9 @@ import net.dv8tion.jda.api.entities.User;
     }
 
     public static String getMasteryByPuuid(String puuid, LeagueShard shard, int champion) {
-        for (Mastery mastery : MasteryService.get(puuid, shard)) {
+        List<Mastery> values = LolApiClient.getMasteries(puuid, shard);
+        if (values == null) return "";
+        for (Mastery mastery : values) {
             if (mastery.championId() == champion) {
                 return formatMasteryLine(mastery);
             }
@@ -482,23 +464,24 @@ import net.dv8tion.jda.api.entities.User;
 
     private static String formatMasteryLine(Mastery mastery) {
         int level = mastery.level() >= 10 ? 10 : mastery.level();
+        String championName = LolApiClient.getChampion(mastery.championId()).getName();
         return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
-            + CustomEmojiHandler.getFormattedEmoji(StaticDataService.getChampion(mastery.championId()).getName())
+            + CustomEmojiHandler.getFormattedEmoji(championName)
             + " **[" + mastery.level() + "]** ";
     }
 
     public static String getActivity(Summoner s) {
         try {
-            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.puuid(), s.region());
-            if (game == null) {
+            LiveGame game = LolApiClient.getLiveGame(s.puuid(), s.region());
+            if (game == null || game.notInGame()) {
                 return "Not in a game";
             }
-            for (SpectatorParticipant participant : game.getParticipants()) {
-                if (participant.getPuuid().equals(s.puuid())) {
-                    String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
+            for (LiveGame.Participant participant : game.participants()) {
+                if (participant.puuid().equals(s.puuid())) {
+                    String gameName = GameQueueTypeUtils.prettyName(game.queue());
+                    String championName = LolApiClient.getChampion(participant.championId()).getName();
                     return "Playing a " + gameName + " as "
-                        + CustomEmojiHandler.getFormattedEmoji(StaticDataService.getChampion(participant.getChampionId()).getName()) + " "
-                        + StaticDataService.getChampion(participant.getChampionId()).getName();
+                        + CustomEmojiHandler.getFormattedEmoji(championName) + " " + championName;
                 }
             }
         } catch (Exception e) {
@@ -509,15 +492,16 @@ import net.dv8tion.jda.api.entities.User;
 
     public static EmbedBuilder getActivity(EmbedBuilder eb, Summoner s) {
         try {
-            SpectatorGameInfo game = SummonerService.getSpectatorGame(s.puuid(), s.region());
-            if (game == null) {
+            LiveGame game = LolApiClient.getLiveGame(s.puuid(), s.region());
+            if (game == null || game.notInGame()) {
                 return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
             }
-            for (SpectatorParticipant participant : game.getParticipants()) {
-                if (participant.getPuuid().equals(s.puuid())) {
-                    String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
+            for (LiveGame.Participant participant : game.participants()) {
+                if (participant.puuid().equals(s.puuid())) {
+                    String gameName = GameQueueTypeUtils.prettyName(game.queue());
+                    String championName = LolApiClient.getChampion(participant.championId()).getName();
                     return eb.setFooter("Playing a " + gameName,
-                        CustomEmojiHandler.getRichEmoji(StaticDataService.getChampion(participant.getChampionId()).getName()).getImageUrl());
+                        CustomEmojiHandler.getRichEmoji(championName).getImageUrl());
                 }
             }
         } catch (Exception e) {

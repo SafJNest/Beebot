@@ -28,8 +28,8 @@ Finally, the bot includes several commands related to the popular game League of
 
 LoL asynchronous work uses the application facade `com.safjnest.lol.queue.QueueHandler` over the JDK-only `com.hive` runtime. One explicitly owned registry connects Riot shard queues, four compute workers (`PROFILE`, `PROFILE_2`, `CHAMPION`, `MONGO`) and direct virtual-thread Sync workflows. See [ADR-0017](docs/architecture/adr/0017-hive-job-runtime.md).
 
-R4B owns the shared contracts (`com.R4B.AB.DTO`) and LoL values/helpers
-(`com.R4B.LOL`). The [standalone artifact](r4b/README.md) builds the canonical
+R4B owns the shared contracts (`com.R4B.api.dto`) and LoL values/helpers
+(`com.R4B.lol`). The [standalone artifact](r4b/README.md) builds the canonical
 sources independently of the SDK and application; local SDK acquisition stays
 behind `com.safjnest.r4j.RiotGateway`. See [ADR-0018](docs/architecture/adr/0018-r4b-shared-contracts.md)
 and the [compatibility/independence evidence](docs/architecture/services/r4b-validation.md).

@@ -18,8 +18,8 @@ I nomi canonici rimangono `Summoner`, `Rank`, `Mastery`, `SummonerView`,
 il proprietario esistente, senza introdurre copie `SummonerDto`, `MatchDto`,
 `SummonerRank`, `ChampionMastery` o alias mantenuti in parallelo.
 
-I package definitivi sono `com.R4B.AB.DTO`, con sottopackage per ambito,
-e `com.R4B.LOL` per enum, costanti e helper puri. Le maiuscole sono obbligatorie. Ogni classe di risposta comprende i propri componenti annidati che
+I package definitivi sono `com.R4B.api.dto`, con sottopackage per ambito,
+e `com.R4B.lol` per enum, costanti e helper puri. Solo `R4B` mantiene le maiuscole; `api.dto` e `lol` sono minuscoli (scelta utente 2026-10-12). Ogni classe di risposta comprende i propri componenti annidati che
 sono effettivamente serializzati. I componenti operativi annidati devono invece
 essere spostati nel servizio produttore.
 
@@ -121,7 +121,7 @@ Molti contratti espongono `LeagueShard`, `GameQueueType`, `LaneType`,
 `TierType`, `TierDivisionType`, `TeamType`, `GameModeType`, `GameType`, `MapType`.
 Un comune che li importasse direttamente avrebbe ancora una dipendenza dal SDK.
 
-ADR-0018 assegna gli enum/value types a `com.R4B.LOL`, con gli stessi valori
+ADR-0018 assegna gli enum/value types a `com.R4B.lol`, con gli stessi valori
 JSON accettati oggi, e conversioni SDK soltanto in R4J. Una dipendenza SDK
 residua fuori dall’integrazione R4J impedisce il completamento della tranche. Non usare ordinali
 sul wire e non confondere platform shard (`EUW1`) con routing region (`EUROPE`).

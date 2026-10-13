@@ -34,8 +34,8 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 
 ## R4B contract boundary
 
-Shared LoL data now belongs to `com.R4B.AB.DTO`; shared enums/helpers belong
-to `com.R4B.LOL` (ADR-0018). Mongo mapping, query/write ownership and producer
+Shared LoL data now belongs to `com.R4B.api.dto`; shared enums/helpers belong
+to `com.R4B.lol` (ADR-0018). Mongo mapping, query/write ownership and producer
 operations remain application code. Shared `Summoner`/`Match` do not inherit
 `AbstractEntity`. This extraction does not authorize document-schema, index,
 Redis-key/TTL or bot-presentation changes. HTTP serialization remains distinct

@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.lol.service.StaticDataService;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.BotCommand;
@@ -45,7 +45,7 @@ public class Item extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         int itemId = event.getOption("item").getAsInt();
 
-        com.R4B.api.dto.riot.Item item = StaticDataService.getItem(itemId);
+        com.R4B.api.dto.riot.Item item = LolApiClient.getItem(itemId);
 
         EmbedBuilder eb = new EmbedBuilder();
 

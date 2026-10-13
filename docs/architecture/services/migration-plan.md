@@ -95,7 +95,7 @@ senza far passare una compilazione o test statici per validazione dei servizi re
 
 | Decisione | Proposta iniziale | Necessaria prima di |
 |---|---|---|
-| Namespace/artifact | Hive `com.hive`; R4B `com.R4B.AB.DTO` / `com.R4B.LOL`; artifact autonomi dai sorgenti canonici | Tranche accettate 0017/0018; moduli applicativi rinviati |
+| Namespace/artifact | Hive `com.hive`; R4B `com.R4B.api.dto` / `com.R4B.lol`; artifact autonomi dai sorgenti canonici | Tranche accettate 0017/0018; moduli applicativi rinviati |
 | Enum LoL sul wire | Tipi del contratto con valori JSON compatibili; mapping SDK in R4J | DTO indipendenti da R4J |
 | Entity operative | Metodi persistenti privati del writer, stesso modello canonico di dati | Estrazione `Summoner`/`Match` |
 | Compute/progresso | Caratterizzare e risolvere le discrepanze registrate | Port scheduler/registry |

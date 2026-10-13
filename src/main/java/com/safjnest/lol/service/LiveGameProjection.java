@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 
 import com.safjnest.lol.utils.ChampionUtils;
 import com.R4B.api.dto.*;
@@ -17,6 +18,11 @@ import com.R4B.lol.TeamType;
 public final class LiveGameProjection {
 
     public static LiveGame fromR4J(SpectatorGameInfo source, Map<String, ProfileOverview> profiles) {
+        return fromR4J(source, profiles, LiveGameProjection::championName);
+    }
+
+    public static LiveGame fromR4J(SpectatorGameInfo source, Map<String, ProfileOverview> profiles,
+            IntFunction<String> championNames) {
         if (source == null) return LiveGame.empty();
 
         Map<TeamType, List<Integer>> bans = new LinkedHashMap<>();
@@ -32,7 +38,7 @@ public final class LiveGameProjection {
             if (participant.getPuuid() == null) {
                 participants.add(new Participant(
                     null,
-                    championName(participant.getChampionId()),
+                    championNames.apply(participant.getChampionId()),
                     participant.getChampionId(),
                     null,
                     participant.getTeam(),

@@ -12,7 +12,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.service.StaticDataService;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.BotCommand;
@@ -74,7 +74,7 @@ public class UltimateBravery extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         
-        String[] champions = StaticDataService.getChampions().values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
+        String[] champions = LolApiClient.getChampions().values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
         String[] roles = {"0", "1", "2", "3", "4"};
 
         if (event.getOption("champion") != null) {
@@ -212,7 +212,7 @@ public class UltimateBravery extends SlashCommand {
             
             String buildString = "";
             for (int i = 0; i < 6; i++) {
-                if (startingItems[i] != null && StaticDataService.getItem(Integer.parseInt(startingItems[i])) != null) buildString += CustomEmojiHandler.getFormattedEmoji(startingItems[i]) + " " + StaticDataService.getItem(Integer.parseInt(startingItems[i])).getName() + "\n";
+                if (startingItems[i] != null && LolApiClient.getItem(Integer.parseInt(startingItems[i])) != null) buildString += CustomEmojiHandler.getFormattedEmoji(startingItems[i]) + " " + LolApiClient.getItem(Integer.parseInt(startingItems[i])).getName() + "\n";
             }
             eb.addField("**Starting Items**", buildString, true);
 
@@ -234,7 +234,7 @@ public class UltimateBravery extends SlashCommand {
 
             buildString = "";
             for (int i = 0; i < 6; i++) {
-                if (fullBuild[i] != null) buildString += CustomEmojiHandler.getFormattedEmoji(fullBuild[i]) + " " + StaticDataService.getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
+                if (fullBuild[i] != null) buildString += CustomEmojiHandler.getFormattedEmoji(fullBuild[i]) + " " + LolApiClient.getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
             }
             eb.addField("**Full Build**", buildString, true);
             return eb;

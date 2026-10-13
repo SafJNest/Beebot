@@ -6,8 +6,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import com.github.philippheuer.events4j.api.domain.IEventSubscription;
-import com.github.twitch4j.ITwitchClient;
-import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.eventsub.Conduit;
 import com.github.twitch4j.eventsub.EventSubSubscription;
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
@@ -17,6 +15,8 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
+import com.github.twitch4j.helix.TwitchHelix;
+import com.github.twitch4j.helix.TwitchHelixBuilder;
 import com.safjnest.App;
 import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.utils.SettingsLoader;
@@ -26,7 +26,7 @@ public class TwitchClient {
     private static String clientId;
     private static String clientSecret;
 
-    private static ITwitchClient client = null;
+    private static TwitchHelix helix = null;
     private static TwitchConduitSocketPool conduit = null;
 
     private static GenericCache<String, User> streamersCache;
@@ -47,10 +47,6 @@ public class TwitchClient {
         return streamersCache;
     }
 
-    public static ITwitchClient getClient() {
-        return client;
-    }
-
     public static TwitchConduitSocketPool getConduit() {
         return conduit;
     }
@@ -58,9 +54,7 @@ public class TwitchClient {
     public static void init() {
         if (App.isTesting()) return;
         BotLogger.trace("[TWITCH] Creating twitch client...");
-        client = TwitchClientBuilder.builder()
-            .withEnableHelix(true)
-            .withEnableEventSocket(true)
+        helix = TwitchHelixBuilder.builder()
             .withClientId(clientId)
             .withClientSecret(clientSecret)
             .build();
@@ -72,7 +66,7 @@ public class TwitchClient {
                 spec.clientId(clientId);
                 spec.clientSecret(clientSecret);
                 spec.poolShards(1);
-                spec.helix(client.getHelix());
+                spec.helix(helix);
 
                 if(firstConduit != null) {
                     spec.conduitId(firstConduit.getId());
@@ -88,16 +82,16 @@ public class TwitchClient {
     }
 
     public static Conduit getFirstConduit() {
-        List<Conduit> conduitList = client.getHelix().getConduits(null).execute().getConduits();
+        List<Conduit> conduitList = helix.getConduits(null).execute().getConduits();
         return conduitList.size() > 0 ? conduitList.get(0) : null;
     }
 
     public static void updateConduit(String conduitId, int shardCount) {
-        TwitchClient.getClient().getHelix().updateConduit(null, conduitId, 1).execute();
+        helix.updateConduit(null, conduitId, 1).execute();
     }
 
     public static void registerSubEvent(String streamerId) {        
-        if(client.getHelix().getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions().size() > 0) 
+        if(helix.getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions().size() > 0)
             return;
         
         BotLogger.trace("[TWITCH] Registering subscription for " + streamerId);
@@ -105,7 +99,7 @@ public class TwitchClient {
     }
 
     public static void unregisterSubEvent(String streamerId) {
-        List<EventSubSubscription> subs = client.getHelix().getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions();
+        List<EventSubSubscription> subs = helix.getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions();
         if(subs.size() == 0)
             return;
 
@@ -118,11 +112,11 @@ public class TwitchClient {
     }
 
     public static EventSubSubscriptionList getSubscriptionsList() {
-        return client.getHelix().getEventSubSubscriptions(null, null, null, null, null, null).execute();
+        return helix.getEventSubSubscriptions(null, null, null, null, null, null).execute();
     }
 
     public static User getStreamerByName(String streamerName) {
-        List<User> users = TwitchClient.getClient().getHelix().getUsers(null, null, List.of(streamerName)).execute().getUsers();
+        List<User> users = helix.getUsers(null, null, List.of(streamerName)).execute().getUsers();
         if (users.size() == 0) return null;
 
         User user = users.get(0);
@@ -137,7 +131,7 @@ public class TwitchClient {
         }
 
         List<String> notCached = streamerIds.stream().filter(id -> !streamersCache.keySet().contains(id)).toList();
-        List<User> users = TwitchClient.getClient().getHelix().getUsers(null, notCached, null).execute().getUsers();
+        List<User> users = helix.getUsers(null, notCached, null).execute().getUsers();
      
         for (User user : users) {
             streamersCache.put(user.getId(), user);
@@ -155,7 +149,7 @@ public class TwitchClient {
     }
 
     public static Stream getStream(String streamerId) {
-        List<Stream> streams = TwitchClient.getClient().getHelix().getStreams(null, null, null, null, null, null, List.of(streamerId), null).execute().getStreams();
+        List<Stream> streams = helix.getStreams(null, null, null, null, null, null, List.of(streamerId), null).execute().getStreams();
         if (streams.size() == 0) return null;
 
         return streams.get(0);

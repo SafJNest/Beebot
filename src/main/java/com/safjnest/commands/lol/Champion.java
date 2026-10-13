@@ -3,6 +3,7 @@ package com.safjnest.commands.lol;
 import com.safjnest.lol.service.FilterDefaults;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -10,8 +11,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.service.ChampionService;
-import com.safjnest.lol.service.StaticDataService;
+import com.safjnest.lol.client.LolApiClient;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
@@ -45,7 +45,7 @@ import com.R4B.lol.*;
  */
 public class Champion extends SlashCommand {
 
-    private static final ChampionService CHAMPION_SERVICE = new ChampionService();
+    private static final int MATCHUP_LIMIT = 3;
 
     public Champion() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -93,8 +93,8 @@ public class Champion extends SlashCommand {
         }
 
         Filter filter = readFilter(event, champion);
-        ChampionStatistics stats = CHAMPION_SERVICE.getStatistics(filter);
-        Build build = CHAMPION_SERVICE.getBuild(filter);
+        ChampionStatistics stats = LolApiClient.getChampionStatistics(champion.getName(), filter);
+        Build build = LolApiClient.getChampionBuild(champion.getName(), filter);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getId()));
@@ -204,9 +204,30 @@ public class Champion extends SlashCommand {
     private void addMatchups(EmbedBuilder eb, ChampionStatistics stats, Filter filter) {
         if (stats == null || filter.lane() == null) return;
 
-        eb.addField("Weak Against", formatMatchups(stats.weakAgainst()), true);
-        eb.addField("Strong Against", formatMatchups(stats.strongAgainst()), true);
-        eb.addField("Popular Matchups", formatMatchups(stats.popularMatchups()), true);
+        eb.addField("Weak Against", formatMatchups(weakAgainst(stats)), true);
+        eb.addField("Strong Against", formatMatchups(strongAgainst(stats)), true);
+        eb.addField("Popular Matchups", formatMatchups(popularMatchups(stats)), true);
+    }
+
+    private List<Map.Entry<Integer, Matchup>> weakAgainst(ChampionStatistics stats) {
+        List<Map.Entry<Integer, Matchup>> values = new ArrayList<>(stats.matchups().entrySet());
+        double avgGames = values.stream().mapToInt(entry -> entry.getValue().matches()).average().orElse(0);
+        return values.stream().filter(entry -> entry.getValue().matches() > avgGames)
+            .sorted(Comparator.comparingDouble(entry -> entry.getValue().winrate())).limit(MATCHUP_LIMIT).toList();
+    }
+
+    private List<Map.Entry<Integer, Matchup>> strongAgainst(ChampionStatistics stats) {
+        List<Map.Entry<Integer, Matchup>> values = new ArrayList<>(stats.matchups().entrySet());
+        double avgGames = values.stream().mapToInt(entry -> entry.getValue().matches()).average().orElse(0);
+        return values.stream().filter(entry -> entry.getValue().matches() > avgGames)
+            .sorted(Comparator.comparingDouble((Map.Entry<Integer, Matchup> entry) -> entry.getValue().winrate()).reversed())
+            .limit(MATCHUP_LIMIT).toList();
+    }
+
+    private List<Map.Entry<Integer, Matchup>> popularMatchups(ChampionStatistics stats) {
+        return stats.matchups().entrySet().stream()
+            .sorted(Comparator.comparingInt((Map.Entry<Integer, Matchup> entry) -> entry.getValue().matches()).reversed())
+            .limit(MATCHUP_LIMIT).toList();
     }
 
     private void addBuild(EmbedBuilder eb, Build build, Filter filter) {
@@ -423,7 +444,7 @@ public class Champion extends SlashCommand {
 
     private String itemName(int item) {
         try {
-            var data = StaticDataService.getItem(item);
+            var data = LolApiClient.getItem(item);
             if (data != null) return data.getName();
         } catch (Exception e) { }
         return String.valueOf(item);
