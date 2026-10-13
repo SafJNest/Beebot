@@ -15,8 +15,8 @@
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
     <java.version>25</java.version>
-    <spring.version>7.0.8</spring.version>
-    <tomcat.version>11.0.10</tomcat.version>
+    <spring.version>7.0.9</spring.version>
+    <tomcat.version>11.0.25</tomcat.version>
   </properties>
 
   <profiles>
@@ -101,6 +101,36 @@
     </repository>
   </repositories>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.22.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mozilla</groupId>
+        <artifactId>rhino</artifactId>
+        <version>1.7.15.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mozilla</groupId>
+        <artifactId>rhino-engine</artifactId>
+        <version>1.7.15.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.23.2</version>
+      </dependency>
+      <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>fastjson</artifactId>
+        <version>1.2.84</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>com.github.SafJNest</groupId>
@@ -136,12 +166,12 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.21.4</version>
+      <version>2.22.2</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.21.4</version>
+      <version>2.22.2</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
@@ -152,7 +182,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.17.0</version>
+      <version>3.20.0</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -216,7 +246,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>2.1.0-alpha1</version>
+      <version>2.0.18</version>
     </dependency>
     <dependency>
       <groupId>javax.xml.bind</groupId>
@@ -258,7 +288,7 @@
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-youtube</artifactId>
-      <version>v3-rev222-1.25.0</version>
+      <version>v3-rev20260820-2.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.stelar7</groupId>
@@ -273,7 +303,7 @@
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
-      <version>3.5.1</version>
+      <version>3.5.10</version>
     </dependency>
     <dependency>
       <groupId>org.mongodb</groupId>
@@ -298,22 +328,22 @@
     <dependency>
       <groupId>com.github.twitch4j</groupId>
       <artifactId>twitch4j</artifactId>
-      <version>1.23.0</version>
+      <version>1.27.0</version>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.4.11</version>
+      <version>1.5.38</version>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.4.11</version>
+      <version>1.5.38</version>
     </dependency>
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>5.5.2</version>
+      <version>5.12.0</version>
     </dependency>
     <dependency>
       <groupId>com.mpatric</groupId>
@@ -323,7 +353,7 @@
     <dependency>
       <groupId>com.github.sealedtx</groupId>
       <artifactId>java-youtube-downloader</artifactId>
-      <version>3.2.4</version>
+      <version>3.3.1</version>
     </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
