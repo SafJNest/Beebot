@@ -1,9 +1,11 @@
 # lol-service specification
 
-Status: Spring ownership/package move is present in Beebot; sources and a Java 25
-Maven POM have been staged in `SafJNest/lol-service`. Its standalone compile
-currently fails on remaining Beebot utility, Redis, SQL, bootstrap and Discord
-presentation dependencies. No lol-service alpha is published.
+Status: `SafJNest/lol-service` now contains a standalone Java 25 Spring MVC
+application and the first alpha (`0.1.0-alpha-1`) is published. Its shaded jar
+builds with a manifest main class and service-owned Mongo/Redis settings. The
+Beebot process has not yet switched to HTTP, and lol-service still uses S4B as a
+direct implementation dependency. The service/repository extraction is
+therefore in progress, not complete.
 
 ## Purpose and boundary
 
@@ -33,11 +35,12 @@ calls back into it.
 ## Application and package layout
 
 Spring-owned code is under `com.safjnest.spring` in Beebot and has been copied
-to the separate Maven repository for compilation work. Beebot remains the
-working source until the copied module builds independently. The copied code
-still needs service-owned configuration, Redis/logger adapters, legacy SQL
-migration ownership, and removal of Discord presentation classes. The
-internal `S4BClient` and independent bootstrap are also not implemented.
+to the separate Maven repository. The service now has an independent bootstrap,
+configuration, logger, Mongo/Redis adapters, and excludes the legacy SQL
+migration and Discord presentation. Beebot still contains its old Spring
+sources during the transition; remove them only after its callers use the
+service API and the bot builds against that boundary. The internal `S4BClient`
+and HTTP boundary are not implemented yet.
 
 ```text
 src/main/java/com/safjnest/spring/
@@ -52,7 +55,8 @@ src/main/java/com/safjnest/spring/
 ```
 
 The root Beebot application remains the Bbot process during this tranche; its
-LoL commands migrate to `LolApiClient` as a separate Bbot-boundary tranche.
+LoL commands and owner operations still have direct in-process Spring callers.
+They migrate to an HTTP client as a separate Bbot-boundary tranche.
 The existing HTTP paths, JSON, errors, cache meaning, Mongo document shapes,
 Discord presentation and command behavior remain compatible.
 
@@ -132,5 +136,6 @@ aggregation across processes is a later explicit contract.
 4. Verify package ownership and contract fixtures, Mongo writer
    ownership, queue policy, HTTP timeout/error behavior, and no dependency on
    JDA, S4B implementation classes or direct Riot SDK dependencies.
-5. Move Bbot LoL callers to the public API in its own tranche; only after both
-   service builds work independently create the two service repositories.
+5. Move Bbot LoL callers to public and authenticated internal HTTP APIs; only
+   after the process boundaries and both clients work independently remove the
+   transitional Spring source from Beebot.

@@ -1,12 +1,12 @@
 # Separazione iniziale dei servizi
 
-Stato: Hive sotto ADR-0017 e R4B sotto ADR-0018; S4B ha un artifact alpha nel repository dedicato. `lol-service` è in estrazione, ma non compila ancora in modo indipendente. Data: 2026-10-13.
+Stato: Hive sotto ADR-0017 e R4B sotto ADR-0018; S4B e `lol-service` hanno un artifact alpha nei rispettivi repository. `lol-service` compila come applicazione standalone, ma il taglio HTTP da Beebot e il client HTTP verso S4B sono ancora da completare. Data: 2026-10-13.
 Baseline: branch `beebot-servicies`, commit `cef023bc`, working tree inizialmente pulito.
 
 Il target è Bbot in Beebot, `lol-service` e S4B in repository separate, con
 Hive/R4B come artifact condivisi. S4B è pubblicato come package alpha, ma la
 chiamata diretta dal monolite è ancora in uso. Il codice Spring è stato copiato
-nel repository `lol-service` per verificare la build; l'estrazione non è completa.
+nel repository `lol-service`, ora compilabile e avviabile; l'estrazione non è completa.
 I processi e i client HTTP restano da separare. R4B possiede i contratti
 `com.R4B.api.dto` e i valori/helper `com.R4B.lol`, conservando nomi canonici,
 JSON, persistenza e presentazione.
@@ -88,9 +88,9 @@ La migrazione del dominio nel processo Spring non autorizza a creare success
 DTO sotto `spring.dto`: i contratti saranno unici in `shared.dto`.
 
 La build usa repository Maven separati, senza un parent multi-module comune.
-S4B è il primo artifact alpha. Il POM di `lol-service` esiste, ma la compilazione
-ha mostrato dipendenze residue da App, Redis, utility, SQL e codice JDA del bot;
-non va pubblicato finché tali ownership non sono risolte.
+S4B e `lol-service` sono pubblicati come alpha. La build standalone di
+`lol-service` è verificata; l'integrazione runtime tra i tre processi è ancora
+aperta.
 
 Una riorganizzazione di package in un unico JAR è una fase intermedia: la reale
 separazione richiede build e bootstrap indipendenti. Il comune non deve caricare

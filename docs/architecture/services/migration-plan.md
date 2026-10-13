@@ -1,9 +1,9 @@
 # Piano iniziale di estrazione
 
-Stato: piano servizi proposto; fase 0 documentata e tranche job/code della fase 3
-implementata anticipatamente con decisione mirata ADR-0017. La tranche
-contratti e consumatori locali è accettata autonomamente in ADR-0018 come R4B.
-Client HTTP, processi e moduli applicativi restano proposti.
+Stato: tranche package e prima applicazione standalone di `lol-service`
+implementate e pubblicate come alpha, dopo le tranche Hive e R4B. Le fasi sono
+state anticipate rispetto all'ordine iniziale; il client HTTP S4B, il passaggio
+HTTP da Beebot e la rimozione delle copie locali restano aperti.
 
 ## Ordine delle fasi
 
@@ -114,8 +114,8 @@ una modifica implicita nella separazione dei servizi.
 ## Versioning successivo
 
 S4B è pubblicato su JitPack al commit `e4424d6`; Beebot lo pinna a quel commit.
-Gli altri artifact resteranno non pubblicati finché il loro build autonomo non
-compila. Le modifiche additive devono restare compatibili; quelle breaking
+`lol-service` ha l'alpha `0.1.0-alpha-1` pubblicata dopo una build Maven
+standalone riuscita. Le modifiche additive devono restare compatibili; quelle breaking
 vanno coordinate con i consumatori e verificate con fixture tra le versioni
 supportate. Una rename Java può essere breaking per i binari anche a JSON invariato.
 
