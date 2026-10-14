@@ -253,26 +253,7 @@ public record BuildSignature(
     }
 
     static List<Integer> skillOrder(JSONArray fallback, List<ChampionBuildTimelineUtils.SkillUpgrade> upgrades) {
-        List<Integer> result = new ArrayList<>(Collections.nCopies(18, 0));
-        boolean hasTimelineSkills = upgrades != null && !upgrades.isEmpty();
-        if (hasTimelineSkills) {
-            int fallbackLevel = 1;
-            for (ChampionBuildTimelineUtils.SkillUpgrade upgrade : upgrades) {
-                int level = upgrade.championLevel() == null ? fallbackLevel : upgrade.championLevel();
-                fallbackLevel = Math.max(fallbackLevel + 1, level + 1);
-                if (level >= 1 && level <= result.size() && upgrade.skillSlot() >= 1 && upgrade.skillSlot() <= 4)
-                    result.set(level - 1, upgrade.skillSlot());
-            }
-            return result;
-        }
-        if (fallback == null) return result;
-        StringBuilder rawSkillOrder = new StringBuilder();
-        for (int index = 0; index < fallback.length(); index++) rawSkillOrder.append(fallback.optString(index, ""));
-        for (int i = 0; i < result.size(); i++) {
-            int slot = i < rawSkillOrder.length() ? Character.getNumericValue(rawSkillOrder.charAt(i)) : 0;
-            if (slot >= 1 && slot <= 4) result.set(i, slot);
-        }
-        return result;
+        return ChampionBuildTimelineUtils.skillOrder(fallback, upgrades);
     }
 
     private static List<Integer> extractCore(List<Integer> fullBuild, List<Integer> starterList, Map<Integer, Item> items) {

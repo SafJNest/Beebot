@@ -24,14 +24,16 @@ indexables, cache invalidation and refresh entry points. MongoDB's
 `forEachChampionRawMatchEventBatch` is the sole bounded match/event join for
 all champion queues and consumers. It returns raw projected matches, including
 matches without event documents; it applies no statistics or build eligibility.
-The union build projection includes participant IDs, boots, placement and subTeam.
+The union build projection includes participant IDs, boots, placement, subTeam
+and skillOrder.
 `ChampionAnalyzer` feeds statistics and requested build accumulators from the
 same source scan. Statistics and standard builds require usable timelines;
 CHERRY dispatches to `ArenaChampionAnalyzer`, which retains outcomes and global
 Prismatics and up to six original augment positions without a core.
-Full builds group canonical final items and recognized consumables within each
-core. `builds[].items` includes those consumables and excludes Prismatic items.
-The Prismatic Anvil `220007` is included as a consumable.
+Full builds group attributed item purchases within each core in timeline order,
+once per item ID. `builds[].items` excludes boots, Prismatics, Juices and the
+Prismatic Anvil `220007`; when no attributable item timeline exists, recognized
+final slots provide the fallback with the same exclusions.
 Its only core is boots plus first Prismatic; it has no starter category.
 A build-only miss reuses the same raw reader without rebuilding statistics.
 
@@ -41,14 +43,16 @@ patch scopes remain exact. Catalogs are loaded for the requested patch, never
 substituted with the current patch. Arena stores schema approvato under
 `build.arena` with `arenaLastUpdate`. CHERRY reads use Arena presence and freshness,
 ignore old standard-only aggregates and expose the Arena subtree through the
-canonical Build; HTTP CHERRY projects Arena directly as build and omits legacy
-fields. Stats retain raw scope ownership and exact
+canonical Build; HTTP CHERRY projects Arena directly as build and includes the
+shared `skillOrders` category while omitting other standard legacy fields. Stats retain raw scope ownership and exact
 subteam synergies, team sizes, `subteamsById` counts for Arena IDs 1–8, and overview placement counts plus average placement; the
 added counters do not change synergy aggregation. Internal Build compatibility projections remain. Standard
 readers and disjoint standard writers remain unchanged. Older Arena payloads
 with the legacy global or per-build `consumables` fields are still returned;
-their presence does not trigger regeneration. Present stale data is returned
-while its background refresh is queued.
+their presence does not trigger regeneration. Builds missing `skillOrders` are
+still returned; that absence alone does not trigger a refresh. Normal
+regeneration adds the field, and an empty list is valid. Present stale data is
+returned while its background refresh is queued.
 
 `lol.queue.scheduler.ComputeScheduler` always enqueues champion matrices, builds and the
 scheduled champion refresh on the `CHAMPION` channel and inherits the common
@@ -61,8 +65,8 @@ the matrix starts, a new build request is independently deduplicated by its full
 
 ## Invariants
 
-- Non-CHERRY payloads remain unchanged; the approved CHERRY contract is
-  documented in docs/arena-build/champion-schema.json;
+- Non-CHERRY payloads remain unchanged; the approved CHERRY contract, including
+  Arena skill orders, is documented in docs/arena-build/champion-schema.json;
   `200`/`202`/`206`/`404` mantengono i contratti indicati dagli endpoint.
 - Mongo remains the persistence owner and Redis remains the cache owner.
 - Ready-empty statistics and builds are persisted so a completed empty result

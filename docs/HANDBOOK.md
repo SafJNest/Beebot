@@ -724,16 +724,20 @@ ID/document/event left join delivering missing-event matches too. The reader has
 no consumer eligibility policy. Statistics and standard builds require usable
 timelines; Arena outcomes, final Prismatics, final-slot consumables and augments
 survive missing timelines. Purchased-and-consumed items require timeline events.
-The common build projection includes participants.id, boots, subTeamPlacement and subTeam.
+The common build projection includes participants.id, boots, subTeamPlacement,
+subTeam and skillOrder.
 Matrix batches remain 10,000 and standalone build batches 100; callbacks are
 synchronous and temporary event/document/match trees are released after processing.
 
 ArenaGameParser uses attributed purchases to identify boots+first-Prismatic cores,
-with final-slot fallback. Full builds aggregate final items and recognized
-consumables sorted by ID while excluding Prismatic items. Global/core Prismatics
-include the first; six augment position lists retain gaps and rank by WR/sample
-count/ID. Global outcomes and choices remain available when a core is missing.
-Anvil 220007 is included as a consumable.
+with final-slot fallback. Full builds retain timeline purchase order and exclude
+boots, Prismatics, Juices and Anvil 220007; final slots are used only when no
+attributable item timeline exists. Global/core Prismatics include the first; six
+augment position lists retain gaps and rank by WR/sample count/ID. Arena skill
+orders prefer timeline skill/level events when available,
+with participant sequences as fallback; they reuse the standard prefix ranking
+and expose available upgrade timings. Global outcomes and choices remain
+available when a core is missing.
 ArenaChampionAnalyzer uses primitive
 maps and returns schema approvato. Timings order purchases without entering
 persisted identities or output. Catalogs are loaded for the requested patch,
@@ -744,13 +748,15 @@ One champion_builds document per filterKey holds standard fields and build.arena
 Arena writes only its subtree and arenaLastUpdate atomically; standard single/bulk
 writes preserve Arena. No replacement or read-merge-replace. CHERRY reads use
 Arena data presence and arenaLastUpdate for freshness. Present payloads with
-legacy separate consumables fields are returned without a schema-triggered
-regeneration; stale timestamps can queue a background refresh.
+legacy separate consumables fields or without `skillOrders` are returned; the
+absence of `skillOrders` alone does not trigger a refresh. Normal regeneration
+adds the field, and an empty array is ready. Stale timestamps can queue a
+background refresh.
 Standard-only results are misses when no Arena payload is present; genuine ready-empty
 results are persisted to avoid repeated empty jobs. Build.fromArena retains internal compatibility; CHERRY HTTP projects the Arena
-aggregate directly in build with final builds per core, consumables within each
-full build and six augment arrays;
-starters and standard-only categories stay empty. Other queues retain standard
+aggregate directly in build with final builds per core, `skillOrders`, consumables
+within each full build and six augment arrays;
+starters and the remaining standard-only categories stay empty. Other queues retain standard
 contracts. API/controller validation, docs and ADR-0006/0012 are synchronized.
 
 Public requests use major.minor patches and source rank/region filters; internal
@@ -766,15 +772,18 @@ connection, rebuild or backfill is part of offline verification.
 ### CHERRY contract update (2026-10-14)
 
 Only CHERRY uses the new [Arena schema](arena-build/champion-schema.json):
-HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
-position rankings and global/core Prismatics. Full-build item lists include
-consumables and exclude Prismatic items, including consumable Anvil 220007. No legacy fields or build.arena
-wrapper are exposed. Stats use exact same-subTeam ally combinations, team
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, skillOrders,
+six augment position rankings and global/core Prismatics. Full-build item lists
+preserve attributed timeline purchase order and exclude boots, Prismatics, Juices
+and Anvil 220007. No other legacy fields or build.arena wrapper are exposed. Stats use
+exact same-subTeam ally combinations, team
 sizes 2/3, `subteamsById` counts for Arena IDs 1–8, and overview placement
 counts/average from `subTeamPlacement`; these additions do not change synergy
 aggregation. Lane relations are omitted. The raw projection includes subTeam and subTeamPlacement.
-Mongo preserves build.arena ownership. Stats readiness uses the ready marker
-and Arena build availability uses data presence. Timestamps can queue background
+Mongo preserves build.arena ownership. Old Arena builds without `skillOrders`
+remain available and receive the field on normal regeneration; an empty array
+is ready. Stats readiness uses the ready marker and Arena build availability
+uses Arena data presence. Timestamps can queue background
 refreshes; readers do not reject legacy separate consumables fields or check all
 eight subteam ID counters and placement buckets. There are no version fields or
 version-based cache guards. Other queues, jobs

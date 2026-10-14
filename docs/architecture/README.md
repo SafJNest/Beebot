@@ -172,24 +172,30 @@ requested Arena builds from one raw scan; a build-only miss preserves statistics
 MongoDB.forEachChampionRawMatchEventBatch is the sole raw match/event join for
 all queues. It left-joins event documents and returns raw data without choosing
 consumer eligibility. Matrix batches remain 10,000; standalone build batches are
-100. The union projection contains participant IDs, boots, placement and subTeam.
+100. The union projection contains participant IDs, boots, placement, subTeam
+and skillOrder.
 Statistics and standard builds retain their timeline eligibility. Arena retains
 missing-timeline outcomes, final Prismatics, final-slot consumables and up to six
 original augment slots; purchased-and-consumed items require timeline events.
+Arena skillOrders prefer skill/level timeline events when available, use
+participant sequences as fallback and expose available upgrade timings.
 
 ArenaGameParser reads the single hydrated Match.events tree and its catalog for
 the requested patch. Its only core is boots+first-Prismatic; there are no starters.
 ArenaChampionAnalyzer produces schema approvato with full builds grouped
-by boots+first-Prismatic core, six augment position rankings and global/core
-Prismatics. Full-build item lists include recognized consumables and exclude
-Prismatic items, including the consumable Anvil 220007. Mongo writes build.arena and arenaLastUpdate atomically
+by boots+first-Prismatic core, skillOrders, six augment position rankings and
+global/core Prismatics. Full-build item lists use attributed purchases in
+timeline order, excluding boots, Prismatics, Juices and Anvil 220007; final
+slots are used only when no attributable item timeline exists. Mongo writes build.arena and arenaLastUpdate atomically
 in the existing champion_builds document. Standard writers preserve that subtree.
 No second identity, collection, replace or read-merge-replace is introduced.
 
 CHERRY reads use Arena presence and freshness, so old standard zero aggregates
 remain misses when no Arena payload exists. Present Arena payloads are served
-even if they have legacy separate consumables fields or lack newer stats buckets. The
-CHERRY HTTP mapper exposes Arena directly as build without legacy fields;
+even if they have legacy separate consumables fields, lack newer stats buckets
+or omit `skillOrders`. Its absence alone does not trigger a refresh; normal
+regeneration adds the field, and an empty array is valid. The CHERRY HTTP mapper exposes Arena directly as build with
+`skillOrders` and without other standard legacy fields;
 internal Build projections remain available to existing callers. Stats expose exact
 subteam synergies, team sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and
 `overview.averagePlacement`/`overview.placements` from `subTeamPlacement`.

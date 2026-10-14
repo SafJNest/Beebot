@@ -14,6 +14,8 @@ import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
+import com.safjnest.lol.utils.ChampionBuildTimelineUtils.SkillUpgrade;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -30,40 +32,40 @@ public final class ArenaGameParser {
 
         Object timeline = match.events != null ? match.events : match.eventData;
         List<Event> events = readEvents(timeline, participant);
+        List<SkillUpgrade> skillUpgrades = ChampionBuildTimelineUtils.skillUpgrades(timeline, participant.puuid);
+        List<Integer> skillOrder = ChampionBuildTimelineUtils.skillOrder(participant.skillOrder, skillUpgrades);
         List<Event> acquisitions = acquisitions(events);
         LinkedHashSet<Integer> prismatics = new LinkedHashSet<>();
-        LinkedHashSet<Integer> consumables = new LinkedHashSet<>();
         LinkedHashSet<Integer> boots = new LinkedHashSet<>();
-        List<Integer> legendaryItems = new ArrayList<>();
-        Set<Integer> seenLegendaries = new HashSet<>();
+        List<Integer> buildItems = new ArrayList<>();
+        Set<Integer> seenBuildItems = new HashSet<>();
 
         for (Event event : acquisitions) {
             int id = event.acquiredId();
             Kind kind = catalog.kind(match.patch, id);
             if (kind == Kind.PRISMATIC) prismatics.add(id);
-            else if (catalog.isConsumable(event.item())) consumables.add(event.item());
-            else if (catalog.isConsumable(id)) consumables.add(id);
             else if (kind == Kind.BOOTS) boots.add(id);
-            else if (kind == Kind.ITEM && seenLegendaries.add(id)) legendaryItems.add(id);
+            else if (id != ArenaItemCatalog.PRISMATIC_ANVIL && !catalog.isJuice(id)
+                    && seenBuildItems.add(id)) buildItems.add(id);
         }
 
         int[] finalItems = finalItems(participant);
         List<Integer> finalBuild = new ArrayList<>();
-        LinkedHashSet<Integer> finalConsumables = new LinkedHashSet<>();
         LinkedHashSet<Integer> finalPrismatics = new LinkedHashSet<>();
         LinkedHashSet<Integer> finalBoots = new LinkedHashSet<>();
         for (int id : finalItems) {
             if (id <= 0) continue;
             Kind kind = catalog.kind(match.patch, id);
-            if (kind == Kind.PRISMATIC) finalPrismatics.add(id);
-            else if (catalog.isConsumable(id)) {
-                finalConsumables.add(id);
+            if (kind == Kind.PRISMATIC) {
+                finalPrismatics.add(id);
                 continue;
             }
-            if (kind == Kind.ITEM || kind == Kind.BOOTS) finalBuild.add(id);
-            if (kind == Kind.BOOTS) finalBoots.add(id);
+            if (kind == Kind.BOOTS) {
+                finalBoots.add(id);
+                continue;
+            }
+            if (id != ArenaItemCatalog.PRISMATIC_ANVIL && !catalog.isJuice(id)) finalBuild.add(id);
         }
-        consumables.addAll(finalConsumables);
 
         Integer firstPrismatic = prismatics.isEmpty() ? null : prismatics.iterator().next();
         boolean fallback = false;
@@ -84,12 +86,11 @@ public final class ArenaGameParser {
             if (id != null && id > 0) augments.add(new Augment(id, index + 1));
         }
 
-        finalBuild.sort(Integer::compareTo);
-        List<Integer> consumableIds = new ArrayList<>(consumables);
-        consumableIds.sort(Integer::compareTo);
+        List<Integer> buildFallback = List.copyOf(finalBuild);
+        List<Integer> timelineBuild = List.copyOf(buildItems);
         return new ParsedArenaGame(participant.win || participant.subTeamPlacement >= 3,
-            boot, firstPrismatic, fallback, List.copyOf(prismatics), consumableIds, legendaryItems, augments,
-            !legendaryItems.isEmpty(), finalBuild);
+            boot, firstPrismatic, fallback, List.copyOf(prismatics), timelineBuild, augments,
+            !events.isEmpty(), buildFallback, skillOrder, skillUpgrades);
     }
 
     // ============================================================================
@@ -130,8 +131,7 @@ public final class ArenaGameParser {
         List<Event> result = new ArrayList<>();
         Event previous = null;
         for (Event event : events) {
-            if ("ITEM_PURCHASED".equals(event.type()) && event.acquiredId() > 0
-                    && !(event.item() > 0 && event.after() > 0 && event.item() != event.after())) {
+            if ("ITEM_PURCHASED".equals(event.type()) && event.acquiredId() > 0) {
                 result.add(event);
             } else if ("ITEM_UNDO".equals(event.type()) && previous != null
                     && "ITEM_PURCHASED".equals(previous.type()) && event.identifies(previous)) {

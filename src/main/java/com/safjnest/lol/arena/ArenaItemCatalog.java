@@ -2,6 +2,7 @@ package com.safjnest.lol.arena;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,21 +17,28 @@ public final class ArenaItemCatalog {
 
     private final Map<Integer, Kind> kinds;
     private final Set<Integer> consumables;
+    private final Set<Integer> juices;
     private final Map<String, Map<Integer, Classification>> classifications;
 
     public ArenaItemCatalog(Map<Integer, Kind> kinds) {
-        this(kinds, Set.of(), Map.of());
+        this(kinds, Set.of(), Set.of(), Map.of());
     }
 
     public ArenaItemCatalog(Map<Integer, Kind> kinds,
             Map<String, Map<Integer, Classification>> classifications) {
-        this(kinds, Set.of(), classifications);
+        this(kinds, Set.of(), Set.of(), classifications);
     }
 
     public ArenaItemCatalog(Map<Integer, Kind> kinds, Set<Integer> consumables,
             Map<String, Map<Integer, Classification>> classifications) {
+        this(kinds, consumables, Set.of(), classifications);
+    }
+
+    public ArenaItemCatalog(Map<Integer, Kind> kinds, Set<Integer> consumables, Set<Integer> juices,
+            Map<String, Map<Integer, Classification>> classifications) {
         this.kinds = Map.copyOf(kinds == null ? Map.of() : kinds);
         this.consumables = Set.copyOf(consumables == null ? Set.of() : consumables);
+        this.juices = Set.copyOf(juices == null ? Set.of() : juices);
         Map<String, Map<Integer, Classification>> copy = new HashMap<>();
         if (classifications != null) for (Map.Entry<String, Map<Integer, Classification>> entry : classifications.entrySet()) {
             String patch = patchMajor(entry.getKey());
@@ -42,9 +50,12 @@ public final class ArenaItemCatalog {
     public static ArenaItemCatalog fromItems(Map<Integer, Item> items) {
         Map<Integer, Kind> kinds = new HashMap<>();
         Set<Integer> consumables = new HashSet<>();
+        Set<Integer> juices = new HashSet<>();
         if (items != null) for (Map.Entry<Integer, Item> entry : items.entrySet()) {
             Item item = entry.getValue();
             if (item == null) continue;
+            if (item.getName() != null && item.getName().toLowerCase(Locale.ROOT).startsWith("juice"))
+                juices.add(entry.getKey());
             if (item.getTags() != null && item.getTags().contains("Consumable")) {
                 consumables.add(entry.getKey());
                 continue;
@@ -52,13 +63,13 @@ public final class ArenaItemCatalog {
             if (ItemUtils.isBoots(item)) kinds.put(entry.getKey(), Kind.BOOTS);
             else if (item.getDepth() == 3) kinds.put(entry.getKey(), Kind.ITEM);
         }
-        return new ArenaItemCatalog(kinds, consumables, Map.of());
+        return new ArenaItemCatalog(kinds, consumables, juices, Map.of());
     }
 
     public static ArenaItemCatalog fromItems(Map<Integer, Item> items,
             Map<String, Map<Integer, Classification>> classifications) {
         ArenaItemCatalog catalog = fromItems(items);
-        return new ArenaItemCatalog(catalog.kinds, catalog.consumables, classifications);
+        return new ArenaItemCatalog(catalog.kinds, catalog.consumables, catalog.juices, classifications);
     }
 
     public Kind kind(String patch, int itemId) {
@@ -71,6 +82,10 @@ public final class ArenaItemCatalog {
 
     public boolean isConsumable(int itemId) {
         return itemId == PRISMATIC_ANVIL || consumables.contains(itemId);
+    }
+
+    public boolean isJuice(int itemId) {
+        return juices.contains(itemId);
     }
 
     public boolean isPrismatic(String patch, int itemId) {

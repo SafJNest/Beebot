@@ -427,17 +427,22 @@ No laneStats, matchups, laneSynergies or lane ranking fields are exposed.
 Unavailable advanced metrics remain null.
 
 `build` directly contains games, wins,
-winrate, coreBuilds, augments, prismatics and coverage. There is no
-build.arena wrapper or standard legacy field. A core's items are boots+first
-Prismatic; `builds[].items` contains sorted final items and consumables seen in
-purchases or final slots, including the Prismatic Anvil `220007`; Prismatic
-items are excluded. Dedicated `prismatics` summaries remain separate. Both augment matrices have exactly six
+winrate, coreBuilds, `skillOrders`, augments, prismatics and coverage. Skill
+orders use the observed sequence, compatible-prefix counts and optional timeline
+upgrade timings from the Arena population. There is no build.arena wrapper or
+other standard legacy field. A core's items are boots+first
+Prismatic; `builds[].items` preserves attributed timeline purchase order and
+excludes boots, Prismatics, Juices and Anvil `220007`. Final slots are a fallback
+only when no attributable item timeline exists. Dedicated `prismatics` summaries remain separate. Both augment matrices have exactly six
 zero-based position lists, including empty positions; options rank by WR, sample
 count and ID. No spell1/spell2 fields appear on items.
 
 Missing CHERRY stats/build data is refreshed through the existing 202 path.
-Present stats are not rejected for missing subteam/placement buckets, and
-present builds are not rejected for legacy separate `consumables` fields;
-stale present data returns 200 with a background refresh. Empty completed aggregates remain 200. Other queues keep the
+Present stats are not rejected for missing subteam/placement buckets. Existing
+builds without `skillOrders` remain available and do not trigger a refresh for
+that reason alone; normal regeneration adds the field, with an empty array as a
+valid result. Legacy separate `consumables` fields remain readable; stale
+present data returns 200 with a background refresh. Empty completed aggregates
+remain 200. Other queues keep the
 standard response documented above. The controller remains thin; canonical
 models own aggregates and LolApiConfig owns the HTTP shape.

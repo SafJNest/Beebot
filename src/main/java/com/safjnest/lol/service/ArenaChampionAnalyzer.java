@@ -46,6 +46,7 @@ public final class ArenaChampionAnalyzer {
         private final Int2ObjectOpenHashMap<StatsCounter> prismatics = new Int2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<StatsCounter> augments = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<CoreCounter> cores = new Long2ObjectOpenHashMap<>();
+        private final ChampionBuildEngine.SkillOrderTrie skillOrders = new ChampionBuildEngine.SkillOrderTrie();
         private long matches;
         private long missingCoreGames;
         private long firstPrismaticFallbackGames;
@@ -84,10 +85,11 @@ public final class ArenaChampionAnalyzer {
                 coreValues.add(entry.getValue().finish(entry.getLongKey(), overall.games));
             coreValues.sort(Comparator.comparingDouble(Core::winrate).reversed()
                 .thenComparing(Comparator.comparingLong(Core::matches).reversed()).thenComparing(Core::id));
-            return new ArenaBuildData(overall.games, overall.wins, coreValues, augmentValues(augments),
+            return new ArenaBuildData(overall.games, overall.wins, coreValues,
+                skillOrders.toOptions(Math.toIntExact(overall.games)), augmentValues(augments),
                 prismaticValues(prismatics),
                 new ArenaBuildData.Coverage(matches, overall.games - missingCoreGames, missingCoreGames,
-                    firstPrismaticFallbackGames, buildTimelineGames));
+                    firstPrismaticFallbackGames, buildTimelineGames), null);
         }
 
         public void clear() {
@@ -96,6 +98,7 @@ public final class ArenaChampionAnalyzer {
             prismatics.clear();
             augments.clear();
             cores.clear();
+            skillOrders.clear();
             overall.games = 0;
             overall.wins = 0;
             matches = 0;
@@ -108,6 +111,7 @@ public final class ArenaChampionAnalyzer {
 
         private void add(ParsedArenaGame game) {
             overall.add(game.win());
+            skillOrders.add(game.skillOrder(), game.win(), game.skillUpgrades());
             if (game.firstPrismaticFallback()) firstPrismaticFallbackGames++;
             if (game.buildTimeline()) buildTimelineGames++;
 
@@ -190,9 +194,7 @@ public final class ArenaChampionAnalyzer {
 
         private void add(ParsedArenaGame game) {
             stats.add(game.win());
-            List<Integer> fullBuildItems = new ArrayList<>(game.finalItems());
-            for (int id : game.consumables()) if (!game.prismatics().contains(id)) fullBuildItems.add(id);
-            fullBuildItems.sort(Integer::compareTo);
+            List<Integer> fullBuildItems = game.buildTimeline() ? game.buildItems() : game.fallbackBuildItems();
             if (!fullBuildItems.isEmpty())
                 builds.computeIfAbsent(new FullBuildKey(fullBuildItems), ignored -> new StatsCounter()).add(game.win());
             for (int itemId : game.prismatics())

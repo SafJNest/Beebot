@@ -46,7 +46,7 @@ public class ArenaChampionAnalyzerTest {
         assertEquals(2, core.matches());
         assertEquals(List.of(3006, 447001), core.items());
         assertEquals(2, core.builds().size());
-        assertEquals(List.of(3006, 4001, 4002), core.builds().get(0).items());
+        assertEquals(List.of(4001, 4002), core.builds().get(0).items());
         assertEquals(1, core.builds().get(0).matches());
         assertEquals(1, core.builds().get(0).wins());
         assertEquals(List.of(447001, 447002), core.prismatics().stream().map(ArenaBuildData.Option::id).toList());

@@ -77,7 +77,8 @@ public record Build(
         }
         return new Build(filter, Math.toIntExact(total), Math.toIntExact(arena.wins()),
             arena.winrate(), cores, arenaOptions(coreItems, total), List.of(), arenaOptions(boots, total),
-            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+            List.of(), List.of(), List.of(), List.of(), List.of(),
+            arena.skillOrders() == null ? List.of() : arena.skillOrders(),
             arenaOptions(prismatics, total), augments, arena);
     }
 

@@ -35,9 +35,29 @@ public class ArenaGameParserTest {
         assertEquals(Integer.valueOf(447001), parsed.firstPrismaticId());
         assertFalse(parsed.firstPrismaticFallback());
         assertEquals(List.of(447001, 447002), parsed.prismatics());
-        assertEquals(List.of(4002, 4001), parsed.legendaryItems());
+        assertEquals(List.of(4002, 4001), parsed.buildItems());
         assertTrue(parsed.win());
         assertTrue(parsed.buildTimeline());
+    }
+
+    @Test
+    public void timelineBuildIncludesPurchasedItemsExceptBootsPrismaticsJuicesAndAnvil() {
+        Participant participant = participant(1, 3);
+        participant.boots = 3006;
+        ArenaItemCatalog catalog = new ArenaItemCatalog(
+            Map.of(3006, Kind.BOOTS, 4001, Kind.ITEM),
+            java.util.Set.of(2031), java.util.Set.of(2031), Map.of());
+        var match = match("EUW1_1", participant, List.of(
+            event("ITEM_PURCHASED", 1000, 3006),
+            event("ITEM_PURCHASED", 2000, 447001),
+            event("ITEM_PURCHASED", 2500, 2031),
+            event("ITEM_PURCHASED", 3000, 1029),
+            event("ITEM_PURCHASED", 3500, 220007),
+            event("ITEM_PURCHASED", 4000, 4001)));
+
+        ParsedArenaGame parsed = ArenaGameParser.parse(match, participant, catalog);
+
+        assertEquals(List.of(1029, 4001), parsed.buildItems());
     }
 
     @Test
@@ -55,7 +75,8 @@ public class ArenaGameParserTest {
         assertEquals(Integer.valueOf(447002), parsed.firstPrismaticId());
         assertTrue(parsed.firstPrismaticFallback());
         assertEquals(List.of(447002, 447001), parsed.prismatics());
-        assertTrue(parsed.legendaryItems().isEmpty());
+        assertTrue(parsed.buildItems().isEmpty());
+        assertEquals(List.of(4001), parsed.fallbackBuildItems());
         assertFalse(parsed.buildTimeline());
         assertFalse(parsed.win());
     }
@@ -78,7 +99,7 @@ public class ArenaGameParserTest {
 
         assertNull(parsed.firstPrismaticId());
         assertTrue(parsed.prismatics().isEmpty());
-        assertEquals(List.of(4001), parsed.legendaryItems());
+        assertEquals(List.of(4001), parsed.buildItems());
     }
 
     public static Participant participant(int id, int placement) {

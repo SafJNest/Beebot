@@ -21,6 +21,7 @@ ChampionView
 │   │   ├── builds[] { items, matches, wins, winrate }
 │   │   ├── augments[position][rank] { id, matches, wins, winrate }
 │   │   └── prismatics[rank] { id, matches, wins, winrate }
+│   ├── skillOrders[] { id, order, matches, wins, winrate, pickrate, timedOrder[] }
 │   ├── augments[position][rank]
 │   ├── prismatics[rank]
 │   └── coverage
@@ -29,12 +30,13 @@ ChampionView
 
 ## Semantica
 
-- L’HTTP CHERRY non contiene `build.arena`, i campi standard legacy, `spell1`, `spell2`, `stats.laneStats`, `stats.matchups` o `stats.laneSynergies`. `spells` non fa parte dello schema approvato.
+- L’HTTP CHERRY non contiene `build.arena`, gli altri campi standard legacy, `spell1`, `spell2`, `stats.laneStats`, `stats.matchups` o `stats.laneSynergies`. `skillOrders` è l’unica categoria standard della build mantenuta nel contratto Arena; `spells` non fa parte dello schema approvato.
 - `ArenaBuildData` è il modello canonico della build Arena. Il `Build` interno mantiene le proiezioni compatibili per i chiamanti esistenti; solo la serializzazione HTTP CHERRY espone direttamente `ArenaBuildData`.
 - Un core contiene esattamente `[bootsId, firstPrismaticId]`; `id` usa gli stessi due ID separati da `-`. `pickrate` usa come denominatore tutti i participant-games del campione, inclusi quelli senza core.
-- `builds[].items` contiene la build completa: item finali riconosciuti in `item0..item5` e ID consumabili acquistati nella timeline o presenti negli slot finali. Gli ID sono ordinati numericamente, i duplicati degli slot finali sono conservati e ogni consumabile compare una volta per participant-game; i Prismatici sono esclusi. L’Anvil `220007` è trattato come consumabile e può comparire qui.
+- `builds[].items` contiene gli acquisti attribuiti nella timeline, nell’ordine d’acquisto e senza ripetere lo stesso ID; esclude boots, Prismatici, Juice e l’Anvil `220007`. Se non ci sono eventi item attribuibili, usa gli slot finali come fallback, con le stesse esclusioni e conservando gli ID duplicati.
 - Entrambe le liste `augments` hanno esattamente sei contenitori. L’indice pubblico è zero-based; posizioni mancanti hanno liste vuote, senza rinumerazione. Il limite di sei si applica anche al parser.
 - Prismatics globali e per core includono il primo Prismatic e tutti gli altri ID osservati, una volta per participant-game. Non hanno posizione temporale e restano separati dalle build complete. Non esiste un aggregato globale separato dei consumabili.
+- `skillOrders` riusa l’aggregazione standard delle sequenze osservate. Preferisce gli eventi `skill_events` e `level_events` quando disponibili e usa `Participant.skillOrder` come fallback; `timedOrder` riporta i tempi medi disponibili. `matches` e `wins` contano le partite compatibili con la sequenza (inclusi i prefissi), mentre `pickrate` usa tutti i participant-games come denominatore. L’array può essere vuoto se nessuna sequenza è disponibile.
 - Opzioni, core e full build sono ordinati per WR decrescente, poi numerosità decrescente e ID canonico; non viene applicata una soglia di campionamento.
 - `synergies` usa la combinazione esatta degli alleati con lo stesso `Participant.subTeam`, con ID dei campioni ordinati. Un trio produce una coppia di alleati, non due righe indipendenti. Non si raggruppa per BLUE/RED o ruolo. Squadre senza identificatore o di dimensione diversa da 2/3 non producono relazioni.
 - `subteams.2` e `.3` contano participant-games per dimensione della propria squadra; entrambi i campi sono sempre presenti. `subteamsById` conta gli stessi esiti per ID Arena e include sempre gli ID da 1 a 8: Poros, Minions, Scuttles, Krugs, Raptors, Sentinels, Wolves e Gromps.
@@ -44,7 +46,7 @@ ChampionView
 
 ## Coverage
 
-`matches` conta match raw accettati; `coreGames` e `missingCoreGames` contano participant-games. `firstPrismaticFallbackGames` conta i fallback dagli slot finali. `buildTimelineGames` mantiene il significato esistente: almeno un acquisto leggendario attribuito nella timeline.
+`matches` conta match raw accettati; `coreGames` e `missingCoreGames` contano participant-games. `firstPrismaticFallbackGames` conta i fallback dagli slot finali. `buildTimelineGames` conta i participant-games con almeno un evento item attribuito nella timeline.
 
 ## Persistenza e migrazione
 
@@ -52,4 +54,4 @@ Mongo mantiene la proprietà separata: `champion_builds.build.arena` contiene il
 
 `champion_stats` mantiene uno scope per queue/rank/patch/region e le foglie canoniche. Solo CHERRY aggiunge i contatori raw `arenaSynergies`, `arenaSubteams`, `arenaSubteamIds` e `arenaPlacements` nella foglia `NONE`; gli altri scope non li serializzano quando vuoti. I reader e la scansione matrix non verificano la presenza di tutti i bucket per ogni champion: un documento pronto e fresco resta utilizzabile anche se alcuni contatori Arena non sono presenti.
 
-Reader e cache CHERRY non hanno un contatore di versione. Stats ready e build Arena presenti vengono restituiti anche quando vecchi o privi di alcuni nuovi campi; la scadenza può accodare un refresh in background senza trasformare il dato presente in `202`. I vecchi campi `consumables` globali o dentro le full build sono accettati in lettura e omessi dall’output, senza causare da soli una rigenerazione. Un payload non deserializzabile o privo di `build.arena` rimane un miss. Non è previsto un rebuild del database reale in questa modifica.
+Reader e cache CHERRY non hanno un contatore di versione. Stats ready e build Arena presenti vengono restituiti anche quando sono privi di alcuni contatori stats o del campo `skillOrders`; la sola assenza di quest’ultimo non accoda un refresh. Il campo comparirà alla prossima normale rigenerazione; un array vuoto nei nuovi aggregati è valido. La scadenza può accodare un refresh in background. I vecchi campi `consumables` globali o dentro le full build sono accettati in lettura e omessi dall’output, senza causare da soli una rigenerazione. Un payload non deserializzabile o privo di `build.arena` rimane un miss. Non è previsto un rebuild del database reale in questa modifica.

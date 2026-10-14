@@ -1,6 +1,7 @@
 package com.safjnest.lol.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -10,9 +11,46 @@ import org.json.JSONObject;
 
 public final class ChampionBuildTimelineUtils {
 
+    private static final int SKILL_ORDER_LENGTH = 18;
+    private static final int MAX_SKILL_SLOT = 4;
     private static final long STARTER_WINDOW_MILLIS = 2 * 60 * 1000L;
 
     private ChampionBuildTimelineUtils() {}
+
+    public static List<Integer> skillOrder(JSONArray fallback, List<SkillUpgrade> upgrades) {
+        List<Integer> fallbackOrder = new ArrayList<>();
+        if (fallback != null) {
+            StringBuilder rawSkillOrder = new StringBuilder();
+            for (int index = 0; index < fallback.length(); index++)
+                rawSkillOrder.append(fallback.optString(index, ""));
+            for (int index = 0; index < rawSkillOrder.length(); index++) {
+                int slot = Character.getNumericValue(rawSkillOrder.charAt(index));
+                fallbackOrder.add(slot >= 1 && slot <= MAX_SKILL_SLOT ? slot : 0);
+            }
+        }
+        return skillOrder(fallbackOrder, upgrades);
+    }
+
+    public static List<Integer> skillOrder(List<Integer> fallback, List<SkillUpgrade> upgrades) {
+        List<Integer> result = new ArrayList<>(Collections.nCopies(SKILL_ORDER_LENGTH, 0));
+        if (upgrades != null && !upgrades.isEmpty()) {
+            int fallbackLevel = 1;
+            for (SkillUpgrade upgrade : upgrades) {
+                int level = upgrade.championLevel() == null ? fallbackLevel : upgrade.championLevel();
+                fallbackLevel = Math.max(fallbackLevel + 1, level + 1);
+                if (level >= 1 && level <= result.size()
+                        && upgrade.skillSlot() >= 1 && upgrade.skillSlot() <= MAX_SKILL_SLOT)
+                    result.set(level - 1, upgrade.skillSlot());
+            }
+            return result;
+        }
+        if (fallback == null) return result;
+        for (int index = 0; index < Math.min(result.size(), fallback.size()); index++) {
+            Integer slot = fallback.get(index);
+            if (slot != null && slot >= 1 && slot <= MAX_SKILL_SLOT) result.set(index, slot);
+        }
+        return result;
+    }
 
     public static List<SkillUpgrade> skillUpgrades(Object rawEvents, String puuid) {
         if (puuid == null || puuid.isBlank()) return List.of();
