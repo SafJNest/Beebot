@@ -148,18 +148,8 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     }
 
     private static CompletableFuture<Void> startChampionStatistics(Filter filter, boolean includeBuild) {
-        List<String> patches = PatchUtils.getRecentPatches(3);
         Filter buildFilter = includeBuild ? filter : null;
-        if (!patches.contains(filter.patch())) {
-            return enqueueChampionStatsMatrix(filter.patch(), filter.queue(), buildFilter).thenApply(ignored -> null);
-        }
-
-        List<CompletableFuture<ChampionService.MatrixRefreshResult>> refreshes = new ArrayList<>();
-        for (String patch : patches) {
-            Filter patchBuild = patch.equals(filter.patch()) ? buildFilter : null;
-            refreshes.add(enqueueChampionStatsMatrix(patch, filter.queue(), patchBuild));
-        }
-        return CompletableFuture.allOf(refreshes.toArray(CompletableFuture[]::new));
+        return enqueueChampionStatsMatrix(filter.patch(), filter.queue(), buildFilter).thenApply(ignored -> null);
     }
 
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
