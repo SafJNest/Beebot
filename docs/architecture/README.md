@@ -163,28 +163,33 @@ The operational documentation for the LoL migration is in [`docs/mongo/`](../mon
 ## Arena champion analytics
 
 The [contract](../arena-build/contracts.md), [schema](../arena-build/schema.md)
-and [phases](../arena-build/phases.md) define the internal Arena build path.
-ArenaGameParser reads the single hydrated `Match.events` tree; ArenaChampionAnalyzer produces
-ArenaBuildData schema/aggregation 4/4. MongoDB updates only `build.arena` in the
-existing `champion_builds` document for the normal `filterKey`. Standard writes
-set their individual root/build paths and preserve Arena. No replace,
-read-merge-replace, CAS, second document, discriminator or collection.
+and [phases](../arena-build/phases.md) define the CHERRY build path.
+The existing Spring champion endpoint selects Arena for CHERRY; role is invalid.
+ChampionService and ComputeScheduler own dispatch, freshness, page composition
+and QueueHandler submission on CHAMPION. A cold matrix feeds statistics and
+requested Arena builds from one raw scan; a build-only miss preserves statistics.
 
-Arena and standard retain separate populations, versions and readiness. Standard
-reads omit Arena internally so ADR-0006/0012 output remains unchanged. ChampionService
-and ComputeScheduler own the internal opt-in pipeline through QueueHandler on
-CHAMPION. There is no new service or HTTP route, and no automatic or scheduled
-trigger currently calls the existing Arena job entrypoint.
+MongoDB.forEachChampionRawMatchEventBatch is the sole raw match/event join for
+all queues. It left-joins event documents and returns raw data without choosing
+consumer eligibility. Matrix batches remain 10,000; standalone build batches are
+100. The union projection contains participant IDs, boots and placement.
+Statistics and standard builds retain their timeline eligibility. Arena retains
+missing-timeline outcomes, final Prismatics and up to six original augment slots.
 
-The Arena bounded join processes at most 100 match records and joins their event
-documents by `_id`, including matches lacking timelines; standard reader
-eligibility stays unchanged. Event timestamps order Arena purchases but are not
-persisted. The standard Build keeps its existing timing aggregates. Catalog is
-immutable input supplied by the caller for the exact requested patch. Participant
-and Tracker remain unchanged, as do accepted ADRs.
+ArenaGameParser reads the single hydrated Match.events tree and its catalog for
+the requested patch. Its only core is boots+first-Prismatic; there are no starters.
+ArenaChampionAnalyzer produces schema/aggregation 5/5, including global Legendary
+items even without a core. Mongo writes build.arena and arenaLastUpdate atomically
+in the existing champion_builds document. Standard writers preserve that subtree.
+No second identity, collection, replace or read-merge-replace is introduced.
 
-The analyzer packs composite IDs into `longKey` values and uses FastUtil
-primitive maps. It counts unique source match documents incrementally and retains
-no raw timeline after each batch. Its scheduler entrypoint is opt-in and has no
-production caller or automatic trigger. Actual Mongo/index/BSON/heap and rollout
-gates remain required; offline verification does not certify production readiness.
+CHERRY reads use Arena versions and freshness, so old standard zero aggregates
+are misses. Build.fromArena exposes counts and compatible flat core/option fields
+plus build.arena. Other queues keep standard response semantics. Public minor
+patches collect their full patches; explicit internal full-patch scopes stay exact.
+Canonical rank and region predicates apply at the source. Event timestamps order
+purchases and are not persisted in Arena. Presentation remains unchanged.
+
+Offline fixtures cover raw-only generation, build-only refresh, JSON/BSON and
+standard coexistence. Actual Mongo indexes, combined BSON sizing, representative
+heap and deployment remain operational gates; no production rebuild is performed.

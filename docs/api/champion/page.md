@@ -405,9 +405,35 @@ and statistics timestamps; all global variants remain available.
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)
 
-## Arena storage
+## Arena (`queue=CHERRY`)
 
-The `build` in this response is the standard build documented above. Internal
-Arena aggregates stored under `build.arena` are not exposed by this endpoint;
-see the [Arena contract](../../arena-build/contracts.md) and
-[schema](../../arena-build/schema.md).
+The existing endpoint generates and reads Arena builds when queue is CHERRY.
+For example, `/api/lol/champion/shaco?patch=16.19&queue=CHERRY` aggregates that
+major/minor patch. Rank and region remain canonical source filters; any role
+returns 400 before source access. A cold statistics/build miss feeds both
+consumers from one raw match/event scan; a later build-only miss runs only Arena.
+
+Build root `games`, `wins` and `winrate` come from Arena participant-games.
+`coreBuilds[].items` contains exactly boots + first Prismatic; `coreItems` and
+`boots` summarize known cores. `starters` is empty. `slots` summarizes global
+ordered Legendary purchases, including games missing a core. `prismatics`
+contains global Prismatic choices; `augments` contains six slot arrays and keeps
+holes at their original positions. Standard-only categories remain empty.
+No synthetic purchase times are added.
+
+`build.arena` exposes the full schema/aggregation 5/5 payload: stats, cores,
+global items, global Prismatics, global augments and coverage. Core-specific
+options remain in `arena.cores`. A missing core does not discard global choices;
+a missing timeline retains final-slot Prismatics and participant augments but
+cannot invent a Legendary purchase order.
+
+Freshness uses `arenaLastUpdate` and current Arena versions. Old standard CHERRY
+zero aggregates and obsolete Arena payloads are misses; the normal request
+returns 202 and regenerates them. Genuine ready-empty Arena results remain ready. A ready statistics scope with no
+requested champion also returns ready-empty statistics instead of recurring 202.
+Item catalogs are resolved for the requested patch; major/minor selects a
+matching Data Dragon full version, with no current-patch fallback.
+
+See the [Arena contract](../../arena-build/contracts.md) and
+[schema](../../arena-build/schema.md). Other queues retain their standard build
+response and eligibility. No command/embed styling changes are introduced.

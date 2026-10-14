@@ -3,7 +3,7 @@
 - Status: Accepted
 - Owner: Main agent
 - Date: 2026-08-01
-- Amended: 2026-09-29
+- Amended: 2026-10-14
 
 ## Context
 
@@ -20,24 +20,35 @@ and produces or updates `ProfileStatistics`, `ProfileActivity` and
 `ProfileMatchups`; it has no cache, Mongo or tracker dependency.
 
 `ChampionService` owns the champion page, persisted statistics/build reads,
-indexables, cache invalidation and refresh entry points. `ChampionAnalyzer`
-owns the composed computation. For missing statistics it streams a single
-`patch + queue` base cursor with the union stats/build projection. The matrix
-and requested build accumulators consume the same joined `match_events` batch;
-both ignore matches without a usable stored timeline. A build-only miss uses
-its narrow participant projection and joins bounded `match_events` batches
-before building options. Final participant items identify build options, while
-timeline events provide purchase and skill-upgrade times. Missing boots do not
-invalidate an otherwise complete core build; that game contributes no boots
-option.
+indexables, cache invalidation and refresh entry points. MongoDB's
+`forEachChampionRawMatchEventBatch` is the sole bounded match/event join for
+all champion queues and consumers. It returns raw projected matches, including
+matches without event documents; it applies no statistics or build eligibility.
+The union build projection includes participant IDs, boots and placement.
+`ChampionAnalyzer` feeds statistics and requested build accumulators from the
+same source scan. Statistics and standard builds require usable timelines;
+CHERRY dispatches to `ArenaChampionAnalyzer`, which retains outcomes and global
+items, Prismatics and up to six original augment positions without a core.
+Its only core is boots plus first Prismatic; it has no starter category.
+A build-only miss reuses the same raw reader without rebuilding statistics.
 
-`lol.queue.DatabaseTracker` always enqueues champion matrices, builds and the
+Arena public requests use the existing major.minor patch parameter and support
+rank/region through the canonical source filter; role is rejected. Internal full
+patch scopes remain exact. Catalogs are loaded for the requested patch, never
+substituted with the current patch. Arena stores schema/aggregation 5/5 under
+`build.arena` with `arenaLastUpdate`. CHERRY reads use Arena versions and freshness,
+ignore old standard-only aggregates and expose the Arena subtree through the
+canonical Build, with compatible flat count/core/option projections. Standard
+readers and disjoint standard writers remain unchanged.
+
+`lol.queue.scheduler.ComputeScheduler` always enqueues champion matrices, builds and the
 scheduled champion refresh on the `CHAMPION` channel and inherits the common
 task lifecycle from `AbstractQueueScheduler`. Profile-logical work may land on
 either channel at insert (ADR-0010). While a matrix is queued, build
 filters for the same `patch + queue` are merged into the matrix request. After
 the matrix starts, a new build request is independently deduplicated by its full
-`Filter.toKey()` and is processed as build-only work.
+`Filter.toKey()` and is processed as build-only work. CHERRY API and explicit Arena jobs share
+`champion-arena:<Filter.toKey()>` for deduplication.
 
 ## Invariants
 

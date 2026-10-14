@@ -10,6 +10,8 @@ import com.safjnest.utils.JsonCodec;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * The complete build aggregate. The order of every option list is
@@ -50,6 +52,61 @@ public record Build(
     }
 
     public enum Kind { ITEM, BOOTS, PRISMATIC, AUGMENT }
+
+    public static Build fromArena(Filter filter, ArenaBuildData arena) {
+        if (arena == null) return null;
+        long total = arena.stats().games();
+        List<CoreBuildOption> cores = new ArrayList<>();
+        Map<Integer, long[]> boots = new TreeMap<>();
+        Map<Integer, long[]> coreItems = new TreeMap<>();
+        Map<Integer, Map<Integer, long[]>> slots = new TreeMap<>();
+        for (ArenaBuildData.Core core : arena.cores()) {
+            List<Integer> ids = List.of(core.bootsId(), core.firstPrismaticId());
+            cores.add(new CoreBuildOption(BuildUtils.joinInts(ids), ids,
+                Math.toIntExact(core.stats().games()), Math.toIntExact(core.stats().wins()),
+                core.stats().winRate(), total == 0 ? 0 : (double) core.stats().games() / total));
+            addArenaCount(boots, core.bootsId(), core.stats().games(), core.stats().wins());
+            for (int id : ids) addArenaCount(coreItems, id, core.stats().games(), core.stats().wins());
+        }
+        for (ArenaBuildData.ItemOption item : arena.items())
+            addArenaCount(slots.computeIfAbsent(item.position(), ignored -> new TreeMap<>()),
+                item.itemId(), item.games(), item.wins());
+        List<List<Option>> items = new ArrayList<>();
+        int lastPosition = slots.isEmpty() ? 0 : java.util.Collections.max(slots.keySet());
+        for (int position = 1; position <= lastPosition; position++)
+            items.add(arenaOptions(slots.getOrDefault(position, Map.of()), total));
+        Map<Integer, long[]> prismatics = new TreeMap<>();
+        for (ArenaBuildData.PrismaticOption item : arena.prismatics())
+            addArenaCount(prismatics, item.prismaticId(), item.games(), item.wins());
+        List<List<Option>> augments = new ArrayList<>();
+        for (int position = 1; position <= ArenaBuildData.MAX_AUGMENTS; position++) {
+            Map<Integer, long[]> values = new TreeMap<>();
+            for (ArenaBuildData.AugmentOption augment : arena.augments()) if (augment.position() == position)
+                addArenaCount(values, augment.augmentId(), augment.games(), augment.wins());
+            augments.add(arenaOptions(values, total));
+        }
+        return new Build(filter, Math.toIntExact(total), Math.toIntExact(arena.stats().wins()),
+            arena.stats().winRate(), cores, arenaOptions(coreItems, total), List.of(),
+            arenaOptions(boots, total), List.of(), List.of(), items, List.of(), List.of(), List.of(),
+            arenaOptions(prismatics, total), augments, arena);
+    }
+
+    private static void addArenaCount(Map<Integer, long[]> values, int id, long games, long wins) {
+        long[] count = values.computeIfAbsent(id, ignored -> new long[2]);
+        count[0] += games;
+        count[1] += wins;
+    }
+
+    private static List<Option> arenaOptions(Map<Integer, long[]> values, long total) {
+        List<Option> result = new ArrayList<>();
+        for (var entry : values.entrySet()) {
+            long[] count = entry.getValue();
+            result.add(new Option(String.valueOf(entry.getKey()), Math.toIntExact(count[0]),
+                Math.toIntExact(count[1]), count[0] == 0 ? 0 : (double) count[1] / count[0],
+                total == 0 ? 0 : (double) count[0] / total));
+        }
+        return List.copyOf(result);
+    }
 
     public record Timing(long timeSumMillis, long timeCount) {
         @JsonProperty(access = JsonProperty.Access.READ_ONLY)

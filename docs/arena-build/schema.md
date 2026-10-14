@@ -1,8 +1,8 @@
 # Schema Arena semplificato
 
-Stato: schema 4/4 implementato nel payload interno `ArenaBuildData`. Sostituisce lo schema Arena 3/3 documentato in precedenza.
+Stato: schema/aggregation 5/5 esposto dal Build canonico per CHERRY. Aggiunge gli item globali e sostituisce i payload Arena precedenti.
 
-ArenaBuildData rimane il payload interno di Build e viene persistito in champion_builds sotto build.arena. Lo standard Build continua a mantenere il proprio schema e la propria scrittura.
+ArenaBuildData è il payload Arena pubblico di Build e viene persistito in champion_builds sotto build.arena. Lo standard Build continua a mantenere il proprio schema e la propria scrittura.
 
 ## Forma
 
@@ -11,7 +11,7 @@ La radice contiene solo:
 - schemaVersion e aggregationVersion;
 - stats aggregate per tutti i participant-games del campione;
 - cores, indicizzati dalla coppia bootsId + firstPrismaticId;
-- prismatics e augments globali;
+- items globali per posizione, prismatics e augments globali (sei posizioni);
 - coverage minima.
 
 Ogni core contiene stats, items ordinati per posizione leggendaria, Prismatics raccomandati e augments per posizione. Nessun ramo progressivo o build completa combinatoria.
@@ -19,8 +19,8 @@ Ogni core contiene stats, items ordinati per posizione leggendaria, Prismatics r
 ## Esempio
 
     {
-      "schemaVersion": 4,
-      "aggregationVersion": 4,
+      "schemaVersion": 5,
+      "aggregationVersion": 5,
       "stats": {
         "games": 100,
         "wins": 52,
@@ -77,6 +77,9 @@ Ogni core contiene stats, items ordinati per posizione leggendaria, Prismatics r
           ]
         }
       ],
+      "items": [
+        {"position": 1, "itemId": 3071, "games": 70, "wins": 40, "winRate": 0.5714}
+      ],
       "prismatics": [
         {
           "prismaticId": 447001,
@@ -129,6 +132,11 @@ Ogni core contiene stats, items ordinati per posizione leggendaria, Prismatics r
 
 ## Scrittura e compatibilità
 
-Lo scrittore Arena aggiorna il sottoalbero build.arena in un solo update atomico e non sovrascrive i campi standard fratelli. La scrittura standard non sovrascrive Arena. Non usare sostituzione del documento o read-merge-replace.
+Lo scrittore Arena aggiorna build.arena e arenaLastUpdate in un solo update atomico e non sovrascrive i campi standard fratelli. La scrittura standard non sovrascrive Arena. Non usare sostituzione del documento o read-merge-replace.
 
-La forma 4/4 non supporta il payload 3/3. I dati Arena vanno rigenerati prima dell'uso; non si legge né si converte il vecchio sottoalbero. Prima del rollout verificare round-trip BSON, limite dimensione e ordine di entrambe le scritture nel database di test.
+La forma 5/5 non supporta payload Arena precedenti. I dati Arena vanno rigenerati prima dell'uso; non si legge né si converte il vecchio sottoalbero. Prima del rollout verificare round-trip BSON, limite dimensione e ordine di entrambe le scritture nel database di test.
+
+Il reader CHERRY usa le versioni Arena e arenaLastUpdate, poi Build.fromArena espone
+conteggi reali, core boots+primo Prismatico, starter vuoti, item globali e sei slot
+augment, oltre al sottoalbero completo. Gli item globali includono anche i giochi
+senza core. Le posizioni augment mancanti non vengono rinumerate.

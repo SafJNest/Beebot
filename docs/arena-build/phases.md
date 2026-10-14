@@ -1,13 +1,13 @@
 # Piano di implementazione Arena
 
-Stato aggiornato il 2026-10-10. Parser, aggregatore, payload 4/4 e streaming a batch sono implementati. I 29 test Arena focalizzati passano; round-trip BSON sul database, sizing rappresentativo e rollout restano aperti.
+Stato aggiornato il 2026-10-14: integrazione pubblica CHERRY, sorgente comune e schema/aggregation 5/5 implementati. Le fasi del 2026-10-10 qui sotto documentano il precedente stato interno 4/4; il nuovo contratto è in contracts.md. Round-trip Mongo operativo, sizing rappresentativo e rollout restano aperti.
 
 ## Fase 0 — Contratto: completata
 
 - Usare [contracts.md](contracts.md) come requisito attivo.
 - Usare [schema.md](schema.md) come schema target.
 - Conservare la persistenza condivisa in champion_builds/build.arena e l'ownership di provider, service e scheduler.
-- Non ampliare il lavoro a un endpoint o a una presentazione pubblica.
+- Il 2026-10-14 la richiesta approvata estende l’endpoint champion esistente a CHERRY; nessun restyling delle presentazioni.
 
 ## Fase 1 — Parser e classi: implementata
 
@@ -47,11 +47,11 @@ I test usano fixture e store isolati e non eseguono query Mongo. Durante il setu
 
 ## Gate operativo: da completare
 
-- round-trip e scrittura del sottoalbero 4/4 su MongoDB di test;
+- round-trip e scrittura del sottoalbero 5/5 su MongoDB di test;
 - sizing BSON rappresentativo e verifica della headroom del documento combinato;
 - explain degli indici e misure di heap sul volume previsto;
 - verifica in ambiente test delle scritture standard e Arena in entrambi gli ordini;
-- definizione esplicita del trigger: oggi `startChampionArena` non ha un caller di produzione.
+- verifica operativa del trigger API CHERRY e della rigenerazione lazy dei vecchi risultati.
 
 Non eseguire query, rebuild, backfill o scritture sul database reale come parte della verifica offline.
 
@@ -61,4 +61,21 @@ Prima della semplificazione la cartella Arena conteneva nove classi di dominio/a
 
 Risultato: cinque classi. Sono conservate ArenaGameParser, ParsedArenaGame, ArenaItemCatalog, ArenaChampionAnalyzer e ArenaBuildData. Il selettore del primo Prismatico è nel parser e la classificazione patch-aware nel catalogo; FirstPrismaticResolver, FirstPrismaticResult, FirstPrismaticResolveType e PrismaticItemClassifier sono stati rimossi. Le classi shared di caricamento, persistenza e job restano ai rispettivi proprietari.
 
-Il job è opt-in e non ha un caller di produzione, trigger API o refresh schedulato. La verifica funzionale del percorso da job a writer resta distinta dal collegamento a un trigger.
+Dal 2026-10-14 il trigger API e il refresh champion selezionano Arena per CHERRY.
+Il join raw è unico per tutte le queue, senza politiche di eligibilità. Il reader
+Arena valida schema/aggregation 5/5 e arenaLastUpdate; il vecchio standard a zero
+non impedisce il refresh. Core boots+primo Prismatico, nessuno starter, sei posizioni
+augment e item globali anche senza core sono coperti dalle fixture di integrazione.
+
+## Verifica integrazione 2026-10-14
+
+Compilazione completa in output temporaneo e 78 test focalizzati offline: zero
+fallimenti, errori o skip. Il test ChampionArenaRawFlowTest parte da sole fixture
+match/eventi e attraversa il join reale, la matrix, entrambi i writer, i reader
+API e il mapper Spring. Poi rimuove solo Arena e verifica il refresh build-only dallo scheduler reale
+senza aggiornare le stats. Verifica risultati davvero vuoti pronti senza miss
+indefiniti. Copre anche la queue standard ARAM attraverso il join
+comune. Store Mongo e cataloghi sono finti, Redis è isolato per questi test.
+Sono inoltre verificati i payload precedenti, sei augments con posizioni mancanti,
+item globali senza core, role CHERRY rifiutato e JSON/BSON. Nessuna verifica live
+su Mongo/Redis/HTTP, nessun indice/explain o rebuild di produzione è stato eseguito.

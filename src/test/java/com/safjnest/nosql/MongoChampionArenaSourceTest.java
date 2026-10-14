@@ -94,9 +94,9 @@ public class MongoChampionArenaSourceTest {
     @Test
     public void queryUsesFullPatchAlongsideIndexedPatchMajor() throws Exception {
         Filter filter = Filter.championBuild(1, "26.19.123", GameQueueType.CHERRY);
-        Method method = MongoDB.class.getDeclaredMethod("championArenaMatchFilter", Filter.class);
+        Method method = MongoDB.class.getDeclaredMethod("championMatchFilter", Filter.class, String.class);
         method.setAccessible(true);
-        Bson query = (Bson) method.invoke(null, filter);
+        Bson query = (Bson) method.invoke(null, filter, null);
         String json = query.toBsonDocument(Document.class, MongoClientSettings.getDefaultCodecRegistry()).toJson();
         assertTrue(json.contains("\"patch\": \"26.19.123\""));
         assertTrue(json.contains("\"patchMajor\": \"26.19\""));
@@ -118,15 +118,15 @@ public class MongoChampionArenaSourceTest {
         assertThrows(IllegalArgumentException.class,
             () -> MongoDB.forEachChampionArenaMatchBatch(arena.setOpponent(2), 100, batch -> {}));
         assertThrows(IllegalArgumentException.class,
-            () -> MongoDB.forEachChampionArenaMatchBatch(Filter.championBuild(1, "26.19", GameQueueType.CHERRY), 100, batch -> {}));
+            () -> MongoDB.forEachChampionArenaMatchBatch(Filter.championBuild(1, "invalid", GameQueueType.CHERRY), 100, batch -> {}));
         assertThrows(IllegalArgumentException.class,
             () -> MongoDB.forEachChampionArenaMatchBatch(Filter.championBuild(1, "26.19.123", GameQueueType.CHERRY)
-                .setRankBehavior(Filter.RankBehavior.EXACT), 100, batch -> {}));
+                .setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.TOP), 100, batch -> {}));
     }
 
     @Test
     public void projectionContainsIdentityFallbackFactsAndNoArrayElemMatch() throws Exception {
-        Method method = MongoDB.class.getDeclaredMethod("championArenaProjection");
+        Method method = MongoDB.class.getDeclaredMethod("championRawWithBuildProjection");
         method.setAccessible(true);
         Document projection = (Document) method.invoke(null);
         for (String field : List.of("_id", "region", "queue", "patch", "participants.id", "participants.puuid",
@@ -139,15 +139,22 @@ public class MongoChampionArenaSourceTest {
 
     @SuppressWarnings("unchecked")
     private static List<Match> hydrate(List<Document> sources, Map<String, Document> events) throws Exception {
-        Method method = MongoDB.class.getDeclaredMethod("championArenaMatches", List.class, Map.class);
-        method.setAccessible(true);
-        return (List<Match>) method.invoke(null, sources, events);
+        Method decode = MongoDB.class.getDeclaredMethod("decodeMatchEventsJson", Document.class);
+        decode.setAccessible(true);
+        List<Match> result = new ArrayList<>();
+        for (Document source : sources) {
+            Document event = events.get(source.getString("_id"));
+            if (event != null) source.put("events", decode.invoke(null, event));
+            result.add(MongoDB.championRawMatch(source));
+        }
+        return result;
     }
 
     private static void assertHydrationFails(Document event) throws Exception {
-        InvocationTargetException failure = assertThrows(InvocationTargetException.class,
+        Exception failure = assertThrows(Exception.class,
             () -> hydrate(List.of(match("EUW1_5")), Map.of("EUW1_5", event)));
-        assertTrue(failure.getCause() instanceof IllegalStateException);
+        Throwable cause = failure instanceof InvocationTargetException ? failure.getCause() : failure;
+        assertTrue(cause instanceof IllegalStateException);
     }
 
     private static Document match(String id) {

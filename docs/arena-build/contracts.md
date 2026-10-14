@@ -1,6 +1,6 @@
 # Contratto Arena semplificato
 
-Stato: schema 4/4 e flusso interno implementati il 2026-10-10. I test focalizzati offline passano; restano aperti i gate Mongo operativi e il rollout.
+Stato: integrazione pubblica e sorgente comune aggiornate il 2026-10-14; schema/aggregation 5/5. Restano aperti i gate Mongo operativi e il rollout.
 
 ## Obiettivo
 
@@ -15,15 +15,15 @@ Il payload non conserva sequenze complete, rami progressivi o metriche diagnosti
 
 ## Flusso e ownership
 
-Il percorso interno è `ComputeScheduler.startChampionArena` → `ChampionService.refreshArena` → `ChampionBuildProvider.forEachArenaBatch` → `MongoDB.forEachChampionArenaMatchBatch` → `ArenaChampionAnalyzer.Accumulator` → `MongoDB.upsertChampionArena`.
+Il percorso pubblico è Spring → ChampionService → ComputeScheduler → matrix o build-only → ArenaChampionAnalyzer → MongoDB.upsertChampionArena. Il job esplicito startChampionArena rimane disponibile. Tutti i percorsi usano il solo join raw MongoDB.forEachChampionRawMatchEventBatch, che consegna anche i match senza eventi e non decide l’eligibilità dei generatori.
 
-- La sorgente filtra `CHERRY` e patch completa; il catalogo item è passato come input immutabile e coerente con quella patch.
-- Mongo legge al massimo 100 match per batch e fa una query `$in` su `match_events._id` per le timeline associate. I match senza timeline restano nel batch.
+- La sorgente usa il filtro canonico queue/patchMajor/champion/rank/region. Una patch completa aggiunge il filtro patch esatto per CHERRY; una patch major.minor raccoglie le patch complete corrispondenti. Role viene rifiutato. Il catalogo è immutabile e caricato per la patch richiesta.
+- Il join comune legge ID, documenti match ed eventi a batch: 10.000 per la matrix, 100 per build-only. I match senza timeline restano nel batch; stats e build standard decidono autonomamente di escluderli.
 - Il callback elabora il batch in modo sincrono. Ogni `Match` Arena mantiene un solo `JSONObject` in `events`, senza duplicarlo in `eventData`; Mongo rilascia documenti, timeline e match al termine. L'accumulatore conserva solo contatori e chiavi aggregate.
-- MongoDB possiede la persistenza. Un documento per `filterKey` resta in `champion_builds`; Arena aggiorna solo `build.arena` con un update atomico. La scrittura standard mantiene i propri percorsi.
-- Non sono introdotti collection, provider, service, queue o endpoint nuovi. La risposta API standard continua a escludere `build.arena`.
+- MongoDB possiede la persistenza. Un documento per `filterKey` resta in `champion_builds`; Arena aggiorna `build.arena` e il proprio timestamp `arenaLastUpdate` con un update atomico. La scrittura standard mantiene i propri percorsi.
+- Non sono introdotti collection, provider, service, queue o endpoint nuovi. CHERRY espone `build.arena` e i riepiloghi compatibili di Build; gli altri reader standard continuano a escludere Arena.
 
-Il job è opt-in: non esiste un caller di produzione che lo avvii automaticamente, né un trigger API o schedulato. Un'eventuale attivazione automatica richiede una decisione separata.
+Il miss API e il refresh champion esistenti selezionano Arena per CHERRY. Stats e build cold condividono la scansione; il build-only miss non rigenera le stats. Versioni Arena e arenaLastUpdate determinano disponibilità e freschezza: un vecchio build standard a zero non soddisfa la richiesta.
 
 ## Estrazione dei fatti
 
@@ -46,7 +46,7 @@ La chiave del core è sempre `bootsId + firstPrismaticId`. Un participant-game e
 
 ### Build leggendaria
 
-La build usa gli acquisti timeline classificati `Kind.ITEM` dal catalogo patch-aware: item completi non-Prismatic, con una sola occorrenza di ciascun ID per participant-game, nell'ordine del primo acquisto valido.
+Gli item globali sono accumulati anche se manca il core. La build usa gli acquisti timeline classificati `Kind.ITEM` dal catalogo patch-aware: item completi non-Prismatic, con una sola occorrenza di ciascun ID per participant-game, nell'ordine del primo acquisto valido.
 
 Le opzioni sono aggregate per posizione ordinale degli item leggendari (`1`, `2`, `3` ...), non per timestamp. Gli slot finali non ricostruiscono l'ordine. Una timeline assente o senza acquisti leggendari non produce item ordinati; una partita parziale contribuisce solo con gli acquisti validi disponibili.
 
@@ -56,7 +56,7 @@ Gli ID Prismatic derivano dagli acquisti timeline e dagli slot finali, senza pos
 
 ### Augments
 
-Gli augments provengono da `participant.augments`. La posizione è l'indice originale, a partire da 1; ID nulli o non positivi sono omessi senza rinumerare gli elementi successivi. Si aggrega la coppia `augmentId + position`, sia per core sia globalmente.
+Gli augments provengono da `participant.augments`, fino a sei posizioni. La posizione è l'indice originale, a partire da 1; ID nulli o non positivi sono omessi senza rinumerare gli elementi successivi. Si aggrega la coppia `augmentId + position`, sia per core sia globalmente.
 
 ### Esito e statistiche
 
@@ -70,6 +70,6 @@ Un participant-game è una vittoria se `participant.win` è vero oppure `subTeam
 
 ## Versione e rollout
 
-La forma 4/4 è implementata e non è compatibile con il payload 3/3. Non esistono reader o conversioni per lo schema precedente; i dati Arena dovranno essere rigenerati prima dell'uso.
+La forma 5/5 aggiunge gli item globali e l’integrazione pubblica; non è compatibile con i payload precedenti. Non esistono reader o conversioni per lo schema precedente; i dati Arena dovranno essere rigenerati prima dell'uso.
 
 I test focalizzati verificano parser, aggregatore, callback del job, join/persistenza con fixture e round-trip BSON locale. Restano da completare un round-trip sul database di test, la misura del documento combinato e la verifica operativa delle scritture Arena/standard. Non effettuare rebuild o rollout sul database reale come parte della verifica offline.

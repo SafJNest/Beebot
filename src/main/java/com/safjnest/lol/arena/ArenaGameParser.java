@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.safjnest.lol.arena.ParsedArenaGame.Augment;
 import com.safjnest.lol.model.Build.Kind;
+import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import org.json.JSONArray;
@@ -67,7 +68,8 @@ public final class ArenaGameParser {
         if (boot == null && boots.size() == 1) boot = boots.iterator().next();
 
         List<Augment> augments = new ArrayList<>();
-        if (participant.augments != null) for (int index = 0; index < participant.augments.size(); index++) {
+        if (participant.augments != null) for (int index = 0;
+                index < Math.min(participant.augments.size(), ArenaBuildData.MAX_AUGMENTS); index++) {
             Integer id = participant.augments.get(index);
             if (id != null && id > 0) augments.add(new Augment(id, index + 1));
         }

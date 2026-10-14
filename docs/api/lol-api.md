@@ -131,5 +131,7 @@ the queue does not support a lane.
 - [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parameters and status;
 - [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache and async flows.
 
-Arena builds are internal and are not exposed by the listed API routes. See the
+The champion page supports Arena through `queue=CHERRY` and exposes `build.arena`
+(schema/aggregation 5/5), six augment slots and boots+first-Prismatic cores.
+Role is rejected. See the
 [Arena contract](../arena-build/contracts.md) for persistence and data semantics.

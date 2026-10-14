@@ -19,7 +19,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public final class ChampionStatsProvider {
 
-    public static final int EVENT_BATCH_SIZE = 1_000;
+    public static final int EVENT_BATCH_SIZE = 10_000;
 
     private ChampionStatsProvider() {}
 

@@ -28,7 +28,7 @@ This directory describes the linear implementation of the MariaDB → MongoDB mi
 - The migration normalizes `match` document residues; other legacy documents and old Kryo payloads remain outside automatic cleanup and are removed manually before regeneration.
 - Readers use `_id` as fallback only for defensive compatibility with documents outside the clean migration.
 - Events are not in the `match` document: they live in `match_events` as JSON and the collection uses native WiredTiger Zstandard.
-- Champion-stat rebuilds join `match_events` to match records in batches of 1,000; profile-matchup and champion-build rebuilds use batches of 100. Each path processes the bounded event batch and recursively releases the temporary event tree. Champion stats and builds exclude a match when its stored event payload has no usable timeline; it contributes neither picks nor games to those aggregates. The compact timeline marks the available frame nearest minute 15 (without interpolation); event counts use timestamps through minute 15. Missing fields inside an available timeline remain absent.
+- Champion-stat matrix rebuilds count the matching games, stream their IDs, then load match records and join `match_events` in batches of 10,000. Logs show the readable scope, planned and completed batches, both query rounds per batch, timeline-document counts, joined games and final totals. A `match_events` document is one game's timeline, not the number of individual timeline events. Profile-matchup and standalone champion-build rebuilds use batches of 100. Each path processes the bounded event batch and recursively releases the temporary event tree. Champion stats and standard builds exclude a match when its stored event payload has no usable timeline; it contributes neither picks nor games to those aggregates. The compact timeline marks the available frame nearest minute 15 (without interpolation); event counts use timestamps through minute 15. Missing fields inside an available timeline remain absent.
 - Champion builds use final participant fields for item identity and batch-loaded `match_events` for attributed purchase and skill-upgrade times. If a timeline exists but a particular event is ambiguous or absent, final-inventory counts remain, without a time sample for that item. The same rule applies when build aggregation runs as part of a champion statistics refresh.
 - Champion-build Mongo documents carry a root `buildVersion`; reads and freshness checks ignore documents from older aggregation generations so the normal API request schedules their rebuild.
 
@@ -102,27 +102,29 @@ Before completion verify LoL Mongo-only reads and writes, no runtime import of L
 Exactly one champion_builds document per normal filterKey stores standard and
 build.arena. MongoDB owns both entrypoints. Standard single/bulk updates `$set`
 root standard metadata and individual standard build paths, preserving Arena.
-Arena sets build.arena atomically and initializes filterKey on insertion. No
+Arena sets build.arena and arenaLastUpdate atomically and initializes filterKey on insertion. No
 new identity, discriminator, collection, replacement or read-merge-replace.
 Arena-only inserts have no standard buildVersion/readiness marker. Standard
 read projection removes Arena before deserialization, so malformed Arena cannot
-break standard reads and the public response stays unchanged.
+break standard reads. CHERRY instead reads Arena and exposes it through Build.fromArena;
+old standard-only zero aggregates do not satisfy CHERRY availability.
 
-Arena schema=4/aggregation=4 uses JsonCodec structured BSON with only overall,
-core, Prismatic, augment and minimal coverage aggregates. Its full subtree is validated/encoded before the update. Local size/headroom guards cannot
+Arena schema=5/aggregation=5 uses JsonCodec structured BSON with global outcomes/items,
+core, Prismatic, six-position augment and minimal coverage aggregates. Its full subtree is validated/encoded before the update. Local size/headroom guards cannot
 measure existing standard fields without reading: Mongo's atomic combined-document
 limit remains authoritative, and rejection leaves the previous value intact.
-The old schema 3 subtree is unsupported and must be regenerated; no compatibility
+Previous Arena versions are unsupported and must be regenerated; no compatibility
 reader or conversion is provided.
 
-The exact full-patch CHERRY match query includes queue/patchMajor/champion plus
-exact patch. Each source batch contains at most 100 matches and joins their event
-documents through `match_events._id`; matches with no event document are still
-delivered. `ArenaGameParser` reads attributed `item_events`, orders purchases by
+All champion consumers use the same raw match/event left join. CHERRY uses
+queue/patchMajor/champion/rank/region, adding exact patch only for internal full
+patch scopes. Standalone batches are 100; matrix batches are 10,000. Missing
+event documents are delivered to consumers rather than excluded by the reader. `ArenaGameParser` reads attributed `item_events`, orders purchases by
 timeline timestamp and falls back to final slots for the first Prismatic when
 needed. Arena timestamps are used for ordering and are not persisted. Standard
-build/stat reader eligibility is unchanged. Internal callers provide a
-patch-correct immutable item catalog.
+build/stat eligibility is unchanged. Arena receives an immutable item catalog
+loaded for the requested patch, retains global choices without a core and uses
+no starters. CHERRY freshness reads current Arena versions and arenaLastUpdate.
 
 The batch callback is synchronous. Each Arena `Match` holds one decoded
 `JSONObject` timeline in `events`; the duplicate `eventData` map is dropped.
@@ -133,7 +135,8 @@ the unique Mongo match documents.
 
 Index definitions/options and explains were not inspected on a live database;
 champion_builds_filter remains the documented candidate access path. No index
-creation/migration or automatic rebuild is introduced. Live Mongo round-trip,
+creation/migration or bulk rebuild is introduced; normal CHERRY API misses now
+generate Arena and refresh obsolete payloads. Live Mongo round-trip,
 combined BSON/cardinality, representative heap and rollout gates remain open.
 See [phases](../arena-build/phases.md) for current offline evidence.
 

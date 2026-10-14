@@ -645,7 +645,7 @@ Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` �
 | `match_events` | ~15-40 KB JSON | native WiredTiger zstd lvl 9, ~60% saving vs raw BSON |
 | `profile_statistics` | ~2-8 KB | leaves `champion×queue×lane`; no materialized `total`/`queueStats` |
 | Redis value | ~1-4 KB JSON | TTL declared by `RedisKey`, mget batch ≤100, pool 32 conn, circuit breaker 30s |
-| `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` at batch 100 | champion stats event batch is now 1,000; retained match map is roughly 8-15 MB if the documented 8-15 KB/match applies, plus cursor and one timeline parse; total heap has not been remeasured, no `List<Match>` in memory |
+| `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` at batch 100 | champion matrix event batches are 10,000; retained raw match/event memory and total heap have not been remeasured, no `List<Match>` in memory |
 | Compute worker | max 2 concurrent | `CHAMPION` reserved for heavy, PROFILE least-loaded |
 
 ### Command / Class Names — Quick Lookup
@@ -712,54 +712,46 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 
 ## Arena build analytics
 
-Start from [contracts](arena-build/contracts.md), [schema](arena-build/schema.md)
-and [phases](arena-build/phases.md). `ArenaGameParser` reads attributed
-`item_events` from the joined `Match.events`, orders them by timestamp and
-original index, and cancels only an immediately undone matching purchase. The
-timestamp orders Arena acquisitions but is not persisted; the payload retains
-Legendary IDs by ordinal position. The standard Build continues to expose its
-existing `averagePurchaseTimeSeconds` and `timedMatches` aggregates. `220007` is
-excluded from Arena choices.
+The existing champion API selects Arena for queue=CHERRY and rejects role. See
+[contracts](arena-build/contracts.md), [schema](arena-build/schema.md) and
+[phases](arena-build/phases.md). No new endpoint/service/provider/collection exists.
+ChampionService and ComputeScheduler dispatch both cold-matrix and build-only
+requests through QueueHandler on CHAMPION. The standalone Arena entrypoint remains
+available for explicit jobs and reports total/completed/missing/failed.
 
-The pure `ArenaChampionAnalyzer` returns schema/aggregation 4/4: one
-boots+first-Prismatic core, timeline-ordered Legendary options, positionless
-Prismatic options and position-specific augments. Packed `longKey` values and
-FastUtil primitive maps hold composite option keys. The parser deduplicates
-items before accumulation; the accumulator keeps its duplicate-match guard with
-primitive numeric IDs instead of retaining a `String` for every match.
+All champion consumers share MongoDB.forEachChampionRawMatchEventBatch: a bounded
+ID/document/event left join delivering missing-event matches too. The reader has
+no consumer eligibility policy. Statistics and standard builds require usable
+timelines; Arena outcomes, final Prismatics and augments survive missing timelines.
+The common build projection includes participants.id, boots and subTeamPlacement.
+Matrix batches remain 10,000 and standalone build batches 100; callbacks are
+synchronous and temporary event/document/match trees are released after processing.
 
-`ChampionBuildProvider`/`MongoDB` stream exact full-patch CHERRY matches in batches
-of at most 100, then join at most 100 matching `match_events` documents. Missing
-timelines are still passed to the analyzer. `MatchMemoryUtils` releases Mongo
-documents, timeline trees and detached matches after the synchronous batch
-callback. Standard reader behavior is unchanged. The caller passes a detached
-catalog for the requested patch; `getItems()` current-patch loading is not used.
-Missing timelines still contribute outcomes and final-slot Prismatics/augments;
-they do not create ordered Legendary build items.
+ArenaGameParser uses attributed purchases to identify boots+first-Prismatic cores,
+ordered Legendary items, positionless Prismatics and up to six original augment
+positions. It has no starter category. Global items and other choices are retained
+when a core is missing. 220007 is excluded. ArenaChampionAnalyzer uses primitive
+maps and returns schema/aggregation 5/5. Timings order purchases without entering
+persisted identities or output. Catalogs are loaded for the requested patch,
+resolving major.minor to its matching full Data Dragon version. No current-patch
+fallback is used and catalog failures fail the job before an empty result is saved.
 
-One champion_builds document per normal filterKey stores standard + build.arena.
-MongoDB.upsertChampionBuild/Builds update only owned standard dot paths;
-upsertChampionArena updates only build.arena. Never set all of build, replace
-whole documents or read-merge-replace. Arena-first insert does not mark standard
-ready. Standard reads omit arena, preserving the endpoint/Discord projection.
+One champion_builds document per filterKey holds standard fields and build.arena.
+Arena writes only its subtree and arenaLastUpdate atomically; standard single/bulk
+writes preserve Arena. No replacement or read-merge-replace. CHERRY reads validate
+Arena versions and use arenaLastUpdate for freshness. Old standard zero results
+and obsolete Arena payloads are regenerated by normal misses; genuine ready-empty
+results are persisted to avoid repeated empty jobs. Build.fromArena populates
+counts, boots+Prismatic cores, global slots, six augment arrays and build.arena;
+starters and standard-only categories stay empty. Other queues retain standard
+contracts. API/controller validation, docs and ADR-0006/0012 are synchronized.
 
-Internal opt-in `ChampionService`/`ComputeScheduler` entrypoints submit via
-QueueHandler on CHAMPION; there is currently no production caller, API trigger or
-scheduled refresh that starts Arena automatically.
-Job phase/currentItem show champion, full patch, shard=ALL and source
-`total/completed/missing/failed`. Total counts discovered candidates, final only
-when the cursor ends; completed includes fallback, missing is its timeline-missing
-subset. The structured JobProgress tracks the single aggregate 0/1→1/1, avoiding
-per-match retained status maps. Source/write failures fail the job.
+Public requests use major.minor patches and source rank/region filters; internal
+full patches also add exact patch matching. The normalized Arena filter has no
+role/opponent/duo/period. Existing filterKey identity is unchanged. Job item memory
+remains one aggregate record rather than one status entry per match.
 
-BSON payload/update guards run before a write; Mongo's final combined-document
-limit is authoritative. A size/serialization error preserves the old subtree.
-No silent truncation, pruning or delete. Review live indexes/explain and measure
-combined BSON/cardinality/heap before rollout. The code's actual DB mapping is
-production=beebot_test, testing=beebot_test_test; do not infer safety from names.
-No Mongo connection/rebuild/backfill/production run is performed by this task.
-
-API/controller/presentation, canonical Participant/Tracker, filter identity and
-accepted ADRs remain unchanged. Any future public Arena read requires its own
-contract review. Historical Phase 2 test results and current implementation
-verification are recorded separately in phases.md.
+BSON guards run before a write; Mongo's combined-document limit remains
+authoritative. Source/catalog/write failures propagate. Live indexes/explain,
+combined BSON/cardinality and heap remain operational gates. No production Mongo
+connection, rebuild or backfill is part of offline verification.

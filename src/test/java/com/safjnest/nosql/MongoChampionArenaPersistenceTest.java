@@ -56,7 +56,7 @@ public class MongoChampionArenaPersistenceTest {
             assertEquals(7, MongoDB.findChampionBuilds(filter()).get(0).games());
             assertEquals(arena(), MongoDB.findChampionArena(filter()));
             assertFalse(store.updates.get(1).get("$set", Document.class).containsKey("build"));
-            assertEquals(List.of("build.arena"), new ArrayList<>(store.updates.get(1).get("$set", Document.class).keySet()));
+            assertEquals(List.of("build.arena", "arenaLastUpdate"), new ArrayList<>(store.updates.get(1).get("$set", Document.class).keySet()));
         }
     }
 
@@ -102,7 +102,7 @@ public class MongoChampionArenaPersistenceTest {
             assertNull(MongoDB.findChampionArena(filter()));
             assertTrue(payload.containsKey("arena"));
             ArenaBuildData current = arena();
-            payload.put("arena", JsonCodec.toDocument(new ArenaBuildData(2, 3, current.stats(), current.cores(),
+            payload.put("arena", JsonCodec.toDocument(new ArenaBuildData(2, 3, current.stats(), current.cores(), current.items(),
                 current.prismatics(), current.augments(), current.coverage())));
             assertNull(MongoDB.findChampionArena(filter()));
             assertEquals(4, MongoDB.findChampionBuilds(filter()).get(0).games());
@@ -113,11 +113,11 @@ public class MongoChampionArenaPersistenceTest {
     public void unsafeScopesVersionsAndAmbiguousStandardBuildNeverWrite() throws Exception {
         try (Store store = new Store()) {
             assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setOpponent(1), arena()));
-            assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setPatch("16.19"), arena()));
+            assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setPatch("invalid"), arena()));
             assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setPeriod(1, 2), arena()));
-            assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setRankBehavior(Filter.RankBehavior.EXACT), arena()));
+            assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter().setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.TOP), arena()));
             ArenaBuildData current = arena();
-            ArenaBuildData unsupported = new ArenaBuildData(3, 2, current.stats(), current.cores(),
+            ArenaBuildData unsupported = new ArenaBuildData(3, 2, current.stats(), current.cores(), current.items(),
                 current.prismatics(), current.augments(), current.coverage());
             assertThrows(IllegalArgumentException.class, () -> MongoDB.upsertChampionArena(filter(), unsupported));
             Build source = standard(4);
@@ -162,6 +162,26 @@ public class MongoChampionArenaPersistenceTest {
             assertEquals(0, store.reads);
             assertEquals(10, store.saved.getInteger("games").intValue());
             assertEquals(arena(), MongoDB.findChampionArena(filter()));
+        }
+    }
+
+    @Test
+    public void oldStandardZeroIsAMissAndOnlyCurrentArenaMakesTheApiBuildReady() throws Exception {
+        try (Store store = new Store()) {
+            MongoDB.upsertChampionBuild(standard(0));
+            var service = new com.safjnest.lol.service.ChampionService();
+            assertNull(service.getBuild(filter(), false));
+            assertEquals(0, MongoDB.findChampionBuildLastUpdate(filter()));
+            MongoDB.upsertChampionArena(filter(), arena());
+            Build build = service.getBuild(filter(), false);
+            assertEquals(1, build.games());
+            assertEquals(6, build.augmentOptions().size());
+            assertNotNull(build.arena());
+            assertTrue(MongoDB.findChampionBuildLastUpdate(filter()) > 0);
+            store.saved.get("build", Document.class).get("arena", Document.class)
+                .put("aggregationVersion", ArenaBuildData.AGGREGATION_VERSION - 1);
+            assertNull(service.getBuild(filter(), false));
+            assertEquals(0, MongoDB.findChampionBuildLastUpdate(filter()));
         }
     }
 
@@ -264,7 +284,12 @@ public class MongoChampionArenaPersistenceTest {
                 for (Object condition : conditions) if (!matches((Document) condition)) return false;
                 return true;
             }
-            for (var condition : query.entrySet()) if (!java.util.Objects.equals(saved.get(condition.getKey()), condition.getValue())) return false;
+            for (var condition : query.entrySet()) {
+                Object value = saved;
+                for (String field : condition.getKey().split("\\."))
+                    value = value instanceof java.util.Map<?, ?> map ? map.get(field) : null;
+                if (!java.util.Objects.equals(value, condition.getValue())) return false;
+            }
             return true;
         }
 

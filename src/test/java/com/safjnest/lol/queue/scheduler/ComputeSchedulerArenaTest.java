@@ -112,9 +112,9 @@ public class ComputeSchedulerArenaTest {
     @Test
     public void invalidScopeAndCatalogFailBeforeSubmittingAnyWork() {
         assertThrows(IllegalArgumentException.class,
-            () -> ComputeScheduler.startChampionArena(filter().setPatch("16.19"), CATALOG));
+            () -> ComputeScheduler.startChampionArena(filter().setPatch("invalid"), CATALOG));
         assertThrows(IllegalArgumentException.class,
-            () -> ComputeScheduler.startChampionArena(filter().setRankBehavior(Filter.RankBehavior.EXACT), CATALOG));
+            () -> ComputeScheduler.startChampionArena(filter().setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.TOP), CATALOG));
         assertThrows(IllegalArgumentException.class,
             () -> ComputeScheduler.startChampionArena(filter().setQueue(GameQueueType.ARAM), CATALOG));
         assertThrows(NullPointerException.class, () -> ComputeScheduler.startChampionArena(filter(), null));

@@ -24,6 +24,23 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public class ChampionServiceArenaTest {
 
+    private static long redisDisabledUntil;
+
+    @org.junit.BeforeClass
+    public static void isolateRedis() throws Exception {
+        var field = com.safjnest.redis.RedisClient.class.getDeclaredField("disabledUntil");
+        field.setAccessible(true);
+        redisDisabledUntil = field.getLong(null);
+        field.setLong(null, Long.MAX_VALUE);
+    }
+
+    @org.junit.AfterClass
+    public static void restoreRedis() throws Exception {
+        var field = com.safjnest.redis.RedisClient.class.getDeclaredField("disabledUntil");
+        field.setAccessible(true);
+        field.setLong(null, redisDisabledUntil);
+    }
+
     @Test
     public void streamsTimelineAndFallbackIntoOneDetachedPayloadAndReportsBoth() {
         AtomicReference<ArenaBuildData> saved = new AtomicReference<>();
@@ -156,14 +173,14 @@ public class ChampionServiceArenaTest {
     }
 
     @Test
-    public void majorPatchExactRankBehaviorAndMissingCatalogFailBeforeSourceAccess() {
+    public void invalidPatchRoleAndMissingCatalogFailBeforeSourceAccess() {
         AtomicInteger reads = new AtomicInteger();
         ChampionService service = new ChampionService((filter, consumer) -> reads.incrementAndGet(),
             (filter, payload) -> { fail("Writer must not be reached"); return false; });
         assertThrows(IllegalArgumentException.class,
-            () -> service.refreshArena(filter().setPatch("16.19"), CATALOG, job()));
+            () -> service.refreshArena(filter().setPatch("invalid"), CATALOG, job()));
         assertThrows(IllegalArgumentException.class,
-            () -> service.refreshArena(filter().setRankBehavior(Filter.RankBehavior.EXACT), CATALOG, job()));
+            () -> service.refreshArena(filter().setLane(no.stelar7.api.r4j.basic.constants.types.lol.LaneType.TOP), CATALOG, job()));
         assertThrows(NullPointerException.class, () -> service.refreshArena(filter(), null, job()));
         assertEquals(0, reads.get());
     }

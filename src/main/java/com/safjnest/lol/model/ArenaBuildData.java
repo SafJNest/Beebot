@@ -5,14 +5,16 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record ArenaBuildData(int schemaVersion, int aggregationVersion, Stats stats,
-        List<Core> cores, List<PrismaticOption> prismatics, List<AugmentOption> augments,
+        List<Core> cores, List<ItemOption> items, List<PrismaticOption> prismatics, List<AugmentOption> augments,
         Coverage coverage) {
 
-    public static final int SCHEMA_VERSION = 4;
-    public static final int AGGREGATION_VERSION = 4;
+    public static final int SCHEMA_VERSION = 5;
+    public static final int AGGREGATION_VERSION = 5;
+    public static final int MAX_AUGMENTS = 6;
 
     public ArenaBuildData {
         cores = List.copyOf(cores);
+        items = List.copyOf(items);
         prismatics = List.copyOf(prismatics);
         augments = List.copyOf(augments);
     }

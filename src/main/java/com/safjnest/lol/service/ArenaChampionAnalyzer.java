@@ -25,6 +25,7 @@ import com.safjnest.lol.model.ArenaBuildData.Stats;
 import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.utils.PatchUtils;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
 public final class ArenaChampionAnalyzer {
@@ -44,6 +45,7 @@ public final class ArenaChampionAnalyzer {
         private final Map<String, Map<Integer, LongOpenHashSet>> matchesByPlatform = new HashMap<>();
         private final Set<String> oversizedMatchIds = new HashSet<>();
         private final StatsCounter overall = new StatsCounter();
+        private final Long2ObjectOpenHashMap<StatsCounter> items = new Long2ObjectOpenHashMap<>();
         private final Int2ObjectOpenHashMap<StatsCounter> prismatics = new Int2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<StatsCounter> augments = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<CoreCounter> cores = new Long2ObjectOpenHashMap<>();
@@ -54,7 +56,7 @@ public final class ArenaChampionAnalyzer {
 
         private Accumulator(int championId, String patch, ArenaItemCatalog catalog) {
             if (championId <= 0 || patch == null || !patch.matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)*"))
-                throw new IllegalArgumentException("Champion and full patch required");
+                throw new IllegalArgumentException("Champion and patch required");
             this.championId = championId;
             this.patch = patch;
             this.catalog = java.util.Objects.requireNonNull(catalog);
@@ -63,7 +65,9 @@ public final class ArenaChampionAnalyzer {
         public boolean accept(Match match) {
             if (match == null || match.gameId == null || !MATCH_ID_PATTERN.matcher(match.gameId).matches())
                 throw new IllegalArgumentException("Full match ID required");
-            if (match.queue != GameQueueType.CHERRY || !patch.equals(match.patch)) return false;
+            boolean patchMatches = patch.equals(PatchUtils.patchMajor(patch))
+                ? patch.equals(PatchUtils.patchMajor(match.patch)) : patch.equals(match.patch);
+            if (match.queue != GameQueueType.CHERRY || !patchMatches) return false;
             MatchIdentity matchId = matchIdentity(match.gameId);
             if (containsMatch(matchId)) throw new IllegalArgumentException("Duplicate match: " + match.gameId);
             validateParticipants(match.participants);
@@ -78,6 +82,10 @@ public final class ArenaChampionAnalyzer {
         }
 
         public ArenaBuildData finish() {
+            List<ItemOption> itemValues = new ArrayList<>();
+            for (var entry : items.long2ObjectEntrySet())
+                itemValues.add(entry.getValue().item(entry.getLongKey()));
+            itemValues.sort(Comparator.comparingInt(ItemOption::position).thenComparingInt(ItemOption::itemId));
             List<Core> coreValues = new ArrayList<>();
             for (var entry : cores.long2ObjectEntrySet())
                 coreValues.add(entry.getValue().finish(entry.getLongKey()));
@@ -95,15 +103,34 @@ public final class ArenaChampionAnalyzer {
             augmentValues.sort(augmentOrder());
 
             return new ArenaBuildData(ArenaBuildData.SCHEMA_VERSION, ArenaBuildData.AGGREGATION_VERSION,
-                overall.finish(), coreValues, prismaticValues, augmentValues,
+                overall.finish(), coreValues, itemValues, prismaticValues, augmentValues,
                 new ArenaBuildData.Coverage(matches, overall.games - missingCoreGames, missingCoreGames,
                     firstPrismaticFallbackGames, buildTimelineGames));
+        }
+
+        public void clear() {
+            matchesByPlatform.clear();
+            oversizedMatchIds.clear();
+            items.clear();
+            prismatics.clear();
+            augments.clear();
+            cores.clear();
+            overall.games = 0;
+            overall.wins = 0;
+            matches = 0;
+            missingCoreGames = 0;
+            firstPrismaticFallbackGames = 0;
+            buildTimelineGames = 0;
         }
 
         private void add(ParsedArenaGame game) {
             overall.add(game.win());
             if (game.firstPrismaticFallback()) firstPrismaticFallbackGames++;
             if (game.buildTimeline()) buildTimelineGames++;
+
+            for (int index = 0; index < game.legendaryItems().size(); index++)
+                items.computeIfAbsent(longKey(index + 1, game.legendaryItems().get(index)),
+                    ignored -> new StatsCounter()).add(game.win());
 
             for (int id : game.prismatics())
                 prismatics.computeIfAbsent(id, ignored -> new StatsCounter()).add(game.win());

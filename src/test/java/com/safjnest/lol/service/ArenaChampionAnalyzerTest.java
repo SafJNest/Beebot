@@ -76,7 +76,7 @@ public class ArenaChampionAnalyzerTest {
     }
 
     @Test
-    public void payloadRoundTripsAsVersionFourAndContainsOnlyTheNewShape() {
+    public void payloadRoundTripsAsCurrentVersionAndContainsOnlyTheNewShape() {
         var accumulator = ArenaChampionAnalyzer.accumulator(27, "16.19.1", CATALOG);
         var participant = participant(1, 3);
         participant.boots = 3006;
@@ -87,8 +87,8 @@ public class ArenaChampionAnalyzerTest {
         var decoded = JsonCodec.fromJson(JsonCodec.toJson(source), ArenaBuildData.class);
         assertEquals(source, decoded);
         var json = new JSONObject(JsonCodec.toJson(source));
-        assertEquals(4, json.getInt("schemaVersion"));
-        assertEquals(4, json.getInt("aggregationVersion"));
+        assertEquals(ArenaBuildData.SCHEMA_VERSION, json.getInt("schemaVersion"));
+        assertEquals(ArenaBuildData.AGGREGATION_VERSION, json.getInt("aggregationVersion"));
         assertTrue(json.getJSONObject("stats").has("winRate"));
         assertFalse(json.has("positions"));
         assertFalse(json.has("builds"));

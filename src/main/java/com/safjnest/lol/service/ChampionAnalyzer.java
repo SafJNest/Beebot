@@ -10,6 +10,9 @@ import com.safjnest.lol.model.ChampionStatistics.Overview;
 import com.safjnest.lol.model.ChampionStatistics.PowerCurvePoint;
 import com.safjnest.lol.model.ChampionStatistics.Trend;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ArenaBuildData;
+import com.safjnest.lol.model.match.Match;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
@@ -181,8 +184,19 @@ public final class ChampionAnalyzer {
         }
         if (scopes.isEmpty()) return new MatrixResult(0, 0, 0);
         // Keep RawMatrix logic intact, then coalesce per scope
-        Map<String, ChampionBuildEngine.BuildAccumulator> builds = new java.util.LinkedHashMap<>();
-        if (buildFilters != null) for (Filter f : buildFilters) if (f != null && f.champion() != 0 && f.patch() != null && f.queue() != null) builds.putIfAbsent(f.toKey(), ChampionBuildEngine.newAccumulator(f));
+        Map<String, ChampionBuildEngine.BuildAccumulator> builds = new LinkedHashMap<>();
+        Map<String, ArenaChampionAnalyzer.Accumulator> arenas = new LinkedHashMap<>();
+        Map<String, Filter> arenaFilters = new LinkedHashMap<>();
+        if (buildFilters != null) for (Filter f : buildFilters) {
+            if (f == null || f.champion() == 0 || f.patch() == null || f.queue() == null) continue;
+            if (f.queue() == GameQueueType.CHERRY) {
+                Filter snapshot = ChampionService.arenaFilterSnapshot(f);
+                if (!arenas.containsKey(snapshot.toKey())) {
+                    arenas.put(snapshot.toKey(), ChampionService.arenaAccumulator(snapshot));
+                    arenaFilters.put(snapshot.toKey(), snapshot);
+                }
+            } else builds.putIfAbsent(f.toKey(), ChampionBuildEngine.newAccumulator(f));
+        }
         Filter first = filters.get(0);
         Filter source = new Filter().setChampion(0).setLane(null).setQueue(first.queue()).setRank(null)
             .setRankBehavior(first.rankBehavior()).setPatch(first.patch()).setRegion(null);
@@ -191,7 +205,17 @@ public final class ChampionAnalyzer {
         try {
             ChampionStatsProvider.forEachMatchWithBuild(source, (read, document) -> {
                 ChampionStatsData.RawMatch rm = read.match();
-                for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) for (var rec : com.safjnest.nosql.MongoDB.championBuildRecords(document, acc.filter())) ChampionBuildEngine.accept(acc, rec);
+                for (ChampionBuildEngine.BuildAccumulator acc : builds.values())
+                    for (var rec : MongoDB.championBuildRecords(document, acc.filter())) ChampionBuildEngine.accept(acc, rec);
+                if (!arenas.isEmpty()) {
+                    Match match = MongoDB.championRawMatch(document);
+                    try {
+                        for (var entry : arenas.entrySet())
+                            if (matchesMatrixFilter(arenaFilters.get(entry.getKey()), rm)) entry.getValue().accept(match);
+                    } finally {
+                        MatchMemoryUtils.release(match);
+                    }
+                }
                 ChampionStatsData.Game game = parse(rm);
                 if (game != null) {
                     raw.addBase(game, rm.metadata());
@@ -291,11 +315,20 @@ public final class ChampionAnalyzer {
                 BotLogger.info("[ChampionBuildPersisted] source=stats-matrix filter=" + acc.filter().toKey()
                     + " games=" + res.get(0).games());
             }
+            for (var entry : arenas.entrySet()) {
+                ArenaBuildData arena = entry.getValue().finish();
+                MongoDB.upsertChampionArena(arenaFilters.get(entry.getKey()), arena);
+                BotLogger.info("[ChampionBuildPersisted] source=stats-matrix queue=CHERRY filter="
+                    + entry.getKey() + " games=" + arena.stats().games());
+            }
             return new MatrixResult(scopes.size(), 0, persistedChampions);
         } finally {
             raw.clear();
             for (ChampionBuildEngine.BuildAccumulator accumulator : builds.values()) accumulator.clear();
             builds.clear();
+            for (ArenaChampionAnalyzer.Accumulator accumulator : arenas.values()) accumulator.clear();
+            arenas.clear();
+            arenaFilters.clear();
         }
     }
 
