@@ -16,6 +16,7 @@ public class ArenaBuildApiTest {
         var accumulator = ArenaChampionAnalyzer.accumulator(27, filter.patch(), CATALOG);
         var participant = participant(1, 3);
         participant.boots = 3006;
+        participant.item0 = 3006; participant.item1 = 447001; participant.item2 = 4001;
         participant.augments = Arrays.asList(11, null, 33, 44, 55, 66, 77);
         var first = match("EUW1_1", participant, List.of(
             event("ITEM_PURCHASED", 1000, 447001), event("ITEM_PURCHASED", 2000, 4001)));
@@ -32,7 +33,7 @@ public class ArenaBuildApiTest {
         assertTrue(build.augmentOptions().get(1).isEmpty());
         assertEquals("55", build.augmentOptions().get(4).get(0).id());
         assertEquals("66", build.augmentOptions().get(5).get(0).id());
-        assertEquals("4001", build.itemSlots().get(0).get(0).id());
+        assertTrue(build.arena().coreBuilds().get(0).builds().get(0).items().contains(4001));
         Build decoded = JsonCodec.fromJson(build.toJson(), Build.class);
         assertEquals(build.arena(), decoded.arena());
         assertEquals(build.augmentOptions(), decoded.augmentOptions());
@@ -54,7 +55,7 @@ public class ArenaBuildApiTest {
         assertEquals("66", build.augmentOptions().get(5).get(0).id());
     }
     @Test
-    public void legendaryPurchasesRemainGlobalWhenBootsAndCoreAreMissing() {
+    public void missingCoreRetainsPopulationWithoutInventingFullBuilds() {
         var participant = participant(1, 3);
         var source = match("EUW1_4", participant, List.of(event("ITEM_PURCHASED", 1000, 4001)));
         var accumulator = ArenaChampionAnalyzer.accumulator(27, "16.19", CATALOG);
@@ -62,8 +63,8 @@ public class ArenaBuildApiTest {
         Build build = Build.fromArena(Filter.championBuild(27, "16.19", GameQueueType.CHERRY), accumulator.finish());
         assertTrue(build.coreBuilds().isEmpty());
         assertEquals(1, build.games());
-        assertEquals("4001", build.itemSlots().get(0).get(0).id());
-        assertEquals(4001, build.arena().items().get(0).itemId());
+        assertTrue(build.arena().coreBuilds().isEmpty());
+        assertEquals(1, build.arena().coverage().missingCoreGames());
     }
 
 }

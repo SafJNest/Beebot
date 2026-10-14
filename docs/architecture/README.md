@@ -172,20 +172,31 @@ requested Arena builds from one raw scan; a build-only miss preserves statistics
 MongoDB.forEachChampionRawMatchEventBatch is the sole raw match/event join for
 all queues. It left-joins event documents and returns raw data without choosing
 consumer eligibility. Matrix batches remain 10,000; standalone build batches are
-100. The union projection contains participant IDs, boots and placement.
+100. The union projection contains participant IDs, boots, placement and subTeam.
 Statistics and standard builds retain their timeline eligibility. Arena retains
-missing-timeline outcomes, final Prismatics and up to six original augment slots.
+missing-timeline outcomes, final Prismatics, final-slot consumables and up to six
+original augment slots; purchased-and-consumed items require timeline events.
 
 ArenaGameParser reads the single hydrated Match.events tree and its catalog for
 the requested patch. Its only core is boots+first-Prismatic; there are no starters.
-ArenaChampionAnalyzer produces schema/aggregation 5/5, including global Legendary
-items even without a core. Mongo writes build.arena and arenaLastUpdate atomically
+ArenaChampionAnalyzer produces schema approvato with full builds grouped
+by boots+first-Prismatic core, six augment position rankings and global/core
+Prismatics. Full-build item lists include recognized consumables and exclude
+Prismatic items, including the consumable Anvil 220007. Mongo writes build.arena and arenaLastUpdate atomically
 in the existing champion_builds document. Standard writers preserve that subtree.
 No second identity, collection, replace or read-merge-replace is introduced.
 
-CHERRY reads use Arena versions and freshness, so old standard zero aggregates
-are misses. Build.fromArena exposes counts and compatible flat core/option fields
-plus build.arena. Other queues keep standard response semantics. Public minor
+CHERRY reads use Arena presence and freshness, so old standard zero aggregates
+remain misses when no Arena payload exists. Present Arena payloads are served
+even if they have legacy separate consumables fields or lack newer stats buckets. The
+CHERRY HTTP mapper exposes Arena directly as build without legacy fields;
+internal Build projections remain available to existing callers. Stats expose exact
+subteam synergies, team sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and
+`overview.averagePlacement`/`overview.placements` from `subTeamPlacement`.
+Readiness uses the stats ready marker and data presence. Timestamps can enqueue a
+background refresh but do not hide present data; readers do not check all eight
+ID counters or placement buckets and do not reject legacy separate consumables
+fields. Other queues keep standard response semantics. Public minor
 patches collect their full patches; explicit internal full-patch scopes stay exact.
 Canonical rank and region predicates apply at the source. Event timestamps order
 purchases and are not persisted in Arena. Presentation remains unchanged.

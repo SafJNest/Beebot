@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ChampionStatistics(
     Filter filter,
     Overview overview,
@@ -16,10 +17,32 @@ public record ChampionStatistics(
     Map<Integer, Matchup> matchups,
     List<LaneSynergy> laneSynergies,
     List<PowerCurvePoint> powerCurve,
-    Trend trend
+    Trend trend,
+    @JsonInclude(JsonInclude.Include.NON_NULL) List<ArenaSynergy> synergies,
+    @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, ArenaSubteam> subteams,
+    @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, ArenaSubteam> subteamsById
 ) {
 
     private static final int EMBED_LIMIT = 3;
+
+    public ChampionStatistics(Filter filter, Overview overview, List<LaneStat> laneStats,
+            Map<Integer, Matchup> matchups, List<LaneSynergy> laneSynergies,
+            List<PowerCurvePoint> powerCurve, Trend trend) {
+        this(filter, overview, laneStats, matchups, laneSynergies, powerCurve, trend, null, null, null);
+    }
+
+    public ChampionStatistics(Filter filter, Overview overview, List<LaneStat> laneStats,
+            Map<Integer, Matchup> matchups, List<LaneSynergy> laneSynergies,
+            List<PowerCurvePoint> powerCurve, Trend trend, List<ArenaSynergy> synergies,
+            Map<String, ArenaSubteam> subteams) {
+        this(filter, overview, laneStats, matchups, laneSynergies, powerCurve, trend, synergies, subteams, null);
+    }
+
+    public record ArenaSynergy(List<Integer> allyChampions, long matches, long wins, double winrate) {
+        public ArenaSynergy { allyChampions = List.copyOf(allyChampions); }
+    }
+
+    public record ArenaSubteam(long games, long wins, double winrate) {}
 
     public record Overview(
         int games,
@@ -32,8 +55,17 @@ public record ChampionStatistics(
         Double kda,
         Double csPerMinute,
         Double goldPerMinute,
-        DamageProfile damageProfile
-    ) {}
+        DamageProfile damageProfile,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Double averagePlacement,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, Long> placements
+    ) {
+        public Overview(int games, int picks, int bans, int wins, double winrate, double pickrate,
+                Double banrate, Double kda, Double csPerMinute, Double goldPerMinute,
+                DamageProfile damageProfile) {
+            this(games, picks, bans, wins, winrate, pickrate, banrate, kda, csPerMinute,
+                goldPerMinute, damageProfile, null, null);
+        }
+    }
 
     public record DamageProfile(Double physical, Double magic, Double trueDamage) {}
 

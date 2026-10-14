@@ -1,75 +1,33 @@
-# Contratto Arena semplificato
+# Contratto Arena CHERRY
 
-Stato: integrazione pubblica e sorgente comune aggiornate il 2026-10-14; schema/aggregation 5/5. Restano aperti i gate Mongo operativi e il rollout.
-
-## Obiettivo
-
-Per ogni partita Arena del campione:
-
-1. identificare il core `bootsId + firstPrismaticId`;
-2. ordinare gli item leggendari acquistati dalla timeline;
-3. aggregare Prismatics e augments con games, wins e win rate, per core e globalmente;
-4. conservare la posizione degli augments, senza posizione per i Prismatics.
-
-Il payload non conserva sequenze complete, rami progressivi o metriche diagnostiche non necessarie a queste aggregazioni.
+Stato: nuovo contratto HTTP schema approvato, approvato il 2026-10-14. Forma completa in [schema.md](schema.md) e [champion-schema.json](champion-schema.json).
 
 ## Flusso e ownership
 
-Il percorso pubblico è Spring → ChampionService → ComputeScheduler → matrix o build-only → ArenaChampionAnalyzer → MongoDB.upsertChampionArena. Il job esplicito startChampionArena rimane disponibile. Tutti i percorsi usano il solo join raw MongoDB.forEachChampionRawMatchEventBatch, che consegna anche i match senza eventi e non decide l’eligibilità dei generatori.
+Spring → ChampionService → ComputeScheduler → matrix/build-only → ArenaChampionAnalyzer → MongoDB.upsertChampionArena. Tutti i consumer usano `MongoDB.forEachChampionRawMatchEventBatch`: unico join raw, batch 10.000 per matrix e 100 per build-only, con match senza eventi consegnati ai consumer. Stats e build standard mantengono la propria eligibilità timeline. Il catalogo item è immutabile e selezionato dalla patch richiesta.
 
-- La sorgente usa il filtro canonico queue/patchMajor/champion/rank/region. Una patch completa aggiunge il filtro patch esatto per CHERRY; una patch major.minor raccoglie le patch complete corrispondenti. Role viene rifiutato. Il catalogo è immutabile e caricato per la patch richiesta.
-- Il join comune legge ID, documenti match ed eventi a batch: 10.000 per la matrix, 100 per build-only. I match senza timeline restano nel batch; stats e build standard decidono autonomamente di escluderli.
-- Il callback elabora il batch in modo sincrono. Ogni `Match` Arena mantiene un solo `JSONObject` in `events`, senza duplicarlo in `eventData`; Mongo rilascia documenti, timeline e match al termine. L'accumulatore conserva solo contatori e chiavi aggregate.
-- MongoDB possiede la persistenza. Un documento per `filterKey` resta in `champion_builds`; Arena aggiorna `build.arena` e il proprio timestamp `arenaLastUpdate` con un update atomico. La scrittura standard mantiene i propri percorsi.
-- Non sono introdotti collection, provider, service, queue o endpoint nuovi. CHERRY espone `build.arena` e i riepiloghi compatibili di Build; gli altri reader standard continuano a escludere Arena.
+La sorgente applica queue, patchMajor, champion, rank e region canonici; per patch complete CHERRY applica anche patch esatta. Role è invalido. La proiezione condivisa include `participants.subTeam` e `participants.subTeamPlacement` per le statistiche, oltre a ID e ai campi build. Non si aggiungono query per sinergia o full build.
 
-Il miss API e il refresh champion esistenti selezionano Arena per CHERRY. Stats e build cold condividono la scansione; il build-only miss non rigenera le stats. Versioni Arena e arenaLastUpdate determinano disponibilità e freschezza: un vecchio build standard a zero non soddisfa la richiesta.
+Mongo è l’unico writer; QueueHandler è l’unico ingresso dei job. CHERRY API ed explicit Arena job mantengono `champion-arena:<Filter.toKey()>`. Stats/build cold condividono una scansione; un build-only miss non riscrive stats correnti. La freschezza delle stats rimane basata su ready/updatedAt.
 
-## Estrazione dei fatti
+## Estrazione
 
-### Eventi e primo Prismatic
+Il core è boots + primo Prismatic. Boots: campo esplicito, unico candidato finale, unico candidato timeline. Primo Prismatic: primo acquisto attribuito valido, altrimenti primo slot finale riconosciuto. Un core mancante conserva esiti e opzioni globali.
 
-`ArenaGameParser` legge gli `item_events` del `match.events` già idratato dal join Arena; non ricostruisce l'inventario finale e non richiama il parser timeline della build standard. Per i chiamanti che forniscono solo il modello canonico può leggere `eventData` come fallback.
+Gli item events attribuiti sono ordinati per timestamp e indice, deduplicati e controllati contro la mappa participant/PUUID; purchase, undo, sale e destroy mantengono le regole già esistenti. Il timestamp non è persistito. `builds[].items` contiene item finali e consumabili riconosciuti, ordinati per ID; gli oggetti Prismatici restano esclusi. Ogni consumabile osservato nella timeline o negli slot finali è conteggiato una volta per participant-game, incluso l’Anvil `220007`.
 
-1. Accetta `ITEM_PURCHASED`, `ITEM_SOLD`, `ITEM_UNDO` e `ITEM_DESTROYED` con timestamp e ID validi. L'evento deve appartenere al participant; se è presente la mappa `participants`, questa deve confermare il PUUID. Eventi duplicati vengono scartati e gli altri sono ordinati per timestamp, poi per indice originale.
-2. La lista degli acquisti contiene solo `ITEM_PURCHASED`. Un acquisto trasformato (`item` e `after` positivi e diversi) viene escluso. Un `ITEM_UNDO` annulla solo l'acquisto corrispondente immediatamente precedente nell'ordine degli eventi; vendite e distruzioni non rimuovono acquisti già osservati.
-3. Si esclude un acquisto se `item`, `before` o `after` coinvolge l'Anvil `220007`. Il primo Prismatic classificato nella timeline è `firstPrismaticId`.
-4. Se la timeline non fornisce un Prismatic, gli slot finali `item0..item5` sono esaminati in ordine e il primo Prismatic noto diventa il fallback. Se manca anche questo, il participant-game non entra in un core ma continua a contribuire alle opzioni globali disponibili.
+Prismatics: ogni ID osservato contribuisce una volta per participant-game, sia globalmente sia nel core, incluso il primo; rimangono separati dalle build complete. Non esiste un aggregato globale separato dei consumabili. Augments: sei posizioni originali, null/nonpositivi omessi senza rinumerazione. Core/full build/opzioni ordinate per WR, numerosità e ID senza soglie minime.
 
-Il timestamp della timeline serve a ordinare gli acquisti. Non viene persistito nel payload Arena.
+L’esito della build conserva `participant.win || subTeamPlacement >= 3`. Stats generiche conservano l’esito raw. I contatori non vengono normalizzati o reinterpretati in questo cambio di contratto.
 
-### Boots e core
+## Stats e HTTP
 
-I boots sono scelti con questa precedenza: `participant.boots` se classificato come boots; altrimenti l'unico boots riconosciuto negli slot finali; altrimenti l'unico boots riconosciuto negli acquisti della timeline. Se una fonte contiene più boots candidati e le precedenti non risolvono il valore, il core resta mancante.
+ChampionAnalyzer accumula sinergie esatte per lo stesso `subTeam`, dimensioni 2/3 e ID Arena 1–8, senza ruoli o team BLUE/RED. Aggiunge in modo indipendente la distribuzione `overview.placements` e la media pesata `overview.averagePlacement` usando `subTeamPlacement`; queste statistiche non cambiano le sinergie. I bucket rank/region mantengono la selezione canonica. I contatori sono raw e non ricevono il ranking lane-based.
 
-La chiave del core è sempre `bootsId + firstPrismaticId`. Un participant-game entra nelle statistiche del core solo se entrambi gli ID sono disponibili. Un core mancante non esclude il participant-game dalle statistiche e dalle opzioni globali.
+Il controller esistente e i parametri rimangono invariati. Il mapper HTTP espone `build` direttamente e solo i campi stats dello schema CHERRY. Altre queue usano la serializzazione esistente. Non si introducono DTO di successo duplicati né si modifica la presentazione Discord.
 
-### Build leggendaria
+## Persistenza e rilascio
 
-Gli item globali sono accumulati anche se manca il core. La build usa gli acquisti timeline classificati `Kind.ITEM` dal catalogo patch-aware: item completi non-Prismatic, con una sola occorrenza di ciascun ID per participant-game, nell'ordine del primo acquisto valido.
+`build.arena` + `arenaLastUpdate` vengono aggiornati atomicamente; i writer standard preservano Arena. Il reader CHERRY e le cache usano presenza dei dati e timestamp, senza contatore di versione. La presenza dei vecchi campi `consumables` o l’assenza di alcuni nuovi contatori stats non rende il dato un miss. Gli scope stats usano il marker `ready`; gli timestamp determinano se accodare un refresh in background. Ready-empty rimane pronto.
 
-Le opzioni sono aggregate per posizione ordinale degli item leggendari (`1`, `2`, `3` ...), non per timestamp. Gli slot finali non ricostruiscono l'ordine. Una timeline assente o senza acquisti leggendari non produce item ordinati; una partita parziale contribuisce solo con gli acquisti validi disponibili.
-
-### Prismatics
-
-Gli ID Prismatic derivano dagli acquisti timeline e dagli slot finali, senza posizione. L'Anvil `220007` è escluso. Ogni ID contribuisce una volta per participant-game. Il totale globale include il primo Prismatic; la lista del core lo esclude perché è già nella chiave.
-
-### Augments
-
-Gli augments provengono da `participant.augments`, fino a sei posizioni. La posizione è l'indice originale, a partire da 1; ID nulli o non positivi sono omessi senza rinumerare gli elementi successivi. Si aggrega la coppia `augmentId + position`, sia per core sia globalmente.
-
-### Esito e statistiche
-
-Un participant-game è una vittoria se `participant.win` è vero oppure `subTeamPlacement >= 3`. Ogni aggregato espone `games`, `wins` e `winRate = wins / games`, senza soglie né correzioni.
-
-- `stats.games` conta participant-games; `coverage.matches` conta i match Mongo accettati. La sorgente restituisce un solo documento per `_id`; l'accumulatore mantiene un controllo duplicati compatto con ID numerici primitivi, non con una `String` per partita.
-- `coreGames` e `missingCoreGames` sono participant-games con core completo o incompleto.
-- `firstPrismaticFallbackGames` conta i fallback dagli slot finali.
-- `buildTimelineGames` conta i participant-games con almeno un item leggendario ordinabile, non tutte le timeline presenti.
-- Core ordinati per boots e primo Prismatic; item per posizione e ID; Prismatics per win rate decrescente, games decrescenti e ID; augments per posizione, poi win rate, games e ID.
-
-## Versione e rollout
-
-La forma 5/5 aggiunge gli item globali e l’integrazione pubblica; non è compatibile con i payload precedenti. Non esistono reader o conversioni per lo schema precedente; i dati Arena dovranno essere rigenerati prima dell'uso.
-
-I test focalizzati verificano parser, aggregatore, callback del job, join/persistenza con fixture e round-trip BSON locale. Restano da completare un round-trip sul database di test, la misura del documento combinato e la verifica operativa delle scritture Arena/standard. Non effettuare rebuild o rollout sul database reale come parte della verifica offline.
+Prima del rilascio operativo restano da verificare indici/explain, dimensione BSON combinata, memoria su dati rappresentativi e HTTP dopo riavvio. Questa modifica non riavvia il server e non rigenera il database reale. Le verifiche eseguite sono riportate nel riepilogo della task.

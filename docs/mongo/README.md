@@ -109,22 +109,27 @@ read projection removes Arena before deserialization, so malformed Arena cannot
 break standard reads. CHERRY instead reads Arena and exposes it through Build.fromArena;
 old standard-only zero aggregates do not satisfy CHERRY availability.
 
-Arena schema=5/aggregation=5 uses JsonCodec structured BSON with global outcomes/items,
-core, Prismatic, six-position augment and minimal coverage aggregates. Its full subtree is validated/encoded before the update. Local size/headroom guards cannot
+Arena uses JsonCodec structured BSON with global outcomes,
+core/final-build combinations, Prismatic, six-position augment and minimal coverage aggregates. Full-build item combinations include recognized consumables and omit Prismatic items; Anvil `220007` is included as a consumable. Its full subtree is validated/encoded before the update. Local size/headroom guards cannot
 measure existing standard fields without reading: Mongo's atomic combined-document
 limit remains authoritative, and rejection leaves the previous value intact.
-Previous Arena versions are unsupported and must be regenerated; no compatibility
-reader or conversion is provided.
+Arena has no schema/aggregation version. Readiness depends on data presence and
+the stats ready marker; timestamps control background refresh only. Payloads
+containing the legacy global or per-build `consumables` fields remain readable
+and do not trigger regeneration. Extra fields are ignored when deserializing a valid Arena payload.
 
 All champion consumers use the same raw match/event left join. CHERRY uses
 queue/patchMajor/champion/rank/region, adding exact patch only for internal full
 patch scopes. Standalone batches are 100; matrix batches are 10,000. Missing
 event documents are delivered to consumers rather than excluded by the reader. `ArenaGameParser` reads attributed `item_events`, orders purchases by
 timeline timestamp and falls back to final slots for the first Prismatic when
-needed. Arena timestamps are used for ordering and are not persisted. Standard
+needed. Anvil `220007` is retained as a consumable rather than a Prismatic. Arena
+timestamps are used for ordering and are not persisted. Standard
 build/stat eligibility is unchanged. Arena receives an immutable item catalog
-loaded for the requested patch, retains global choices without a core and uses
-no starters. CHERRY freshness reads current Arena versions and arenaLastUpdate.
+loaded for the requested patch, retains global Prismatics and augments without a
+core and uses no starters. CHERRY freshness reads Arena data presence and
+arenaLastUpdate; stale present payloads are served while a background refresh is
+queued. Legacy separate consumables fields do not cause a miss.
 
 The batch callback is synchronous. Each Arena `Match` holds one decoded
 `JSONObject` timeline in `events`; the duplicate `eventData` map is dropped.
@@ -135,8 +140,8 @@ the unique Mongo match documents.
 
 Index definitions/options and explains were not inspected on a live database;
 champion_builds_filter remains the documented candidate access path. No index
-creation/migration or bulk rebuild is introduced; normal CHERRY API misses now
-generate Arena and refresh obsolete payloads. Live Mongo round-trip,
+creation/migration or bulk rebuild is introduced; CHERRY API misses with no
+Arena payload can generate the missing aggregate. Live Mongo round-trip,
 combined BSON/cardinality, representative heap and rollout gates remain open.
 See [phases](../arena-build/phases.md) for current offline evidence.
 
@@ -144,3 +149,20 @@ Code at MongoDB.PRODUCTION_DATABASE/TEST_DATABASE currently maps production to
 beebot_test and testing to beebot_test_test; the historical names in ADR-0009
 configuration are stale. No database connection or production operation was
 performed in Phase 3. Do not identify an isolated environment from its name alone.
+
+### CHERRY contract update (2026-10-14)
+
+Only CHERRY uses the new [Arena schema](../arena-build/champion-schema.json):
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
+position rankings and global/core Prismatics. Full-build item lists include
+consumables and exclude Prismatic items, including consumable Anvil 220007. No legacy fields or build.arena
+wrapper are exposed. Stats use exact same-subTeam ally combinations, team
+sizes 2/3, `subteamsById` counts for Arena IDs 1–8, and overview placement
+counts/average from `subTeamPlacement`; these additions do not change synergy
+aggregation. Lane relations are omitted. The raw projection includes subTeam and subTeamPlacement.
+Mongo preserves build.arena ownership. Stats readiness uses the ready marker
+and Arena build availability uses data presence. Timestamps can queue background
+refreshes; readers do not reject legacy separate consumables fields or check all
+eight subteam ID counters and placement buckets. There are no version fields or
+version-based cache guards. Other queues, jobs
+and Discord presentation remain unchanged. No live rebuild/explain is claimed.

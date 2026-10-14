@@ -17,12 +17,10 @@ import com.safjnest.lol.arena.ArenaGameParser;
 import com.safjnest.lol.arena.ArenaItemCatalog;
 import com.safjnest.lol.arena.ParsedArenaGame;
 import com.safjnest.lol.model.ArenaBuildData;
-import com.safjnest.lol.model.ArenaBuildData.AugmentOption;
+import com.safjnest.lol.model.ArenaBuildData.Option;
 import com.safjnest.lol.model.ArenaBuildData.Core;
-import com.safjnest.lol.model.ArenaBuildData.ItemOption;
-import com.safjnest.lol.model.ArenaBuildData.PrismaticOption;
-import com.safjnest.lol.model.ArenaBuildData.Stats;
-import com.safjnest.lol.model.Build.Kind;
+import com.safjnest.lol.model.ArenaBuildData.FullBuild;
+import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.utils.PatchUtils;
@@ -45,7 +43,6 @@ public final class ArenaChampionAnalyzer {
         private final Map<String, Map<Integer, LongOpenHashSet>> matchesByPlatform = new HashMap<>();
         private final Set<String> oversizedMatchIds = new HashSet<>();
         private final StatsCounter overall = new StatsCounter();
-        private final Long2ObjectOpenHashMap<StatsCounter> items = new Long2ObjectOpenHashMap<>();
         private final Int2ObjectOpenHashMap<StatsCounter> prismatics = new Int2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<StatsCounter> augments = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<CoreCounter> cores = new Long2ObjectOpenHashMap<>();
@@ -82,28 +79,13 @@ public final class ArenaChampionAnalyzer {
         }
 
         public ArenaBuildData finish() {
-            List<ItemOption> itemValues = new ArrayList<>();
-            for (var entry : items.long2ObjectEntrySet())
-                itemValues.add(entry.getValue().item(entry.getLongKey()));
-            itemValues.sort(Comparator.comparingInt(ItemOption::position).thenComparingInt(ItemOption::itemId));
             List<Core> coreValues = new ArrayList<>();
             for (var entry : cores.long2ObjectEntrySet())
-                coreValues.add(entry.getValue().finish(entry.getLongKey()));
-            coreValues.sort(Comparator.comparingInt(Core::bootsId)
-                .thenComparingInt(Core::firstPrismaticId));
-
-            List<PrismaticOption> prismaticValues = new ArrayList<>();
-            for (var entry : prismatics.int2ObjectEntrySet())
-                prismaticValues.add(entry.getValue().prismatic(entry.getIntKey()));
-            prismaticValues.sort(prismaticOrder());
-
-            List<AugmentOption> augmentValues = new ArrayList<>();
-            for (var entry : augments.long2ObjectEntrySet())
-                augmentValues.add(entry.getValue().augment(entry.getLongKey()));
-            augmentValues.sort(augmentOrder());
-
-            return new ArenaBuildData(ArenaBuildData.SCHEMA_VERSION, ArenaBuildData.AGGREGATION_VERSION,
-                overall.finish(), coreValues, itemValues, prismaticValues, augmentValues,
+                coreValues.add(entry.getValue().finish(entry.getLongKey(), overall.games));
+            coreValues.sort(Comparator.comparingDouble(Core::winrate).reversed()
+                .thenComparing(Comparator.comparingLong(Core::matches).reversed()).thenComparing(Core::id));
+            return new ArenaBuildData(overall.games, overall.wins, coreValues, augmentValues(augments),
+                prismaticValues(prismatics),
                 new ArenaBuildData.Coverage(matches, overall.games - missingCoreGames, missingCoreGames,
                     firstPrismaticFallbackGames, buildTimelineGames));
         }
@@ -111,7 +93,6 @@ public final class ArenaChampionAnalyzer {
         public void clear() {
             matchesByPlatform.clear();
             oversizedMatchIds.clear();
-            items.clear();
             prismatics.clear();
             augments.clear();
             cores.clear();
@@ -123,14 +104,12 @@ public final class ArenaChampionAnalyzer {
             buildTimelineGames = 0;
         }
 
+        // ============================================================================
+
         private void add(ParsedArenaGame game) {
             overall.add(game.win());
             if (game.firstPrismaticFallback()) firstPrismaticFallbackGames++;
             if (game.buildTimeline()) buildTimelineGames++;
-
-            for (int index = 0; index < game.legendaryItems().size(); index++)
-                items.computeIfAbsent(longKey(index + 1, game.legendaryItems().get(index)),
-                    ignored -> new StatsCounter()).add(game.win());
 
             for (int id : game.prismatics())
                 prismatics.computeIfAbsent(id, ignored -> new StatsCounter()).add(game.win());
@@ -146,10 +125,8 @@ public final class ArenaChampionAnalyzer {
             }
 
             long key = longKey(game.bootsId(), game.firstPrismaticId());
-            cores.computeIfAbsent(key, ignored -> new CoreCounter()).add(key, game);
+            cores.computeIfAbsent(key, ignored -> new CoreCounter()).add(game);
         }
-
-        // ============================================================================
 
         private boolean containsMatch(MatchIdentity matchId) {
             if (matchId.overflowId() != null) return oversizedMatchIds.contains(matchId.overflowId());
@@ -178,18 +155,6 @@ public final class ArenaChampionAnalyzer {
                 throw new IllegalArgumentException("Invalid or duplicate participant identity");
         }
 
-        private static Comparator<PrismaticOption> prismaticOrder() {
-            return Comparator.comparingDouble(PrismaticOption::winRate).reversed()
-                .thenComparing(Comparator.comparingLong(PrismaticOption::games).reversed())
-                .thenComparingInt(PrismaticOption::prismaticId);
-        }
-
-        private static Comparator<AugmentOption> augmentOrder() {
-            return Comparator.comparingInt(AugmentOption::position)
-                .thenComparing(Comparator.comparingDouble(AugmentOption::winRate).reversed())
-                .thenComparing(Comparator.comparingLong(AugmentOption::games).reversed())
-                .thenComparingInt(AugmentOption::augmentId);
-        }
     }
 
     private static long longKey(int high, int low) {
@@ -219,44 +184,71 @@ public final class ArenaChampionAnalyzer {
 
     private static final class CoreCounter {
         private final StatsCounter stats = new StatsCounter();
-        private final Long2ObjectOpenHashMap<StatsCounter> items = new Long2ObjectOpenHashMap<>();
+        private final Map<FullBuildKey, StatsCounter> builds = new HashMap<>();
         private final Int2ObjectOpenHashMap<StatsCounter> prismatics = new Int2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<StatsCounter> augments = new Long2ObjectOpenHashMap<>();
 
-        private void add(long key, ParsedArenaGame game) {
+        private void add(ParsedArenaGame game) {
             stats.add(game.win());
-            for (int index = 0; index < game.legendaryItems().size(); index++) {
-                int itemId = game.legendaryItems().get(index);
-                long itemKey = longKey(index + 1, itemId);
-                items.computeIfAbsent(itemKey, ignored -> new StatsCounter()).add(game.win());
-            }
-            for (int itemId : game.prismatics()) if (itemId != lowInt(key))
+            List<Integer> fullBuildItems = new ArrayList<>(game.finalItems());
+            for (int id : game.consumables()) if (!game.prismatics().contains(id)) fullBuildItems.add(id);
+            fullBuildItems.sort(Integer::compareTo);
+            if (!fullBuildItems.isEmpty())
+                builds.computeIfAbsent(new FullBuildKey(fullBuildItems), ignored -> new StatsCounter()).add(game.win());
+            for (int itemId : game.prismatics())
                 prismatics.computeIfAbsent(itemId, ignored -> new StatsCounter()).add(game.win());
-            for (ParsedArenaGame.Augment augment : game.augments()) {
-                long augmentKey = longKey(augment.id(), augment.position());
-                augments.computeIfAbsent(augmentKey, ignored -> new StatsCounter()).add(game.win());
-            }
+            for (ParsedArenaGame.Augment augment : game.augments())
+                augments.computeIfAbsent(longKey(augment.id(), augment.position()), ignored -> new StatsCounter())
+                    .add(game.win());
         }
 
-        private Core finish(long key) {
-            List<ItemOption> itemValues = new ArrayList<>();
-            for (var entry : items.long2ObjectEntrySet())
-                itemValues.add(entry.getValue().item(entry.getLongKey()));
-            itemValues.sort(Comparator.comparingInt(ItemOption::position)
-                .thenComparingInt(ItemOption::itemId));
-
-            List<PrismaticOption> prismaticValues = new ArrayList<>();
-            for (var entry : prismatics.int2ObjectEntrySet())
-                prismaticValues.add(entry.getValue().prismatic(entry.getIntKey()));
-            prismaticValues.sort(Accumulator.prismaticOrder());
-
-            List<AugmentOption> augmentValues = new ArrayList<>();
-            for (var entry : augments.long2ObjectEntrySet())
-                augmentValues.add(entry.getValue().augment(entry.getLongKey()));
-            augmentValues.sort(Accumulator.augmentOrder());
-
-            return new Core(highInt(key), lowInt(key), stats.finish(), itemValues, prismaticValues, augmentValues);
+        private Core finish(long key, long totalGames) {
+            List<FullBuild> values = new ArrayList<>();
+            for (var entry : builds.entrySet())
+                values.add(new FullBuild(entry.getKey().items(), entry.getValue().games, entry.getValue().wins));
+            values.sort(Comparator.comparingDouble(FullBuild::winrate).reversed()
+                .thenComparing(Comparator.comparingLong(FullBuild::matches).reversed())
+                .thenComparing(value -> BuildUtils.joinInts(value.items())));
+            List<Integer> items = List.of(highInt(key), lowInt(key));
+            return new Core(BuildUtils.joinInts(items), items, stats.games, stats.wins,
+                totalGames == 0 ? 0 : (double) stats.games / totalGames,
+                values, augmentValues(augments), prismaticValues(prismatics));
         }
+    }
+
+    private static List<Option> prismaticValues(Int2ObjectOpenHashMap<StatsCounter> source) {
+        return optionValues(source);
+    }
+
+    private static List<Option> optionValues(Int2ObjectOpenHashMap<StatsCounter> source) {
+        List<Option> result = new ArrayList<>();
+        for (var entry : source.int2ObjectEntrySet())
+            result.add(new Option(entry.getIntKey(), entry.getValue().games, entry.getValue().wins));
+        result.sort(optionOrder());
+        return result;
+    }
+
+    private record FullBuildKey(List<Integer> items) {
+        private FullBuildKey {
+            items = List.copyOf(items);
+        }
+    }
+
+    private static List<List<Option>> augmentValues(Long2ObjectOpenHashMap<StatsCounter> source) {
+        List<List<Option>> result = new ArrayList<>();
+        for (int position = 1; position <= ArenaBuildData.MAX_AUGMENTS; position++) {
+            List<Option> values = new ArrayList<>();
+            for (var entry : source.long2ObjectEntrySet()) if (lowInt(entry.getLongKey()) == position)
+                values.add(new Option(highInt(entry.getLongKey()), entry.getValue().games, entry.getValue().wins));
+            values.sort(optionOrder());
+            result.add(values);
+        }
+        return result;
+    }
+
+    private static Comparator<Option> optionOrder() {
+        return Comparator.comparingDouble(Option::winrate).reversed()
+            .thenComparing(Comparator.comparingLong(Option::matches).reversed()).thenComparingInt(Option::id);
     }
 
     private static final class StatsCounter {
@@ -267,10 +259,5 @@ public final class ArenaChampionAnalyzer {
             games++;
             if (win) wins++;
         }
-
-        private Stats finish() { return new Stats(games, wins); }
-        private ItemOption item(long key) { return new ItemOption(highInt(key), lowInt(key), games, wins); }
-        private PrismaticOption prismatic(int id) { return new PrismaticOption(id, games, wins); }
-        private AugmentOption augment(long key) { return new AugmentOption(highInt(key), lowInt(key), games, wins); }
     }
 }

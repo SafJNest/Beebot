@@ -51,7 +51,7 @@ public class ChampionArenaRawFlowTest {
             assertTrue(cold.starterOptions().isEmpty());
             assertEquals(List.of(3006, 447001), cold.coreBuilds().get(0).items());
             assertEquals("66", cold.augmentOptions().get(5).get(0).id());
-            assertEquals("4001", cold.itemSlots().get(0).get(0).id());
+            assertEquals(List.of(4001), cold.arena().coreBuilds().get(0).builds().get(0).items());
             assertEquals(1, store.eventQueries);
 
             store.table("champion_builds").clear();
@@ -71,8 +71,9 @@ public class ChampionArenaRawFlowTest {
             var json = converter.getObjectMapper().readTree(converter.getObjectMapper().writeValueAsString(hotStatistics));
             assertEquals(2, json.get("games").asInt());
             assertEquals(6, json.get("augments").size());
-            assertEquals(0, json.get("starters").size());
-            assertEquals(2, json.get("arena").get("stats").get("games").asInt());
+            assertFalse(json.has("starters"));
+            assertFalse(json.has("schemaVersion"));
+            assertFalse(json.has("arena"));
             assertFalse(json.has("filter"));
         }
     }
@@ -259,7 +260,7 @@ public class ChampionArenaRawFlowTest {
             Document participant = new Document("id", 1).append("puuid", "player").append("champion", 27)
                 .append("lane", "NONE").append("team", "ORDER").append("win", true).append("kda", "1/0/1")
                 .append("cs", 0).append("goldEarned", 1000).append("subTeamPlacement", 3).append("boots", 3006)
-                .append("item0", 447001).append("augments", java.util.Arrays.asList(11, null, 33, 44, 55, 66));
+                .append("item0", 447001).append("item1", 4001).append("augments", java.util.Arrays.asList(11, null, 33, 44, 55, 66));
             return new Document("_id", id).append("queue", "CHERRY").append("patch", patch).append("patchMajor", "16.19")
                 .append("region", "EUW1").append("rank", "UNRANKED").append("timeStart", 1000L).append("timeEnd", 601000L)
                 .append("participants", List.of(participant));

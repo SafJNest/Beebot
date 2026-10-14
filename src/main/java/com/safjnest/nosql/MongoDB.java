@@ -1561,9 +1561,7 @@ public final class MongoDB {
         Document document = builds().find(Filters.eq("_id", filter.toKey()))
             .projection(Projections.include("build.arena")).first();
         if (document == null || !(document.get("build") instanceof Map<?, ?> build)) return null;
-        ArenaBuildData arena = JsonCodec.fromDocument(build.get("arena"), ArenaBuildData.class);
-        return arena != null && arena.schemaVersion() == ArenaBuildData.SCHEMA_VERSION
-            && arena.aggregationVersion() == ArenaBuildData.AGGREGATION_VERSION ? arena : null;
+        return JsonCodec.fromDocument(build.get("arena"), ArenaBuildData.class);
     }
 
         public static List<Filter> findStoredChampionBuildFilters() {
@@ -1580,8 +1578,7 @@ public final class MongoDB {
         if (filter == null) return 0;
         if (filter.queue() == GameQueueType.CHERRY) {
             Document arena = builds().find(Filters.and(Filters.eq("_id", filter.toKey()),
-                Filters.eq("build.arena.schemaVersion", ArenaBuildData.SCHEMA_VERSION),
-                Filters.eq("build.arena.aggregationVersion", ArenaBuildData.AGGREGATION_VERSION)))
+                Filters.exists("build.arena")))
                 .projection(Projections.include("arenaLastUpdate")).first();
             return arena == null ? 0 : number(arena, "arenaLastUpdate");
         }
@@ -3121,9 +3118,6 @@ public final class MongoDB {
     public static boolean upsertChampionArena(Filter filter, ArenaBuildData arena) {
         if (arena == null) return false;
         requireArenaBuildFilter(filter);
-        if (arena.schemaVersion() != ArenaBuildData.SCHEMA_VERSION
-                || arena.aggregationVersion() != ArenaBuildData.AGGREGATION_VERSION)
-            throw new IllegalArgumentException("Current Arena schema and aggregation versions required");
         Document payload = JsonCodec.toDocument(arena);
         requireChampionBuildSize(payload);
         Document update = new Document("$set", new Document("build.arena", payload)
@@ -3948,6 +3942,8 @@ public final class MongoDB {
                 .append("participants.lane", 1)
                 .append("participants.win", 1)
                 .append("participants.team", 1)
+                .append("participants.subTeam", 1)
+                .append("participants.subTeamPlacement", 1)
                 .append("participants.kda", 1)
                 .append("participants.cs", 1)
                 .append("participants.goldEarned", 1)

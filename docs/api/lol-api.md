@@ -131,7 +131,22 @@ the queue does not support a lane.
 - [ADR-0007](../architecture/adr/0007-unified-api-result-and-parameters.md) — parameters and status;
 - [ADR-0008](../architecture/adr/0008-endpoint-cache-and-async-lookups.md) — cache and async flows.
 
-The champion page supports Arena through `queue=CHERRY` and exposes `build.arena`
-(schema/aggregation 5/5), six augment slots and boots+first-Prismatic cores.
+The champion page supports Arena through `queue=CHERRY` and exposes Arena directly in `build`
+(schema approvato), six augment slots and boots+first-Prismatic cores.
 Role is rejected. See the
 [Arena contract](../arena-build/contracts.md) for persistence and data semantics.
+
+### CHERRY contract update (2026-10-14)
+
+Only CHERRY uses the new [Arena schema](../arena-build/champion-schema.json):
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
+position rankings and global/core Prismatics. No legacy fields or build.arena
+wrapper are exposed. Stats use exact same-subTeam ally combinations, team
+sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and overview placement
+counts plus average placement; these additions do not change synergy aggregation.
+Lane relations are omitted. The raw projection includes subTeam and subTeamPlacement.
+Mongo preserves build.arena ownership. Stats readiness uses the ready marker
+and Arena build availability uses data presence. Timestamps can queue background
+refreshes; readers do not require all eight subteam ID counters or placement
+buckets. There are no version fields or version-based cache guards. Other queues, jobs
+and Discord presentation remain unchanged. No live rebuild/explain is claimed.

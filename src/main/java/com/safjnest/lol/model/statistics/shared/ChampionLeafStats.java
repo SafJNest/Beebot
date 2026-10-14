@@ -19,6 +19,18 @@ public class ChampionLeafStats extends LeafStats {
 
     public Map<String, WinLossStats> powerCurve = new LinkedHashMap<>();
 
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+    public Map<String, WinLossStats> arenaSynergies = new LinkedHashMap<>();
+
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+    public Map<String, WinLossStats> arenaSubteams = new LinkedHashMap<>();
+
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+    public Map<String, WinLossStats> arenaSubteamIds = new LinkedHashMap<>();
+
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+    public Map<String, Long> arenaPlacements = new LinkedHashMap<>();
+
     public ChampionLeafStats() {}
 
     public Double csPerMinute() {
@@ -67,7 +79,22 @@ public class ChampionLeafStats extends LeafStats {
                 if (existing == null) powerCurve.put(e.getKey(), new WinLossStats(e.getValue().games, e.getValue().wins));
                 else existing.merge(e.getValue());
             }
+            mergeCounts(arenaSynergies, o.arenaSynergies);
+            mergeCounts(arenaSubteams, o.arenaSubteams);
+            mergeCounts(arenaSubteamIds, o.arenaSubteamIds);
+            mergeLongCounts(arenaPlacements, o.arenaPlacements);
         }
+    }
+
+    private static void mergeCounts(Map<String, WinLossStats> target, Map<String, WinLossStats> source) {
+        if (source == null) return;
+        for (var entry : source.entrySet())
+            target.computeIfAbsent(entry.getKey(), ignored -> new WinLossStats()).merge(entry.getValue());
+    }
+
+    private static void mergeLongCounts(Map<String, Long> target, Map<String, Long> source) {
+        if (source == null) return;
+        for (var entry : source.entrySet()) target.merge(entry.getKey(), entry.getValue(), Long::sum);
     }
 
     private static MatchupStats copy(MatchupStats src) {

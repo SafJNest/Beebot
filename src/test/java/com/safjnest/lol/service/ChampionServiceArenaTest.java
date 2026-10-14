@@ -62,7 +62,7 @@ public class ChampionServiceArenaTest {
         });
 
         assertTrue(service.refreshArena(filter(), CATALOG, job));
-        assertEquals(2, saved.get().stats().games());
+        assertEquals(2, saved.get().games());
         assertEquals(2, saved.get().coverage().matches());
         assertEquals(2, saved.get().coverage().missingCoreGames());
         assertEquals(1, saved.get().coverage().firstPrismaticFallbackGames());
@@ -81,7 +81,7 @@ public class ChampionServiceArenaTest {
         });
         Job<Boolean> job = job();
         assertTrue(service.refreshArena(filter(), CATALOG, job));
-        assertEquals(0, saved.get().stats().games());
+        assertEquals(0, saved.get().games());
         assertEquals("DONE total=0 completed=0 missing=0 failed=0", job.phase());
         assertEquals(new JobProgress(1, 1), job.progress());
     }
@@ -151,7 +151,7 @@ public class ChampionServiceArenaTest {
                 consumer.accept(List.of(match("EUW1_" + index, participant(1, 3), List.of())));
                 assertEquals(1, job.items().size());
             }
-        }, (filter, payload) -> payload.stats().games() == 200);
+        }, (filter, payload) -> payload.games() == 200);
         assertTrue(service.refreshArena(filter(), CATALOG, job));
         assertEquals(1, job.items().size());
         assertTrue(job.itemLabels().isEmpty());

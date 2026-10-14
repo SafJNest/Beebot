@@ -117,13 +117,6 @@ public class ChampionService {
             CacheInvalidationService.clearRedis(RedisKey.CHAMPION_PAGE, filter.champion(), filter.pageKey());
             cached = null;
         }
-        if (cached != null && selectedQueue == GameQueueType.CHERRY
-                && (cached.build() == null || cached.build().arena() == null
-                    || cached.build().arena().schemaVersion() != ArenaBuildData.SCHEMA_VERSION
-                    || cached.build().arena().aggregationVersion() != ArenaBuildData.AGGREGATION_VERSION)) {
-            CacheInvalidationService.clearRedis(RedisKey.CHAMPION_PAGE, filter.champion(), filter.pageKey());
-            cached = null;
-        }
         if (cached != null) {
             ChampionView page = new ChampionView(
                 cached.champion(),
@@ -204,7 +197,7 @@ public class ChampionService {
             refreshBuild(filter);
             arena = MongoDB.findChampionArena(snapshot);
         }
-        return Build.fromArena(filter, arena);
+        return arena == null ? null : Build.fromArena(filter, arena);
     }
 
     public boolean hasBuild(Filter filter) {
@@ -498,8 +491,8 @@ public class ChampionService {
     ) {
         ChampionStatistics stats = getStatistics(filter, false);
         Build build = getBuild(filter, false);
-        boolean statisticsPending = stats == null || isStale(statsLastUpdate);
-        boolean buildPending = build == null || isStale(buildLastUpdate);
+        boolean statisticsPending = stats == null;
+        boolean buildPending = build == null;
         if (statisticsPending || buildPending) {
             BotLogger.info("[ChampionDataPending] champion=" + filter.champion()
                 + " lane=" + filter.lane()
@@ -515,6 +508,10 @@ public class ChampionService {
             ComputeScheduler.startChampionData(filter, statisticsPending, buildPending);
             return ApiResult.pending(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), true, filter));
         }
+        boolean statisticsStale = isStale(statsLastUpdate);
+        boolean buildStale = isStale(buildLastUpdate);
+        boolean refresh = statisticsStale || buildStale;
+        if (refresh) ComputeScheduler.startChampionData(filter, statisticsStale, buildStale);
         ChampionView rawPage = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
             ChampionUtils.getChampionProfilePic(champion.getId())), stats, build);
         RedisClient.set(RedisKey.CHAMPION_PAGE, rawPage, filter.champion(), filter.pageKey());
@@ -522,7 +519,7 @@ public class ChampionService {
             rawPage.champion(),
             MatchupRankingAnalyzer.rank(rawPage.stats()),
             rawPage.build(),
-            ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter)
+            ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), refresh, filter)
         );
         return ApiResult.ready(page, page.metadata());
     }

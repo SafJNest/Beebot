@@ -55,39 +55,29 @@ public record Build(
 
     public static Build fromArena(Filter filter, ArenaBuildData arena) {
         if (arena == null) return null;
-        long total = arena.stats().games();
+        long total = arena.games();
         List<CoreBuildOption> cores = new ArrayList<>();
         Map<Integer, long[]> boots = new TreeMap<>();
         Map<Integer, long[]> coreItems = new TreeMap<>();
-        Map<Integer, Map<Integer, long[]>> slots = new TreeMap<>();
-        for (ArenaBuildData.Core core : arena.cores()) {
-            List<Integer> ids = List.of(core.bootsId(), core.firstPrismaticId());
-            cores.add(new CoreBuildOption(BuildUtils.joinInts(ids), ids,
-                Math.toIntExact(core.stats().games()), Math.toIntExact(core.stats().wins()),
-                core.stats().winRate(), total == 0 ? 0 : (double) core.stats().games() / total));
-            addArenaCount(boots, core.bootsId(), core.stats().games(), core.stats().wins());
-            for (int id : ids) addArenaCount(coreItems, id, core.stats().games(), core.stats().wins());
+        for (ArenaBuildData.Core core : arena.coreBuilds()) {
+            cores.add(new CoreBuildOption(core.id(), core.items(), Math.toIntExact(core.matches()),
+                Math.toIntExact(core.wins()), core.winrate(), core.pickrate()));
+            addArenaCount(boots, core.items().get(0), core.matches(), core.wins());
+            for (int id : core.items()) addArenaCount(coreItems, id, core.matches(), core.wins());
         }
-        for (ArenaBuildData.ItemOption item : arena.items())
-            addArenaCount(slots.computeIfAbsent(item.position(), ignored -> new TreeMap<>()),
-                item.itemId(), item.games(), item.wins());
-        List<List<Option>> items = new ArrayList<>();
-        int lastPosition = slots.isEmpty() ? 0 : java.util.Collections.max(slots.keySet());
-        for (int position = 1; position <= lastPosition; position++)
-            items.add(arenaOptions(slots.getOrDefault(position, Map.of()), total));
         Map<Integer, long[]> prismatics = new TreeMap<>();
-        for (ArenaBuildData.PrismaticOption item : arena.prismatics())
-            addArenaCount(prismatics, item.prismaticId(), item.games(), item.wins());
+        for (ArenaBuildData.Option item : arena.prismatics())
+            addArenaCount(prismatics, item.id(), item.matches(), item.wins());
         List<List<Option>> augments = new ArrayList<>();
-        for (int position = 1; position <= ArenaBuildData.MAX_AUGMENTS; position++) {
+        for (List<ArenaBuildData.Option> position : arena.augments()) {
             Map<Integer, long[]> values = new TreeMap<>();
-            for (ArenaBuildData.AugmentOption augment : arena.augments()) if (augment.position() == position)
-                addArenaCount(values, augment.augmentId(), augment.games(), augment.wins());
+            for (ArenaBuildData.Option augment : position)
+                addArenaCount(values, augment.id(), augment.matches(), augment.wins());
             augments.add(arenaOptions(values, total));
         }
-        return new Build(filter, Math.toIntExact(total), Math.toIntExact(arena.stats().wins()),
-            arena.stats().winRate(), cores, arenaOptions(coreItems, total), List.of(),
-            arenaOptions(boots, total), List.of(), List.of(), items, List.of(), List.of(), List.of(),
+        return new Build(filter, Math.toIntExact(total), Math.toIntExact(arena.wins()),
+            arena.winrate(), cores, arenaOptions(coreItems, total), List.of(), arenaOptions(boots, total),
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
             arenaOptions(prismatics, total), augments, arena);
     }
 

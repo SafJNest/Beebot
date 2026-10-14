@@ -35,8 +35,12 @@ public final class MatchupRankingAnalyzer {
 
     public static ChampionStatistics rank(ChampionStatistics statistics) {
         if (statistics == null) return null;
+        if (statistics.filter() != null
+                && statistics.filter().queue() == no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType.CHERRY)
+            return statistics;
         return new ChampionStatistics(statistics.filter(), statistics.overview(), statistics.laneStats(),
-            rankChampionMatchups(statistics), rankChampionSynergies(statistics), statistics.powerCurve(), statistics.trend());
+            rankChampionMatchups(statistics), rankChampionSynergies(statistics), statistics.powerCurve(), statistics.trend(),
+            statistics.synergies(), statistics.subteams(), statistics.subteamsById());
     }
 
     public static ProfileMatchups rank(ProfileMatchups profile) {

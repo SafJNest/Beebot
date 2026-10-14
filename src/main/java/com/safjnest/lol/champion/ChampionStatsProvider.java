@@ -13,6 +13,7 @@ import com.safjnest.nosql.MongoDB;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -59,13 +60,14 @@ public final class ChampionStatsProvider {
         ChampionStatsData.MatchMeta metadata = new ChampionStatsData.MatchMeta(
                 map(document.get("bans")), document.get("events"),
                 number(document.get("timeStart")), number(document.get("timeEnd")),
-                region(document.getString("region")), rank(document.getString("rank")));
+                region(document.getString("region")), rank(document.getString("rank")), queue(document.getString("queue")));
         List<ChampionStatsData.RawParticipant> participants = new ArrayList<>();
         for (Document participant : participants(document.get("participants"))) {
             participants.add(new ChampionStatsData.RawParticipant(
                     participant.getInteger("champion", 0), lane(participant), participant.getBoolean("win", false),
                     team(participant), matchId, participant.getString("kda"), participant.getInteger("cs", 0),
-                    participant.getInteger("goldEarned", 0), participant.getString("puuid")));
+                    participant.getInteger("goldEarned", 0), participant.getString("puuid"),
+                    participant.getInteger("subTeam", 0), participant.getInteger("subTeamPlacement", 0)));
         }
         return new ChampionStatsData.RawMatch(matchId, metadata, participants);
     }
@@ -107,6 +109,11 @@ public final class ChampionStatsProvider {
 
     private static TierType rank(String value) {
         try { return value == null ? null : TierType.valueOf(value); }
+        catch (RuntimeException ignored) { return null; }
+    }
+
+    private static GameQueueType queue(String value) {
+        try { return value == null ? null : GameQueueType.valueOf(value); }
         catch (RuntimeException ignored) { return null; }
     }
 }

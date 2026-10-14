@@ -1,6 +1,6 @@
 # Piano di implementazione Arena
 
-Stato aggiornato il 2026-10-14: integrazione pubblica CHERRY, sorgente comune e schema/aggregation 5/5 implementati. Le fasi del 2026-10-10 qui sotto documentano il precedente stato interno 4/4; il nuovo contratto è in contracts.md. Round-trip Mongo operativo, sizing rappresentativo e rollout restano aperti.
+Stato aggiornato il 2026-10-14: contratto CHERRY implementato; vedi schema.md. Le descrizioni 5/5 qui sotto sono storiche. Le fasi del 2026-10-10 qui sotto documentano il precedente stato interno 4/4; il nuovo contratto è in contracts.md. Round-trip Mongo operativo, sizing rappresentativo e rollout restano aperti.
 
 ## Fase 0 — Contratto: completata
 
@@ -79,3 +79,20 @@ comune. Store Mongo e cataloghi sono finti, Redis è isolato per questi test.
 Sono inoltre verificati i payload precedenti, sei augments con posizioni mancanti,
 item globali senza core, role CHERRY rifiutato e JSON/BSON. Nessuna verifica live
 su Mongo/Redis/HTTP, nessun indice/explain o rebuild di produzione è stato eseguito.
+
+## Contratto approvato (2026-10-14)
+
+The current contract supersedes v5 descriptions above: see schema.md and
+champion-schema.json. CHERRY HTTP flattens Arena into build and groups complete
+item combinations within coreBuilds. Full-build `items` include recognized
+consumables, including the Prismatic Anvil `220007`, while excluding Prismatic
+items. It also exposes six-position augment rankings and global/core Prismatics,
+and replaces lane relations with exact subteam
+synergies, sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and placement
+distribution/average in `overview`. Placement counts do not change synergy
+aggregation. Persistence ownership remains build.arena; readers do not require
+all eight ID counters or placement buckets to exist and do not reject builds
+with old separate `consumables` fields. Present data is served; stale timestamps
+may enqueue a background refresh. Other queues retain their prior behavior.
+Compilation status is reported by the implementation task; no new live Mongo
+rollout, explain or automated test execution is implied by this phase.

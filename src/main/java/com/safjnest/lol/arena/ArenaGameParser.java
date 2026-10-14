@@ -32,28 +32,38 @@ public final class ArenaGameParser {
         List<Event> events = readEvents(timeline, participant);
         List<Event> acquisitions = acquisitions(events);
         LinkedHashSet<Integer> prismatics = new LinkedHashSet<>();
+        LinkedHashSet<Integer> consumables = new LinkedHashSet<>();
         LinkedHashSet<Integer> boots = new LinkedHashSet<>();
         List<Integer> legendaryItems = new ArrayList<>();
         Set<Integer> seenLegendaries = new HashSet<>();
 
         for (Event event : acquisitions) {
-            if (event.involves(ArenaItemCatalog.PRISMATIC_ANVIL)) continue;
             int id = event.acquiredId();
             Kind kind = catalog.kind(match.patch, id);
             if (kind == Kind.PRISMATIC) prismatics.add(id);
+            else if (catalog.isConsumable(event.item())) consumables.add(event.item());
+            else if (catalog.isConsumable(id)) consumables.add(id);
             else if (kind == Kind.BOOTS) boots.add(id);
             else if (kind == Kind.ITEM && seenLegendaries.add(id)) legendaryItems.add(id);
         }
 
         int[] finalItems = finalItems(participant);
+        List<Integer> finalBuild = new ArrayList<>();
+        LinkedHashSet<Integer> finalConsumables = new LinkedHashSet<>();
         LinkedHashSet<Integer> finalPrismatics = new LinkedHashSet<>();
         LinkedHashSet<Integer> finalBoots = new LinkedHashSet<>();
         for (int id : finalItems) {
-            if (id <= 0 || id == ArenaItemCatalog.PRISMATIC_ANVIL) continue;
+            if (id <= 0) continue;
             Kind kind = catalog.kind(match.patch, id);
             if (kind == Kind.PRISMATIC) finalPrismatics.add(id);
-            else if (kind == Kind.BOOTS) finalBoots.add(id);
+            else if (catalog.isConsumable(id)) {
+                finalConsumables.add(id);
+                continue;
+            }
+            if (kind == Kind.ITEM || kind == Kind.BOOTS) finalBuild.add(id);
+            if (kind == Kind.BOOTS) finalBoots.add(id);
         }
+        consumables.addAll(finalConsumables);
 
         Integer firstPrismatic = prismatics.isEmpty() ? null : prismatics.iterator().next();
         boolean fallback = false;
@@ -74,9 +84,12 @@ public final class ArenaGameParser {
             if (id != null && id > 0) augments.add(new Augment(id, index + 1));
         }
 
+        finalBuild.sort(Integer::compareTo);
+        List<Integer> consumableIds = new ArrayList<>(consumables);
+        consumableIds.sort(Integer::compareTo);
         return new ParsedArenaGame(participant.win || participant.subTeamPlacement >= 3,
-            boot, firstPrismatic, fallback, List.copyOf(prismatics), legendaryItems, augments,
-            !legendaryItems.isEmpty());
+            boot, firstPrismatic, fallback, List.copyOf(prismatics), consumableIds, legendaryItems, augments,
+            !legendaryItems.isEmpty(), finalBuild);
     }
 
     // ============================================================================
