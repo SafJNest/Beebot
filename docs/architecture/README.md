@@ -7,10 +7,12 @@ This directory is the source of truth for the LoL domain and API refactor.
 The initial analysis for the `beebot-servicies` branch is in
 [`services/README.md`](services/README.md): service boundaries, complete source
 inventory, shared response contracts, generic jobs/queues and extraction plan.
-The S4B service target and its first internal API contract are specified in
+The S4B service target and the shared Riot proxy contract are specified in
 [`services/s4b-service-spec.md`](services/s4b-service-spec.md).
 The corresponding public LoL service boundary is specified in
 [`services/lol-service-spec.md`](services/lol-service-spec.md).
+The shared Riot-shaped proxy contract for S4B and `lol-service` is specified
+in [`services/riot-endpoint-proxy-spec.md`](services/riot-endpoint-proxy-spec.md).
 [ADR-0016](adr/0016-service-boundaries-and-shared-core.md) remains **proposed**
 for separate services, HTTP clients and application modules. Hive is accepted
 under [ADR-0017](adr/0017-hive-job-runtime.md); shared contracts and LoL types
@@ -91,7 +93,7 @@ Physical queues remain scheduler-owned; Sync uses direct execution.
 
 Queue glossary:
 
-- `com.safjnest.s4b.scheduler.RiotScheduler`: S4B-owned outbound Riot work, one serial queue per shard;
+- `com.safjnest.s4b.scheduler.RiotScheduler`: current monolith outbound Riot work, one serial queue per `LeagueShard`; the target HTTP service shares cooldown state by Riot `RegionShard` as specified in [the proxy contract](services/riot-endpoint-proxy-spec.md);
 - `spring.lol.scheduler.ComputeScheduler`: four serial workers PROFILE, PROFILE_2,
   CHAMPION and MONGO, with domain placement/reservation policy;
 - `spring.lol.scheduler.SyncScheduler`: immediate virtual-thread execution with

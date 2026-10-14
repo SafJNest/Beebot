@@ -1,11 +1,11 @@
 # Separazione iniziale dei servizi
 
-Stato: Hive sotto ADR-0017 e R4B sotto ADR-0018; S4B e `lol-service` hanno un artifact alpha nei rispettivi repository. `lol-service` compila come applicazione standalone, ma il taglio HTTP da Beebot e il client HTTP verso S4B sono ancora da completare. Data: 2026-10-13.
+Stato: Hive sotto ADR-0017 e R4B sotto ADR-0018; S4B e `lol-service` hanno un artifact alpha nei rispettivi repository. `lol-service` compila come applicazione standalone. Contratto del proxy Riot e controllo tecnico iniziale completati; gli agenti di implementazione lavorano in parallelo. Il trasporto S4B deve gestire localmente status/header, cooldown 429 e retry 5xx finiti; il taglio HTTP da Beebot è ancora da completare. Data: 2026-10-14.
 Baseline: branch `beebot-servicies`, commit `cef023bc`, working tree inizialmente pulito.
 
 Il target è Bbot in Beebot, `lol-service` e S4B in repository separate, con
 Hive/R4B come artifact condivisi. S4B è pubblicato come package alpha, ma la
-chiamata diretta dal monolite è ancora in uso. Il codice Spring è stato copiato
+chiamata diretta dal servizio è ancora in uso. Il codice Spring è stato copiato
 nel repository `lol-service`, ora compilabile e avviabile; l'estrazione non è completa.
 I processi e i client HTTP restano da separare. R4B possiede i contratti
 `com.R4B.api.dto` e i valori/helper `com.R4B.lol`, conservando nomi canonici,
@@ -31,6 +31,7 @@ JSON, persistenza e presentazione.
 9. [Verifiche R4B](r4b-validation.md): build separate, compatibilità e review effettive.
 10. [Specifiche S4B](s4b-service-spec.md): package interno che possiede acquisizione Riot, queue fisica e cache.
 11. [Specifiche lol-service](lol-service-spec.md): API LoL, dominio, Mongo, Compute/Sync e client S4B sotto `com.safjnest.spring`.
+12. [Proxy degli endpoint Riot](riot-endpoint-proxy-spec.md): contratto comune host/path, DTO R4B, priorità, rate limit e revisione indipendente per S4B e lol-service.
 
 ## Responsabilità target
 
@@ -38,7 +39,7 @@ JSON, persistenza e presentazione.
 |---|---|---|
 | Bbot | Discord, comandi, eventi, audio, embed, configurazione guild/utenti e integrazioni del bot; consuma le risposte LoL | JDA, audio, Twitch/Spotify e persistenza relazionale dei domini del bot |
 | S4B | Chiamate Riot e dati statici, routing platform/region, rate limit, coda delle richieste esterne, risposte a Spring | SDK R4J, credenziali Riot, Redis per cache esterna e protezioni proprie |
-| Spring | API, servizi del dominio LoL, Mongo, calcolo di profili/champion/build/record/classifiche, tracking, refresh e code interne | Spring/Tomcat, Mongo, Redis per cache/proiezioni del dominio, client verso R4J |
+| lol-service | API e proxy LoL, dominio, Mongo, calcolo di profili/champion/build/record/classifiche, tracking, refresh e code interne | Spring/Tomcat, Mongo, Redis per cache/proiezioni del dominio, client/proxy verso S4B; nessuna dipendenza da R4J |
 | Comune | Strutture scambiate, core generico job/code, in seguito trasporto HTTP riutilizzabile | Nessun accesso a Mongo, Discord o Riot; nessuna configurazione dei servizi |
 
 “Mongo” in questi documenti indica la parte dati/calcolo del servizio Spring,
@@ -46,12 +47,12 @@ non un quarto servizio. I servizi di dominio restano indipendenti dal framework:
 il processo Spring li ospita, mentre controller/configurazione sono il suo adapter HTTP.
 
 ```text
-Bbot ── richieste / DTO finali ──> Spring ── richieste / dati esterni ──> R4J ──> Riot
-                                  │                                  │
-                                  ├── Mongo                          └── Redis R4J
-                                  └── Redis dominio
+Bbot ── richieste / DTO finali ──> lol-service ── Riot routes / R4B DTO ──> S4B ──> R4J ──> Riot
+                                        │                                  ├── queue Riot
+                                        ├── Mongo                          └── Redis R4J
+                                        └── Redis dominio
 
-Bbot, Spring, R4J ── dipendono da ──> comune
+Bbot, lol-service, S4B ── dipendono da ──> comune
 comune ── non dipende da ──> servizi
 ```
 
@@ -60,32 +61,24 @@ continua a possedere i suoi dati guild/audio/utenti: “solo bot” non elimina
 la persistenza necessaria a quei domini. Il reader LoL MariaDB e il comando
 di migrazione sono stati rimossi; non fanno parte dei runtime dei servizi.
 
-## Package e build proposti
+## Package e build
 
-Il core implementato usa la radice indipendente **`com.hive`**, come richiesto
-dall’utente. Non è un package `shared` e non dipende da `com.safjnest`.
-Gli altri namespace sotto descrivono solo la precedente proposta dei contratti
-e dei servizi, da decidere nelle rispettive tranche:
+I package dei contratti e del core job sono definiti dagli ADR accettati.
+Non introdurre una radice `shared` o copie dei contratti in Spring/Bbot:
 
 ```text
-com.safjnest.shared
-  dto.lol.{summoner,match,champion,statistics,leaderboard,record}
-  dto.status                 # aggregati operativi esposti
-  dto.http                   # schema errore HTTP, senza Spring
-  dto.riot                   # soli dati del confine Spring ↔ R4J, da specificare
-  http                       # riservato al futuro HttpBuilder/client
-
-com.hive                     # implementato: infrastruttura autonoma
+com.R4B.api.dto              # contratti LoL/acquisizione condivisi
+com.R4B.lol                  # enum e helper LoL puri
+com.hive                     # infrastruttura autonoma di job/code
   job, scheduler, worker, status
 
 com.safjnest.bbot             # adapter e funzionalità del bot
 com.safjnest.s4b              # acquisizione Riot, SDK e scheduler S4B
-com.safjnest.spring           # composizione del servizio, API e dominio ospitato
+com.safjnest.spring           # composizione lol-service, API, dominio e persistence
 ```
 
-I nomi dei package dei servizi e degli artifact sono proposti, non definitivi.
-La migrazione del dominio nel processo Spring non autorizza a creare success
-DTO sotto `spring.dto`: i contratti saranno unici in `shared.dto`.
+S4B e lol-service sono processi distinti e dipendono dagli artifact R4B/Hive;
+nessuna istanza runtime, registry o coda è condivisa tramite libreria.
 
 La build usa repository Maven separati, senza un parent multi-module comune.
 S4B e `lol-service` sono pubblicati come alpha. La build standalone di

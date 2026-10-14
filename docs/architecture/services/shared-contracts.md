@@ -162,37 +162,33 @@ nel client del bot: potrebbe esporre campi interni.
   attuale delle righe; un client HTTP non deve cambiare l'embed incidentalmente.
 - Presentazione Discord invariata: campi, ordine, testi, formattazione e layout.
 
-## Confine Spring ↔ R4J
+## Confine lol-service ↔ S4B (integrazione R4J)
 
-Il contratto di questo confine riguarda acquisizione esterna, non profilo o
-build già calcolati. Le operazioni da specificare sono Account per PUUID/Riot ID,
-Summoner, League entries per PUUID/tier/page, masteries, spectator, match-list
-con filtri/paginazione, match e timeline per ID completo, dati statici/versioni.
+R4J è un dettaglio SDK di S4B; Spring non lo importa. S4B acquisisce account,
+summoner, league entries, masteries, spectator, match-list, match/timeline e
+dati statici. Le route Riot-shaped e il mapping dei risultati ai DTO R4B sono
+specificati in [riot-endpoint-proxy-spec.md](riot-endpoint-proxy-spec.md).
 
-Richiesta: operazione, identificatori, platform/routing region necessari,
-parametri canonici e contesto di priorità/correlazione. Risposta: dati neutralizzati
-dal SDK, esito e informazioni di errore/retry pertinenti. Nomi route, payload
-completi e modalità sincrona/accettata restano da definire nella specifica API interna.
+Richiesta HTTP: route e argomenti Riot originali, routing scope nel host e
+priorità interna `X-S4B-Priority`. Risposta: DTO R4B compatibile con la route,
+senza `CompletableFuture`, SDK POJO, `Job`, driver o cursor. `lol-service`
+mantiene i servizi di dominio e converte i dati acquisiti nei modelli persistiti
+o nelle proiezioni. Non riusare `Match` come se fosse il match raw Riot.
 
-Non restituire `CompletableFuture`, SDK POJO, `Job`, driver o cursor attraverso
-HTTP. Non riusare `Match` come se il dato raw Riot fosse già il match analizzato
-da Spring. I DTO di acquisizione sono contratti distinti per uno scopo distinto,
-non un secondo profilo/build finale. Prima di crearli, riusare i tipi canonici
-che descrivono esattamente lo stesso valore senza perdere i dati richiesti.
+Il contratto è request/response: durante un rate limit S4B lascia pendere il
+lavoro e il proxy Spring mantiene aperto lo scambio HTTP. I dettagli di retry,
+parametri e mapping restano vincolati alla versione R4J e sono gate di controllo
+prima dell'implementazione.
 
-## Futuro HttpBuilder/client
+## Client HTTP lol-service ↔ S4B
 
-Client HTTP e builder richieste sono rinviati a un task successivo; nessun
-package di trasporto futuro viene creato da questa tranche. Il client riutilizzabile
-si occuperà di URI/query encoding, headers, invio, timeout, body JSON e risultato
-HTTP tipizzato. Base URL, auth, endpoint e policy di retry arrivano dal chiamante.
-Non dipenderà da Spring, JDA o dal SDK Riot e non conterrà business logic.
-
-`HttpUtils` attuale offre GET generiche, timeout e gestione errori a `null`;
-non è già il client inter-servizio. Un client tipizzato deve conservare status,
-headers ed errore, interpretare `202`, gestire `204` senza body e non ripetere
-automaticamente scritture senza idempotenza. Spring mapping HTTP resta un owner
-separato dal client, che lo consuma senza duplicare policy applicative.
+Il client inter-servizio appartiene a `lol-service`, non a R4B/Hive. Solo il
+client conosce base URL e autenticazione S4B; un catch-all inoltra il percorso
+Riot senza mantenere un secondo catalogo di route. I metodi domain tipizzati
+usano le classi R4B già esistenti. `HttpUtils` attuale offre GET generiche,
+timeout e gestione errori a `null`; non è già il client inter-servizio. Il
+proxy conserva gli status/body HTTP previsti e rimuove header non inoltrabili;
+non ritenta automaticamente chiamate senza idempotenza.
 
 ## Gate di estrazione
 

@@ -6,6 +6,16 @@
 
 Questo documento descrive l'implementazione osservata e una migrazione incrementale verso processi separati. Non modifica gli ADR accettati: prima di implementare i confini proposti serve un nuovo ADR che risolva i punti di compatibilità indicati qui.
 
+**Nota di aggiornamento 2026-10-14:** questo documento conserva l'analisi
+storica del monolite e le alternative di processo. Per la separazione corrente
+Beebot → `lol-service` → S4B e il proxy Riot, fanno fede
+[`services/README.md`](services/README.md),
+[`services/s4b-service-spec.md`](services/s4b-service-spec.md),
+[`services/lol-service-spec.md`](services/lol-service-spec.md) e
+[`services/riot-endpoint-proxy-spec.md`](services/riot-endpoint-proxy-spec.md).
+Le fasi di estrazione qui descritte sono superate dove divergono da quelle
+specifiche.
+
 ## 1. Sintesi della situazione
 
 Oggi esiste un solo eseguibile. `com.safjnest.App.main()` avvia nello stesso processo Spring MVC/Tomcat, Redis e MongoDB, scheduler e code LoL, servizi Twitch e JDA. Il JAR assemblato usa `com.safjnest.App` come main class e include le dipendenze del monolite. Spring non è ancora Spring Boot: `SpringServer` crea Tomcat embedded e registra un `DispatcherServlet` configurato da `LolApiConfig`.

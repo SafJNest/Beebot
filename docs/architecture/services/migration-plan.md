@@ -1,9 +1,12 @@
 # Piano iniziale di estrazione
 
 Stato: tranche package e prima applicazione standalone di `lol-service`
-implementate e pubblicate come alpha, dopo le tranche Hive e R4B. Le fasi sono
-state anticipate rispetto all'ordine iniziale; il client HTTP S4B, il passaggio
-HTTP da Beebot e la rimozione delle copie locali restano aperti.
+implementate e pubblicate come alpha, dopo le tranche Hive e R4B. Il contratto
+del proxy Riot e il controllo tecnico iniziale sono completati; gli agenti S4B
+e `lol-service` lavorano in parallelo. S4B possiede il trasporto HTTP che
+legge status/header Riot e il client tipizzato viene generato dallo stesso
+schema binding; il passaggio HTTP da Beebot e la rimozione delle copie locali
+restano aperti.
 
 ## Ordine delle fasi
 
@@ -14,7 +17,7 @@ HTTP da Beebot e la rimozione delle copie locali restano aperti.
 | 2 — Contratti comuni | Separare metodi operativi dai modelli canonici e trasferire DTO/dipendenze di dati | Contratti compilano senza servizi/SDK/driver; JSON compatibile; nessun DTO duplicato |
 | 3 — Job/code comuni | Hive per istanza, core generico e adapter locali implementati nel monolite | Evidenze e review in hive-validation.md; processi ancora condivisi |
 | 4 — Confini package | S4B sotto `com.safjnest.s4b`; API LoL, dominio, tracker, Mongo e runtime sotto `com.safjnest.spring` nello stesso root POM | Ownership isolata; nessun cambiamento al JSON o al bootstrap |
-| 5 — Confine HTTP S4B | API interna S4B e client in lol-service, fetch/cache SDK sotto S4B | lol-service senza SDK Riot; S4B senza Mongo/JDA; errori/timeout/limiter verificati |
+| 5 — Proxy Riot S4B | Route Riot-shaped derivate da `URLEndpoint`, proxy catch-all in lol-service, DTO R4B, priorità e attesa durante rate limit | Nessuna route URL duplicata; lol-service senza SDK/S4B implementation; S4B senza Mongo/JDA; controllo indipendente di scope regionali, retry `429`, retry `5xx` finiti e durata HTTP |
 | 6 — Confine Bbot | Client verso Spring e conversione dei comandi/maintenance alle API del proprietario | Bot senza accesso LoL diretto a Mongo/Riot; embed e comandi compatibili |
 | 7 — Repository separate | Pubblicazione dei comuni, versioni e release indipendenti | Contratti e build già isolati; smoke test tra versioni supportate |
 
@@ -99,10 +102,10 @@ senza far passare una compilazione o test statici per validazione dei servizi re
 | Enum LoL sul wire | Tipi del contratto con valori JSON compatibili; mapping SDK in R4J | DTO indipendenti da R4J |
 | Entity operative | Metodi persistenti privati del writer, stesso modello canonico di dati | Estrazione `Summoner`/`Match` |
 | Compute/progresso | Caratterizzare e risolvere le discrepanze registrate | Port scheduler/registry |
-| API S4B | Contratti R4B SDK-independent, copertura delle operazioni Riot e static-data | Trasferimento fetch al processo S4B |
-| Completamento remoto | Iniziare con risultato HTTP quando compatibile con durata/timeout | Confine di processo; acceptance/polling solo se necessario |
+| API S4B | Route derivate dagli `URLEndpoint` R4J usati, binding tipizzati ai DTO R4B, risorse Data Dragon senza envelope, header di priorità interno | Bootstrap del proxy S4B e client/proxy lol-service |
+| Completamento remoto | HTTP sincrono; richiesta aperta durante l'attesa di rate limit; retry `429` posseduto da S4B e retry `5xx` finiti | Confine di processo; niente `202`/polling per acquisizioni Riot |
 | Redis | Client/pool per servizio, cataloghi chiavi posseduti separatamente | Bootstrap indipendenti |
-| Invalidazione cache raw dopo insert | Chiamata idempotente al proprietario R4J se ancora richiesta | Rimozione delle scritture Redis incrociate |
+| Invalidazione cache raw dopo insert | Chiamata autenticata e tipizzata al proprietario S4B, se ancora richiesta | Rimozione delle scritture Redis incrociate |
 | Status | Metriche locali; aggregazione/correlazione esplicita | Status di tre processi |
 | Repliche/durabilità | Nessuna garanzia nuova nella prima estrazione | Scaling multi-istanza o backlog durevole |
 
@@ -119,13 +122,21 @@ standalone riuscita. Le modifiche additive devono restare compatibili; quelle br
 vanno coordinate con i consumatori e verificate con fixture tra le versioni
 supportate. Una rename Java può essere breaking per i binari anche a JSON invariato.
 
-## Consegna di questa fase
+## Consegna della definizione proxy
 
-La fase 0 è documentale. Nessun endpoint, JSON, command/embed, documento Mongo,
-chiave Redis, libreria Maven o package Java viene modificato. Handbook, indice
-architetturale e README ricevono soltanto un rimando alla proposta; i documenti
-API/Mongo sono stati riesaminati e restano la descrizione del runtime corrente.
-Disallineamenti preesistenti sono registrati nell'inventario.
+Questa fase ha aggiornato la specifica e i rimandi architetturali, senza
+modificare endpoint, JSON, command/embed, documenti Mongo, chiavi Redis,
+dipendenze Maven o package Java. Il controllo read-only ha confermato la
+derivazione dei path dagli `URLEndpoint` e ha rilevato che R4J 2.8.1 non espone
+status/header e applica la stessa policy di retry a 429 e 5xx. Il contratto
+stabilisce quindi un trasporto JDK posseduto da S4B, con binding tipizzati che
+usano `URLEndpoint` come fonte dei path; S4B possiede il cooldown/requeue 429,
+e i retry 5xx restano limitati per numero e durata. Lo schema binding genera
+anche il contratto client di `lol-service`, senza route scritte una seconda
+volta. La copertura include anche
+`runesReforged.json` e `versions.json` come risorse JSON statiche senza
+envelope. Ora partono in parallelo gli agenti S4B e `lol-service`; il
+controllore verifica l'allineamento durante il lavoro e al handoff.
 
 ## Decisione della tranche job/code
 

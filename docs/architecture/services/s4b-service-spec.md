@@ -42,68 +42,86 @@ steps. Hive and R4B remain dependencies; their sources are not copied.
 
 ## Internal HTTP contract
 
-Use a versioned private base path `/internal/v1/riot`. The API exposes
-acquisition operations, not Spring domain endpoints or SDK classes. All
-requests validate `LeagueShard` and `RegionShard` separately; `UNKNOWN` is not
-a valid Riot route. The initial read API is:
+S4B exposes the Riot-shaped paths needed by the application. Platform or
+regional routing scope is encoded in the service host, and the path is derived
+from the pinned R4J `URLEndpoint` constants. For example,
+`euw1.api.s4b/<R4J route path>` or `europe.api.s4b/<R4J route path>`. Static
+data has a fixed service host scope. The exact proxy contract and initial
+endpoint families are in
+[the Riot endpoint proxy specification](riot-endpoint-proxy-spec.md).
 
-| Operation | Inputs | Result contract |
-|---|---|---|
-| account by PUUID | region, PUUID | `RiotAccount` |
-| account by Riot ID | region, game name, tag line | `RiotAccount` |
-| summoner | shard, PUUID | canonical `Summoner` |
-| ranks | shard, PUUID | list of canonical `Rank` |
-| ranks by tier | shard, queue, tier, page | list of `Rank` |
-| masteries | shard, PUUID | list of canonical `Mastery` |
-| current spectator game | shard, PUUID | `SpectatorGameInfo` or not found |
-| match IDs | shard, PUUID, queue, index, count, start time, type | list of match IDs |
-| match detail | region, match ID | `RiotMatchData` |
-| match timeline | region, match ID | `RiotTimelineData` |
-| static items/champions/spells | requested static-data version where applicable | keyed R4B maps |
+The allowlist covers account by PUUID/Riot ID, summoner, ranks by PUUID and
+tier/page, masteries, spectator, match IDs, match detail/timeline, typed static
+items/champions/spells, and the Data Dragon `runesReforged.json` and
+`versions.json` resources. Those two static-resource bodies preserve Riot's
+JSON shape without a generic envelope. S4B must use R4J endpoint constants as the path source;
+it must not maintain copied URL templates. A typed binding may associate an
+R4J constant with parameter rules and its existing R4B result type, without
+repeating the route string. Validate path, query, method, body and shard scope
+before queue admission. Do not expose arbitrary hosts or unrelated R4J API
+families.
 
-Wire types come from `com.R4B.api.dto` and `com.R4B.lol`. SDK POJOs,
-`SummonerView`, Mongo entities and application-specific aggregates never appear
-in this API. Preserve compatible JSON field names and enum representations;
-add golden JSON fixtures before changing an existing contract. The API does
-not expose queue priority or arbitrary scheduler/key controls to callers.
+This typed binding is the single source of truth for both the server route
+matcher and the type-safe client surface consumed by `lol-service`. Generate
+an authenticated `GET /.well-known/s4b/routes` manifest directly from the
+bindings on the private control-plane base configured by `S4B_CONTROL_BASE_URL`;
+do not expose it through the public Riot route proxy. Include schema version,
+stable operation ID, method, generated path
+template and typed path parameters, host/rate-limit scope, query allowlist and
+types, optional request body contract, response media type and canonical R4B
+DTO (or raw static-resource shape). Do not hand-maintain route templates in
+`lol-service`, and do not make the manifest/client artifact depend transitively
+on R4J or S4B server internals. `lol-service` validates and caches the manifest
+with version/ETag revalidation and calls operations only by stable ID.
 
-Use ordinary request/response HTTP for acquisition: S4B enqueues locally,
-waits for the job result, then returns it. The first version has no remote job
-ID, polling endpoint, or distributed deduplication. Bulk or long-running
-maintenance operations are separate contracts and are not disguised as a
-single synchronous acquisition request.
+Responses use the existing SDK-independent `com.R4B.api.dto` and
+`com.R4B.lol` contracts. R4J SDK types and generic map/JSON envelopes do not
+cross HTTP. Acquisition remains request/response: no remote job ID or polling
+API is introduced.
 
-Use existing `LolApiError` JSON with meaningful HTTP statuses: 400 for invalid
-input, 404 for Riot data not found, 429 for admission/rate-limit rejection,
-502/503 for upstream or S4B unavailability, and 504 for a bounded timeout.
-Do not return HTTP 200 with `null` for operational failures. Preserve the
-distinction between an absent Riot resource and an unsuccessful Riot request.
-
-Only Spring may call the internal API. Bind it to the private service
-network and require a configured service credential; do not expose Riot keys
-or Redis credentials through the API. The concrete credential transport and
-deployment binding are configuration decisions for the S4B bootstrap, not
-fields in shared DTOs.
+Only `lol-service` may call S4B's Riot routes, over the private service network
+with a configured service credential. S4B alone adds Riot credentials and
+controls cache access. The host binding and credential transport are
+deployment configuration, not fields in shared DTOs.
 
 ## Queue and request lifecycle
 
-The S4B-local `RiotScheduler` is registered in the current monolith Hive
-runtime by `QueueHandler`. It has one serial physical queue per
-`LeagueShard`, preserving current route validation and SDK platform/region
-mapping. It owns S4B worker names, logging and admission behavior. Redis
-cooldowns/rate protection remain in S4B's acquisition path; Hive stays generic.
+The independent S4B process starts and owns its Hive runtime and Riot
+scheduler. Platform and regional hosts map to one `RegionShard` rate-limit
+scope; application cooldowns apply to all Riot API work in that region,
+method/service cooldowns gate their narrower scope, and Data Dragon is
+scheduled separately. S4B owns queue names, logging, admission and rate-limit
+behavior; Hive stays generic. `lol-service` does not submit Riot jobs to its
+local Hive.
 
-At the package stage, existing `lol` services submit typed jobs through
-`QueueHandler` to the S4B scheduler. At the HTTP stage, S4B controllers call
-acquisition services that submit typed jobs through the service facade. The
-deduplication identity is scheduler + logical
-shard + stable operation key, for example `match:<region>:<matchId>`. Cache
-hits may return before queue submission. A caller timeout does not claim that
-a running Riot request was physically cancelled. HTTP and queue wait limits
-must be bounded and coordinated; saturation is reported explicitly rather
-than creating an unbounded remote backlog. Do not add retries that can multiply
-Riot traffic; retry policy must preserve the current SDK/rate-protection
-behavior.
+`lol-service` sends `X-S4B-Priority: IMMEDIATE|NORMAL|BACKGROUND`; S4B validates
+it and maps it to its local queue. Spring derives the priority and overwrites
+caller-provided values. Queue deduplication uses normalized endpoint identity
+plus canonical arguments. Cache hits may return before queue submission.
+
+A Riot `429` keeps the S4B job pending until Riot returns a non-429 result. S4B
+reads `Retry-After` and `X-Rate-Limit-Type`, pauses the matching cooldown
+bucket, and schedules the same logical job again without holding a queue
+worker. The same HTTP exchange stays open while the job is pending; use
+per-attempt upstream timeouts, not a total acquisition timeout. Queue admission
+remains bounded and may reject saturation before the Riot request starts. Do
+not introduce `202`, remote polling, or premature timeout responses for a
+rate-limited request. After admission there is intentionally no application
+wall-clock deadline for repeated 429s. Configure bounded total and per-region
+pending counts; reject saturation with `503` and `LolApiError` before contacting
+Riot. A downstream disconnect detaches that waiter without corrupting shared
+deduplicated work.
+
+R4J 2.8.1 internally retries both 429 and 5xx with one `maxSleep` policy and
+does not expose the response headers needed by S4B. For supported proxy
+operations, S4B owns a narrow JDK `HttpClient` transport adapter that derives
+paths from the R4J `URLEndpoint` constants while typed bindings define method,
+arguments, body and R4B result type. This lets S4B read upstream status and
+headers and own 429 cooldown/requeue without using the opaque
+`DataCallBuilder` or forking R4J. Keep 5xx retries finite by attempt count and
+elapsed time; do not raise R4J's shared `maxSleep` as a workaround. Generate
+the server matcher and the `lol-service` typed client/spec from the same
+binding schema, with no R4J runtime dependency in the client artifact.
 
 ## Redis and cache ownership
 
@@ -118,20 +136,22 @@ cross-owner accesses as part of the internal API cutover.
 
 Riot credentials and acquisition/cache policy belong to S4B. The alpha reads
 `RIOT_API_KEY` with a monolith compatibility fallback to `rsc/settings.json`.
-An internal HTTP server, service credential, readiness endpoint and independent
-lifecycle remain deployment requirements for the next tranche.
+The HTTP service accepts `Authorization: Bearer <S4B_SERVICE_TOKEN>` over TLS;
+the same configured secret is used by S4B and `lol-service`. An internal HTTP
+server, readiness endpoint and independent lifecycle remain deployment
+requirements for the next tranche.
 
 ## Implementation sequence and gates
 
-1. Keep only Riot SDK runtime, gateway, conversion, Riot scheduling and raw
-   Riot cache policy under `com.safjnest.s4b`; S4B does not own tracking, Mongo,
-   public API, domain calculations or projections.
-2. Spring owns domain callers and queue/runtime composition under
-   `com.safjnest.spring`; this monolith stage preserves current in-process
-   behavior.
-3. Add the internal S4B endpoints and typed Spring client, then migrate Spring
-   callers from direct S4B imports to HTTP.
-4. Add the typed Spring client, then remove all direct Spring access to
-   `RiotGateway`, `RiotScheduler` and S4B-owned Redis keys.
-5. Give the independent S4B process its own Hive lifecycle and HTTP bootstrap;
-   verify both service builds before deployment.
+1. The shared contract and read-only technical control are complete. Start the
+   S4B and `lol-service` implementation agents in parallel against the same
+   host/path/header/DTO contract.
+2. S4B adds its independent HTTP/bootstrap lifecycle, JDK transport adapter,
+   dynamically derived route matcher, typed binding schema, queue
+   priority/cooldown and Redis ownership; it exports the client/spec generated
+   from that schema.
+3. `lol-service` adds the dynamic proxy, long-lived async response and typed
+   clients against that contract, while removing direct S4B/R4J/cache access.
+4. The control agent aligns both repositories during work and at handoff;
+   report mismatches without silently changing either implementation. Beebot
+   cleanup follows only after both service boundaries work.

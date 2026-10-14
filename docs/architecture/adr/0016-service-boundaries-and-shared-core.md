@@ -15,6 +15,28 @@ Nel monolite i package applicativi Spring vivono sotto
 `com.safjnest.spring`; S4B resta sotto `com.safjnest.s4b`. Questa decisione
 non anticipa client HTTP, bootstrap o processi separati, che restano proposti.
 
+## Proposta di proxy Riot 2026-10-14
+
+La specifica condivisa per il proxy Riot e il controllo tecnico iniziale sono
+stati completati in
+[`riot-endpoint-proxy-spec.md`](../services/riot-endpoint-proxy-spec.md).
+Propone che S4B sia l'unico consumer di R4J e ricavi le route dagli
+`URLEndpoint` della versione R4J bloccata. `lol-service` espone le stesse
+route tramite un proxy catch-all, senza un secondo catalogo URL, e comunica
+con S4B tramite HTTP usando i DTO esistenti in R4B. Spring passa la priorità
+in `X-S4B-Priority`; una richiesta resta aperta durante l'attesa imposta da
+un rate limit Riot. La queue usa lo scope Riot per region; S4B possiede il
+cooldown/requeue `429`, mentre i retry `5xx` restano limitati. R4J 2.8.1 non
+espone oggi gli header necessari, quindi S4B usa un trasporto JDK posseduto
+dal servizio, mantenendo `URLEndpoint` come unica fonte dei path e binding
+tipizzati per gli altri dettagli dell'operazione. Il client di `lol-service`
+viene generato dallo stesso schema senza copiare le route né dipendere da R4J.
+Il contratto include anche i payload statici Data Dragon di rune e versioni.
+
+Il contratto è pronto per l'implementazione parallela. Il trasporto locale
+S4B è una decisione della specifica proposta, non cambia lo stato degli ADR
+accettati. Le specifiche di S4B e lol-service restano riallineate.
+
 ## Contesto
 
 Il monolite avvia Discord, Spring, Riot scheduling, Mongo, Redis e calcoli LoL
