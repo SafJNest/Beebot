@@ -52,7 +52,7 @@ Quick Style Rules (from `AGENTS.md`):
 
 **Stack:** Java 25, Spring 7.0.8 + Tomcat 11, JDA 6.3.1 + jdave, Jedis 5.1.0 (Redis), MongoDB driver sync 5.8.0, MariaDB (backfill only), R4J 2.8.1, Lavalink, FastUtil/Caffeine. Build `mvn package` → `jar-with-dependencies` main `com.safjnest.App`.
 
-**Runtime LoL:** MongoDB is the sole runtime storage (`beebot` / `beebot_test` with `App.isTesting()`). MariaDB only for `MongoMigration` backfill. Redis cache only (no queue/backlog). R4J for Riot.
+**Runtime LoL:** MongoDB is the sole runtime storage (`beebot_test` in production / `beebot_test_test` with `App.isTesting()`, current MongoDB constants). MariaDB only for `MongoMigration` backfill. Redis cache only (no queue/backlog). R4J for Riot.
 
 **Global scheduling:** `lol.queue` single registry — three separate physical schedulers, never shared:
 
@@ -645,7 +645,7 @@ Verify: `db.col.getIndexes()` + `db.col.find({...}).explain("executionStats")` �
 | `match_events` | ~15-40 KB JSON | native WiredTiger zstd lvl 9, ~60% saving vs raw BSON |
 | `profile_statistics` | ~2-8 KB | leaves `champion×queue×lane`; no materialized `total`/`queueStats` |
 | Redis value | ~1-4 KB JSON | TTL declared by `RedisKey`, mget batch ≤100, pool 32 conn, circuit breaker 30s |
-| `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` at batch 100 | champion stats event batch is now 1,000; retained match map is roughly 8-15 MB if the documented 8-15 KB/match applies, plus cursor and one timeline parse; total heap has not been remeasured, no `List<Match>` in memory |
+| `ChampionStatistics` heap | former 200 MB → <30 MB after `rusted-java` at batch 100 | champion matrix event batches are 10,000; retained raw match/event memory and total heap have not been remeasured, no `List<Match>` in memory |
 | Compute worker | max 2 concurrent | `CHAMPION` reserved for heavy, PROFILE least-loaded |
 
 ### Command / Class Names — Quick Lookup
@@ -709,3 +709,73 @@ Every change to model/service/persist/filter/command/embed/cache/API **must** pa
 - `src/main/java/com/safjnest/spring/controller/LolController.java` + `LolApiParameters.java` + `LolApiResponses.java`
 - `docs/architecture/profile-statistics-source-of-truth.md`
 - `docs/new-queue.md` + `docs/mongo/README.md` + `docs/api/lol-api.md`
+
+## Arena build analytics
+
+The existing champion API selects Arena for queue=CHERRY and rejects role. See
+[contracts](arena-build/contracts.md), [schema](arena-build/schema.md) and
+[phases](arena-build/phases.md). No new endpoint/service/provider/collection exists.
+ChampionService and ComputeScheduler dispatch both cold-matrix and build-only
+requests through QueueHandler on CHAMPION. The standalone Arena entrypoint remains
+available for explicit jobs and reports total/completed/missing/failed.
+
+All champion consumers share MongoDB.forEachChampionRawMatchEventBatch: a bounded
+ID/document/event left join delivering missing-event matches too. The reader has
+no consumer eligibility policy. Statistics and standard builds require usable
+timelines; Arena outcomes, final Prismatics, final-slot consumables and augments
+survive missing timelines. Purchased-and-consumed items require timeline events.
+The common build projection includes participants.id, boots, subTeamPlacement and subTeam.
+Matrix batches remain 10,000 and standalone build batches 100; callbacks are
+synchronous and temporary event/document/match trees are released after processing.
+
+ArenaGameParser uses attributed purchases to identify boots+first-Prismatic cores,
+with final-slot fallback. Full builds aggregate final items and recognized
+consumables sorted by ID while excluding Prismatic items. Global/core Prismatics
+include the first; six augment position lists retain gaps and rank by WR/sample
+count/ID. Global outcomes and choices remain available when a core is missing.
+Anvil 220007 is included as a consumable.
+ArenaChampionAnalyzer uses primitive
+maps and returns schema approvato. Timings order purchases without entering
+persisted identities or output. Catalogs are loaded for the requested patch,
+resolving major.minor to its matching full Data Dragon version. No current-patch
+fallback is used and catalog failures fail the job before an empty result is saved.
+
+One champion_builds document per filterKey holds standard fields and build.arena.
+Arena writes only its subtree and arenaLastUpdate atomically; standard single/bulk
+writes preserve Arena. No replacement or read-merge-replace. CHERRY reads use
+Arena data presence and arenaLastUpdate for freshness. Present payloads with
+legacy separate consumables fields are returned without a schema-triggered
+regeneration; stale timestamps can queue a background refresh.
+Standard-only results are misses when no Arena payload is present; genuine ready-empty
+results are persisted to avoid repeated empty jobs. Build.fromArena retains internal compatibility; CHERRY HTTP projects the Arena
+aggregate directly in build with final builds per core, consumables within each
+full build and six augment arrays;
+starters and standard-only categories stay empty. Other queues retain standard
+contracts. API/controller validation, docs and ADR-0006/0012 are synchronized.
+
+Public requests use major.minor patches and source rank/region filters; internal
+full patches also add exact patch matching. The normalized Arena filter has no
+role/opponent/duo/period. Existing filterKey identity is unchanged. Job item memory
+remains one aggregate record rather than one status entry per match.
+
+BSON guards run before a write; Mongo's combined-document limit remains
+authoritative. Source/catalog/write failures propagate. Live indexes/explain,
+combined BSON/cardinality and heap remain operational gates. No production Mongo
+connection, rebuild or backfill is part of offline verification.
+
+### CHERRY contract update (2026-10-14)
+
+Only CHERRY uses the new [Arena schema](arena-build/champion-schema.json):
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
+position rankings and global/core Prismatics. Full-build item lists include
+consumables and exclude Prismatic items, including consumable Anvil 220007. No legacy fields or build.arena
+wrapper are exposed. Stats use exact same-subTeam ally combinations, team
+sizes 2/3, `subteamsById` counts for Arena IDs 1–8, and overview placement
+counts/average from `subTeamPlacement`; these additions do not change synergy
+aggregation. Lane relations are omitted. The raw projection includes subTeam and subTeamPlacement.
+Mongo preserves build.arena ownership. Stats readiness uses the ready marker
+and Arena build availability uses data presence. Timestamps can queue background
+refreshes; readers do not reject legacy separate consumables fields or check all
+eight subteam ID counters and placement buckets. There are no version fields or
+version-based cache guards. Other queues, jobs
+and Discord presentation remain unchanged. No live rebuild/explain is claimed.

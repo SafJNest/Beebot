@@ -1,0 +1,716 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Arena - Documento champion",
+  "description": "Contratto HTTP CHERRY. Le altre queue mantengono il contratto standard. Aggregati grezzi separati dalla proiezione HTTP.",
+  "type": "object",
+  "properties": {
+    "champion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "image"
+      ]
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "overview": {
+          "type": "object",
+          "properties": {
+            "games": {
+              "type": "integer"
+            },
+            "picks": {
+              "type": "integer"
+            },
+            "bans": {
+              "type": "integer"
+            },
+            "wins": {
+              "type": "integer"
+            },
+            "winrate": {
+              "type": "number"
+            },
+            "pickrate": {
+              "type": "number"
+            },
+            "banrate": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "kda": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "csPerMinute": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "goldPerMinute": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "averagePlacement": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 1,
+              "maximum": 8,
+              "description": "Media pesata dei placement Arena validi osservati per il campione."
+            },
+            "placements": {
+              "type": "object",
+              "patternProperties": {
+                "^[1-8]$": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false,
+              "description": "Conteggi per placement subteam; sono emesse solo le posizioni osservate."
+            },
+            "damageProfile": {
+              "type": "null",
+              "description": "Nel documento il valore è null; il tipo non-null previsto non è deducibile dal campione."
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "games",
+            "picks",
+            "bans",
+            "wins",
+            "winrate",
+            "pickrate",
+            "banrate",
+            "kda",
+            "csPerMinute",
+            "goldPerMinute",
+            "averagePlacement",
+            "placements",
+            "damageProfile"
+          ]
+        },
+        "powerCurve": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "durationBucket": {
+                "type": "string"
+              },
+              "games": {
+                "type": "integer"
+              },
+              "wins": {
+                "type": "integer"
+              },
+              "winrate": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "durationBucket",
+              "games",
+              "wins",
+              "winrate"
+            ]
+          }
+        },
+        "trend": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "previousPatch": {
+              "type": "string"
+            },
+            "games": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "winrate": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "deltaWinrate": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "previousPatch",
+            "games",
+            "winrate",
+            "deltaWinrate"
+          ],
+          "additionalProperties": false
+        },
+        "synergies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "allyChampions": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "ID dei compagni dello stesso subteam, ordinati in ordine numerico crescente; lunghezza 1 (duo) o 2 (trio).",
+                "minItems": 1,
+                "maxItems": 2
+              },
+              "matches": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "wins": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "winrate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "allyChampions",
+              "matches",
+              "wins",
+              "winrate"
+            ]
+          },
+          "description": "Ogni entry corrisponde ad una combinazione esatta di alleati della stessa squadra, non basata sui ruoli."
+        },
+        "subteams": {
+          "type": "object",
+          "properties": {
+            "2": {
+              "type": "object",
+              "properties": {
+                "games": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "wins": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "winrate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "games",
+                "wins",
+                "winrate"
+              ]
+            },
+            "3": {
+              "type": "object",
+              "properties": {
+                "games": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "wins": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "winrate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "games",
+                "wins",
+                "winrate"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "2",
+            "3"
+          ],
+          "description": "Statistiche del campione per dimensione della sua squadra (incluso il campione)."
+        },
+        "subteamsById": {
+          "type": "object",
+          "patternProperties": {
+            "^[1-8]$": {
+              "type": "object",
+              "properties": {
+                "games": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "wins": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "winrate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "games",
+                "wins",
+                "winrate"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+          ],
+          "description": "Conteggi per ID Arena stabile: 1 Poros, 2 Minions, 3 Scuttles, 4 Krugs, 5 Raptors, 6 Sentinels, 7 Wolves, 8 Gromps."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "overview",
+        "synergies",
+        "subteams",
+        "subteamsById",
+        "powerCurve",
+        "trend"
+      ]
+    },
+    "build": {
+      "type": "object",
+      "properties": {
+        "games": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "wins": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "winrate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "coreBuilds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Identificativo canonico del core, in continuita con build.coreBuilds esistenti."
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Item che definiscono il core (es. boots e primo prismatic).",
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "matches": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "wins": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "winrate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "pickrate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "builds": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "description": "Lista canonica crescente degli item finali riconosciuti e dei consumabili rilevati negli acquisti o negli slot finali; esclude gli oggetti Prismatici e include l’Anvil 220007. Gli eventuali ID duplicati degli slot finali sono conservati."
+                    },
+                    "matches": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "wins": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "winrate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "items",
+                    "matches",
+                    "wins",
+                    "winrate"
+                  ],
+                  "description": "Build completa associata al core; gli item Prismatici sono esposti separatamente."
+                },
+                "description": "Full build finali associate al core."
+              },
+              "augments": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "matches": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "wins": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "winrate": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "matches",
+                      "wins",
+                      "winrate"
+                    ],
+                    "description": "Augment in una precisa posizione di scelta; la posizione e data dall’indice del contenitore."
+                  },
+                  "description": "Ranking per winrate decrescente degli augment scelti in questa posizione."
+                },
+                "description": "augments[position][rank], position da 0. Gruppi vuoti ammessi per posizioni senza dati.",
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "prismatics": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "matches": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "wins": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "winrate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "matches",
+                    "wins",
+                    "winrate"
+                  ],
+                  "description": "Aggregazione per ID prismatic, senza ordine di acquisto, ordinata per winrate decrescente."
+                },
+                "description": "Statistiche dei prismatic acquistati nelle partite che appartengono al core, senza ordine temporale."
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "items",
+              "matches",
+              "wins",
+              "winrate",
+              "pickrate",
+              "builds",
+              "augments",
+              "prismatics"
+            ],
+            "description": "Core Arena; la chiave riutilizza il nome legacy coreBuilds."
+          },
+          "description": "Raggruppamento per core (identico nome delle build normali)."
+        },
+        "augments": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "wins": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "winrate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "matches",
+                "wins",
+                "winrate"
+              ],
+              "description": "Augment in una precisa posizione di scelta; la posizione e data dall’indice del contenitore."
+            },
+            "description": "Ranking per winrate decrescente degli augment scelti in questa posizione."
+          },
+          "description": "augments[position][rank], position da 0. Gruppi vuoti ammessi per posizioni senza dati.",
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "prismatics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "matches": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "wins": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "winrate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "matches",
+              "wins",
+              "winrate"
+            ],
+            "description": "Aggregazione per ID prismatic, senza ordine di acquisto, ordinata per winrate decrescente."
+          },
+          "description": "Ranking globale per WR, indipendente dal core e dall’ordine di acquisto."
+        },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "matches": {
+              "type": "integer"
+            },
+            "coreGames": {
+              "type": "integer"
+            },
+            "missingCoreGames": {
+              "type": "integer"
+            },
+            "firstPrismaticFallbackGames": {
+              "type": "integer"
+            },
+            "buildTimelineGames": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "matches",
+            "coreGames",
+            "missingCoreGames",
+            "firstPrismaticFallbackGames",
+            "buildTimelineGames"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "games",
+        "wins",
+        "winrate",
+        "coreBuilds",
+        "augments",
+        "prismatics",
+        "coverage"
+      ],
+      "description": "Aggregato CHERRY. I consumabili compaiono nelle build complete; gli item Prismatici restano separati."
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "pagination": {
+          "type": "null",
+          "description": "Nel documento il valore è null; il tipo non-null previsto non è deducibile dal campione."
+        },
+        "lastUpdate": {
+          "type": "integer"
+        },
+        "refresh": {
+          "type": "boolean"
+        },
+        "filter": {
+          "type": "object",
+          "properties": {
+            "champion": {
+              "type": "integer"
+            },
+            "lane": {
+              "type": "null",
+              "description": "Nel documento il valore è null; il tipo non-null previsto non è deducibile dal campione."
+            },
+            "queue": {
+              "type": "string"
+            },
+            "rank": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "rankBehavior": {
+              "type": "string"
+            },
+            "patch": {
+              "type": "string"
+            },
+            "region": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "opponent": {
+              "type": "integer"
+            },
+            "duo": {
+              "type": "integer"
+            },
+            "timeStart": {
+              "type": "integer"
+            },
+            "timeEnd": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "champion",
+            "lane",
+            "queue",
+            "rank",
+            "rankBehavior",
+            "patch",
+            "region",
+            "opponent",
+            "duo",
+            "timeStart",
+            "timeEnd"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "pagination",
+        "lastUpdate",
+        "refresh",
+        "filter"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "champion",
+    "stats",
+    "build",
+    "metadata"
+  ]
+}

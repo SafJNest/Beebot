@@ -381,15 +381,17 @@ keys serialized as
 
 | HTTP | `code` | When |
 |---:|---|---|
-| `202` | `champion_data_pending` | Statistics or build have not yet been generated; refresh is queued in the background. A completed refresh with no data produces `200` with empty aggregates. |
+| `202` | `champion_data_pending` | Statistics or build data is absent or not ready; refresh is queued in the background. A completed refresh with no data produces `200` with empty aggregates. |
 | `400` | `invalid_request` | Invalid rank, region, queue or role, or role incompatible with queue. |
 | `404` | `not_found` | Unknown champion. |
 
-The requested variant is stale when the top-level Mongo timestamp for statistics
-or build is missing/more than a week old. In that case it keeps `202
-champion_data_pending` and queues only the stale component. `metadata` exposes the
-full requested filter, `refresh` and the oldest of the build
-and statistics timestamps; all global variants remain available.
+When persisted statistics or build data is present but its Mongo timestamp is
+missing or more than a week old, the endpoint returns the stored data with HTTP
+200 and `metadata.refresh=true`, while queuing only the stale component in the
+background. HTTP 202 is reserved for a required data component that is absent
+or whose statistics document is not ready. `metadata` exposes the full requested
+filter, `refresh` and the oldest of the build and statistics timestamps; all
+global variants remain available.
 
 ```json
 {
@@ -404,3 +406,38 @@ and statistics timestamps; all global variants remain available.
 - Controller: [`ChampionController`](../../../src/main/java/com/safjnest/spring/controller/ChampionController.java)
 - Service: [`ChampionService`](../../../src/main/java/com/safjnest/lol/service/ChampionService.java)
 - Success model: [`ChampionView`](../../../src/main/java/com/safjnest/lol/model/ChampionView.java)
+
+
+## CHERRY response
+
+Use `/api/lol/champion/shaco?patch=16.19&queue=CHERRY`; role returns 400.
+Rank/region retain canonical optional semantics. Only CHERRY uses
+[champion-schema.json](../../arena-build/champion-schema.json).
+
+`stats` contains overview, powerCurve, trend, synergies, subteams and
+subteamsById. `overview.averagePlacement` is the weighted mean of valid Arena
+placements, and `overview.placements` contains counts for observed positions
+1–8. Synergy allyChampions is the sorted exact same-subTeam combination
+(one ally for duo, two for trio); `subteams` always has keys 2 and 3 with
+games/wins/winrate. `subteamsById` always has keys 1–8 with the same counts
+grouped by Arena team ID: Poros, Minions, Scuttles, Krugs, Raptors, Sentinels,
+Wolves and Gromps, respectively. These counts are separate from and do not
+change synergy aggregation.
+No laneStats, matchups, laneSynergies or lane ranking fields are exposed.
+Unavailable advanced metrics remain null.
+
+`build` directly contains games, wins,
+winrate, coreBuilds, augments, prismatics and coverage. There is no
+build.arena wrapper or standard legacy field. A core's items are boots+first
+Prismatic; `builds[].items` contains sorted final items and consumables seen in
+purchases or final slots, including the Prismatic Anvil `220007`; Prismatic
+items are excluded. Dedicated `prismatics` summaries remain separate. Both augment matrices have exactly six
+zero-based position lists, including empty positions; options rank by WR, sample
+count and ID. No spell1/spell2 fields appear on items.
+
+Missing CHERRY stats/build data is refreshed through the existing 202 path.
+Present stats are not rejected for missing subteam/placement buckets, and
+present builds are not rejected for legacy separate `consumables` fields;
+stale present data returns 200 with a background refresh. Empty completed aggregates remain 200. Other queues keep the
+standard response documented above. The controller remains thin; canonical
+models own aggregates and LolApiConfig owns the HTTP shape.

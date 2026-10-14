@@ -18,6 +18,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.BsonBinaryWriter;
+import org.bson.codecs.EncoderContext;
+import org.bson.io.BasicOutputBuffer;
 import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import org.bson.conversions.Bson;
@@ -50,6 +53,7 @@ import com.mongodb.client.result.UpdateResult;
 import com.safjnest.App;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ProfileIndexable;
 import com.safjnest.utils.SettingsLoader;
@@ -110,8 +114,14 @@ public final class MongoDB {
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final int CHAMPION_BUILD_EVENT_BATCH_SIZE = 100;
     private static final int CHAMPION_BUILD_GENERATION_VERSION = 3;
+    private static final int CHAMPION_BUILD_MAX_BSON_BYTES = 16 * 1024 * 1024 - 256 * 1024;
+    private static final List<String> CHAMPION_STANDARD_BUILD_FIELDS = List.of(
+            "filter", "games", "wins", "winrate", "coreBuilds", "coreItems", "starters", "boots",
+            "supportItems", "roleBoundItems", "slots", "runes", "summonerSpells", "skillOrders",
+            "prismatics", "augments");
     private static final List<String> CHAMPION_BUILD_PARTICIPANT_PROJECTION_FIELDS = List.of(
-            "participants.puuid", "participants.champion", "participants.lane", "participants.win",
+            "participants.id", "participants.puuid", "participants.champion", "participants.lane", "participants.win",
+            "participants.boots", "participants.subTeamPlacement",
             "participants.roleQuestId",
             "participants.item0", "participants.item1", "participants.item2", "participants.item3",
             "participants.item4", "participants.item5", "participants.item6", "participants.skillOrder",
@@ -569,28 +579,27 @@ public final class MongoDB {
     public static void forEachChampionBuildRawBatch(Filter filter, int batchSize,
                                                      Consumer<List<QueryRecord>> consumer) {
         if (filter == null || consumer == null || batchSize <= 0) return;
-        FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
-                .projection(championBuildOnlyProjection()).batchSize(batchSize);
-        List<Document> matchBatch = new ArrayList<>(CHAMPION_BUILD_EVENT_BATCH_SIZE);
         List<QueryRecord> batch = new ArrayList<>(batchSize);
         ChampionBuildBatchMetrics metrics = new ChampionBuildBatchMetrics();
         try {
-            try (MongoCursor<Document> cursor = query.iterator()) {
-                while (cursor.hasNext()) {
-                    matchBatch.add(cursor.next());
-                    metrics.matchDocuments++;
-                    if (matchBatch.size() >= CHAMPION_BUILD_EVENT_BATCH_SIZE)
-                        flushChampionBuildMatches(matchBatch, filter, batch, batchSize, consumer, metrics);
+            forEachChampionRawMatchEventBatch(filter, CHAMPION_BUILD_EVENT_BATCH_SIZE, true, raw -> {
+                Document match = raw.document();
+                metrics.matchDocuments++;
+                if (match.get("events") != null) metrics.eventDocuments++;
+                if (MatchupTimelineUtils.hasTimeline(match.get("events"))) metrics.usableTimelines++;
+                List<QueryRecord> records = championBuildRecords(match, filter);
+                metrics.matchingParticipants += records.size();
+                for (QueryRecord record : records) {
+                    batch.add(record);
+                    metrics.emittedRecords++;
+                    if (batch.size() >= batchSize) {
+                        consumer.accept(batch);
+                        batch.clear();
+                    }
                 }
-            }
-            if (!matchBatch.isEmpty())
-                flushChampionBuildMatches(matchBatch, filter, batch, batchSize, consumer, metrics);
-            if (!batch.isEmpty()) {
-                consumer.accept(batch);
-                batch.clear();
-            }
+            });
+            if (!batch.isEmpty()) consumer.accept(batch);
         } finally {
-            MatchMemoryUtils.release(matchBatch);
             MatchMemoryUtils.release(batch);
             BotLogger.info("[ChampionBuildSource] filter=" + filter.toKey()
                 + " matchDocuments=" + metrics.matchDocuments
@@ -599,6 +608,32 @@ public final class MongoDB {
                 + " matchingParticipants=" + metrics.matchingParticipants
                 + " emittedRecords=" + metrics.emittedRecords);
         }
+    }
+
+    public static void forEachChampionArenaMatchBatch(Filter filter, int batchSize,
+                                                       Consumer<List<Match>> consumer) {
+        if (consumer == null || batchSize <= 0 || batchSize > CHAMPION_BUILD_EVENT_BATCH_SIZE)
+            throw new IllegalArgumentException("Arena consumer and batch size 1..100 required");
+        requireArenaBuildFilter(filter);
+        List<Match> batch = new ArrayList<>(batchSize);
+        try {
+            forEachChampionRawMatchEventBatch(filter, batchSize, true, raw -> {
+                batch.add(championRawMatch(raw.document()));
+                if (batch.size() == batchSize) {
+                    consumer.accept(batch);
+                    MatchMemoryUtils.release(batch);
+                }
+            });
+            if (!batch.isEmpty()) consumer.accept(batch);
+        } finally {
+            MatchMemoryUtils.release(batch);
+        }
+    }
+
+    public static Match championRawMatch(Document document) {
+        Match match = readMatch(QueryRecordParser.fromDocument(document));
+        match.eventData = null;
+        return match;
     }
 
     public static List<QueryRecord> championBuildRecords(Document match, Filter filter) {
@@ -620,52 +655,6 @@ public final class MongoDB {
             return result;
         } finally {
             MatchMemoryUtils.release(timeline);
-        }
-    }
-
-    private static void flushChampionBuildMatches(List<Document> matches, Filter filter, List<QueryRecord> records,
-                                                   int batchSize, Consumer<List<QueryRecord>> consumer,
-                                                   ChampionBuildBatchMetrics metrics) {
-        if (matches.isEmpty()) return;
-        List<String> ids = new ArrayList<>(matches.size());
-        for (Document match : matches) ids.add(match.getString("_id"));
-        Map<String, JSONObject> timelines = new HashMap<>();
-        try {
-            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", ids))
-                    .batchSize(ids.size()).iterator()) {
-                while (cursor.hasNext()) {
-                    Document event = cursor.next();
-                    try {
-                        metrics.eventDocuments++;
-                        timelines.put(event.getString("_id"), new JSONObject(decodeMatchEventsJson(event)));
-                    } finally {
-                        MatchMemoryUtils.release(event);
-                    }
-                }
-            }
-            for (Document match : matches) {
-                try {
-                    JSONObject timeline = timelines.get(match.getString("_id"));
-                    if (!MatchupTimelineUtils.hasTimeline(timeline)) continue;
-                    metrics.usableTimelines++;
-                    for (Document participant : documents(match.get("participants"))) {
-                        if (!matchesChampionFilter(participant, filter)) continue;
-                        metrics.matchingParticipants++;
-                        records.add(championBuildRecord(match, participant, timeline));
-                        metrics.emittedRecords++;
-                        if (records.size() >= batchSize) {
-                            consumer.accept(records);
-                            records.clear();
-                        }
-                    }
-                } finally {
-                    MatchMemoryUtils.release(match);
-                }
-            }
-            matches.clear();
-        } finally {
-            MatchMemoryUtils.release(timelines);
-            MatchMemoryUtils.release(ids);
         }
     }
 
@@ -1567,6 +1556,14 @@ public final class MongoDB {
         return result;
     }
 
+    public static ArenaBuildData findChampionArena(Filter filter) {
+        requireArenaBuildFilter(filter);
+        Document document = builds().find(Filters.eq("_id", filter.toKey()))
+            .projection(Projections.include("build.arena")).first();
+        if (document == null || !(document.get("build") instanceof Map<?, ?> build)) return null;
+        return JsonCodec.fromDocument(build.get("arena"), ArenaBuildData.class);
+    }
+
         public static List<Filter> findStoredChampionBuildFilters() {
         return readFilters(builds(), false);
     }
@@ -1579,6 +1576,12 @@ public final class MongoDB {
 
     public static long findChampionBuildLastUpdate(Filter filter) {
         if (filter == null) return 0;
+        if (filter.queue() == GameQueueType.CHERRY) {
+            Document arena = builds().find(Filters.and(Filters.eq("_id", filter.toKey()),
+                Filters.exists("build.arena")))
+                .projection(Projections.include("arenaLastUpdate")).first();
+            return arena == null ? 0 : number(arena, "arenaLastUpdate");
+        }
         Document document = builds().find(Filters.eq("filterKey", filter.toKey()))
             .projection(Projections.include("lastUpdate", "buildVersion")).first();
         return document == null || number(document, "buildVersion") != CHAMPION_BUILD_GENERATION_VERSION
@@ -1606,41 +1609,147 @@ public final class MongoDB {
 
     public record ChampionRawMatch(Document document, long matchReadNanos, long eventReadNanos) {}
 
+    private record ChampionRawMatchEventBatchResult(int requestedMatches, int matchDocuments,
+            int matchEventDocuments, int matchesWithEvents, int deliveredMatches) {}
+
+    private static final class ChampionRawMatchEventQueryRounds {
+        private int matchDocuments;
+        private int matchEvents;
+    }
+
     public static void forEachChampionRawMatchEventBatch(Filter filter, int batchSize, boolean withBuild,
                                                            Consumer<ChampionRawMatch> consumer) {
         if (filter == null || batchSize <= 0 || consumer == null) return;
         List<String> batch = new ArrayList<>(batchSize);
-        FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
-                .projection(Projections.include("_id")).batchSize(batchSize);
+        long countedMatches = -1;
+        long plannedBatches = -1;
+        long selectedMatchIds = 0;
+        long requestedMatchesProcessed = 0;
+        long matchDocuments = 0;
+        long matchEventDocuments = 0;
+        long matchesWithEvents = 0;
+        long deliveredMatches = 0;
+        int batchesStarted = 0;
+        int batchesCompleted = 0;
+        ChampionRawMatchEventQueryRounds queryRounds = new ChampionRawMatchEventQueryRounds();
+        boolean countStarted = false;
+        boolean idScanStarted = false;
+        boolean completed = false;
+        String failure = null;
+        long runStartedNanos = System.nanoTime();
+        long countQueryNanos = 0;
+        long idScanNanos = 0;
         try {
+            BotLogger.info("[ChampionStatsMatrixSource] phase=count-matching-matches batchSize=" + batchSize
+                + " withBuild=" + withBuild + " scope=" + championMatrixScope(filter));
+            countStarted = true;
+            long countQueryStartedNanos = System.nanoTime();
+            countedMatches = countChampionMatches(filter);
+            countQueryNanos = System.nanoTime() - countQueryStartedNanos;
+            plannedBatches = countedMatches / batchSize + (countedMatches % batchSize == 0 ? 0 : 1);
+            BotLogger.info("[ChampionStatsMatrixSource] phase=scan-match-ids countedMatches=" + countedMatches
+                + " batchSize=" + batchSize + " plannedBatches=" + plannedBatches
+                + " countMs=" + countQueryNanos / 1_000_000 + " withBuild=" + withBuild
+                + " scope=" + championMatrixScope(filter));
+
+            FindIterable<Document> query = matches().find(championMatchFilter(filter, null))
+                .projection(Projections.include("_id")).batchSize(batchSize);
+            idScanStarted = true;
+            long idScanStartedNanos = System.nanoTime();
             try (MongoCursor<Document> cursor = query.iterator()) {
                 while (cursor.hasNext()) {
                     Document document = cursor.next();
                     try {
                         String matchId = document.getString("_id");
-                        if (matchId != null) batch.add(matchId);
-                        if (batch.size() == batchSize) processChampionRawMatchEventBatch(batch, batchSize, withBuild, consumer);
+                        if (matchId != null) {
+                            batch.add(matchId);
+                            selectedMatchIds++;
+                        }
+                        if (batch.size() == batchSize) {
+                            int batchNumber = ++batchesStarted;
+                            ChampionRawMatchEventBatchResult result = processChampionRawMatchEventBatch(
+                                filter, batch, batchSize, withBuild, consumer, batchNumber, plannedBatches, queryRounds);
+                            requestedMatchesProcessed += result.requestedMatches();
+                            matchDocuments += result.matchDocuments();
+                            matchEventDocuments += result.matchEventDocuments();
+                            matchesWithEvents += result.matchesWithEvents();
+                            deliveredMatches += result.deliveredMatches();
+                            batchesCompleted++;
+                        }
                     } finally {
                         MatchMemoryUtils.release(document);
                     }
                 }
-                if (!batch.isEmpty()) processChampionRawMatchEventBatch(batch, batchSize, withBuild, consumer);
+                if (!batch.isEmpty()) {
+                    int batchNumber = ++batchesStarted;
+                    ChampionRawMatchEventBatchResult result = processChampionRawMatchEventBatch(
+                        filter, batch, batchSize, withBuild, consumer, batchNumber, plannedBatches, queryRounds);
+                    requestedMatchesProcessed += result.requestedMatches();
+                    matchDocuments += result.matchDocuments();
+                    matchEventDocuments += result.matchEventDocuments();
+                    matchesWithEvents += result.matchesWithEvents();
+                    deliveredMatches += result.deliveredMatches();
+                    batchesCompleted++;
+                }
             }
+            idScanNanos = System.nanoTime() - idScanStartedNanos;
+            BotLogger.info("[ChampionStatsMatrixSource] phase=scan-match-ids-completed selectedMatchIds="
+                + selectedMatchIds + " plannedBatches=" + plannedBatches + " batchesStarted=" + batchesStarted
+                + " idScanMs=" + idScanNanos / 1_000_000 + " scope=" + championMatrixScope(filter));
+            completed = true;
+        } catch (RuntimeException | Error exception) {
+            failure = exception.getClass().getSimpleName();
+            throw exception;
         } finally {
             MatchMemoryUtils.release(batch);
+            BotLogger.info("[ChampionStatsMatrixSource] status=" + (completed ? "completed" : "failed")
+                + " countQueries=" + (countStarted ? 1 : 0)
+                + " matchIdScanQueries=" + (idScanStarted ? 1 : 0)
+                + " countedMatches=" + countedMatches
+                + " selectedMatchIds=" + selectedMatchIds
+                + " requestedMatchesProcessed=" + requestedMatchesProcessed
+                + " batchSize=" + batchSize
+                + " plannedBatches=" + plannedBatches
+                + " batchesStarted=" + batchesStarted
+                + " batchesCompleted=" + batchesCompleted
+                + " matchDocumentQueryRounds=" + queryRounds.matchDocuments
+                + " matchEventsQueryRounds=" + queryRounds.matchEvents
+                + " matchDocuments=" + matchDocuments
+                + " matchEventDocuments=" + matchEventDocuments
+                + " matchesWithEvents=" + matchesWithEvents
+                + " deliveredMatches=" + deliveredMatches
+                + " missingMatchDocuments=" + Math.max(0, selectedMatchIds - matchDocuments)
+                + " matchesMissingEvents=" + Math.max(0, matchDocuments - matchesWithEvents)
+                + " unmatchedMatchEventDocuments=" + Math.max(0, matchEventDocuments - matchesWithEvents)
+                + " withBuild=" + withBuild
+                + " countMs=" + countQueryNanos / 1_000_000
+                + " idScanMs=" + idScanNanos / 1_000_000
+                + " elapsedMs=" + (System.nanoTime() - runStartedNanos) / 1_000_000
+                + " failure=" + failure
+                + " scope=" + championMatrixScope(filter));
         }
     }
 
-    private static void processChampionRawMatchEventBatch(List<String> batch, int batchSize, boolean withBuild,
-                                                            Consumer<ChampionRawMatch> consumer) {
-        if (batch.isEmpty()) return;
+    private static ChampionRawMatchEventBatchResult processChampionRawMatchEventBatch(Filter filter,
+            List<String> batch, int batchSize, boolean withBuild, Consumer<ChampionRawMatch> consumer,
+            int batchNumber, long plannedBatches, ChampionRawMatchEventQueryRounds queryRounds) {
+        if (batch.isEmpty()) return new ChampionRawMatchEventBatchResult(0, 0, 0, 0, 0);
         int requestedMatches = batch.size();
         int matchDocuments = 0;
-        int eventDocuments = 0;
-        int joinedEvents = 0;
+        int matchEventDocuments = 0;
+        int matchesWithEvents = 0;
         int deliveredMatches = 0;
+        long matchQueryNanos = 0;
+        long matchEventsQueryNanos = 0;
+        long batchStartedNanos = System.nanoTime();
+        boolean completed = false;
         Map<String, Document> matchesById = new HashMap<>();
         try {
+            BotLogger.info("[ChampionStatsMatrixSource] phase=match-documents-query batch=" + batchNumber + "/"
+                + plannedBatches + " requestedMatches=" + requestedMatches + " withBuild=" + withBuild
+                + " scope=" + championMatrixScope(filter));
+            queryRounds.matchDocuments++;
+            long queryStartedNanos = System.nanoTime();
             try (MongoCursor<Document> cursor = matches().find(Filters.in("_id", batch))
                     .projection(withBuild ? championRawWithBuildProjection() : championRawProjection())
                     .batchSize(batchSize).iterator()) {
@@ -1653,16 +1762,25 @@ public final class MongoDB {
                     }
                     else MatchMemoryUtils.release(match);
                 }
+            } finally {
+                matchQueryNanos = System.nanoTime() - queryStartedNanos;
             }
-            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", batch)).batchSize(batchSize).iterator()) {
+
+            BotLogger.info("[ChampionStatsMatrixSource] phase=match-events-query batch=" + batchNumber + "/"
+                + plannedBatches + " requestedMatches=" + requestedMatches + " matchDocuments=" + matchDocuments
+                + " withBuild=" + withBuild + " scope=" + championMatrixScope(filter));
+            queryRounds.matchEvents++;
+            queryStartedNanos = System.nanoTime();
+            try (MongoCursor<Document> cursor = matchEvents().find(Filters.in("_id", batch))
+                    .batchSize(batchSize).iterator()) {
                 while (cursor.hasNext()) {
                     long eventStarted = System.nanoTime();
                     Document event = cursor.next();
-                    eventDocuments++;
+                    matchEventDocuments++;
                     Document match = matchesById.get(event.getString("_id"));
                     try {
                         if (match == null) continue;
-                        joinedEvents++;
+                        matchesWithEvents++;
                         match.put("events", decodeMatchEventsJson(event));
                         consumer.accept(new ChampionRawMatch(match, 0, System.nanoTime() - eventStarted));
                         deliveredMatches++;
@@ -1672,17 +1790,46 @@ public final class MongoDB {
                         if (match != null) MatchMemoryUtils.release(match);
                     }
                 }
+            } finally {
+                matchEventsQueryNanos = System.nanoTime() - queryStartedNanos;
+            }
+            for (Document match : matchesById.values()) {
+                try {
+                    consumer.accept(new ChampionRawMatch(match, 0, 0));
+                    deliveredMatches++;
+                } finally {
+                    MatchMemoryUtils.release(match);
+                }
             }
             matchesById.clear();
+            completed = true;
+            return new ChampionRawMatchEventBatchResult(requestedMatches, matchDocuments, matchEventDocuments,
+                matchesWithEvents, deliveredMatches);
         } finally {
             MatchMemoryUtils.release(matchesById);
             MatchMemoryUtils.release(batch);
-            if (withBuild) BotLogger.info("[ChampionBuildMatrixSource] requestedMatches=" + requestedMatches
+            BotLogger.info("[ChampionStatsMatrixSource] batch=" + batchNumber + "/" + plannedBatches
+                + " status=" + (completed ? "completed" : "failed")
+                + " requestedMatches=" + requestedMatches
                 + " matchDocuments=" + matchDocuments
-                + " eventDocuments=" + eventDocuments
-                + " joinedEvents=" + joinedEvents
-                + " deliveredMatches=" + deliveredMatches);
+                + " matchEventDocuments=" + matchEventDocuments
+                + " matchesWithEvents=" + matchesWithEvents
+                + " deliveredMatches=" + deliveredMatches
+                + " missingMatchDocuments=" + Math.max(0, requestedMatches - matchDocuments)
+                + " matchesMissingEvents=" + Math.max(0, matchDocuments - matchesWithEvents)
+                + " unmatchedMatchEventDocuments=" + Math.max(0, matchEventDocuments - matchesWithEvents)
+                + " matchQueryMs=" + matchQueryNanos / 1_000_000
+                + " matchEventsPhaseMs=" + matchEventsQueryNanos / 1_000_000
+                + " elapsedMs=" + (System.nanoTime() - batchStartedNanos) / 1_000_000
+                + " withBuild=" + withBuild
+                + " scope=" + championMatrixScope(filter));
         }
+    }
+
+    private static String championMatrixScope(Filter filter) {
+        return "{patch=" + filter.patch() + ", queue=" + filter.queue() + ", rank=" + filter.rank()
+            + ", region=" + filter.region() + ", champion=" + filter.champion() + ", lane=" + filter.lane()
+            + ", rankBehavior=" + filter.rankBehavior() + "}";
     }
 
     public static List<Document> findChampionRawDocuments(List<String> fullGameIds) {
@@ -2949,20 +3096,37 @@ public final class MongoDB {
 
     public static boolean upsertChampionBuild(Build build) {
         if (build == null || build.filter() == null) return false;
-        Document document = buildDocument(build);
-        replace(builds(), document);
+        Document update = standardBuildUpdate(build);
+        UpdateResult result = builds().updateOne(Filters.eq("_id", build.filter().toKey()), update,
+            new UpdateOptions().upsert(true));
+        if (!result.wasAcknowledged()) throw new IllegalStateException("Champion build update was not acknowledged");
         return true;
     }
 
-        public static boolean upsertChampionBuilds(List<Build> builds) {
+    public static boolean upsertChampionBuilds(List<Build> builds) {
         if (builds == null || builds.isEmpty()) return false;
         List<WriteModel<Document>> operations = new ArrayList<>(builds.size());
         for (Build build : builds) if (build != null && build.filter() != null) {
-            Document document = buildDocument(build);
-            operations.add(new ReplaceOneModel<>(Filters.eq("_id", document.get("_id")), document,
-                    new ReplaceOptions().upsert(true)));
+            Document update = standardBuildUpdate(build);
+            operations.add(new UpdateOneModel<>(Filters.eq("_id", build.filter().toKey()), update,
+                    new UpdateOptions().upsert(true)));
         }
         if (!operations.isEmpty()) bulkWrite(builds(), operations);
+        return true;
+    }
+
+    public static boolean upsertChampionArena(Filter filter, ArenaBuildData arena) {
+        if (arena == null) return false;
+        requireArenaBuildFilter(filter);
+        Document payload = JsonCodec.toDocument(arena);
+        requireChampionBuildSize(payload);
+        Document update = new Document("$set", new Document("build.arena", payload)
+            .append("arenaLastUpdate", System.currentTimeMillis()))
+            .append("$setOnInsert", new Document("filterKey", filter.toKey()));
+        requireChampionBuildSize(update);
+        UpdateResult result = builds().updateOne(Filters.eq("_id", filter.toKey()), update,
+            new UpdateOptions().upsert(true));
+        if (!result.wasAcknowledged()) throw new IllegalStateException("Arena build update was not acknowledged");
         return true;
     }
 
@@ -3143,7 +3307,7 @@ public final class MongoDB {
         participant.q = record.getAsInt("q"); participant.w = record.getAsInt("w"); participant.e = record.getAsInt("e"); participant.r = record.getAsInt("r");
         participant.d = record.getAsInt("d"); participant.f = record.getAsInt("f"); participant.summonerSpell1 = record.getAsInt("summonerSpell1"); participant.summonerSpell2 = record.getAsInt("summonerSpell2");
         participant.primaryRunes = readIntegerList(record, "primaryRunes"); participant.secondaryRunes = readIntegerList(record, "secondaryRunes");
-        participant.statsRunes = readIntegerList(record, "statsRunes"); participant.skillOrder = readIntegerList(record, "skillOrder"); participant.augments = readIntegerList(record, "augments");
+        participant.statsRunes = readIntegerList(record, "statsRunes"); participant.skillOrder = readIntegerList(record, "skillOrder"); participant.augments = readAugments(record);
         participant.starterItems = readIntegerList(record, "starterItems"); participant.buildPath = readIntegerList(record, "buildPath"); participant.boots = record.getAsInt("boots"); participant.supportItem = record.getAsInt("supportItem");
         return participant;
     }
@@ -3282,6 +3446,12 @@ public final class MongoDB {
             if (value == null) throw new IllegalArgumentException("Mongo field " + field + " contains a null integer");
             result.add(value);
         }
+        return result;
+    }
+
+    private static List<Integer> readAugments(QueryRecord record) {
+        List<Integer> result = new ArrayList<>();
+        for (Integer value : record.getAsList("augments", Integer.class)) result.add(value == null ? 0 : value);
         return result;
     }
 
@@ -3442,6 +3612,16 @@ public final class MongoDB {
         if (data.isEmpty()) return new LinkedHashMap<>();
         try {
             return new JSONObject(data).toMap();
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException("Invalid compressed match event JSON id=" + document.get("_id"), exception);
+        }
+    }
+
+    private static JSONObject decodeMatchEventsObject(Document document) {
+        String data = decodeMatchEventsJson(document);
+        if (data.isEmpty()) return new JSONObject();
+        try {
+            return new JSONObject(data);
         } catch (RuntimeException exception) {
             throw new IllegalStateException("Invalid compressed match event JSON id=" + document.get("_id"), exception);
         }
@@ -3737,7 +3917,11 @@ public final class MongoDB {
             }
             if (!participantFilters.isEmpty()) filters.add(Filters.elemMatch("participants", Filters.and(participantFilters)));
             if (filter.queue() != null) filters.add(Filters.eq("queue", filter.queue().name()));
-            if (filter.patch() != null) filters.add(patchMajorFilter(filter.patch()));
+            if (filter.patch() != null) {
+                filters.add(patchMajorFilter(filter.patch()));
+                if (filter.queue() == GameQueueType.CHERRY && !filter.patch().equals(patchMajor(filter.patch())))
+                    filters.add(Filters.eq("patch", filter.patch()));
+            }
             if (filter.region() != null) filters.add(Filters.eq("region", filter.region().name()));
             if (filter.rank() != null) filters.add(rankFilter(filter));
         }
@@ -3747,6 +3931,8 @@ public final class MongoDB {
 
     private static Document championRawProjection() {
         return new Document("_id", 1)
+                .append("queue", 1)
+                .append("patch", 1)
                 .append("region", 1)
                 .append("rank", 1)
                 .append("bans", 1)
@@ -3756,6 +3942,8 @@ public final class MongoDB {
                 .append("participants.lane", 1)
                 .append("participants.win", 1)
                 .append("participants.team", 1)
+                .append("participants.subTeam", 1)
+                .append("participants.subTeamPlacement", 1)
                 .append("participants.kda", 1)
                 .append("participants.cs", 1)
                 .append("participants.goldEarned", 1)
@@ -3764,12 +3952,6 @@ public final class MongoDB {
 
     private static Document championRawWithBuildProjection() {
         Document projection = championRawProjection();
-        addChampionBuildProjectionFields(projection);
-        return projection;
-    }
-
-    private static Document championBuildOnlyProjection() {
-        Document projection = new Document("_id", 1);
         addChampionBuildProjectionFields(projection);
         return projection;
     }
@@ -4063,7 +4245,13 @@ public final class MongoDB {
     }
 
     private static Build readBuild(Document document) {
-        return readStructured(document.get("build"), Build.class);
+        if (!(document.get("build") instanceof Map<?, ?> value)) return null;
+        Map<String, Object> standard = new LinkedHashMap<>();
+        for (var entry : value.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) return null;
+            if (!"arena".equals(key)) standard.put(key, entry.getValue());
+        }
+        return readStructured(standard, Build.class);
     }
 
     private static <T> T readStructured(Object value, Class<T> type) {
@@ -4093,15 +4281,35 @@ public final class MongoDB {
         return Updates.combine(updates);
     }
 
-    private static Document buildDocument(Build build) {
-        String id = build.filter().toKey();
-        return new Document("_id", id)
-                .append("filterKey", id)
-                .append("games", build.games())
+    private static Document standardBuildUpdate(Build build) {
+        if (build.arena() != null) throw new IllegalArgumentException("Arena requires its dedicated build.arena write path");
+        Document payload = JsonCodec.toDocument(build);
+        Document fields = new Document("games", build.games())
                 .append("winrate", build.winrate())
                 .append("buildVersion", CHAMPION_BUILD_GENERATION_VERSION)
-                .append("lastUpdate", System.currentTimeMillis())
-                .append("build", JsonCodec.toDocument(build));
+                .append("lastUpdate", System.currentTimeMillis());
+        for (String field : CHAMPION_STANDARD_BUILD_FIELDS) fields.put("build." + field, payload.get(field));
+        Document update = new Document("$set", fields)
+            .append("$setOnInsert", new Document("filterKey", build.filter().toKey()));
+        requireChampionBuildSize(update);
+        return update;
+    }
+
+    private static void requireArenaBuildFilter(Filter filter) {
+        if (filter == null || filter.champion() <= 0 || filter.queue() != GameQueueType.CHERRY
+                || filter.patch() == null || !filter.patch().matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)*")
+                || filter.lane() != null
+                || filter.opponent() != 0 || filter.duo() != 0 || filter.timeStart() != 0 || filter.timeEnd() != 0)
+            throw new IllegalArgumentException("Arena requires champion/patch/CHERRY without role, opponent, duo or period");
+    }
+
+    private static void requireChampionBuildSize(Document document) {
+        try (BasicOutputBuffer output = new BasicOutputBuffer(); BsonBinaryWriter writer = new BsonBinaryWriter(output)) {
+            MongoClientSettings.getDefaultCodecRegistry().get(Document.class).encode(writer, document,
+                EncoderContext.builder().build());
+            if (output.getSize() > CHAMPION_BUILD_MAX_BSON_BYTES)
+                throw new IllegalArgumentException("Champion build BSON exceeds safe update size: " + output.getSize());
+        }
     }
 
     private static Bson entityUpdateStage(Map<String, Object> operation) {

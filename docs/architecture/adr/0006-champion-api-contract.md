@@ -26,7 +26,7 @@ The scheduler is started explicitly and idempotently by the application. It owns
 
 Champion statistics, builds and profile statistics use the shared Jackson JSON codec. MariaDB stores UTF-8 JSON text and Mongo stores structured BSON. Champion stats have one raw aggregate document per scope; legacy champion-stat readers, markers and compatibility fallbacks are not supported. Invalid payloads are treated as missing so the refresh flow can recreate them.
 
-Build aggregation requires at least two eligible completed core items; boots are optional, and a match without boots contributes no boots option.
+Standard build aggregation requires at least two eligible completed core items; boots are optional. The approved CHERRY exception uses ArenaChampionAnalyzer: only boots + first Prismatic define a core; coreBuilds contains canonical final builds, six augment position rankings and Prismatics. Global Prismatics/augments/outcomes survive missing cores. HTTP exposes Arena directly as build with no standard legacy fields or build.arena wrapper. Stats omit laneStats/matchups/laneSynergies and expose exact same-subTeam synergies, sizes 2/3, `subteamsById` counts for Arena IDs 1–8, and `overview.averagePlacement`/`overview.placements`. Placement aggregation is independent from synergy aggregation. Mongo retains build.arena and arenaLastUpdate; readers require the stats ready marker but do not require all eight ID counters or placement buckets. Present stale data remains available while a refresh is queued in the background. No schema or aggregation version is written or checked. Other queues retain this ADR's standard contract. Both paths share the raw join and requested-patch catalog. See docs/arena-build/champion-schema.json.
 
 ## Ownership
 
@@ -45,11 +45,11 @@ Build aggregation requires at least two eligible completed core items; boots are
 - No second public DTO is created for build or champion statistics.
 - Role is rejected when the selected queue does not support lanes.
 - The page cache is written only when both aggregates are ready and always stores the raw page without response ranking fields.
-- Missing global statistics are deduplicated by `champion-stats-matrix:<patch>:<queue>`, while missing builds are deduplicated by `champion-build:<Filter.toKey()>`; both jobs are submitted immediately to the database queue.
+- Missing global statistics are deduplicated by `champion-stats-matrix:<patch>:<queue>`, while standard missing builds are deduplicated by `champion-build:<Filter.toKey()>` and CHERRY by `champion-arena:<Filter.toKey()>`; both jobs are submitted immediately to the database queue.
 - A matrix starts only from the requested patch and queue, enumerates global and active-region filters plus cumulative rank thresholds, and persists one `ready=true` raw scope document even when `champions={}`.
 - API page reads do not call the synchronous command fallback methods.
 - Automatic `mostCommonBuild`, `highestWinrate`, `getMostUsed` and `getHighWinrate` selections are not part of the service contract.
-- Every bounded build category contains at most three options; empty source data remains an empty list.
+- Arena option lists retain every observed option; they do not apply a backend sample threshold. Empty source data remains empty.
 - Augments are persisted and exposed by slot, preserving augment order.
 - Champion stats and page cache keys include rank behavior, period and requested lane; persistence is scope-only and stores lane leaves beneath the champion. Recomputing one scope invalidates statistics and page caches for every champion and valid lane in that scope.
 - Missing advanced metrics are represented as `null`, never as fabricated zeroes.

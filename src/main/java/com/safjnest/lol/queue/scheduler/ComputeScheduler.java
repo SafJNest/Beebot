@@ -2,12 +2,14 @@ package com.safjnest.lol.queue.scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.arena.ArenaItemCatalog;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.job.Job;
@@ -38,6 +40,22 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     public static AbstractScheduler<DatabaseWorkerType> scheduler() {
         return INSTANCE;
+    }
+
+    public static CompletableFuture<Boolean> startChampionArena(Filter filter, ArenaItemCatalog catalog) {
+        return startChampionArena(filter, catalog, CHAMPION_SERVICE);
+    }
+
+    static CompletableFuture<Boolean> startChampionArena(Filter filter, ArenaItemCatalog catalog,
+            ChampionService service) {
+        Filter snapshot = ChampionService.arenaFilterSnapshot(filter);
+        Objects.requireNonNull(catalog, "Detached catalog for the requested patch required");
+        Objects.requireNonNull(service);
+        String key = "champion-arena:" + snapshot.toKey();
+        String name = "champion arena champion=" + snapshot.champion()
+            + " patch=" + snapshot.patch() + " shard=" + (snapshot.region() == null ? "ALL" : snapshot.region().name());
+        return submit(DatabaseWorkerType.CHAMPION, JobPriority.BACKGROUND, key, name,
+            job -> service.refreshArena(snapshot, catalog, job));
     }
 
     public static CompletableFuture<Boolean> startProfileStatistics(Summoner summoner, Filter filter) {
@@ -294,11 +312,34 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
             CompletableFuture<ChampionService.MatrixRefreshResult> future = submit(
                 DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name, ignored -> {
                     List<Filter> buildFilters = request.startAndGetBuildFilters();
+                    long startedNanos = System.nanoTime();
                     try {
                         BotLogger.info("[ChampionStatsMatrix] started patch=" + patch
                             + " queue=" + queue.name()
-                            + " buildFilters=" + buildFilters.size());
-                        return CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, buildFilters);
+                            + " requestKey=" + key
+                            + " requestedBuildFilters=" + buildFilters.size()
+                            + " buildScopes=" + championBuildFilterScopes(buildFilters));
+                        ChampionService.MatrixRefreshResult result =
+                            CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, buildFilters);
+                        BotLogger.info("[ChampionStatsMatrix] completed patch=" + patch
+                            + " queue=" + queue.name()
+                            + " requestKey=" + key
+                            + " totalScopes=" + result.combinations()
+                            + " skippedScopes=" + result.skipped()
+                            + " generatedScopes=" + result.generated()
+                            + " emptyScopes=" + result.empty()
+                            + " persistedChampions=" + result.persistedChampions()
+                            + " buildFilters=" + buildFilters.size()
+                            + " elapsedMs=" + (System.nanoTime() - startedNanos) / 1_000_000);
+                        return result;
+                    } catch (RuntimeException | Error exception) {
+                        BotLogger.warning("[ChampionStatsMatrix] failed patch=" + patch
+                            + " queue=" + queue.name()
+                            + " requestKey=" + key
+                            + " failure=" + exception.getClass().getSimpleName()
+                            + " message=" + exception.getMessage()
+                            + " elapsedMs=" + (System.nanoTime() - startedNanos) / 1_000_000);
+                        throw exception;
                     } finally {
                         CHAMPION_MATRICES.remove(key, request);
                     }
@@ -310,6 +351,23 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     public static String championStatsMatrixKey(String patch, GameQueueType queue) {
         return "champion-stats-matrix:" + patch + ":" + queue.name();
+    }
+
+    private static String championBuildFilterScopes(List<Filter> filters) {
+        StringBuilder scopes = new StringBuilder("[");
+        for (int index = 0; index < filters.size(); index++) {
+            Filter filter = filters.get(index);
+            if (index > 0) scopes.append(", ");
+            scopes.append("{champion=").append(filter.champion())
+                .append(", lane=").append(filter.lane())
+                .append(", queue=").append(filter.queue())
+                .append(", rank=").append(filter.rank())
+                .append(", rankBehavior=").append(filter.rankBehavior())
+                .append(", patch=").append(filter.patch())
+                .append(", region=").append(filter.region())
+                .append('}');
+        }
+        return scopes.append(']').toString();
     }
 
     public static String profileRefreshKey(String puuid) {
@@ -334,11 +392,12 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     static boolean isHeavyChampionTaskKey(String key) {
         return key != null && (key.startsWith("champion-stats-matrix:")
             || key.startsWith("champion-build:")
+            || key.startsWith("champion-arena:")
             || key.startsWith("champion-data-refresh:"));
     }
 
     private static CompletableFuture<Boolean> startChampionBuild(Filter filter) {
-        String key = "champion-build:" + filter.toKey();
+        String key = (filter.queue() == GameQueueType.CHERRY ? "champion-arena:" : "champion-build:") + filter.toKey();
         String name = "champion build champion=" + filter.champion()
             + " patch=" + filter.patch()
             + " queue=" + filter.queue()
@@ -346,9 +405,9 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
             + " region=" + filter.region()
             + " lane=" + filter.lane();
         return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name,
-            ignored -> {
+            job -> {
                 BotLogger.info("[ChampionBuild] started filter=" + filter.toKey());
-                return refreshChampionBuild(filter);
+                return refreshChampionBuild(filter, job);
             });
     }
 
@@ -444,9 +503,9 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
         }
     }
 
-    private static boolean refreshChampionBuild(Filter filter) {
+    private static boolean refreshChampionBuild(Filter filter, Job<?> job) {
         try {
-            boolean refreshed = CHAMPION_SERVICE.refreshBuild(filter);
+            boolean refreshed = CHAMPION_SERVICE.refreshBuild(filter, job);
             if (!refreshed) BotLogger.error("Champion build refresh failed for filter=" + filter.toKey());
             return refreshed;
         } catch (Exception exception) {

@@ -12,14 +12,14 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | contextual record ranking | Mongo cursor over `profile_records {filterKey,metric,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | profile matchup rebuild | cursor over bounded match batches plus one `$in` join on `match_events`; process and recursively clear each decoded timeline | 1 batch of 100 | ProfileService |
-| champion stats rebuild | cursor over match IDs plus bounded match and `match_events` reads; process only matches with a usable event timeline and recursively clear each decoded timeline | 1 batch of 1,000 | ChampionAnalyzer |
-| champion build rebuild | cursor over projected matches and one `$in` join on `match_events`; emit build records only for matches with a usable event timeline, in bounded batches, then recursively clear decoded event trees | 1 event batch of 100 matches | ChampionBuildEngine |
+| champion stats matrix rebuild | exact count plus cursor over match IDs, then bounded match and `match_events` reads; logs planned/completed batches; delivers missing-event matches and leaves eligibility to stats/build consumers | 1 batch of 10,000; 1 match query + 1 `match_events` query per batch | ChampionAnalyzer |
+| standalone champion build rebuild | same shared raw ID/match/event join as statistics; standard consumer requires a usable timeline, Arena retains missing events; recursively clear temporary inputs | 1 event batch of 100 matches | ChampionBuildEngine |
 | history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |
 | match results | projection of only the fields needed for `MatchResult` and participants | 1 | profile/tracker |
 | tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC, _id DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
 | timeline repair | cursor stored matches for one PUUID newest-first, fetch timeline directly by Riot match ID, regenerate the complete compact event payload, replace only that match's `match_events` record; stop after 10 consecutive missing timelines | streaming per PUUID | `!test fix-timeline <puuid>` |
 | patch timeline repair | one cursor per region over `match.patchMajor + region`, project only `_id`, fetch timelines in parallel across regions with a 500 ms delay per region, log `current/total`, regenerate compact events and replace only its `match_events` record; continue through missing timelines | streaming per region | `!test fix-timeline-patch <patch>` |
-| match events | `_id: {$in: [...]}` on `match_events` | 1 per batch; 100 profile matchups/builds or 1,000 champion stats | match detail/history and aggregate rebuilds |
+| match events | `_id: {$in: [...]}` on `match_events` | 1 per batch; 100 profile matchups/standalone builds or 10,000 champion matrix matches | match detail/history and aggregate rebuilds |
 | champion | cursor of match IDs, then match/event documents joined in bounded batches; process and recursively clear each timeline; raw batch without full `Match -> Participant` | 2 per batch (+ count/trend) | Champion services |
 | leaderboard aggregates | Mongo snapshot `leaderboard_aggregates` per filter; rebuild every 12 hours and `$match` + `$group` on `summoner.ranks.<QUEUE>` path for new filters | 1 | LeaderboardService |
 | writes | atomic updates, participant pipeline, unordered bulk for builds/statistics/summoners; unique `{puuid, filterKey}` | 1 per update/batch | MongoDB/tracker |
@@ -110,3 +110,42 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `indexSizes`. The leaderboard uses `competitive` for MMR/range/role and then a
 `$in` on the `summoner` primary key; the required indexes are described in
 [`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
+
+## Arena build path
+
+Reuse champion_builds with `_id=filterKey`, one standard+Arena document and
+champion/patch/CHERRY scope with canonical rank/region filters; role is invalid. No discriminator or extra collection.
+
+| Operation | Implemented contract | Owner |
+|---|---|---|
+| Arena source | shared raw query queue+patchMajor+champion/rank/region, exact patch for full-patch CHERRY scopes; union ID/boots/placement/subTeam projection; 100 standalone or 10,000 matrix | MongoDB/ChampionBuildProvider |
+| Arena timeline join | one `match_events` query by `_id: {$in: batch IDs}`; missing event documents do not drop matches | MongoDB |
+| Arena parsing | attributed `item_events`; timestamp orders purchases, final slots provide first-Prismatic fallback; full-build item lists include consumables and exclude Prismatics, including Anvil 220007; timestamps are not persisted | ArenaGameParser |
+| Standard write | atomic `$set` root metadata and individual standard build.* paths, never build/replace | MongoDB |
+| Arena write | `_id=filterKey`, `$set build.arena` + arenaLastUpdate, filterKey on insert; aggregate subtree senza campi di versione | MongoDB |
+| Standard read | existing filterKey/buildVersion lookup, detached projection removes arena | MongoDB |
+| CHERRY read | Arena data presence + freshness timestamp; legacy separate consumables fields remain readable; flat HTTP Arena projection; stats ready marker without per-champion bucket completeness checks; six augments and final builds | ChampionService/MongoDB |
+
+Candidate indexes remain match queue/patchMajor and champion_builds_filter;
+match_events uses unique _id. No new runtime indexes or live explain was executed.
+Indexes/options/coverage must be verified operationally, not inferred from this table.
+BSON local payload/update guards plus Mongo's atomic final-document check protect
+previous data on failure; combined size/heap measurements on representative data
+remain pending. Standard eligibility remains unchanged; the existing champion API now dispatches CHERRY to Arena.
+
+### CHERRY contract update (2026-10-14)
+
+Only CHERRY uses the new [Arena schema](../arena-build/champion-schema.json):
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
+position rankings and global/core Prismatics. Full-build item lists include
+consumables and exclude Prismatic items, including consumable Anvil 220007. No legacy fields or build.arena
+wrapper are exposed. Stats use exact same-subTeam ally combinations, team
+sizes 2/3, `subteamsById` counts for Arena IDs 1–8, and overview placement
+counts/average from `subTeamPlacement`; these additions do not change synergy
+aggregation. Lane relations are omitted. The raw projection includes subTeam and subTeamPlacement.
+Mongo preserves build.arena ownership. Stats readiness uses the ready marker;
+Arena build availability uses data presence. Timestamps can enqueue background
+refreshes, but readers do not require legacy-field absence or all eight subteam
+ID counters and placement buckets. There are no version fields or version-based
+cache guards. Other queues, jobs
+and Discord presentation remain unchanged. No live rebuild/explain is claimed.

@@ -5,10 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.lol.model.statistics.StatisticalLeaf;
 import com.safjnest.utils.JsonCodec;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * The complete build aggregate. The order of every option list is
@@ -30,11 +33,88 @@ public record Build(
     @JsonProperty("summonerSpells") List<Option> summonerSpellOptions,
     List<SkillOrderOption> skillOrders,
     @JsonProperty("prismatics") List<Option> prismaticOptions,
-    @JsonProperty("augments") List<List<Option>> augmentOptions
+    @JsonProperty("augments") List<List<Option>> augmentOptions,
+    @JsonInclude(JsonInclude.Include.NON_NULL) ArenaBuildData arena
 ) {
 
     public Build {
         roleBoundItemOptions = roleBoundItemOptions == null ? List.of() : List.copyOf(roleBoundItemOptions);
+    }
+
+    public Build(Filter filter, int games, int wins, double winrate,
+            List<CoreBuildOption> coreBuilds, List<Option> coreItems, List<Option> starterOptions,
+            List<Option> bootOptions, List<Option> supportItemOptions, List<Option> roleBoundItemOptions,
+            List<List<Option>> itemSlots, List<RuneOption> runeOptions, List<Option> summonerSpellOptions,
+            List<SkillOrderOption> skillOrders, List<Option> prismaticOptions, List<List<Option>> augmentOptions) {
+        this(filter, games, wins, winrate, coreBuilds, coreItems, starterOptions, bootOptions,
+            supportItemOptions, roleBoundItemOptions, itemSlots, runeOptions, summonerSpellOptions,
+            skillOrders, prismaticOptions, augmentOptions, null);
+    }
+
+    public enum Kind { ITEM, BOOTS, PRISMATIC, AUGMENT }
+
+    public static Build fromArena(Filter filter, ArenaBuildData arena) {
+        if (arena == null) return null;
+        long total = arena.games();
+        List<CoreBuildOption> cores = new ArrayList<>();
+        Map<Integer, long[]> boots = new TreeMap<>();
+        Map<Integer, long[]> coreItems = new TreeMap<>();
+        for (ArenaBuildData.Core core : arena.coreBuilds()) {
+            cores.add(new CoreBuildOption(core.id(), core.items(), Math.toIntExact(core.matches()),
+                Math.toIntExact(core.wins()), core.winrate(), core.pickrate()));
+            addArenaCount(boots, core.items().get(0), core.matches(), core.wins());
+            for (int id : core.items()) addArenaCount(coreItems, id, core.matches(), core.wins());
+        }
+        Map<Integer, long[]> prismatics = new TreeMap<>();
+        for (ArenaBuildData.Option item : arena.prismatics())
+            addArenaCount(prismatics, item.id(), item.matches(), item.wins());
+        List<List<Option>> augments = new ArrayList<>();
+        for (List<ArenaBuildData.Option> position : arena.augments()) {
+            Map<Integer, long[]> values = new TreeMap<>();
+            for (ArenaBuildData.Option augment : position)
+                addArenaCount(values, augment.id(), augment.matches(), augment.wins());
+            augments.add(arenaOptions(values, total));
+        }
+        return new Build(filter, Math.toIntExact(total), Math.toIntExact(arena.wins()),
+            arena.winrate(), cores, arenaOptions(coreItems, total), List.of(), arenaOptions(boots, total),
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+            arenaOptions(prismatics, total), augments, arena);
+    }
+
+    private static void addArenaCount(Map<Integer, long[]> values, int id, long games, long wins) {
+        long[] count = values.computeIfAbsent(id, ignored -> new long[2]);
+        count[0] += games;
+        count[1] += wins;
+    }
+
+    private static List<Option> arenaOptions(Map<Integer, long[]> values, long total) {
+        List<Option> result = new ArrayList<>();
+        for (var entry : values.entrySet()) {
+            long[] count = entry.getValue();
+            result.add(new Option(String.valueOf(entry.getKey()), Math.toIntExact(count[0]),
+                Math.toIntExact(count[1]), count[0] == 0 ? 0 : (double) count[1] / count[0],
+                total == 0 ? 0 : (double) count[0] / total));
+        }
+        return List.copyOf(result);
+    }
+
+    public record Timing(long timeSumMillis, long timeCount) {
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        public Double averageTimeMillis() {
+            return timeCount == 0 ? null : (double) timeSumMillis / timeCount;
+        }
+    }
+
+    public record Choice(Kind kind, int id, Integer position, StatisticalLeaf stats, Timing timing,
+                         long denominator, long unpositionedGames) {
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        public double pickrate() {
+            return denominator == 0 ? 0 : (double) stats.games() / denominator;
+        }
+    }
+
+    public record Slot(Kind kind, int position, StatisticalLeaf population, List<Choice> options) {
+        public Slot { options = List.copyOf(options); }
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

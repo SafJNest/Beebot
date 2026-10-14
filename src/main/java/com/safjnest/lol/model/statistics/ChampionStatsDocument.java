@@ -4,9 +4,17 @@ import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public class ChampionStatsDocument {
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public static final List<String> ARENA_SUBTEAM_IDS = List.of("1", "2", "3", "4", "5", "6", "7", "8");
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public static final List<String> ARENA_PLACEMENTS = List.of("1", "2", "3", "4", "5", "6", "7", "8");
 
     public String _id;
 

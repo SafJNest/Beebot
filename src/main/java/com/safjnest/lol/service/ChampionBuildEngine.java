@@ -24,7 +24,7 @@ import java.util.Set;
 final class ChampionBuildEngine {
 
     private static final int SLOT_COUNT = 4;
-    private static final int AUGMENT_SLOT_COUNT = 4;
+    private static final int AUGMENT_SLOT_COUNT = 6;
     private static final int MAX_ABILITY_SLOT = 4;
 
     private ChampionBuildEngine() {}

@@ -7,8 +7,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
+import com.safjnest.lol.arena.ArenaItemCatalog;
+import com.safjnest.lol.champion.ChampionBuildProvider;
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionTierList;
@@ -17,17 +24,20 @@ import com.safjnest.lol.model.ChampionView;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ResponseMetadata;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
 import com.safjnest.lol.model.statistics.shared.MatchupStats;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
@@ -43,7 +53,39 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class ChampionService {
 
+    private final BiConsumer<Filter, Consumer<List<Match>>> arenaSource;
+    private final BiPredicate<Filter, ArenaBuildData> arenaWriter;
+
+    public ChampionService() {
+        this(ChampionBuildProvider::forEachArenaBatch, MongoDB::upsertChampionArena);
+    }
+
+    ChampionService(BiConsumer<Filter, Consumer<List<Match>>> arenaSource,
+            BiPredicate<Filter, ArenaBuildData> arenaWriter) {
+        this.arenaSource = Objects.requireNonNull(arenaSource);
+        this.arenaWriter = Objects.requireNonNull(arenaWriter);
+    }
+
     public record MatrixRefreshResult(int combinations, int skipped, int generated, int empty, int persistedChampions) {}
+
+    public static Filter arenaFilterSnapshot(Filter filter) {
+        if (filter == null || filter.champion() <= 0 || filter.queue() != GameQueueType.CHERRY
+                || filter.patch() == null || !filter.patch().matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)*")
+                || filter.lane() != null || filter.opponent() != 0 || filter.duo() != 0)
+            throw new IllegalArgumentException("Champion/patch/CHERRY without role, opponent or duo required");
+        return Filter.championBuild(filter.champion(), filter.patch(), GameQueueType.CHERRY)
+            .setRank(filter.rank()).setRankBehavior(filter.rankBehavior()).setRegion(filter.region());
+    }
+
+    static ArenaChampionAnalyzer.Accumulator arenaAccumulator(Filter filter) {
+        Filter snapshot = arenaFilterSnapshot(filter);
+        ArenaItemCatalog catalog = ArenaItemCatalog.fromItems(StaticDataService.getItems(snapshot.patch()));
+        return ArenaChampionAnalyzer.accumulator(snapshot.champion(), snapshot.patch(), catalog);
+    }
+
+    public boolean refreshArena(Filter filter, ArenaItemCatalog catalog, Job<?> job) {
+        return refreshArenaInternal(filter, catalog, Objects.requireNonNull(job, "Arena job required"));
+    }
 
     public ApiResult<ChampionView> get(
         String championValue,
@@ -116,11 +158,9 @@ public class ChampionService {
                         return stats;
                     }
                 }
-                if (doc.champions.containsKey(filter.champion())) {
-                    stats = ChampionAnalyzer.empty(filter);
-                    RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
-                    return stats;
-                }
+                stats = ChampionAnalyzer.empty(filter);
+                RedisClient.set(RedisKey.CHAMPION_STATS, stats, filter.champion(), filter.genericKey());
+                return stats;
             }
         } catch (RuntimeException ignored) {}
         if (!allowCompute || filter.patch() == null || filter.queue() == null) return null;
@@ -145,11 +185,19 @@ public class ChampionService {
     }
 
     public Build getBuild(Filter filter) {
-        return ChampionBuildEngine.getAggregate(filter);
+        return getBuild(filter, true);
     }
 
     public Build getBuild(Filter filter, boolean allowCompute) {
-        return ChampionBuildEngine.getAggregate(filter, allowCompute);
+        if (filter == null) return null;
+        if (filter.queue() != GameQueueType.CHERRY) return ChampionBuildEngine.getAggregate(filter, allowCompute);
+        Filter snapshot = arenaFilterSnapshot(filter);
+        ArenaBuildData arena = MongoDB.findChampionArena(snapshot);
+        if (arena == null && allowCompute) {
+            refreshBuild(filter);
+            arena = MongoDB.findChampionArena(snapshot);
+        }
+        return arena == null ? null : Build.fromArena(filter, arena);
     }
 
     public boolean hasBuild(Filter filter) {
@@ -169,7 +217,15 @@ public class ChampionService {
     }
 
     public boolean refreshBuild(Filter filter) {
+        return refreshBuild(filter, null);
+    }
+
+    public boolean refreshBuild(Filter filter, Job<?> job) {
         if (filter == null || filter.champion() == 0) return false;
+        if (filter.queue() == GameQueueType.CHERRY) {
+            ArenaItemCatalog catalog = ArenaItemCatalog.fromItems(StaticDataService.getItems(filter.patch()));
+            return refreshArenaInternal(filter, catalog, job);
+        }
         List<Build> builds = ChampionBuildEngine.recomputeAll(filter);
         boolean refreshed = builds != null && !builds.isEmpty();
         BotLogger.info("[ChampionBuildPersisted] filter=" + filter.toKey()
@@ -277,6 +333,12 @@ public class ChampionService {
             if (doc != null && doc.ready && !isStale(doc.updatedAt)) readyKeys.add(scope.toKey());
         }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
+        BotLogger.info("[ChampionStatsMatrix] phase=scope-scan patch=" + patch
+            + " queue=" + queue
+            + " totalScopes=" + combinations.size()
+            + " readyScopes=" + readyKeys.size()
+            + " missingScopes=" + missing.size()
+            + " requestedBuildFilters=" + buildFilters.size());
         ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrixCoalesced(missing, buildFilters);
         invalidateTierLists(missing);
         for (Filter filter : missing) invalidateStatisticsScope(filter);
@@ -359,6 +421,68 @@ public class ChampionService {
 
     // ============================================================================
 
+    private static final class ArenaProgress {
+        private long total;
+        private long completed;
+        private long missing;
+        private long failed;
+
+        private void report(Job<?> job, String phase) {
+            if (job == null) return;
+            job.phase(phase + " total=" + total + " completed=" + completed
+                + " missing=" + missing + " failed=" + failed);
+        }
+    }
+
+    private boolean refreshArenaInternal(Filter filter, ArenaItemCatalog catalog, Job<?> job) {
+        Filter request = Filter.fromStateKey(filter.toStateKey());
+        String item = job == null ? null : job.key();
+        if (job != null) job.trackItem(item);
+        ArenaProgress progress = new ArenaProgress();
+        try {
+            Filter snapshot = arenaFilterSnapshot(filter);
+            Objects.requireNonNull(catalog, "Detached catalog for the requested patch required");
+            if (job != null) job.currentItem("champion=" + snapshot.champion() + " patch=" + snapshot.patch()
+                + " shard=" + (snapshot.region() == null ? "ALL" : snapshot.region().name()));
+            ArenaBuildData result = aggregateArena(snapshot, catalog, job, progress);
+            progress.report(job, "WRITE");
+            if (!arenaWriter.test(snapshot, result))
+                throw new IllegalStateException("Arena write was not completed");
+            progress.report(job, "DONE");
+            invalidate(request);
+            if (job != null) job.done(item);
+            return true;
+        } catch (RuntimeException | Error exception) {
+            progress.failed++;
+            progress.report(job, "FAILED");
+            if (job != null) job.failed(item);
+            throw exception;
+        }
+    }
+
+    private ArenaBuildData aggregateArena(Filter snapshot, ArenaItemCatalog catalog,
+            Job<?> job, ArenaProgress progress) {
+        ArenaChampionAnalyzer.Accumulator accumulator = ArenaChampionAnalyzer.accumulator(
+            snapshot.champion(), snapshot.patch(), catalog);
+        try {
+            progress.report(job, "READ");
+            arenaSource.accept(snapshot, batch -> {
+                Objects.requireNonNull(batch, "Arena batch required");
+                progress.total += batch.size();
+                for (Match match : batch) {
+                    if (!accumulator.accept(match))
+                        throw new IllegalArgumentException("Arena source match does not match the requested scope");
+                    progress.completed++;
+                    if (!MatchupTimelineUtils.hasTimeline(match.events)) progress.missing++;
+                }
+                progress.report(job, "READ");
+            });
+            return accumulator.finish();
+        } finally {
+            accumulator.clear();
+        }
+    }
+
     private ApiResult<ChampionView> compose(
         StaticChampion champion,
         Filter filter,
@@ -367,10 +491,16 @@ public class ChampionService {
     ) {
         ChampionStatistics stats = getStatistics(filter, false);
         Build build = getBuild(filter, false);
-        boolean statisticsPending = stats == null || isStale(statsLastUpdate);
-        boolean buildPending = build == null || isStale(buildLastUpdate);
+        boolean statisticsPending = stats == null;
+        boolean buildPending = build == null;
         if (statisticsPending || buildPending) {
-            BotLogger.info("[ChampionDataPending] filter=" + filter.toKey()
+            BotLogger.info("[ChampionDataPending] champion=" + filter.champion()
+                + " lane=" + filter.lane()
+                + " queue=" + filter.queue()
+                + " rank=" + filter.rank()
+                + " rankBehavior=" + filter.rankBehavior()
+                + " patch=" + filter.patch()
+                + " region=" + filter.region()
                 + " statisticsPending=" + statisticsPending
                 + " statisticsLastUpdate=" + statsLastUpdate
                 + " buildPending=" + buildPending
@@ -378,6 +508,10 @@ public class ChampionService {
             ComputeScheduler.startChampionData(filter, statisticsPending, buildPending);
             return ApiResult.pending(ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), true, filter));
         }
+        boolean statisticsStale = isStale(statsLastUpdate);
+        boolean buildStale = isStale(buildLastUpdate);
+        boolean refresh = statisticsStale || buildStale;
+        if (refresh) ComputeScheduler.startChampionData(filter, statisticsStale, buildStale);
         ChampionView rawPage = new ChampionView(new ChampionView.Champion(champion.getId(), champion.getName(),
             ChampionUtils.getChampionProfilePic(champion.getId())), stats, build);
         RedisClient.set(RedisKey.CHAMPION_PAGE, rawPage, filter.champion(), filter.pageKey());
@@ -385,7 +519,7 @@ public class ChampionService {
             rawPage.champion(),
             MatchupRankingAnalyzer.rank(rawPage.stats()),
             rawPage.build(),
-            ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), false, filter)
+            ResponseMetadata.of(oldest(statsLastUpdate, buildLastUpdate), refresh, filter)
         );
         return ApiResult.ready(page, page.metadata());
     }

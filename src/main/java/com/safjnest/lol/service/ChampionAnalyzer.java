@@ -3,13 +3,14 @@ package com.safjnest.lol.service;
 import com.safjnest.lol.champion.ChampionStatsData;
 import com.safjnest.lol.champion.ChampionStatsProvider;
 import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.LaneSynergy;
-import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.ChampionStatistics.Overview;
 import com.safjnest.lol.model.ChampionStatistics.PowerCurvePoint;
 import com.safjnest.lol.model.ChampionStatistics.Trend;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ArenaBuildData;
+import com.safjnest.lol.model.match.Match;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import com.safjnest.lol.model.statistics.ChampionStatsDocument;
 import com.safjnest.lol.model.statistics.shared.ChampionLeafStats;
 import com.safjnest.lol.model.statistics.shared.ChampionNode;
@@ -18,6 +19,7 @@ import com.safjnest.lol.model.statistics.shared.MatchupStats;
 import com.safjnest.lol.model.statistics.shared.TrendStats;
 import com.safjnest.lol.model.statistics.shared.WinLossStats;
 import com.safjnest.lol.utils.KdaUtils;
+import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.PatchUtils;
@@ -93,6 +95,9 @@ public final class ChampionAnalyzer {
     // ============================================================================
 
     static ChampionStatistics empty(Filter filter) {
+        if (filter != null && filter.queue() == GameQueueType.CHERRY)
+            return arenaStatistics(filter, new Overview(0, 0, 0, 0, 0, 0, null, null, null, null, null),
+                new ChampionLeafStats(), List.of(), null);
         return new ChampionStatistics(
             filter,
             new ChampionStatistics.Overview(0, 0, 0, 0, 0, 0, null, null, null, null, null),
@@ -114,6 +119,18 @@ public final class ChampionAnalyzer {
         double winrate = leaf.winrate();
         double pickrate = totalGames == 0 ? 0 : (double) picks / totalGames;
         Double banrate = banGames == 0 ? null : (double) bans / banGames;
+        if (filter.queue() == GameQueueType.CHERRY) {
+            List<PowerCurvePoint> curve = new ArrayList<>();
+            for (String bucket : POWER_BUCKETS) {
+                WinLossStats value = leaf.powerCurve.get(bucket);
+                if (value != null && value.games > 0)
+                    curve.add(new PowerCurvePoint(bucket, (int) value.games, (int) value.wins, value.winrate()));
+            }
+            Trend trend = leaf.trend == null || leaf.trend.games == 0 ? null
+                : new Trend(doc.previousPatch, (int) leaf.trend.games, leaf.trend.winrate(), winrate - leaf.trend.winrate());
+            return arenaStatistics(filter, new Overview(totalGames, picks, bans, wins, winrate, pickrate, banrate,
+                leaf.kda(), leaf.csPerMinute(), leaf.goldPerMinute(), null), leaf, curve, trend);
+        }
         // Convert matchups: leaf.matchups is opp -> MatchupStats, key is opponent champion id
         Map<Integer, ChampionStatistics.Matchup> matchups = new java.util.LinkedHashMap<>();
         for (Map.Entry<Integer, com.safjnest.lol.model.statistics.shared.MatchupStats> e : leaf.matchups.entrySet()) {
@@ -160,6 +177,56 @@ public final class ChampionAnalyzer {
         return new ChampionStatistics(filter, new Overview(totalGames, picks, bans, wins, winrate, pickrate, banrate, leaf.kda(), leaf.csPerMinute(), leaf.goldPerMinute(), null), laneStats, matchups, synergies, powerCurve, trend);
     }
 
+    private static void copyArenaCounts(Map<String, WinLossStats> target, Map<String, int[]> source) {
+        if (source == null) return;
+        for (var entry : source.entrySet())
+            target.put(entry.getKey(), new WinLossStats(entry.getValue()[0], entry.getValue()[1]));
+    }
+
+    private static void copyArenaPlacements(Map<String, Long> target, Map<String, Integer> source) {
+        if (source == null) return;
+        for (var entry : source.entrySet()) target.put(entry.getKey(), entry.getValue().longValue());
+    }
+
+    private static ChampionStatistics arenaStatistics(Filter filter, Overview overview, ChampionLeafStats leaf,
+            List<PowerCurvePoint> powerCurve, Trend trend) {
+        List<ChampionStatistics.ArenaSynergy> synergies = new ArrayList<>();
+        for (var entry : leaf.arenaSynergies.entrySet()) {
+            WinLossStats value = entry.getValue();
+            synergies.add(new ChampionStatistics.ArenaSynergy(BuildUtils.parseDashList(entry.getKey()),
+                value.games, value.wins, value.winrate()));
+        }
+        synergies.sort(Comparator.comparingDouble(ChampionStatistics.ArenaSynergy::winrate).reversed()
+            .thenComparing(Comparator.comparingLong(ChampionStatistics.ArenaSynergy::matches).reversed())
+            .thenComparing(value -> BuildUtils.joinInts(value.allyChampions())));
+        Map<String, ChampionStatistics.ArenaSubteam> subteams = new LinkedHashMap<>();
+        for (String size : List.of("2", "3")) {
+            WinLossStats value = leaf.arenaSubteams.getOrDefault(size, new WinLossStats());
+            subteams.put(size, new ChampionStatistics.ArenaSubteam(value.games, value.wins, value.winrate()));
+        }
+        Map<String, ChampionStatistics.ArenaSubteam> subteamsById = new LinkedHashMap<>();
+        for (String subteamId : ChampionStatsDocument.ARENA_SUBTEAM_IDS) {
+            WinLossStats value = leaf.arenaSubteamIds.getOrDefault(subteamId, new WinLossStats());
+            subteamsById.put(subteamId, new ChampionStatistics.ArenaSubteam(value.games, value.wins, value.winrate()));
+        }
+        Map<String, Long> placements = new LinkedHashMap<>();
+        long placementGames = 0;
+        long placementTotal = 0;
+        for (String placement : ChampionStatsDocument.ARENA_PLACEMENTS) {
+            long count = leaf.arenaPlacements.getOrDefault(placement, 0L);
+            if (count <= 0) continue;
+            placements.put(placement, count);
+            placementGames += count;
+            placementTotal += Long.parseLong(placement) * count;
+        }
+        Double averagePlacement = placementGames == 0 ? null : (double) placementTotal / placementGames;
+        Overview arenaOverview = new Overview(overview.games(), overview.picks(), overview.bans(), overview.wins(),
+            overview.winrate(), overview.pickrate(), overview.banrate(), overview.kda(), overview.csPerMinute(),
+            overview.goldPerMinute(), overview.damageProfile(), averagePlacement, placements);
+        return new ChampionStatistics(filter, arenaOverview, List.of(), Map.of(), List.of(), powerCurve, trend,
+            synergies, subteams, subteamsById);
+    }
+
     static MatrixResult recomputeMatrix(List<Filter> filters) {
         return recomputeMatrixCoalesced(filters, List.of());
     }
@@ -181,8 +248,19 @@ public final class ChampionAnalyzer {
         }
         if (scopes.isEmpty()) return new MatrixResult(0, 0, 0);
         // Keep RawMatrix logic intact, then coalesce per scope
-        Map<String, ChampionBuildEngine.BuildAccumulator> builds = new java.util.LinkedHashMap<>();
-        if (buildFilters != null) for (Filter f : buildFilters) if (f != null && f.champion() != 0 && f.patch() != null && f.queue() != null) builds.putIfAbsent(f.toKey(), ChampionBuildEngine.newAccumulator(f));
+        Map<String, ChampionBuildEngine.BuildAccumulator> builds = new LinkedHashMap<>();
+        Map<String, ArenaChampionAnalyzer.Accumulator> arenas = new LinkedHashMap<>();
+        Map<String, Filter> arenaFilters = new LinkedHashMap<>();
+        if (buildFilters != null) for (Filter f : buildFilters) {
+            if (f == null || f.champion() == 0 || f.patch() == null || f.queue() == null) continue;
+            if (f.queue() == GameQueueType.CHERRY) {
+                Filter snapshot = ChampionService.arenaFilterSnapshot(f);
+                if (!arenas.containsKey(snapshot.toKey())) {
+                    arenas.put(snapshot.toKey(), ChampionService.arenaAccumulator(snapshot));
+                    arenaFilters.put(snapshot.toKey(), snapshot);
+                }
+            } else builds.putIfAbsent(f.toKey(), ChampionBuildEngine.newAccumulator(f));
+        }
         Filter first = filters.get(0);
         Filter source = new Filter().setChampion(0).setLane(null).setQueue(first.queue()).setRank(null)
             .setRankBehavior(first.rankBehavior()).setPatch(first.patch()).setRegion(null);
@@ -191,7 +269,17 @@ public final class ChampionAnalyzer {
         try {
             ChampionStatsProvider.forEachMatchWithBuild(source, (read, document) -> {
                 ChampionStatsData.RawMatch rm = read.match();
-                for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) for (var rec : com.safjnest.nosql.MongoDB.championBuildRecords(document, acc.filter())) ChampionBuildEngine.accept(acc, rec);
+                for (ChampionBuildEngine.BuildAccumulator acc : builds.values())
+                    for (var rec : MongoDB.championBuildRecords(document, acc.filter())) ChampionBuildEngine.accept(acc, rec);
+                if (!arenas.isEmpty()) {
+                    Match match = MongoDB.championRawMatch(document);
+                    try {
+                        for (var entry : arenas.entrySet())
+                            if (matchesMatrixFilter(arenaFilters.get(entry.getKey()), rm)) entry.getValue().accept(match);
+                    } finally {
+                        MatchMemoryUtils.release(match);
+                    }
+                }
                 ChampionStatsData.Game game = parse(rm);
                 if (game != null) {
                     raw.addBase(game, rm.metadata());
@@ -276,6 +364,20 @@ public final class ChampionAnalyzer {
                             }
                         }
                     }
+                    if (scope.queue() == GameQueueType.CHERRY) {
+                        for (var champion : doc.champions.entrySet()) {
+                            ChampionLeafStats leaf = champion.getValue().lanes.get(LaneType.NONE.name());
+                            if (leaf == null) continue;
+                            copyArenaCounts(leaf.arenaSynergies, global.arenaSynergies().get(champion.getKey()));
+                            copyArenaCounts(leaf.arenaSubteams, global.arenaSubteams().get(champion.getKey()));
+                            copyArenaCounts(leaf.arenaSubteamIds, global.arenaSubteamIds().get(champion.getKey()));
+                            copyArenaPlacements(leaf.arenaPlacements, global.arenaPlacements().get(champion.getKey()));
+                            for (String subteamId : ChampionStatsDocument.ARENA_SUBTEAM_IDS)
+                                leaf.arenaSubteamIds.computeIfAbsent(subteamId, ignored -> new WinLossStats());
+                            for (String placement : ChampionStatsDocument.ARENA_PLACEMENTS)
+                                leaf.arenaPlacements.putIfAbsent(placement, 0L);
+                        }
+                    }
                     addPreviousTrend(doc);
                     MongoDB.upsertChampionStatsDocument(doc);
                     persistedChampions += doc.champions.size();
@@ -291,11 +393,20 @@ public final class ChampionAnalyzer {
                 BotLogger.info("[ChampionBuildPersisted] source=stats-matrix filter=" + acc.filter().toKey()
                     + " games=" + res.get(0).games());
             }
+            for (var entry : arenas.entrySet()) {
+                ArenaBuildData arena = entry.getValue().finish();
+                MongoDB.upsertChampionArena(arenaFilters.get(entry.getKey()), arena);
+                BotLogger.info("[ChampionBuildPersisted] source=stats-matrix queue=CHERRY filter="
+                    + entry.getKey() + " games=" + arena.games());
+            }
             return new MatrixResult(scopes.size(), 0, persistedChampions);
         } finally {
             raw.clear();
             for (ChampionBuildEngine.BuildAccumulator accumulator : builds.values()) accumulator.clear();
             builds.clear();
+            for (ArenaChampionAnalyzer.Accumulator accumulator : arenas.values()) accumulator.clear();
+            arenas.clear();
+            arenaFilters.clear();
         }
     }
 
@@ -358,9 +469,11 @@ public final class ChampionAnalyzer {
         ChampionStatsData.MatchMeta metadata = rawMatch.metadata();
         List<ChampionStatsData.Player> players = new ArrayList<>();
         for (ChampionStatsData.RawParticipant participant : rawMatch.participants()) {
-            players.add(new ChampionStatsData.Player(participant.champion(), participant.lane(), participant.win(),
+            LaneType lane = metadata.queue() == GameQueueType.CHERRY ? LaneType.NONE : participant.lane();
+            players.add(new ChampionStatsData.Player(participant.champion(), lane, participant.win(),
                 participant.team(), participant.matchId(), metadata.timeStart(), metadata.timeEnd(), participant.kda(),
-                participant.cs(), participant.gold(), participant.puuid()));
+                participant.cs(), participant.gold(), participant.puuid(), participant.subTeam(),
+                participant.subTeamPlacement()));
         }
         return new ChampionStatsData.Game(rawMatch.matchId(), metadata.bans(), metadata.timeStart(), metadata.timeEnd(),
             List.copyOf(players), parseMatchData(players, metadata.events()));
@@ -547,7 +660,11 @@ public final class ChampionAnalyzer {
         Map<Integer, double[]> metricsRaw,
         Map<Integer, Map<Integer, double[]>> matchupRaw,
         Map<Integer, Map<ChampionStatsData.SynergyKey, double[]>> synergyRaw,
-        Map<Integer, Map<String, int[]>> powerCurveRaw
+        Map<Integer, Map<String, int[]>> powerCurveRaw,
+        Map<Integer, Map<String, int[]>> arenaSynergies,
+        Map<Integer, Map<String, int[]>> arenaSubteams,
+        Map<Integer, Map<String, int[]>> arenaSubteamIds,
+        Map<Integer, Map<String, Integer>> arenaPlacements
     ) {}
 
     private static final class MatrixMetrics {
@@ -617,8 +734,15 @@ public final class ChampionAnalyzer {
                 if (player.win()) pickWin[1]++;
                 addMetrics(bucket, key, player, false, game.data());
                 addPowerCurve(bucket, key, player);
+                if (metadata.queue() == GameQueueType.CHERRY)
+                    addArenaPlacement(bucket, player.champion(), player.subTeamPlacement());
             }
 
+            if (metadata.queue() == GameQueueType.CHERRY) {
+                addArenaRelations(bucket, game.players());
+                recordBucketPeak(bucket);
+                return;
+            }
             Map<TeamType, List<ChampionStatsData.Player>> teams = byTeam(game.players());
             List<List<ChampionStatsData.Player>> sides = new ArrayList<>(teams.values());
             if (sides.size() == 2) {
@@ -634,6 +758,10 @@ public final class ChampionAnalyzer {
             for (ChampionStatsData.Player player : game.players()) {
                 long key = playerKey(index(player.champion()), laneCode(player.lane()));
                 addMetrics(bucket, key, player, true, game.data());
+            }
+            if (metadata.queue() == GameQueueType.CHERRY) {
+                recordBucketPeak(bucket);
+                return;
             }
             Map<TeamType, List<ChampionStatsData.Player>> teams = byTeam(game.players());
             List<List<ChampionStatsData.Player>> sides = new ArrayList<>(teams.values());
@@ -693,7 +821,43 @@ public final class ChampionAnalyzer {
 
             Map<Integer, int[]> banCount = toJavaMap(rollup.banCount);
             return new RawProjection(filter, rollup.totalGames, rollup.banGames, pickWin,
-                banCount, metricAccum, matchupAccum, synergyAccum, powerCurveAccum);
+                banCount, metricAccum, matchupAccum, synergyAccum, powerCurveAccum,
+                rollup.arenaSynergies, rollup.arenaSubteams, rollup.arenaSubteamIds, rollup.arenaPlacements);
+        }
+
+        private void addArenaRelations(RawBucket bucket, List<ChampionStatsData.Player> players) {
+            Map<Integer, List<ChampionStatsData.Player>> teams = new HashMap<>();
+            for (ChampionStatsData.Player player : players) if (player.subTeam() > 0)
+                teams.computeIfAbsent(player.subTeam(), ignored -> new ArrayList<>()).add(player);
+            for (Map.Entry<Integer, List<ChampionStatsData.Player>> entry : teams.entrySet()) {
+                int subteamId = entry.getKey();
+                List<ChampionStatsData.Player> team = entry.getValue();
+                for (ChampionStatsData.Player player : team)
+                    addArenaCount(bucket.arenaSubteamIds, player.champion(), String.valueOf(subteamId), player.win());
+                if (team.size() != 2 && team.size() != 3) continue;
+                for (ChampionStatsData.Player player : team) {
+                    List<Integer> allies = new ArrayList<>();
+                    for (ChampionStatsData.Player ally : team) if (ally != player) allies.add(ally.champion());
+                    if (allies.size() != team.size() - 1 || allies.contains(0)) continue;
+                    allies.sort(Integer::compareTo);
+                    addArenaCount(bucket.arenaSynergies, player.champion(), BuildUtils.joinInts(allies), player.win());
+                    addArenaCount(bucket.arenaSubteams, player.champion(), String.valueOf(team.size()), player.win());
+                }
+            }
+        }
+
+        private static void addArenaCount(Map<Integer, Map<String, int[]>> target, int champion, String key, boolean win) {
+            int[] count = target.computeIfAbsent(champion, ignored -> new HashMap<>())
+                .computeIfAbsent(key, ignored -> new int[2]);
+            count[0]++;
+            if (win) count[1]++;
+        }
+
+        private static void addArenaPlacement(RawBucket bucket, int champion, int placement) {
+            String key = String.valueOf(placement);
+            if (placement <= 0 || !ChampionStatsDocument.ARENA_PLACEMENTS.contains(key)) return;
+            bucket.arenaPlacements.computeIfAbsent(champion, ignored -> new HashMap<>())
+                .merge(key, 1, Integer::sum);
         }
 
         private void addMatchups(RawBucket bucket, List<ChampionStatsData.Player> team,
@@ -1045,6 +1209,10 @@ public final class ChampionAnalyzer {
         private final Long2ObjectOpenHashMap<int[]> powerCurve = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<double[]> matchups = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<double[]> synergies = new Long2ObjectOpenHashMap<>();
+        private final Map<Integer, Map<String, int[]>> arenaSynergies = new HashMap<>();
+        private final Map<Integer, Map<String, int[]>> arenaSubteams = new HashMap<>();
+        private final Map<Integer, Map<String, int[]>> arenaSubteamIds = new HashMap<>();
+        private final Map<Integer, Map<String, Integer>> arenaPlacements = new HashMap<>();
 
         private RawBucket(no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard region,
                           no.stelar7.api.r4j.basic.constants.types.lol.TierType rank) {
@@ -1068,6 +1236,31 @@ public final class ChampionAnalyzer {
             }
             mergeInts(pickWin, source.pickWin); mergeDoubles(metrics, source.metrics); mergeInts(powerCurve, source.powerCurve);
             mergeDoubles(matchups, source.matchups); mergeDoubles(synergies, source.synergies);
+            mergeArenaCounts(arenaSynergies, source.arenaSynergies);
+            mergeArenaCounts(arenaSubteams, source.arenaSubteams);
+            mergeArenaCounts(arenaSubteamIds, source.arenaSubteamIds);
+            mergeArenaPlacements(arenaPlacements, source.arenaPlacements);
+        }
+
+        private static void mergeArenaCounts(Map<Integer, Map<String, int[]>> target,
+                Map<Integer, Map<String, int[]>> source) {
+            for (var champion : source.entrySet()) {
+                Map<String, int[]> values = target.computeIfAbsent(champion.getKey(), ignored -> new HashMap<>());
+                for (var entry : champion.getValue().entrySet()) {
+                    int[] count = values.computeIfAbsent(entry.getKey(), ignored -> new int[2]);
+                    count[0] += entry.getValue()[0];
+                    count[1] += entry.getValue()[1];
+                }
+            }
+        }
+
+        private static void mergeArenaPlacements(Map<Integer, Map<String, Integer>> target,
+                Map<Integer, Map<String, Integer>> source) {
+            for (var champion : source.entrySet()) {
+                Map<String, Integer> values = target.computeIfAbsent(champion.getKey(), ignored -> new HashMap<>());
+                for (var entry : champion.getValue().entrySet())
+                    values.merge(entry.getKey(), entry.getValue(), Integer::sum);
+            }
         }
 
         private void markPlayer(long key, int order) {
@@ -1096,13 +1289,22 @@ public final class ChampionAnalyzer {
 
         private void clear() {
             banCount.clear(); pickWin.clear(); playerOrder.clear(); matchupOrder.clear(); metrics.clear(); powerCurve.clear(); matchups.clear(); synergies.clear();
+            arenaSynergies.clear();
+            arenaSubteams.clear();
+            arenaSubteamIds.clear();
+            arenaPlacements.clear();
             totalGames = 0;
             banGames = 0;
         }
 
         private int valueCount() {
-            return banCount.size() + pickWin.size() + metrics.size() + powerCurve.size()
+            int values = banCount.size() + pickWin.size() + metrics.size() + powerCurve.size()
                 + matchups.size() + synergies.size();
+            for (Map<String, int[]> counts : arenaSynergies.values()) values += counts.size();
+            for (Map<String, int[]> counts : arenaSubteams.values()) values += counts.size();
+            for (Map<String, int[]> counts : arenaSubteamIds.values()) values += counts.size();
+            for (Map<String, Integer> counts : arenaPlacements.values()) values += counts.size();
+            return values;
         }
     }
 

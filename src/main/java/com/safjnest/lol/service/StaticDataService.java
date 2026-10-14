@@ -1,6 +1,8 @@
 package com.safjnest.lol.service;
 
 import java.util.Map;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -19,16 +21,39 @@ public final class StaticDataService {
     private static final TypeReference<Map<Integer, Item>> ITEMS_TYPE = new TypeReference<>() {};
     private static final TypeReference<Map<Integer, StaticChampion>> CHAMPIONS_TYPE = new TypeReference<>() {};
     private static final TypeReference<Map<Integer, StaticSummonerSpell>> SUMMONER_SPELLS_TYPE = new TypeReference<>() {};
+    private static final Map<String, Map<Integer, Item>> PATCH_ITEMS = new ConcurrentHashMap<>();
+    private static Map<Integer, Item> items;
 
     private StaticDataService() {
     }
 
     public static Map<Integer, Item> getItems() {
-        return get(RedisKey.DDRAGON_ITEMS, ITEMS_TYPE, () -> LeagueHandler.getRiotApi().getDDragonAPI().getItems());
+        if (items == null) {
+            items = get(RedisKey.DDRAGON_ITEMS, ITEMS_TYPE, () -> LeagueHandler.getRiotApi().getDDragonAPI().getItems());
+        }
+        return items;
     }
 
     public static Item getItem(int id) {
         return getItems().get(id);
+    }
+
+    public static Map<Integer, Item> getItems(String patch) {
+        if (patch == null) return getItems();
+        return PATCH_ITEMS.computeIfAbsent(patch, requested -> {
+            Map<Integer, Item> loaded = get(RedisKey.DDRAGON_ITEMS, requested, ITEMS_TYPE, () -> {
+                var api = LeagueHandler.getRiotApi().getDDragonAPI();
+                String version = resolveItemVersion(requested,
+                    requested.equals(PatchUtils.patchMajor(requested)) ? api.getVersions() : List.of());
+                Map<Integer, Item> result = api.getItems(version, "en_US");
+                if (result == null || result.isEmpty())
+                    throw new IllegalStateException("Missing item catalog for patch " + requested);
+                return result;
+            });
+            if (loaded == null || loaded.isEmpty())
+                throw new IllegalStateException("Missing item catalog for patch " + requested);
+            return Map.copyOf(loaded);
+        });
     }
 
     public static Map<Integer, StaticChampion> getChampions() {
@@ -60,6 +85,15 @@ public final class StaticDataService {
     }
 
     // ============================================================================
+
+    static String resolveItemVersion(String requested, List<String> versions) {
+        if (requested == null || !requested.matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)*"))
+            throw new IllegalArgumentException("Valid item catalog patch required");
+        if (!requested.equals(PatchUtils.patchMajor(requested))) return requested;
+        if (versions != null) for (String version : versions)
+            if (requested.equals(PatchUtils.patchMajor(version))) return version;
+        throw new IllegalArgumentException("Unknown item catalog patch " + requested);
+    }
 
     private static <T> T get(RedisKey key, TypeReference<T> type, DataLoader<T> loader) {
         return get(key, PatchUtils.getPatch(), type, loader);

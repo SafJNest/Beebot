@@ -6,6 +6,8 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
+import com.safjnest.lol.service.StaticDataService;
+import java.util.HashSet;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
@@ -58,15 +60,18 @@ public record BuildSignature(
         JSONObject buildObj = buildJson.optJSONObject("build");
         if (buildObj == null || buildObj.optJSONArray("build") == null) return null;
 
+        Map<Integer, Item> items = filter == null ? ItemUtils.getItems() : StaticDataService.getItems(filter.patch());
+        Set<Integer> bootIds = new HashSet<>();
+        for (var entry : items.entrySet()) if (ItemUtils.isBoots(entry.getValue())) bootIds.add(entry.getKey());
         List<Integer> inventory = BuildUtils.jsonArrayToIntList(buildObj.optJSONArray("build"));
-        List<Integer> fullBuildList = extractFullBuild(buildObj, itemEvents);
-        int boots = inventory.stream().filter(id -> ItemUtils.getBoots().contains(id))
+        List<Integer> fullBuildList = extractFullBuild(buildObj, itemEvents, items, bootIds);
+        int boots = inventory.stream().filter(bootIds::contains)
                 .filter(id -> id != ItemUtils.BASE_BOOTS).findFirst().orElse(0);
         int supportItem = inventory.stream().filter(SUPPORT_ITEMS::contains).findFirst().orElse(0);
 
-        List<Integer> starterList = extractStarter(filter, starterEvents);
+        List<Integer> starterList = extractStarter(filter, starterEvents, bootIds);
 
-        List<Integer> coreList = extractCore(fullBuildList, starterList);
+        List<Integer> coreList = extractCore(fullBuildList, starterList, items);
         if (coreList.size() < 2) return null;
 
         Collections.sort(starterList);
@@ -161,7 +166,7 @@ public record BuildSignature(
 
     // -------------------------------------------------------------------------
 
-    private static List<Integer> extractStarter(Filter filter, List<ChampionBuildTimelineUtils.ItemEvent> starterEvents) {
+    private static List<Integer> extractStarter(Filter filter, List<ChampionBuildTimelineUtils.ItemEvent> starterEvents, Set<Integer> bootIds) {
         Map<Integer, Integer> consumablesCount = new HashMap<>();
         Integer boots = null;
         Integer trinket = null;
@@ -175,7 +180,7 @@ public record BuildSignature(
                 continue;
             }
 
-            if (ItemUtils.getBoots().contains(id)) {
+            if (bootIds.contains(id)) {
                 boots = id;
                 continue;
             }
@@ -214,10 +219,15 @@ public record BuildSignature(
     }
 
     static List<Integer> extractFullBuild(JSONObject buildObj, List<ChampionBuildTimelineUtils.ItemEvent> itemEvents) {
+        return extractFullBuild(buildObj, itemEvents, ItemUtils.getItems(), ItemUtils.getBoots());
+    }
+
+    private static List<Integer> extractFullBuild(JSONObject buildObj,
+            List<ChampionBuildTimelineUtils.ItemEvent> itemEvents, Map<Integer, Item> items, Set<Integer> bootIds) {
         List<Integer> inventory = BuildUtils.jsonArrayToIntList(buildObj.optJSONArray("build"));
         List<Integer> orderedInventory = orderByTimeline(inventory, itemEvents);
         LinkedHashSet<Integer> ordered = new LinkedHashSet<>();
-        for (int id : orderedInventory) if (!isSkippable(id)) ordered.add(id);
+        for (int id : orderedInventory) if (!isSkippable(id, items.get(id), bootIds)) ordered.add(id);
         return new ArrayList<>(ordered);
     }
 
@@ -265,10 +275,10 @@ public record BuildSignature(
         return result;
     }
 
-    private static List<Integer> extractCore(List<Integer> fullBuild, List<Integer> starterList) {
+    private static List<Integer> extractCore(List<Integer> fullBuild, List<Integer> starterList, Map<Integer, Item> items) {
         Integer first = null, second = null;
         for (Integer id : fullBuild) {
-            Item item = ItemUtils.getItem(id);
+            Item item = items.get(id);
             if (id == null || id == 0 || starterList.contains(id) || ItemUtils.isBoots(item) || SUPPORT_ITEMS.contains(id) || ItemUtils.isPrismatic(id)) continue;
             if (first == null) { first = id; }
             else if (!Objects.equals(first, id)) { second = id; break; }
@@ -280,17 +290,17 @@ public record BuildSignature(
         return core;
     }
 
-    private static boolean isSkippable(int id) {
-        return isSkippable(id, ItemUtils.getItem(id));
+    static boolean isSkippable(int id, Item item) {
+        return isSkippable(id, item, item == null ? Set.of() : ItemUtils.getBoots());
     }
 
-    static boolean isSkippable(int id, Item item) {
+    private static boolean isSkippable(int id, Item item, Set<Integer> bootIds) {
         if (id == 0 || TRINKETS.contains(id) || CONSUMABLES.contains(id)) return true;
         if (item == null) return false;
         if (item.getDepth() < COMPLETED_ITEM_DEPTH) return true;
         try {
             for (String from : item.getFrom())
-                if (ItemUtils.getBoots().contains(Integer.parseInt(from))) return true;
+                if (bootIds.contains(Integer.parseInt(from))) return true;
         } catch (Exception ignored) {}
         return false;
     }
