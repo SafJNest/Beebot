@@ -28,9 +28,12 @@ The top-level `jobs` projection includes every job in the first three levels fro
 a root, then at most 100 fourth-level jobs ordered by priority and enqueue time.
 It exposes phase, aggregate `progress`, and an optional active `currentItem`
 detail, but never per-item `items` or `itemLabels`. For example, `rank-entries`
-exposes its regional/tier job and `500/1000` progress without serializing the
-thousand summoner PUUIDs. `pushsamplegame` reports the current match label while
+exposes one job per region and entry progress without serializing summoner
+PUUIDs. `pushsamplegame` reports the current match label while
 fetching and its `[current/total] Pushing ...` detail while persisting.
+Rank-entry scans expose one job per region. That job reports its active
+rank, queue and page in `currentItem` while it walks ranks and pages
+sequentially; separate regions can progress concurrently.
 
 A leaf job reports its own item progress. A parent reports terminal direct
 children over direct children created, including children that already left the

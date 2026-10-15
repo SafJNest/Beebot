@@ -48,6 +48,8 @@ derived compatibility projection for tracking, sample-game and rank-entry
 roots. A job remains in memory while its body, an explicit async callback or at
 least one child is active. It is removed as soon as its full subtree is terminal;
 no Redis, MongoDB or pub/sub persistence is involved.
+Rank-entry roots create one Sync child per region. Each regional child walks its
+selected ranks and pages sequentially; separate regions can run concurrently.
 
 The HTTP `jobs` projection includes three complete levels and at most 100 jobs
 from the fourth level, ordered by priority and enqueue time. It omits per-item

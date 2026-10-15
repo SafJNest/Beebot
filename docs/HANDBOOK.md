@@ -121,7 +121,11 @@ indexes for migration needs.
 Schedule through `TrackerScheduler` and dispatch work through `QueueHandler`.
 Respect shard routing and existing refresh ownership. Report `total`,
 `completed` and `missing` through job progress when processing collections of
-items.
+items. Rank-entry scans use one LPTracker job per region and process that
+region's ranks and pages sequentially; separate regions can run concurrently.
+An empty page ends the current rank. Page-fetch failures are logged and skipped;
+three consecutive failures move a paginated scan to the next rank. High-elo
+single-page requests move to the next rank after one failure.
 
 ### 5.12 Tests and validation
 

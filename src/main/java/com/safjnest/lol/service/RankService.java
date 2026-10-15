@@ -14,9 +14,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.job.Job;
+import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
-import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -32,6 +33,7 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 
 public final class RankService {
 
+    private static final int MAX_CONSECUTIVE_PAGE_ERRORS = 3;
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<Map<GameQueueType, Rank>> RANKS_TYPE = new TypeReference<>() {};
@@ -91,16 +93,8 @@ public final class RankService {
             GameQueueType queue,
             TierDivisionType tier,
             int page) {
-        if (shard == null || queue == null || tier == null || page < 0) return List.of();
-
         try {
-            String id = queue.name() + ":" + tier.name() + ":" + page;
-            return QueueHandler.<List<LeagueEntry>>immediate(RiotScheduler.class, shard, shard.name() + ":league-tier:" + id,
-                "league tier " + id, ignored -> {
-                List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI()
-                    .getLeagueByTierDivision(shard, queue, tier, page);
-                return entries == null ? List.of() : entries;
-            }).join();
+            return fetchByTier(shard, queue, tier, page);
         } catch (CompletionException exception) {
             return List.of();
         }
@@ -158,9 +152,19 @@ public final class RankService {
         if (allEntries) BotLogger.info("[LPTracker] Pushing all entries");
         QueueHandler.background(SyncScheduler.class, null, "rank-entries", "RANK_ENTRIES", root -> {
             for (LeagueShard shard : LeagueShardUtils.getActives()) {
-                for (TierDivisionType tier : highTiers) for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR))
-                    enqueueTier(shard, tier, queue, 0);
-                for (TierDivisionType tier : allTiers) enqueueTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, 1);
+                if (highTiers.isEmpty() && allTiers.isEmpty()) continue;
+                QueueHandler.background(SyncScheduler.class, shard, "rank-entries:" + shard.name(),
+                    "rank entries region=" + shard.name(), regionTask -> {
+                        for (TierDivisionType tier : highTiers) {
+                            for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
+                                processTier(shard, tier, queue, 0, regionTask);
+                            }
+                        }
+                        for (TierDivisionType tier : allTiers) {
+                            processTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, 1, regionTask);
+                        }
+                        return null;
+                    });
             }
             return null;
         });
@@ -231,30 +235,56 @@ public final class RankService {
         });
     }
 
-    private static void enqueueTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue, int page) {
-        String key = (page == 0 ? "rank-high:" : "rank-all:") + shard.name() + ':' + tier.name() + ':' + queue.name();
-        QueueHandler.background(SyncScheduler.class, shard, key, "rank entries tier=" + tier.name() + " queue=" + queue.name(), task -> {
-            int currentPage = page;
-            do {
-                task.phase("FETCHING");
-                List<LeagueEntry> entries = getByTier(shard, queue, tier, currentPage);
-                if (page > 0) BotLogger.info("[LPTracker] Start analyzing page " + currentPage
-                    + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
-                task.phase("PERSISTING");
-                for (LeagueEntry entry : entries) {
-                    task.trackItem(entry.getPuuid());
-                    try {
-                        saveEntry(shard, entry);
-                        task.done(entry.getPuuid());
-                    } catch (Exception exception) {
-                        task.failed(entry.getPuuid());
-                    }
+    private static void processTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue,
+            int firstPage, Job<?> task) {
+        int consecutiveErrors = 0;
+        for (int page = firstPage; ; page++) {
+            task.phase("FETCHING");
+            task.currentItem("tier=" + tier.name() + " queue=" + queue.name() + " page=" + page);
+            List<LeagueEntry> entries;
+            try {
+                entries = fetchByTier(shard, queue, tier, page);
+            } catch (RuntimeException failure) {
+                BotLogger.error("[LPTracker] Failed to fetch page " + page + " of " + tier.name()
+                    + " queue=" + queue.name() + " for region " + shard + " | " + failure);
+                if (firstPage == 0 || ++consecutiveErrors >= MAX_CONSECUTIVE_PAGE_ERRORS) return;
+                continue;
+            }
+            consecutiveErrors = 0;
+            if (firstPage > 0) BotLogger.info("[LPTracker] Start analyzing page " + page
+                + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
+            if (entries.isEmpty()) return;
+            task.phase("PERSISTING");
+            for (LeagueEntry entry : entries) {
+                String puuid = entry.getPuuid();
+                String item = puuid == null || puuid.isBlank() ? null
+                    : tier.name() + ':' + queue.name() + ':' + puuid;
+                task.trackItem(item);
+                task.labelItem(item, puuid);
+                try {
+                    saveEntry(shard, entry);
+                    task.done(item);
+                } catch (Exception exception) {
+                    task.failed(item);
                 }
-                if (page == 0 || entries.isEmpty()) break;
-                currentPage++;
-            } while (true);
-            return null;
-        });
+            }
+            if (firstPage == 0) return;
+        }
+    }
+
+    private static List<LeagueEntry> fetchByTier(
+            LeagueShard shard,
+            GameQueueType queue,
+            TierDivisionType tier,
+            int page) {
+        if (shard == null || queue == null || tier == null || page < 0) return List.of();
+        String id = queue.name() + ":" + tier.name() + ":" + page;
+        return QueueHandler.<List<LeagueEntry>>immediate(RiotScheduler.class, shard, shard.name() + ":league-tier:" + id,
+            "league tier " + id, ignored -> {
+            List<LeagueEntry> entries = RIOT_API.getLoLAPI().getLeagueAPI()
+                .getLeagueByTierDivision(shard, queue, tier, page);
+            return entries == null ? List.of() : entries;
+        }).join();
     }
 
     private static List<TierDivisionType> highEloTiers() {
