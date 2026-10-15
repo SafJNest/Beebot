@@ -509,92 +509,6 @@
           },
           "description": "Raggruppamento per core (identico nome delle build normali)."
         },
-        "skillOrders": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "description": "Sequenza di slot abilita separati da trattini."
-              },
-              "order": {
-                "type": "array",
-                "items": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 4
-                },
-                "minItems": 1,
-                "maxItems": 18
-              },
-              "matches": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "wins": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "winrate": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 1
-              },
-              "pickrate": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 1
-              },
-              "timedOrder": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "level": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 18
-                    },
-                    "abilitySlot": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "maximum": 4
-                    },
-                    "averageUpgradeTimeSeconds": {
-                      "type": "number",
-                      "minimum": 0
-                    },
-                    "timedMatches": {
-                      "type": "integer",
-                      "minimum": 0
-                    }
-                  },
-                  "additionalProperties": false,
-                  "required": [
-                    "level",
-                    "abilitySlot",
-                    "averageUpgradeTimeSeconds",
-                    "timedMatches"
-                  ]
-                },
-                "description": "Tempo medio di potenziamento per livello e slot, quando gli eventi timeline sono attribuibili."
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "id",
-              "order",
-              "matches",
-              "wins",
-              "winrate",
-              "pickrate",
-              "timedOrder"
-            ],
-            "description": "Sequenza osservata ordinata per supporto, corrispondenze esatte e ID."
-          },
-          "description": "Ordini delle skill aggregati per la popolazione CHERRY; pickrate usa tutti i participant-games."
-        },
         "augments": {
           "type": "array",
           "items": {
@@ -708,7 +622,7 @@
         "prismatics",
         "coverage"
       ],
-      "description": "Aggregato CHERRY. I nuovi aggregati includono skillOrders; i consumabili compaiono nelle build complete e gli item Prismatici restano separati. I payload persistiti precedenti possono omettere skillOrders fino alla normale rigenerazione."
+      "description": "Aggregato CHERRY. Le build complete includono consumabili e gli item Prismatici restano separati. Gli eventuali skillOrders presenti nei payload persistiti precedenti vengono ignorati."
     },
     "metadata": {
       "type": "object",

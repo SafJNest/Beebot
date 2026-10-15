@@ -427,9 +427,8 @@ No laneStats, matchups, laneSynergies or lane ranking fields are exposed.
 Unavailable advanced metrics remain null.
 
 `build` directly contains games, wins,
-winrate, coreBuilds, `skillOrders`, augments, prismatics and coverage. Skill
-orders use the observed sequence, compatible-prefix counts and optional timeline
-upgrade timings from the Arena population. There is no build.arena wrapper or
+winrate, coreBuilds, augments, prismatics and coverage. CHERRY does not aggregate
+or expose skill orders. There is no build.arena wrapper or
 other standard legacy field. A core's items are boots+first
 Prismatic; `builds[].items` preserves attributed timeline purchase order and
 excludes boots, Prismatics, Juices and Anvil `220007`. Final slots are a fallback
@@ -439,9 +438,9 @@ count and ID. No spell1/spell2 fields appear on items.
 
 Missing CHERRY stats/build data is refreshed through the existing 202 path.
 Present stats are not rejected for missing subteam/placement buckets. Existing
-builds without `skillOrders` remain available and do not trigger a refresh for
-that reason alone; normal regeneration adds the field, with an empty array as a
-valid result. Legacy separate `consumables` fields remain readable; stale
+builds with the legacy `skillOrders` field remain available; it is ignored and
+omitted from CHERRY responses without triggering a refresh. Legacy separate
+`consumables` fields remain readable; stale
 present data returns 200 with a background refresh. Empty completed aggregates
 remain 200. Other queues keep the
 standard response documented above. The controller remains thin; canonical

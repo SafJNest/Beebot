@@ -118,13 +118,13 @@ champion/patch/CHERRY scope with canonical rank/region filters; role is invalid.
 
 | Operation | Implemented contract | Owner |
 |---|---|---|
-| Arena source | shared raw query queue+patchMajor+champion/rank/region, exact patch for full-patch CHERRY scopes; union ID/boots/placement/subTeam/skillOrder projection; 100 standalone or 10,000 matrix | MongoDB/ChampionBuildProvider |
+| Arena source | shared raw query queue+patchMajor+champion/rank/region, exact patch for full-patch CHERRY scopes; union ID/boots/placement/subTeam/skillOrder projection for the standard build consumer; 100 standalone or 10,000 matrix | MongoDB/ChampionBuildProvider |
 | Arena timeline join | one `match_events` query by `_id: {$in: batch IDs}`; missing event documents do not drop matches | MongoDB |
 | Arena parsing | attributed `item_events`; timestamp orders purchases, final slots provide first-Prismatic fallback; full-build item lists include consumables and exclude Prismatics, including Anvil 220007; timestamps are not persisted | ArenaGameParser |
 | Standard write | atomic `$set` root metadata and individual standard build.* paths, never build/replace | MongoDB |
 | Arena write | `_id=filterKey`, `$set build.arena` + arenaLastUpdate, filterKey on insert; aggregate subtree senza campi di versione | MongoDB |
 | Standard read | existing filterKey/buildVersion lookup, detached projection removes arena | MongoDB |
-| CHERRY read | Arena data presence + freshness timestamp; legacy separate consumables fields and missing skillOrders remain readable; flat HTTP Arena projection; stats ready marker without per-champion bucket completeness checks | ChampionService/MongoDB |
+| CHERRY read | Arena data presence + freshness timestamp; legacy separate consumables fields and skillOrders remain readable but omitted from output; flat HTTP Arena projection; stats ready marker without per-champion bucket completeness checks | ChampionService/MongoDB |
 
 Candidate indexes remain match queue/patchMajor and champion_builds_filter;
 match_events uses unique _id. No new runtime indexes or live explain was executed.
@@ -136,7 +136,7 @@ remain pending. Standard eligibility remains unchanged; the existing champion AP
 ### CHERRY contract update (2026-10-14)
 
 Only CHERRY uses the new [Arena schema](../arena-build/champion-schema.json):
-HTTP build is the flat Arena aggregate, with coreBuilds[].builds, `skillOrders`, six augment
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
 position rankings and global/core Prismatics. Full-build item lists include
 consumables and exclude Prismatic items, including consumable Anvil 220007. No other legacy fields or build.arena
 wrapper are exposed. Stats use exact same-subTeam ally combinations, team
@@ -144,8 +144,8 @@ sizes 2/3, `subteamsById` counts for Arena IDs 1–8, and overview placement
 counts/average from `subTeamPlacement`; these additions do not change synergy
 aggregation. Lane relations are omitted. The raw projection includes subTeam and subTeamPlacement.
 Mongo preserves build.arena ownership. Stats readiness uses the ready marker;
-Arena build availability uses Arena data presence. Missing `skillOrders` alone
-does not trigger a refresh; normal regeneration adds it. Timestamps can enqueue background
+Arena build availability uses Arena data presence. Legacy `skillOrders` values
+are ignored and omitted; removing them does not trigger a refresh. Timestamps can enqueue background
 refreshes, but readers do not require legacy-field absence or all eight subteam
 ID counters and placement buckets. There are no version fields or version-based
 cache guards. Other queues, jobs

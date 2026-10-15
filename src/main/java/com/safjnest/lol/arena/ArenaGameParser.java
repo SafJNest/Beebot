@@ -14,8 +14,6 @@ import com.safjnest.lol.model.Build.Kind;
 import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
-import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
-import com.safjnest.lol.utils.ChampionBuildTimelineUtils.SkillUpgrade;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -32,8 +30,6 @@ public final class ArenaGameParser {
 
         Object timeline = match.events != null ? match.events : match.eventData;
         List<Event> events = readEvents(timeline, participant);
-        List<SkillUpgrade> skillUpgrades = ChampionBuildTimelineUtils.skillUpgrades(timeline, participant.puuid);
-        List<Integer> skillOrder = ChampionBuildTimelineUtils.skillOrder(participant.skillOrder, skillUpgrades);
         List<Event> acquisitions = acquisitions(events);
         LinkedHashSet<Integer> prismatics = new LinkedHashSet<>();
         LinkedHashSet<Integer> boots = new LinkedHashSet<>();
@@ -90,7 +86,7 @@ public final class ArenaGameParser {
         List<Integer> timelineBuild = List.copyOf(buildItems);
         return new ParsedArenaGame(participant.win || participant.subTeamPlacement >= 3,
             boot, firstPrismatic, fallback, List.copyOf(prismatics), timelineBuild, augments,
-            !events.isEmpty(), buildFallback, skillOrder, skillUpgrades);
+            !events.isEmpty(), buildFallback);
     }
 
     // ============================================================================

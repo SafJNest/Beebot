@@ -87,16 +87,15 @@ champion-schema.json. CHERRY HTTP flattens Arena into build and groups complete
 item combinations within coreBuilds. Full-build `items` preserve attributed
 timeline purchase order, excluding boots, Prismatics, Juices and the Prismatic
 Anvil `220007`; final slots are used only when the item timeline is unavailable.
-It also exposes Arena skill-order rankings with timeline timings when
-available, six-position augment rankings and global/core Prismatics,
+It exposes six-position augment rankings and global/core Prismatics,
 and replaces lane relations with exact subteam
 synergies, sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and placement
 distribution/average in `overview`. Placement counts do not change synergy
 aggregation. Persistence ownership remains build.arena; readers do not require
 all eight ID counters or placement buckets to exist and do not reject builds
-with old separate `consumables` fields or missing `skillOrders`. Missing
-`skillOrders` alone does not trigger a refresh; existing data is served and
-newly generated payloads include the field, possibly as an empty list. Stale
+with old separate `consumables` fields or legacy `skillOrders`. That field is
+ignored and omitted; existing data is served without a refresh, and newly
+generated payloads omit it. Stale
 timestamps may enqueue the existing background refresh. Other queues
 retain their prior behavior.
 Compilation status is reported by the implementation task; no new live Mongo

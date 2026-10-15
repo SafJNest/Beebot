@@ -31,7 +31,7 @@ public record Build(
     @JsonProperty("slots") List<List<Option>> itemSlots,
     @JsonProperty("runes") List<RuneOption> runeOptions,
     @JsonProperty("summonerSpells") List<Option> summonerSpellOptions,
-    List<SkillOrderOption> skillOrders,
+    @JsonInclude(JsonInclude.Include.NON_NULL) List<SkillOrderOption> skillOrders,
     @JsonProperty("prismatics") List<Option> prismaticOptions,
     @JsonProperty("augments") List<List<Option>> augmentOptions,
     @JsonInclude(JsonInclude.Include.NON_NULL) ArenaBuildData arena
@@ -78,7 +78,7 @@ public record Build(
         return new Build(filter, Math.toIntExact(total), Math.toIntExact(arena.wins()),
             arena.winrate(), cores, arenaOptions(coreItems, total), List.of(), arenaOptions(boots, total),
             List.of(), List.of(), List.of(), List.of(), List.of(),
-            arena.skillOrders() == null ? List.of() : arena.skillOrders(),
+            null,
             arenaOptions(prismatics, total), augments, arena);
     }
 

@@ -220,7 +220,6 @@ public class Champion extends SlashCommand {
         addSummonerSpells(eb, build);
 
         if (GameQueueTypeUtils.isCherry(filter.queue())) {
-            addSkillOrder(eb, build);
             eb.addField("Augment Options", formatAugments(build.augments()), true);
             eb.addField("Prismatic Options", formatPrismatics(build.prismatics()), true);
             addItemFields(eb, build);

@@ -2,23 +2,20 @@ package com.safjnest.lol.model;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonPropertyOrder({ "games", "wins", "winrate", "coreBuilds", "skillOrders", "augments", "prismatics", "coverage"})
+@JsonPropertyOrder({ "games", "wins", "winrate", "coreBuilds", "augments", "prismatics", "coverage"})
 public record ArenaBuildData(long games, long wins,
-        List<Core> coreBuilds, @JsonInclude(JsonInclude.Include.NON_NULL) List<Build.SkillOrderOption> skillOrders,
-        List<List<Option>> augments, List<Option> prismatics, Coverage coverage,
+        List<Core> coreBuilds, List<List<Option>> augments, List<Option> prismatics, Coverage coverage,
         @JsonProperty(value = "consumables", access = JsonProperty.Access.WRITE_ONLY) List<Option> legacyConsumables) {
 
     public static final int MAX_AUGMENTS = 6;
 
     public ArenaBuildData {
         coreBuilds = List.copyOf(coreBuilds);
-        skillOrders = skillOrders == null ? null : List.copyOf(skillOrders);
         prismatics = List.copyOf(prismatics);
         legacyConsumables = legacyConsumables == null ? null : List.copyOf(legacyConsumables);
         augments = copyAugments(augments);
@@ -26,13 +23,7 @@ public record ArenaBuildData(long games, long wins,
 
     public ArenaBuildData(long games, long wins, List<Core> coreBuilds,
             List<List<Option>> augments, List<Option> prismatics, Coverage coverage) {
-        this(games, wins, coreBuilds, List.of(), augments, prismatics, coverage, null);
-    }
-
-    public ArenaBuildData(long games, long wins, List<Core> coreBuilds,
-            List<List<Option>> augments, List<Option> prismatics, Coverage coverage,
-            List<Option> legacyConsumables) {
-        this(games, wins, coreBuilds, List.of(), augments, prismatics, coverage, legacyConsumables);
+        this(games, wins, coreBuilds, augments, prismatics, coverage, null);
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

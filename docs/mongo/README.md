@@ -110,15 +110,18 @@ break standard reads. CHERRY instead reads Arena and exposes it through Build.fr
 old standard-only zero aggregates do not satisfy CHERRY availability.
 
 Arena uses JsonCodec structured BSON with global outcomes,
-core/final-build combinations, `skillOrders`, Prismatic, six-position augment and minimal coverage aggregates. Full-build item combinations include recognized consumables and omit Prismatic items; Anvil `220007` is included as a consumable. Its full subtree is validated/encoded before the update. Local size/headroom guards cannot
+core/final-build combinations, Prismatic, six-position augment and minimal
+coverage aggregates. Full-build item combinations include recognized consumables
+and omit Prismatic items; Anvil `220007` is included as a consumable. Its full
+subtree is validated/encoded before the update. Local size/headroom guards cannot
 measure existing standard fields without reading: Mongo's atomic combined-document
 limit remains authoritative, and rejection leaves the previous value intact.
 Arena has no schema/aggregation version. Readiness depends on data presence and
 the stats ready marker; timestamps control background refresh only. Payloads
 containing the legacy global or per-build `consumables` fields remain readable
-and do not trigger regeneration. Arena payloads missing `skillOrders` remain
-available and do not trigger a refresh for that reason alone; normal
-regeneration adds the field, and an empty array is valid. Extra fields are
+and do not trigger regeneration. Existing Arena payloads containing legacy
+`skillOrders` remain available; the field is ignored and omitted without a
+refresh. Extra fields are
 ignored when deserializing a valid Arena payload.
 
 All champion consumers use the same raw match/event left join. CHERRY uses
@@ -127,15 +130,14 @@ patch scopes. Standalone batches are 100; matrix batches are 10,000. Missing
 event documents are delivered to consumers rather than excluded by the reader. `ArenaGameParser` reads attributed `item_events`, orders purchases by
 timeline timestamp and falls back to final slots for the first Prismatic when
 needed. Anvil `220007` is retained as a consumable rather than a Prismatic.
-Participant skill orders are aggregated globally with the standard prefix
-ranking; skill/level events take precedence when available and provide timings.
-Arena timestamps are used for ordering and are not persisted. Standard
-build/stat eligibility is unchanged. Arena receives an immutable item catalog
+Arena does not aggregate or expose skill orders. Standard build skill-order
+ranking remains unchanged. Arena timestamps order items and are not persisted.
+Standard build/stat eligibility is unchanged. Arena receives an immutable item catalog
 loaded for the requested patch, retains global Prismatics and augments without a
 core and uses no starters. CHERRY freshness reads Arena data presence and
 arenaLastUpdate; stale valid payloads are served while a background refresh is
-queued. Legacy separate consumables fields and missing `skillOrders` do not
-cause a miss; an empty array is ready.
+queued. Legacy separate consumables fields and old `skillOrders` do not cause a
+miss; the old field is ignored and omitted.
 
 The batch callback is synchronous. Each Arena `Match` holds one decoded
 `JSONObject` timeline in `events`; the duplicate `eventData` map is dropped.
@@ -159,7 +161,7 @@ performed in Phase 3. Do not identify an isolated environment from its name alon
 ### CHERRY contract update (2026-10-14)
 
 Only CHERRY uses the new [Arena schema](../arena-build/champion-schema.json):
-HTTP build is the flat Arena aggregate, with coreBuilds[].builds, `skillOrders`, six augment
+HTTP build is the flat Arena aggregate, with coreBuilds[].builds, six augment
 position rankings and global/core Prismatics. Full-build item lists include
 consumables and exclude Prismatic items, including consumable Anvil 220007. No other legacy fields or build.arena
 wrapper are exposed. Stats use exact same-subTeam ally combinations, team

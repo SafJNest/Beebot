@@ -43,15 +43,14 @@ patch scopes remain exact. Catalogs are loaded for the requested patch, never
 substituted with the current patch. Arena stores schema approvato under
 `build.arena` with `arenaLastUpdate`. CHERRY reads use Arena presence and freshness,
 ignore old standard-only aggregates and expose the Arena subtree through the
-canonical Build; HTTP CHERRY projects Arena directly as build and includes the
-shared `skillOrders` category while omitting other standard legacy fields. Stats retain raw scope ownership and exact
+canonical Build; HTTP CHERRY projects Arena directly as build without skill
+orders or other standard legacy fields. Stats retain raw scope ownership and exact
 subteam synergies, team sizes, `subteamsById` counts for Arena IDs 1–8, and overview placement counts plus average placement; the
 added counters do not change synergy aggregation. Internal Build compatibility projections remain. Standard
 readers and disjoint standard writers remain unchanged. Older Arena payloads
 with the legacy global or per-build `consumables` fields are still returned;
-their presence does not trigger regeneration. Builds missing `skillOrders` are
-still returned; that absence alone does not trigger a refresh. Normal
-regeneration adds the field, and an empty list is valid. Present stale data is
+their presence does not trigger regeneration. Old `skillOrders` data is ignored
+and omitted from CHERRY responses without triggering a refresh. Present stale data is
 returned while its background refresh is queued.
 
 `lol.queue.scheduler.ComputeScheduler` always enqueues champion matrices, builds and the
@@ -65,8 +64,8 @@ the matrix starts, a new build request is independently deduplicated by its full
 
 ## Invariants
 
-- Non-CHERRY payloads remain unchanged; the approved CHERRY contract, including
-  Arena skill orders, is documented in docs/arena-build/champion-schema.json;
+- Non-CHERRY payloads remain unchanged; the approved CHERRY contract is
+  documented in docs/arena-build/champion-schema.json;
   `200`/`202`/`206`/`404` mantengono i contratti indicati dagli endpoint.
 - Mongo remains the persistence owner and Redis remains the cache owner.
 - Ready-empty statistics and builds are persisted so a completed empty result
