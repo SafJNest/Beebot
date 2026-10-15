@@ -23,6 +23,7 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -154,6 +155,7 @@ public final class RankService {
     public static void enqueueRankEntries(boolean highElo, boolean allEntries) {
         List<TierDivisionType> highTiers = highElo ? highEloTiers() : List.of();
         List<TierDivisionType> allTiers = allEntries ? allEntryTiers() : List.of();
+        if (allEntries) BotLogger.info("[LPTracker] Pushing all entries");
         QueueHandler.background(SyncScheduler.class, null, "rank-entries", "RANK_ENTRIES", root -> {
             for (LeagueShard shard : LeagueShardUtils.getActives()) {
                 for (TierDivisionType tier : highTiers) for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR))
@@ -236,6 +238,8 @@ public final class RankService {
             do {
                 task.phase("FETCHING");
                 List<LeagueEntry> entries = getByTier(shard, queue, tier, currentPage);
+                if (page > 0) BotLogger.info("[LPTracker] Start analyzing page " + currentPage
+                    + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
                 task.phase("PERSISTING");
                 for (LeagueEntry entry : entries) {
                     task.trackItem(entry.getPuuid());
