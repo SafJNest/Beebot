@@ -62,4 +62,4 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Match misses return `202` and are resolved by the scheduler.
 - No Redis key pattern contains `v1`, `v2` or `v3`.
 
-The complete profile-statistics flow and the index rationale are maintained in [`profile-statistics-source-of-truth.md`](../profile-statistics-source-of-truth.md).
+The profile-statistics ownership and identity summary is maintained in [`profile-statistics-source-of-truth.md`](../profile-statistics-source-of-truth.md).

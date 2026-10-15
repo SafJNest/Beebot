@@ -1,211 +1,39 @@
 # LoL architecture
 
-This directory is the source of truth for the LoL domain and API refactor.
+This directory contains accepted architecture decisions for the LoL domain.
+Repository-wide implementation rules live in [`AGENTS.md`](../../AGENTS.md);
+operational steps live in the [developer handbook](../HANDBOOK.md).
 
-## Precedence
+## Ownership
 
-When documents disagree, use this order:
+- `lol.model` owns canonical LoL success models.
+- `lol.service` owns domain reads, writes, cache coordination and composition.
+- `lol.queue` owns job registration and scheduling; `lol.tracker` owns periodic
+  tracking.
+- `nosql.MongoDB` owns Mongo persistence. MariaDB is used only by
+  `MongoMigration`.
+- Spring owns HTTP controllers, configuration and error representations.
+- Redis stores disposable caches and derived indexes.
 
-1. `AGENTS.md` for repository-wide implementation rules;
-2. accepted ADRs for architectural decisions;
-3. `docs/HANDBOOK.md` for operational scope and checklists;
-4. current code only as evidence of the migration state.
+The current scheduler contract is [ADR-0014](adr/0014-global-job-scheduler.md).
+The profile aggregate identity and ownership are summarized in
+[`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md).
+Mongo persistence details are in [`docs/mongo`](../mongo/README.md); CHERRY
+build ownership is in [`docs/arena-build`](../arena-build/README.md).
 
-An agent must report a contradiction. It must not resolve the contradiction by changing an ADR or expanding its task scope without approval from the main agent.
+## Accepted ADRs
 
-## Canonical package layout
-
-```text
-lol/model/summoner/
-  Summoner
-  Rank
-  Mastery
-  SummonerOverview
-  SummonerView
-  SummonerLeaderboard
-
-lol/model/match/
-  Match
-  Participant
-  MatchResult
-  LiveGame
-
-lol/model/leaderboard/
-  LeaderboardPage
-  LeaderboardDistribution
-
-lol/model/statistics/
-  ProfileStatistics
-  ProfileActivity
-  ProfileMatchups
-  shared/LeafStats
-  shared/ProfileLeafStats
-  shared/ChampionLeafStats
-  ChampionStatsDocument
-  ProfileStatisticsRow
-
-lol/model/
-  ChampionView
-
-lol/model/status/
-  BotStatus
-  LeagueMetrics
-  SchedulerStatus
-  QueueStatus
-  WorkerStatus
-  RunStatus
-  JobStatus
-  JobProgress
-  JvmMetrics
-  SystemMetrics
-  RedisMetrics
-
-lol/queue/
-  QueueHandler
-  Registry
-  Router
-  job/
-    Job
-    JobPriority
-    JobState
-  scheduler/
-    AbstractScheduler
-    RiotScheduler
-    ComputeScheduler
-    SyncScheduler
-    DatabaseWorkerType
-    ChampionMatrixRequest
-  worker/
-    JobQueue
-    JobWorker
-    WorkerState
-
-lol/tracker/
-  Tracker
-  TrackerScheduler
-
-status/
-  StatusService
-  SystemMetricsSampler
-  LeagueMetricsStore
-```
-
-Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
-`lol.queue` owns the global in-memory registry plus the shared physical
-scheduler infrastructure. `QueueHandler` is the sole public submission API.
-`Job` is the registered data object. Riot,
-compute and Sync retain distinct workers and route-local priority queues; the
-registry tracks their logical parent/child tree and does not merge their queues.
-
-Queue glossary:
-
-- `RiotScheduler` — outbound Riot work, one queue per `LeagueShard`;
-- `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
-- `SyncScheduler` — starts each tracking, rank, match, sample and participant refresh job immediately on its own virtual thread; Registry owns parent/child completion.
-
-The current routing, priorities and insert-time placement contract is defined by [ADR-0014](adr/0014-global-job-scheduler.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
-`MatchService` owns untracked match insertion and can only create a
-`tracked=false` document; it cannot replace a completed match. `Tracker` owns
-the normal RankProgress history completion and commits the single
-`tracked=false -> true` transition. `%test fix-tracked` is the explicit Mongo
-recovery exception: after rebuilding the stored ranked history, it marks each
-repaired ranked match `tracked=true`. Non-tracker match insertion, including
-OP.GG and sample-game imports, may persist a best-effort participant `{ rank, lp }`
-snapshot from the canonical Mongo rank record while computing `match.rank`; a
-missing queue rank in a present `ranks` map is stored as `{ rank: UNRANKED, lp: 0 }`;
-missing or null `ranks` remains unknown. It never writes gain or predecessor data.
-The package boundary is intentional: `job/` owns lifecycle data, `scheduler/`
-owns route selection and physical queues, and `worker/` owns queue draining.
-A job body receives the `Job` itself for phase/item reporting; simple bodies
-ignore it. An async callback calls `QueueHandler.retain(job)` before the body
-returns and `QueueHandler.resume(job, callback)` when it schedules or completes
-its children.
-
-## Response ranking ownership
-
-Champion-page relations and profile matchup/synergy relations are ranked only
-for HTTP responses by `MatchupRankingAnalyzer`. Stored aggregates and Redis
-caches remain raw. `TierMathUtils` is the single owner of median priors,
-shrinkage, Z-score standardization, posterior rate moments and the common
-S+/S/A/B/C/D thresholds used both by this projection and
-`ChampionTierAnalyzer`.
-
-## Statistics source of truth
-
-The complete profile-statistics flow, filter encoding, Mongo document shape, compound index, cache ownership and Discord/API composition are documented in [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md). Start there when a future task mentions `ProfileStatistics`, `SummonerOverview`, `filterKey`, profile matches or `lastUpdate`.
-
-## ADR index
-
-- [ADR-0001: Canonical LoL model boundaries](adr/0001-canonical-lol-model-boundaries.md)
-- [ADR-0002: Summoner view and leaderboard contract](adr/0002-summoner-view-and-leaderboard-contract.md)
-- [ADR-0003: Match and match result models](adr/0003-match-and-match-result-models.md)
-- [ADR-0005: LoL API JSON contract](adr/0005-lol-api-json-contract.md)
-- [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
-- [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
-- [ADR-0008: Component caches and asynchronous match lookups](adr/0008-endpoint-cache-and-async-lookups.md)
-- [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
-- [ADR-0010: Database refresh queue](adr/0010-database-refresh-queue.md) — terminology superseded by ADR-0014
-- [ADR-0011: Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md) — terminology superseded by ADR-0014
-- [ADR-0012: Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
-- [ADR-0013: Champion tier-list projection](adr/0013-champion-tier-list.md)
-- [ADR-0014: Global job scheduler](adr/0014-global-job-scheduler.md) — **current queue contract** (`QueueHandler`/`Job`/`RiotScheduler`/`ComputeScheduler`/`SyncScheduler`)
-- [ADR-0015: Contextual ranking projections](adr/0015-contextual-ranking.md) — **current ranking contract** (`RankService` → `CompetitiveService` → `LeaderboardService`, plus `ProfileRecordService` record indexes)
-
-## Developer handbook
-
-Operational guide for adding command / endpoint / service / model / queue / Mongo / Redis: [`docs/HANDBOOK.md`](../HANDBOOK.md).
-
-## MongoDB migration
-
-The operational documentation for the LoL migration is in [`docs/mongo/`](../mongo/README.md). ADR-0009 is accepted; Guardian gates remain mandatory for every capability.
-
-## Arena champion analytics
-
-The [contract](../arena-build/contracts.md), [schema](../arena-build/schema.md)
-and [phases](../arena-build/phases.md) define the CHERRY build path.
-The existing Spring champion endpoint selects Arena for CHERRY; role is invalid.
-ChampionService and ComputeScheduler own dispatch, freshness, page composition
-and QueueHandler submission on CHAMPION. A cold matrix feeds statistics and
-requested Arena builds from one raw scan; a build-only miss preserves statistics.
-
-MongoDB.forEachChampionRawMatchEventBatch is the sole raw match/event join for
-all queues. It left-joins event documents and returns raw data without choosing
-consumer eligibility. Matrix batches remain 10,000; standalone build batches are
-100. The union projection contains participant IDs, boots, placement, subTeam
-and skillOrder.
-Statistics and standard builds retain their timeline eligibility. Arena retains
-missing-timeline outcomes, final Prismatics, final-slot consumables and up to six
-original augment slots; purchased-and-consumed items require timeline events.
-Arena does not aggregate or expose skill orders. Standard build skill-order
-handling remains unchanged.
-
-ArenaGameParser reads the single hydrated Match.events tree and its catalog for
-the requested patch. Its only core is boots+first-Prismatic; there are no starters.
-ArenaChampionAnalyzer produces schema approvato with full builds grouped
-by boots+first-Prismatic core, six augment position rankings and
-global/core Prismatics. Full-build item lists use attributed purchases in
-timeline order, excluding boots, Prismatics, Juices and Anvil 220007; final
-slots are used only when no attributable item timeline exists. Mongo writes build.arena and arenaLastUpdate atomically
-in the existing champion_builds document. Standard writers preserve that subtree.
-No second identity, collection, replace or read-merge-replace is introduced.
-
-CHERRY reads use Arena presence and freshness, so old standard zero aggregates
-remain misses when no Arena payload exists. Present Arena payloads are served
-even when they have legacy separate consumables fields, legacy `skillOrders` or
-lack newer stats buckets. `skillOrders` is ignored and omitted without a
-refresh. The CHERRY HTTP mapper exposes Arena directly as build without other
-standard legacy fields;
-internal Build projections remain available to existing callers. Stats expose exact
-subteam synergies, team sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and
-`overview.averagePlacement`/`overview.placements` from `subTeamPlacement`.
-Readiness uses the stats ready marker and data presence. Timestamps can enqueue a
-background refresh but do not hide present data; readers do not check all eight
-ID counters or placement buckets and do not reject legacy separate consumables
-fields. Other queues keep standard response semantics. Public minor
-patches collect their full patches; explicit internal full-patch scopes stay exact.
-Canonical rank and region predicates apply at the source. Event timestamps order
-purchases and are not persisted in Arena. Presentation remains unchanged.
-
-Offline fixtures cover raw-only generation, build-only refresh, JSON/BSON and
-standard coexistence. Actual Mongo indexes, combined BSON sizing, representative
-heap and deployment remain operational gates; no production rebuild is performed.
+- [0001 — Canonical LoL model boundaries](adr/0001-canonical-lol-model-boundaries.md)
+- [0002 — Summoner view and leaderboard contract](adr/0002-summoner-view-and-leaderboard-contract.md)
+- [0003 — Match and match-result models](adr/0003-match-and-match-result-models.md)
+- [0005 — LoL API JSON contract](adr/0005-lol-api-json-contract.md)
+- [0006 — Champion API contract](adr/0006-champion-api-contract.md)
+- [0007 — Unified API result and parameters](adr/0007-unified-api-result-and-parameters.md)
+- [0008 — Endpoint cache and asynchronous lookups](adr/0008-endpoint-cache-and-async-lookups.md)
+- [0009 — Mongo persistence and migration](adr/0009-mongo-persistence-and-migration.md)
+- [0010 — Database refresh queue](adr/0010-database-refresh-queue.md), superseded queue terminology
+- [0011 — Domain services and R4J queue](adr/0011-domain-services-and-r4j-queue.md), superseded ownership clauses
+- [0012 — Profile and champion analysis facades](adr/0012-profile-and-champion-analysis-facades.md)
+- [0013 — Champion tier-list projection](adr/0013-champion-tier-list.md)
+- [0014 — Global job scheduler](adr/0014-global-job-scheduler.md), current queue contract
+- [0015 — Contextual ranking projections](adr/0015-contextual-ranking.md)

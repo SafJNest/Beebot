@@ -108,8 +108,9 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `totalDocsExamined`, `nReturned`, `winningPlan`, `indexName` and the absence of
 `COLLSCAN` and of a blocking `SORT`. Compare the before/after baseline with `collStats` and
 `indexSizes`. The leaderboard uses `competitive` for MMR/range/role and then a
-`$in` on the `summoner` primary key; the required indexes are described in
-[`11-leaderboard-rank-indexes.md`](11-leaderboard-rank-indexes.md).
+`$in` on the `summoner` primary key; contextual segment ownership and rebuilds
+are described in [`13-contextual-ranking.md`](13-contextual-ranking.md) and
+[ADR-0015](../architecture/adr/0015-contextual-ranking.md).
 
 ## Arena build path
 

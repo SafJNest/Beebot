@@ -1,10 +1,8 @@
-# Documentation index
+# Documentation
 
-- [Developer Handbook](HANDBOOK.md) — **start here** for new command / endpoint / service / model / queue / mongo / cache
-- [Repository rules and programming style](../AGENTS.md)
-- [LoL architecture](architecture/README.md) — source of truth, ADR index, package layout
-- [LoL HTTP API](api/lol-api.md) — index by scope and endpoint reference
-- [LoL queues (walkthrough)](new-queue.md) — `QueueHandler` / `RiotScheduler` / `ComputeScheduler` / `SyncScheduler`
-- [Profile statistics source of truth](architecture/profile-statistics-source-of-truth.md) — `PUUID + filterKey`, cache, Mongo, OTP
-- [MongoDB LoL migration](mongo/README.md) — operational status, BSON rules, indexes, backfill
-- [SQL structure](sql/README.md) — only for `LeagueDB` backfill adapter
+- [Developer handbook](HANDBOOK.md) — repository conventions and change workflows.
+- [Architecture](architecture/README.md) — ownership and accepted ADRs.
+- [HTTP API](api/lol-api.md) — endpoint index and contracts.
+- [MongoDB](mongo/README.md) — persistence and migration.
+- [Arena builds](arena-build/README.md) — CHERRY schema and processing.
+- [SQL](sql/README.md) — legacy migration adapter.

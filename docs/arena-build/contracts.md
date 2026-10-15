@@ -1,6 +1,6 @@
 # Contratto Arena CHERRY
 
-Stato: nuovo contratto HTTP schema approvato, approvato il 2026-10-14. Forma completa in [schema.md](schema.md) e [champion-schema.json](champion-schema.json).
+Stato: contratto CHERRY approvato il 2026-10-14. La forma HTTP completa è in [champion-schema.json](champion-schema.json).
 
 ## Flusso e ownership
 
