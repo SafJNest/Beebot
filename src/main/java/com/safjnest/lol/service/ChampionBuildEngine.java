@@ -11,7 +11,6 @@ import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.utils.log.BotLogger;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -77,7 +76,6 @@ final class ChampionBuildEngine {
                 MatchMemoryUtils.release(batch);
             }
         });
-        logBuildSummary(accumulator, "build-only");
         return finish(accumulator);
     }
 
@@ -87,21 +85,9 @@ final class ChampionBuildEngine {
 
     static void accept(BuildAccumulator accumulator, QueryRecord record) {
         if (accumulator == null || record == null) return;
-        accumulator.sourceRecords++;
-        ChampionBuildData.Game game = ChampionBuildProvider.parse(record, accumulator.filter,
-            accumulator.parseRejections);
+        ChampionBuildData.Game game = ChampionBuildProvider.parse(record, accumulator.filter);
         if (game == null) return;
         accept(accumulator, game);
-    }
-
-    static void logBuildSummary(BuildAccumulator accumulator, String source) {
-        if (accumulator == null) return;
-        BotLogger.info("[ChampionBuild] source=" + source
-            + " filter=" + accumulator.filter.toKey()
-            + " sourceRecords=" + accumulator.sourceRecords
-            + " acceptedGames=" + accumulator.games
-            + " rejectedRecords=" + (accumulator.sourceRecords - accumulator.games)
-            + " rejectionReasons=" + accumulator.parseRejections);
     }
 
     static void accept(BuildAccumulator accumulator, ChampionBuildData.Game game) {
@@ -185,8 +171,6 @@ final class ChampionBuildEngine {
         private final Map<Integer, int[]> prismatics = new LinkedHashMap<>();
         private final Map<Integer, TimingStats> prismaticTimes = new LinkedHashMap<>();
         private final Map<Integer, Map<Integer, int[]>> augments = new LinkedHashMap<>();
-        private final Map<String, Integer> parseRejections = new LinkedHashMap<>();
-        private int sourceRecords;
         private int games;
         private int wins;
 
@@ -219,8 +203,6 @@ final class ChampionBuildEngine {
             MatchMemoryUtils.release(prismatics);
             MatchMemoryUtils.release(prismaticTimes);
             MatchMemoryUtils.release(augments);
-            MatchMemoryUtils.release(parseRejections);
-            sourceRecords = 0;
             games = 0;
             wins = 0;
         }

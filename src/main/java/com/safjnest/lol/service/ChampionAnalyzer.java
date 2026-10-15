@@ -386,18 +386,13 @@ public final class ChampionAnalyzer {
                 }
             }
             for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) {
-                ChampionBuildEngine.logBuildSummary(acc, "stats-matrix");
                 java.util.List<com.safjnest.lol.model.Build> res = ChampionBuildEngine.finish(acc);
                 if (res.isEmpty()) res = ChampionBuildEngine.emptyResult(acc.filter());
                 com.safjnest.nosql.MongoDB.upsertChampionBuilds(res);
-                BotLogger.info("[ChampionBuildPersisted] source=stats-matrix filter=" + acc.filter().toKey()
-                    + " games=" + res.get(0).games());
             }
             for (var entry : arenas.entrySet()) {
                 ArenaBuildData arena = entry.getValue().finish();
                 MongoDB.upsertChampionArena(arenaFilters.get(entry.getKey()), arena);
-                BotLogger.info("[ChampionBuildPersisted] source=stats-matrix queue=CHERRY filter="
-                    + entry.getKey() + " games=" + arena.games());
             }
             return new MatrixResult(scopes.size(), 0, persistedChampions);
         } finally {

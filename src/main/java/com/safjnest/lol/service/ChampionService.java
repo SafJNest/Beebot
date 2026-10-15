@@ -228,9 +228,6 @@ public class ChampionService {
         }
         List<Build> builds = ChampionBuildEngine.recomputeAll(filter);
         boolean refreshed = builds != null && !builds.isEmpty();
-        BotLogger.info("[ChampionBuildPersisted] filter=" + filter.toKey()
-            + " refreshed=" + refreshed
-            + " games=" + (refreshed ? builds.get(0).games() : 0));
         if (refreshed) invalidate(filter);
         return refreshed;
     }

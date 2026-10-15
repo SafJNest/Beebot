@@ -568,30 +568,16 @@ public final class MongoDB {
         return result;
     }
 
-    private static final class ChampionBuildBatchMetrics {
-        private long matchDocuments;
-        private long eventDocuments;
-        private long usableTimelines;
-        private long matchingParticipants;
-        private long emittedRecords;
-    }
-
     public static void forEachChampionBuildRawBatch(Filter filter, int batchSize,
                                                      Consumer<List<QueryRecord>> consumer) {
         if (filter == null || consumer == null || batchSize <= 0) return;
         List<QueryRecord> batch = new ArrayList<>(batchSize);
-        ChampionBuildBatchMetrics metrics = new ChampionBuildBatchMetrics();
         try {
             forEachChampionRawMatchEventBatch(filter, CHAMPION_BUILD_EVENT_BATCH_SIZE, true, raw -> {
                 Document match = raw.document();
-                metrics.matchDocuments++;
-                if (match.get("events") != null) metrics.eventDocuments++;
-                if (MatchupTimelineUtils.hasTimeline(match.get("events"))) metrics.usableTimelines++;
                 List<QueryRecord> records = championBuildRecords(match, filter);
-                metrics.matchingParticipants += records.size();
                 for (QueryRecord record : records) {
                     batch.add(record);
-                    metrics.emittedRecords++;
                     if (batch.size() >= batchSize) {
                         consumer.accept(batch);
                         batch.clear();
@@ -601,12 +587,6 @@ public final class MongoDB {
             if (!batch.isEmpty()) consumer.accept(batch);
         } finally {
             MatchMemoryUtils.release(batch);
-            BotLogger.info("[ChampionBuildSource] filter=" + filter.toKey()
-                + " matchDocuments=" + metrics.matchDocuments
-                + " eventDocuments=" + metrics.eventDocuments
-                + " usableTimelines=" + metrics.usableTimelines
-                + " matchingParticipants=" + metrics.matchingParticipants
-                + " emittedRecords=" + metrics.emittedRecords);
         }
     }
 

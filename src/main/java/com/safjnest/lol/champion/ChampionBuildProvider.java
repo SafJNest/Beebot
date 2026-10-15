@@ -31,27 +31,14 @@ public final class ChampionBuildProvider {
     }
 
     public static ChampionBuildData.Game parse(QueryRecord record, Filter filter) {
-        return parse(record, filter, null);
-    }
-
-    public static ChampionBuildData.Game parse(QueryRecord record, Filter filter, Map<String, Integer> rejections) {
         JSONObject full = json(record.get("build"));
-        if (full == null) {
-            countRejection(rejections, "invalid_json");
-            return null;
-        }
+        if (full == null) return null;
         try {
             JSONObject timeline = full.optJSONObject("timeline");
-            if (!MatchupTimelineUtils.hasTimeline(timeline)) {
-                countRejection(rejections, "unusable_timeline");
-                return null;
-            }
+            if (!MatchupTimelineUtils.hasTimeline(timeline)) return null;
             JSONObject buildObject = full.optJSONObject("build");
             JSONArray skillOrder = full.optJSONArray("skill_order");
-            if (buildObject == null || buildObject.optJSONArray("build") == null) {
-                countRejection(rejections, "missing_build_fields");
-                return null;
-            }
+            if (buildObject == null || buildObject.optJSONArray("build") == null) return null;
 
             String puuid = record.get("puuid");
             List<ChampionBuildTimelineUtils.ItemEvent> itemEvents = ChampionBuildTimelineUtils.itemEvents(timeline, puuid);
@@ -73,19 +60,12 @@ public final class ChampionBuildProvider {
             Map<Integer, Long> itemTimes = new LinkedHashMap<>();
             for (ChampionBuildTimelineUtils.ItemEvent item : itemEvents)
                 itemTimes.put(item.itemId(), item.timestampMillis());
-            if (signature == null) {
-                countRejection(rejections, "invalid_final_build");
-                return null;
-            }
+            if (signature == null) return null;
             return new ChampionBuildData.Game(signature, runes, record.getAsBoolean("win"),
                 buildObject.optInt("role_bound", 0), Map.copyOf(itemTimes), skillUpgrades);
         } finally {
             MatchMemoryUtils.release(full);
         }
-    }
-
-    private static void countRejection(Map<String, Integer> rejections, String reason) {
-        if (rejections != null) rejections.merge(reason, 1, Integer::sum);
     }
 
     private static JSONObject json(String raw) {
