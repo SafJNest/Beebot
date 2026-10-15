@@ -34,6 +34,7 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 public final class RankService {
 
     private static final int MAX_CONSECUTIVE_PAGE_ERRORS = 3;
+    private static final long MISSING_SUMMONER_DELAY_MS = 350;
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<Map<GameQueueType, Rank>> RANKS_TYPE = new TypeReference<>() {};
@@ -122,6 +123,12 @@ public final class RankService {
     public static void saveEntry(LeagueShard shard, LeagueEntry entry) {
         if (entry == null || !valid(entry.getPuuid(), shard)) return;
         if (SummonerService.find(entry.getPuuid(), shard) == null) {
+            try {
+                Thread.sleep(MISSING_SUMMONER_DELAY_MS);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Rank entry import interrupted", exception);
+            }
             var summoner = SummonerService.getRiotSummoner(entry.getPuuid(), shard);
             if (summoner == null) return;
             if (SummonerService.find(entry.getPuuid(), shard) == null && !SummonerService.upsert(summoner, null)) return;

@@ -126,6 +126,9 @@ region's ranks and pages sequentially; separate regions can run concurrently.
 An empty page ends the current rank. Page-fetch failures are logged and skipped;
 three consecutive failures move a paginated scan to the next rank. High-elo
 single-page requests move to the next rank after one failure.
+When `RankService.saveEntry` imports a summoner missing from local storage, it
+waits 350 ms before fetching the Riot identity. Existing summoners have no added
+delay.
 
 ### 5.12 Tests and validation
 
