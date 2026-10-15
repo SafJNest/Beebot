@@ -92,3 +92,9 @@ Rank entries are scheduled as real leaf tasks before execution: one task for
 each `shard + tier + queue`. The derived `runs[].tasks` can therefore be grouped by
 task `route` to render the seven shard groups and their pending/running/done
 rank jobs without parsing task names.
+
+High-elo rank entries (Master, Grandmaster and Challenger) use page `0` and are
+fetched once per queue. Other ranked tiers use the paginated entries endpoint,
+starting at page `1` and continuing until Riot returns an empty page. The
+`getrank` and `getallrank` operations remain separate: the former fetches
+high-elo tiers; the latter fetches the other ranked tiers.

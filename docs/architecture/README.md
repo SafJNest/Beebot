@@ -103,7 +103,7 @@ Queue glossary:
 - `ComputeScheduler` — Mongo compute work, routes `PROFILE` and `CHAMPION`;
 - `SyncScheduler` — starts each tracking, rank, match, sample and participant refresh job immediately on its own virtual thread; Registry owns parent/child completion.
 
-Routing, priorities and insert-time placement are defined by [ADR-0010](adr/0010-database-refresh-queue.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
+The current routing, priorities and insert-time placement contract is defined by [ADR-0014](adr/0014-global-job-scheduler.md). A walkthrough of the current code is [`docs/new-queue.md`](../new-queue.md).
 `MatchService` owns untracked match insertion and can only create a
 `tracked=false` document; it cannot replace a completed match. `Tracker` owns
 the normal RankProgress history completion and commits the single
@@ -139,7 +139,6 @@ The complete profile-statistics flow, filter encoding, Mongo document shape, com
 - [ADR-0001: Canonical LoL model boundaries](adr/0001-canonical-lol-model-boundaries.md)
 - [ADR-0002: Summoner view and leaderboard contract](adr/0002-summoner-view-and-leaderboard-contract.md)
 - [ADR-0003: Match and match result models](adr/0003-match-and-match-result-models.md)
-- [ADR-0004: Profile statistics asynchronous generation](adr/0004-profile-statistics-refresh-queue.md) — superseded by ADR-0010
 - [ADR-0005: LoL API JSON contract](adr/0005-lol-api-json-contract.md)
 - [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
 - [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
@@ -177,13 +176,13 @@ and skillOrder.
 Statistics and standard builds retain their timeline eligibility. Arena retains
 missing-timeline outcomes, final Prismatics, final-slot consumables and up to six
 original augment slots; purchased-and-consumed items require timeline events.
-Arena skillOrders prefer skill/level timeline events when available, use
-participant sequences as fallback and expose available upgrade timings.
+Arena does not aggregate or expose skill orders. Standard build skill-order
+handling remains unchanged.
 
 ArenaGameParser reads the single hydrated Match.events tree and its catalog for
 the requested patch. Its only core is boots+first-Prismatic; there are no starters.
 ArenaChampionAnalyzer produces schema approvato with full builds grouped
-by boots+first-Prismatic core, skillOrders, six augment position rankings and
+by boots+first-Prismatic core, six augment position rankings and
 global/core Prismatics. Full-build item lists use attributed purchases in
 timeline order, excluding boots, Prismatics, Juices and Anvil 220007; final
 slots are used only when no attributable item timeline exists. Mongo writes build.arena and arenaLastUpdate atomically
@@ -192,10 +191,10 @@ No second identity, collection, replace or read-merge-replace is introduced.
 
 CHERRY reads use Arena presence and freshness, so old standard zero aggregates
 remain misses when no Arena payload exists. Present Arena payloads are served
-even if they have legacy separate consumables fields, lack newer stats buckets
-or omit `skillOrders`. Its absence alone does not trigger a refresh; normal
-regeneration adds the field, and an empty array is valid. The CHERRY HTTP mapper exposes Arena directly as build with
-`skillOrders` and without other standard legacy fields;
+even when they have legacy separate consumables fields, legacy `skillOrders` or
+lack newer stats buckets. `skillOrders` is ignored and omitted without a
+refresh. The CHERRY HTTP mapper exposes Arena directly as build without other
+standard legacy fields;
 internal Build projections remain available to existing callers. Stats expose exact
 subteam synergies, team sizes 2/3, `subteamsById` counts for Arena IDs 1–8 and
 `overview.averagePlacement`/`overview.placements` from `subTeamPlacement`.

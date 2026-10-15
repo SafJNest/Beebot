@@ -588,7 +588,5 @@ Before modifying this flow verify:
 - `src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java`
 - `src/main/java/com/safjnest/lol/message/LeagueMessage.java`
 - `src/main/java/com/safjnest/lol/model/summoner/SummonerOverview.java`
-- `docs/mongo/01-db-structure.md`
-- `docs/architecture/adr/0004-profile-statistics-refresh-queue.md`
 - `docs/architecture/adr/0010-database-refresh-queue.md`
 - `docs/architecture/adr/0008-endpoint-cache-and-async-lookups.md`

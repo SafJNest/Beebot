@@ -158,7 +158,7 @@ public final class RankService {
             for (LeagueShard shard : LeagueShardUtils.getActives()) {
                 for (TierDivisionType tier : highTiers) for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR))
                     enqueueTier(shard, tier, queue, 0);
-                for (TierDivisionType tier : allTiers) enqueueTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, -1);
+                for (TierDivisionType tier : allTiers) enqueueTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, 1);
             }
             return null;
         });
