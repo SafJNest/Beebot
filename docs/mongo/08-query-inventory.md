@@ -4,7 +4,7 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 
 | Area | Target Mongo query | Application budget | Consumer |
 |---|---|---:|---|
-| search/autocomplete | one `find` on `summoner` with `region + riotSearch` prefix, base projection + `ranks`, Solo rank included | 1 | SummonerService |
+| search/autocomplete | one `find` on `summoner` with `region + riotSearch` prefix, base projection + `ranks`, Solo rank included; global HTTP search uses `$in` over active shard names in the same bounded query | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` sorted by `_id`; maps to canonical `Summoner` (`region` as `LeagueShard`) | 1 | UserData / Discord |
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
 | leaderboard | Normal page: `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id`. Summoner page: exact identity lookup, Redis exact-division rank/range when resident; otherwise indexed count-before plus bounded seek queries around the target tuple, then one `$in` on `summoner._id`. Both use the existing total-count path. | Normal: 2 per page + count on cache miss. Summoner: identity + anchor + rank/page reads + count + summoner fetch. | LeaderboardService |

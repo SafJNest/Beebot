@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.competitive.CompetitiveEntry;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
@@ -122,8 +123,10 @@ public class LeaderboardService {
                 selectedRank, selectedQueue, selectedRegion, target, before % limit, limit);
         }
         int page = pageForPosition(before, limit);
-        return ApiResult.ready(buildPage(selectedRank, selectedQueue, selectedRegion, null, null,
-            page, limit, summoners, total, false));
+        LeaderboardPage leaderboardPage = buildPage(selectedRank, selectedQueue, selectedRegion, null, null,
+            page, limit, summoners, total, false);
+        ResponseMetadata metadata = summonerMetadata(leaderboardPage, selectedQueue, selectedRank, region);
+        return ApiResult.ready(leaderboardPage.withMetadata(metadata), metadata);
     }
 
     public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
@@ -362,6 +365,16 @@ public class LeaderboardService {
             rankKey, queue.name(), region, roleKey, otpKey, page, limit
         );
         return response;
+    }
+
+    static ResponseMetadata summonerMetadata(
+            LeaderboardPage page, GameQueueType queue, TierType rank, LeagueShard region) {
+        int offset = Math.toIntExact((long) (page.page() - 1) * page.pageSize());
+        return new ResponseMetadata(
+            new ResponseMetadata.Pagination(page.page(), page.pageSize(), page.pageSize(), offset,
+                page.total(), page.pages(), page.page() < page.pages()),
+            null, false, Filter.leaderboard(queue, rank, region)
+        );
     }
 
     private static TierType tier(TierDivisionType division) {

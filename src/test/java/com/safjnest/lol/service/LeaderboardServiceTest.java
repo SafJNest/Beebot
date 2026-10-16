@@ -5,14 +5,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
 
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.summoner.Rank;
+import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.utils.TierDivisionUtils;
 
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class LeaderboardServiceTest {
 
@@ -61,6 +67,28 @@ public class LeaderboardServiceTest {
         assertEquals(120L, LeaderboardService.tierPositionBefore(
             Map.of(TierDivisionType.MASTER_I, 1_000L), TierDivisionType.MASTER_I, 120));
         assertEquals(4, LeaderboardService.pageForPosition(150, 50));
+    }
+
+    @Test
+    public void summonerMetadataReportsEffectiveFiltersAndComputedPagination() {
+        LeaderboardPage page = new LeaderboardPage(24, 2, 70, 35, List.of());
+
+        var metadata = LeaderboardService.summonerMetadata(
+            page, GameQueueType.RANKED_SOLO_5X5, TierType.GOLD, LeagueShard.EUW1);
+
+        assertEquals(Integer.valueOf(24), metadata.pagination().page());
+        assertEquals(Integer.valueOf(2), metadata.pagination().pageSize());
+        assertEquals(Integer.valueOf(2), metadata.pagination().limit());
+        assertEquals(Integer.valueOf(46), metadata.pagination().offset());
+        assertEquals(Long.valueOf(70), metadata.pagination().total());
+        assertEquals(Long.valueOf(35), metadata.pagination().pages());
+        assertTrue(metadata.pagination().hasMore());
+        assertEquals(GameQueueType.RANKED_SOLO_5X5, metadata.filter().queue());
+        assertEquals(TierType.GOLD, metadata.filter().rank());
+        assertEquals(Filter.RankBehavior.EXACT, metadata.filter().rankBehavior());
+        assertEquals(LeagueShard.EUW1, metadata.filter().region());
+        assertNull(metadata.filter().lane());
+        assertNull(metadata.filter().patch());
     }
 
     @Test

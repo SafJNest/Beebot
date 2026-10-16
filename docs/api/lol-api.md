@@ -15,7 +15,7 @@ Examples use `http://localhost:8080` as the base URL.
 
 ### Summoner
 
-- [Search](summoner/search.md) — `GET /api/lol/{shard}/search`
+- [Search](summoner/search.md) — `GET /api/lol/search` (`shard` optional)
 - [Profile by PUUID](summoner/profile-by-puuid.md) — `GET /api/lol/{shard}/profile/{puuid}`
 - [Profile refresh](summoner/profile-refresh.md) — `POST /api/lol/{shard}/profile/{puuid}/refresh`
 - [Profile by Riot ID](summoner/profile-by-name.md) — `GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}`

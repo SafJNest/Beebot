@@ -47,22 +47,6 @@ public class LolController {
         this.profileRecordService = new ProfileRecordService();
     }
 
-    @GetMapping("/search")
-    public List<SummonerView> search(
-            @PathVariable("shard") String shardValue,
-            @RequestParam("q") String q
-    ) {
-        String query = LolApiParameters.requiredText(q, "search query");
-        if (SummonerService.normalizeSearch(query).isEmpty()) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Search query must contain at least one character after removing spaces, '-' and '#'"
-            );
-        }
-
-        return SummonerService.search(query, LolApiParameters.requiredShard(shardValue));
-    }
-
     @GetMapping("/profile/{puuid}")
     public ResponseEntity<?> profile(
             @PathVariable("shard") String shardValue,

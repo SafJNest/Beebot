@@ -23,6 +23,7 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
+import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.nosql.MongoDB;
@@ -281,7 +282,9 @@ public final class SummonerService {
 
     public static List<SummonerView> search(String query, LeagueShard shard) {
         String normalizedQuery = normalizeSearch(query);
-        String key = RedisKey.SUMMONER_SEARCH.of(LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
+        String cacheRegion = shard == null ? LeagueConstants.GLOBAL_REGION : LeagueShardUtils.cacheRegion(shard);
+        String searchScope = LeagueShardUtils.defaultRegion(shard);
+        String key = RedisKey.SUMMONER_SEARCH.of(cacheRegion, searchScope, normalizedQuery);
         List<SummonerView> cached = RedisClient.get(key, SUMMONER_SEARCH_TYPE);
         if (cached != null) return cached;
 
@@ -293,7 +296,7 @@ public final class SummonerService {
             Rank rank = row.soloRank() != null ? row.soloRank() : Rank.unranked();
             summoners.add(SummonerView.from(row.summoner(), Map.of(GameQueueType.RANKED_SOLO_5X5, rank), new ProfileStatistics(), List.of()));
         }
-        RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, LeagueShardUtils.cacheRegion(shard), shard.name(), normalizedQuery);
+        RedisClient.set(RedisKey.SUMMONER_SEARCH, summoners, cacheRegion, searchScope, normalizedQuery);
         return summoners;
     }
 

@@ -189,6 +189,14 @@ public final class LolApiParameters {
         return shard;
     }
 
+    public static LeagueShard optionalShard(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        LeagueShard shard = parseEnum(normalized, LeagueShard.class, "shard");
+        if (shard == LeagueShard.UNKNOWN) throw invalid("shard", "must be a valid League shard");
+        return shard;
+    }
+
     public static LeagueShard requiredShard(String value) {
         if (value == null || value.isBlank()) throw invalid("shard", "is required");
         return region(value);

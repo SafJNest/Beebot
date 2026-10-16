@@ -54,11 +54,13 @@ public class LeaderboardController {
     private ResponseEntity<?> response(ApiResult<LeaderboardPage> result) {
         if (result.payload() != null) {
             LeaderboardPage pageValue = result.payload();
-            ResponseMetadata metadata = new ResponseMetadata(
-                new ResponseMetadata.Pagination(pageValue.page(), pageValue.pageSize(), null, null,
-                    pageValue.total(), pageValue.pages(), null),
-                null, false, null
-            );
+            ResponseMetadata metadata = result.metadata() == null
+                ? new ResponseMetadata(
+                    new ResponseMetadata.Pagination(pageValue.page(), pageValue.pageSize(), null, null,
+                        pageValue.total(), pageValue.pages(), null),
+                    null, false, null
+                )
+                : result.metadata();
             result = ApiResult.ready(pageValue.withMetadata(metadata), metadata);
         }
         return LolApiResponses.from(

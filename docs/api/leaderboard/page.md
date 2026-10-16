@@ -76,7 +76,8 @@ seek queries around the player's `competitive` tuple compute the same page
 without loading or skipping preceding rows. Rows retain the `MMR DESC, score
 DESC` order. Exact MMR-and-score ties still have no Mongo tie-breaker, so a
 player in a tie may move between adjacent pages.
-The HTTP payload does not change.
+The `LeaderboardPage` data shape does not change; the `summoner` lookup fills
+the existing metadata fields with its effective filter and computed pagination.
 
 ## States and errors
 
@@ -86,4 +87,9 @@ The HTTP payload does not change.
 | `400` | `invalid_request` | Invalid queue/region/limit; without `summoner`, also invalid rank/role/OTP or `page < 1`. |
 | `404` | `not_found` | Resource not found. |
 
-`metadata.pagination` exposes `page`, `pageSize`, `total` and `pages`.
+`metadata.pagination` exposes `page`, `pageSize`, `total` and `pages`. For a
+`summoner` lookup it also fills `limit`, the computed `offset`, and `hasMore`;
+`metadata.filter` reports the effective queue, exact tier and requested region
+(null when the lookup covers all regions). The tier is inferred from the
+summoner's rank in that queue, while ignored `rank`, `role`, `otp` and `page`
+parameters are not reflected in the filter.

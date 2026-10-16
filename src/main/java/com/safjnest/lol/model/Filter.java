@@ -37,6 +37,20 @@ public class Filter {
         return new Filter(false).setChampion(champion).setPatch(patch).setQueue(queue);
     }
 
+    public static Filter leaderboard(GameQueueType queue, TierType rank, LeagueShard region) {
+        return new Filter(false)
+            .setChampion(0)
+            .setLane(null)
+            .setQueue(queue)
+            .setRank(rank)
+            .setRankBehavior(RankBehavior.EXACT)
+            .setPatch(null)
+            .setRegion(region)
+            .setOpponent(0)
+            .setDuo(0)
+            .setPeriod(0, 0);
+    }
+
     public static Filter summoner(long timeStart, long timeEnd) {
         return new Filter()
             .setChampion(0)

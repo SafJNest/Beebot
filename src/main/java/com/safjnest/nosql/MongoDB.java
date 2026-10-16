@@ -919,13 +919,21 @@ public final class MongoDB {
     }
 
     public static List<SummonerSearchResult> findSummonerSearch(String normalizedQuery, LeagueShard shard, int limit) {
-        traceRead("summoner.search", "region=" + shard + " limit=" + limit);
+        traceRead("summoner.search", "region=" + (shard == null ? LeagueConstants.GLOBAL_REGION : shard.name()) + " limit=" + limit);
         int boundedLimit = Math.max(0, Math.min(MAX_SEARCH_RESULTS, limit));
         if (boundedLimit == 0) return List.of();
         Pattern prefix = Pattern.compile("^" + Pattern.quote(normalizedQuery == null ? "" : normalizedQuery));
+        Bson shardFilter;
+        if (shard == null) {
+            List<String> activeShards = new ArrayList<>();
+            for (LeagueShard activeShard : LeagueShardUtils.getActives()) activeShards.add(activeShard.name());
+            shardFilter = Filters.in("region", activeShards);
+        } else {
+            shardFilter = Filters.eq("region", shard.name());
+        }
         List<SummonerSearchResult> result = new ArrayList<>();
         for (Document document : summoners()
-                .find(Filters.and(Filters.eq("region", shard.name()), Filters.regex("riotSearch", prefix)))
+                .find(Filters.and(shardFilter, Filters.regex("riotSearch", prefix)))
                 .projection(Projections.include("_id", "puuid", "riotId", "region", "level", "icon", "ranks"))
                 .sort(Sorts.ascending("riotId"))
                 .limit(boundedLimit)) {
