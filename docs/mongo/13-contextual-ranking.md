@@ -38,6 +38,24 @@ hashes are rebuilt by assigning each
 `competitive.mmr` to its exact MMR interval.
 The segment registry and access hash are Redis-only observability metadata.
 
+`GET /api/lol/leaderboard?summoner=...` uses the requested queue rank to
+select a tier and keeps the requested region. If each division segment needed
+for the page is resident, the service combines exact-division counts with
+`ZREVRANK`, then reads only the page's Redis member ranges. Members remain the
+sortable score prefix plus competitive identity; Mongo resolves those IDs to
+PUUIDs and the existing summoner projection hydrates the response. This path
+does not read or write the one-day page cache.
+
+When a required segment is absent, Mongo uses the player's `competitive` row
+as its seek anchor. An indexed count of rows with a greater `(mmr, score)`
+tuple determines the page; bounded queries fetch the nearest rows before and
+after it. No deep `skip` is used. Existing exact MMR/score ties have no Mongo
+tie-breaker and can move between pages. The compound global/regional indexes
+above cover the filter and order, but the count can still examine many index
+keys in Gold/Emerald. Verify with `explain("executionStats")` on representative
+data before deciding to prewarm these lower divisions. The fallback issues no
+Riot API search: Riot ID matching is exact against stored `summoner.riotId`.
+
 Apply these operator-managed indexes after checking existing names and running
 the corresponding `explain("executionStats")` commands.
 Replace the existing contextual index definitions with these compound keys;

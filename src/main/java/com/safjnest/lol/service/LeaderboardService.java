@@ -2,6 +2,7 @@ package com.safjnest.lol.service;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -79,57 +80,50 @@ public class LeaderboardService {
             rank, selectedQueue, selectedRegion, role, otpChampionId, offset, limit
         );
         long total = findLeaderboardCount(rank, selectedQueue, selectedRegion, role, otpChampionId);
-        long pages = total == 0 ? 0 : (total + limit - 1) / limit;
+        return ApiResult.ready(buildPage(rank, selectedQueue, selectedRegion, role, otpChampionId,
+            page, limit, summoners, total, true));
+    }
 
-        Filter filter = Filter.canonical();
-        Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
-        Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
-        for (Summoner summoner : summoners) {
-            LeagueShard shard = summoner.region();
-            puuidsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(summoner.puuid());
-        }
-        for (Map.Entry<LeagueShard, List<String>> entry : puuidsByShard.entrySet())
-            statisticsBySummoner.putAll(profileService.getStatistics(entry.getValue(), entry.getKey(), filter));
-        for (Summoner summoner : summoners) {
-            if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
-            ComputeScheduler.startProfileStatistics(summoner, filter);
-        }
+    public ApiResult<LeaderboardPage> getLeaderboardForSummoner(
+            String identity, GameQueueType queue, LeagueShard region, int limit) {
+        if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
+        if (identity == null || identity.isBlank()) return ApiResult.notFound();
 
-        List<RankedSummoner> rankingSubjects = new ArrayList<>(summoners.size());
-        for (Summoner summoner : summoners) {
-            Map<GameQueueType, Rank> stored = summoner.ranks();
-            Rank rankValue = stored == null ? null : stored.get(selectedQueue);
-            if (rankValue == null) rankValue = Rank.unranked();
-            rankingSubjects.add(new RankedSummoner(
-                summoner.puuid(), summoner.region(), Map.of(selectedQueue, rankValue)));
-        }
-        Map<String, Map<GameQueueType, Rank>> rankings = resolveRankings(rankingSubjects);
+        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(GameQueueTypeUtils.defaultQueue(queue));
+        String selectedRegion = LeagueShardUtils.defaultRegion(region);
+        Summoner targetSummoner = MongoDB.findSummonerExact(identity, region);
+        if (targetSummoner == null || targetSummoner.region() == null) return ApiResult.notFound();
+        Map<GameQueueType, Rank> storedRanks = targetSummoner.ranks();
+        Rank targetRank = storedRanks == null ? null : storedRanks.get(selectedQueue);
+        if (targetRank == null || targetRank.tier() == null || targetRank.tier() == TierDivisionType.UNRANKED)
+            return ApiResult.notFound();
+        TierType selectedRank = tier(targetRank.tier());
+        if (selectedRank == null || selectedRank == TierType.UNRANKED) return ApiResult.notFound();
 
-        List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
-        for (int index = 0; index < summoners.size(); index++) {
-            Summoner summoner = summoners.get(index);
-            Map<GameQueueType, Rank> stored = summoner.ranks();
-            Rank rankValue = stored == null ? null : stored.get(selectedQueue);
-            if (rankValue == null) rankValue = Rank.unranked();
-            Map<GameQueueType, Rank> ranks = rankings.getOrDefault(summoner.puuid(), Map.of(selectedQueue, rankValue));
-            ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
-            List<Mastery> masteries = summoner.masteries();
-            SummonerView view = SummonerView.from(
-                summoner,
-                ranks,
-                statistics,
-                statistics == null || masteries == null ? List.of() : masteries
-            );
-            leaderboardSummoners.add(new SummonerLeaderboard(offset + index + 1, view));
-        }
+        CompetitiveEntry target = MongoDB.findCompetitive(targetSummoner.puuid(), selectedQueue);
+        if (target == null || !targetSummoner.puuid().equals(target.puuid()) || target.queue() != selectedQueue
+                || target.region() != targetSummoner.region()
+                || TierDivisionUtils.getTierFromMmr(target.mmr()) != selectedRank
+                || (!LeagueConstants.GLOBAL_REGION.equals(selectedRegion) && !selectedRegion.equals(target.region().name())))
+            return ApiResult.notFound();
 
-        LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, leaderboardSummoners);
-        if (statisticsBySummoner.size() == summoners.size()) RedisClient.set(
-            RedisKey.LEADERBOARD_PAGE,
-            response,
-            rankKey, selectedQueue.name(), selectedRegion, roleKey, otpKey, page, limit
-        );
-        return ApiResult.ready(response);
+        long total = findLeaderboardCount(selectedRank, selectedQueue, selectedRegion, null, null);
+        long before = redisPositionBefore(selectedQueue, selectedRegion, targetRank.tier(), target);
+        List<Summoner> summoners = null;
+        if (before >= 0) summoners = redisPage(selectedQueue, selectedRegion, selectedRank, before, limit);
+        if (summoners != null) {
+            boolean foundTarget = false;
+            for (Summoner summoner : summoners) if (targetSummoner.puuid().equals(summoner.puuid())) foundTarget = true;
+            if (!foundTarget) summoners = null;
+        }
+        if (summoners == null) {
+            before = MongoDB.countLeaderboardEntriesBefore(selectedRank, selectedQueue, selectedRegion, target);
+            summoners = MongoDB.findLeaderboardSeekPage(
+                selectedRank, selectedQueue, selectedRegion, target, before % limit, limit);
+        }
+        int page = pageForPosition(before, limit);
+        return ApiResult.ready(buildPage(selectedRank, selectedQueue, selectedRegion, null, null,
+            page, limit, summoners, total, false));
     }
 
     public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
@@ -310,6 +304,139 @@ public class LeaderboardService {
     public record IndexStatus(long segments, long memoryBytes, List<SegmentStatus> values) {}
 
     // ============================================================================
+
+    private LeaderboardPage buildPage(
+            TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId,
+            int page, int limit, List<Summoner> summoners, long total, boolean cachePage) {
+        long offset = (long) (page - 1) * limit;
+        long pages = total == 0 ? 0 : (total + limit - 1) / limit;
+        Filter filter = Filter.canonical();
+        Map<String, ProfileStatistics> statisticsBySummoner = new HashMap<>();
+        Map<LeagueShard, List<String>> puuidsByShard = new HashMap<>();
+        for (Summoner summoner : summoners) {
+            LeagueShard shard = summoner.region();
+            puuidsByShard.computeIfAbsent(shard, ignored -> new ArrayList<>()).add(summoner.puuid());
+        }
+        for (Map.Entry<LeagueShard, List<String>> entry : puuidsByShard.entrySet())
+            statisticsBySummoner.putAll(profileService.getStatistics(entry.getValue(), entry.getKey(), filter));
+        for (Summoner summoner : summoners) {
+            if (statisticsBySummoner.containsKey(summoner.puuid())) continue;
+            ComputeScheduler.startProfileStatistics(summoner, filter);
+        }
+
+        List<RankedSummoner> rankingSubjects = new ArrayList<>(summoners.size());
+        for (Summoner summoner : summoners) {
+            Map<GameQueueType, Rank> stored = summoner.ranks();
+            Rank rankValue = stored == null ? null : stored.get(queue);
+            if (rankValue == null) rankValue = Rank.unranked();
+            rankingSubjects.add(new RankedSummoner(
+                summoner.puuid(), summoner.region(), Map.of(queue, rankValue)));
+        }
+        Map<String, Map<GameQueueType, Rank>> rankings = resolveRankings(rankingSubjects);
+
+        List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
+        for (int index = 0; index < summoners.size(); index++) {
+            Summoner summoner = summoners.get(index);
+            Map<GameQueueType, Rank> stored = summoner.ranks();
+            Rank rankValue = stored == null ? null : stored.get(queue);
+            if (rankValue == null) rankValue = Rank.unranked();
+            Map<GameQueueType, Rank> ranks = rankings.getOrDefault(summoner.puuid(), Map.of(queue, rankValue));
+            ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
+            List<Mastery> masteries = summoner.masteries();
+            SummonerView view = SummonerView.from(
+                summoner,
+                ranks,
+                statistics,
+                statistics == null || masteries == null ? List.of() : masteries
+            );
+            leaderboardSummoners.add(new SummonerLeaderboard(offset + index + 1, view));
+        }
+
+        LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, leaderboardSummoners);
+        String rankKey = rank == null ? LeagueConstants.ALL : rank.name();
+        String roleKey = role == null ? LeagueConstants.ALL : role.name();
+        String otpKey = otpChampionId == null ? LeagueConstants.ALL : otpChampionId.toString();
+        if (cachePage && statisticsBySummoner.size() == summoners.size()) RedisClient.set(
+            RedisKey.LEADERBOARD_PAGE,
+            response,
+            rankKey, queue.name(), region, roleKey, otpKey, page, limit
+        );
+        return response;
+    }
+
+    private static TierType tier(TierDivisionType division) {
+        if (division == null || division == TierDivisionType.UNRANKED || division.getTier() == null) return TierType.UNRANKED;
+        try { return TierType.valueOf(division.getTier().toUpperCase(java.util.Locale.ROOT)); }
+        catch (IllegalArgumentException ignored) { return TierType.UNRANKED; }
+    }
+
+    private static long redisPositionBefore(
+            GameQueueType queue, String region, TierDivisionType division, CompetitiveEntry target) {
+        LeagueShard shard = LeagueConstants.GLOBAL_REGION.equals(region) ? null : LeagueShard.valueOf(region);
+        Map<TierDivisionType, Long> counts = counts(queue, shard);
+        if (counts.isEmpty()) return -1;
+        String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(
+            queue.name(), LeagueShardUtils.leaderboardScope(shard), division.name());
+        if (!RedisClient.sortedSetExists(key)) return -1;
+        List<Long> ranks = RedisClient.reverseRanks(List.of(key), List.of(member(target.puuid(), queue, target.score())));
+        if (ranks.size() != 1 || ranks.get(0) == null) return -1;
+        long before = ranks.get(0);
+        Map<TierDivisionType, Long> tierCounts = new HashMap<>();
+        for (TierDivisionType candidate : TierDivisionUtils.descendingRankedDivisions()) {
+            if (tier(candidate) == tier(division)) tierCounts.put(candidate, counts.getOrDefault(candidate, 0L));
+        }
+        return tierPositionBefore(tierCounts, division, before);
+    }
+
+    private static List<Summoner> redisPage(
+            GameQueueType queue, String region, TierType rank, long before, int limit) {
+        LeagueShard shard = LeagueConstants.GLOBAL_REGION.equals(region) ? null : LeagueShard.valueOf(region);
+        String scope = LeagueShardUtils.leaderboardScope(shard);
+        Map<TierDivisionType, Long> counts = counts(queue, shard);
+        if (counts.isEmpty()) return null;
+        long pageStart = before / limit * limit;
+        long pageEnd = pageStart + limit - 1;
+        long cursor = 0;
+        List<Binary> ids = new ArrayList<>(limit);
+        for (TierDivisionType division : TierDivisionUtils.descendingRankedDivisions()) {
+            if (tier(division) != rank) continue;
+            long cardinality = counts.getOrDefault(division, 0L);
+            if (cardinality == 0) continue;
+            String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(queue.name(), scope, division.name());
+            if (!RedisClient.sortedSetExists(key)) return null;
+            long localStart = Math.max(0, pageStart - cursor);
+            long localEnd = Math.min(cardinality - 1, pageEnd - cursor);
+            if (localStart <= localEnd) {
+                List<byte[]> members = RedisClient.reverseRange(key, localStart, localEnd);
+                if (members.size() != localEnd - localStart + 1) return null;
+                for (byte[] member : members) {
+                    if (member == null || member.length != Long.BYTES + 16) return null;
+                    ids.add(new Binary(Arrays.copyOfRange(member, Long.BYTES, member.length)));
+                }
+            }
+            cursor += cardinality;
+            if (cursor > pageEnd) break;
+        }
+        if (ids.isEmpty()) return null;
+        List<String> puuids = MongoDB.findCompetitivePuuids(ids);
+        if (puuids.size() != ids.size()) return null;
+        List<Summoner> summoners = MongoDB.findLeaderboardSummoners(puuids);
+        return summoners.size() == ids.size() ? summoners : null;
+    }
+
+    static long tierPositionBefore(Map<TierDivisionType, Long> counts, TierDivisionType division, long withinDivision) {
+        long result = withinDivision;
+        for (TierDivisionType candidate : TierDivisionUtils.descendingRankedDivisions()) {
+            if (candidate == division) break;
+            if (tier(candidate) == tier(division)) result += counts.getOrDefault(candidate, 0L);
+        }
+        return result;
+    }
+
+    static int pageForPosition(long zeroBasedPosition, int limit) {
+        return (int) (zeroBasedPosition / limit) + 1;
+    }
+
 
     private static long findLeaderboardCount(
         TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId

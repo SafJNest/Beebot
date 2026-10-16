@@ -442,6 +442,18 @@ public class RedisClient {
         return result;
     }
 
+    public static List<byte[]> reverseRange(String key, long start, long stop) {
+        if (key == null || start < 0 || stop < start || !canUseRedis()) return List.of();
+        try (Jedis jedis = pool.getResource()) {
+            List<byte[]> result = new ArrayList<>(jedis.zrevrange(key.getBytes(StandardCharsets.UTF_8), start, stop));
+            markAvailable();
+            return result;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return List.of();
+        }
+    }
+
     public static List<Long> countsAbove(List<String> keys, List<Double> scores) {
         List<Long> result = new ArrayList<>();
         if (keys == null || scores == null || keys.size() != scores.size() || !canUseRedis()) return result;

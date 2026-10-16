@@ -95,6 +95,8 @@ migration behavior before adding a persisted shape. Do not add duplicate
 Add the query to `MongoDB`, use typed filters and narrow projections, and stream
 large result sets with a cursor. Add or reuse an index, inspect
 `explain("executionStats")`, and update `docs/mongo/08-query-inventory.md`.
+For the summoner leaderboard locator, measure the count-before scan on
+representative Gold/Emerald data: an indexed count can still inspect many keys.
 
 ### 5.8 New Redis cache
 

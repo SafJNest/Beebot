@@ -78,6 +78,20 @@ public class MongoLeaderboardTest {
     }
 
     @Test
+    public void exactRiotIdFilterUsesIndexedCandidateAndAnchoredExactMatch() {
+        String value = MongoDB.exactRiotIdFilter("Player Name#EUW", LeagueShard.EUW1)
+            .toBsonDocument(Document.class, com.mongodb.MongoClientSettings.getDefaultCodecRegistry()).toJson();
+
+        assertTrue(value.contains("riotSearch"));
+        assertTrue(value.contains("playernameeuw"));
+        assertTrue(value.contains("riotId"));
+        assertTrue(value.contains("EUW1"));
+        assertTrue(value.contains("Player Name#EUW"));
+        assertTrue(value.contains("^"));
+        assertTrue(value.contains("$"));
+    }
+
+    @Test
     public void rankDocumentsDoNotPersistMmr() {
         Document document = MongoDB.toDocument(new Rank(
                 TierDivisionType.DIAMOND_I, 90, 100, 80, 123L, 45L));

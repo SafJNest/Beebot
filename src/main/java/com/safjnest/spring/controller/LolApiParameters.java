@@ -263,6 +263,11 @@ public final class LolApiParameters {
         return page;
     }
 
+    public static int page(String value) {
+        try { return page(Integer.parseInt(value)); }
+        catch (NumberFormatException exception) { throw invalid("page", "must be an integer"); }
+    }
+
     public static int limit(int limit) {
         if (limit < MIN_LEADERBOARD_LIMIT || limit > MAX_LEADERBOARD_LIMIT) {
             throw invalid("limit", "must be between 1 and 50");

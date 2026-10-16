@@ -42,6 +42,28 @@ public class LeaderboardServiceTest {
     }
 
     @Test
+    public void summonerPositionCombinesTierDivisionsAndFindsDeepPages() {
+        Map<TierDivisionType, Long> goldCounts = Map.of(
+            TierDivisionType.GOLD_I, 3L,
+            TierDivisionType.GOLD_II, 4L,
+            TierDivisionType.GOLD_III, 5L,
+            TierDivisionType.GOLD_IV, 6L
+        );
+
+        long goldPosition = LeaderboardService.tierPositionBefore(goldCounts, TierDivisionType.GOLD_IV, 7);
+        assertEquals(19L, goldPosition);
+        assertEquals(1, LeaderboardService.pageForPosition(goldPosition, 50));
+        assertEquals(3_601, LeaderboardService.pageForPosition(180_000, 50));
+    }
+
+    @Test
+    public void summonerPositionWithinSingleDivisionUsesItsRedisOrdinal() {
+        assertEquals(120L, LeaderboardService.tierPositionBefore(
+            Map.of(TierDivisionType.MASTER_I, 1_000L), TierDivisionType.MASTER_I, 120));
+        assertEquals(4, LeaderboardService.pageForPosition(150, 50));
+    }
+
+    @Test
     public void rankKeepsContextualPositionsOutOfTheUnrankedDefault() {
         Rank rank = new Rank(TierDivisionType.GOLD_IV, 0, 6, 7).withRankings(3_163_321L, 742_918L);
 

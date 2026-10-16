@@ -772,6 +772,117 @@ public final class MongoDB {
         return document == null ? null : document.getString("_id");
     }
 
+    public static Summoner findSummonerExact(String identity, LeagueShard shard) {
+        if (identity == null || identity.isBlank()) return null;
+        String value = identity.trim();
+        Bson regionFilter = shard == null ? new Document() : Filters.eq("region", shard.name());
+        Document document;
+        if (!value.contains("#")) {
+            document = summoners().find(Filters.and(Filters.eq("_id", value), regionFilter))
+                .projection(Projections.include("_id", "riotId", "region", "level", "icon", "ranks", "masteries"))
+                .first();
+            return document == null ? null : summoner(document);
+        }
+
+        List<Document> matches = new ArrayList<>();
+        Bson exactFilter = exactRiotIdFilter(value, shard);
+        for (Document candidate : summoners().find(exactFilter)
+                .projection(Projections.include("_id", "riotId", "region", "level", "icon", "ranks", "masteries"))
+                .limit(2)) matches.add(candidate);
+        if (matches.isEmpty()) {
+            Pattern exactRiotId = Pattern.compile("^" + Pattern.quote(value) + "$",
+                Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+            for (Document candidate : summoners().find(Filters.and(
+                    Filters.regex("riotId", exactRiotId), regionFilter))
+                    .projection(Projections.include("_id", "riotId", "region", "level", "icon", "ranks", "masteries"))
+                    .limit(2)) matches.add(candidate);
+        }
+        return matches.size() == 1 ? summoner(matches.get(0)) : null;
+    }
+
+    static Bson exactRiotIdFilter(String riotId, LeagueShard shard) {
+        Pattern exactRiotId = Pattern.compile("^" + Pattern.quote(riotId.trim()) + "$",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+        Bson regionFilter = shard == null ? new Document() : Filters.eq("region", shard.name());
+        return Filters.and(Filters.eq("riotSearch", normalizedRiotId(riotId)),
+            Filters.regex("riotId", exactRiotId), regionFilter);
+    }
+
+    public static List<String> findCompetitivePuuids(List<Binary> ids) {
+        List<String> result = new ArrayList<>();
+        if (ids == null || ids.isEmpty()) return result;
+        Map<Binary, String> byId = new HashMap<>();
+        for (Document document : competitive().find(Filters.in("_id", ids)).projection(Projections.include("_id", "puuid"))) {
+            Binary id = document.get("_id", Binary.class);
+            String puuid = document.getString("puuid");
+            if (id != null && puuid != null) byId.put(id, puuid);
+        }
+        for (Binary id : ids) {
+            String puuid = byId.get(id);
+            if (puuid != null) result.add(puuid);
+        }
+        return result;
+    }
+
+    public static long countLeaderboardEntriesBefore(
+            TierType rank, GameQueueType queue, String region, CompetitiveEntry target) {
+        if (target == null) return 0;
+        List<Bson> filters = new ArrayList<>();
+        filters.add(competitiveFilter(rank, queue, region, null));
+        filters.add(Filters.or(Filters.gt("mmr", target.mmr()), Filters.and(
+            Filters.eq("mmr", target.mmr()), Filters.gt("score", target.score()))));
+        return competitive().countDocuments(Filters.and(filters));
+    }
+
+    public static List<Summoner> findLeaderboardSeekPage(
+            TierType rank, GameQueueType queue, String region, CompetitiveEntry target, long beforeInPage, int limit) {
+        if (target == null || limit < 1) return List.of();
+        Bson base = competitiveFilter(rank, queue, region, null);
+        List<String> puuids = new ArrayList<>(limit);
+        int before = (int) Math.max(0, Math.min(limit - 1L, beforeInPage));
+        if (before > 0) {
+            Bson better = Filters.and(base, Filters.or(Filters.gt("mmr", target.mmr()), Filters.and(
+                Filters.eq("mmr", target.mmr()), Filters.gt("score", target.score()))));
+            List<String> nearest = new ArrayList<>(before);
+            for (Document document : competitive().find(better)
+                    .projection(Projections.include("puuid"))
+                    .sort(Sorts.orderBy(Sorts.ascending("mmr"), Sorts.ascending("score")))
+                    .limit(before)) nearest.add(document.getString("puuid"));
+            Collections.reverse(nearest);
+            puuids.addAll(nearest);
+        }
+        puuids.add(target.puuid());
+        int after = limit - puuids.size();
+        if (after > 0) {
+            Bson worse = Filters.and(base, Filters.or(Filters.lt("mmr", target.mmr()), Filters.and(
+                Filters.eq("mmr", target.mmr()), Filters.lt("score", target.score()))));
+            for (Document document : competitive().find(worse)
+                    .projection(Projections.include("puuid"))
+                    .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("score")))
+                    .limit(after)) {
+                String puuid = document.getString("puuid");
+                if (puuid != null) puuids.add(puuid);
+            }
+        }
+        return findLeaderboardSummoners(puuids);
+    }
+
+    public static List<Summoner> findLeaderboardSummoners(List<String> puuids) {
+        if (puuids == null || puuids.isEmpty()) return List.of();
+        Map<String, Summoner> byPuuid = new HashMap<>();
+        for (Document document : summoners().find(Filters.in("_id", puuids))
+                .projection(Projections.include("_id", "riotId", "region", "level", "icon", "ranks", "masteries"))) {
+            Summoner summoner = summoner(document);
+            byPuuid.put(summoner.puuid(), summoner);
+        }
+        List<Summoner> result = new ArrayList<>(puuids.size());
+        for (String puuid : puuids) {
+            Summoner summoner = byPuuid.get(puuid);
+            if (summoner != null) result.add(summoner);
+        }
+        return result;
+    }
+
     public static Summoner findSummoner(String puuid, LeagueShard shard) {
         traceRead("summoner.find", "puuid=" + puuid + " region=" + shard);
         if (puuid == null || puuid.isBlank()) return null;

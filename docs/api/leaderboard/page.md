@@ -18,12 +18,20 @@ curl --get 'http://localhost:8080/api/lol/leaderboard' \
 | Name | Type | Default | Description |
 |---|---|---|---|
 | `rank` | `TierType` | all | Tier and its divisions. |
+| `summoner` | string | — | PUUID or exact `Riot ID#tag`. Selects the tier from that player's requested queue rank and returns the page containing them. |
 | `region` | `LeagueShard` | all | Shard to filter. |
 | `queue` | `GameQueueType` | `TEAM_BUILDER_RANKED_SOLO` | Leaderboard queue. |
 | `role` | `LaneType` | all | Primary role: `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY`; excludes profiles without statistics/primary lane and requires a queue with lanes. |
 | `otp` | integer | all | OTP champion ID; requires `competitive.otpChampionId = otp`. Can be combined with `role`. |
 | `page` | integer | `1` | 1-based page, at least `1`. |
 | `limit` | integer | `50` | From `1` to `50`. |
+
+When `summoner` is present, `queue` (default Solo/Duo), `region` and `limit`
+are retained. `rank`, `role`, `otp` and the requested `page` are ignored; the
+page is computed from the player's rank and position. Riot IDs are matched
+exactly against stored IDs, without autocomplete or fuzzy lookup. An absent
+player, a player outside the requested region, or a player without a valid
+rank in that queue returns `404 not_found`.
 
 ## `200` response
 
@@ -61,6 +69,13 @@ on `_id`. `total` is resolved from Redis, then (without role) from
 A `role` or `otp` filter uses the count on the projection directly.
 Leaderboard page cache entries retain their existing one-day TTL and are not
 invalidated when a competitive entry changes.
+The `summoner` path bypasses this page cache. It uses a resident exact-division
+Redis ZSET to compute the position and retrieve only the requested page; when
+the needed segment is cold, an indexed count-before query and bounded Mongo
+seek queries around the player's `competitive` tuple compute the same page
+without loading or skipping preceding rows. Rows retain the `MMR DESC, score
+DESC` order. Exact MMR-and-score ties still have no Mongo tie-breaker, so a
+player in a tie may move between adjacent pages.
 The HTTP payload does not change.
 
 ## States and errors
@@ -68,7 +83,7 @@ The HTTP payload does not change.
 | HTTP | `code` | When |
 |---:|---|---|
 | `200` | — | Page available. |
-| `400` | `invalid_request` | Invalid enum, `page < 1` or `limit` outside `1..50`. |
+| `400` | `invalid_request` | Invalid queue/region/limit; without `summoner`, also invalid rank/role/OTP or `page < 1`. |
 | `404` | `not_found` | Resource not found. |
 
 `metadata.pagination` exposes `page`, `pageSize`, `total` and `pages`.

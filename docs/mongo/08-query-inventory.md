@@ -7,7 +7,7 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | search/autocomplete | one `find` on `summoner` with `region + riotSearch` prefix, base projection + `ranks`, Solo rank included | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` sorted by `_id`; maps to canonical `Summoner` (`region` as `LeagueShard`) | 1 | UserData / Discord |
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
-| leaderboard | `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id` loads the page; separate total Redis → aggregate → `countDocuments` | 2 per page + count only on cache miss | LeaderboardService |
+| leaderboard | Normal page: `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id`. Summoner page: exact identity lookup, Redis exact-division rank/range when resident; otherwise indexed count-before plus bounded seek queries around the target tuple, then one `$in` on `summoner._id`. Both use the existing total-count path. | Normal: 2 per page + count on cache miss. Summoner: identity + anchor + rank/page reads + count + summoner fetch. | LeaderboardService |
 | contextual leaderboard ranking | Mongo cursor over `competitive {queue,mmr range,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | LeaderboardService |
 | contextual record ranking | Mongo cursor over `profile_records {filterKey,metric,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
@@ -53,7 +53,7 @@ Indexes are managed by the database operator, not by the runtime or the migratio
 | Collection | Index | Covered query |
 |---|---|---|
 | `summoner` | `summoner_search_prefix` | search/autocomplete by region and prefix, with `riotId` sort |
-| `summoner` | `summoner_riot_id` | exact/case-insensitive fallback for `findPuuid` |
+| `summoner` | `summoner_riot_id` (`{riotSearch: 1, riotId: 1, region: 1}`) | normalized `riotSearch` candidate lookup, then anchored case-insensitive `riotId` verification for `findPuuid` and summoner leaderboard mode |
 | `summoner` | `summoner_user_accounts` | Discord accounts by `userId`, sorted by `_id` |
 | `summoner` | `summoner_tracking_true` | tracker and accounts with `tracking=true` |
 | `competitive` | `{queue: 1, mmr: -1, score: -1}` and `{queue: 1, region: 1, mmr: -1, score: -1}` | leaderboard page order and scoped query |
@@ -67,6 +67,18 @@ Indexes are managed by the database operator, not by the runtime or the migratio
 | `champion_builds` | `champion_builds_filter` | aggregate builds per `filterKey` |
 | `champion_stats` | `_id` | one raw scope document, direct lookup by `scope.toKey()` |
 
+`summoner_riot_id` must index `{riotSearch: 1, riotId: 1, region: 1}` so exact
+Riot ID lookup can narrow on the normalized indexed value before verifying the
+stored case-insensitive exact string. Check the existing key before creating or
+replacing the operator-managed index:
+
+```javascript
+db.summoner.createIndex(
+  {riotSearch: 1, riotId: 1, region: 1},
+  {name: "summoner_riot_id"}
+)
+```
+
 `match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` and
 direct match/summoner lookups remain covered by `_id`. No indexes are created
 on `masteries`, participant metrics, or every possible `Filter` combination;
@@ -79,6 +91,13 @@ Uniqueness of `{puuid, filterKey}` requires an operational check for missing and
 Before acceptance, run on a database with representative data:
 
 ```javascript
+db.competitive.aggregate([
+  {$match: {queue: "RANKED_SOLO_5X5", region: "EUW1", mmr: {$gte: 1200, $lt: 1600}, $or: [{mmr: {$gt: 1432}}, {mmr: 1432, score: {$gt: 18}}]}},
+  {$count: "count"}
+]).explain("executionStats")
+db.competitive.find({queue: "RANKED_SOLO_5X5", region: "EUW1", mmr: {$gte: 1200, $lt: 1600}, $or: [{mmr: {$gt: 1432}}, {mmr: 1432, score: {$gt: 18}}]}).sort({mmr: 1, score: 1}).limit(24).explain("executionStats")
+db.competitive.find({queue: "RANKED_SOLO_5X5", region: "EUW1", mmr: {$gte: 1200, $lt: 1600}, $or: [{mmr: {$lt: 1432}}, {mmr: 1432, score: {$lt: 18}}]}).sort({mmr: -1, score: -1}).limit(25).explain("executionStats")
+db.summoner.find({riotSearch: "playernameeuw", riotId: /^Player Name#EUW$/i, region: "EUW1"}, {_id: 1, riotId: 1, region: 1, ranks: 1, masteries: 1}).limit(2).explain("executionStats")
 db.summoner.find({region: "EUW1", riotSearch: /^name/}, {riotId: 1, ranks: 1}).sort({riotId: 1}).limit(25).explain("executionStats")
 db.match.find({participants: {$elemMatch: {puuid: "puuid", champion: 1}}, region: "EUW1", queue: "RANKED_SOLO_5X5", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
 db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}, _id: {$ne: "EUW1_123"}, timeStart: {$lt: 1714514400000}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
@@ -111,6 +130,21 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `$in` on the `summoner` primary key; contextual segment ownership and rebuilds
 are described in [`13-contextual-ranking.md`](13-contextual-ranking.md) and
 [ADR-0015](../architecture/adr/0015-contextual-ranking.md).
+
+Summoner leaderboard mode keeps only queue and optional region from the
+request. It resolves an exact PUUID or exact stored `Riot ID#tag`, obtains the
+queue rank and matching `competitive` anchor, and bypasses the page cache.
+For a resident Redis rank segment, `ZREVRANK` gives the target ordinal and
+`ZREVRANGE` reads the computed page. If a segment needed for that page is cold,
+the fallback counts rows ahead by `(mmr > target.mmr) OR (mmr = target.mmr AND
+score > target.score)`, then seeks to the closest preceding and following rows
+with the compound sort index. It does not use `skip`. No stable field is added
+for exact MMR-and-score ties.
+
+The plans above are operator verification steps, not results claimed by this
+change. Confirm `IXSCAN`, no blocking `SORT`, and latency on representative
+Gold/Emerald data before deciding whether lower-division Redis prewarming is
+needed.
 
 ## Arena build path
 

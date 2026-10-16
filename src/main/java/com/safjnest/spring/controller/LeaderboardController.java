@@ -24,22 +24,34 @@ public class LeaderboardController {
     @GetMapping("/leaderboard")
     public ResponseEntity<?> leaderboard(
             @RequestParam(value = "rank", required = false) String rankValue,
+            @RequestParam(value = "summoner", required = false) String summonerValue,
             @RequestParam(value = "region", required = false) String regionValue,
             @RequestParam(value = "queue", required = false) String queueValue,
             @RequestParam(value = "role", required = false) String roleValue,
             @RequestParam(value = "otp", required = false) String otpValue,
-            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "page", defaultValue = "1") String pageValue,
             @RequestParam(value = "limit", defaultValue = "50") int limit
     ) {
         var queue = LolApiParameters.queue(queueValue);
+        var region = LolApiParameters.region(regionValue);
+        int validatedLimit = LolApiParameters.limit(limit);
+        if (summonerValue != null && !summonerValue.isBlank()) {
+            ApiResult<LeaderboardPage> summonerResult = leaderboardService.getLeaderboardForSummoner(
+                summonerValue, queue, region, validatedLimit);
+            return response(summonerResult);
+        }
         var role = LolApiParameters.role(roleValue);
         LolApiParameters.validateRole(queue, role);
         ApiResult<LeaderboardPage> result = leaderboardService.getLeaderboard(
-                LolApiParameters.rank(rankValue), queue, LolApiParameters.region(regionValue), role,
+                LolApiParameters.rank(rankValue), queue, region, role,
                 LolApiParameters.otpChampion(otpValue),
-                LolApiParameters.page(page),
-                LolApiParameters.limit(limit)
+                LolApiParameters.page(pageValue),
+                validatedLimit
             );
+        return response(result);
+    }
+
+    private ResponseEntity<?> response(ApiResult<LeaderboardPage> result) {
         if (result.payload() != null) {
             LeaderboardPage pageValue = result.payload();
             ResponseMetadata metadata = new ResponseMetadata(
