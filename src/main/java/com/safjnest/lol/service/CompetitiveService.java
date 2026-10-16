@@ -122,7 +122,8 @@ public final class CompetitiveService {
         if (rank == null || rank.tier() == null) return null;
         long mmr = TierDivisionUtils.getMmr(rank.tier(), rank.lp());
         if (mmr < 0) return null;
-        return new CompetitiveEntry(puuid, shard, canonicalQueue, mmr, primary, otpChampionId, now);
+        long score = (long) rank.wins() - rank.losses();
+        return new CompetitiveEntry(puuid, shard, canonicalQueue, mmr, score, primary, otpChampionId, now);
     }
 
     private static boolean hasRank(Map<GameQueueType, Rank> ranks) {
@@ -191,6 +192,6 @@ public final class CompetitiveService {
         if (next == null) return null;
         LaneType primary = next.primary() == null && previous != null ? previous.primary() : next.primary();
         Integer otpChampionId = next.otpChampionId() == null && previous != null ? previous.otpChampionId() : next.otpChampionId();
-        return new CompetitiveEntry(next.puuid(), next.region(), next.queue(), next.mmr(), primary, otpChampionId, next.lastUpdate());
+        return new CompetitiveEntry(next.puuid(), next.region(), next.queue(), next.mmr(), next.score(), primary, otpChampionId, next.lastUpdate());
     }
 }

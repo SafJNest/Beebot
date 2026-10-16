@@ -146,6 +146,10 @@ of live Mongo, Redis, Riot or Discord behavior.
 | Champion statistics and builds | `ChampionService`, `ChampionAnalyzer` | `champion_statistics`, `champion_builds` |
 | Competitive ranks and leaderboard indexes | `CompetitiveService`, `LeaderboardService` | `competitive`, Redis |
 
+`competitive.score` is the ranked queue's `wins - losses` balance. It breaks
+equal-MMR leaderboard ties and is refreshed with the competitive projection;
+existing rows require `!test regenerate competitive` after rollout.
+
 The unique profile identity index is `profile_statistics_identity` on
 `{ puuid, filterKey }`. Match `_id` is the complete Riot match ID; summoner
 `_id` is the PUUID. Query and migration details are in [`docs/mongo`](mongo/README.md).

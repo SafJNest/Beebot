@@ -9,6 +9,7 @@ public record CompetitiveEntry(
     LeagueShard region,
     GameQueueType queue,
     long mmr,
+    long score,
     LaneType primary,
     Integer otpChampionId,
     long lastUpdate

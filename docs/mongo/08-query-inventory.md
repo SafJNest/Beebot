@@ -7,7 +7,7 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | search/autocomplete | one `find` on `summoner` with `region + riotSearch` prefix, base projection + `ranks`, Solo rank included | 1 | SummonerService |
 | linked accounts by userId | `find({userId})` sorted by `_id`; maps to canonical `Summoner` (`region` as `LeagueShard`) | 1 | UserData / Discord |
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
-| leaderboard | `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC` and limited PUUIDs; one `$in` on `summoner._id` loads the page; separate total Redis → aggregate → `countDocuments` | 2 per page + count only on cache miss | LeaderboardService |
+| leaderboard | `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id` loads the page; separate total Redis → aggregate → `countDocuments` | 2 per page + count only on cache miss | LeaderboardService |
 | contextual leaderboard ranking | Mongo cursor over `competitive {queue,mmr range,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | LeaderboardService |
 | contextual record ranking | Mongo cursor over `profile_records {filterKey,metric,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
@@ -56,7 +56,7 @@ Indexes are managed by the database operator, not by the runtime or the migratio
 | `summoner` | `summoner_riot_id` | exact/case-insensitive fallback for `findPuuid` |
 | `summoner` | `summoner_user_accounts` | Discord accounts by `userId`, sorted by `_id` |
 | `summoner` | `summoner_tracking_true` | tracker and accounts with `tracking=true` |
-| `competitive` | queue/region/role/OTP/MMR with PUUID | leaderboard page, `mmr DESC` sort; scope-specific index |
+| `competitive` | `{queue: 1, mmr: -1, score: -1}` and `{queue: 1, region: 1, mmr: -1, score: -1}` | leaderboard page order and scoped query |
 | `match` | `match_participant_time` | history, profile, OPGG, recent matches and LP data |
 | `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | temporal queries, region/patchMajor, bans and champion wins |
 | `match` | `match_champion_filter` | champion batch with equality-first filter and participant/lane |
@@ -93,11 +93,11 @@ db.match.aggregate([
 db.competitive.find(
   {queue: "RANKED_SOLO_5X5", region: "EUW1", mmr: {$gte: 800, $lt: 1200}},
   {_id: 0, puuid: 1}
-).sort({mmr: -1}).skip(50).limit(50).explain("executionStats")
+).sort({mmr: -1, score: -1}).skip(50).limit(50).explain("executionStats")
 db.competitive.find(
   {queue: "RANKED_SOLO_5X5", region: "EUW1", primary: "UTILITY", mmr: {$gte: 30000}},
   {_id: 0, puuid: 1}
-).sort({mmr: -1}).limit(50).explain("executionStats")
+).sort({mmr: -1, score: -1}).limit(50).explain("executionStats")
 db.summoner.find(
   {_id: {$in: ["<page-puuid-1>", "<page-puuid-2>"]}},
   {_id: 1, riotId: 1, region: 1, level: 1, icon: 1, ranks: 1, masteries: 1}

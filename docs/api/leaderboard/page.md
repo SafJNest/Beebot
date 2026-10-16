@@ -54,10 +54,13 @@ respectively. They do not replace row `position`: `position` remains the
 position for the requested rank/region/role/OTP filters and pagination.
 
 Internally the page reads `competitive` for MMR-range/role/OTP filtering, sorting and
-pagination of PUUIDs; then it reads only the summoners of the page with an `$in`
+pagination of PUUIDs. Rows sort by MMR descending, then ranked win/loss `score`
+descending; then it reads only the summoners of the page with an `$in`
 on `_id`. `total` is resolved from Redis, then (without role) from
 `leaderboard_aggregates`, then with `countDocuments()` on `competitive`.
 A `role` or `otp` filter uses the count on the projection directly.
+Leaderboard page cache entries retain their existing one-day TTL and are not
+invalidated when a competitive entry changes.
 The HTTP payload does not change.
 
 ## States and errors

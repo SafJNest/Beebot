@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -243,7 +244,7 @@ public class LeaderboardService {
                     RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(queue.name(), LeagueShardUtils.leaderboardScope(subject.region())),
                     ignored -> counts(queue, subject.region()));
                 targets.add(new RankTarget(subject.puuid(), queue, rank, globalCounts, regionalCounts));
-                byte[] member = member(subject.puuid(), queue);
+                byte[] member = member(subject.puuid(), queue, (long) rank.wins() - rank.losses());
                 keys.add(globalSegment); members.add(member);
                 keys.add(regionalSegment); members.add(member);
             }
@@ -276,6 +277,7 @@ public class LeaderboardService {
     }
 
     public static void warmupIndex() {
+        clearLeaderboardSegments();
         for (GameQueueType queue : GameQueueTypeUtils.leaderboardQueues()) {
             replaceCounts(queue, null);
             List<LeagueShard> regions = MongoDB.findCompetitiveRankingRegions(queue);
@@ -380,8 +382,8 @@ public class LeaderboardService {
                 RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(queue.name(), scope), tier.name(), delta);
             String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(queue.name(), scope, tier.name());
             if (!RedisClient.sortedSetExists(key)) continue;
-            if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(entry.puuid(), queue), entry.mmr())));
-            else RedisClient.removeSortedSetMember(key, member(entry.puuid(), queue));
+            if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(entry.puuid(), queue, entry.score()), entry.mmr())));
+            else RedisClient.removeSortedSetMember(key, member(entry.puuid(), queue, entry.score()));
             RedisClient.expire(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT, queue.name(), scope, tier.name());
             RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
         }
@@ -428,7 +430,7 @@ public class LeaderboardService {
                     LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name() },
                 entries -> MongoDB.forEachCompetitiveRankingSegment(
                     segment.queue(), segment.tier(), segment.region(), entry ->
-                    entries.accept(new RedisClient.SortedSetEntry(member(entry.puuid(), segment.queue()), entry.mmr()))));
+                    entries.accept(new RedisClient.SortedSetEntry(member(entry.puuid(), segment.queue(), entry.score()), entry.mmr()))));
             if (built) {
                 RedisClient.addPersistentMember(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of(), key);
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
@@ -482,9 +484,20 @@ public class LeaderboardService {
         return result;
     }
 
-    private static byte[] member(String puuid, GameQueueType queue) {
+    static byte[] member(String puuid, GameQueueType queue, long score) {
         Binary id = MongoDB.competitiveId(puuid, GameQueueTypeUtils.canonicalQueue(queue).name());
-        return id.getData();
+        byte[] identity = id.getData();
+        ByteBuffer member = ByteBuffer.allocate(Long.BYTES + identity.length);
+        member.putLong(score ^ Long.MIN_VALUE);
+        member.put(identity);
+        return member.array();
+    }
+
+    private static void clearLeaderboardSegments() {
+        List<String> keys = new ArrayList<>(RedisClient.members(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of()));
+        keys.add(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of());
+        keys.add(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of());
+        RedisClient.delete(keys);
     }
 
     private record RankTarget(

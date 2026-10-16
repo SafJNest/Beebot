@@ -1888,7 +1888,7 @@ public final class MongoDB {
         List<String> puuids = new ArrayList<>(boundedLimit);
         for (Document document : competitive().find(competitiveFilter(rank, queue, region, role, otpChampionId))
                 .projection(Projections.include("puuid"))
-                .sort(Sorts.descending("mmr"))
+                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("score")))
                 .skip(boundedOffset)
                 .limit(boundedLimit)) {
             String puuid = document.getString("puuid");
@@ -1953,7 +1953,7 @@ public final class MongoDB {
         if (range.maximum() != null) filters.add(Filters.lt("mmr", range.maximum()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
         try (MongoCursor<Document> cursor = competitive().find(Filters.and(filters))
-                .sort(Sorts.descending("mmr"))
+                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("score")))
                 .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
             while (cursor.hasNext()) {
                 CompetitiveEntry entry = competitiveEntry(cursor.next());
@@ -2484,6 +2484,7 @@ public final class MongoDB {
                 .append("region", entry.region().name())
                 .append("queue", queue)
                 .append("mmr", entry.mmr())
+                .append("score", entry.score())
                 .append("lastUpdate", entry.lastUpdate());
         if (entry.primary() != null) value.append("primary", entry.primary().name());
         if (entry.otpChampionId() != null) value.append("otpChampionId", entry.otpChampionId());
@@ -4212,7 +4213,7 @@ public final class MongoDB {
         try { primary = LaneType.valueOf(document.getString("primary")); }
         catch (RuntimeException ignored) {}
         if (puuid == null || puuid.isBlank() || region == LeagueShard.UNKNOWN || queue == null || mmr < 0) return null;
-        return new CompetitiveEntry(puuid, region, queue, mmr, primary,
+        return new CompetitiveEntry(puuid, region, queue, mmr, number(document, "score"), primary,
             document.containsKey("otpChampionId") ? document.getInteger("otpChampionId") : null,
             number(document, "lastUpdate"));
     }

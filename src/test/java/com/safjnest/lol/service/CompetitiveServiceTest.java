@@ -32,8 +32,25 @@ public class CompetitiveServiceTest {
 
         assertNotNull(entry);
         assertEquals(30050, entry.mmr());
+        assertEquals(8, entry.score());
         assertNull(entry.primary());
         assertNull(entry.otpChampionId());
+    }
+
+    @Test
+    public void scoreRewardsWinVolumeAndPenalizesSmallSamples() {
+        CompetitiveEntry smallSample = CompetitiveService.entry(
+            "few-games", LeagueShard.EUW1,
+            Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(TierDivisionType.IRON_I, 99, 6, 4)),
+            null, GameQueueType.RANKED_SOLO_5X5, 1L);
+        CompetitiveEntry largeSample = CompetitiveService.entry(
+            "many-games", LeagueShard.EUW1,
+            Map.of(GameQueueType.RANKED_SOLO_5X5, new Rank(TierDivisionType.IRON_I, 99, 2200, 1800)),
+            null, GameQueueType.RANKED_SOLO_5X5, 1L);
+
+        assertEquals(2, smallSample.score());
+        assertEquals(400, largeSample.score());
+        org.junit.Assert.assertTrue(largeSample.score() > smallSample.score());
     }
 
     @Test
@@ -49,11 +66,11 @@ public class CompetitiveServiceTest {
     @Test
     public void mergeRetainsKnownOptionalFieldsWhenTheNewRefreshDoesNotKnowThem() {
         CompetitiveEntry previous = new CompetitiveEntry(
-            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_000,
+            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_000, 12,
             LaneType.MID, 103, 1L
         );
         CompetitiveEntry refreshed = new CompetitiveEntry(
-            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_100,
+            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_100, 14,
             null, null, 2L
         );
 
@@ -61,16 +78,17 @@ public class CompetitiveServiceTest {
 
         assertEquals(LaneType.MID, merged.primary());
         assertEquals(Integer.valueOf(103), merged.otpChampionId());
+        assertEquals(14, merged.score());
     }
 
     @Test
     public void mergeReplacesKnownOptionalFieldsWhenTheNewRefreshKnowsThem() {
         CompetitiveEntry previous = new CompetitiveEntry(
-            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_000,
+            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_000, 12,
             LaneType.MID, 103, 1L
         );
         CompetitiveEntry refreshed = new CompetitiveEntry(
-            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_100,
+            "puuid", LeagueShard.EUW1, GameQueueType.RANKED_SOLO_5X5, 18_100, 14,
             LaneType.JUNGLE, 64, 2L
         );
 
