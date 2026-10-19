@@ -16,6 +16,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 
@@ -114,13 +115,20 @@ public final class SummonerService {
     }
 
     public static no.stelar7.api.r4j.pojo.lol.summoner.Summoner getRiotSummoner(String puuid, LeagueShard shard) {
+        return getRiotSummoner(puuid, shard, JobPriority.IMMEDIATE);
+    }
+
+    public static no.stelar7.api.r4j.pojo.lol.summoner.Summoner getRiotSummoner(
+            String puuid,
+            LeagueShard shard,
+            JobPriority priority) {
         if (!valid(puuid, shard)) return null;
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner cached = cacheRiotSummoner(puuid, shard);
         if (cached != null) return cached;
 
         try {
-            return getRiotSummonerAsync(puuid, shard).join();
+            return getRiotSummonerAsync(puuid, shard, priority).join();
         } catch (CompletionException exception) {
             return null;
         }
@@ -137,20 +145,30 @@ public final class SummonerService {
     public static CompletableFuture<no.stelar7.api.r4j.pojo.lol.summoner.Summoner> getRiotSummonerAsync(
             String puuid,
             LeagueShard shard) {
+        return getRiotSummonerAsync(puuid, shard, JobPriority.IMMEDIATE);
+    }
+
+    public static CompletableFuture<no.stelar7.api.r4j.pojo.lol.summoner.Summoner> getRiotSummonerAsync(
+            String puuid,
+            LeagueShard shard,
+            JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(null);
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner cached = cacheRiotSummoner(puuid, shard);
-        if (cached != null) return saveAsync(cached).thenApply(ignored -> cached);
+        if (cached != null) return saveAsync(cached, priority).thenApply(ignored -> cached);
 
-        return QueueHandler.<no.stelar7.api.r4j.pojo.lol.summoner.Summoner>immediate(RiotScheduler.class, shard, shard.name() + ":summoner:" + puuid,
-            "summoner puuid=" + puuid, ignored -> {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
-                RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
-            if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
-            return summoner;
-        }).thenComposeAsync(summoner -> summoner == null
+        CompletableFuture<no.stelar7.api.r4j.pojo.lol.summoner.Summoner> fetch = QueueHandler.submit(
+            RiotScheduler.class, shard, shard.name() + ":summoner:" + puuid, "summoner puuid=" + puuid,
+            priority == null ? JobPriority.IMMEDIATE : priority,
+            ignored -> {
+                no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
+                    RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
+                if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
+                return summoner;
+            });
+        return fetch.thenComposeAsync(summoner -> summoner == null
             ? CompletableFuture.completedFuture(null)
-            : saveAsync(summoner).thenApply(ignored -> summoner));
+            : saveAsync(summoner, priority).thenApply(ignored -> summoner));
     }
 
     public static boolean upsert(Summoner summoner, String userId) {
@@ -197,18 +215,26 @@ public final class SummonerService {
     }
 
     public static CompletableFuture<RiotAccount> getRiotAccountAsync(String puuid, LeagueShard shard) {
+        return getRiotAccountAsync(puuid, shard, JobPriority.IMMEDIATE);
+    }
+
+    public static CompletableFuture<RiotAccount> getRiotAccountAsync(
+            String puuid,
+            LeagueShard shard,
+            JobPriority priority) {
         if (!valid(puuid, shard)) return CompletableFuture.completedFuture(null);
 
         RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT.of(shard.name(), puuid), RiotAccount.class);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
-        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account:" + puuid,
-            "account puuid=" + puuid, ignored -> {
-            RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
-                com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
-            if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
-            return account;
-        });
+        return QueueHandler.submit(RiotScheduler.class, shard, shard.name() + ":account:" + puuid,
+            "account puuid=" + puuid, priority == null ? JobPriority.IMMEDIATE : priority,
+            ignored -> {
+                RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
+                    com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
+                if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
+                return account;
+            });
     }
 
     public static CompletableFuture<RiotAccount> getRiotAccountAsync(String name, String tag, LeagueShard shard) {
@@ -525,12 +551,14 @@ public final class SummonerService {
         }).exceptionally(ignored -> identity);
     }
 
-    private static CompletableFuture<Summoner> saveAsync(no.stelar7.api.r4j.pojo.lol.summoner.Summoner source) {
+    private static CompletableFuture<Summoner> saveAsync(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner source,
+            JobPriority priority) {
         String riotId = MongoDB.findSummonerName(source.getPUUID(), source.getPlatform());
         if (riotId != null && !riotId.isBlank()) return CompletableFuture.completedFuture(store(
             persist(source, riotId, null), source.getPlatform()));
 
-        return getRiotAccountAsync(source.getPUUID(), source.getPlatform()).thenApply(account -> store(
+        return getRiotAccountAsync(source.getPUUID(), source.getPlatform(), priority).thenApply(account -> store(
             persist(source, account == null ? null : account.getName() + "#" + account.getTag(), null),
             source.getPlatform()
         ));

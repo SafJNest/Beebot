@@ -64,7 +64,7 @@ public final class QueueHandler {
         Registry.instance().resume(job, callback);
     }
 
-    private static <T> CompletableFuture<T> submit(Class<?> scheduler, Object route, String key, String name,
+    public static <T> CompletableFuture<T> submit(Class<?> scheduler, Object route, String key, String name,
         JobPriority priority, Function<Job<T>, T> work) {
         start();
         return Router.global().submit(scheduler, route, key, name, priority, work);

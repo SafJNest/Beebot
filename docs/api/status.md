@@ -40,9 +40,11 @@ children over direct children created, including children that already left the
 registry. A root that starts two children reports `0/2`; if both children each
 start two further jobs, the root remains `0/2` while each child reports `0/2`.
 
-A nested job cannot exceed its parent priority: `IMMEDIATE` requested from a
-`BACKGROUND` job remains `BACKGROUND`; `IMMEDIATE` requested from `NORMAL`
-remains `NORMAL`.
+Parent/child links describe lifecycle ownership, not a priority ceiling. A job
+uses the priority chosen by its caller; for example, an `IMMEDIATE` Riot request
+created by a `BACKGROUND` Sync job remains `IMMEDIATE`. Import flows that need
+to stay behind interactive work pass `BACKGROUND` explicitly to their Riot
+requests.
 
 `mongo` is sampled every second in background by `SystemMetricsSampler`. A
 `GET /api/status` read returns the latest in-memory snapshot; it does not

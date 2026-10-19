@@ -104,6 +104,43 @@ public class RouterTest {
     }
 
     @Test
+    public void immediateTrackerRequestPrecedesBackgroundImportRequests() throws Exception {
+        router.register(riot);
+        CountDownLatch blockerStarted = new CountDownLatch(1);
+        CountDownLatch blockerRelease = new CountDownLatch(1);
+        List<String> order = Collections.synchronizedList(new ArrayList<>());
+
+        var blocker = router.submit(RiotTestScheduler.class, "EUW", "blocker", "blocker", JobPriority.IMMEDIATE, ignored -> {
+            blockerStarted.countDown();
+            await(blockerRelease);
+            return null;
+        });
+        assertTrue(blockerStarted.await(2, TimeUnit.SECONDS));
+        var importList = router.submit(RiotTestScheduler.class, "EUW", "import-list", "import list", JobPriority.BACKGROUND,
+            ignored -> {
+                order.add("import-list");
+                return null;
+            });
+        var importMatch = router.submit(RiotTestScheduler.class, "EUW", "import-match", "import match", JobPriority.BACKGROUND,
+            ignored -> {
+                order.add("import-match");
+                return null;
+            });
+        var tracker = router.submit(RiotTestScheduler.class, "EUW", "tracker", "tracker", JobPriority.IMMEDIATE, ignored -> {
+            order.add("tracker");
+            return null;
+        });
+
+        blockerRelease.countDown();
+        blocker.get(2, TimeUnit.SECONDS);
+        tracker.get(2, TimeUnit.SECONDS);
+        importList.get(2, TimeUnit.SECONDS);
+        importMatch.get(2, TimeUnit.SECONDS);
+
+        assertEquals(List.of("tracker", "import-list", "import-match"), order);
+    }
+
+    @Test
     public void allowsAnImmediateChildAboveItsBackgroundParentPriority() throws Exception {
         router.register(sync);
         CountDownLatch childStarted = new CountDownLatch(1);

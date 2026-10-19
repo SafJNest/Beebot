@@ -472,9 +472,10 @@ public class Test extends Command {
         LeagueShard shard = GuildCache.getGuild(event.getGuild()).getLeagueShard(event.getChannel().getId());
         QueueHandler.background(SyncScheduler.class, shard, "owner-match-history:" + shard.name() + ":" + summonerName,
             "owner match history " + summonerName, job -> {
-                no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = SummonerService.getRiotSummoner(summonerName, shard);
-                if (queues == null) MatchService.importHistory(summoner, null);
-                else for (GameQueueType queue : queues) MatchService.importHistory(summoner, queue);
+                no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
+                    SummonerService.getRiotSummoner(summonerName, shard, job.priority());
+                if (queues == null) MatchService.importHistory(summoner, null, job.priority());
+                else for (GameQueueType queue : queues) MatchService.importHistory(summoner, queue, job.priority());
                 return null;
             });
         event.reply("Match history retrieval queued for " + summonerName + ".");

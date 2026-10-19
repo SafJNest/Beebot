@@ -41,6 +41,11 @@ owned by Registry. Riot API calls created by Sync jobs still use RiotScheduler's
 per-shard priority queues. Missing API matches are background Sync work; OP.GG
 match loading is immediate Sync work.
 
+Owner `retrieveallgames` and `retrieveallgamesfast` imports create a background
+Sync job and pass `BACKGROUND` to summoner lookup, matchlist-page requests and
+match fetches. Tracker requests keep their `IMMEDIATE` priority and can run ahead
+of queued import requests on the same shard.
+
 `/api/status.jobs` is the registry view. Dispatcher snapshots expose Riot and
 Compute queues/workers; Sync lifecycle appears in `jobs` without a physical
 queue/worker projection. Task snapshots include PID/PPID. `runs` remains only a

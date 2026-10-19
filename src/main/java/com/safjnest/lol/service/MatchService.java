@@ -113,18 +113,22 @@ public final class MatchService {
     }
 
     public static CompletableFuture<LOLMatch> fetchAsync(String gameId, LeagueShard shard) {
+        return fetchAsync(gameId, shard, JobPriority.IMMEDIATE);
+    }
+
+    public static CompletableFuture<LOLMatch> fetchAsync(String gameId, LeagueShard shard, JobPriority priority) {
         if (!valid(gameId, shard)) return CompletableFuture.completedFuture(null);
 
         LOLMatch cached = getCachedR4JMatch(gameId, shard);
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         RegionShard region = shard.toRegionShard();
-        return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
-            "match id=" + gameId, ignored -> {
-            LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
-            if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
-            return match;
-        });
+        return QueueHandler.submit(RiotScheduler.class, shard, shard.name() + ":match:" + gameId,
+            "match id=" + gameId, priority == null ? JobPriority.IMMEDIATE : priority, ignored -> {
+                LOLMatch match = RIOT_API.getLoLAPI().getMatchAPI().getMatch(region, gameId);
+                if (match != null) RedisClient.set(RedisKey.R4J_MATCH, match, region.name(), gameId);
+                return match;
+            });
     }
 
     public static Match insert(LOLMatch source) {
@@ -257,12 +261,19 @@ public final class MatchService {
     }
 
     public static void importHistory(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, GameQueueType queue) {
+        importHistory(summoner, queue, JobPriority.IMMEDIATE);
+    }
+
+    public static void importHistory(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue,
+            JobPriority priority) {
         if (summoner == null || summoner.getPlatform() == null) return;
         try {
             List<String> matchIds = new ArrayList<>();
             List<String> page;
             do {
-                page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null);
+                page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null, priority);
                 if (page == null) page = List.of();
                 matchIds.addAll(page);
                 Thread.sleep(350);
@@ -273,7 +284,7 @@ public final class MatchService {
             for (String matchId : matchIds) {
                 if (LeagueHandler.isMatchDBCached(matchId)) continue;
                 
-                fetchAsync(matchId, summoner.getPlatform()).whenComplete((match, failure) -> {
+                fetchAsync(matchId, summoner.getPlatform(), priority).whenComplete((match, failure) -> {
                     if (failure != null) {
                         BotLogger.error("Match fetch failed: " + matchId + " message=" + failure.getMessage());
                         return;
@@ -388,6 +399,17 @@ public final class MatchService {
             int count,
             long startTime,
             MatchlistMatchType type) {
+        return getMatchlist(summoner, queue, index, count, startTime, type, JobPriority.IMMEDIATE);
+    }
+
+    public static List<String> getMatchlist(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue,
+            int index,
+            int count,
+            long startTime,
+            MatchlistMatchType type,
+            JobPriority priority) {
         if (summoner == null || index < 0 || count < 0 || startTime < 0) return List.of();
 
         int requestedCount = count == 0 ? MATCH_LIST_BATCH_SIZE : count;
@@ -397,7 +419,7 @@ public final class MatchService {
         if (cached != null) return cached;
 
         try {
-            return getMatchlistAsync(summoner, queue, index, count, startTime, type).join();
+            return getMatchlistAsync(summoner, queue, index, count, startTime, type, priority).join();
         } catch (CompletionException exception) {
             return List.of();
         }
@@ -410,6 +432,17 @@ public final class MatchService {
             int count,
             long startTime,
             MatchlistMatchType type) {
+        return getMatchlistAsync(summoner, queue, index, count, startTime, type, JobPriority.IMMEDIATE);
+    }
+
+    public static CompletableFuture<List<String>> getMatchlistAsync(
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue,
+            int index,
+            int count,
+            long startTime,
+            MatchlistMatchType type,
+            JobPriority priority) {
         if (summoner == null || index < 0 || count < 0 || startTime < 0) return CompletableFuture.completedFuture(List.of());
 
         int requestedCount = count == 0 ? MATCH_LIST_BATCH_SIZE : count;
@@ -419,8 +452,9 @@ public final class MatchService {
         if (cached != null) return CompletableFuture.completedFuture(cached);
 
         String id = summoner.getPUUID() + ":" + requestKey + ":" + index;
-        return QueueHandler.immediate(RiotScheduler.class, summoner.getPlatform(), summoner.getPlatform().name() + ":match-list:" + id,
-            "match list puuid=" + summoner.getPUUID(), ignored -> {
+        return QueueHandler.submit(RiotScheduler.class, summoner.getPlatform(),
+            summoner.getPlatform().name() + ":match-list:" + id, "match list puuid=" + summoner.getPUUID(),
+            priority == null ? JobPriority.IMMEDIATE : priority, ignored -> {
                 MatchListBuilder builder = matchListBuilder(summoner, queue, index, requestedCount, startTime, type);
                 List<String> values = builder.get();
                 if (values == null) return List.of();
