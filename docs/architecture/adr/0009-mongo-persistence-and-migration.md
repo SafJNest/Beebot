@@ -68,13 +68,44 @@ MATCH records for all ten participants.
 
 The global Records overview reads the indexed top five rows for every metric; the
 nested metric ladder reads `profile_records` directly with a filterKey, metric
-and score sort. Positions are not persisted. Timeline metrics are rebuilt from
+and value sort (descending for highest metrics, ascending for earliest times).
+Record positions and normalized scores are removed; Redis caches only page totals.
+Timeline metrics are rebuilt from
 `match_events` in bounded batches; matches without events simply do not
 produce timeline records. Champion-build refresh also joins the separate event
 collection in batches of 100 matches to derive item and skill timing; final
 participant fields remain the source for build membership and counts. The
 operator owns the unique identity and
 global/regional indexes documented in `docs/mongo/12-profile-record-indexes.md`.
+
+## Amendment 2026-10-20: Mongo match facets and retired SQL imports
+
+At the owner's explicit request, the 2026-10-19 MariaDB match-search projection
+is superseded by Mongo `match_facets`. It contains one document per
+`{gameId, puuid}` with region, start/end time, queue, champion, lane and major
+patch. Its `_id` is the complete SHA-256 digest of `gameId + ":" + puuid`,
+stored as BSON Binary. New collections use WiredTiger Zstandard compression.
+
+`MongoDB.insertFacets(Match)` performs idempotent bulk replace/upserts after a
+new canonical match and its events are inserted, and after canonical match
+replacement. Match and projection writes are separately acknowledged;
+projection failures propagate and `!test export-match-search` repairs missing
+documents. The command keeps its direct dedicated thread and existing messages.
+`MongoDB.searchFacets` uses an initial PUUID/time match and one `$facet` for
+self-excluding dimension counts. The canonical `MatchFacets` record replaces
+the SQL-owned response record.
+
+The owner also explicitly requested removal of historical MariaDB imports.
+`LeagueDB`, its SQL match/participant decoder, SQL recovery operations and the
+obsolete LoL SQL test script are removed. `MongoMigration` retains only Mongo
+rank-progress normalization and tracked-history rebuilding. This change does
+not drop any live SQL table or modify another domain's SQL integration.
+
+Mongo `match` remains the canonical source for complete matches and runtime
+history. The public API, presentation, history count and pagination are
+unchanged; the previously discussed facets endpoint and history integration
+are not implemented by this storage replacement. The schema, rebuild and
+operational index are documented in `docs/mongo/15-match-facets-projection.md`.
 
 ## Amendment 2026-07-26
 
@@ -86,7 +117,7 @@ modify or remove indexes.
 
 ## Context
 
-Historical LoL persistence is concentrated in `LeagueDB`, a static class that contains SQL queries and mapping for summoner, rank, mastery, match and participant. The runtime must be separated from the MariaDB backfill.
+Historical LoL persistence used MariaDB for summoners, ranks, masteries, matches and participants. The SQL adapter and imports have now been retired; current LoL storage and maintenance use MongoDB exclusively.
 
 The repository already contains canonical LoL models, Redis as cache and services that use the `Redis -> database -> Riot` flow. The migration must introduce Mongo without creating a second HTTP contract or losing data during the transition.
 
@@ -94,15 +125,16 @@ The repository already contains canonical LoL models, Redis as cache and service
 
 The first migration covers only `league_of_legends`. Other MariaDB domains will be handled in separate ADRs after the LoL cutover.
 
-The operational strategy is:
+The current operational strategy is:
 
-1. `MongoMigration` reads MariaDB with checkpoint and high-water mark;
-2. the LoL runtime reads and writes exclusively to MongoDB;
-3. Redis remains cache only;
-4. Riot API remains external source for fallback and refresh;
-5. `LeagueDB` remains a SQL adapter used exclusively by `MongoMigration`.
+1. the LoL runtime reads and writes canonical data through `MongoDB`;
+2. Mongo match writers also maintain the rebuildable `match_facets` projection;
+3. `MongoMigration` only maintains data already in Mongo;
+4. Redis remains cache and derived-index storage;
+5. Riot remains the external source for fallback and refresh.
 
-There are no MariaDB queries, mirror, SQL fallback, outbox or dual-write proxy in the LoL runtime.
+There is no LoL MariaDB runtime access, SQL import, fallback or dual-write
+proxy. The old SQL migration strategy is superseded by the amendment above.
 
 Mongo will use:
 
@@ -119,7 +151,8 @@ Mongo will use:
 
 `SummonerService`, `RankService`, `MasteryService`, `MatchService` and
 `ProfileService` are the LoL cache-aware runtime boundaries (ADR-0011 / ADR-0012).
-Runtime Mongo persistence is exposed directly via `MongoDB`; `LeagueDB` is confined to the migration read path.
+Runtime Mongo persistence is exposed directly via `MongoDB`; `MongoMigration`
+contains Mongo-only maintenance. There is no LoL SQL adapter.
 
 Spring continues to own only controllers, HTTP configuration and error models. `QueryRecord` is the common projection container; complex objects use the already existing LoL models.
 
@@ -134,7 +167,12 @@ Spring continues to own only controllers, HTTP configuration and error models. `
 
 ## Write path
 
-Every LoL runtime mutation goes directly through `MongoDB` with an idempotent operation. Rank updates do not invalidate snapshots; the periodic task rebuilds Mongo aggregates and increments the Redis version every 12 hours. SQL queries are allowed only in the `MongoMigration` read path; no runtime consumer may keep a LoL `INSERT`, `UPDATE` or `DELETE`.
+Every LoL runtime mutation goes directly through `MongoDB` with an idempotent
+operation. Match inserts and replacements also upsert `match_facets`. Rank
+updates do not invalidate snapshots; the periodic task rebuilds Mongo
+aggregates and increments the Redis version every 12 hours. No LoL write or
+maintenance operation accesses MariaDB.
+
 
 ## Configuration
 
@@ -144,9 +182,17 @@ Mongo configuration is read from `rsc/settings.json` as a connection URI string.
 "mongo": "mongodb://<user>:<password>@safjnest.com:27017/"
 ```
 
-`App.isTesting() == false` uses `beebot`; `App.isTesting() == true` uses `beebot_test`. Collections use the same names as MariaDB tables, without `lol_` prefix, in both databases.
+`App.isTesting()` selects `MongoDB.TEST_DATABASE` or `MongoDB.PRODUCTION_DATABASE`.
+Use the deployed constants to select the operational database; its name alone
+does not identify the environment. Collections use the same names as MariaDB
+tables, without `lol_` prefix, in both databases.
 
-The code owns bootstrap of collections and declared secondary indexes. Bootstrap is idempotent and does not perform automatic drops; compatible existing indexes are reused, while conflicting ones require an explicit operational migration. The new flow does not require general automatic cleanups; the match schema migration normalizes only the residues identified by this ADR. The operator manually removes other obsolete or duplicate payloads before regeneration.
+The runtime bootstraps collections only. Secondary indexes are managed
+operationally by the database operator according to `docs/mongo`; runtime code
+and migrations do not create, modify or remove them. The new flow does not
+require general automatic cleanups; the match schema migration normalizes only
+the residues identified by this ADR. The operator manually removes other
+obsolete or duplicate payloads before regeneration.
 
 ## API compatibility
 
@@ -164,15 +210,15 @@ Numeric fields of public models remain compatible with the historical model, but
 - participant and profile data can be read with natural access patterns;
 - local projections can use `QueryRecord` and `List<QueryRecord>`, even nested;
 - complex objects reuse canonical models, without duplicate Mongo DTOs;
-- MariaDB remains available for backfill and for other domains;
+- MariaDB remains available for other domains; LoL historical imports are retired;
 - the same Mongo infrastructure can be reused by other domains.
 
 ### Negative
 
 - the runtime cannot use MariaDB as fallback if Mongo is unavailable;
 - the leaderboard requires a derived projection and MMR indexes per queue/scope; the page first reads `competitive`, then the summoners of only that page, while the total uses Redis and Mongo aggregates before the `countDocuments()` fallback; distribution, top-region and count are persisted in `leaderboard_aggregates`, rebuilt every 12 hours and cached in Redis;
-- the backfill requires checkpoint, high-water mark and corrupted payload handling;
-- the backfill and the runtime must be verified separately.
+- Mongo rank-history maintenance retains checkpoint and corrupted payload handling;
+- projection rebuilds and runtime writes must be verified separately.
 
 ## Gate
 

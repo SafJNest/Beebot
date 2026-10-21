@@ -101,8 +101,8 @@ public class MongoChampionArenaSourceTest {
         assertTrue(json.contains("\"patch\": \"26.19.123\""));
         assertTrue(json.contains("\"patchMajor\": \"26.19\""));
         assertTrue(json.contains("\"queue\": \"CHERRY\""));
-        assertTrue(json.contains("$elemMatch"));
-        assertTrue(json.contains("\"champion\": 1"));
+        assertFalse(json.contains("$elemMatch"));
+        assertTrue(json.contains("\"participants.champion\": 1"));
     }
 
     @Test

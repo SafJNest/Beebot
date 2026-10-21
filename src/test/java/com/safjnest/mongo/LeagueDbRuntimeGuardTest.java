@@ -14,13 +14,11 @@ import org.junit.Test;
 public class LeagueDbRuntimeGuardTest {
 
     @Test
-    public void leagueDbIsReferencedOnlyByMigration() throws IOException {
+    public void leagueDbIsNotReferencedByRuntime() throws IOException {
         Path sourceRoot = Path.of("src/main/java");
         List<String> violations = new ArrayList<>();
         try (Stream<Path> paths = Files.walk(sourceRoot)) {
             paths.filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> !path.endsWith("LeagueDB.java"))
-                    .filter(path -> !path.endsWith("MongoMigration.java"))
                     .forEach(path -> {
                         try {
                             String source = Files.readString(path);

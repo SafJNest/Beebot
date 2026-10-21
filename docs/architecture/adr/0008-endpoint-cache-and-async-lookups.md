@@ -33,6 +33,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Champion build reads the single persisted aggregate before allowing command/refresh computation.
 - Match detail follows `Redis -> Mongo -> MatchService background fetch -> insert`.
 - The profile component Futures and MatchService jobs are the asynchronous work retained by the LoL flow.
+- Profile match pages dispatch the page lookup and cached/disjunctive facet lookup concurrently on virtual threads, then combine both canonical results into one asynchronous HTTP response. The facet aggregation supplies both the facets and page total, so `/matches` does not issue a separate exact-count query.
 
 ## Invariants
 

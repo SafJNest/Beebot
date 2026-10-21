@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.MatchOrder;
+import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.utils.SeasonUtils;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -63,6 +65,15 @@ public class LolControllerTest {
             .getAnnotation(GetMapping.class);
 
         assertEquals("/profile/{puuid}/rank-history", mapping.value()[0]);
+    }
+
+    @Test
+    public void shouldExposeMatchFacets() throws NoSuchMethodException {
+        GetMapping mapping = LolController.class.getMethod("facets", String.class, String.class,
+            List.class, List.class, List.class, List.class, String.class, long.class, long.class, java.util.Map.class)
+            .getAnnotation(GetMapping.class);
+
+        assertEquals("/profile/{puuid}/facets", mapping.value()[0]);
     }
 
     @Test
@@ -215,6 +226,62 @@ public class LolControllerTest {
         assertEquals(MatchOrder.DESC, LolApiParameters.matchOrder(null));
         assertEquals(100, LolApiParameters.matchLimit(100));
         assertEquals(0, LolApiParameters.matchOffset(0));
+    }
+
+    @Test
+    public void shouldParseRepeatedMatchFacetFiltersAndCurrentSeasonDefaults() {
+        MatchFacetQuery query = LolApiParameters.matchFacetQuery(
+            LeagueShard.EUW1,
+            List.of("team_builder_ranked_solo", "ranked_flex_sr", "team_builder_ranked_solo"),
+            null,
+            List.of("mid", "top"),
+            null,
+            null,
+            0,
+            0,
+            false
+        );
+
+        assertEquals(List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.RANKED_FLEX_SR), query.queues());
+        assertTrue(query.champions().isEmpty());
+        assertEquals(List.of(LaneType.MID, LaneType.TOP), query.lanes());
+        assertTrue(query.patches().isEmpty());
+        assertEquals("current", query.selectedSeason());
+        assertEquals(SeasonUtils.getCurrentSeasonRange().start(), query.timeStart());
+        assertEquals(SeasonUtils.getCurrentSeasonRange().end(), query.timeEnd());
+    }
+
+    @Test
+    public void shouldParseAllAndExplicitMatchFacetPeriods() {
+        MatchFacetQuery all = LolApiParameters.matchFacetQuery(
+            LeagueShard.EUW1, null, null, null, null, "all", 0, 0, false);
+        MatchFacetQuery previous = LolApiParameters.matchFacetQuery(
+            LeagueShard.EUW1, null, null, null, null, "previous", 0, 0, false);
+        MatchFacetQuery custom = LolApiParameters.matchFacetQuery(
+            LeagueShard.EUW1, null, null, null, null, null, 100, 200, true);
+
+        assertEquals("all", all.selectedSeason());
+        assertEquals(0, all.timeStart());
+        assertEquals(0, all.timeEnd());
+        assertEquals("previous", previous.selectedSeason());
+        int previousYear = SeasonUtils.getCurrentSeasonRange().year() - 1;
+        assertEquals(SeasonUtils.getSeasonRange(previousYear).start(), previous.timeStart());
+        assertEquals(SeasonUtils.getSeasonRange(previousYear).end(), previous.timeEnd());
+        assertNull(custom.selectedSeason());
+        assertEquals(100, custom.timeStart());
+        assertEquals(200, custom.timeEnd());
+    }
+
+    @Test
+    public void shouldRejectMatchFacetSeasonWithExplicitRange() {
+        try {
+            LolApiParameters.matchFacetQuery(
+                LeagueShard.EUW1, null, null, null, null, "current", 100, 200, true);
+            throw new AssertionError("Expected incompatible season and range");
+        } catch (ResponseStatusException exception) {
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+            assertTrue(exception.getReason().contains("cannot be combined"));
+        }
     }
 
     @Test

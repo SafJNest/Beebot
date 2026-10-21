@@ -17,10 +17,12 @@ curl 'http://localhost:8080/api/lol/EUW1/match/EUW1_6789012345'
 | `shard` | path | enum `LeagueShard` | yes | — | Shard used for the lookup. |
 | `gameId` | path | string | yes | — | Full Riot ID, for example `EUW1_6789012345`. |
 
-The prefix before `_` is stripped for the SQL lookup; the path shard
-remains the reference region. A miss follows `Redis → DB → Tracker → Riot`
+The complete Riot match ID is used for the Mongo lookup; the path shard
+remains the reference region. A miss follows `Redis → Mongo → Riot`
 and does not perform a synchronous Riot fetch in the HTTP request. Fetched
-non-remake matches are persisted regardless of split age.
+non-remake matches are persisted regardless of split age. New Mongo match
+inserts also synchronously upsert Mongo `match_facets` participant documents; the
+endpoint still reads Mongo and its response contract is unchanged.
 
 ## `200` response
 

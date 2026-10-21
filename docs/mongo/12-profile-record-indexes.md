@@ -1,60 +1,80 @@
 # Profile record indexes
 
-`profile_records` is a projection rebuildable from the canonical `match`,
-`match_events` and `summoner.masteries` documents. Each document has an `_id`
-ObjectId generated once. Match-derived metrics have one row per `{ puuid,
-filterKey, metric }`; `HIGHEST_MASTERY` has one row per `{ puuid, filterKey,
-metric, championId }`.
+`profile_records` is rebuildable from canonical `match`, `match_events` and
+`summoner.masteries` documents. Match metrics have one row per
+`{puuid, filterKey, metric}`; mastery adds `championId`. Keep the existing unique
+identity index `{puuid: 1, filterKey: 1, metric: 1, championId: 1}`.
+
+Records store and sort their actual `value`, with `occurredAt ASC, puuid ASC`
+as tie breakers. Highest metrics sort descending; earliest-time metrics sort
+ascending. Record rows have no `score`, global/regional positions, Redis ZSETs
+or ranking jobs. Redis caches only the paginated total for 60 seconds per
+filter/metric/region/champion; row-count changes invalidate it.
+
+## Value indexes
+
+Create these indexes before deploying the value-based queries. Existing
+indexes on `score` cannot provide their sort order. No index or query sorts by `_id`.
 
 ```javascript
-db.profile_records.dropIndex("profile_records_identity")
-
 db.profile_records.createIndex(
-  {puuid: 1, filterKey: 1, metric: 1, championId: 1},
-  {name: "profile_records_identity", unique: true}
+  {filterKey: 1, metric: 1, value: -1, occurredAt: 1, puuid: 1},
+  {name: "profile_records_value_global"}
+)
+db.profile_records.createIndex(
+  {filterKey: 1, metric: 1, region: 1, value: -1, occurredAt: 1, puuid: 1},
+  {name: "profile_records_value_regional"}
+)
+db.profile_records.createIndex(
+  {filterKey: 1, metric: 1, championId: 1, value: -1, occurredAt: 1, puuid: 1},
+  {name: "profile_records_mastery_value_global"}
+)
+db.profile_records.createIndex(
+  {filterKey: 1, metric: 1, championId: 1, region: 1, value: -1, occurredAt: 1, puuid: 1},
+  {name: "profile_records_mastery_value_regional"}
 )
 
+const earliestMetrics = [
+  "FIRST_KILL_TIME", "FIRST_BLOOD_TIME", "FIRST_DRAKE_TIME",
+  "FIRST_BARON_TIME", "FIRST_ELDER_TIME"
+];
 db.profile_records.createIndex(
-  {filterKey: 1, metric: 1, score: -1, occurredAt: 1, puuid: 1},
-  {name: "profile_records_global"}
+  {filterKey: 1, metric: 1, value: 1, occurredAt: 1, puuid: 1},
+  {name: "profile_records_earliest_global", partialFilterExpression: {metric: {$in: earliestMetrics}}}
 )
-
 db.profile_records.createIndex(
-  {filterKey: 1, metric: 1, region: 1, score: -1, occurredAt: 1, puuid: 1},
-  {name: "profile_records_regional"}
-)
-
-db.profile_records.createIndex(
-  {filterKey: 1, metric: 1, championId: 1, score: -1, occurredAt: 1, puuid: 1},
-  {name: "profile_records_mastery_global"}
-)
-
-db.profile_records.createIndex(
-  {filterKey: 1, metric: 1, championId: 1, region: 1, score: -1, occurredAt: 1, puuid: 1},
-  {name: "profile_records_mastery_regional"}
+  {filterKey: 1, metric: 1, region: 1, value: 1, occurredAt: 1, puuid: 1},
+  {name: "profile_records_earliest_regional", partialFilterExpression: {metric: {$in: earliestMetrics}}}
 )
 ```
 
-Indexes are applied by the operator. The runtime only creates the
-missing collection and does not create, modify, or remove indexes.
+The two ascending indexes cover only earliest-time metrics; they preserve the
+same ascending tie breakers without indexing every mastery row twice.
+Indexes are operator-managed; the runtime never creates or drops them.
+Compare plans and keys/documents examined with `explain("executionStats")`.
 
-Apply the identity replacement before the first mastery projection rebuild:
+## Cleanup after deployment
 
-```text
-!test audit mastery-records
-!test regenerate mastery-records
-!test audit mastery-records
+On each affected database, after the new code and value indexes are active:
+
+```javascript
+for (const index of db.profile_records.getIndexes()) {
+  if ("score" in index.key) db.profile_records.dropIndex(index.name);
+}
+db.profile_records.updateMany({}, {$unset: {score: "", globalRanking: "", regionRanking: ""}})
 ```
 
-The audit is read-only. It reports the projected raw BSON for one record per
-canonical mastery and the live collection/index sizes, so the second run shows
-the actual footprint after the projection exists.
+Existing documents remain readable before cleanup. Subsequent writes also
+remove these retired fields without regenerating the records.
 
-The global list uses `filterKey + metric`, sort `score DESC, occurredAt ASC,
-puuid ASC`; the regional one adds `region`. `HIGHEST_MASTERY` may additionally
-bind `championId`, using the mastery indexes above. The `/records` overview
-performs a limited read of the leader for each metric on the same index.
-Position is not persisted. Any Redis rank cache is a discardable projection
-and is not part of the Mongo source-of-truth contract. Contextual record
-ranking derives lazy Redis ZSETs from `filterKey + metric + GLOBAL|region` and,
-for `HIGHEST_MASTERY`, optionally the exact champion ID.
+Remove only obsolete record ranking keys on the application Redis instance;
+these commands keep leaderboard indexes and the new record count cache:
+
+```bash
+for record_prefix in beebot:lol beebot_test:lol; do
+  redis-cli --scan --pattern "${record_prefix}:los:ranking:*" | xargs -r -n 500 redis-cli UNLINK
+done
+```
+
+`!test audit mastery-records` remains read-only. `!test regenerate mastery-records`
+rebuilds mastery rows from `summoner.masteries` when a data repair is needed.

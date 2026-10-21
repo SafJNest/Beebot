@@ -10,6 +10,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.record.ProfileRecord;
 import com.safjnest.lol.model.record.RecordMetric;
+import com.safjnest.lol.model.record.RecordOrder;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
@@ -133,7 +134,8 @@ public final class ProfileRecordAnalyzer {
         }
 
         private static boolean before(ProfileRecord candidate, ProfileRecord current) {
-            if (candidate.score != current.score) return candidate.score > current.score;
+            if (candidate.value != current.value) return candidate.metric.order() == RecordOrder.HIGHEST
+                ? candidate.value > current.value : candidate.value < current.value;
             if (candidate.occurredAt != current.occurredAt) return candidate.occurredAt < current.occurredAt;
             return candidate.matchId.compareTo(current.matchId) < 0;
         }

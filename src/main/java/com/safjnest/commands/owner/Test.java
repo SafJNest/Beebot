@@ -11,6 +11,7 @@ import com.safjnest.App;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
@@ -19,6 +20,7 @@ import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.CompetitiveService;
+import com.safjnest.lol.service.FacetsService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.ProfileRecordService;
@@ -55,7 +57,7 @@ public class Test extends Command {
     );
     private static final List<String> AUDIT_OPERATIONS = List.of("mastery-records");
     private static final List<String> MIGRATION_OPERATIONS = List.of(
-        "all", "tracked", "ranks", "fix-tracked", "rankprogress [runId]"
+        "fix-tracked", "rankprogress [runId]"
     );
 
     public Test() {
@@ -82,7 +84,7 @@ public class Test extends Command {
                 + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
-                + "] | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
+                + "] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -126,10 +128,11 @@ public class Test extends Command {
             case "fix-timeline" -> queueTimelineRepair(event, arguments);
             case "fix-timeline-patch" -> queueTimelinePatchRepair(event, arguments);
             case "test-matchups" -> queueMatchupRegeneration(event, arguments);
+            case "export-match-search" -> startMatchSearchExport(event);
             default -> event.reply("Usage: !test regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS)
                 + "] | !test fix-timeline <puuid> | !test fix-timeline-patch <patch>"
-                + " | !test test-matchups <puuid> <shard>.");
+                + " | !test test-matchups <puuid> <shard> | !test export-match-search.");
         }
     }
 
@@ -152,15 +155,12 @@ public class Test extends Command {
     private static void queueMigration(CommandEvent event, String[] arguments) {
         String migrationInput = arguments.length < 2 ? "" : arguments[1].trim();
         if (migrationInput.isBlank()) {
-            queueMigrationOperation(event, "all", "Full Mongo migration", MongoMigration::migrateAll);
+            event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
             return;
         }
         String[] migrationArguments = migrationInput.split("\\s+", 2);
         String migration = migrationArguments[0].toLowerCase();
         switch (migration) {
-            case "all" -> queueMigrationOperation(event, "all", "Full Mongo migration", MongoMigration::migrateAll);
-            case "tracked" -> queueMigrationOperation(event, "tracked", "Tracked RankProgress recovery", MongoMigration::migrateTrackedRankProgress);
-            case "ranks" -> queueMigrationOperation(event, "ranks", "Rank migration", MongoMigration::migrateRanks);
             case "fix-tracked" -> queueMigrationOperation(event, "fix-tracked", "Tracked RankProgress rebuild", MongoMigration::rebuildTrackedRankProgress);
             case "rankprogress" -> queueRankProgressMigration(event, migrationArguments);
             default -> event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
@@ -194,7 +194,7 @@ public class Test extends Command {
         String runId = arguments.length < 2 || arguments[1].isBlank() ? "rankprogress-v1" : arguments[1].trim();
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
             "owner-migration:rankprogress:" + runId, "owner RankProgress migration " + runId, job -> {
-                MongoMigration.migrateRankProgress(new MongoMigration.Options(false, 500_000, runId, true, 0));
+                MongoMigration.migrateRankProgress(new MongoMigration.Options(false, 500_000, runId, true));
                 return null;
             });
         event.reply("RankProgress migration queued: run=" + runId + ".");
@@ -245,10 +245,10 @@ public class Test extends Command {
         QueueHandler.background(SyncScheduler.class, null, "owner-fix-timeline:" + puuid,
             "owner fix timeline " + puuid, job -> {
                 Filter filter = Filter.summoner(0, 0);
-                int total = MongoDB.countMatches(puuid, filter);
+                long total = FacetsService.count(puuid);
                 int[] counts = new int[3];
                 System.out.println("[Fix timelines] puuid=" + puuid + " total=" + total);
-                job.setProgressTotal(total);
+                job.setProgressTotal((int) Math.min(Integer.MAX_VALUE, total));
                 job.phase("TIMELINES");
                 int[] step = {0};
                 int[] missingTimelineStreak = {0};
@@ -425,12 +425,13 @@ public class Test extends Command {
             return;
         }
         Filter filter = Filter.summoner(0, System.currentTimeMillis());
-        Filter countFilter = Filter.summoner(filter.timeStart(), filter.timeEnd()).setRegion(shard);
+        MatchFacetQuery countFilter = new MatchFacetQuery(
+            shard, List.of(), List.of(), List.of(), List.of(), filter.timeStart(), filter.timeEnd(), null, List.of());
         String jobKey = "owner-test-matchups:" + shard.name() + ":" + puuid;
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, jobKey,
             "owner test matchups " + shard.name() + " " + puuid, job -> {
-                int matchesFound = MongoDB.countMatches(puuid, countFilter);
-                job.setProgressTotal(matchesFound);
+                long matchesFound = FacetsService.count(puuid, countFilter);
+                job.setProgressTotal((int) Math.min(Integer.MAX_VALUE, matchesFound));
                 job.phase("MATCHUPS");
                 if (matchesFound == 0) return "No matches found for this PUUID and shard.";
                 boolean generated = new ProfileService().generateMatchups(puuid, shard, filter);
@@ -445,6 +446,27 @@ public class Test extends Command {
             });
         event.reply("Matchup regeneration queued for PUUID " + puuid + " on " + shard.name()
             + " (all match history).");
+    }
+
+    private static void startMatchSearchExport(CommandEvent event) {
+        new Thread(() -> {
+            try {
+                long total = MongoDB.estimatedMatchDocumentCount();
+                long[] counts = new long[3];
+                event.reply("Match search export started: estimated total=" + total + ".");
+                MongoDB.forEachSearchMatch(match -> {
+                    int rows = MongoDB.insertFacets(match);
+                    counts[0]++;
+                    counts[1] += rows;
+                    if (rows == 0) counts[2]++;
+                });
+                String summary = "total=" + counts[0] + "; completed=" + (counts[0] - counts[2])
+                    + "; missing=" + counts[2] + "; participantRows=" + counts[1];
+                event.reply("Match search export completed: " + summary + ".");
+            } catch (RuntimeException failure) {
+                event.reply("Match search export failed: " + failure.getMessage() + ".");
+            }
+        }, "match-search-export").start();
     }
 
     private static void queueHighElo(CommandEvent event) {
@@ -561,9 +583,7 @@ public class Test extends Command {
 
     private static void replyRankingStatus(CommandEvent event) {
         LeaderboardService.IndexStatus leaderboard = LeaderboardService.indexStatus();
-        ProfileRecordService.IndexStatus records = ProfileRecordService.indexStatus();
-        event.reply("Leaderboard segments=" + leaderboard.segments() + " memoryBytes=" + leaderboard.memoryBytes()
-            + " | record segments=" + records.segments() + " memoryBytes=" + records.memoryBytes());
+        event.reply("Leaderboard segments=" + leaderboard.segments() + " memoryBytes=" + leaderboard.memoryBytes());
     }
 
 }

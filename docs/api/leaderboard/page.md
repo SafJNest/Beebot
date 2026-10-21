@@ -69,6 +69,8 @@ on `_id`. `total` is resolved from Redis, then (without role) from
 A `role` or `otp` filter uses the count on the projection directly.
 Leaderboard page cache entries retain their existing one-day TTL and are not
 invalidated when a competitive entry changes.
+Cached pages still resolve contextual rankings from Redis on every request,
+queuing missing segments only; nullable rankings are not frozen by the page cache.
 The `summoner` path bypasses this page cache. It uses a resident exact-division
 Redis ZSET to compute the position and retrieve only the requested page; when
 the needed segment is cold, an indexed count-before query and bounded Mongo

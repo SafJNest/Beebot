@@ -8,15 +8,18 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | linked accounts by userId | `find({userId})` sorted by `_id`; maps to canonical `Summoner` (`region` as `LeagueShard`) | 1 | UserData / Discord |
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
 | leaderboard | Normal page: `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id`. Summoner page: exact identity lookup, Redis exact-division rank/range when resident; otherwise indexed count-before plus bounded seek queries around the target tuple, then one `$in` on `summoner._id`. Both use the existing total-count path. | Normal: 2 per page + count on cache miss. Summoner: identity + anchor + rank/page reads + count + summoner fetch. | LeaderboardService |
-| contextual leaderboard ranking | Mongo cursor over `competitive {queue,mmr range,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | LeaderboardService |
-| contextual record ranking | Mongo cursor over `profile_records {filterKey,metric,region}` into a temporary Redis ZSET, then atomic publish | streaming batch | ProfileRecordService |
+| contextual leaderboard ranking | Only if Redis key is absent: projected `competitive {queue,mmr range,region}` cursor, no sort, then temporary ZSET and atomic publish; count hashes use one region/MMR aggregation per queue | Mongo 5,000 / Redis 1,000 | LeaderboardService |
+| records | Direct `profile_records {filterKey,metric,region,championId?}` query sorted by `value` and limited to the page, then one batched summoner lookup; total uses Redis with a 60-second TTL and Mongo count on a miss | 2 + count on cache miss | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | profile matchup rebuild | cursor over bounded match batches plus one `$in` join on `match_events`; process and recursively clear each decoded timeline | 1 batch of 100 | ProfileService |
 | champion stats matrix rebuild | exact count plus cursor over match IDs, then bounded match and `match_events` reads; logs planned/completed batches; delivers missing-event matches and leaves eligibility to stats/build consumers | 1 batch of 10,000; 1 match query + 1 `match_events` query per batch | ChampionAnalyzer |
 | standalone champion build rebuild | same shared raw ID/match/event join as statistics; standard consumer requires a usable timeline, Arena retains missing events; recursively clear temporary inputs | 1 event batch of 100 matches | ChampionBuildEngine |
-| history | participant filter in a single `$elemMatch`, limited projection/paging; direct `countDocuments` | 1 + batch events | LeagueMessage |
-| match results | projection of only the fields needed for `MatchResult` and participants | 1 | profile/tracker |
-| tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC, _id DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
+| history | dotted PUUID for a single participant predicate; one `$elemMatch` when champion/lane must belong to that player; region-scoped projection/paging; OPGG page totals come from the cached `match_facets` aggregation | 1 + batch events | LeagueMessage / FacetsService |
+| profile match page | projection of only the fields needed for `MatchResult` and participants, in parallel with one `match_facets` aggregation supplying disjunctive facets and exact total | 2 concurrent reads; no separate count query | MatchService / FacetsService |
+| match facets rebuild | `_id`-ordered cursor over all matches; projects region, times, queue, patch and participant PUUID/champion/lane; upserts flat `match_facets` documents | 50,000 matches per Mongo batch | `!test export-match-search` |
+| match facets search | `match_facets` PUUID/shard match followed by one `$facet` for total, disjunctive queue/lane/champion/patch counts, season alternatives and filtered time extrema; shared with `/matches` | 1 aggregation | `MongoDB.searchFacets` |
+| match facets count | filtered counts reuse `FacetsService.get(...).total()`; unfiltered counts use indexed `countDocuments({puuid})` on `match_facets` and a 10-second Redis entry | 1 cache lookup or projection count | FacetsService |
+| tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
 | timeline repair | cursor stored matches for one PUUID newest-first, fetch timeline directly by Riot match ID, regenerate the complete compact event payload, replace only that match's `match_events` record; stop after 10 consecutive missing timelines | streaming per PUUID | `!test fix-timeline <puuid>` |
 | patch timeline repair | one cursor per region over `match.patchMajor + region`, project only `_id`, fetch timelines in parallel across regions with a 500 ms delay per region, log `current/total`, regenerate compact events and replace only its `match_events` record; continue through missing timelines | streaming per region | `!test fix-timeline-patch <patch>` |
 | match events | `_id: {$in: [...]}` on `match_events` | 1 per batch; 100 profile matchups/standalone builds or 10,000 champion matrix matches | match detail/history and aggregate rebuilds |
@@ -29,10 +32,14 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 Search returns directly the payload needed for search and autocomplete: `Summoner` and `RANKED_SOLO_5X5` rank are read in the same projection. The `findRank` loop per PUUID no longer exists.
 
 Profile and leaderboard use structured BSON fields. Champion and lane filters are applied to the same `participants` element via a single `$elemMatch`; they can no longer match champion and lane on two different participants.
+Match reads share the participant/scope builders, with PUUID and known region
+before optional equality fields and time bounds. Single participant predicates
+use dotted paths; OPGG explicitly supplies the summoner region for both list
+and count. Global discovery and unique-ID operations keep their intended scope.
 
 Tracker predecessor lookup filters the participant PUUID, shard and canonical
 Solo/Duo queues, excludes the current full match ID, and reads the latest
-earlier `timeStart` with `{timeStart: -1, _id: -1}` ordering.
+earlier `timeStart` with `{timeStart: -1}` ordering.
 
 Paginated queries are limited to 100 matches, 50 leaderboard summoners, 25 search results, 500,000 summoner keys per page and 50,000 match keys per page. Full summoner data is read and written in sub-batches of 20,000; matches and events remain in sub-batches of 1,000. Long-batch cursors must be closed explicitly.
 
@@ -40,7 +47,7 @@ Paginated queries are limited to 100 matches, 50 leaderboard summoners, 25 searc
 
 PUUID is the summoner identity and the document `_id`; the full Riot match ID is the match identity; R4J enums use `name()`; bans use BLUE and RED; participant stays flat; upsert/update/delete are idempotent; application reads and writes are Mongo-only; Mongo read errors are explicit.
 
-MariaDB stores UTF-8 JSON in `champion_builds.data`, `champion_stats.data`, and `profile_statistics.data`. Mongo stores `build` as structured BSON; its `filterKey` is `champion + lane + queue + rank + rankBehavior + patch + region`, plus opponent/duo when requested. `profile_statistics` stores timestamps directly and only the leaf nodes `champions.<championId>.<canonicalQueue>.<position>`, plus `pings`, `spellOne`, and `spellTwo`, never under a `statistics` field. `isOtp`, totals and queue/lane/champion aggregates are runtime-only. `champion_stats` stores exactly one raw `ChampionStatsDocument` per `queue + rankBehavior + rank + patch + region` scope under `_id = scope.toKey()`: root scope/games/banGames/previousPatch/ready/updatedAt plus `champions.<championId>.bans` and lane leaves. It never stores `statistics`, `overview`, `filter`, `laneStats`, or any calculated rate. Matchups live only in raw leaves keyed directly by opponent champion ID. No Kryo payloads, compatibility reads or `legacyPayload` are used.
+LoL no longer reads or writes MariaDB. Mongo stores `build` as structured BSON; its `filterKey` is `champion + lane + queue + rank + rankBehavior + patch + region`, plus opponent/duo when requested. `profile_statistics` stores timestamps directly and only the leaf nodes `champions.<championId>.<canonicalQueue>.<position>`, plus `pings`, `spellOne`, and `spellTwo`, never under a `statistics` field. `isOtp`, totals and queue/lane/champion aggregates are runtime-only. `champion_stats` stores exactly one raw `ChampionStatsDocument` per `queue + rankBehavior + rank + patch + region` scope under `_id = scope.toKey()`: root scope/games/banGames/previousPatch/ready/updatedAt plus `champions.<championId>.bans` and lane leaves. It never stores `statistics`, `overview`, `filter`, `laneStats`, or any calculated rate. Matchups live only in raw leaves keyed directly by opponent champion ID. No Kryo payloads, compatibility reads or `legacyPayload` are used.
 
 `profile_matchups` is a separate collection: its `matchups` payload stores `champions.<championId>.<canonicalQueue>.<position>` leaves, with same-position `matchups.<opponentChampionId>` and applicable `synergies.<allyChampionId>`. For lane queues, root-leaf timeline metric sums/counts aggregate available differences against same-lane opponents; matchup leaves keep the same values scoped by opponent. Synergy leaves keep pair-scoped timeline metrics. Means, adjusted win rate and tier are response-only. The persisted maps retain all champion IDs; `others` is formed only in the API projection by combining buckets below `minGames`.
 
@@ -57,9 +64,13 @@ Indexes are managed by the database operator, not by the runtime or the migratio
 | `summoner` | `summoner_user_accounts` | Discord accounts by `userId`, sorted by `_id` |
 | `summoner` | `summoner_tracking_true` | tracker and accounts with `tracking=true` |
 | `competitive` | `{queue: 1, mmr: -1, score: -1}` and `{queue: 1, region: 1, mmr: -1, score: -1}` | leaderboard page order and scoped query |
-| `match` | `match_participant_time` | history, profile, OPGG, recent matches and LP data |
-| `match` | `match_shard_time`, `match_shard_patch_time`, `match_patch` | temporal queries, region/patchMajor, bans and champion wins |
-| `match` | `match_champion_filter` | champion batch with equality-first filter and participant/lane |
+| `match` | `match_player_search_v3` | Existing shared PUUID+region/time access; unfiltered pages and broad count fallback |
+| `match` | `match_player_champion_lane_time_v4` | Additional PUUID+region+champion prefix; champion+lane counts and time-bounded pages, optional queue |
+| `match` | `match_player_lane_time_v4` | Additional PUUID+region+lane/time access without a champion requirement, optional queue |
+| `match` | `match_region_time_v3` | Region/season scans and the region-only prefix |
+| `match` | `match_patch_region_time_v3` | Scalar patch-only and patch+region/time scans |
+| `match` | `match_queue_patch_scope_v3` | Scalar queue/patch/region/rank scopes, covered count candidates and queue-only repair scans; ID projections require document fetches |
+| `match` | `match_champion_scope_v3` | Global champion and champion+lane sources without a PUUID |
 | `profile_statistics` | `profile_statistics_identity` | lookup/upsert/delete/batch for `{puuid, filterKey}`, `unique` |
 | `profile_statistics` | `profile_statistics_period` | projection over `timeStart`/`timeEnd` ranges |
 | `profile_activity` | `profile_activity_identity` | lookup/upsert for `{puuid, filterKey}`, `unique` |
@@ -79,6 +90,8 @@ db.summoner.createIndex(
 )
 ```
 
+`match` index consolidation steps and exact key patterns are in
+[`14-match-index-consolidation.md`](14-match-index-consolidation.md).
 `match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` and
 direct match/summoner lookups remain covered by `_id`. No indexes are created
 on `masteries`, participant metrics, or every possible `Filter` combination;
@@ -100,8 +113,8 @@ db.competitive.find({queue: "RANKED_SOLO_5X5", region: "EUW1", mmr: {$gte: 1200,
 db.summoner.find({riotSearch: "playernameeuw", riotId: /^Player Name#EUW$/i, region: "EUW1"}, {_id: 1, riotId: 1, region: 1, ranks: 1, masteries: 1}).limit(2).explain("executionStats")
 db.summoner.find({region: "EUW1", riotSearch: /^name/}, {riotId: 1, ranks: 1}).sort({riotId: 1}).limit(25).explain("executionStats")
 db.match.find({participants: {$elemMatch: {puuid: "puuid", champion: 1}}, region: "EUW1", queue: "RANKED_SOLO_5X5", patchMajor: "14.2"}).sort({timeStart: -1}).limit(100).explain("executionStats")
-db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}, _id: {$ne: "EUW1_123"}, timeStart: {$lt: 1714514400000}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
-db.match.find({participants: {$elemMatch: {puuid: "puuid"}}, queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}}).sort({timeStart: -1, _id: -1}).limit(1).explain("executionStats")
+db.match.find({"participants.puuid": "puuid", region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}, _id: {$ne: "EUW1_123"}, timeStart: {$lt: 1714514400000}}).sort({timeStart: -1}).limit(1).explain("executionStats")
+db.match.find({"participants.puuid": "puuid", region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}}).sort({timeStart: -1}).limit(1).explain("executionStats")
 db.match.distinct("participants.puuid", {region: "EUW1", queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}})
 db.match.aggregate([
   {$match: {queue: {$in: ["TEAM_BUILDER_RANKED_SOLO", "RANKED_SOLO_5X5"]}}},

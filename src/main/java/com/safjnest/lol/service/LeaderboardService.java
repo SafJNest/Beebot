@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
@@ -46,11 +45,6 @@ import org.bson.types.Binary;
 
 public class LeaderboardService {
 
-    public static final int DEFAULT_PAGE_SIZE = 50;
-    private static final int MAX_PAGE_SIZE = DEFAULT_PAGE_SIZE;
-    private static final Map<String, Object> LEADERBOARD_COUNT_LOCKS = new ConcurrentHashMap<>();
-    private static final Map<String, CompletableFuture<Boolean>> INDEX_BUILDS = new ConcurrentHashMap<>();
-
     private final ProfileService profileService = new ProfileService();
 
     public ApiResult<LeaderboardPage> getLeaderboard(
@@ -63,7 +57,7 @@ public class LeaderboardService {
         TierType rank, GameQueueType queue, LeagueShard region, LaneType role, Integer otpChampionId, int page, int limit
     ) {
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
-        if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
+        if (limit < 1 || limit > 50) throw new IllegalArgumentException("limit must be between 1 and 50");
 
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(GameQueueTypeUtils.defaultQueue(queue));
         String selectedRegion = LeagueShardUtils.defaultRegion(region);
@@ -74,7 +68,7 @@ public class LeaderboardService {
             rankKey, selectedQueue.name(), selectedRegion, roleKey, otpKey, page, limit
         );
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
-        if (cached != null) return ApiResult.ready(cached);
+        if (cached != null) return ApiResult.ready(resolvePageRankings(cached));
 
         long offset = (long) (page - 1) * limit;
         List<Summoner> summoners = MongoDB.findLeaderboardPage(
@@ -87,7 +81,7 @@ public class LeaderboardService {
 
     public ApiResult<LeaderboardPage> getLeaderboardForSummoner(
             String identity, GameQueueType queue, LeagueShard region, int limit) {
-        if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
+        if (limit < 1 || limit > 50) throw new IllegalArgumentException("limit must be between 1 and 50");
         if (identity == null || identity.isBlank()) return ApiResult.notFound();
 
         GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(GameQueueTypeUtils.defaultQueue(queue));
@@ -177,13 +171,13 @@ public class LeaderboardService {
                     long offset = 0;
                     while (true) {
                         List<Summoner> page = MongoDB.findLeaderboardPage(
-                            rank, queue, shard.name(), offset, DEFAULT_PAGE_SIZE
+                            rank, queue, shard.name(), offset, 50
                         );
                         if (page.isEmpty()) break;
 
                         rebuildProfilePage(page, filter, processedPuuids);
                         offset += page.size();
-                        if (page.size() < DEFAULT_PAGE_SIZE) break;
+                        if (page.size() < 50) break;
                     }
                 }
             }
@@ -267,28 +261,27 @@ public class LeaderboardService {
     }
 
     public static void warmupIndexAsync() {
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-index-warmup", "leaderboard index warmup", job -> {
-            warmupIndex();
-            return null;
-        });
+        warmupIndex();
     }
 
     public static void warmupIndex() {
-        clearLeaderboardSegments();
+        if (!RedisClient.available()) return;
+        Set<RankSegment> segments = new LinkedHashSet<>();
         for (GameQueueType queue : GameQueueTypeUtils.leaderboardQueues()) {
-            replaceCounts(queue, null);
-            List<LeagueShard> regions = MongoDB.findCompetitiveRankingRegions(queue);
-            for (LeagueShard region : regions) replaceCounts(queue, region);
+            counts(queue, null);
             for (TierDivisionType tier : TierDivisionUtils.descendingRankedDivisions()) if (TierDivisionUtils.isHighElo(tier)) {
-                rebuildIndex(new RankSegment(queue, tier, null));
-                for (LeagueShard region : regions) rebuildIndex(new RankSegment(queue, tier, region));
+                segments.add(new RankSegment(queue, tier, null));
+                for (LeagueShard region : LeagueShardUtils.getActives()) segments.add(new RankSegment(queue, tier, region));
             }
         }
+        ensureIndexesAsync(segments);
     }
 
     public static IndexStatus indexStatus() {
         List<SegmentStatus> segments = new ArrayList<>();
         long memory = 0;
+        Set<String> builds = new HashSet<>();
+        for (var job : QueueHandler.snapshot()) builds.add(job.key());
         Map<String, Long> accesses = RedisClient.getHashLongs(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of());
         for (String key : RedisClient.members(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of())) {
             if (!RedisClient.sortedSetExists(key)) continue;
@@ -297,7 +290,7 @@ public class LeaderboardService {
             memory += used;
             long ttl = RedisClient.ttl(key);
             segments.add(new SegmentStatus(key, RedisClient.sortedSetCardinality(key), used, ttl == -1, ttl,
-                accesses.getOrDefault(key, 0L), INDEX_BUILDS.containsKey(key)));
+                accesses.getOrDefault(key, 0L), builds.contains("leaderboard-index:" + key)));
         }
         return new IndexStatus(segments.size(), memory, List.copyOf(segments));
     }
@@ -327,35 +320,24 @@ public class LeaderboardService {
             ComputeScheduler.startProfileStatistics(summoner, filter);
         }
 
-        List<RankedSummoner> rankingSubjects = new ArrayList<>(summoners.size());
-        for (Summoner summoner : summoners) {
-            Map<GameQueueType, Rank> stored = summoner.ranks();
-            Rank rankValue = stored == null ? null : stored.get(queue);
-            if (rankValue == null) rankValue = Rank.unranked();
-            rankingSubjects.add(new RankedSummoner(
-                summoner.puuid(), summoner.region(), Map.of(queue, rankValue)));
-        }
-        Map<String, Map<GameQueueType, Rank>> rankings = resolveRankings(rankingSubjects);
-
         List<SummonerLeaderboard> leaderboardSummoners = new ArrayList<>(summoners.size());
         for (int index = 0; index < summoners.size(); index++) {
             Summoner summoner = summoners.get(index);
             Map<GameQueueType, Rank> stored = summoner.ranks();
             Rank rankValue = stored == null ? null : stored.get(queue);
             if (rankValue == null) rankValue = Rank.unranked();
-            Map<GameQueueType, Rank> ranks = rankings.getOrDefault(summoner.puuid(), Map.of(queue, rankValue));
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.puuid());
             List<Mastery> masteries = summoner.masteries();
             SummonerView view = SummonerView.from(
                 summoner,
-                ranks,
+                Map.of(queue, rankValue),
                 statistics,
                 statistics == null || masteries == null ? List.of() : masteries
             );
             leaderboardSummoners.add(new SummonerLeaderboard(offset + index + 1, view));
         }
 
-        LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, leaderboardSummoners);
+        LeaderboardPage response = resolvePageRankings(new LeaderboardPage(page, limit, total, pages, leaderboardSummoners));
         String rankKey = rank == null ? LeagueConstants.ALL : rank.name();
         String roleKey = role == null ? LeagueConstants.ALL : role.name();
         String otpKey = otpChampionId == null ? LeagueConstants.ALL : otpChampionId.toString();
@@ -365,6 +347,22 @@ public class LeaderboardService {
             rankKey, queue.name(), region, roleKey, otpKey, page, limit
         );
         return response;
+    }
+
+    private static LeaderboardPage resolvePageRankings(LeaderboardPage page) {
+        List<RankedSummoner> subjects = new ArrayList<>(page.summoners().size());
+        for (SummonerLeaderboard row : page.summoners()) {
+            SummonerView view = row.summoner();
+            subjects.add(new RankedSummoner(view.summoner().puuid(), view.summoner().region(), view.ranks()));
+        }
+        Map<String, Map<GameQueueType, Rank>> rankings = resolveRankings(subjects);
+        List<SummonerLeaderboard> rows = new ArrayList<>(page.summoners().size());
+        for (SummonerLeaderboard row : page.summoners()) {
+            SummonerView view = row.summoner();
+            rows.add(new SummonerLeaderboard(row.position(), SummonerView.from(view.summoner(),
+                rankings.getOrDefault(view.summoner().puuid(), view.ranks()), view.overview()).withMetadata(view.metadata())));
+        }
+        return new LeaderboardPage(page.page(), page.pageSize(), page.total(), page.pages(), rows, page.metadata());
     }
 
     static ResponseMetadata summonerMetadata(
@@ -461,24 +459,10 @@ public class LeaderboardService {
         Long cached = RedisClient.getLong(cacheKey);
         if (cached != null && cached >= 0) return cached;
 
-        Object lock = LEADERBOARD_COUNT_LOCKS.computeIfAbsent(cacheKey, ignored -> new Object());
-        synchronized (lock) {
-            cached = RedisClient.getLong(cacheKey);
-            if (cached != null && cached >= 0) return cached;
-
-            boolean claimed = RedisClient.claim(RedisKey.LEADERBOARD_COUNT_LOCK, "1", queue.name(), region, rankKey, roleKey, otpKey);
-            try {
-                Long aggregate = role == null && otpChampionId == null ? MongoDB.findLeaderboardAggregateCount(rank, queue, region) : null;
-                long total = aggregate == null
-                    ? MongoDB.findLeaderboardCount(rank, queue, region, role, otpChampionId)
-                    : aggregate;
-                RedisClient.setCached(RedisKey.LEADERBOARD_COUNT, Long.toString(total),
-                    queue.name(), region, rankKey, roleKey, otpKey);
-                return total;
-            } finally {
-                if (claimed) RedisClient.delete(RedisKey.LEADERBOARD_COUNT_LOCK.of(queue.name(), region, rankKey, roleKey, otpKey));
-            }
-        }
+        Long aggregate = role == null && otpChampionId == null ? MongoDB.findLeaderboardAggregateCount(rank, queue, region) : null;
+        long total = aggregate == null ? MongoDB.findLeaderboardCount(rank, queue, region, role, otpChampionId) : aggregate;
+        RedisClient.setCached(RedisKey.LEADERBOARD_COUNT, Long.toString(total), queue.name(), region, rankKey, roleKey, otpKey);
+        return total;
     }
 
     private static void requireRank(TierType rank) {
@@ -524,13 +508,13 @@ public class LeaderboardService {
             if (!RedisClient.sortedSetExists(key)) continue;
             if (delta > 0) RedisClient.addSortedSet(key, List.of(new RedisClient.SortedSetEntry(member(entry.puuid(), queue, entry.score()), entry.mmr())));
             else RedisClient.removeSortedSetMember(key, member(entry.puuid(), queue, entry.score()));
-            RedisClient.expire(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT, queue.name(), scope, tier.name());
+            RedisClient.expire(key, TierDivisionUtils.isHighElo(tier) ? 0 : RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.ttlSeconds());
             RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
         }
     }
 
     private static void ensureIndexesAsync(Set<RankSegment> segments) {
-        if (segments.isEmpty()) return;
+        if (segments.isEmpty() || !RedisClient.available()) return;
         Map<RankSegment, String> keys = new LinkedHashMap<>();
         for (RankSegment segment : segments) keys.put(segment, RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(
             GameQueueTypeUtils.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name()));
@@ -539,9 +523,7 @@ public class LeaderboardService {
             RankSegment segment = entry.getKey();
             String key = entry.getValue();
             if (existing.contains(key)) {
-                RedisClient.expire(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT,
-                    GameQueueTypeUtils.canonicalQueue(segment.queue()).name(),
-                    LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name());
+                RedisClient.expire(key, TierDivisionUtils.isHighElo(segment.tier()) ? 0 : RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.ttlSeconds());
                 RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
                 continue;
             }
@@ -556,31 +538,16 @@ public class LeaderboardService {
     private static void rebuildIndex(RankSegment segment) {
         String key = RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT.of(
             GameQueueTypeUtils.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name());
-        CompletableFuture<Boolean> created = new CompletableFuture<>();
-        CompletableFuture<Boolean> existing = INDEX_BUILDS.putIfAbsent(key, created);
-        if (existing != null) {
-            existing.join();
-            return;
-        }
-        try {
-            boolean built = RedisClient.buildSortedSet(
-                RedisKey.CONTEXTUAL_LEADERBOARD_BUILD, new Object[] { java.util.UUID.randomUUID() },
-                RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT,
-                new Object[] { GameQueueTypeUtils.canonicalQueue(segment.queue()).name(),
-                    LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name() },
-                entries -> MongoDB.forEachCompetitiveRankingSegment(
-                    segment.queue(), segment.tier(), segment.region(), entry ->
-                    entries.accept(new RedisClient.SortedSetEntry(member(entry.puuid(), segment.queue(), entry.score()), entry.mmr()))));
-            if (built) {
-                RedisClient.addPersistentMember(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of(), key);
-                RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
-            }
-            created.complete(built);
-        } catch (RuntimeException exception) {
-            created.completeExceptionally(exception);
-            throw exception;
-        } finally {
-            INDEX_BUILDS.remove(key, created);
+        if (!RedisClient.available() || RedisClient.sortedSetExists(key)) return;
+        boolean built = RedisClient.buildSortedSet(RedisKey.CONTEXTUAL_LEADERBOARD_BUILD, new Object[] { java.util.UUID.randomUUID() },
+            RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENT,
+            new Object[] { GameQueueTypeUtils.canonicalQueue(segment.queue()).name(), LeagueShardUtils.leaderboardScope(segment.region()), segment.tier().name() },
+            entries -> MongoDB.forEachCompetitiveRankingSegment(segment.queue(), segment.tier(), segment.region(), entry ->
+                entries.accept(new RedisClient.SortedSetEntry(member(entry.puuid(), segment.queue(), entry.score()), entry.mmr()))));
+        if (built) {
+            if (TierDivisionUtils.isHighElo(segment.tier())) RedisClient.expire(key, 0);
+            RedisClient.addPersistentMember(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of(), key);
+            RedisClient.setHashLong(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of(), key, System.currentTimeMillis());
         }
     }
 
@@ -589,7 +556,8 @@ public class LeaderboardService {
             GameQueueTypeUtils.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region));
         Map<String, Long> stored = RedisClient.getHashLongs(key);
         if (!stored.isEmpty()) return divisions(stored);
-        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-counts:" + key,
+        if (!RedisClient.available()) return Map.of();
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.PROFILE, "leaderboard-counts:" + queue.name(),
             "leaderboard counts " + key, job -> {
                 replaceCounts(queue, region);
                 return null;
@@ -598,11 +566,16 @@ public class LeaderboardService {
     }
 
     private static void replaceCounts(GameQueueType queue, LeagueShard region) {
-        Map<String, Long> values = new HashMap<>();
-        for (Map.Entry<TierDivisionType, Long> entry : MongoDB.findCompetitiveRankCounts(queue, region).entrySet())
-            values.put(entry.getKey().name(), entry.getValue());
-        RedisClient.replaceHash(RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(
-            GameQueueTypeUtils.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region)), values);
+        if (!RedisClient.available() || !RedisClient.getHashLongs(RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(
+                GameQueueTypeUtils.canonicalQueue(queue).name(), LeagueShardUtils.leaderboardScope(region))).isEmpty()) return;
+        Map<String, Map<String, Long>> scopes = MongoDB.findCompetitiveRankCounts(queue);
+        for (LeagueShard shard : LeagueShardUtils.getActives()) scopes.putIfAbsent(shard.name(), new HashMap<>());
+        scopes.putIfAbsent(LeagueShardUtils.leaderboardScope(region), new HashMap<>());
+        for (var scope : scopes.entrySet()) {
+            for (TierDivisionType division : TierDivisionUtils.descendingRankedDivisions()) scope.getValue().putIfAbsent(division.name(), 0L);
+            RedisClient.replaceHash(RedisKey.CONTEXTUAL_LEADERBOARD_COUNTS.of(
+                GameQueueTypeUtils.canonicalQueue(queue).name(), scope.getKey()), scope.getValue());
+        }
     }
 
     static Long absoluteRanking(Map<TierDivisionType, Long> counts, TierDivisionType tier, Long withinDivision) {
@@ -631,13 +604,6 @@ public class LeaderboardService {
         member.putLong(score ^ Long.MIN_VALUE);
         member.put(identity);
         return member.array();
-    }
-
-    private static void clearLeaderboardSegments() {
-        List<String> keys = new ArrayList<>(RedisClient.members(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of()));
-        keys.add(RedisKey.CONTEXTUAL_LEADERBOARD_SEGMENTS.of());
-        keys.add(RedisKey.CONTEXTUAL_LEADERBOARD_ACCESS.of());
-        RedisClient.delete(keys);
     }
 
     private record RankTarget(

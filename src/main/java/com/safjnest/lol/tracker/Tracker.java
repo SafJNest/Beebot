@@ -248,6 +248,10 @@ public class Tracker {
         return fromR4J(source, analyzeMatchBuild(source, source.getParticipants()));
     }
 
+    public static Match fromR4J(LOLMatch source, JobPriority priority) {
+        return fromR4J(source, analyzeMatchBuild(source, source.getParticipants(), priority));
+    }
+
     public static Match fromR4J(
             LOLMatch source,
             Map<String, HashMap<String, String>> matchData) {
@@ -549,6 +553,13 @@ public class Tracker {
 
 
     public static HashMap<String, HashMap<String, String>> analyzeMatchBuild(LOLMatch match, List<MatchParticipant> participants) {
+        return analyzeMatchBuild(match, participants, JobPriority.IMMEDIATE);
+    }
+
+    public static HashMap<String, HashMap<String, String>> analyzeMatchBuild(
+            LOLMatch match,
+            List<MatchParticipant> participants,
+            JobPriority priority) {
         Map<Integer, Item> items = StaticDataService.getItems();
 
         HashMap<String, HashMap<String, String>> matchData = new HashMap<>();
@@ -616,7 +627,7 @@ public class Tracker {
 
         }
 
-        LOLTimeline timeline = MatchService.getTimeline(match);
+        LOLTimeline timeline = MatchService.getTimeline(match, priority);
         long gameDuration = match.getGameDuration() == null ? Long.MAX_VALUE : match.getGameDuration().longValue() * 1000L;
         return analyzeTimelineEventData(matchData, participants, timeline, items, gameDuration);
     }

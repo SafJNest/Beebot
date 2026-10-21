@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +42,7 @@ import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Facet;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.Sorts;
@@ -65,11 +67,14 @@ import com.safjnest.lol.model.competitive.CompetitiveEntry;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.MatchFacetQuery;
+import com.safjnest.lol.model.match.MatchFacets;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.record.ProfileRecord;
 import com.safjnest.lol.model.record.RecordMetric;
+import com.safjnest.lol.model.record.RecordOrder;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -111,7 +116,8 @@ public final class MongoDB {
     private static final int COMPETITIVE_ID_BYTES = 16;
     private static final int PROFILE_RECORD_MATCH_BATCH_SIZE = 250;
     private static final int AI_TRAINING_CURSOR_BATCH_SIZE = 10_000;
-    private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
+    private static final String COMPRESSED_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
+    private static final String MATCH_FACETS_COLLECTION = "match_facets";
     private static final int CHAMPION_BUILD_EVENT_BATCH_SIZE = 100;
     private static final int CHAMPION_BUILD_GENERATION_VERSION = 3;
     private static final int CHAMPION_BUILD_MAX_BSON_BYTES = 16 * 1024 * 1024 - 256 * 1024;
@@ -152,7 +158,7 @@ public final class MongoDB {
             GameQueueType.NORMAL_5X5_DRAFT.name(),
             GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5.name());
     private static final List<String> COLLECTION_NAMES = List.of(
-            "summoner", "match", "match_events", "profile_statistics", "champion",
+            "summoner", "match", "match_events", MATCH_FACETS_COLLECTION, "profile_statistics", "champion",
             "champion_builds", "champion_stats", "profile_activity", "profile_matchups", PROFILE_RECORDS_COLLECTION, LEADERBOARD_AGGREGATES_COLLECTION,
             COMPETITIVE_COLLECTION,
             CHAMPION_INDEXABLES_COLLECTION, PROFILE_INDEXABLES_COLLECTION, "migration_runs");
@@ -168,8 +174,8 @@ public final class MongoDB {
     }
 
     private static CreateCollectionOptions collectionOptions(String collection) {
-        if (!"match_events".equals(collection)) return new CreateCollectionOptions();
-        return new CreateCollectionOptions().storageEngineOptions(new Document("wiredTiger", new Document("configString", EVENTS_STORAGE_ENGINE_CONFIG)));
+        if (!"match_events".equals(collection) && !MATCH_FACETS_COLLECTION.equals(collection)) return new CreateCollectionOptions();
+        return new CreateCollectionOptions().storageEngineOptions(new Document("wiredTiger", new Document("configString", COMPRESSED_STORAGE_ENGINE_CONFIG)));
     }
 
     public static final String PRODUCTION_DATABASE = "beebot_test"; //cant rename mongo db...
@@ -446,17 +452,224 @@ public final class MongoDB {
         return result;
     }
 
-    public static int countMatches(String puuid, Filter filter) {
-        traceRead("match.countMatches", "puuid=" + puuid);
-        if (puuid == null || puuid.isBlank() || filter == null) return 0;
-        if (filter.opponent() == 0 && filter.duo() == 0)
-            return (int) Math.min(Integer.MAX_VALUE, matches().countDocuments(buildMatchFilter(puuid, null, filter, 0, 0)));
-        int count = 0;
-        for (Document document : matches().find(buildMatchFilter(puuid, null, filter, 0, 0)).projection(profileStatisticsMatchProjection())) {
-            Match match = readMatch(matchRecord(document));
-            if (ProfileStatistics.matchesFilter(match, puuid, filter)) count++;
+    public static long countMatchFacets(String puuid) {
+        if (puuid == null || puuid.isBlank()) return 0;
+        return database().getCollection(MATCH_FACETS_COLLECTION).countDocuments(Filters.eq("puuid", puuid));
+    }
+
+    public static long estimatedMatchDocumentCount() {
+        return matches().estimatedDocumentCount();
+    }
+
+    public static void forEachSearchMatch(Consumer<Match> consumer) {
+        try (MongoCursor<Document> cursor = matches().find()
+                .projection(Projections.include("region", "timeStart", "timeEnd", "queue", "patch",
+                    "participants.puuid", "participants.champion", "participants.lane"))
+                .sort(Sorts.ascending("_id")).batchSize(50000).iterator()) {
+            while (cursor.hasNext()) consumer.accept(read(matchRecord(cursor.next()), Match.class));
         }
-        return count;
+    }
+
+    public static int insertFacets(Match match) {
+        if (match == null || match.participants == null || match.participants.isEmpty()) return 0;
+        if (match.gameId == null || match.gameId.isBlank() || match.leagueShard == null)
+            throw new IllegalArgumentException("Match game ID and shard are required");
+        List<WriteModel<Document>> operations = new ArrayList<>(match.participants.size());
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (Participant participant : match.participants) {
+                if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
+                Binary id = new Binary(digest.digest((match.gameId + ':' + participant.puuid).getBytes(StandardCharsets.UTF_8)));
+                Document document = new Document("_id", id)
+                        .append("gameId", match.gameId).append("puuid", participant.puuid)
+                        .append("region", match.leagueShard.name())
+                        .append("timeStart", match.timeStart).append("timeEnd", match.timeEnd)
+                        .append("queue", match.queue == null ? null : match.queue.name())
+                        .append("champion", participant.champion)
+                        .append("lane", participant.lane == null ? null : participant.lane.name())
+                        .append("patchMajor", PatchUtils.patchMajor(match.patch));
+                operations.add(new ReplaceOneModel<>(Filters.eq("_id", id), document, new ReplaceOptions().upsert(true)));
+            }
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is not available", exception);
+        }
+        bulkWrite(database().getCollection(MATCH_FACETS_COLLECTION), operations);
+        return operations.size();
+    }
+
+    public static MatchFacets searchFacets(String puuid, MatchFacetQuery query) {
+        if (puuid == null || puuid.isBlank()) throw new IllegalArgumentException("PUUID is required");
+        if (query == null || query.shard() == null) throw new IllegalArgumentException("Shard and facet query are required");
+        Document result = database().getCollection(MATCH_FACETS_COLLECTION)
+            .aggregate(matchFacetsPipeline(puuid, query)).first();
+        return readMatchFacets(result, query);
+    }
+
+    static MatchFacets readMatchFacets(Document result, MatchFacetQuery query) {
+        Document totals = firstDocument(result, "total");
+        Document range = firstDocument(result, "range");
+        long total = totals == null ? 0 : facetCount(totals, "total");
+        Long min = range == null ? null : nullableNumber(range.get("min"));
+        Long max = range == null ? null : nullableNumber(range.get("max"));
+        List<MatchFacets.Option<String>> queues = stringOptions(result, "queue", query.queues().stream().map(Enum::name).toList());
+        List<MatchFacets.Option<String>> lanes = stringOptions(result, "lane", query.lanes().stream().map(Enum::name).toList());
+        List<MatchFacets.Option<Integer>> champions = integerOptions(result, "champion", query.champions());
+        List<MatchFacets.Option<String>> patches = stringOptions(result, "patch", query.patches());
+        List<MatchFacets.SeasonOption> seasons = seasonOptions(result, query);
+        return new MatchFacets(total, new MatchFacets.Facets(queues, lanes, champions, patches, seasons,
+            new MatchFacets.Range(min, max)));
+    }
+
+    static List<Bson> matchFacetsPipeline(String puuid, MatchFacetQuery query) {
+        List<Facet> facetBranches = new ArrayList<>();
+        facetBranches.add(new Facet("total", countStages(query, null)));
+        facetBranches.add(new Facet("queue", optionStages(query, "queue", null)));
+        facetBranches.add(new Facet("lane", optionStages(query, "lane", null)));
+        facetBranches.add(new Facet("champion", optionStages(query, "champion", null)));
+        facetBranches.add(new Facet("patch", optionStages(query, "patchMajor", null)));
+        facetBranches.add(new Facet("season", seasonStages(query)));
+        facetBranches.add(new Facet("range", rangeStages(query)));
+        return List.of(
+            Aggregates.match(new Document("puuid", puuid).append("region", query.shard().name())),
+            Aggregates.facet(facetBranches)
+        );
+    }
+
+    private static List<Bson> countStages(MatchFacetQuery query, String ignoredField) {
+        List<Bson> conditions = facetConditions(query, ignoredField, true);
+        List<Bson> stages = new ArrayList<>();
+        if (!conditions.isEmpty()) stages.add(Aggregates.match(Filters.and(conditions)));
+        stages.add(Aggregates.count("total"));
+        return stages;
+    }
+
+    private static List<Bson> optionStages(MatchFacetQuery query, String field, String ignoredField) {
+        List<Bson> conditions = facetConditions(query, ignoredField == null ? field : ignoredField, true);
+        conditions.add(Filters.ne(field, null));
+        return List.of(
+            Aggregates.match(Filters.and(conditions)),
+            Aggregates.group("$" + field, Accumulators.sum("total", 1L)),
+            Aggregates.sort(Sorts.orderBy(Sorts.descending("total"), Sorts.ascending("_id")))
+        );
+    }
+
+    private static List<Bson> seasonStages(MatchFacetQuery query) {
+        List<Bson> conditions = facetConditions(query, null, false);
+        List<Bson> stages = new ArrayList<>();
+        if (!conditions.isEmpty()) stages.add(Aggregates.match(Filters.and(conditions)));
+        Document group = new Document("_id", null);
+        for (MatchFacetQuery.Season season : query.seasons()) {
+            if (season.timeStart() == null || season.timeEnd() == null) {
+                group.append(season.value(), new Document("$sum", 0));
+                continue;
+            }
+            group.append(season.value(), new Document("$sum", new Document("$cond", List.of(
+                new Document("$and", List.of(
+                    new Document("$gte", List.of("$timeStart", season.timeStart())),
+                    new Document("$lte", List.of("$timeStart", season.timeEnd())),
+                    new Document("$lte", List.of("$timeEnd", season.timeEnd()))
+                )), 1, 0))));
+        }
+        group.append("all", new Document("$sum", 1));
+        stages.add(new Document("$group", group));
+        return stages;
+    }
+
+    private static List<Bson> rangeStages(MatchFacetQuery query) {
+        List<Bson> conditions = facetConditions(query, null, false);
+        List<Bson> stages = new ArrayList<>();
+        if (!conditions.isEmpty()) stages.add(Aggregates.match(Filters.and(conditions)));
+        stages.add(new Document("$group", new Document("_id", null)
+            .append("min", new Document("$min", "$timeStart"))
+            .append("max", new Document("$max", "$timeEnd"))));
+        return stages;
+    }
+
+    private static List<Bson> facetConditions(MatchFacetQuery query, String ignoredField, boolean applyPeriod) {
+        List<Bson> conditions = new ArrayList<>();
+        if (!"queue".equals(ignoredField) && !query.queues().isEmpty())
+            conditions.add(Filters.in("queue", query.queues().stream().map(Enum::name).toList()));
+        if (!"champion".equals(ignoredField) && !query.champions().isEmpty())
+            conditions.add(Filters.in("champion", query.champions()));
+        if (!"lane".equals(ignoredField) && !query.lanes().isEmpty())
+            conditions.add(Filters.in("lane", query.lanes().stream().map(Enum::name).toList()));
+        if (!"patchMajor".equals(ignoredField) && !query.patches().isEmpty())
+            conditions.add(Filters.in("patchMajor", query.patches()));
+        if (applyPeriod && query.timeStart() > 0) conditions.add(Filters.gte("timeStart", query.timeStart()));
+        if (applyPeriod && query.timeEnd() > 0) {
+            conditions.add(Filters.lte("timeStart", query.timeEnd()));
+            conditions.add(Filters.lte("timeEnd", query.timeEnd()));
+        }
+        return conditions;
+    }
+
+    private static List<MatchFacets.Option<String>> stringOptions(Document result, String key, List<String> selected) {
+        List<MatchFacets.Option<String>> options = new ArrayList<>();
+        for (Document bucket : documents(result, key)) {
+            String value = bucket.getString("_id");
+            options.add(new MatchFacets.Option<>(value, facetCount(bucket, "total"), selected.contains(value)));
+        }
+        for (String value : selected) {
+            boolean found = false;
+            for (MatchFacets.Option<String> option : options) if (option.value().equals(value)) found = true;
+            if (!found)
+                options.add(new MatchFacets.Option<>(value, 0, true));
+        }
+        options.sort((left, right) -> {
+            int totalOrder = Long.compare(right.total(), left.total());
+            return totalOrder == 0 ? left.value().compareTo(right.value()) : totalOrder;
+        });
+        return options;
+    }
+
+    private static List<MatchFacets.Option<Integer>> integerOptions(Document result, String key, List<Integer> selected) {
+        List<MatchFacets.Option<Integer>> options = new ArrayList<>();
+        for (Document bucket : documents(result, key)) {
+            int value = ((Number) bucket.get("_id")).intValue();
+            options.add(new MatchFacets.Option<>(value, facetCount(bucket, "total"), selected.contains(value)));
+        }
+        for (Integer value : selected) {
+            boolean found = false;
+            for (MatchFacets.Option<Integer> option : options) if (option.value().equals(value)) found = true;
+            if (!found)
+                options.add(new MatchFacets.Option<>(value, 0, true));
+        }
+        options.sort((left, right) -> {
+            int totalOrder = Long.compare(right.total(), left.total());
+            return totalOrder == 0 ? Integer.compare(left.value(), right.value()) : totalOrder;
+        });
+        return options;
+    }
+
+    private static List<MatchFacets.SeasonOption> seasonOptions(Document result, MatchFacetQuery query) {
+        Document counts = firstDocument(result, "season");
+        List<MatchFacets.SeasonOption> options = new ArrayList<>();
+        for (MatchFacetQuery.Season season : query.seasons()) {
+            long total = counts == null || season.timeStart() == null ? 0 : facetCount(counts, season.value());
+            options.add(new MatchFacets.SeasonOption(season.value(), season.year(), total,
+                season.value().equals(query.selectedSeason())));
+        }
+        options.add(new MatchFacets.SeasonOption("all", null, counts == null ? 0 : facetCount(counts, "all"),
+            "all".equals(query.selectedSeason())));
+        return options;
+    }
+
+    private static List<Document> documents(Document result, String key) {
+        return result == null ? List.of() : result.getList(key, Document.class, List.of());
+    }
+
+    private static Document firstDocument(Document result, String key) {
+        List<Document> values = documents(result, key);
+        return values.isEmpty() ? null : values.get(0);
+    }
+
+    private static long facetCount(Document document, String key) {
+        Object value = document.get(key);
+        return value instanceof Number number ? number.longValue() : 0;
+    }
+
+    private static Long nullableNumber(Object value) {
+        return value instanceof Number number ? number.longValue() : null;
     }
 
     public static List<LeagueShard> findTimelineRegionsByPatch(String patch) {
@@ -472,13 +685,13 @@ public final class MongoDB {
     public static long countMatchesByPatch(String patch, LeagueShard shard) {
         if (patch == null || patch.isBlank() || shard == null) return 0;
         return matches().countDocuments(Filters.and(
-            Filters.eq("patchMajor", patchMajor(patch)), Filters.eq("region", shard.name())));
+            Filters.eq("region", shard.name()), patchMajorFilter(patch)));
     }
 
     public static void forEachTimelineMatchByPatch(String patch, LeagueShard shard, Consumer<String> consumer) {
         if (patch == null || patch.isBlank() || shard == null || consumer == null) return;
         try (MongoCursor<Document> cursor = matches().find(Filters.and(
-                Filters.eq("patchMajor", patchMajor(patch)), Filters.eq("region", shard.name())))
+                Filters.eq("region", shard.name()), patchMajorFilter(patch)))
                 .projection(Projections.include("_id"))
                 .batchSize(250)
                 .iterator()) {
@@ -489,7 +702,7 @@ public final class MongoDB {
     }
 
     public static long findLatestMatchTime(String patch, LeagueShard shard) {
-        Bson filter = Filters.and(Filters.eq("patchMajor", patchMajor(patch)), Filters.eq("region", shard.name()));
+        Bson filter = Filters.and(Filters.eq("region", shard.name()), patchMajorFilter(patch));
         Document document = matches().find(filter).sort(Sorts.descending("timeStart")).first();
         return document == null ? 0L : ((Number) document.getOrDefault("timeStart", 0L)).longValue() / 1000L;
     }
@@ -505,7 +718,9 @@ public final class MongoDB {
 
     public static List<QueryRecord> findChampionWins(String patch, int champion, no.stelar7.api.r4j.basic.constants.types.lol.LaneType lane) {
         List<QueryRecord> result = new ArrayList<>();
-        for (Document document : matches().find(Filters.eq("patchMajor", patchMajor(patch)))
+        Bson participantFilter = matchParticipantFilter(null, champion, lane);
+        Bson filter = participantFilter == null ? patchMajorFilter(patch) : Filters.and(participantFilter, patchMajorFilter(patch));
+        for (Document document : matches().find(filter)
                 .projection(Projections.include("participants.champion", "participants.lane", "participants.win"))) {
             for (Document participant : documents(document.get("participants"))) {
                 if (participant.getInteger("champion", 0) != champion) continue;
@@ -1061,19 +1276,13 @@ public final class MongoDB {
         Bson queueFilter = canonicalQueue == GameQueueType.RANKED_SOLO_5X5
                 ? Filters.in("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name())
                 : Filters.eq("queue", queue.name());
-        Bson beforeFilter = beforeMatchId == null || beforeMatchId.isBlank()
-                ? Filters.lt("timeStart", beforeTimeStart)
-                : Filters.or(Filters.lt("timeStart", beforeTimeStart),
-                        Filters.and(Filters.eq("timeStart", beforeTimeStart), Filters.lt("_id", beforeMatchId)));
         Bson filter = Filters.and(
-                Filters.elemMatch("participants", Filters.eq("puuid", puuid)),
-                Filters.eq("region", shard.name()),
-                queueFilter,
+                scopedMatchFilter(puuid, shard, queueFilter, 0, 0),
                 Filters.ne("_id", beforeMatchId),
-                beforeFilter);
+                Filters.lt("timeStart", beforeTimeStart));
         Document document = matches().find(filter)
                 .projection(Projections.include("participants"))
-                .sort(Sorts.descending("timeStart", "_id"))
+                .sort(Sorts.descending("timeStart"))
                 .first();
         if (document == null) return null;
 
@@ -1099,7 +1308,7 @@ public final class MongoDB {
         boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
         FindIterable<Document> documents = matches().find(buildMatchFilter(puuid, null, filter, 0, 0))
             .projection(relationalFilter ? profileStatisticsMatchProjection() : matchResultProjection())
-            .sort(ascending ? Sorts.ascending("timeStart", "_id") : Sorts.descending("timeStart", "_id"))
+            .sort(ascending ? Sorts.ascending("timeStart") : Sorts.descending("timeStart"))
             .skip(relationalFilter ? 0 : boundedOffset);
         if (!relationalFilter) documents = documents.limit(boundedLimit);
         int skipped = 0;
@@ -1125,10 +1334,11 @@ public final class MongoDB {
             long seasonEnd) {
         if (puuid == null || puuid.isBlank() || shard == null || seasonStart <= 0 || seasonEnd < seasonStart) return List.of();
         List<com.safjnest.lol.model.match.RankHistoryMatch> result = new ArrayList<>();
-        Bson filter = Filters.and(matchFilter(puuid, shard, seasonStart, seasonEnd, null), Filters.in("queue",
-            GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name(), GameQueueType.RANKED_FLEX_SR.name()));
+        Bson filter = scopedMatchFilter(puuid, shard, Filters.in("queue",
+            GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name(), GameQueueType.RANKED_FLEX_SR.name()),
+            seasonStart, seasonEnd);
         for (Document document : matches().find(filter)
-                .projection(rankHistoryProjection()).sort(Sorts.ascending("timeStart", "_id"))) {
+                .projection(rankHistoryProjection()).sort(Sorts.ascending("timeStart"))) {
             com.safjnest.lol.model.match.Match match = read(matchRecord(document), Match.class);
             com.safjnest.lol.model.match.RankHistoryMatch value = com.safjnest.lol.model.match.RankHistoryMatch.from(match, puuid);
             if (value != null) result.add(value);
@@ -1174,7 +1384,7 @@ public final class MongoDB {
         if (puuid == null || puuid.isBlank() || filter == null || consumer == null) return;
         try (MongoCursor<Document> cursor = matches().find(buildMatchFilter(puuid, shard, filter, afterTime, untilTime))
                 .projection(profileStatisticsMatchProjection())
-                .sort(newestFirst ? Sorts.descending("timeStart", "_id") : Sorts.ascending("timeStart", "_id"))
+                .sort(newestFirst ? Sorts.descending("timeStart") : Sorts.ascending("timeStart"))
                 .iterator()) {
             while (cursor.hasNext()) {
                 Match match = read(matchRecord(cursor.next()), Match.class);
@@ -1194,7 +1404,7 @@ public final class MongoDB {
         List<Match> batch = new ArrayList<>(100);
         List<String> ids = new ArrayList<>(100);
         FindIterable<Document> query = matches().find(buildMatchFilter(puuid, shard, filter, afterTime, untilTime))
-            .projection(profileStatisticsMatchProjection()).sort(Sorts.ascending("timeStart", "_id")).batchSize(100);
+            .projection(profileStatisticsMatchProjection()).sort(Sorts.ascending("timeStart")).batchSize(100);
         try (MongoCursor<Document> cursor = query.iterator()) {
             while (cursor.hasNext()) {
                 Document document = cursor.next();
@@ -1267,7 +1477,7 @@ public final class MongoDB {
         List<Match> batch = new ArrayList<>(PROFILE_RECORD_MATCH_BATCH_SIZE);
         try (MongoCursor<Document> cursor = matches().find(buildMatchFilter(puuid, shard, filter, 0, 0))
                 .projection(profileStatisticsMatchProjection())
-                .sort(Sorts.ascending("timeStart", "_id"))
+                .sort(Sorts.ascending("timeStart"))
                 .iterator()) {
             while (cursor.hasNext()) {
                 Match match = read(matchRecord(cursor.next()), Match.class);
@@ -1298,8 +1508,8 @@ public final class MongoDB {
         if (consumer == null) return;
         String patchMajor = patch == null ? patchMajor(PatchUtils.getPatch()) : patch;
         Bson filter = Filters.and(
-            Filters.eq("patchMajor", patchMajor),
-            Filters.in("queue", AI_TRAINING_QUEUES)
+            Filters.in("queue", AI_TRAINING_QUEUES),
+            Filters.eq("patchMajor", patchMajor)
         );
         try (MongoCursor<Document> cursor = matches().find(filter)
                 .projection(Projections.include("_id", "patch", "queue", "timeStart", "participants.champion", "participants.lane", "participants.team", "participants.win"))
@@ -1361,17 +1571,18 @@ public final class MongoDB {
         traceRead("match.findSummonerData", "puuid=" + puuid + " queue=" + queue);
         List<QueryRecord> result = new ArrayList<>();
         GameQueueType canonicalQueue = GameQueueTypeUtils.canonicalQueue(queue);
-        Bson filter = matchFilter(puuid, shard, timeStart, timeEnd, null);
+        Bson queueFilter = null;
         if (canonicalQueue == GameQueueType.RANKED_SOLO_5X5) {
-            filter = Filters.and(filter, Filters.in("queue",
-                GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name()));
+            queueFilter = Filters.in("queue",
+                GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name());
         } else if (queue != null) {
-            filter = Filters.and(filter, Filters.eq("queue", queue.name()));
+            queueFilter = Filters.eq("queue", queue.name());
         }
+        Bson filter = scopedMatchFilter(puuid, shard, queueFilter, timeStart, timeEnd);
         for (Document document : matches().find(filter)
                 .projection(Projections.include("_id", "timeStart", "timeEnd", "patch",
                         "tracked", "participants.puuid", "participants.rankProgress", "participants.win"))
-                .sort(Sorts.ascending("timeStart", "_id"))) {
+                .sort(Sorts.ascending("timeStart"))) {
             String gameId = gameId(document);
             for (Document participant : documents(document.get("participants"))) {
                 if (!puuid.equals(participant.getString("puuid"))) continue;
@@ -1537,44 +1748,13 @@ public final class MongoDB {
         if (championId != null) filters.add(Filters.eq("championId", championId));
         List<ProfileRecord> result = new ArrayList<>();
         for (Document document : profileRecords().find(Filters.and(filters))
-                .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
+                .sort(Sorts.orderBy(metric.order() == RecordOrder.LOWEST ? Sorts.ascending("value") : Sorts.descending("value"),
+                    Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
                 .skip(Math.max(0, offset)).limit(Math.min(100, limit))) {
             ProfileRecord record = readProfileRecord(document);
             if (record != null) result.add(record);
         }
         return result;
-    }
-
-    public static void forEachProfileRecordRankingSegment(
-        String filterKey,
-        RecordMetric metric,
-        LeagueShard region,
-        Consumer<ProfileRecord> consumer
-    ) {
-        forEachProfileRecordRankingSegment(filterKey, metric, region, null, consumer);
-    }
-
-    public static void forEachProfileRecordRankingSegment(
-        String filterKey,
-        RecordMetric metric,
-        LeagueShard region,
-        Integer championId,
-        Consumer<ProfileRecord> consumer
-    ) {
-        if (filterKey == null || filterKey.isBlank() || metric == null || consumer == null) return;
-        List<Bson> filters = new ArrayList<>();
-        filters.add(Filters.eq("filterKey", filterKey));
-        filters.add(Filters.eq("metric", metric.name()));
-        if (region != null) filters.add(Filters.eq("region", region.name()));
-        if (championId != null) filters.add(Filters.eq("championId", championId));
-        try (MongoCursor<Document> cursor = profileRecords().find(Filters.and(filters))
-                .sort(Sorts.orderBy(Sorts.descending("score"), Sorts.ascending("occurredAt"), Sorts.ascending("puuid")))
-                .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
-            while (cursor.hasNext()) {
-                ProfileRecord record = readProfileRecord(cursor.next());
-                if (record != null) consumer.accept(record);
-            }
-        }
     }
 
     public static long countGlobalProfileRecords(Filter filter, RecordMetric metric, LeagueShard region) {
@@ -2072,8 +2252,8 @@ public final class MongoDB {
         if (range.maximum() != null) filters.add(Filters.lt("mmr", range.maximum()));
         if (region != null) filters.add(Filters.eq("region", region.name()));
         try (MongoCursor<Document> cursor = competitive().find(Filters.and(filters))
-                .sort(Sorts.orderBy(Sorts.descending("mmr"), Sorts.descending("score")))
-                .batchSize(COMPETITIVE_REBUILD_BATCH_SIZE).iterator()) {
+                .projection(Projections.fields(Projections.include("puuid", "region", "queue", "mmr", "score"), Projections.excludeId()))
+                .batchSize(5_000).iterator()) {
             while (cursor.hasNext()) {
                 CompetitiveEntry entry = competitiveEntry(cursor.next());
                 if (entry != null) consumer.accept(entry);
@@ -2081,16 +2261,21 @@ public final class MongoDB {
         }
     }
 
-    public static Map<TierDivisionType, Long> findCompetitiveRankCounts(GameQueueType queue, LeagueShard region) {
-        Map<TierDivisionType, Long> result = new LinkedHashMap<>();
-        if (queue == null) return result;
-        List<Bson> filters = new ArrayList<>();
-        filters.add(Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()));
-        if (region != null) filters.add(Filters.eq("region", region.name()));
-        for (Document document : competitive().find(Filters.and(filters)).projection(Projections.include("mmr"))) {
-            TierDivisionType division = TierDivisionUtils.getDivisionFromMmr(number(document, "mmr"));
-            if (division != TierDivisionType.UNRANKED) result.merge(division, 1L, Long::sum);
+    public static Map<String, Map<String, Long>> findCompetitiveRankCounts(GameQueueType queue) {
+        Map<String, Map<String, Long>> result = new LinkedHashMap<>();
+        result.put(LeagueConstants.GLOBAL_REGION, new LinkedHashMap<>());
+        List<Bson> pipeline = List.of(Aggregates.match(Filters.and(
+            Filters.eq("queue", GameQueueTypeUtils.canonicalQueue(queue).name()), Filters.gte("mmr", 0))),
+            Aggregates.group(new Document("region", "$region").append("mmr", "$mmr"), Accumulators.sum("players", 1)));
+        for (Document value : competitive().aggregate(pipeline)) {
+            Document group = value.get("_id", Document.class);
+            String division = TierDivisionUtils.getDivisionFromMmr(number(group, "mmr")).name();
+            long players = number(value, "players");
+            result.computeIfAbsent(group.getString("region"), ignored -> new LinkedHashMap<>()).merge(division, players, Long::sum);
+            result.get(LeagueConstants.GLOBAL_REGION).merge(division, players, Long::sum);
         }
+        for (Map<String, Long> counts : result.values())
+            for (TierDivisionType division : TierDivisionUtils.descendingRankedDivisions()) counts.putIfAbsent(division.name(), 0L);
         return result;
     }
 
@@ -2148,9 +2333,9 @@ public final class MongoDB {
         if (stored != null) return stored;
 
         Map<String, Long> counts = new LinkedHashMap<>();
-        for (Document entry : competitive().find(competitiveFilter(null, queue, region, null))
-                .projection(Projections.include("mmr")))
-            counts.merge(TierDivisionUtils.getTierFromMmr(number(entry, "mmr")).name(), 1L, Long::sum);
+        for (Document entry : competitive().aggregate(List.of(
+                Aggregates.match(competitiveFilter(null, queue, region, null)), Aggregates.group("$mmr", Accumulators.sum("players", 1)))))
+            counts.merge(TierDivisionUtils.getTierFromMmr(number(entry, "_id")).name(), number(entry, "players"), Long::sum);
         List<LeaderboardDistribution.Entry> result = new ArrayList<>();
         for (TierType tier : TierType.values()) {
             if (tier != TierType.UNRANKED) result.add(new LeaderboardDistribution.Entry(
@@ -2167,10 +2352,11 @@ public final class MongoDB {
         if (stored != null) return stored;
 
         Map<String, Long> counts = new LinkedHashMap<>();
-        for (Document entry : competitive().find(competitiveFilter(rank, queue, LeagueConstants.GLOBAL_REGION, null))
-                .projection(Projections.include("region"))) {
-            String region = entry.getString("region");
-            if (region != null) counts.merge(region, 1L, Long::sum);
+        for (Document entry : competitive().aggregate(List.of(
+                Aggregates.match(competitiveFilter(rank, queue, LeagueConstants.GLOBAL_REGION, null)),
+                Aggregates.group("$region", Accumulators.sum("players", 1))))) {
+            String region = entry.getString("_id");
+            if (region != null) counts.put(region, number(entry, "players"));
         }
         List<LeaderboardDistribution.Entry> result = new ArrayList<>();
         for (Map.Entry<String, Long> entry : counts.entrySet()) {
@@ -2734,6 +2920,7 @@ public final class MongoDB {
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo match insert was not acknowledged id=" + fullGameId);
         if (update.getUpsertedId() == null) return false;
         upsertMatchEvents(fullGameId, match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap());
+        insertFacets(match);
         return true;
     }
 
@@ -2754,7 +2941,7 @@ public final class MongoDB {
                 || !RankProgressUtils.hasCurrentSnapshot(progress)) return false;
         RankProgress restored = new RankProgress(progress.rank, progress.lp, progress.gain, null, null);
         Bson filter = Filters.and(Filters.eq("_id", fullGameId), Filters.ne("tracked", true),
-                Filters.elemMatch("participants", Filters.eq("puuid", puuid)));
+                Filters.eq("participants.puuid", puuid));
         UpdateResult update = matches().updateOne(filter, Updates.set("participants.$.rankProgress", rankProgressDocument(restored)));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo rank progress restore was not acknowledged id=" + fullGameId);
         return update.getModifiedCount() > 0;
@@ -2770,6 +2957,7 @@ public final class MongoDB {
         document.put("_id", fullGameId);
         document.put("tracked", tracked);
         replace(matches(), document);
+        insertFacets(match);
         return true;
     }
 
@@ -2880,9 +3068,8 @@ public final class MongoDB {
 
     public static Set<String> findRankProgressRegions(String puuid) {
         if (puuid == null || puuid.isBlank()) return Set.of();
-        Bson filter = Filters.and(
-                Filters.elemMatch("participants", Filters.eq("puuid", puuid)),
-                Filters.in("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name()));
+        Bson filter = scopedMatchFilter(puuid, null,
+                Filters.in("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name()), 0, 0);
         Set<String> regions = new HashSet<>();
         for (String region : matches().distinct("region", filter, String.class)) {
             if (region != null && !region.isBlank()) regions.add(region);
@@ -2910,7 +3097,7 @@ public final class MongoDB {
                         GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name())));
         List<Bson> pipeline = List.of(
                 new Document("$match", filter),
-                new Document("$sort", new Document("timeStart", -1).append("_id", -1)),
+                new Document("$sort", new Document("timeStart", -1)),
                 new Document("$unwind", "$participants"),
                 new Document("$match", new Document("participants.puuid", subject.puuid())),
                 new Document("$project", new Document("_id", 1).append("tracked", 1)
@@ -3119,12 +3306,11 @@ public final class MongoDB {
             updates.add(Updates.set("filterKey", filterKey));
             for (Map.Entry<String, Object> entry : document.entrySet()) {
                 if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())
-                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())
-                        || "globalRanking".equals(entry.getKey()) || "regionRanking".equals(entry.getKey())) continue;
+                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())) continue;
                 if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
                 else updates.add(Updates.set(entry.getKey(), entry.getValue()));
             }
-            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared", "globalRanking", "regionRanking", "masteryLevel"))
+            for (String optional : List.of("mmr", "team", "actorPuuid", "gameShared", "score", "globalRanking", "regionRanking", "masteryLevel"))
                 if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
             updates.add(Updates.unset("riotId"));
             updates.add(Updates.unset("icon"));
@@ -3157,12 +3343,11 @@ public final class MongoDB {
             updates.add(Updates.set("filterKey", filterKey));
             for (Map.Entry<String, Object> entry : document.entrySet()) {
                 if ("_id".equals(entry.getKey()) || "puuid".equals(entry.getKey()) || "filterKey".equals(entry.getKey())
-                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())
-                        || "globalRanking".equals(entry.getKey()) || "regionRanking".equals(entry.getKey())) continue;
+                        || "riotId".equals(entry.getKey()) || "icon".equals(entry.getKey())) continue;
                 if (entry.getValue() == null) updates.add(Updates.unset(entry.getKey()));
                 else updates.add(Updates.set(entry.getKey(), entry.getValue()));
             }
-            for (String optional : List.of("matchId", "mmr", "team", "actorPuuid", "gameShared", "globalRanking", "regionRanking"))
+            for (String optional : List.of("matchId", "mmr", "team", "actorPuuid", "gameShared", "score", "globalRanking", "regionRanking"))
                 if (!document.containsKey(optional)) updates.add(Updates.unset(optional));
             updates.add(Updates.unset("riotId"));
             updates.add(Updates.unset("icon"));
@@ -3937,44 +4122,67 @@ public final class MongoDB {
         return QueryRecordParser.fromDocument(document);
     }
 
-    private static org.bson.conversions.Bson matchFilter(
+    private static Bson matchParticipantFilter(String puuid, int champion, LaneType lane) {
+        Document participant = new Document();
+        if (puuid != null && !puuid.isBlank()) participant.append("puuid", puuid);
+        if (champion != 0) participant.append("champion", champion);
+        if (lane != null) participant.append("lane", lane.name());
+        if (participant.isEmpty()) return null;
+        if (participant.size() == 1) {
+            Map.Entry<String, Object> predicate = participant.entrySet().iterator().next();
+            return Filters.eq("participants." + predicate.getKey(), predicate.getValue());
+        }
+        return Filters.elemMatch("participants", participant);
+    }
+
+    private static Bson scopedMatchFilter(
+            String puuid,
+            LeagueShard shard,
+            Bson queueFilter,
+            long timeStart,
+            long timeEnd) {
+        List<Bson> filters = new ArrayList<>();
+        Bson participant = matchParticipantFilter(puuid, 0, null);
+        if (participant != null) filters.add(participant);
+        if (shard != null) filters.add(Filters.eq("region", shard.name()));
+        if (queueFilter != null) filters.add(queueFilter);
+        addMatchTimeFilters(filters, timeStart, timeEnd);
+        return filters.isEmpty() ? new Document() : Filters.and(filters);
+    }
+
+    private static Bson matchFilter(
             String puuid,
             LeagueShard shard,
             long timeStart,
             long timeEnd,
             GameQueueType queue) {
-        List<org.bson.conversions.Bson> filters = new ArrayList<>();
-        if (puuid != null && !puuid.isBlank()) {
-            filters.add(Filters.elemMatch("participants", Filters.eq("puuid", puuid)));
-        }
-        if (shard != null) filters.add(Filters.eq("region", shard.name()));
-        if (queue != null) filters.add(Filters.eq("queue", queue.name()));
-        if (timeStart != 0) filters.add(Filters.gte("timeStart", timeStart));
-        if (timeEnd != 0) filters.add(Filters.lte("timeEnd", timeEnd));
-        return Filters.and(filters);
+        return scopedMatchFilter(puuid, shard, queue == null ? null : Filters.eq("queue", queue.name()), timeStart, timeEnd);
     }
 
     private static Bson buildMatchFilter(String puuid, LeagueShard shard, Filter filter, long afterTime, long untilTime) {
         List<Bson> filters = new ArrayList<>();
+        Bson participant = matchParticipantFilter(puuid, filter.champion(), filter.lane());
+        if (participant != null) filters.add(participant);
         LeagueShard selectedShard = filter.region() != null ? filter.region() : shard;
         if (selectedShard != null) filters.add(Filters.eq("region", selectedShard.name()));
         if (filter.queue() != null) filters.add(Filters.eq("queue", filter.queue().name()));
+        if (filter.patch() != null) filters.add(patchMajorFilter(filter.patch()));
+        if (filter.rank() != null) filters.add(rankFilter(filter));
+        if (filter.opponent() != 0) filters.add(Filters.eq("participants.champion", filter.opponent()));
+        if (filter.duo() != 0) filters.add(Filters.eq("participants.champion", filter.duo()));
 
         long start = filter.timeStart() == 0 ? afterTime : Math.max(filter.timeStart(), afterTime);
         long end = filter.timeEnd() == 0 ? untilTime : untilTime == 0 ? filter.timeEnd() : Math.min(filter.timeEnd(), untilTime);
-        if (start != 0) filters.add(Filters.gte("timeStart", start));
-        if (end != 0) filters.add(Filters.lte("timeEnd", end));
-        if (filter.patch() != null) filters.add(patchMajorFilter(filter.patch()));
-        if (filter.rank() != null) filters.add(rankFilter(filter));
-
-        List<Bson> participantFilters = new ArrayList<>();
-        participantFilters.add(Filters.eq("puuid", puuid));
-        if (filter.champion() != 0) participantFilters.add(Filters.eq("champion", filter.champion()));
-        if (filter.lane() != null) participantFilters.add(Filters.eq("lane", filter.lane().name()));
-        filters.add(Filters.elemMatch("participants", Filters.and(participantFilters)));
-        if (filter.opponent() != 0) filters.add(Filters.elemMatch("participants", Filters.eq("champion", filter.opponent())));
-        if (filter.duo() != 0) filters.add(Filters.elemMatch("participants", Filters.eq("champion", filter.duo())));
+        addMatchTimeFilters(filters, start, end);
         return filters.isEmpty() ? new Document() : Filters.and(filters);
+    }
+
+    private static void addMatchTimeFilters(List<Bson> filters, long start, long end) {
+        Document bounds = new Document();
+        if (start != 0) bounds.append("$gte", start);
+        if (end != 0) bounds.append("$lte", end);
+        if (!bounds.isEmpty()) filters.add(new Document("timeStart", bounds));
+        if (end != 0) filters.add(Filters.lte("timeEnd", end));
     }
 
     private static Bson rankFilter(Filter filter) {
@@ -4009,23 +4217,20 @@ public final class MongoDB {
 
     private static Bson championMatchFilter(Filter filter, String puuid) {
         List<Bson> filters = new ArrayList<>();
+        LaneType lane = filter != null && filter.lane() != null
+            && (filter.queue() == null || GameQueueTypeUtils.hasLane(filter.queue())) ? filter.lane() : null;
+        Bson participant = matchParticipantFilter(puuid, filter == null ? 0 : filter.champion(), lane);
+        if (participant != null) filters.add(participant);
         if (filter != null) {
-            List<Bson> participantFilters = new ArrayList<>();
-            if (filter.champion() != 0) participantFilters.add(Filters.eq("champion", filter.champion()));
-            if (filter.lane() != null && GameQueueTypeUtils.hasLane(filter.queue())) {
-                participantFilters.add(Filters.eq("lane", filter.lane().name()));
-            }
-            if (!participantFilters.isEmpty()) filters.add(Filters.elemMatch("participants", Filters.and(participantFilters)));
+            if (filter.region() != null) filters.add(Filters.eq("region", filter.region().name()));
             if (filter.queue() != null) filters.add(Filters.eq("queue", filter.queue().name()));
             if (filter.patch() != null) {
                 filters.add(patchMajorFilter(filter.patch()));
                 if (filter.queue() == GameQueueType.CHERRY && !filter.patch().equals(patchMajor(filter.patch())))
                     filters.add(Filters.eq("patch", filter.patch()));
             }
-            if (filter.region() != null) filters.add(Filters.eq("region", filter.region().name()));
             if (filter.rank() != null) filters.add(rankFilter(filter));
         }
-        if (puuid != null) filters.add(Filters.elemMatch("participants", Filters.eq("puuid", puuid)));
         return filters.isEmpty() ? new Document() : Filters.and(filters);
     }
 

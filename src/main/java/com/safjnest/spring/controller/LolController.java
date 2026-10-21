@@ -3,6 +3,7 @@ package com.safjnest.spring.controller;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,14 +21,17 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ResponseMetadata;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.MatchFacetQuery;
+import com.safjnest.lol.model.match.MatchFacets;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.RankHistory;
 import com.safjnest.lol.model.match.RankHistoryQuery;
+import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.model.statistics.ProfileActivity;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.safjnest.lol.service.FacetsService;
 import com.safjnest.lol.service.MatchService;
-import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.SummonerService;
@@ -80,7 +84,7 @@ public class LolController {
     }
 
     @GetMapping("/profile/{puuid}/matches")
-    public MatchPage matches(
+    public CompletableFuture<MatchPage> matches(
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid,
             @RequestParam(name = "queue", required = false) String queueValue,
@@ -88,6 +92,7 @@ public class LolController {
             @RequestParam(name = "offset", defaultValue = "0") int offset,
             @RequestParam(name = "timeStart", defaultValue = "0") long timeStart,
             @RequestParam(name = "timeEnd", defaultValue = "0") long timeEnd,
+            @RequestParam(name = "season", required = false) String seasonValue,
             @RequestParam(name = "sort", required = false) String sortValue,
             @RequestParam(name = "champion", required = false) String championValue,
             @RequestParam(name = "lane", required = false) String laneValue,
@@ -95,33 +100,78 @@ public class LolController {
             @RequestParam Map<String, String> queryParameters
     ) {
         LolApiParameters.validateQueryParameters(queryParameters,
-            Set.of("queue", "limit", "offset", "timeStart", "timeEnd", "sort", "champion", "lane", "patch"));
+            Set.of("queue", "limit", "offset", "timeStart", "timeEnd", "season", "sort", "champion", "lane", "patch"));
         LeagueShard shard = LolApiParameters.requiredShard(shardValue);
         String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
         int pageLimit = LolApiParameters.matchLimit(limit);
         int pageOffset = LolApiParameters.matchOffset(offset);
         MatchOrder order = LolApiParameters.matchOrder(sortValue);
         GameQueueType queue = LolApiParameters.optionalQueue(queueValue);
-        Filter filter = LolApiParameters.activityFilter(
+        boolean timeBoundsProvided = queryParameters.containsKey("timeStart") || queryParameters.containsKey("timeEnd");
+        Filter filter = LolApiParameters.matchesFilter(
             timeStart,
             timeEnd,
+            seasonValue,
+            timeBoundsProvided,
             queue,
             LolApiParameters.optionalChampion(championValue)
         ).setLane(LolApiParameters.matchLane(laneValue, queue))
             .setPatch(LolApiParameters.patch(patchValue))
             .setRegion(shard);
-        MatchPage page = MatchService.getPage(
-            profilePuuid,
-            filter,
-            pageOffset,
-            pageLimit,
-            order
+        MatchFacetQuery facetQuery = LolApiParameters.matchFacetQuery(
+            shard,
+            queueValue == null ? List.of() : List.of(queueValue),
+            championValue == null ? List.of() : List.of(championValue),
+            laneValue == null ? List.of() : List.of(laneValue),
+            patchValue == null ? List.of() : List.of(patchValue),
+            seasonValue,
+            timeStart,
+            timeEnd,
+            timeBoundsProvided
         );
-        ResponseMetadata metadata = new ResponseMetadata(
-            new ResponseMetadata.Pagination(null, null, page.limit(), page.offset(), page.total(), null, page.hasMore()),
-            null, false, filter
+        return MatchService.getPage(profilePuuid, filter, pageOffset, pageLimit, order, facetQuery)
+            .thenApply(matchPage -> {
+                ResponseMetadata metadata = new ResponseMetadata(
+                    new ResponseMetadata.Pagination(null, null, matchPage.limit(), matchPage.offset(), matchPage.total(), null,
+                        matchPage.hasMore()),
+                    null, false, filter
+                );
+                return matchPage.withMetadata(metadata);
+            });
+    }
+
+    @GetMapping("/profile/{puuid}/facets")
+    public MatchFacets facets(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid,
+            @RequestParam(name = "queue", required = false) List<String> queueValues,
+            @RequestParam(name = "champion", required = false) List<String> championValues,
+            @RequestParam(name = "lane", required = false) List<String> laneValues,
+            @RequestParam(name = "patch", required = false) List<String> patchValues,
+            @RequestParam(name = "season", required = false) String seasonValue,
+            @RequestParam(name = "timeStart", defaultValue = "0") long timeStart,
+            @RequestParam(name = "timeEnd", defaultValue = "0") long timeEnd,
+            @RequestParam Map<String, String> queryParameters
+    ) {
+        LolApiParameters.validateQueryParameters(queryParameters,
+            Set.of("queue", "champion", "lane", "patch", "season", "timeStart", "timeEnd"));
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        MatchFacetQuery query = LolApiParameters.matchFacetQuery(
+            shard,
+            queueValues,
+            championValues,
+            laneValues,
+            patchValues,
+            seasonValue,
+            timeStart,
+            timeEnd,
+            queryParameters.containsKey("timeStart") || queryParameters.containsKey("timeEnd")
         );
-        return page.withMetadata(metadata);
+        MatchFacets facets = FacetsService.get(LolApiParameters.requiredText(puuid, "puuid"), query);
+        return facets.withMetadata(new ResponseMetadata(
+            new ResponseMetadata.Pagination(null, null, null, null, facets.total(), null, null),
+            null, false, null
+        ));
     }
 
     @GetMapping("/profile/{puuid}/rank-history")

@@ -24,7 +24,7 @@ public class RedisClient {
 
     public record SortedSetEntry(byte[] member, double score) {}
 
-    public static final int SORTED_SET_BATCH_SIZE = 250;
+    public static final int SORTED_SET_BATCH_SIZE = 1_000;
     private static final int CONNECTION_TIMEOUT_MS = 500;
     private static final long RETRY_AFTER_FAILURE_MS = 30_000;
     private static final JedisPool pool;
@@ -153,7 +153,7 @@ public class RedisClient {
     public static void delete(List<String> keys) {
         if (keys == null || keys.isEmpty() || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.del(keys.toArray(new String[0]));
+            jedis.unlink(keys.toArray(new String[0]));
             markAvailable();
         } catch (Exception ignored) {
             markUnavailable();
@@ -278,7 +278,7 @@ public class RedisClient {
         expire(key.of(args), key.ttlSeconds());
     }
 
-    private static void expire(String key, int seconds) {
+    public static void expire(String key, int seconds) {
         if (key == null || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             applyTtl(jedis, key, seconds);
@@ -362,67 +362,64 @@ public class RedisClient {
     }
 
     public static void addSortedSet(String key, List<SortedSetEntry> entries) {
-        if (key == null || entries == null || entries.isEmpty() || !canUseRedis()) return;
+        if (key == null || entries == null || entries.isEmpty()) return;
+        if (!canUseRedis()) throw new IllegalStateException("Redis is unavailable");
         try (Jedis jedis = pool.getResource()) {
-            Pipeline pipeline = jedis.pipelined();
-            byte[] encodedKey = key.getBytes(StandardCharsets.UTF_8);
-            for (SortedSetEntry entry : entries)
-                if (entry != null && entry.member() != null) pipeline.zadd(encodedKey, entry.score(), entry.member());
-            pipeline.sync();
+            writeSortedSet(jedis, key, entries, 0);
             markAvailable();
-        } catch (Exception ignored) {
+        } catch (RuntimeException failure) {
             markUnavailable();
+            throw failure;
         }
     }
 
     public static void removeSortedSetMember(String key, byte[] member) {
         if (key == null || member == null || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.zrem(key.getBytes(StandardCharsets.UTF_8), member);
+            jedis.eval("if redis.call('TYPE',KEYS[1]).ok=='zset' then return redis.call('ZREM',KEYS[1],ARGV[1]) end; return 0".getBytes(StandardCharsets.UTF_8),
+                List.of(key.getBytes(StandardCharsets.UTF_8)), List.of(member));
             markAvailable();
-        } catch (Exception ignored) {
+        } catch (RuntimeException failure) {
             markUnavailable();
+            throw failure;
         }
     }
 
-    private static void publishSortedSet(String temporaryKey, String key, int ttlSeconds) {
-        if (temporaryKey == null || key == null || !canUseRedis()) return;
-        try (Jedis jedis = pool.getResource()) {
-            jedis.rename(temporaryKey, key);
-            if (ttlSeconds > 0) jedis.expire(key, ttlSeconds);
-            else jedis.persist(key);
-            markAvailable();
-        } catch (Exception ignored) {
-            markUnavailable();
-        }
-    }
-
-    public static boolean buildSortedSet(
-        RedisKey temporaryRedisKey,
-        Object[] temporaryValues,
-        RedisKey redisKey,
-        Object[] values,
-        Consumer<Consumer<SortedSetEntry>> source
-    ) {
-        if (temporaryRedisKey == null || redisKey == null || source == null) return false;
-        String temporaryKey = temporaryRedisKey.of(temporaryValues);
+    public static boolean buildSortedSet(RedisKey temporaryRedisKey, Object[] temporaryValues,
+            RedisKey redisKey, Object[] values, Consumer<Consumer<SortedSetEntry>> source) {
         String key = redisKey.of(values);
+        if (!canUseRedis()) return false;
+        if (sortedSetExists(key)) return true;
+        String temporary = temporaryRedisKey.of(temporaryValues);
         List<SortedSetEntry> batch = new ArrayList<>(SORTED_SET_BATCH_SIZE);
-        try {
+        try (Jedis jedis = pool.getResource()) {
             source.accept(entry -> {
                 batch.add(entry);
                 if (batch.size() < SORTED_SET_BATCH_SIZE) return;
-                addSortedSet(temporaryKey, batch);
+                writeSortedSet(jedis, temporary, batch, temporaryRedisKey.ttlSeconds());
                 batch.clear();
             });
-            if (!batch.isEmpty()) addSortedSet(temporaryKey, batch);
-            expire(temporaryKey, temporaryRedisKey.ttlSeconds());
-            if (!sortedSetExists(temporaryKey)) return false;
-            publishSortedSet(temporaryKey, key, redisKey.ttlSeconds());
-            return sortedSetExists(key);
+            if (!batch.isEmpty()) writeSortedSet(jedis, temporary, batch, temporaryRedisKey.ttlSeconds());
+            jedis.eval("if redis.call('EXISTS',KEYS[2])==1 then return 1 end; "
+                + "if redis.call('EXISTS',KEYS[1])==0 then redis.call('SET',KEYS[2],'','EX',60); return 1 end; "
+                + "redis.call('RENAME',KEYS[1],KEYS[2]); if tonumber(ARGV[1])>0 then redis.call('EXPIRE',KEYS[2],ARGV[1]) else redis.call('PERSIST',KEYS[2]) end; return 1",
+                List.of(temporary, key), List.of(Integer.toString(redisKey.ttlSeconds())));
+            return true;
+        } catch (RuntimeException failure) {
+            markUnavailable();
+            throw failure;
         } finally {
-            delete(temporaryKey);
+            delete(temporary);
         }
+    }
+
+    private static void writeSortedSet(Jedis jedis, String key, List<SortedSetEntry> entries, int ttl) {
+        List<byte[]> args = new ArrayList<>(entries.size() * 2 + 1);
+        args.add(Integer.toString(ttl).getBytes(StandardCharsets.UTF_8));
+        for (SortedSetEntry entry : entries) { args.add(Double.toString(entry.score()).getBytes(StandardCharsets.UTF_8)); args.add(entry.member()); }
+        jedis.eval(("if redis.call('TYPE',KEYS[1]).ok=='string' then redis.call('UNLINK',KEYS[1]) end; "
+            + "redis.call('ZADD',KEYS[1],unpack(ARGV,2)); if tonumber(ARGV[1])>0 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end; return 1").getBytes(StandardCharsets.UTF_8),
+            List.of(key.getBytes(StandardCharsets.UTF_8)), args);
     }
 
     public static List<Long> reverseRanks(List<String> keys, List<byte[]> members) {
@@ -430,11 +427,12 @@ public class RedisClient {
         if (keys == null || members == null || keys.size() != members.size() || !canUseRedis()) return result;
         try (Jedis jedis = pool.getResource()) {
             Pipeline pipeline = jedis.pipelined();
-            List<Response<Long>> responses = new ArrayList<>(keys.size());
+            List<Response<Object>> responses = new ArrayList<>(keys.size());
             for (int index = 0; index < keys.size(); index++)
-                responses.add(pipeline.zrevrank(keys.get(index).getBytes(StandardCharsets.UTF_8), members.get(index)));
+                responses.add(pipeline.eval("if redis.call('TYPE',KEYS[1]).ok~='zset' then return false end; return redis.call('ZREVRANK',KEYS[1],ARGV[1])".getBytes(StandardCharsets.UTF_8),
+                    List.of(keys.get(index).getBytes(StandardCharsets.UTF_8)), List.of(members.get(index))));
             pipeline.sync();
-            for (Response<Long> response : responses) result.add(response.get());
+            for (Response<Object> response : responses) result.add(response.get() instanceof Number value ? value.longValue() : null);
             markAvailable();
         } catch (Exception ignored) {
             markUnavailable();
@@ -445,6 +443,7 @@ public class RedisClient {
     public static List<byte[]> reverseRange(String key, long start, long stop) {
         if (key == null || start < 0 || stop < start || !canUseRedis()) return List.of();
         try (Jedis jedis = pool.getResource()) {
+            if (!"zset".equals(jedis.type(key))) return List.of();
             List<byte[]> result = new ArrayList<>(jedis.zrevrange(key.getBytes(StandardCharsets.UTF_8), start, stop));
             markAvailable();
             return result;
@@ -454,27 +453,10 @@ public class RedisClient {
         }
     }
 
-    public static List<Long> countsAbove(List<String> keys, List<Double> scores) {
-        List<Long> result = new ArrayList<>();
-        if (keys == null || scores == null || keys.size() != scores.size() || !canUseRedis()) return result;
-        try (Jedis jedis = pool.getResource()) {
-            Pipeline pipeline = jedis.pipelined();
-            List<Response<Long>> responses = new ArrayList<>(keys.size());
-            for (int index = 0; index < keys.size(); index++)
-                responses.add(pipeline.zcount(keys.get(index).getBytes(StandardCharsets.UTF_8), Math.nextUp(scores.get(index)), Double.POSITIVE_INFINITY));
-            pipeline.sync();
-            for (Response<Long> response : responses) result.add(response.get());
-            markAvailable();
-        } catch (Exception ignored) {
-            markUnavailable();
-        }
-        return result;
-    }
-
     public static long sortedSetCardinality(String key) {
         if (key == null || !canUseRedis()) return 0;
         try (Jedis jedis = pool.getResource()) {
-            long result = jedis.zcard(key);
+            long result = ((Number) jedis.eval("if redis.call('TYPE',KEYS[1]).ok=='zset' then return redis.call('ZCARD',KEYS[1]) end; return 0", List.of(key), List.of())).longValue();
             markAvailable();
             return result;
         } catch (Exception ignored) {
@@ -511,26 +493,27 @@ public class RedisClient {
     }
 
     public static void replaceHash(String key, Map<String, Long> values) {
-        if (key == null || values == null || !canUseRedis()) return;
+        if (!canUseRedis()) throw new IllegalStateException("Redis is unavailable");
+        List<String> args = new ArrayList<>();
+        for (var value : values.entrySet()) { args.add(value.getKey()); args.add(value.getValue().toString()); }
         try (Jedis jedis = pool.getResource()) {
-            jedis.del(key);
-            Map<String, String> encoded = new HashMap<>();
-            for (Map.Entry<String, Long> entry : values.entrySet()) encoded.put(entry.getKey(), Long.toString(entry.getValue()));
-            if (!encoded.isEmpty()) jedis.hset(key, encoded);
-            jedis.persist(key);
+            jedis.eval("redis.call('DEL',KEYS[1]); if #ARGV>0 then redis.call('HSET',KEYS[1],unpack(ARGV)) end; return 1", List.of(key), args);
             markAvailable();
-        } catch (Exception ignored) {
+        } catch (RuntimeException failure) {
             markUnavailable();
+            throw failure;
         }
     }
 
     public static void incrementHashIfPresent(String key, String field, long amount) {
         if (key == null || field == null || amount == 0 || !canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
-            if (jedis.exists(key)) jedis.hincrBy(key, field, amount);
+            jedis.eval("if redis.call('EXISTS',KEYS[1])==1 then return redis.call('HINCRBY',KEYS[1],ARGV[1],ARGV[2]) end; return 0",
+                List.of(key), List.of(field, Long.toString(amount)));
             markAvailable();
-        } catch (Exception ignored) {
+        } catch (RuntimeException failure) {
             markUnavailable();
+            throw failure;
         }
     }
 
@@ -557,6 +540,10 @@ public class RedisClient {
 
     public static void close() {
         pool.close();
+    }
+
+    public static boolean available() {
+        return canUseRedis();
     }
 
     private static boolean canUseRedis() {

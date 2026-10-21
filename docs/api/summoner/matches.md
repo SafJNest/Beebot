@@ -7,7 +7,7 @@
 ## Fetch
 
 ```bash
-curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?queue=RANKED_SOLO_5X5&champion=Ahri&lane=MID&patch=16.18&limit=20&offset=0&sort=timeStart:desc'
+curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?queue=RANKED_SOLO_5X5&champion=Ahri&lane=MID&season=previous&limit=20&offset=0&sort=timeStart:desc'
 ```
 
 ## Parameters
@@ -20,6 +20,7 @@ curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/matches?
 | `champion` | query | champion name or ID | no | all | Only matches where this profile played the selected champion. |
 | `lane` | query | `TOP`, `JUNGLE`, `MID`, `BOT`, `UTILITY` | no | all | Filter by the profile's lane. |
 | `patch` | query | `major.minor` | no | all | Filter by patch major version, for example `16.18`. |
+| `season` | query | `current`, `previous`, `all` | no | current | Select a configured season range; `all` removes the time bounds. Cannot be combined with `timeStart` or `timeEnd`. |
 | `limit` | query | integer | no | `20` | From `1` to `100`. |
 | `offset` | query | integer | no | `0` | Zero-based offset, `>= 0`. |
 | `timeStart` | query | long | no | current season start | Unix epoch ms inclusive. |
@@ -61,21 +62,63 @@ Riot calls, lookups or statistic regenerations.
   ],
   "limit": 20,
   "offset": 0,
-  "total": 5131,
-  "hasMore": true
+  "total": 27,
+  "hasMore": true,
+  "facets": {
+    "queue": [
+      { "value": "RANKED_SOLO_5X5", "total": 80, "selected": true }
+    ],
+    "lane": [
+      { "value": "MID", "total": 27, "selected": true },
+      { "value": "TOP", "total": 14, "selected": false }
+    ],
+    "champion": [
+      { "value": 103, "total": 27, "selected": true },
+      { "value": 238, "total": 12, "selected": false }
+    ],
+    "patch": [
+      { "value": "16.18", "total": 27, "selected": false }
+    ],
+    "season": [
+      { "value": "current", "year": 2026, "total": 80, "selected": false },
+      { "value": "previous", "year": 2025, "total": 27, "selected": true },
+      { "value": "all", "year": null, "total": 107, "selected": false }
+    ],
+    "range": { "min": 1714514400000, "max": 1791763200000 }
+  }
 }
 ```
 
-Sorting always uses `timeStart` and `_id` as a technical tie-breaker, so
-offset and pages remain stable.
+`facets` uses the same queue, champion, lane, patch and season/time filters as
+the page. Each categorical facet excludes its own selected dimension while
+applying the others, so the options show disjunctive counts. `range` follows
+the categorical filters and shard while ignoring the selected period. Facet
+values and counts come from the cached `FacetsService` result, shared with the
+dedicated `/facets` endpoint; the page's root `total` remains the exact count
+for the selected filters. The page lookup and facet lookup run concurrently;
+the endpoint combines their results into one asynchronous HTTP response. Since
+the facets result is cached for 10 seconds, root `total` may also be up to 10
+seconds behind a newly written or rebuilt match projection.
 
-When one time bound is nonzero, the endpoint uses the requested range and a
-zero on the other bound is unbounded. When both are zero, it uses the current season.
-Unknown query parameters return `400`.
+Sorting uses `timeStart`; matches with the same start time have no guaranteed
+relative order, so they may move between offset pages.
 
-`total` is the number of persisted matches that satisfy the same filters as
-`items` (`shard`, `queue`, `champion`, `lane`, `patch`, `timeStart` and `timeEnd`), before applying
-`limit` and `offset`.
+When `season` is supplied, `current` and `previous` are converted to the
+configured season's inclusive `timeStart` and `timeEnd`; `all` uses zero for
+both bounds, which means unbounded. `season` cannot be combined with explicit
+`timeStart` or `timeEnd`. When `season` is omitted, one nonzero time bound uses
+the requested range and a zero on the other bound is unbounded; when both are
+zero, the current season is used. Unknown query parameters return `400`.
+The effective lower bound applies to match start and the upper bound to match
+end. Persistence also caps match start at the upper bound to restrict the
+chronological index scan; valid matches start no later than they end, so this
+does not change the selected matches or the exposed filter metadata.
+
+`total` comes from the same `match_facets` aggregation as `facets`. It counts
+matches that satisfy the same filters as `items` (`shard`, `queue`, `champion`,
+`lane`, `patch` and the effective `timeStart`/`timeEnd` range selected directly
+or through `season`), before applying `limit` and `offset`. The page items are
+read from `match`; the page lookup and facet aggregation run concurrently.
 
 Each result exposes the requested summoner's runes: the first entry of
 `primaryRunes` and `secondaryRunes` is the tree, the others are the chosen runes;
@@ -96,6 +139,7 @@ The page keeps existing fields and adds root `metadata` with
 
 ## Owner
 
-`MatchService.getPage(puuid, Filter, ...)`, `MongoDB.findMatchResults(puuid, Filter, ...)`
-and `MongoDB.countMatches(puuid, Filter)`. The `Filter` carries the shard and match
-selectors; pagination and ordering stay separate.
+`MatchService.getPage(puuid, Filter, ..., MatchFacetQuery)` composes the page
+items from `MongoDB.findMatchResults` with total and facets from
+`FacetsService.get`. The `Filter` and `MatchFacetQuery` carry the same shard and
+match selectors; pagination and ordering stay separate.

@@ -2,6 +2,9 @@ package com.safjnest.spring.controller;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.match.RankHistoryQuery;
 import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.model.match.MatchOrder;
@@ -20,6 +24,7 @@ import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -154,6 +159,119 @@ public final class LolApiParameters {
         if (champion < 0) throw invalid("champion", "must be greater than or equal to 0");
         Filter filter = start == 0 && end == 0 ? Filter.canonical() : Filter.summoner(start, end);
         return filter.setQueue(queue).setChampion(champion);
+    }
+
+    public static Filter matchesFilter(
+        long timeStart,
+        long timeEnd,
+        String seasonValue,
+        boolean timeBoundsProvided,
+        GameQueueType queue,
+        int champion
+    ) {
+        if (seasonValue == null || seasonValue.isBlank()) return activityFilter(timeStart, timeEnd, queue, champion);
+        if (timeBoundsProvided) throw invalid("season", "cannot be combined with timeStart or timeEnd");
+
+        String season = seasonValue.trim().toLowerCase(Locale.ROOT);
+        if (LeagueConstants.ALL.equalsIgnoreCase(season)) {
+            if (champion < 0) throw invalid("champion", "must be greater than or equal to 0");
+            return Filter.summoner(0, 0).setQueue(queue).setChampion(champion);
+        }
+
+        SeasonUtils.SeasonRange selected = switch (season) {
+            case "current" -> SeasonUtils.getCurrentSeasonRange();
+            case "previous" -> previousSeason();
+            default -> throw invalid("season", "must be current, previous or all");
+        };
+        if (selected == null) throw invalid("season", "is not available in the configured season data");
+        return activityFilter(selected.start(), selected.end(), queue, champion);
+    }
+
+    public static MatchFacetQuery matchFacetQuery(
+        LeagueShard shard,
+        List<String> queueValues,
+        List<String> championValues,
+        List<String> laneValues,
+        List<String> patchValues,
+        String seasonValue,
+        long timeStart,
+        long timeEnd,
+        boolean timeBoundsProvided
+    ) {
+        if (timeStart < 0) throw invalid("timeStart", "must be greater than or equal to 0");
+        if (timeEnd < 0) throw invalid("timeEnd", "must be greater than or equal to 0");
+        if (timeStart != 0 && timeEnd != 0 && timeEnd < timeStart)
+            throw invalid("timeEnd", "must be greater than or equal to timeStart");
+        if (seasonValue != null && !seasonValue.isBlank() && timeBoundsProvided)
+            throw invalid("season", "cannot be combined with timeStart or timeEnd");
+
+        LinkedHashSet<GameQueueType> queues = new LinkedHashSet<>();
+        boolean allQueues = false;
+        if (queueValues != null) for (String value : queueValues) {
+            if (value == null || value.isBlank()) continue;
+            if (LeagueConstants.ALL.equalsIgnoreCase(value.trim())) allQueues = true;
+            else queues.add(parseEnum(value, GameQueueType.class, "queue"));
+        }
+        if (allQueues && !queues.isEmpty()) throw invalid("queue", "all cannot be combined with queue values");
+
+        LinkedHashSet<Integer> champions = new LinkedHashSet<>();
+        if (championValues != null) for (String value : championValues)
+            if (value != null && !value.isBlank()) champions.add(optionalChampion(value));
+
+        LinkedHashSet<LaneType> lanes = new LinkedHashSet<>();
+        if (laneValues != null) for (String value : laneValues) {
+            if (value == null || value.isBlank()) continue;
+            LaneType lane = parseEnum(value, LaneType.class, "lane");
+            if (!LaneTypeUtils.playables().contains(lane))
+                throw invalid("lane", "must be one of: TOP, JUNGLE, MID, BOT, UTILITY");
+            lanes.add(lane);
+        }
+        if (!lanes.isEmpty() && !queues.isEmpty()) {
+            boolean supportsLane = false;
+            for (GameQueueType queue : queues) if (GameQueueTypeUtils.hasLane(queue)) supportsLane = true;
+            if (!supportsLane) throw invalid("lane", "is not supported by the selected queues");
+        }
+
+        LinkedHashSet<String> patches = new LinkedHashSet<>();
+        if (patchValues != null) for (String value : patchValues) {
+            String patch = patch(value);
+            if (patch != null) patches.add(PatchUtils.patchMajor(patch));
+        }
+
+        String selectedSeason = seasonValue == null || seasonValue.isBlank()
+            ? timeBoundsProvided ? null : "current"
+            : seasonValue.trim().toLowerCase(Locale.ROOT);
+        long selectedStart = timeStart;
+        long selectedEnd = timeEnd;
+        SeasonUtils.SeasonRange current = SeasonUtils.getCurrentSeasonRange();
+        SeasonUtils.SeasonRange previous = previousSeason();
+        if (selectedSeason != null) {
+            switch (selectedSeason) {
+                case "current" -> {
+                    if (current == null) throw invalid("season", "current season is not configured");
+                    selectedStart = current.start();
+                    selectedEnd = current.end();
+                }
+                case "previous" -> {
+                    if (previous == null) throw invalid("season", "previous season is not configured");
+                    selectedStart = previous.start();
+                    selectedEnd = previous.end();
+                }
+                case "all" -> {
+                    selectedStart = 0;
+                    selectedEnd = 0;
+                }
+                default -> throw invalid("season", "must be current, previous or all");
+            }
+        }
+
+        List<MatchFacetQuery.Season> seasons = new ArrayList<>();
+        if (current != null)
+            seasons.add(new MatchFacetQuery.Season("current", current.year(), current.start(), current.end()));
+        if (previous != null)
+            seasons.add(new MatchFacetQuery.Season("previous", previous.year(), previous.start(), previous.end()));
+        return new MatchFacetQuery(shard, List.copyOf(queues), List.copyOf(champions), List.copyOf(lanes),
+            List.copyOf(patches), selectedStart, selectedEnd, selectedSeason, seasons);
     }
 
     public static Filter profileFilter(String queueValue, String patchValue, String seasonValue) {
@@ -313,6 +431,17 @@ public final class LolApiParameters {
     }
 
     // ============================================================================
+
+    private static SeasonUtils.SeasonRange previousSeason() {
+        SeasonUtils.SeasonRange current = SeasonUtils.getCurrentSeasonRange();
+        if (current == null) return null;
+        SeasonUtils.SeasonRange previous = null;
+        for (SeasonUtils.SeasonRange season : SeasonUtils.getSeasonRanges()) {
+            if (season.end() >= current.start()) continue;
+            if (previous == null || season.end() > previous.end()) previous = season;
+        }
+        return previous;
+    }
 
     private static void validateMatchupsPeriod(long start, long end) {
         if (start < 0) throw invalid("start", "must be greater than or equal to 0");

@@ -8,13 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executor;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.MatchFacetQuery;
+import com.safjnest.lol.model.match.MatchFacets;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
 import com.safjnest.lol.model.match.MatchResult;
@@ -58,6 +60,9 @@ public final class MatchService {
 
     static final int MATCH_LIST_BATCH_SIZE = 100;
 
+    private static final Executor MATCH_READ_EXECUTOR = command -> Thread.ofVirtual()
+        .name("lol-match-read")
+        .start(command);
     private static final TypeReference<List<String>> MATCH_IDS_TYPE = new TypeReference<List<String>>() {};
     private static final TypeReference<List<RankHistoryMatch>> RANK_HISTORY_TYPE = new TypeReference<>() {};
 
@@ -132,6 +137,10 @@ public final class MatchService {
     }
 
     public static Match insert(LOLMatch source) {
+        return insert(source, JobPriority.IMMEDIATE);
+    }
+
+    public static Match insert(LOLMatch source, JobPriority priority) {
         if (source == null || source.getPlatform() == null) return null;
         String fullGameId = MatchUtils.fullGameId(source);
         cacheR4JMatch(source);
@@ -140,7 +149,8 @@ public final class MatchService {
             return null;
         }
 
-        Match match = Match.fromR4J(source);
+        Match match = com.safjnest.lol.tracker.Tracker.fromR4J(
+            source, priority == null ? JobPriority.IMMEDIATE : priority);
         if (match == null) return null;
         localRanking(match);
         boolean inserted = MongoDB.insertMatch(match);
@@ -201,18 +211,26 @@ public final class MatchService {
     }
 
     public static LOLTimeline getTimeline(LOLMatch match) {
+        return getTimeline(match, JobPriority.IMMEDIATE);
+    }
+
+    public static LOLTimeline getTimeline(LOLMatch match, JobPriority priority) {
         if (match == null || match.getPlatform() == null) return null;
-        return getTimeline(MatchUtils.fullGameId(match), match.getPlatform());
+        return getTimeline(MatchUtils.fullGameId(match), match.getPlatform(), priority);
     }
 
     public static LOLTimeline getTimeline(String gameId, LeagueShard shard) {
+        return getTimeline(gameId, shard, JobPriority.IMMEDIATE);
+    }
+
+    public static LOLTimeline getTimeline(String gameId, LeagueShard shard, JobPriority priority) {
         if (!valid(gameId, shard)) return null;
         String region = shard.toRegionShard().name();
         LOLTimeline cached = RedisClient.get(RedisKey.R4J_TIMELINE.of(region, gameId), LOLTimeline.class);
         if (cached != null) return cached;
 
-        return QueueHandler.<LOLTimeline>immediate(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
-            "timeline id=" + gameId, ignored -> {
+        return QueueHandler.<LOLTimeline>submit(RiotScheduler.class, shard, shard.name() + ":timeline:" + gameId,
+            "timeline id=" + gameId, priority == null ? JobPriority.IMMEDIATE : priority, ignored -> {
                 LOLTimeline timeline = RIOT_API.getLoLAPI().getMatchAPI().getTimeline(shard.toRegionShard(), gameId);
                 if (timeline != null) RedisClient.set(RedisKey.R4J_TIMELINE, timeline, region, gameId);
                 return timeline;
@@ -269,62 +287,69 @@ public final class MatchService {
             GameQueueType queue,
             JobPriority priority) {
         if (summoner == null || summoner.getPlatform() == null) return;
+        JobPriority effectivePriority = priority == null ? JobPriority.IMMEDIATE : priority;
         try {
             List<String> matchIds = new ArrayList<>();
             List<String> page;
             do {
-                page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null, priority);
+                page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null, effectivePriority);
                 if (page == null) page = List.of();
                 matchIds.addAll(page);
                 Thread.sleep(350);
             } while (!page.isEmpty());
 
             int total = matchIds.size();
-            java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger(0);
+            int done = 0;
             for (String matchId : matchIds) {
                 if (LeagueHandler.isMatchDBCached(matchId)) continue;
-                
-                fetchAsync(matchId, summoner.getPlatform(), priority).whenComplete((match, failure) -> {
-                    if (failure != null) {
-                        BotLogger.error("Match fetch failed: " + matchId + " message=" + failure.getMessage());
-                        return;
-                    }
-                    if (match == null) return;
-                    try {
-                        Match result = insert(match);
-                        BotLogger.info("[" + done.incrementAndGet() + "/" + total + "] " + match.getGameId() + " - "
-                            + match.getPlatform() + " - " + match.getQueue() + " rank=" + (result == null ? "null" : result.rank));
-                    } catch (Throwable throwable) {
-                        BotLogger.error("Import insert failed: " + matchId + " " + throwable);
-                    }
-                });
+                LOLMatch match;
+                try {
+                    match = fetchAsync(matchId, summoner.getPlatform(), effectivePriority).join();
+                    Thread.sleep(500);
+                } catch (CompletionException exception) {
+                    BotLogger.error("Match fetch failed: " + matchId + " message=" + exception.getMessage());
+                    continue;
+                }
+                if (match == null) continue;
+                try {
+                    Match result = insert(match, effectivePriority);
+                    done++;
+                    BotLogger.info("[" + done + "/" + total + "] " + match.getGameId() + " - "
+                        + match.getPlatform() + " - " + match.getQueue() + " rank=" + (result == null ? "null" : result.rank));
+                } catch (Throwable throwable) {
+                    BotLogger.error("Import insert failed: " + matchId + " " + throwable);
+                }
             }
         } catch (Exception exception) {
             BotLogger.error("Match history import failed for puuid=" + summoner.getPUUID() + " message=" + exception.getMessage());
         }
     }
 
-    public static MatchPage getPage(
+    public static CompletableFuture<MatchPage> getPage(
             String puuid,
             Filter filter,
             int offset,
             int limit,
-            MatchOrder order) {
-        if (filter == null || !valid(puuid, filter.region()) || offset < 0 || limit < 1 || order == null) {
-            return new MatchPage(List.of(), limit, offset, 0, false);
+            MatchOrder order,
+            MatchFacetQuery facetQuery) {
+        if (filter == null || !valid(puuid, filter.region()) || offset < 0 || limit < 1 || order == null
+                || facetQuery == null || facetQuery.shard() != filter.region()) {
+            return CompletableFuture.completedFuture(new MatchPage(List.of(), limit, offset, 0, false));
         }
 
-        long total = MongoDB.countMatches(puuid, filter);
-        List<MatchResult> items = MongoDB.findMatchResults(
-            puuid,
-            filter,
-            offset,
-            limit + 1,
-            order.ascending()
+        CompletableFuture<List<MatchResult>> page = CompletableFuture.supplyAsync(
+            () -> MongoDB.findMatchResults(puuid, filter, offset, limit + 1, order.ascending()),
+            MATCH_READ_EXECUTOR
         );
-        boolean hasMore = items.size() > limit;
-        if (hasMore) items = new ArrayList<>(items.subList(0, limit));
-        return new MatchPage(items, limit, offset, total, hasMore);
+        CompletableFuture<MatchFacets> facets = CompletableFuture.supplyAsync(
+            () -> FacetsService.get(puuid, facetQuery),
+            MATCH_READ_EXECUTOR
+        );
+        return page.thenCombine(facets, (items, matchFacets) -> {
+            boolean hasMore = items.size() > limit;
+            if (hasMore) items = new ArrayList<>(items.subList(0, limit));
+            return new MatchPage(items, limit, offset, matchFacets.total(), hasMore, matchFacets.facets(), null);
+        });
     }
 
     public static RankHistory getRankHistory(String puuid, LeagueShard shard, RankHistoryQuery query) {

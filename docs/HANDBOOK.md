@@ -19,7 +19,10 @@ the affected symbol and its impact before editing.
   configuration and HTTP errors.
 - `Summoner`, `Rank`, `Mastery`, `Match`, `Participant` and `MatchResult` are
   canonical. Reuse existing mapping utilities.
-- Mongo is the LoL runtime store. MariaDB is limited to `MongoMigration`.
+- Mongo owns all LoL persistence, including the rebuildable `match_facets`
+  projection maintained after match insert/upsert and rebuilt by
+  `!test export-match-search`. LoL has no MariaDB runtime or historical
+  migration path.
 - Redis stores caches and derived indexes. It is not a durable queue.
 - Changes to data or persistence preserve existing command and API presentation
   unless a presentation change is requested.
@@ -34,6 +37,8 @@ the affected symbol and its impact before editing.
 | Job lifecycle and routing | `lol/queue/QueueHandler`, schedulers |
 | Periodic tracking | `lol/tracker/` |
 | Mongo persistence and backfill | `nosql/MongoDB`, `MongoMigration` |
+| Match facets projection writes and export | `MongoDB`, `!test export-match-search` |
+| Match facets API reads | `LolController.facets`, `FacetsService.get`, `MongoDB.searchFacets` |
 | Redis keys and invalidation | `redis/RedisKey`, `CacheInvalidationService` |
 
 ## 4. Shared data flow
@@ -86,8 +91,9 @@ parallel queue or retry store.
 ### 5.6 New Mongo collection or entity
 
 Use `AbstractEntity` and `NoSqlEntityExecutor` where applicable. Register the
-collection and its create-only indexes in `MongoDB`. Define identity and
-migration behavior before adding a persisted shape. Do not add duplicate
+collection in `MongoDB`; manage indexes according to the owning ADR and
+`docs/mongo` inventory. Define identity and migration behavior before adding a
+persisted shape. Do not add duplicate
 `*Document` models or dual-write paths.
 
 ### 5.7 New Mongo query
@@ -95,6 +101,17 @@ migration behavior before adding a persisted shape. Do not add duplicate
 Add the query to `MongoDB`, use typed filters and narrow projections, and stream
 large result sets with a cursor. Add or reuse an index, inspect
 `explain("executionStats")`, and update `docs/mongo/08-query-inventory.md`.
+For match queries, reuse the participant/scope builders: PUUID and known
+region first, optional equality filters next, time bounds last. Single
+participant predicates use dotted paths; multiple conditions on the same
+participant use one `$elemMatch`. Preserve deliberate global and ID-only
+queries. The replacement catalog and operational rollout are in
+`docs/mongo/14-match-index-consolidation.md`.
+When an end bound is present, the shared time builder limits both `timeStart`
+and `timeEnd` to it. This bounds the chronological index scan while preserving
+the completed-match containment rule. Player count indexes put champion/lane
+before time; keep the existing chronological index for unfiltered pages and
+compare space and actual plans before dropping any index.
 For the summoner leaderboard locator, measure the count-before scan on
 representative Gold/Emerald data: an indexed count can still inspect many keys.
 
@@ -102,7 +119,8 @@ representative Gold/Emerald data: an indexed count can still inspect many keys.
 
 Declare the key and TTL in `RedisKey`. Use `RedisClient` and invalidate through
 `CacheInvalidationService` after the durable write succeeds. Keep cache values
-rebuildable from Mongo.
+rebuildable from Mongo. Record reads use Mongo ordering by `value`; their only
+Redis cache is the paginated total, with a 60-second TTL and invalidation on row-count changes.
 
 ### 5.9 New aggregate or analyzer
 
@@ -144,6 +162,7 @@ of live Mongo, Redis, Riot or Discord behavior.
 |---|---|---|
 | Summoner, ranks, masteries | `SummonerService`, `RankService`, `MasteryService` | `summoner` |
 | Matches and events | `MatchService`, `Tracker` | `match`, `match_events` |
+| Match facets projection and APIs | `MongoDB.insertFacets`, `FacetsService.get` / `count`, `!test export-match-search` | Mongo `match_facets`, Redis 10s cache; included in `/matches` and `/facets` |
 | Profile statistics, activity, matchups | `ProfileService`, `ProfileAnalyzer` | `profile_statistics`, `profile_activity`, `profile_matchups` |
 | Champion statistics and builds | `ChampionService`, `ChampionAnalyzer` | `champion_statistics`, `champion_builds` |
 | Competitive ranks and leaderboard indexes | `CompetitiveService`, `LeaderboardService` | `competitive`, Redis |

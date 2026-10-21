@@ -10,8 +10,10 @@ operational steps live in the [developer handbook](../HANDBOOK.md).
 - `lol.service` owns domain reads, writes, cache coordination and composition.
 - `lol.queue` owns job registration and scheduling; `lol.tracker` owns periodic
   tracking.
-- `nosql.MongoDB` owns Mongo persistence. MariaDB is used only by
-  `MongoMigration`.
+- `nosql.MongoDB` owns canonical Mongo persistence and the rebuildable
+  `match_facets` participant projection. Match insert/upsert maintains it;
+  `!test export-match-search` rebuilds it from Mongo. LoL no longer accesses
+  MariaDB, including historical migrations.
 - Spring owns HTTP controllers, configuration and error representations.
 - Redis stores disposable caches and derived indexes.
 
@@ -20,6 +22,8 @@ The profile aggregate identity and ownership are summarized in
 [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md).
 Mongo persistence details are in [`docs/mongo`](../mongo/README.md); CHERRY
 build ownership is in [`docs/arena-build`](../arena-build/README.md).
+The Mongo match-facets projection is documented in
+[`docs/mongo/15-match-facets-projection.md`](../mongo/15-match-facets-projection.md).
 
 ## Accepted ADRs
 

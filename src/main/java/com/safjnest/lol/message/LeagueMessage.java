@@ -20,6 +20,7 @@ import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.match.LiveGame;
 import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.CanonicalQueue;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -34,10 +35,12 @@ import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.RankProgressUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.FacetsService;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.service.ProfileService;
@@ -1291,7 +1294,7 @@ public class LeagueMessage {
                 }
             }
             case OVERVIEW_OPGG -> {
-                Filter filter = parameter.toFilter();
+                Filter filter = parameter.toFilter().setRegion(summoner.region());
                 matches = MongoDB.getMatches(
                     puuid,
                     filter,
@@ -1712,7 +1715,19 @@ public class LeagueMessage {
         for (Match match : matches) 
             eb = getOpggEmbedMatchPreview(eb, match, s, queryResult);
         
-        int totalPages = MongoDB.countMatches(puuid, parameter.toFilter());
+        Filter filter = parameter.toFilter().setRegion(s.region());
+        MatchFacetQuery facetQuery = new MatchFacetQuery(
+            s.region(),
+            filter.queue() == null ? List.of() : List.of(filter.queue()),
+            filter.champion() == 0 ? List.of() : List.of(filter.champion()),
+            filter.lane() == null ? List.of() : List.of(filter.lane()),
+            filter.patch() == null ? List.of() : List.of(PatchUtils.patchMajor(filter.patch())),
+            filter.timeStart(),
+            filter.timeEnd(),
+            null,
+            List.of()
+        );
+        long totalPages = FacetsService.count(puuid, facetQuery);
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);

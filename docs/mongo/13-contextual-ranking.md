@@ -21,21 +21,15 @@ beebot:lol:los:leaderboard:counts:<queue>:GLOBAL|<region>
 beebot:lol:los:leaderboard:segments
 beebot:lol:los:leaderboard:access
 beebot:lol:los:leaderboard:building:<build-id>
-beebot:lol:los:ranking:<filterKey>:<metric>:GLOBAL|<region>
-beebot:lol:los:ranking:segments
-beebot:lol:los:ranking:access
-beebot:lol:los:ranking:building:<build-id>
 ```
 
-Leaderboard ZSET score is `competitive.mmr`; record ZSET score is
-`profile_records.score`. Leaderboard members contain the sortable signed
+Leaderboard ZSET score is `competitive.mmr`. Members contain the sortable signed
 `competitive.score` followed by the 128-bit SHA-256 competitive identity. This
 makes reverse ZSET ordering use MMR then score while retaining MMR as the
 numeric ZSET score. The identity suffix only keeps Redis members unique; exact
-MMR-and-score ties have no added Mongo ordering criterion. Record members
-remain binary 128-bit SHA-256 hashes. The global and regional exact-rank count
-hashes are rebuilt by assigning each
-`competitive.mmr` to its exact MMR interval.
+MMR-and-score ties have no added Mongo ordering criterion. The global and regional exact-rank count
+hashes use one aggregation per queue, grouping region/MMR in Mongo and mapping
+only grouped values to canonical divisions in Java, including global totals.
 The segment registry and access hash are Redis-only observability metadata.
 
 `GET /api/lol/leaderboard?summoner=...` uses the requested queue rank to
@@ -58,8 +52,8 @@ Riot API search: Riot ID matching is exact against stored `summoner.riotId`.
 
 Apply these operator-managed indexes after checking existing names and running
 the corresponding `explain("executionStats")` commands.
-Replace the existing contextual index definitions with these compound keys;
-Mongo does not change an existing index definition when its name is reused.
+Keep equivalent existing compound keys, including `competitive_queue_mmr`
+and `competitive_queue_region_mmr`; do not duplicate them under new names.
 
 ```javascript
 db.competitive.createIndex(
@@ -73,17 +67,11 @@ db.competitive.createIndex(
 )
 ```
 
-The existing `profile_records_global` and `profile_records_regional` indexes
-already cover record-segment rebuilds. Redis loss does not alter Mongo:
-`LeaderboardService.warmupIndexAsync()` clears registered leaderboard segments
-to remove members written with the prior encoding, rebuilds permanent Master+
-segments and all count hashes at startup, while lazy leaderboard and record
-segments rebuild on the next matching request. After deploying the new
-projection, run `!test regenerate competitive` once so existing Mongo rows gain
-their score.
+Record queries read ordered `value` rows directly from Mongo. Their indexes and
+obsolete Redis key cleanup are documented in [profile record indexes](12-profile-record-indexes.md).
+Records retain only the 60-second total-count cache, with no ranking ZSETs or jobs.
+Startup preserves resident leaderboard keys and queues only missing Master+
+segments and counts. Lazy leaderboard segments build only when absent.
 
-Run `!test ranking` to print separate leaderboard and record index status:
-resident segment count, cardinality, Redis `MEMORY USAGE`, idle TTL, last access
-and in-progress state. Use it after a real `!test regenerate competitive` rebuild to record
-the required MASTER+, global/regional `[1200, 1300)` and representative record
-measurements.
+Run `!test ranking` to print leaderboard index status: resident segment count,
+cardinality, Redis `MEMORY USAGE`, idle TTL, last access and in-progress state.

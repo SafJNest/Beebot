@@ -38,6 +38,7 @@ public class RedisKeyTest {
         assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_STATISTICS.ttlSeconds());
         assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_ACTIVITY.ttlSeconds());
         assertEquals(12 * SECONDS_PER_HOUR, RedisKey.SUMMONER_MATCHUPS.ttlSeconds());
+        assertEquals(10, RedisKey.SUMMONER_MATCH_FACETS.ttlSeconds());
         assertEquals(SECONDS_PER_DAY, RedisKey.SUMMONER_RANK_HISTORY.ttlSeconds());
         assertEquals(SECONDS_PER_DAY, RedisKey.LEADERBOARD_PAGE.ttlSeconds());
         assertEquals(12 * SECONDS_PER_HOUR, RedisKey.LEADERBOARD_COUNT.ttlSeconds());
@@ -73,6 +74,7 @@ public class RedisKeyTest {
         String summonerStatistics = RedisKey.SUMMONER_STATISTICS.of("EUROPE", "EUW1", "puuid-1", "filter");
         String summonerActivity = RedisKey.SUMMONER_ACTIVITY.of("EUROPE", "EUW1", "puuid-1", "filter");
         String summonerMatchups = RedisKey.SUMMONER_MATCHUPS.of("EUROPE", "EUW1", "puuid-1", "filter");
+        String summonerFacets = RedisKey.SUMMONER_MATCH_FACETS.of("EUROPE", "EUW1", "puuid-1", "filter");
         String rankHistory = RedisKey.SUMMONER_RANK_HISTORY.of("EUROPE", "EUW1", "puuid-1", 16);
 
         assertTrue(!firstRanks.equals(secondRanks));
@@ -81,6 +83,7 @@ public class RedisKeyTest {
         assertTrue(summonerStatistics.endsWith("los:EUROPE:EUW1:summoner:puuid-1:statistics:filter"));
         assertTrue(summonerActivity.endsWith("los:EUROPE:EUW1:summoner:puuid-1:activity:filter"));
         assertTrue(summonerMatchups.endsWith("los:EUROPE:EUW1:summoner:puuid-1:matchups:filter"));
+        assertTrue(summonerFacets.endsWith("los:EUROPE:EUW1:summoner:puuid-1:facets:filter"));
         assertTrue(rankHistory.endsWith("los:EUROPE:EUW1:summoner:puuid-1:rank-history:16"));
         assertTrue(RedisKey.SUMMONER_SEARCH.of("EUROPE", "EUW1", "query").endsWith("los:EUROPE:EUW1:summoner:search:query"));
         assertTrue(RedisKey.SUMMONER_AUTOCOMPLETE.of("EUROPE", "EUW1", "query").endsWith("los:EUROPE:EUW1:summoner:autocomplete:query"));

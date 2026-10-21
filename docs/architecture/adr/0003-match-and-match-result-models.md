@@ -36,3 +36,11 @@ Riot-specific tracker records remain internal to the service/tracker boundary. T
 - There is one complete match owner and one lightweight result owner.
 - Profile and match list responses no longer define their own recent-match records.
 - JSON serialization is migrated explicitly where field names or packages change; Kryo is not part of the runtime.
+
+## Amendment 2026-10-20: profile match facets
+
+The canonical `MatchPage` keeps its existing page fields and includes the
+`MatchFacets.Facets` projection for the selected match filters. It reuses
+`FacetsService` so the dedicated `/facets` endpoint and `/matches` share the
+same disjunctive facet calculation and Redis cache. The page's root `total`
+continues to describe the exact selected match filter.

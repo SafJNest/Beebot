@@ -126,6 +126,15 @@ indexables and other pure lists remain unchanged arrays.
 the canonical payload and not `ResponseMetadata`, so an inactive game remains an
 HTTP `200` success with null game fields and empty participants.
 
+### Amendment 2026-10-20: match page facets
+
+`GET /api/lol/{shard}/profile/{puuid}/matches` retains its existing page fields
+and adds root `facets` containing the queue, lane, champion, patch, season and
+range options from canonical `MatchFacets.Facets`. The root `total` remains the
+exact count for the selected filters; each categorical facet computes
+disjunctive counts by omitting its own dimension. `/matches` and `/facets` use
+the same `FacetsService` cache.
+
 `BotStatus` (`GET /api/status`) is another object-root exception: it exposes operational
 process metrics without `ResponseMetadata` and without a LoL envelope. Besides
 `league`, `process`, `system` and `redis`, it includes `tracker` (`TrackerScheduler` jobs with in-memory progress),

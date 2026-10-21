@@ -1,6 +1,7 @@
 package com.safjnest.lol.model.record;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.lol.model.summoner.Mastery;
@@ -10,6 +11,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ProfileRecord {
 
     public String puuid;
@@ -18,7 +20,6 @@ public class ProfileRecord {
     public String filterKey;
     public RecordMetric metric;
     public long value;
-    public long score;
     public String matchId;
     public long occurredAt;
     public int championId;
@@ -27,8 +28,6 @@ public class ProfileRecord {
     public TeamType team;
     public String actorPuuid;
     public Boolean gameShared;
-    public Long globalRanking;
-    public Long regionRanking;
     public long lastUpdate;
     // TODO: extend dedicated subtype for HIGHEST_MASTERY-only fields
     public Integer masteryLevel;
@@ -50,7 +49,6 @@ public class ProfileRecord {
         record.filterKey = filterKey;
         record.metric = metric;
         record.value = value;
-        record.score = metric.order().score(value);
         record.matchId = matchId;
         record.occurredAt = occurredAt;
         record.championId = participant == null ? 0 : participant.champion;
@@ -75,7 +73,6 @@ public class ProfileRecord {
         record.filterKey = filterKey;
         record.metric = RecordMetric.HIGHEST_MASTERY;
         record.value = mastery.points();
-        record.score = record.metric.order().score(record.value);
         record.occurredAt = lastUpdate;
         record.championId = mastery.championId();
         record.region = region;

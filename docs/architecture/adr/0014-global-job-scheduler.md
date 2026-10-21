@@ -42,9 +42,14 @@ per-shard priority queues. Missing API matches are background Sync work; OP.GG
 match loading is immediate Sync work.
 
 Owner `retrieveallgames` and `retrieveallgamesfast` imports create a background
-Sync job and pass `BACKGROUND` to summoner lookup, matchlist-page requests and
-match fetches. Tracker requests keep their `IMMEDIATE` priority and can run ahead
-of queued import requests on the same shard.
+Sync job that stays active while it orchestrates the import: it waits for the
+summoner lookup and matchlist-page Riot jobs, then submits and waits for each
+missing match Riot job in turn. Conversion and persistence run on that Sync job;
+timeline requests created during conversion use the import's `BACKGROUND`
+priority and are awaited there as well. Tracker requests keep their `IMMEDIATE`
+priority and can run ahead of queued import requests on the same shard. Match
+conversion must not run in a Riot completion callback when it can synchronously
+wait for another Riot request.
 
 `/api/status.jobs` is the registry view. Dispatcher snapshots expose Riot and
 Compute queues/workers; Sync lifecycle appears in `jobs` without a physical
