@@ -127,14 +127,17 @@ representative Gold/Emerald data: an indexed count can still inspect many keys.
 Declare the key and TTL in `RedisKey`. Use `RedisClient` and invalidate through
 `CacheInvalidationService` after the durable write succeeds. Keep cache values
 rebuildable from Mongo. Record reads use Mongo ordering by `value`; their only
-Redis cache is the paginated total, with a 60-second TTL and invalidation on row-count changes.
+Redis cache is the paginated total, backed by durable `aggregates`, with a 60-second TTL and invalidation of both stores on row-count changes.
 
 ### 5.9 New aggregate or analyzer
 
 Put pure accumulation and finalization in an Analyzer. Let the owning service
 read bounded Mongo batches, persist the completed aggregate, then update Redis.
 Define the aggregate identity and include every dataset-changing filter in its
-key.
+key. Indicative counts and distributions use `AggregateService`: Redis ->
+`aggregates` -> calculate and persist before caching. Mongo snapshots do not
+expire. `!test regenerate aggregates [type]` queues separate background MONGO
+jobs with progress; see [aggregate snapshots](mongo/16-aggregates.md).
 
 ### 5.10 Filter change
 

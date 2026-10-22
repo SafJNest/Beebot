@@ -19,5 +19,8 @@ route additionally filters `championId`.
 Only paginated totals are cached in Redis, for 60 seconds per
 `filterKey + metric + GLOBAL|region + all|championId`, independently of limit
 and offset. Successful writes invalidate totals whose row count changed;
-value-only updates retain them. A cache miss runs `countDocuments` once and
-stores the result, including zero.
+value-only updates retain them. A Redis miss reads the durable `aggregates`
+snapshot. Only a miss in both stores runs `countDocuments` and persists the
+result, including zero, before caching it.
+
+Persistence, explicit rebuilds and deployment steps: [aggregate snapshots](../mongo/16-aggregates.md).

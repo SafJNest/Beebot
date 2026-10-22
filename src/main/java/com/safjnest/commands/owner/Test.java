@@ -19,6 +19,7 @@ import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.AggregateService;
 import com.safjnest.lol.service.CompetitiveService;
 import com.safjnest.lol.service.FacetsService;
 import com.safjnest.lol.service.LeaderboardService;
@@ -84,6 +85,7 @@ public class Test extends Command {
                 + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
+                + "] | regenerate aggregates [all|" + String.join("|", AggregateService.types())
                 + "] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
             case "gc" -> {
                 System.gc();
@@ -139,14 +141,23 @@ public class Test extends Command {
     // ============================================================================
 
     private static void queueRegeneration(CommandEvent event, String[] arguments) {
-        String operation = arguments.length < 2 ? "" : arguments[1].trim().toLowerCase();
+        String[] options = arguments.length < 2 ? new String[0] : arguments[1].trim().toLowerCase(Locale.ROOT).split("\\s+");
+        String operation = options.length == 0 ? "" : options[0];
+        String aggregateType = options.length < 2 ? "all" : options[1];
         if (!REGENERATION_OPERATIONS.contains(operation)) {
             event.reply("Usage: !test regenerate <" + String.join("|", REGENERATION_OPERATIONS) + ">.");
             return;
         }
+        if (options.length > ("aggregates".equals(operation) ? 2 : 1)
+                || ("aggregates".equals(operation) && !"all".equals(aggregateType) && !AggregateService.types().contains(aggregateType))) {
+            event.reply("Usage: !test regenerate aggregates [all|" + String.join("|", AggregateService.types()) + "].");
+            return;
+        }
         QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
-            "owner-regenerate:" + operation, "owner regenerate " + operation, job -> {
-                regenerate(operation);
+            "owner-regenerate:" + operation + ("aggregates".equals(operation) ? ":" + aggregateType : ""),
+            "owner regenerate " + operation + ("aggregates".equals(operation) ? " " + aggregateType : ""), job -> {
+                if ("aggregates".equals(operation)) AggregateService.enqueueRebuild(aggregateType);
+                else regenerate(operation);
                 return null;
             });
         event.reply("Regeneration " + operation + " queued.");
@@ -516,7 +527,7 @@ public class Test extends Command {
         switch (operation) {
             case "profiles" -> regenerateProfiles();
             case "competitive" -> regenerateCompetitive();
-            case "aggregates" -> regenerateAggregates();
+            case "aggregates" -> AggregateService.enqueueRebuild("all");
             case "records" -> regenerateRecords();
             case "mastery-records" -> regenerateMasteryRecords();
             case "champions" -> regenerateChampions();
@@ -524,11 +535,11 @@ public class Test extends Command {
             case "all" -> {
                 regenerateProfiles();
                 regenerateCompetitive();
-                regenerateAggregates();
                 regenerateRecords();
                 regenerateMasteryRecords();
                 regenerateChampions();
                 regenerateIndexables();
+                AggregateService.enqueueRebuild("all");
             }
             default -> throw new IllegalArgumentException("Unsupported regeneration operation: " + operation);
         }
@@ -548,11 +559,6 @@ public class Test extends Command {
         var competitive = CompetitiveService.rebuild();
         System.out.println("[Regenerate competitive] entries=" + competitive.entries()
             + " removed=" + competitive.removed());
-    }
-
-    private static void regenerateAggregates() {
-        var aggregates = LeaderboardService.rebuildAllAggregates();
-        System.out.println("[Regenerate leaderboard aggregates] total=" + aggregates.total());
     }
 
     private static void regenerateRecords() {

@@ -16,9 +16,9 @@ Leaderboard segments are keyed by canonical queue, `GLOBAL` or `LeagueShard`, an
 
 `MASTER_I`, `GRANDMASTER_I` and `CHALLENGER_I` segments are permanent. Startup preserves resident Redis keys and queues only missing segments and count hashes. Lower leaderboard divisions remain lazy. Builds use projected Mongo cursors of 5,000 rows, without sorting, and Redis writes of 1,000 members before atomic publication. Empty results occupy the same key as an empty string; rank reads treat them as empty and incremental writes convert them to ZSETs. The existing job registry deduplicates active builds; no service-local build maps are needed.
 
-Exact-rank counts use one Mongo aggregation per canonical queue, grouping by region and MMR. Java assigns grouped MMR values to canonical divisions and sums global counts, then writes all scope hashes. Existing hashes are reused and updated incrementally. Absolute leaderboard rank is the sum of higher exact-rank counts plus the one-based ZSET ordinal within the exact division.
+Exact-rank counts use one Mongo aggregation per canonical queue, grouping by region and MMR. Java assigns grouped MMR values to canonical divisions and sums global counts, then persists all scope maps in `aggregates` before publishing their Redis hashes. Existing snapshots are reused and updated incrementally in Mongo before Redis. Absolute leaderboard rank is the sum of higher exact-rank counts plus the one-based ZSET ordinal within the exact division.
 
-Records are returned directly from Mongo sorted by their actual `value`, descending for highest metrics and ascending for earliest-time metrics, with `occurredAt ASC, puuid ASC` ties. `ProfileRecord` has no normalized score or positional fields. Record Redis ZSETs, build jobs and ranking calculations are removed. The only record Redis cache stores paginated totals per filter/metric/region/champion for 60 seconds, invalidated when row counts change. `HIGHEST_MASTERY` remains a rebuildable projection of canonical `summoner.masteries`.
+Records are returned directly from Mongo sorted by their actual `value`, descending for highest metrics and ascending for earliest-time metrics, with `occurredAt ASC, puuid ASC` ties. `ProfileRecord` has no normalized score or positional fields. Record Redis ZSETs, build jobs and ranking calculations are removed. The only record Redis cache stores paginated totals per filter/metric/region/champion for 60 seconds, backed by durable `aggregates`. Row-count changes invalidate both stores. Expiry reloads the persisted snapshot without recalculation. `HIGHEST_MASTERY` remains a rebuildable projection of canonical `summoner.masteries`.
 
 `Rank.globalRanking` and `Rank.regionRanking` are nullable derived response fields, not persisted in `summoner.ranks`. `SummonerLeaderboard.position` continues to mean the position in the requested filtered/page leaderboard.
 
@@ -26,7 +26,7 @@ Records are returned directly from Mongo sorted by their actual `value`, descend
 
 ## Operations
 
-After changing the competitive projection, including adding `score`, run `!test regenerate competitive` before serving contextual rankings. Run `!test regenerate aggregates` separately for leaderboard aggregates. A member-encoding change requires explicit removal of affected Redis indexes; ordinary startup never clears them. A resident key skips both job submission and its Mongo scan. Redis loss rebuilds missing indexes on startup or demand.
+After changing the competitive projection, including adding `score`, run `!test regenerate competitive` before serving contextual rankings. Run `!test regenerate aggregates [type]` separately for count/distribution snapshots. It submits one background Compute/MONGO child per selected aggregate family; the parent releases its worker and Registry owns descendant completion. A member-encoding change requires explicit removal of affected Redis indexes; ordinary startup never clears them. A resident key skips both job submission and its Mongo scan. Redis loss rebuilds missing indexes on startup or demand.
 
 `LeaderboardService.indexStatus()` provides resident segment counts, per-key cardinality, `MEMORY USAGE`, TTL and in-progress build state. It contains no player-level logging and does not clean up Redis as a side effect.
 
@@ -38,3 +38,11 @@ After changing the competitive projection, including adding `score`, run `!test 
 - Equal-MMR leaderboard rows use the ranked `wins - losses` score consistently in Mongo page order and Redis absolute positions. Cached leaderboard pages keep their existing TTL and may remain stale until expiration.
 - Contextual positions are refreshed even on page-cache hits, so lazy divisions such as Iron can build missing indexes and expose positions once ready without rebuilding the page payload.
 - The contextual index supports a later `rank + range` API without changing its key shape.
+
+## Amendment 2026-10-22: shared snapshots
+
+The owner-approved [aggregate snapshot contract](../../mongo/16-aggregates.md)
+replaces leaderboard-specific snapshot persistence. Mongo `aggregates` contains
+one document per cached count/distribution key, never player positions or ZSETs.
+No new automatic counter hooks are introduced. Existing incremental division
+updates and record count invalidations synchronize Mongo before Redis.

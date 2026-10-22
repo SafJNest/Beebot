@@ -15,6 +15,8 @@ operational steps live in the [developer handbook](../HANDBOOK.md).
   `!test export-match-search` rebuilds it from Mongo. LoL no longer accesses
   MariaDB, including historical migrations.
 - Spring owns HTTP controllers, configuration and error representations.
+- `AggregateService` owns indicative count/distribution snapshots in Mongo
+  `aggregates` and their Redis caches; see [aggregate snapshots](../mongo/16-aggregates.md).
 - Redis stores disposable caches and derived indexes.
 
 The current scheduler contract is [ADR-0014](adr/0014-global-job-scheduler.md).

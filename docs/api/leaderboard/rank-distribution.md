@@ -26,7 +26,9 @@ curl --get 'http://localhost:8080/api/lol/leaderboard/rank-distribution' \
 present when the combination was seeded by the rebuild.
 
 The HTTP payload does not change; internally the result may be read from the
-Mongo snapshot `leaderboard_aggregates` or regenerated from `competitive`.
+Mongo snapshot `aggregates` or calculated from `competitive` if absent. Redis
+expiry reloads the durable snapshot without recalculation; explicit regeneration
+replaces both stores.
 
 ```json
 {
@@ -58,3 +60,5 @@ Mongo snapshot `leaderboard_aggregates` or regenerated from `competitive`.
 - Controller: [`LeaderboardController`](../../../src/main/java/com/safjnest/spring/controller/LeaderboardController.java)
 - Service: [`LeaderboardService`](../../../src/main/java/com/safjnest/lol/service/LeaderboardService.java)
 - Success model: [`LeaderboardDistribution`](../../../src/main/java/com/safjnest/lol/model/leaderboard/LeaderboardDistribution.java)
+
+Persistence, explicit rebuilds and deployment steps: [aggregate snapshots](../../mongo/16-aggregates.md).

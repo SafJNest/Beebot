@@ -64,9 +64,10 @@ position for the requested rank/region/role/OTP filters and pagination.
 Internally the page reads `competitive` for MMR-range/role/OTP filtering, sorting and
 pagination of PUUIDs. Rows sort by MMR descending, then ranked win/loss `score`
 descending; then it reads only the summoners of the page with an `$in`
-on `_id`. `total` is resolved from Redis, then (without role) from
-`leaderboard_aggregates`, then with `countDocuments()` on `competitive`.
-A `role` or `otp` filter uses the count on the projection directly.
+on `_id`. `total` is resolved from Redis, then from `aggregates`, then with
+`countDocuments()` on `competitive` only when the durable snapshot is missing.
+Role and OTP filters have their own snapshots under the same flow. Redis expiry
+reloads the stored snapshot; it does not refresh it.
 Leaderboard page cache entries retain their existing one-day TTL and are not
 invalidated when a competitive entry changes.
 Cached pages still resolve contextual rankings from Redis on every request,
@@ -95,3 +96,5 @@ the existing metadata fields with its effective filter and computed pagination.
 (null when the lookup covers all regions). The tier is inferred from the
 summoner's rank in that queue, while ignored `rank`, `role`, `otp` and `page`
 parameters are not reflected in the filter.
+
+Persistence, explicit rebuilds and deployment steps: [aggregate snapshots](../../mongo/16-aggregates.md).

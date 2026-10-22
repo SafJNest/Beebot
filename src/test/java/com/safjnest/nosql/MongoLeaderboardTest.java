@@ -103,12 +103,15 @@ public class MongoLeaderboardTest {
     }
 
     @Test
-    public void aggregateKeysKeepDistributionAndTopRegionsScopesSeparate() {
-        assertEquals(
-                "rank-distribution:RANKED_SOLO_5X5:EUW1",
-                MongoDB.rankDistributionAggregateKey(GameQueueType.RANKED_SOLO_5X5, LeagueShard.EUW1.name()));
-        assertEquals(
-                "top-regions:RANKED_FLEX_SR:MASTER",
-                MongoDB.topRegionsAggregateKey(GameQueueType.RANKED_FLEX_SR, TierType.MASTER));
+    public void aggregateKeysUseFullRedisIdentitiesAndKeepScopesSeparate() {
+        String distribution = new com.safjnest.lol.service.AggregateService.Scope(
+            com.safjnest.redis.RedisKey.LEADERBOARD_RANK_DISTRIBUTION,
+            java.util.List.of(GameQueueType.RANKED_SOLO_5X5.name(), LeagueShard.EUW1.name())).id();
+        String regions = new com.safjnest.lol.service.AggregateService.Scope(
+            com.safjnest.redis.RedisKey.LEADERBOARD_TOP_REGIONS,
+            java.util.List.of(GameQueueType.RANKED_FLEX_SR.name(), TierType.MASTER.name())).id();
+        assertTrue(distribution.endsWith(":los:leaderboard:rank-distribution:RANKED_SOLO_5X5:EUW1"));
+        assertTrue(regions.endsWith(":los:leaderboard:top-regions:RANKED_FLEX_SR:MASTER"));
+        assertFalse(distribution.equals(regions));
     }
 }

@@ -30,6 +30,9 @@ numeric ZSET score. The identity suffix only keeps Redis members unique; exact
 MMR-and-score ties have no added Mongo ordering criterion. The global and regional exact-rank count
 hashes use one aggregation per queue, grouping region/MMR in Mongo and mapping
 only grouped values to canonical divisions in Java, including global totals.
+Complete maps are persisted in `aggregates` before Redis. Missing hashes first
+restore the durable snapshot; source grouping occurs only when that is missing.
+Existing incremental updates change Mongo before publishing the Redis hash.
 The segment registry and access hash are Redis-only observability metadata.
 
 `GET /api/lol/leaderboard?summoner=...` uses the requested queue rank to
@@ -69,9 +72,11 @@ db.competitive.createIndex(
 
 Record queries read ordered `value` rows directly from Mongo. Their indexes and
 obsolete Redis key cleanup are documented in [profile record indexes](12-profile-record-indexes.md).
-Records retain only the 60-second total-count cache, with no ranking ZSETs or jobs.
+Records retain only the 60-second total-count cache backed by `aggregates`, with no ranking ZSETs or player ranking jobs. Snapshot regeneration uses the separate `record-counts` job.
 Startup preserves resident leaderboard keys and queues only missing Master+
 segments and counts. Lazy leaderboard segments build only when absent.
 
 Run `!test ranking` to print leaderboard index status: resident segment count,
 cardinality, Redis `MEMORY USAGE`, idle TTL, last access and in-progress state.
+
+Persistence, explicit rebuilds and deployment steps: [aggregate snapshots](16-aggregates.md).

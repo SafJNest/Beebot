@@ -223,3 +223,20 @@ Numeric fields of public models remain compatible with the historical model, but
 ## Gate
 
 This ADR is approved for Java implementation. Any conflict with existing LoL ADRs must be reported and not implicitly resolved by the macro-task. The old `summoner.metrics` and legacy custom builds remain out of the current target.
+
+## Amendment 2026-10-22: shared aggregate snapshots
+
+At the owner's explicit request, the historical `leaderboard_aggregates`
+collection and timed snapshot rebuild policy above are superseded by
+[the shared `aggregates` contract](../../mongo/16-aggregates.md). Each document
+uses the full Redis key as `_id`, the RedisKey name as `type`, ordered string
+`arguments`, structured BSON `value`, and `updatedAt`. Redis -> Mongo snapshot
+-> source calculation is the sole count/distribution read path. Snapshots do
+not expire; explicit per-type jobs regenerate them and existing invalidation
+or increment paths update both stores. Runtime reads no legacy schema or
+collection. The operator owns conversion and cache alignment at deployment.
+
+This internal persistence change preserves API models, paths and presentation.
+Facets, exact page-locator counts, player indexes, statistics and builds retain
+their existing ownership and collections. No secondary indexes are created at
+runtime; `_id_` and operator-managed `aggregates_type` cover snapshot access.

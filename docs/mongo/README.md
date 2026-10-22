@@ -19,6 +19,9 @@ derived-index store.
   rebuild and operational index are documented in the
   [projection contract](15-match-facets-projection.md).
 
+- `aggregates` stores indicative count/distribution snapshots keyed 1:1 with Redis;
+  see [aggregate snapshots](16-aggregates.md).
+
 ## Migration and maintenance
 
 Owner-only migration and regeneration commands are implemented in
@@ -29,6 +32,8 @@ Owner-only migration and regeneration commands are implemented in
 - `!test export-match-search` — rebuild `match_facets` from canonical matches.
 - `!test regenerate profiles`, `records`, `champions` or `indexables` — rebuild
   the selected derived data.
+- `!test regenerate aggregates [type]` — queue separate count/distribution jobs;
+  omit the type to rebuild all six aggregate families.
 - `!test fix-timeline <puuid>` or `!test fix-timeline-patch <patch>` — restore
   missing timeline events from Riot.
 

@@ -50,6 +50,12 @@ requests.
 `GET /api/status` read returns the latest in-memory snapshot; it does not
 recompute metrics on demand.
 
+League totals use the shared [aggregate snapshots](../mongo/16-aggregates.md)
+flow: Redis, then durable Mongo `aggregates`, then calculation only if missing.
+Redis expiry reloads Mongo; explicit `!test regenerate aggregates metrics`
+recalculates the five snapshots. Calculation failures preserve the previous
+sample instead of persisting a false zero. The HTTP payload remains unchanged.
+
 ## Mongo metrics
 
 ### Operations (`mongo.operations`)

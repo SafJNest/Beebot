@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,7 +21,6 @@ import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -64,11 +64,8 @@ public final class ProfileRecordService {
         List<ProfileRecord> records = MongoDB.findGlobalProfileRecords(filter, metric, region, championId, limit, offset);
         enrich(records);
         Object[] countScope = { filter.toSummonerKey(), metric.name(), LeagueShardUtils.leaderboardScope(region), championId == null ? "all" : championId };
-        Long total = RedisClient.getLong(RedisKey.RECORD_COUNT.of(countScope));
-        if (total == null) {
-            total = MongoDB.countGlobalProfileRecords(filter, metric, region, championId);
-            RedisClient.setCached(RedisKey.RECORD_COUNT, total.toString(), countScope);
-        }
+        long total = AggregateService.get(RedisKey.RECORD_COUNT, Long.class,
+            () -> MongoDB.countGlobalProfileRecords(filter, metric, region, championId), countScope);
         long lastUpdate = lastUpdate(records);
         ResponseMetadata.Pagination pagination = new ResponseMetadata.Pagination(
             null, null, limit, offset, total, null, offset + records.size() < total);
@@ -110,6 +107,24 @@ public final class ProfileRecordService {
                 if (updateMasteries(summoner.puuid(), shard, summoner.masteries())) refreshed[0]++;
         });
         return refreshed[0];
+    }
+
+    public static Map<List<String>, Long> calculateCounts() {
+        Map<List<String>, Long> counts = new LinkedHashMap<>();
+        MongoDB.forEachRecordCount(row -> {
+            org.bson.Document scope = row.get("_id", org.bson.Document.class);
+            String filterKey = scope.getString("filterKey");
+            RecordMetric metric = RecordMetric.valueOf(scope.getString("metric"));
+            String region = scope.getString("region");
+            long count = ((Number) row.get("count")).longValue();
+            List<String> regions = region == null ? List.of(LeagueShardUtils.leaderboardScope(null))
+                : List.of(LeagueShardUtils.leaderboardScope(null), region);
+            List<String> champions = metric.championScoped() && scope.get("championId") instanceof Number champion && champion.intValue() > 0
+                ? List.of("all", Integer.toString(champion.intValue())) : List.of("all");
+            for (String selectedRegion : regions) for (String champion : champions)
+                counts.merge(List.of(filterKey, metric.name(), selectedRegion, champion), count, Long::sum);
+        });
+        return counts;
     }
 
     // ============================================================================
@@ -160,6 +175,6 @@ public final class ProfileRecordService {
         }
         List<String> keys = new ArrayList<>();
         for (var entry : changes.entrySet()) if (entry.getValue() != 0) keys.add(entry.getKey());
-        CacheInvalidationService.clearRedis(keys);
+        AggregateService.invalidate(keys);
     }
 }

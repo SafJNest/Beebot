@@ -9,7 +9,7 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
 | leaderboard | Normal page: `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id`. Summoner page: exact identity lookup, Redis exact-division rank/range when resident; otherwise indexed count-before plus bounded seek queries around the target tuple, then one `$in` on `summoner._id`. Both use the existing total-count path. | Normal: 2 per page + count on cache miss. Summoner: identity + anchor + rank/page reads + count + summoner fetch. | LeaderboardService |
 | contextual leaderboard ranking | Only if Redis key is absent: projected `competitive {queue,mmr range,region}` cursor, no sort, then temporary ZSET and atomic publish; count hashes use one region/MMR aggregation per queue | Mongo 5,000 / Redis 1,000 | LeaderboardService |
-| records | Direct `profile_records {filterKey,metric,region,championId?}` query sorted by `value` and limited to the page, then one batched summoner lookup; total uses Redis with a 60-second TTL and Mongo count on a miss | 2 + count on cache miss | ProfileRecordService |
+| records | Direct `profile_records {filterKey,metric,region,championId?}` query sorted by `value` and limited to the page, then one batched summoner lookup; total uses Redis (60s), then durable `aggregates`, then a source count only when absent from both | 2 + count on cache miss | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | profile matchup rebuild | cursor over bounded match batches plus one `$in` join on `match_events`; process and recursively clear each decoded timeline | 1 batch of 100 | ProfileService |
 | champion stats matrix rebuild | exact count plus cursor over match IDs, then bounded match and `match_events` reads; logs planned/completed batches; delivers missing-event matches and leaves eligibility to stats/build consumers | 1 batch of 10,000; 1 match query + 1 `match_events` query per batch | ChampionAnalyzer |
@@ -24,7 +24,8 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | patch timeline repair | one cursor per region over `match.patchMajor + region`, project only `_id`, fetch timelines in parallel across regions with a 500 ms delay per region, log `current/total`, regenerate compact events and replace only its `match_events` record; continue through missing timelines | streaming per region | `!test fix-timeline-patch <patch>` |
 | match events | `_id: {$in: [...]}` on `match_events` | 1 per batch; 100 profile matchups/standalone builds or 10,000 champion matrix matches | match detail/history and aggregate rebuilds |
 | champion | cursor of match IDs, then match/event documents joined in bounded batches; process and recursively clear each timeline; raw batch without full `Match -> Participant` | 2 per batch (+ count/trend) | Champion services |
-| leaderboard aggregates | Mongo snapshot `leaderboard_aggregates` per filter; rebuild every 12 hours and `$match` + `$group` on `summoner.ranks.<QUEUE>` path for new filters | 1 | LeaderboardService |
+| indicative count/distribution snapshots | Redis -> durable `aggregates` by `_id` -> source query only if absent; explicit rebuild jobs query `{type: {$in: [...]}}`; no snapshot expiry | 1 snapshot lookup on Redis miss | AggregateService + owning services |
+| global metrics | same snapshot flow for game/summoner/mastery/tracked totals and ranks per queue; source errors retain previous sampled values | no source query while snapshot exists | LeagueMetricsStore |
 | writes | atomic updates, participant pipeline, unordered bulk for builds/statistics/summoners; unique `{puuid, filterKey}` | 1 per update/batch | MongoDB/tracker |
 
 ## Projections and filters
@@ -92,8 +93,10 @@ db.summoner.createIndex(
 
 `match` index consolidation steps and exact key patterns are in
 [`14-match-index-consolidation.md`](14-match-index-consolidation.md).
-`match_events`, `leaderboard_aggregates`, `migration_runs`, `champion` and
-direct match/summoner lookups remain covered by `_id`. No indexes are created
+`match_events`, `aggregates`, `migration_runs`, `champion` and
+direct match/summoner lookups remain covered by `_id`. Aggregate regeneration
+additionally uses the operator-managed `{type: 1}` index documented in
+[aggregate snapshots](16-aggregates.md). No indexes are created
 on `masteries`, participant metrics, or every possible `Filter` combination;
 `opponent` and `duo` remain relational filters applied in Java.
 
@@ -198,3 +201,5 @@ refreshes, but readers do not require legacy-field absence or all eight subteam
 ID counters and placement buckets. There are no version fields or version-based
 cache guards. Other queues, jobs
 and Discord presentation remain unchanged. No live rebuild/explain is claimed.
+
+Persistence, explicit rebuilds and deployment steps: [aggregate snapshots](16-aggregates.md).

@@ -8,9 +8,8 @@ import java.util.function.LongSupplier;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.model.status.LeagueMetrics;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
+import com.safjnest.lol.service.AggregateService;
 import com.safjnest.redis.RedisKey;
-import com.safjnest.utils.JsonCodec;
 
 public final class LeagueMetricsStore {
 
@@ -43,11 +42,22 @@ public final class LeagueMetricsStore {
         );
     }
 
-    // ============================================================================
+    public static Object calculate(RedisKey key) {
+        return switch (key) {
+            case STATUS_GAMES_ANALYZED -> MongoDB.estimatedMatchCount();
+            case STATUS_TOTAL_SUMMONERS -> MongoDB.estimatedSummonerCount();
+            case STATUS_TOTAL_MASTERIES -> MongoDB.totalMasteriesCount();
+            case STATUS_TRACKED_SUMMONERS -> trackedSummonerSource();
+            case STATUS_RANKS_BY_QUEUE -> MongoDB.rankTotalsByQueue();
+            default -> throw new IllegalArgumentException("Unsupported metric aggregate: " + key);
+        };
+    }
 
     public static long trackedSummoners() {
         return TRACKED_SUMMONERS.get();
     }
+
+    // ============================================================================
 
     private static long trackedSummonerSource() {
         return MongoDB.findTrackedSummonerModels().size();
@@ -55,30 +65,17 @@ public final class LeagueMetricsStore {
 
     private static void refreshLong(RedisKey key, AtomicLong target, LongSupplier source) {
         try {
-            String redisKey = key.of();
-            Long cached = RedisClient.getLong(redisKey);
-            if (cached != null) {
-                target.set(Math.max(0, cached));
-                return;
-            }
-            long value = Math.max(0, source.getAsLong());
+            long value = AggregateService.get(key, Long.class, () -> Math.max(0, source.getAsLong()));
             target.set(value);
-            RedisClient.setCached(key, Long.toString(value));
         } catch (Exception ignored) {
         }
     }
 
     private static void refreshRanksByQueue() {
         try {
-            String redisKey = RedisKey.STATUS_RANKS_BY_QUEUE.of();
-            Map<String, Long> cached = RedisClient.get(redisKey, new TypeReference<Map<String, Long>>() {});
-            if (cached != null) {
-                RANKS_BY_QUEUE.set(cached);
-                return;
-            }
-            Map<String, Long> value = MongoDB.rankTotalsByQueue();
+            Map<String, Long> value = AggregateService.get(RedisKey.STATUS_RANKS_BY_QUEUE,
+                new TypeReference<Map<String, Long>>() {}, MongoDB::rankTotalsByQueue);
             RANKS_BY_QUEUE.set(value);
-            RedisClient.setCached(RedisKey.STATUS_RANKS_BY_QUEUE, JsonCodec.toJson(value));
         } catch (Exception ignored) {
         }
     }

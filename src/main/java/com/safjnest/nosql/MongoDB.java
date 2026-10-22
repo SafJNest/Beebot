@@ -133,12 +133,8 @@ public final class MongoDB {
             "participants.item4", "participants.item5", "participants.item6", "participants.skillOrder",
             "participants.augments", "participants.summonerSpell1", "participants.summonerSpell2",
             "participants.primaryRunes", "participants.secondaryRunes", "participants.statsRunes");
-    private static final String LEADERBOARD_AGGREGATES_COLLECTION = "leaderboard_aggregates";
+    private static final String AGGREGATES_COLLECTION = "aggregates";
     private static final String COMPETITIVE_COLLECTION = "competitive";
-    private static final String PAGE_COUNT_AGGREGATE = "page-count";
-    private static final String DIVISION_COUNT_AGGREGATE = "division-count";
-    private static final String RANK_DISTRIBUTION_AGGREGATE = "rank-distribution";
-    private static final String TOP_REGIONS_AGGREGATE = "top-regions";
     private static final String CHAMPION_INDEXABLES_COLLECTION = "champions_indexable";
     private static final String PROFILE_INDEXABLES_COLLECTION = "profiles_indexable";
     private static final String PROFILE_RECORDS_COLLECTION = "profile_records";
@@ -146,9 +142,6 @@ public final class MongoDB {
             TierDivisionType.MASTER_I.name(),
             TierDivisionType.GRANDMASTER_I.name(),
             TierDivisionType.CHALLENGER_I.name());
-    private static final List<GameQueueType> LEADERBOARD_QUEUES = List.of(
-            GameQueueType.RANKED_SOLO_5X5,
-            GameQueueType.RANKED_FLEX_SR);
     private static final List<String> AI_TRAINING_QUEUES = List.of(
             GameQueueType.RANKED_SOLO_5X5.name(),
             GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(),
@@ -159,7 +152,7 @@ public final class MongoDB {
             GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5.name());
     private static final List<String> COLLECTION_NAMES = List.of(
             "summoner", "match", "match_events", MATCH_FACETS_COLLECTION, "profile_statistics", "champion",
-            "champion_builds", "champion_stats", "profile_activity", "profile_matchups", PROFILE_RECORDS_COLLECTION, LEADERBOARD_AGGREGATES_COLLECTION,
+            "champion_builds", "champion_stats", "profile_activity", "profile_matchups", PROFILE_RECORDS_COLLECTION, AGGREGATES_COLLECTION,
             COMPETITIVE_COLLECTION,
             CHAMPION_INDEXABLES_COLLECTION, PROFILE_INDEXABLES_COLLECTION, "migration_runs");
     private static void ensureCollections(MongoDatabase database) {
@@ -952,8 +945,8 @@ public final class MongoDB {
         return database().getCollection("summoner");
     }
 
-    private static MongoCollection<Document> leaderboardAggregates() {
-        return database().getCollection(LEADERBOARD_AGGREGATES_COLLECTION);
+    private static MongoCollection<Document> aggregates() {
+        return database().getCollection(AGGREGATES_COLLECTION);
     }
 
     private static MongoCollection<Document> competitive() {
@@ -2289,49 +2282,11 @@ public final class MongoDB {
         return result;
     }
 
-    public static Long findLeaderboardAggregateCount(TierType rank, GameQueueType queue, String region) {
-        if (rank != null) {
-            List<LeaderboardDistribution.Entry> distribution = readLeaderboardAggregate(
-                    rankDistributionAggregateKey(queue, region), RANK_DISTRIBUTION_AGGREGATE);
-            if (distribution != null) for (LeaderboardDistribution.Entry entry : distribution)
-                if (rank.name().equals(entry.key())) return entry.players();
-        }
-        String aggregateKey = leaderboardCountAggregateKey(queue, region, rank);
-        Document aggregate = leaderboardAggregates().find(Filters.and(
-                Filters.eq("_id", aggregateKey),
-                Filters.eq("type", PAGE_COUNT_AGGREGATE),
-                Filters.eq("source", COMPETITIVE_COLLECTION))).first();
-        if (aggregate == null || !aggregate.containsKey("count")) return null;
-        return number(aggregate, "count");
-    }
-
-    public static long findLeaderboardCount(TierType rank, GameQueueType queue, String region) {
-        return findLeaderboardCount(rank, queue, region, null);
-    }
-
-    public static long findLeaderboardCount(TierType rank, GameQueueType queue, String region, LaneType role) {
-        return findLeaderboardCount(rank, queue, region, role, null);
-    }
-
-    public static long findLeaderboardCount(
-        TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId
-    ) {
-        if (role != null || otpChampionId != null)
-            return competitive().countDocuments(competitiveFilter(rank, queue, region, role, otpChampionId));
-        Long stored = findLeaderboardAggregateCount(rank, queue, region);
-        if (stored != null) return stored;
-
-        long total = competitive().countDocuments(competitiveFilter(rank, queue, region, null));
-        storeLeaderboardCount(queue, region, rank, total);
-        return total;
+    public static long findLeaderboardCount(TierType rank, GameQueueType queue, String region, LaneType role, Integer otpChampionId) {
+        return competitive().countDocuments(competitiveFilter(rank, queue, region, role, otpChampionId));
     }
 
     public static List<LeaderboardDistribution.Entry> findRankDistribution(GameQueueType queue, String region) {
-        String aggregateKey = rankDistributionAggregateKey(queue, region);
-        List<LeaderboardDistribution.Entry> stored = readLeaderboardAggregate(
-                aggregateKey, RANK_DISTRIBUTION_AGGREGATE);
-        if (stored != null) return stored;
-
         Map<String, Long> counts = new LinkedHashMap<>();
         for (Document entry : competitive().aggregate(List.of(
                 Aggregates.match(competitiveFilter(null, queue, region, null)), Aggregates.group("$mmr", Accumulators.sum("players", 1)))))
@@ -2341,16 +2296,10 @@ public final class MongoDB {
             if (tier != TierType.UNRANKED) result.add(new LeaderboardDistribution.Entry(
                     tier.name(), counts.getOrDefault(tier.name(), 0L)));
         }
-        storeLeaderboardAggregate(aggregateKey, RANK_DISTRIBUTION_AGGREGATE, queue, region, null, result);
         return result;
     }
 
     public static List<LeaderboardDistribution.Entry> findTopRegions(GameQueueType queue, TierType rank) {
-        String aggregateKey = topRegionsAggregateKey(queue, rank);
-        List<LeaderboardDistribution.Entry> stored = readLeaderboardAggregate(
-                aggregateKey, TOP_REGIONS_AGGREGATE);
-        if (stored != null) return stored;
-
         Map<String, Long> counts = new LinkedHashMap<>();
         for (Document entry : competitive().aggregate(List.of(
                 Aggregates.match(competitiveFilter(rank, queue, LeagueConstants.GLOBAL_REGION, null)),
@@ -2366,195 +2315,46 @@ public final class MongoDB {
             int players = Long.compare(second.players(), first.players());
             return players != 0 ? players : first.key().compareTo(second.key());
         });
-        storeLeaderboardAggregate(aggregateKey, TOP_REGIONS_AGGREGATE, queue, LeagueConstants.GLOBAL_REGION, rank, result);
         return result;
     }
 
-    static String rankDistributionAggregateKey(GameQueueType queue, String region) {
-        return RANK_DISTRIBUTION_AGGREGATE + ":" + queueName(queue) + ":" + regionName(region);
+    public static Document findAggregate(String id) {
+        return aggregates().find(Filters.eq("_id", id)).first();
     }
 
-    static String topRegionsAggregateKey(GameQueueType queue, TierType rank) {
-        return TOP_REGIONS_AGGREGATE + ":" + queueName(queue) + ":" + (rank == null ? LeagueConstants.ALL : rank.name());
+    public static List<Document> findAggregateScopes(List<String> types) {
+        return aggregates().find(Filters.in("type", types))
+                .projection(Projections.include("type", "arguments"))
+                .batchSize(EXISTS_QUERY_BATCH_SIZE).into(new ArrayList<>());
     }
 
-    static String leaderboardCountAggregateKey(GameQueueType queue, String region, TierType rank) {
-        return PAGE_COUNT_AGGREGATE + ":" + queueName(queue) + ":" + regionName(region)
-                + ":" + (rank == null ? LeagueConstants.ALL : rank.name());
+    public static void storeAggregate(String id, String type, List<String> arguments, Object value) {
+        Document aggregate = JsonCodec.toDocument(Map.of("value", value));
+        aggregate.append("_id", id).append("type", type).append("arguments", arguments)
+                .append("updatedAt", System.currentTimeMillis());
+        if (!aggregates().replaceOne(Filters.eq("_id", id), aggregate, new ReplaceOptions().upsert(true)).wasAcknowledged())
+            throw new IllegalStateException("Mongo aggregate write was not acknowledged");
     }
 
-    private static List<LeaderboardDistribution.Entry> readLeaderboardAggregate(
-            String aggregateKey, String type) {
-        Document aggregate = leaderboardAggregates().find(Filters.and(
-                Filters.eq("_id", aggregateKey),
-                Filters.eq("type", type),
-                Filters.eq("source", COMPETITIVE_COLLECTION))).first();
-        if (aggregate == null) return null;
+    public static Document incrementAggregateHash(String id, String field, long delta) {
+        return aggregates().findOneAndUpdate(Filters.and(Filters.eq("_id", id), Filters.exists("value." + field)),
+                Updates.combine(Updates.inc("value." + field, delta), Updates.set("updatedAt", System.currentTimeMillis())),
+                new com.mongodb.client.model.FindOneAndUpdateOptions()
+                        .returnDocument(com.mongodb.client.model.ReturnDocument.AFTER));
+    }
 
-        Object value = aggregate.get("entries");
-        if (!(value instanceof List<?> values)) return null;
-        List<LeaderboardDistribution.Entry> result = new ArrayList<>(values.size());
-        for (Object item : values) {
-            if (!(item instanceof Document entry)) return null;
-            String key = entry.getString("key");
-            if (key == null) return null;
-            result.add(new LeaderboardDistribution.Entry(key, number(entry, "players")));
+    public static void deleteAggregate(String id) {
+        if (!aggregates().deleteOne(Filters.eq("_id", id)).wasAcknowledged())
+            throw new IllegalStateException("Mongo aggregate deletion was not acknowledged");
+    }
+
+    public static void forEachRecordCount(Consumer<Document> consumer) {
+        Bson group = Aggregates.group(new Document("filterKey", "$filterKey").append("metric", "$metric")
+                .append("region", "$region").append("championId", "$championId"), Accumulators.sum("count", 1));
+        try (MongoCursor<Document> cursor = profileRecords().aggregate(List.of(group))
+                .batchSize(EXISTS_QUERY_BATCH_SIZE).iterator()) {
+            while (cursor.hasNext()) consumer.accept(cursor.next());
         }
-        return result;
-    }
-
-    public static void rebuildLeaderboardAggregates() {
-        List<Document> scopes = leaderboardAggregates().find()
-                .projection(Projections.include("type", "queue", "region", "rank"))
-                .into(new ArrayList<>());
-        for (Document scope : scopes) {
-            GameQueueType queue = queue(scope.getString("queue"));
-            String type = scope.getString("type");
-            if (RANK_DISTRIBUTION_AGGREGATE.equals(type)) {
-                findRankDistribution(queue, scope.getString("region"));
-            } else if (TOP_REGIONS_AGGREGATE.equals(type) && scope.getString("rank") != null) {
-                findTopRegions(queue, TierType.valueOf(scope.getString("rank")));
-            } else if (PAGE_COUNT_AGGREGATE.equals(type)) {
-                findLeaderboardCount(tier(scope.getString("rank")), queue, scope.getString("region"));
-            } else if (DIVISION_COUNT_AGGREGATE.equals(type)) {
-                String divisionName = scope.getString("rank");
-                TierDivisionType division = divisionName == null || LeagueConstants.ALL.equals(divisionName) ? null : TierDivisionType.valueOf(divisionName);
-                findDivisionCount(division, queue, scope.getString("region"));
-            }
-        }
-    }
-
-    public static LeaderboardAggregateRebuild rebuildAllLeaderboardAggregates() {
-        int rankDistributions = 0;
-        int counts = 0;
-        int topRegions = 0;
-        int divisionCounts = 0;
-
-        for (GameQueueType queue : LEADERBOARD_QUEUES) {
-            for (String region : leaderboardRegions()) {
-                findRankDistribution(queue, region);
-                rankDistributions++;
-                findLeaderboardCount(null, queue, region);
-                counts++;
-                for (TierDivisionType division : TierDivisionType.values()) {
-                    if (division == TierDivisionType.UNRANKED) continue;
-                    findDivisionCount(division, queue, region);
-                    divisionCounts++;
-                }
-            }
-            for (TierType rank : TierType.values()) {
-                findTopRegions(queue, rank);
-                topRegions++;
-            }
-        }
-        return new LeaderboardAggregateRebuild(rankDistributions, counts, topRegions, divisionCounts);
-    }
-
-    public record LeaderboardAggregateRebuild(int rankDistributions, int counts, int topRegions, int divisionCounts) {
-
-        public LeaderboardAggregateRebuild(int rankDistributions, int counts, int topRegions) {
-            this(rankDistributions, counts, topRegions, 0);
-        }
-
-        public int total() {
-            return rankDistributions + counts + topRegions + divisionCounts;
-        }
-    }
-
-    private static void storeLeaderboardAggregate(
-            String aggregateKey,
-            String type,
-            GameQueueType queue,
-            String region,
-            TierType rank,
-            List<LeaderboardDistribution.Entry> entries) {
-        List<Document> values = new ArrayList<>(entries.size());
-        for (LeaderboardDistribution.Entry entry : entries) {
-            values.add(new Document("key", entry.key()).append("players", entry.players()));
-        }
-        Document aggregate = new Document("_id", aggregateKey)
-                .append("type", type)
-                .append("source", COMPETITIVE_COLLECTION)
-                .append("queue", queueName(queue))
-                .append("entries", values);
-        if (region != null) aggregate.append("region", region);
-        if (rank != null) aggregate.append("rank", rank.name());
-
-        UpdateResult update = leaderboardAggregates().replaceOne(
-                Filters.eq("_id", aggregateKey), aggregate, new ReplaceOptions().upsert(true));
-        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo leaderboard aggregate write was not acknowledged");
-    }
-
-    private static void storeLeaderboardCount(GameQueueType queue, String region, TierType rank, long count) {
-        String aggregateKey = leaderboardCountAggregateKey(queue, region, rank);
-        Document aggregate = new Document("_id", aggregateKey)
-                .append("type", PAGE_COUNT_AGGREGATE)
-                .append("source", COMPETITIVE_COLLECTION)
-                .append("queue", queueName(queue))
-                .append("region", regionName(region))
-                .append("rank", rank == null ? LeagueConstants.ALL : rank.name())
-                .append("count", count);
-        UpdateResult update = leaderboardAggregates().replaceOne(
-                Filters.eq("_id", aggregateKey), aggregate, new ReplaceOptions().upsert(true));
-        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo leaderboard count write was not acknowledged");
-    }
-
-    public static Long findDivisionAggregateCount(TierDivisionType division, GameQueueType queue, String region) {
-        String aggregateKey = divisionCountAggregateKey(queue, region, division);
-        Document aggregate = leaderboardAggregates().find(Filters.and(
-                Filters.eq("_id", aggregateKey),
-                Filters.eq("type", DIVISION_COUNT_AGGREGATE),
-                Filters.eq("source", COMPETITIVE_COLLECTION))).first();
-        if (aggregate == null || !aggregate.containsKey("count")) return null;
-        return number(aggregate, "count");
-    }
-
-    public static long findDivisionCount(TierDivisionType division, GameQueueType queue, String region) {
-        Long stored = findDivisionAggregateCount(division, queue, region);
-        if (stored != null) return stored;
-        long total = competitive().countDocuments(competitiveFilter(division, queue, region));
-        storeDivisionCount(queue, region, division, total);
-        return total;
-    }
-
-    private static void storeDivisionCount(GameQueueType queue, String region, TierDivisionType division, long count) {
-        String aggregateKey = divisionCountAggregateKey(queue, region, division);
-        Document aggregate = new Document("_id", aggregateKey)
-                .append("type", DIVISION_COUNT_AGGREGATE)
-                .append("source", COMPETITIVE_COLLECTION)
-                .append("queue", queueName(queue))
-                .append("region", regionName(region))
-                .append("rank", division == null ? LeagueConstants.ALL : division.name())
-                .append("count", count);
-        UpdateResult update = leaderboardAggregates().replaceOne(
-                Filters.eq("_id", aggregateKey), aggregate, new ReplaceOptions().upsert(true));
-        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo leaderboard division count write was not acknowledged");
-    }
-
-    private static String divisionCountAggregateKey(GameQueueType queue, String region, TierDivisionType division) {
-        return DIVISION_COUNT_AGGREGATE + ":" + queueName(queue) + ":" + regionName(region) + ":" + (division == null ? LeagueConstants.ALL : division.name());
-    }
-
-    private static Bson competitiveFilter(TierDivisionType division, GameQueueType queue, String region) {
-        List<Bson> filters = new ArrayList<>();
-        if (queue != null) filters.add(Filters.eq("queue", queue.name()));
-        if (region != null && !LeagueConstants.GLOBAL_REGION.equals(region)) filters.add(Filters.eq("region", region));
-        if (division != null) {
-            TierDivisionUtils.MmrRange range = TierDivisionUtils.getMmrRange(division);
-            filters.add(Filters.gte("mmr", range.minimum()));
-            if (range.maximum() != null) filters.add(Filters.lt("mmr", range.maximum()));
-        }
-        return filters.isEmpty() ? new Document() : Filters.and(filters);
-    }
-
-    private static void deleteLeaderboardAggregates(Bson filter) {
-        if (!leaderboardAggregates().deleteMany(filter).wasAcknowledged()) {
-            throw new IllegalStateException("Mongo leaderboard aggregate rebuild was not acknowledged");
-        }
-    }
-
-    private static String queueName(GameQueueType queue) {
-        return queue == null ? LeagueConstants.ALL : queue.name();
     }
 
     private static GameQueueType queue(String value) {
@@ -2564,26 +2364,6 @@ public final class MongoDB {
         } catch (IllegalArgumentException ignored) {
             return null;
         }
-    }
-
-    private static TierType tier(String value) {
-        if (value == null || LeagueConstants.ALL.equals(value)) return null;
-        try {
-            return TierType.valueOf(value);
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
-    }
-
-    private static String regionName(String region) {
-        return region == null || region.isBlank() ? LeagueConstants.GLOBAL_REGION : region;
-    }
-
-    private static List<String> leaderboardRegions() {
-        List<String> regions = new ArrayList<>(LeagueShardUtils.getActives().size() + 1);
-        regions.add(LeagueConstants.GLOBAL_REGION);
-        for (LeagueShard shard : LeagueShardUtils.getActives()) regions.add(shard.name());
-        return regions;
     }
 
     private static String rankPath(GameQueueType queue) {
@@ -3978,48 +3758,32 @@ public final class MongoDB {
     }
 
     public static long estimatedMatchCount() {
-        try {
-            return matches().estimatedDocumentCount();
-        } catch (RuntimeException ignored) {
-            return 0;
-        }
+        return matches().estimatedDocumentCount();
     }
 
     public static long estimatedSummonerCount() {
-        try {
-            return summoners().estimatedDocumentCount();
-        } catch (RuntimeException ignored) {
-            return 0;
-        }
+        return summoners().estimatedDocumentCount();
     }
 
     public static long totalMasteriesCount() {
-        try {
-            Document result = summoners().aggregate(List.of(
-                new Document("$project", new Document("count", new Document("$size", new Document("$ifNull", List.of("$masteries", List.of()))))),
-                new Document("$group", new Document("_id", null).append("total", new Document("$sum", "$count")))
-            )).first();
-            return result == null ? 0 : number(result, "total");
-        } catch (RuntimeException ignored) {
-            return 0;
-        }
+        Document result = summoners().aggregate(List.of(
+            new Document("$project", new Document("count", new Document("$size", new Document("$ifNull", List.of("$masteries", List.of()))))),
+            new Document("$group", new Document("_id", null).append("total", new Document("$sum", "$count")))
+        )).first();
+        return result == null ? 0 : number(result, "total");
     }
 
     public static Map<String, Long> rankTotalsByQueue() {
-        try {
-            Map<String, Long> totals = new LinkedHashMap<>();
-            for (Document entry : summoners().aggregate(List.of(
-                new Document("$project", new Document("queues", new Document("$objectToArray", "$ranks"))),
-                new Document("$unwind", "$queues"),
-                new Document("$group", new Document("_id", "$queues.k").append("total", new Document("$sum", 1)))
-            ))) {
-                String queue = entry.getString("_id");
-                if (queue != null && !queue.isBlank()) totals.put(queue, number(entry, "total"));
-            }
-            return totals.isEmpty() ? Map.of() : Map.copyOf(totals);
-        } catch (RuntimeException ignored) {
-            return Map.of();
+        Map<String, Long> totals = new LinkedHashMap<>();
+        for (Document entry : summoners().aggregate(List.of(
+            new Document("$project", new Document("queues", new Document("$objectToArray", "$ranks"))),
+            new Document("$unwind", "$queues"),
+            new Document("$group", new Document("_id", "$queues.k").append("total", new Document("$sum", 1)))
+        ))) {
+            String queue = entry.getString("_id");
+            if (queue != null && !queue.isBlank()) totals.put(queue, number(entry, "total"));
         }
+        return Map.copyOf(totals);
     }
 
     private static MongoCollection<Document> matches() {

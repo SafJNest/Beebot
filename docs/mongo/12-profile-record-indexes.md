@@ -8,7 +8,8 @@ identity index `{puuid: 1, filterKey: 1, metric: 1, championId: 1}`.
 Records store and sort their actual `value`, with `occurredAt ASC, puuid ASC`
 as tie breakers. Highest metrics sort descending; earliest-time metrics sort
 ascending. Record rows have no `score`, global/regional positions, Redis ZSETs
-or ranking jobs. Redis caches only the paginated total for 60 seconds per
+or ranking jobs. Redis caches only the paginated total, backed by durable
+`aggregates`, for 60 seconds per
 filter/metric/region/champion; row-count changes invalidate it.
 
 ## Value indexes
@@ -78,3 +79,5 @@ done
 
 `!test audit mastery-records` remains read-only. `!test regenerate mastery-records`
 rebuilds mastery rows from `summoner.masteries` when a data repair is needed.
+
+Persistence, explicit rebuilds and deployment steps: [aggregate snapshots](16-aggregates.md).

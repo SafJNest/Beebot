@@ -76,14 +76,16 @@ public class RedisClient {
         }
     }
 
-    private static void set(String key, String value, int ttlSeconds) {
-        if (key == null || value == null || !canUseRedis()) return;
+    private static boolean set(String key, String value, int ttlSeconds) {
+        if (key == null || value == null || !canUseRedis()) return false;
         try (Jedis jedis = pool.getResource()) {
             if (ttlSeconds > 0) jedis.setex(key, ttlSeconds, value);
             else jedis.set(key, value);
             markAvailable();
+            return true;
         } catch (Exception ignored) {
             markUnavailable();
+            return false;
         }
     }
 
@@ -140,13 +142,15 @@ public class RedisClient {
         return result;
     }
 
-    public static void delete(String key) {
-        if (!canUseRedis()) return;
+    public static boolean delete(String key) {
+        if (!canUseRedis()) return false;
         try (Jedis jedis = pool.getResource()) {
             jedis.del(key);
             markAvailable();
+            return true;
         } catch (Exception ignored) {
             markUnavailable();
+            return false;
         }
     }
 
@@ -256,9 +260,8 @@ public class RedisClient {
         }
     }
 
-    public static void setCached(RedisKey key, String value, Object... args) {
-        if (key == null) return;
-        set(key.of(args), value, key.ttlSeconds());
+    public static boolean setCached(RedisKey key, String value, Object... args) {
+        return key != null && set(key.of(args), value, key.ttlSeconds());
     }
 
     public static long ttl(String key) {
@@ -498,18 +501,6 @@ public class RedisClient {
         for (var value : values.entrySet()) { args.add(value.getKey()); args.add(value.getValue().toString()); }
         try (Jedis jedis = pool.getResource()) {
             jedis.eval("redis.call('DEL',KEYS[1]); if #ARGV>0 then redis.call('HSET',KEYS[1],unpack(ARGV)) end; return 1", List.of(key), args);
-            markAvailable();
-        } catch (RuntimeException failure) {
-            markUnavailable();
-            throw failure;
-        }
-    }
-
-    public static void incrementHashIfPresent(String key, String field, long amount) {
-        if (key == null || field == null || amount == 0 || !canUseRedis()) return;
-        try (Jedis jedis = pool.getResource()) {
-            jedis.eval("if redis.call('EXISTS',KEYS[1])==1 then return redis.call('HINCRBY',KEYS[1],ARGV[1],ARGV[2]) end; return 0",
-                List.of(key), List.of(field, Long.toString(amount)));
             markAvailable();
         } catch (RuntimeException failure) {
             markUnavailable();
