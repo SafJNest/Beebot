@@ -53,6 +53,13 @@ and job deduplication. See the [profile source of truth](architecture/profile-st
 Cache misses enqueue work through `QueueHandler`; persistence success precedes
 cache updates and invalidation.
 
+Profile GETs return the available summoner view as `PARTIAL` with
+`metadata.refresh=true` while missing rank, mastery or statistics work is queued.
+They return `202` only while Riot ID resolution or the base summoner profile is
+still in progress. When Riot ID resolution completes, base profile loading is
+queued without requiring another request; the request does not wait for component
+or aggregate work.
+
 ## 5. Operational steps
 
 ### 5.1 New Discord command

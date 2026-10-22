@@ -26,8 +26,8 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Tracker timeline analysis uses `R4J_TIMELINE` in Redis so the insert and rank-tracking passes reuse one Riot timeline response. The tracker explicitly deletes this entry in `finally`; its two-minute key TTL is only a fallback if the tracker exits outside its normal cleanup path.
 - The R4J `MATCH` Redis payload expires after the one-hour TTL declared by `R4J_MATCH`; Mongo remains the durable match source. A background match job performs one `fetch -> insert` attempt: a null R4J result marks the match missing and ends the job; there is no retry map or automatic retry. A later request may queue a new attempt. The subsequent forced rank refresh is low-priority R4J work and does not block match insertion; the tracker does not refresh masteries.
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
-- Profile reads use saved getters for rank and mastery: Redis first, then Mongo, with an absent component represented as an empty view value. `POST /profile/{puuid}/refresh` is the only profile flow that starts their Riot refreshes; it uses the same R4J scheduling path.
-- `ProfileService` starts a summoner Future only when the profile base is absent. It never starts rank or mastery Riot work during `GET`; once the base is ready, missing statistics still return the available profile as `PARTIAL` while `DatabaseTracker` queues the aggregate refresh.
+- Profile reads use saved getters for rank and mastery: Redis first, then Mongo. When either component is absent, `GET` queues its initial Riot fetch through the existing R4J scheduling path and returns the available profile as `PARTIAL` with `metadata.refresh=true`. Existing components are not refreshed by `GET`; `POST /profile/{puuid}/refresh` remains the explicit forced refresh.
+- `ProfileService` starts a summoner Future only when the profile base is absent. When Riot ID resolution is pending, its completion also starts base-profile loading so a second request is not required to advance the flow. The Spring `GET` does not wait for rank, mastery or statistics work: once the summoner base is available, it returns the available view while missing statistics are queued through the existing compute scheduler and missing rank/mastery through their existing services. `202` is reserved for Riot ID resolution or base-profile loading still in progress.
 - `SUMMONER_OVERVIEW` caches the summoner components and aggregate without the volatile `recentMatches` list. The HTTP profile request loads up to five lightweight `MatchResult` rows separately, without events, and composes them into the response.
 - The synchronous bot wrappers wait for the same Futures. A successful component Future persists the canonical value in Redis and Mongo once; a Riot error is retried later and is never persisted as an empty list.
 - Champion build reads the single persisted aggregate before allowing command/refresh computation.
@@ -38,8 +38,8 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 ## Invariants
 
 - Canonical models remain the only success payloads.
-- Missing profile-base data starts immediately through the `SummonerService` Future. Missing rank and mastery data are fetched only by explicit profile refresh.
-- Missing profile statistics start through `DatabaseTracker` after the profile components are ready.
+- Missing profile-base data starts immediately through the `SummonerService` Future. Missing rank and mastery components are queued by profile `GET`; forced refresh of existing components remains exclusive to the explicit profile refresh.
+- Missing profile statistics start through `ComputeScheduler` after the profile base is ready.
 - Profile component lists are cached only after a confirmed Riot result; database or Riot failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - Redis stores fetched R4J payloads and Data Dragon static data; it does not

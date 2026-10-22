@@ -83,6 +83,29 @@ public final class SummonerService {
             : getRiotSummonerAsync(puuid, shard).thenApply(ignored -> find(puuid, shard));
     }
 
+    static CompletableFuture<Summoner> getSummonerAsync(String name, String tag, LeagueShard shard) {
+        return getPuuidByRiotIdAsync(name, tag, shard).thenCompose(puuid -> puuid == null
+            ? CompletableFuture.completedFuture(null)
+            : getSummonerAsync(puuid, shard));
+    }
+
+    static String findPuuid(String name, String tag, LeagueShard shard) {
+        if (!valid(name, tag, shard)) return null;
+        String stored = queryPuuid(name, tag, shard);
+        if (stored != null) return stored;
+        RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT_BY_NAME.of(
+            shard.name(), normalizeAccountPart(name), normalizeAccountPart(tag)), RiotAccount.class);
+        return cached == null ? null : cached.getPUUID();
+    }
+
+    static boolean isMissing(String puuid, LeagueShard shard) {
+        return valid(puuid, shard) && RedisClient.get(RedisKey.R4J_SUMMONER_NOT_FOUND.of(shard.name(), puuid)) != null;
+    }
+
+    static boolean isMissing(String name, String tag, LeagueShard shard) {
+        return valid(name, tag, shard) && RedisClient.get(accountNotFoundKey(name, tag, shard)) != null;
+    }
+
     public static Summoner get(String puuid, LeagueShard shard) {
         try {
             return getAsync(puuid, shard).join();
@@ -156,6 +179,7 @@ public final class SummonerService {
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner cached = cacheRiotSummoner(puuid, shard);
         if (cached != null) return saveAsync(cached, priority).thenApply(ignored -> cached);
+        if (isMissing(puuid, shard)) return CompletableFuture.completedFuture(null);
 
         CompletableFuture<no.stelar7.api.r4j.pojo.lol.summoner.Summoner> fetch = QueueHandler.submit(
             RiotScheduler.class, shard, shard.name() + ":summoner:" + puuid, "summoner puuid=" + puuid,
@@ -163,7 +187,12 @@ public final class SummonerService {
             ignored -> {
                 no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
                     RIOT_API.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid);
-                if (summoner != null) RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
+                if (summoner == null) {
+                    RedisClient.set(RedisKey.R4J_SUMMONER_NOT_FOUND, "1", shard.name(), puuid);
+                } else {
+                    RedisClient.set(RedisKey.R4J_SUMMONER, summoner, shard.name(), puuid);
+                    RedisClient.delete(RedisKey.R4J_SUMMONER_NOT_FOUND.of(shard.name(), puuid));
+                }
                 return summoner;
             });
         return fetch.thenComposeAsync(summoner -> summoner == null
@@ -232,40 +261,42 @@ public final class SummonerService {
             ignored -> {
                 RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                     com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
-                if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
-                return account;
+                return account == null ? null : cacheAccount(account, account.getName(), account.getTag(), shard);
             });
     }
 
     public static CompletableFuture<RiotAccount> getRiotAccountAsync(String name, String tag, LeagueShard shard) {
         if (!valid(name, tag, shard)) return CompletableFuture.completedFuture(null);
 
-        RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT_BY_NAME.of(shard.name(), name, tag), RiotAccount.class);
+        String gameName = normalizeAccountPart(name);
+        String tagLine = normalizeAccountPart(tag);
+        RiotAccount cached = RedisClient.get(RedisKey.R4J_ACCOUNT_BY_NAME.of(shard.name(), gameName, tagLine), RiotAccount.class);
         if (cached != null) return CompletableFuture.completedFuture(cached);
+        if (isMissing(name, tag, shard)) return CompletableFuture.completedFuture(null);
 
-        String riotId = name + "#" + tag;
+        String riotId = gameName + "#" + tagLine;
         return QueueHandler.immediate(RiotScheduler.class, shard, shard.name() + ":account:" + riotId,
             "account riotId=" + riotId, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByTag(
-                com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), name, tag);
-            if (account != null) {
-                RedisClient.set(RedisKey.R4J_ACCOUNT_BY_NAME, account, shard.name(), name, tag);
-                RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), account.getPUUID());
+                com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), name.trim(), tag.trim());
+            if (account == null) {
+                RedisClient.set(RedisKey.R4J_ACCOUNT_BY_NAME_NOT_FOUND, "1", shard.name(), gameName, tagLine);
+                return null;
             }
-            return account;
+            return cacheAccount(account, name, tag, shard);
         });
     }
 
     public static String getPuuidByRiotId(String name, String tag, LeagueShard shard) {
-        String stored = queryPuuid(name, tag, shard);
-        if (stored != null) return stored;
-
-        RiotAccount account = getRiotAccount(name, tag, shard);
-        return account == null ? null : account.getPUUID();
+        try {
+            return getPuuidByRiotIdAsync(name, tag, shard).join();
+        } catch (CompletionException exception) {
+            return null;
+        }
     }
 
     public static CompletableFuture<String> getPuuidByRiotIdAsync(String name, String tag, LeagueShard shard) {
-        String stored = queryPuuid(name, tag, shard);
+        String stored = findPuuid(name, tag, shard);
         if (stored != null) return CompletableFuture.completedFuture(stored);
 
         return getRiotAccountAsync(name, tag, shard).thenApply(account -> account == null ? null : account.getPUUID());
@@ -377,6 +408,23 @@ public final class SummonerService {
 
     // ============================================================================
 
+    private static String normalizeAccountPart(String value) {
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String accountNotFoundKey(String name, String tag, LeagueShard shard) {
+        return RedisKey.R4J_ACCOUNT_BY_NAME_NOT_FOUND.of(shard.name(), normalizeAccountPart(name), normalizeAccountPart(tag));
+    }
+
+    private static RiotAccount cacheAccount(RiotAccount account, String name, String tag, LeagueShard shard) {
+        RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), account.getPUUID());
+        if (valid(name, tag, shard)) {
+            RedisClient.set(RedisKey.R4J_ACCOUNT_BY_NAME, account, shard.name(), normalizeAccountPart(name), normalizeAccountPart(tag));
+            RedisClient.delete(accountNotFoundKey(name, tag, shard));
+        }
+        return account;
+    }
+
     private static Summoner cache(String puuid, LeagueShard shard) {
         return RedisClient.get(RedisKey.SUMMONER.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid), Summoner.class);
     }
@@ -416,8 +464,7 @@ public final class SummonerService {
             "account refresh puuid=" + puuid, ignored -> {
             RiotAccount account = RIOT_API.getAccountAPI().getAccountByPUUID(
                 com.safjnest.lol.utils.LeagueShardUtils.getAccountRegion(shard), puuid);
-            if (account != null) RedisClient.set(RedisKey.R4J_ACCOUNT, account, shard.name(), puuid);
-            return account;
+            return account == null ? null : cacheAccount(account, account.getName(), account.getTag(), shard);
         });
     }
 
@@ -534,20 +581,17 @@ public final class SummonerService {
         CompletableFuture<Map<GameQueueType, Rank>> ranksFuture = foundRanks != null
             ? CompletableFuture.completedFuture(foundRanks)
             : RankService.getAsync(puuid, shard);
-        return ranksFuture.thenCompose(ranks -> {
+        CompletableFuture<List<Mastery>> masteriesFuture = foundMasteries != null
+            ? CompletableFuture.completedFuture(foundMasteries)
+            : MasteryService.getAsync(puuid, shard);
+        return ranksFuture.thenCombine(masteriesFuture, (ranks, masteries) -> {
             if (foundRanks == null && ranks != null) {
                 for (Map.Entry<GameQueueType, Rank> entry : ranks.entrySet()) {
                     if (entry.getKey() != null && entry.getValue() != null) identity.setRank(entry.getKey(), entry.getValue());
                 }
             }
-            CompletableFuture<List<Mastery>> masteriesFuture = foundMasteries != null
-                ? CompletableFuture.completedFuture(foundMasteries)
-                : MasteryService.getAsync(puuid, shard);
-            return masteriesFuture.thenApply(masteries -> {
-                if (foundMasteries == null && masteries != null) identity.setMasteries(masteries);
-                RedisClient.set(RedisKey.SUMMONER, identity, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
-                return identity;
-            });
+            if (foundMasteries == null && masteries != null) identity.setMasteries(masteries);
+            return store(identity, shard);
         }).exceptionally(ignored -> identity);
     }
 
@@ -575,7 +619,11 @@ public final class SummonerService {
             source.getSummonerLevel(),
             source.getProfileIconId()
         );
-        return MongoDB.upsertSummoner(result, userId) ? result : null;
+        if (!MongoDB.upsertSummoner(result, userId)) return null;
+        RedisClient.delete(RedisKey.R4J_SUMMONER_NOT_FOUND.of(result.region().name(), result.puuid()));
+        if (valid(result.name(), result.tag(), result.region()))
+            RedisClient.delete(accountNotFoundKey(result.name(), result.tag(), result.region()));
+        return result;
     }
 
     private static Summoner store(Summoner summoner, LeagueShard shard) {

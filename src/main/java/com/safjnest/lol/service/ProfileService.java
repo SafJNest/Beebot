@@ -34,7 +34,6 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 public class ProfileService {
 
     private static final AtomicBoolean ALL_PROFILE_STATS_REFRESH_RUNNING = new AtomicBoolean(false);
-    private static final int MIN_PROFILE_GAMES = 5;
     private static final long STALE_BASE_MILLIS = TimeConstant.DAY * 30L;
     private static final long STALE_JITTER_DAYS = 14;
     private static final long STALE_LAST_SEEN_MILLIS = TimeConstant.DAY * 60L;
@@ -48,36 +47,14 @@ public class ProfileService {
         if (shard == null || puuid == null || puuid.isBlank() || filter == null) return ApiResult.notFound();
         String key = RedisKey.SUMMONER_OVERVIEW.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
-        if (cached != null && isReady(cached)) {
-            ProfileStatistics statistics = getStatistics(cached.summoner(), shard, filter);
-            boolean refresh = isStale(puuid, statistics == null ? 0 : statistics.lastUpdate);
-            SummonerView page = SummonerView.from(cached.summoner(), LeaderboardService.resolveRankings(
-                cached.summoner().puuid(), shard, cached.ranks()), statistics,
-                cached.overview().masteries(), cached.overview().champions()).withMetadata(
-                ResponseMetadata.of(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
-            return refresh ? ApiResult.partial(page, page.metadata()) : ApiResult.ready(page, page.metadata());
-        }
+        Summoner profile = cached == null ? null : cached.summoner();
+        if (profile == null || profile.puuid() == null || profile.puuid().isBlank())
+            profile = SummonerService.find(puuid, shard);
+        if (profile != null) return profile(profile, shard, filter, cached);
+        if (SummonerService.isMissing(puuid, shard)) return ApiResult.notFound();
 
-        CompletableFuture<Summoner> profileFuture = SummonerService.getAsync(puuid, shard);
-        if (!isReadyFuture(profileFuture))
-            return ApiResult.pending(ResponseMetadata.of(0, true, filter));
-
-        Summoner profile = completed(profileFuture);
-        if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return ApiResult.notFound();
-
-        ProfileStatistics statistics = getStatistics(profile, shard, filter);
-        Map<GameQueueType, Rank> ranks = RankService.find(puuid, shard);
-        List<Mastery> masteries = MasteryService.find(puuid, shard);
-        boolean refresh = ranks == null || masteries == null
-            || statistics == null || isStale(profile.puuid(), statistics.lastUpdate);
-
-        SummonerView page = SummonerView.from(profile, LeaderboardService.resolveRankings(profile.puuid(), shard, ranks), statistics, masteries)
-            .withMetadata(ResponseMetadata.of(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
-        if (statistics != null && !refresh) {
-            RedisClient.set(RedisKey.SUMMONER_OVERVIEW, page, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
-            return ApiResult.ready(page, page.metadata());
-        }
-        return ApiResult.partial(page, page.metadata());
+        loadProfile(SummonerService.getSummonerAsync(puuid, shard), shard, filter);
+        return ApiResult.pending(ResponseMetadata.of(0, true, filter));
     }
 
     public ApiResult<SummonerView> get(LeagueShard shard, String gameName, String tagLine) {
@@ -88,10 +65,12 @@ public class ProfileService {
         if (shard == null || gameName == null || gameName.isBlank() || tagLine == null || tagLine.isBlank() || filter == null) {
             return ApiResult.notFound();
         }
-        CompletableFuture<String> puuidFuture = SummonerService.getPuuidByRiotIdAsync(gameName, tagLine, shard);
-        if (!isReadyFuture(puuidFuture)) return ApiResult.pending(ResponseMetadata.of(0, true, filter));
-        String puuid = completed(puuidFuture);
-        return puuid != null ? get(shard, puuid, filter) : ApiResult.notFound();
+        String puuid = SummonerService.findPuuid(gameName, tagLine, shard);
+        if (puuid != null) return get(shard, puuid, filter);
+        if (SummonerService.isMissing(gameName, tagLine, shard)) return ApiResult.notFound();
+
+        loadProfile(SummonerService.getSummonerAsync(gameName, tagLine, shard), shard, filter);
+        return ApiResult.pending(ResponseMetadata.of(0, true, filter));
     }
 
     public ProfileStatistics getStatistics(String puuid, LeagueShard shard, Filter filter) {
@@ -332,6 +311,35 @@ public class ProfileService {
 
     // ============================================================================
 
+    private ApiResult<SummonerView> profile(Summoner summoner, LeagueShard shard, Filter filter, SummonerView cached) {
+        String puuid = summoner.puuid();
+        ProfileStatistics statistics = getStatistics(summoner, shard, filter);
+        Map<GameQueueType, Rank> ranks = RankService.find(puuid, shard);
+        List<Mastery> masteries = MasteryService.find(puuid, shard);
+        boolean refresh = ranks == null || masteries == null || statistics == null
+            || isStale(puuid, statistics.lastUpdate);
+        if (ranks == null || masteries == null) SummonerService.getAsync(puuid, shard);
+
+        if (cached != null) {
+            if (ranks == null) ranks = cached.ranks();
+            if (masteries == null && cached.overview() != null) masteries = cached.overview().masteries();
+        }
+        SummonerView page = SummonerView.from(summoner, LeaderboardService.resolveRankings(puuid, shard, ranks),
+            statistics, masteries, cached == null || cached.overview() == null ? null : cached.overview().champions())
+            .withMetadata(ResponseMetadata.of(statistics == null ? 0 : statistics.lastUpdate, refresh, filter));
+        if (!refresh) RedisClient.set(RedisKey.SUMMONER_OVERVIEW, page,
+            LeagueShardUtils.cacheRegion(shard), shard.name(), puuid);
+        return refresh ? ApiResult.partial(page, page.metadata()) : ApiResult.ready(page, page.metadata());
+    }
+
+    private void loadProfile(CompletableFuture<Summoner> future, LeagueShard shard, Filter filter) {
+        future.thenAccept(summoner -> {
+            if (summoner == null) return;
+            SummonerService.getAsync(summoner.puuid(), shard);
+            getStatistics(summoner, shard, filter);
+        });
+    }
+
     private static void cacheStatistics(String puuid, LeagueShard shard, Filter filter, ProfileStatistics statistics) {
         RedisClient.set(RedisKey.SUMMONER_STATISTICS, statistics, LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
     }
@@ -378,15 +386,6 @@ public class ProfileService {
 
     private static String matchupsKey(String puuid, LeagueShard shard, Filter filter) {
         return RedisKey.SUMMONER_MATCHUPS.of(LeagueShardUtils.cacheRegion(shard), shard.name(), puuid, filter.toSummonerKey());
-    }
-
-    private static boolean isReady(SummonerView page) {
-        return page.summoner() != null
-            && page.summoner().puuid() != null
-            && !page.summoner().puuid().isBlank()
-            && page.overview() != null
-            && page.overview().statistics() != null
-            && page.overview().statistics().total().games >= MIN_PROFILE_GAMES;
     }
 
     private static boolean isReadyFuture(CompletableFuture<?> future) {

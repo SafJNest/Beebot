@@ -7,9 +7,11 @@ import java.time.Duration;
 public enum RedisKey {
 
     R4J_SUMMONER("r4j:summoner:by-id:%s:%s", Duration.ofHours(1)),
+    R4J_SUMMONER_NOT_FOUND("r4j:summoner:not-found:%s:%s", Duration.ofHours(1)),
     R4J_SUMMONER_ID("r4j:summoner:id-by-puuid:%s:%s", Duration.ofHours(1)),
     R4J_ACCOUNT("r4j:account:by-puuid:%s:%s", Duration.ofHours(1)),
     R4J_ACCOUNT_BY_NAME("r4j:account:by-name:%s:%s:%s", Duration.ofHours(1)),
+    R4J_ACCOUNT_BY_NAME_NOT_FOUND("r4j:account:by-name:not-found:%s:%s:%s", Duration.ofHours(1)),
     R4J_USER_ID_BY_PUUID("r4j:account:user-id-by-puuid:%s:%s", Duration.ofHours(6)),
     R4J_LEAGUE_ENTRIES("r4j:league:entries:%s:%s", Duration.ofHours(1)),
     R4J_CHAMPION_MASTERIES("r4j:league:champion-masteries:%s:%s", Duration.ofHours(1)),

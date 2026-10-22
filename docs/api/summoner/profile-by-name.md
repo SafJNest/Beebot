@@ -32,15 +32,15 @@ leaves. There are no `total`, `queueStats`, `laneStats`, `championStats`,
 `reference`, `context`, `winrate`, `kda` or `avg*` fields in the
 statistics payload. The only derived classification allowed in the leaf is
 `isOtp: true`, omitted for all other champions in the same queue. Rank and mastery remain
-Redis/Mongo reads; the GET does not perform
-synchronous Riot calls.
+Redis/Mongo reads; when either component is missing, its Riot fetch is queued and the
+available profile is returned without waiting.
 
 ## States and errors
 
 | HTTP | `code` | When |
 |---:|---|---|
-| `200` | — | Profile available; may be stale with `metadata.refresh=true`. |
-| `202` | `profile_pending` | Riot ID resolution or base profile in progress. |
+| `200` | — | Profile available, including a partial view; missing components are queued and indicated by `metadata.refresh=true`. |
+| `202` | `profile_pending` | Riot ID resolution or base profile in progress. When Riot ID resolution completes, base profile loading is queued without requiring another request. |
 | `400` | `invalid_request` | Missing/invalid path parameters. |
 | `404` | `not_found` | Riot ID or profile not found. |
 

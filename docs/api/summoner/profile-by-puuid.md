@@ -108,9 +108,10 @@ Averages are derived by the consumer: `avgKills = kills / games`,
 `arenaPlacementSum / games` of the `ARENA → UNKNOWN` leaf only. Arena
 fields are not present in leaves of other queues.
 
-If rank/mastery or statistics are not ready, the response keeps the `PARTIAL`/`202` states
-documented by the `ApiResult` contract; no GET performs
-a synchronous Riot call.
+If rank, mastery or statistics are missing, the endpoint returns the available profile
+as `PARTIAL` with `metadata.refresh=true` and queues the missing work without waiting.
+`202` is returned only while the summoner base profile is being loaded. The GET does not
+perform synchronous Riot calls.
 
 Each classified entry in `ranks` may include nullable `globalRanking` and
 `regionRanking`. These are one-based contextual positions for the queue across
