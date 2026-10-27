@@ -178,28 +178,26 @@ public final class MatchService {
 
     public static void upsertRankProgress(List<Match> matches, LeagueShard shard) {
         if (matches == null || matches.isEmpty() || shard == null) return;
-        Map<String, List<String>> gameIdsByPuuid = new java.util.LinkedHashMap<>();
+        Map<GameQueueType, Map<String, List<String>>> gameIdsByQueue = new java.util.LinkedHashMap<>();
         for (Match match : matches) {
-            if (match == null || match.gameId == null || match.participants == null) continue;
+            if (match == null || match.gameId == null || match.participants == null || match.queue == null) continue;
+            GameQueueType queue = GameQueueTypeUtils.rankedCanonicalQueue(match.queue);
+            Map<String, List<String>> gameIdsByPuuid = gameIdsByQueue.computeIfAbsent(queue, ignored -> new java.util.LinkedHashMap<>());
             for (Participant participant : match.participants) {
                 if (participant == null || participant.puuid == null || participant.puuid.isBlank()) continue;
                 gameIdsByPuuid.computeIfAbsent(participant.puuid, ignored -> new ArrayList<>()).add(match.gameId);
             }
         }
-        if (gameIdsByPuuid.isEmpty()) return;
-
-        Map<String, Rank> ranks = MongoDB.findSoloRanksByPuuid(new ArrayList<>(gameIdsByPuuid.keySet()), shard);
-        for (Map.Entry<String, List<String>> entry : gameIdsByPuuid.entrySet()) {
-            String puuid = entry.getKey();
-            Rank rank = ranks.get(puuid);
-            if (rank != null) {
+        for (Map.Entry<GameQueueType, Map<String, List<String>>> scope : gameIdsByQueue.entrySet()) {
+            GameQueueType queue = scope.getKey();
+            Map<String, List<String>> gameIdsByPuuid = scope.getValue();
+            Map<String, Rank> ranks = MongoDB.findRanksByPuuid(new ArrayList<>(gameIdsByPuuid.keySet()), shard, queue);
+            for (Map.Entry<String, List<String>> entry : gameIdsByPuuid.entrySet()) {
+                String puuid = entry.getKey();
+                Rank rank = ranks.get(puuid);
+                if (rank == null) continue;
                 upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(rank), shard);
-                continue;
             }
-            RankService.refreshBackgroundAsync(puuid, shard).whenComplete((refreshed, failure) -> {
-                if (failure != null) return;
-                upsertRankProgress(entry.getValue(), puuid, RankProgressUtils.snapshot(soloRank(refreshed)), shard);
-            });
         }
     }
 
@@ -353,7 +351,7 @@ public final class MatchService {
     }
 
     public static RankHistory getRankHistory(String puuid, LeagueShard shard, RankHistoryQuery query) {
-        if (!valid(puuid, shard) || query == null || !isRankHistoryQueue(query.queue()) || query.order() == null) {
+        if (!valid(puuid, shard) || query == null || !GameQueueTypeUtils.isRanked(query.queue()) || query.order() == null) {
             return new RankHistory(List.of(), 0, null);
         }
         RankHistoryPeriod period = rankHistoryPeriod(query);
@@ -511,10 +509,6 @@ public final class MatchService {
 
     // ============================================================================
 
-    private static Rank soloRank(Map<GameQueueType, Rank> ranks) {
-        return ranks == null ? null : ranks.get(GameQueueType.RANKED_SOLO_5X5);
-    }
-
     private static void localRanking(Match match) {
         if (match == null || match.rank != null || match.leagueShard == null || match.participants == null || match.queue == null) return;
         GameQueueType queue = GameQueueTypeUtils.rankedCanonicalQueue(match.queue);
@@ -595,11 +589,6 @@ public final class MatchService {
         Comparator<RankHistoryMatch> comparator = Comparator.comparingLong(RankHistoryMatch::timeStart)
             .thenComparing(RankHistoryMatch::gameId);
         return order.ascending() ? comparator : comparator.reversed();
-    }
-
-    private static boolean isRankHistoryQueue(GameQueueType queue) {
-        GameQueueType canonical = GameQueueTypeUtils.canonicalQueue(queue);
-        return canonical == GameQueueType.RANKED_SOLO_5X5 || canonical == GameQueueType.RANKED_FLEX_SR;
     }
 
     private static RankHistoryPeriod rankHistoryPeriod(RankHistoryQuery query) {

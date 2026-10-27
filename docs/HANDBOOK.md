@@ -60,6 +60,11 @@ still in progress. When Riot ID resolution completes, base profile loading is
 queued without requiring another request; the request does not wait for component
 or aggregate work.
 
+Match insertion and missing rank-snapshot completion use stored ranks only.
+Missing local rank data leaves the snapshot unknown and must not trigger a Riot
+rank request. Rank refreshes belong to explicit refresh/profile flows and the tracker.
+This rule does not change public payloads or Discord presentation.
+
 ## 5. Operational steps
 
 ### 5.1 New Discord command
@@ -151,7 +156,26 @@ indexes for migration needs.
 Schedule through `TrackerScheduler` and dispatch work through `QueueHandler`.
 Respect shard routing and existing refresh ownership. Report `total`,
 `completed` and `missing` through job progress when processing collections of
-items. Rank-entry scans use one LPTracker job per region and process that
+items. With tracking enabled, the champion refresh runs every evening at 23:00
+in the server's timezone. `!test regenerate champion [patch]` (`champions` is also
+accepted) starts the same deduplicated background `CHAMPION` job manually,
+including when tracking is disabled. The default is the current patch;
+`!test regenerate champion 16.20` targets only 16.20. It first queries distinct
+queues in that patch's stored matches, retaining the champion build queues
+(Solo/Duo, including its enum alias, Flex, Draft, ARAM and Arena). It forces all
+statistics matrices for those queues, then rebuilds the discovered/stored build
+filters for the same patch and queues. Statistics are replaced in place without deleting Mongo data; statistics,
+page and tier-list Redis caches are invalidated after persistence. Job progress
+shows `STATISTICS`/`BUILDS`, the current scope/filter and completed, missing or
+failed items. A statistics failure stops the build phase; build failures are
+reported per filter and remaining builds continue. Console logs use the compact
+`[refresh build]:` prefix: statistics queue index/total with its name, batch
+index/total, then build champion ID, queue index/total and filter index/total.
+Detailed source/query/timing/scope summaries are removed; failures remain logged.
+Only console logging changes here: queries, persistence, job progress, public API contracts and
+Discord presentation remain unchanged; the queue discovery uses the existing
+patch-prefix match index and adds no indexes.
+Rank-entry scans use one LPTracker job per region and process that
 region's ranks and pages sequentially; separate regions can run concurrently.
 An empty page ends the current rank. Page-fetch failures are logged and skipped;
 three consecutive failures move a paginated scan to the next rank. High-elo

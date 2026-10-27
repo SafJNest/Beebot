@@ -72,8 +72,8 @@ public final class LolApiParameters {
             ? GameQueueType.RANKED_SOLO_5X5
             : optionalQueue(value);
         GameQueueType canonical = GameQueueTypeUtils.canonicalQueue(queue);
-        if (canonical == GameQueueType.RANKED_SOLO_5X5 || canonical == GameQueueType.RANKED_FLEX_SR) return canonical;
-        throw invalid("queue", "must be RANKED_SOLO_5X5, RANKED_FLEX_SR or TEAM_BUILDER_RANKED_SOLO");
+        if (GameQueueTypeUtils.isRanked(canonical)) return canonical;
+        throw invalid("queue", "must be RANKED_SOLO_5X5, RANKED_FLEX_SR, RANKED_PREMADE_5X5 or TEAM_BUILDER_RANKED_SOLO");
     }
 
     public static RankHistoryQuery rankHistoryQuery(

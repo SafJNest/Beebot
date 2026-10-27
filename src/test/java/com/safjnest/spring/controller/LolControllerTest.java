@@ -289,6 +289,7 @@ public class LolControllerTest {
         assertEquals(GameQueueType.RANKED_SOLO_5X5, LolApiParameters.rankHistoryQueue(null));
         assertEquals(GameQueueType.RANKED_SOLO_5X5, LolApiParameters.rankHistoryQueue("team_builder_ranked_solo"));
         assertEquals(GameQueueType.RANKED_FLEX_SR, LolApiParameters.rankHistoryQueue("ranked_flex_sr"));
+        assertEquals(GameQueueType.RANKED_PREMADE_5X5, LolApiParameters.rankHistoryQueue("ranked_premade_5x5"));
 
         try {
             LolApiParameters.rankHistoryQueue("aram");

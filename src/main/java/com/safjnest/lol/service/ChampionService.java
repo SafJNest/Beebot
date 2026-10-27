@@ -322,20 +322,18 @@ public class ChampionService {
     }
 
     public MatrixRefreshResult refreshStatisticsMatrix(String patch, GameQueueType queue, List<Filter> buildFilters) {
+        return refreshStatisticsMatrix(patch, queue, buildFilters, false);
+    }
+
+    public MatrixRefreshResult refreshStatisticsMatrix(String patch, GameQueueType queue, List<Filter> buildFilters, boolean force) {
         List<Filter> combinations = matrixFilters(patch, queue);
         Set<String> readyKeys = new HashSet<>();
-        for (Filter filter : combinations) {
+        if (!force) for (Filter filter : combinations) {
             ChampionStatsScope scope = ChampionStatsScope.from(filter);
             ChampionStatsDocument doc = MongoDB.findChampionStatsDocument(scope);
             if (doc != null && doc.ready && !isStale(doc.updatedAt)) readyKeys.add(scope.toKey());
         }
         List<Filter> missing = missingMatrixFilters(combinations, readyKeys);
-        BotLogger.info("[ChampionStatsMatrix] phase=scope-scan patch=" + patch
-            + " queue=" + queue
-            + " totalScopes=" + combinations.size()
-            + " readyScopes=" + readyKeys.size()
-            + " missingScopes=" + missing.size()
-            + " requestedBuildFilters=" + buildFilters.size());
         ChampionAnalyzer.MatrixResult result = ChampionAnalyzer.recomputeMatrixCoalesced(missing, buildFilters);
         invalidateTierLists(missing);
         for (Filter filter : missing) invalidateStatisticsScope(filter);
@@ -367,19 +365,42 @@ public class ChampionService {
         return MongoDB.findChampionIndexables(patch);
     }
 
-    public void refresh() {
-        String patch = new Filter().patch();
-        for (Filter filter : getBuildFilters(patch)) {
+    public void refresh(String patch, Job<?> job) {
+        List<GameQueueType> queues = new ArrayList<>(getStatQueues(patch));
+        List<Filter> builds = getBuildFilters(patch);
+        builds.removeIf(filter -> !queues.contains(filter.queue()));
+        for (GameQueueType queue : queues)
+            job.trackItem(ComputeScheduler.championStatsMatrixKey(patch, queue));
+        for (Filter filter : builds) job.trackItem(filter.toKey());
+        BotLogger.info("[refresh build]: starting patch=" + patch);
+        job.phase("STATISTICS");
+        int queueIndex = 0;
+        for (GameQueueType queue : queues) {
+            String key = ComputeScheduler.championStatsMatrixKey(patch, queue);
+            job.currentItem(key);
+            BotLogger.info("[refresh build]: generating stats | queue " + (++queueIndex) + "/" + queues.size()
+                + " (" + GameQueueTypeUtils.prettyName(queue) + ")");
+            refreshStatisticsMatrix(patch, queue, List.of(), true);
+            job.done(key);
+        }
+        job.phase("BUILDS");
+        int buildIndex = 0;
+        for (Filter filter : builds) {
+            job.currentItem(filter.toKey());
+            BotLogger.info("[refresh build]: generating build champion " + filter.champion()
+                + " | queue " + (queues.indexOf(filter.queue()) + 1) + "/" + queues.size()
+                + " (" + GameQueueTypeUtils.prettyName(filter.queue()) + ")"
+                + " | filter " + (++buildIndex) + "/" + builds.size());
             try {
-                refreshBuild(filter);
+                if (refreshBuild(filter)) job.done(filter.toKey());
+                else job.missing(filter.toKey());
             } catch (RuntimeException exception) {
-                BotLogger.warning("[LPTracker] Failed refreshing build filter " + filter.toKey());
+                job.failed(filter.toKey());
+                BotLogger.warning("[refresh build]: failed champion " + filter.champion()
+                    + " | queue " + GameQueueTypeUtils.prettyName(filter.queue()) + " | " + exception.getMessage());
             }
         }
-        Set<GameQueueType> queues = new LinkedHashSet<>();
-        List<String> patches = PatchUtils.getRecentPatches(3);
-        for (String statsPatch : patches) queues.addAll(getStatQueues(statsPatch));
-        for (String statsPatch : patches) for (GameQueueType queue : queues) refreshStatisticsMatrix(statsPatch, queue);
+        BotLogger.info("[refresh build]: finished patch=" + patch);
     }
 
     public static List<Filter> matrixFilters(String patch, GameQueueType queue) {
@@ -530,8 +551,8 @@ public class ChampionService {
 
     private Set<GameQueueType> getStatQueues(String patch) {
         Set<GameQueueType> queues = new LinkedHashSet<>();
-        for (Filter filter : MongoDB.findChampionStatsRefreshFilters(patch))
-            if (filter.queue() != null) queues.add(filter.queue());
+        for (GameQueueType queue : MongoDB.findChampionQueues(patch))
+            if (GameQueueTypeUtils.championBuildQueues().contains(queue)) queues.add(queue);
         return queues;
     }
 

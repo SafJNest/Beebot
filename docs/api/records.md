@@ -7,7 +7,9 @@ pagination. Champion names use Data Dragon names such as `thresh`.
 
 Record lists are read directly from Mongo and ordered by `value`: descending
 for highest-value metrics, ascending for earliest-time metrics, then
-`occurredAt ASC, puuid ASC`. Rows expose neither `score` nor `globalRanking`
+`occurredAt ASC`. No further ordering is guaranteed when both values are equal;
+tied rows can move between offset-based pages. PUUID is not a sort criterion.
+Rows expose neither `score` nor `globalRanking`
 nor `regionRanking`. There are no record ranking calculations, Redis sorted
 sets, or `record-index` jobs. Other payload fields and presentation are unchanged.
 

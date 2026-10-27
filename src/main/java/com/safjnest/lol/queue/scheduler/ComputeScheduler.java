@@ -18,6 +18,7 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -153,11 +154,14 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
     }
 
     public static CompletableFuture<Void> enqueueChampionDataRefresh() {
-        String patch = new Filter().patch();
+        return enqueueChampionDataRefresh(new Filter().patch());
+    }
+
+    public static CompletableFuture<Void> enqueueChampionDataRefresh(String patch) {
         String key = "champion-data-refresh:" + patch;
-        return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key,
-            "champion data refresh patch=" + patch, ignored -> {
-                CHAMPION_SERVICE.refresh();
+        return submit(DatabaseWorkerType.CHAMPION, JobPriority.BACKGROUND, key,
+            "champion data refresh patch=" + patch, job -> {
+                CHAMPION_SERVICE.refresh(patch, job);
                 return null;
             });
     }
@@ -312,33 +316,13 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
             CompletableFuture<ChampionService.MatrixRefreshResult> future = submit(
                 DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name, ignored -> {
                     List<Filter> buildFilters = request.startAndGetBuildFilters();
-                    long startedNanos = System.nanoTime();
                     try {
-                        BotLogger.info("[ChampionStatsMatrix] started patch=" + patch
-                            + " queue=" + queue.name()
-                            + " requestKey=" + key
-                            + " requestedBuildFilters=" + buildFilters.size()
-                            + " buildScopes=" + championBuildFilterScopes(buildFilters));
-                        ChampionService.MatrixRefreshResult result =
-                            CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, buildFilters);
-                        BotLogger.info("[ChampionStatsMatrix] completed patch=" + patch
-                            + " queue=" + queue.name()
-                            + " requestKey=" + key
-                            + " totalScopes=" + result.combinations()
-                            + " skippedScopes=" + result.skipped()
-                            + " generatedScopes=" + result.generated()
-                            + " emptyScopes=" + result.empty()
-                            + " persistedChampions=" + result.persistedChampions()
-                            + " buildFilters=" + buildFilters.size()
-                            + " elapsedMs=" + (System.nanoTime() - startedNanos) / 1_000_000);
-                        return result;
+                        BotLogger.info("[refresh build]: generating stats | queue 1/1 ("
+                            + GameQueueTypeUtils.prettyName(queue) + ") | patch=" + patch);
+                        return CHAMPION_SERVICE.refreshStatisticsMatrix(patch, queue, buildFilters);
                     } catch (RuntimeException | Error exception) {
-                        BotLogger.warning("[ChampionStatsMatrix] failed patch=" + patch
-                            + " queue=" + queue.name()
-                            + " requestKey=" + key
-                            + " failure=" + exception.getClass().getSimpleName()
-                            + " message=" + exception.getMessage()
-                            + " elapsedMs=" + (System.nanoTime() - startedNanos) / 1_000_000);
+                        BotLogger.warning("[refresh build]: stats failed | queue "
+                            + GameQueueTypeUtils.prettyName(queue) + " | patch=" + patch + " | " + exception.getMessage());
                         throw exception;
                     } finally {
                         CHAMPION_MATRICES.remove(key, request);
@@ -351,23 +335,6 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
 
     public static String championStatsMatrixKey(String patch, GameQueueType queue) {
         return "champion-stats-matrix:" + patch + ":" + queue.name();
-    }
-
-    private static String championBuildFilterScopes(List<Filter> filters) {
-        StringBuilder scopes = new StringBuilder("[");
-        for (int index = 0; index < filters.size(); index++) {
-            Filter filter = filters.get(index);
-            if (index > 0) scopes.append(", ");
-            scopes.append("{champion=").append(filter.champion())
-                .append(", lane=").append(filter.lane())
-                .append(", queue=").append(filter.queue())
-                .append(", rank=").append(filter.rank())
-                .append(", rankBehavior=").append(filter.rankBehavior())
-                .append(", patch=").append(filter.patch())
-                .append(", region=").append(filter.region())
-                .append('}');
-        }
-        return scopes.append(']').toString();
     }
 
     public static String profileRefreshKey(String puuid) {
@@ -406,7 +373,8 @@ public final class ComputeScheduler extends AbstractScheduler<DatabaseWorkerType
             + " lane=" + filter.lane();
         return submit(DatabaseWorkerType.CHAMPION, JobPriority.NORMAL, key, name,
             job -> {
-                BotLogger.info("[ChampionBuild] started filter=" + filter.toKey());
+                BotLogger.info("[refresh build]: generating build champion " + filter.champion()
+                    + " | queue 1/1 (" + GameQueueTypeUtils.prettyName(filter.queue()) + ") | patch=" + filter.patch());
                 return refreshChampionBuild(filter, job);
             });
     }

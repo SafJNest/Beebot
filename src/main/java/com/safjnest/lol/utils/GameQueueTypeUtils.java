@@ -33,6 +33,12 @@ public class GameQueueTypeUtils {
     GameQueueType.RANKED_PREMADE_5X5
   );
 
+  private static final List<GameQueueType> CHAMPION_BUILD_QUEUES = List.of(
+    GameQueueType.RANKED_SOLO_5X5, GameQueueType.TEAM_BUILDER_RANKED_SOLO,
+    GameQueueType.RANKED_FLEX_SR, GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5,
+    GameQueueType.ARAM, GameQueueType.CHERRY
+  );
+
   public static boolean hasLane(GameQueueType queue) {
     return !QUEUES_WITHOUT_LANE.contains(queue);
   }
@@ -62,12 +68,20 @@ public class GameQueueTypeUtils {
     return canonicalQueue(queue) == GameQueueType.RANKED_SOLO_5X5;
   }
 
+  public static boolean isRanked(GameQueueType queue) {
+    return queue != null && RANKED_QUEUES.contains(canonicalQueue(queue));
+  }
+
   public static List<GameQueueType> leaderboardQueues() {
     return LEADERBOARD_QUEUES;
   }
 
   public static List<GameQueueType> profileRebuildQueues() {
     return LEADERBOARD_QUEUES;
+  }
+
+  public static List<GameQueueType> championBuildQueues() {
+    return CHAMPION_BUILD_QUEUES;
   }
 
   public static String prettyName(GameQueueType queue) {

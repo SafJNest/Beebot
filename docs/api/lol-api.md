@@ -22,7 +22,7 @@ Examples use `http://localhost:8080` as the base URL.
 - [Live game](summoner/livegame.md) — `GET /api/lol/{shard}/livegame/{puuid}` and `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
 - [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`; supports `season=current|previous|all` as a shortcut for the time bounds.
 - [Match facets](summoner/match-facets.md) — `GET /api/lol/{shard}/profile/{puuid}/facets`; supports repeated filter values for disjunctive counts.
-- [Rank history](summoner/rank-history.md) — `GET /api/lol/{shard}/profile/{puuid}/rank-history`
+- [Rank history](lol-api/summoner/rank-history.md) — `GET /api/lol/{shard}/profile/{puuid}/rank-history`; supports Solo/Duo, Flex and Premade.
 - [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`
 - [Matchups](summoner/matchups.md) — `GET /api/lol/{shard}/profile/{puuid}/matchups`
 - [Profile indexables](summoner/indexables.md) — `GET /api/lol/profile/indexables`

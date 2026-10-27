@@ -86,7 +86,7 @@ public class Test extends Command {
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
                 + "] | regenerate aggregates [all|" + String.join("|", AggregateService.types())
-                + "] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
+                + "] | regenerate champion [patch] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -143,6 +143,16 @@ public class Test extends Command {
     private static void queueRegeneration(CommandEvent event, String[] arguments) {
         String[] options = arguments.length < 2 ? new String[0] : arguments[1].trim().toLowerCase(Locale.ROOT).split("\\s+");
         String operation = options.length == 0 ? "" : options[0];
+        if ("champion".equals(operation) || "champions".equals(operation)) {
+            if (options.length > 2 || (options.length == 2 && !options[1].matches("\\d+\\.\\d+"))) {
+                event.reply("Usage: !test regenerate champion [patch], for example 16.20.");
+                return;
+            }
+            String patch = options.length == 2 ? options[1] : new Filter().patch();
+            ComputeScheduler.enqueueChampionDataRefresh(patch);
+            event.reply("Regeneration champions queued for patch=" + patch + ".");
+            return;
+        }
         String aggregateType = options.length < 2 ? "all" : options[1];
         if (!REGENERATION_OPERATIONS.contains(operation)) {
             event.reply("Usage: !test regenerate <" + String.join("|", REGENERATION_OPERATIONS) + ">.");
@@ -577,8 +587,7 @@ public class Test extends Command {
     }
 
     private static void regenerateChampions() {
-        new ChampionService().refresh();
-        System.out.println("[Regenerate champions] completed.");
+        ComputeScheduler.enqueueChampionDataRefresh();
     }
 
     private static void regenerateIndexables() {

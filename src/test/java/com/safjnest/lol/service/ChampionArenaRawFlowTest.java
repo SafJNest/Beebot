@@ -26,6 +26,10 @@ import com.mongodb.client.result.UpdateResult;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.statistics.shared.ChampionStatsScope;
+import com.safjnest.lol.queue.job.Job;
+import com.safjnest.lol.queue.job.JobPriority;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.redis.RedisClient;
 
@@ -75,6 +79,83 @@ public class ChampionArenaRawFlowTest {
             assertFalse(json.has("schemaVersion"));
             assertFalse(json.has("arena"));
             assertFalse(json.has("filter"));
+        }
+    }
+
+    @Test
+    public void forcedMatrixRefreshUpdatesReadyScopesWithNewGamesWithoutDeletingThem() throws Exception {
+        try (Store store = new Store()) {
+            Filter filter = Filter.championBuild(27, "16.19", GameQueueType.CHERRY);
+            ChampionStatsScope scope = ChampionStatsScope.from(filter);
+            ChampionService service = new ChampionService();
+            service.refreshStatisticsMatrix("16.19", GameQueueType.CHERRY);
+            var original = MongoDB.findChampionStatsDocument(scope);
+            assertEquals(1, original.games);
+            var identities = java.util.Set.copyOf(store.table("champion_stats").keySet());
+
+            store.table("match").put("EUW1_3", Store.match("EUW1_3", "16.19.1"));
+            Document events = Document.parse(store.table("match_events").get("EUW1_1").toJson());
+            events.put("_id", "EUW1_3");
+            store.table("match_events").put("EUW1_3", events);
+            var skipped = service.refreshStatisticsMatrix("16.19", GameQueueType.CHERRY);
+            assertEquals(skipped.combinations(), skipped.skipped());
+            assertEquals(1, MongoDB.findChampionStatsDocument(scope).games);
+
+            var refreshed = service.refreshStatisticsMatrix("16.19", GameQueueType.CHERRY, List.of(), true);
+            var updated = MongoDB.findChampionStatsDocument(scope);
+            assertEquals(0, refreshed.skipped());
+            assertEquals(2, updated.games);
+            assertTrue(updated.ready);
+            assertEquals(original._id, updated._id);
+            assertEquals(identities, store.table("champion_stats").keySet());
+            assertEquals(2, store.eventQueries);
+        }
+    }
+
+    @Test
+    public void refreshUsesOnlyPlayedBuildQueuesInTheRequestedPatchAndRunsStatisticsFirst() throws Exception {
+        try (Store store = new Store()) {
+            Document aram = Store.match("EUW1_3", "16.19.1");
+            aram.put("queue", "ARAM");
+            store.table("match").put("EUW1_3", aram);
+            Document unsupported = Store.match("EUW1_4", "16.19.1");
+            unsupported.put("queue", "STRAWBERRY");
+            store.table("match").put("EUW1_4", unsupported);
+            Document otherPatch = Store.match("EUW1_5", "16.20.1");
+            otherPatch.put("patchMajor", "16.20");
+            otherPatch.put("queue", "RANKED_FLEX_SR");
+            store.table("match").put("EUW1_5", otherPatch);
+            assertEquals(java.util.Set.of(GameQueueType.CHERRY, GameQueueType.ARAM, GameQueueType.STRAWBERRY),
+                java.util.Set.copyOf(MongoDB.findChampionQueues("16.19")));
+            List<String> phases = new ArrayList<>();
+            Job<Void> job = new Job<>(1, 0, ComputeScheduler.class, DatabaseWorkerType.CHAMPION,
+                "refresh", "refresh", JobPriority.BACKGROUND, ignored -> null);
+            ChampionService service = new ChampionService() {
+                @Override
+                public MatrixRefreshResult refreshStatisticsMatrix(String patch, GameQueueType queue,
+                        List<Filter> builds, boolean force) {
+                    assertEquals("16.19", patch);
+                    assertTrue(force);
+                    assertTrue(builds.isEmpty());
+                    assertEquals("STATISTICS", job.phase());
+                    phases.add("stats:" + queue);
+                    return new MatrixRefreshResult(1, 0, 1, 0, 1);
+                }
+
+                @Override
+                public boolean refreshBuild(Filter filter) {
+                    assertEquals("16.19", filter.patch());
+                    assertEquals("BUILDS", job.phase());
+                    assertTrue(phases.containsAll(List.of("stats:CHERRY", "stats:ARAM")));
+                    phases.add("build:" + filter.queue());
+                    return true;
+                }
+            };
+            service.refresh("16.19", job);
+            assertEquals(java.util.Set.of("stats:CHERRY", "stats:ARAM", "build:CHERRY", "build:ARAM"),
+                java.util.Set.copyOf(phases));
+            assertEquals(4, job.progress().total());
+            assertEquals(4, job.progress().current());
         }
     }
 
@@ -172,10 +253,21 @@ public class ChampionArenaRawFlowTest {
                 switch (method.getName()) {
                     case "find": {
                         if (name.equals("match_events")) eventQueries++;
-                        Document query = bson((Bson) args[0]);
+                        Document query = args == null || args.length == 0 ? new Document() : bson((Bson) args[0]);
                         List<Document> result = new ArrayList<>();
                         for (Document value : table(name).values()) if (matches(value, query)) result.add(value);
                         return iterable(result);
+                    }
+                    case "distinct": {
+                        Document query = bson((Bson) args[1]);
+                        var values = new java.util.LinkedHashSet<String>();
+                        for (Document value : table(name).values())
+                            if (matches(value, query)) values.add(value.getString((String) args[0]));
+                        return proxy(com.mongodb.client.DistinctIterable.class, (object2, operation, parameters) -> {
+                            if (!operation.getName().equals("into")) throw new UnsupportedOperationException(operation.getName());
+                            ((java.util.Collection<String>) parameters[0]).addAll(values);
+                            return parameters[0];
+                        });
                     }
                     case "bulkWrite": {
                         for (Object value : (List<?>) args[0]) {

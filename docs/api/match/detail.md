@@ -189,9 +189,14 @@ actual response contains all available participants for the match.
 the current snapshot (`rank`, `lp`), the optional gain and the optional previous snapshot.
 An untracked match inserted from stored rank records may contain only the current
 snapshot; `gain` and the previous snapshot remain unset until the tracker completes
-rank history. When a stored rank map exists but has no entry for the match queue,
+rank history. Both initial insertion and missing-snapshot completion select the
+Flex rank for `RANKED_FLEX_SR`, the Premade rank for `RANKED_PREMADE_5X5`,
+and the Solo/Duo rank for every other queue (including its enum alias).
+When a stored rank map exists but has no entry for that selected ranked queue,
 the current snapshot is `UNRANKED` with `lp: 0`; when the rank map is absent or null,
-the rank is unknown and the snapshot remains unset.
+the rank is unknown and the snapshot remains unset. Match insertion and
+missing-snapshot completion read local ranks only; they never start a Riot rank
+refresh. Explicit refresh/profile flows and the tracker retain rank-refresh ownership.
 The former top-level `rank`, `lp` and `gain` participant fields
 have been intentionally removed from the public JSON.
 

@@ -9,10 +9,11 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | profile | one `find` on `summoner` with `Summoner + ranks + masteries` projection; Redis statistics first, then Mongo | 2 | ProfileService |
 | leaderboard | Normal page: `find` on `competitive` with queue/MMR-range/region/role/OTP filter, `mmr DESC, score DESC` and limited PUUIDs; one `$in` on `summoner._id`. Summoner page: exact identity lookup, Redis exact-division rank/range when resident; otherwise indexed count-before plus bounded seek queries around the target tuple, then one `$in` on `summoner._id`. Both use the existing total-count path. | Normal: 2 per page + count on cache miss. Summoner: identity + anchor + rank/page reads + count + summoner fetch. | LeaderboardService |
 | contextual leaderboard ranking | Only if Redis key is absent: projected `competitive {queue,mmr range,region}` cursor, no sort, then temporary ZSET and atomic publish; count hashes use one region/MMR aggregation per queue | Mongo 5,000 / Redis 1,000 | LeaderboardService |
-| records | Direct `profile_records {filterKey,metric,region,championId?}` query sorted by `value` and limited to the page, then one batched summoner lookup; total uses Redis (60s), then durable `aggregates`, then a source count only when absent from both | 2 + count on cache miss | ProfileRecordService |
+| records | Direct `profile_records {filterKey,metric,region,championId?}` query sorted by `value`, then `occurredAt ASC` (no PUUID tie breaker), and limited to the page, then one batched summoner lookup; total uses Redis (60s), then durable `aggregates`, then a source count only when absent from both | 2 + count on cache miss | ProfileRecordService |
 | profile statistics batch | `{puuid: {$in: [...]}, filterKey}`, flat root projection, unique identity index | 1 | ProfileService |
 | profile matchup rebuild | cursor over bounded match batches plus one `$in` join on `match_events`; process and recursively clear each decoded timeline | 1 batch of 100 | ProfileService |
-| champion stats matrix rebuild | exact count plus cursor over match IDs, then bounded match and `match_events` reads; logs planned/completed batches; delivers missing-event matches and leaves eligibility to stats/build consumers | 1 batch of 10,000; 1 match query + 1 `match_events` query per batch | ChampionAnalyzer |
+| champion refresh queue discovery | `distinct("queue", {patchMajor: selectedPatch})` on `match`, then retain champion build queues; cron defaults to the current patch, `!test regenerate champion [patch]` can override it | 1 query; existing `match_patch_region_time_v3` patch prefix | ChampionService / MongoDB |
+| champion stats matrix rebuild | exact count plus cursor over match IDs, then bounded match and `match_events` reads; compact `[refresh build]:` queue/batch progress; delivers missing-event matches and leaves eligibility to stats/build consumers | 1 batch of 10,000; 1 match query + 1 `match_events` query per batch | ChampionAnalyzer |
 | standalone champion build rebuild | same shared raw ID/match/event join as statistics; standard consumer requires a usable timeline, Arena retains missing events; recursively clear temporary inputs | 1 event batch of 100 matches | ChampionBuildEngine |
 | history | dotted PUUID for a single participant predicate; one `$elemMatch` when champion/lane must belong to that player; region-scoped projection/paging; OPGG page totals come from the cached `match_facets` aggregation | 1 + batch events | LeagueMessage / FacetsService |
 | profile match page | projection of only the fields needed for `MatchResult` and participants, in parallel with one `match_facets` aggregation supplying disjunctive facets and exact total | 2 concurrent reads; no separate count query | MatchService / FacetsService |
@@ -20,6 +21,8 @@ The runtime counterpart lives in `MongoDB.java`; hot paths use typed projections
 | match facets search | `match_facets` PUUID/shard match followed by one `$facet` for total, disjunctive queue/lane/champion/patch counts, season alternatives and filtered time extrema; shared with `/matches` | 1 aggregation | `MongoDB.searchFacets` |
 | match facets count | filtered counts reuse `FacetsService.get(...).total()`; unfiltered counts use indexed `countDocuments({puuid})` on `match_facets` and a 10-second Redis entry | 1 cache lookup or projection count | FacetsService |
 | tracker repair | for each `tracking=true` summoner, scan stored Solo/Duo participant history by `timeStart DESC`, rewrite derived `rankProgress` links and set `tracked=true` | streaming per tracked summoner | `%test fix-tracked` |
+| rank history | seasonal participant/shard/time query includes Solo/Duo (both enum names), Flex and Premade, then filters the cached seasonal projection by selected queue | 1 per season on cache miss; existing match participant indexes | MatchService / MongoDB |
+| missing match rank snapshots | group games by selected ranked queue and PUUID, then read stored rank maps in one bounded `_id`/region query per queue; fill only missing snapshots on untracked matches | up to 3 rank queries per page, then conditional match updates | MatchService / MongoDB |
 | timeline repair | cursor stored matches for one PUUID newest-first, fetch timeline directly by Riot match ID, regenerate the complete compact event payload, replace only that match's `match_events` record; stop after 10 consecutive missing timelines | streaming per PUUID | `!test fix-timeline <puuid>` |
 | patch timeline repair | one cursor per region over `match.patchMajor + region`, project only `_id`, fetch timelines in parallel across regions with a 500 ms delay per region, log `current/total`, regenerate compact events and replace only its `match_events` record; continue through missing timelines | streaming per region | `!test fix-timeline-patch <patch>` |
 | match events | `_id: {$in: [...]}` on `match_events` | 1 per batch; 100 profile matchups/standalone builds or 10,000 champion matrix matches | match detail/history and aggregate rebuilds |
@@ -41,6 +44,18 @@ and count. Global discovery and unique-ID operations keep their intended scope.
 Tracker predecessor lookup filters the participant PUUID, shard and canonical
 Solo/Duo queues, excludes the current full match ID, and reads the latest
 earlier `timeStart` with `{timeStart: -1}` ordering.
+
+Initial match snapshots and missing-snapshot completion use the Flex rank for
+Flex games, Premade for Premade games, and Solo/Duo for all other queues.
+A known rank map without the selected entry produces `UNRANKED`/0 LP; an
+unknown map leaves the snapshot unset. Match insertion and missing-snapshot
+completion use stored ranks only and never request a Riot rank refresh.
+Rank refreshes remain owned by explicit refresh/profile flows and the tracker.
+Existing snapshots and tracked matches are not overwritten or backfilled.
+The rank-history seasonal cache uses `rank-history:v2` to include Premade
+immediately after deployment. No indexes, payload shapes or Discord presentation
+change; only rank-history queue validation expands. The LP gain tracker remains
+Solo/Duo-only.
 
 Paginated queries are limited to 100 matches, 50 leaderboard summoners, 25 search results, 500,000 summoner keys per page and 50,000 match keys per page. Full summoner data is read and written in sub-batches of 20,000; matches and events remain in sub-batches of 1,000. Long-batch cursors must be closed explicitly.
 

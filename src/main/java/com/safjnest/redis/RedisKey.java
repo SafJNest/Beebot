@@ -41,7 +41,7 @@ public enum RedisKey {
     SUMMONER_MATCHUPS("los:%s:%s:summoner:%s:matchups:%s", Duration.ofHours(12)),
     SUMMONER_MATCH_FACETS("los:%s:%s:summoner:%s:facets:%s", Duration.ofSeconds(10)),
     SUMMONER_MATCH_FACET_COUNT("los:summoner:%s:facets:count", Duration.ofSeconds(10)),
-    SUMMONER_RANK_HISTORY("los:%s:%s:summoner:%s:rank-history:%s", Duration.ofDays(1)),
+    SUMMONER_RANK_HISTORY("los:%s:%s:summoner:%s:rank-history:v2:%s", Duration.ofDays(1)),
     LEADERBOARD_PAGE("los:leaderboard:page:%s:%s:%s:%s:%s:%s:%s", Duration.ofDays(1)),
     LEADERBOARD_COUNT("los:leaderboard:count:%s:%s:%s:%s:%s", Duration.ofHours(12)),
     LEADERBOARD_COUNT_LOCK("los:leaderboard:count-lock:%s:%s:%s:%s:%s", Duration.ofMinutes(1)),

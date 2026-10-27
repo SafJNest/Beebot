@@ -991,9 +991,9 @@
 
     "test": {
         "alias" : ["wip"],
-        "help"  : "Owner diagnostics. `test gc` requests JVM garbage collection; `test fix-timeline <puuid>` rebuilds stored match timelines; `test fix-timeline-patch <patch>` rebuilds timelines for every match in a patch; `test retrieveallgames <summoner>` and `test retrieveallgamesfast <summoner>` queue match history import as background Riot work; `test export-match-search` rebuilds the Mongo match_facets projection; `test regenerate aggregates [all|leaderboard-counts|rank-distribution|top-regions|division-counts|record-counts|metrics]` queues separate background aggregate rebuild jobs by type.",
+        "help"  : "Owner diagnostics. `test gc` requests JVM garbage collection; `test fix-timeline <puuid>` rebuilds stored match timelines; `test fix-timeline-patch <patch>` rebuilds timelines for every match in a patch; `test retrieveallgames <summoner>` and `test retrieveallgamesfast <summoner>` queue match history import as background Riot work; `test export-match-search` rebuilds the Mongo match_facets projection; `test regenerate champion [patch]` (also `champions`) discovers played build queues in the selected patch, forces statistics and invalidates Redis before rebuilding builds; defaults to the current patch, as does the daily 23:00 background job; `test regenerate aggregates [all|leaderboard-counts|rank-distribution|top-regions|division-counts|record-counts|metrics]` queues separate background aggregate rebuild jobs by type.",
         "category" : "Owner",
-        "arguments" : "[gc | diagnostic | regenerate aggregates [type] | pushsamplegame [GameQueueType] | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | fix-timeline <puuid> | fix-timeline-patch <patch> | export-match-search]"
+        "arguments" : "[gc | diagnostic | regenerate champion [patch] | regenerate aggregates [type] | pushsamplegame [GameQueueType] | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | fix-timeline <puuid> | fix-timeline-patch <patch> | export-match-search]"
     },
 
     "championstats": {

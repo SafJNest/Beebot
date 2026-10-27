@@ -16,7 +16,7 @@ curl 'http://localhost:8080/api/lol/EUW1/profile/Qx7m2vW8-example-puuid/rank-his
 |---|---|---|---:|---|---|
 | `shard` | path | enum `LeagueShard` | yes | — | Riot shard of the profile. |
 | `puuid` | path | string | yes | — | Canonical Riot PUUID of the summoner. |
-| `queue` | query | enum `GameQueueType` | no | `RANKED_SOLO_5X5` | Solo/Duo (`RANKED_SOLO_5X5` or alias `TEAM_BUILDER_RANKED_SOLO`) or `RANKED_FLEX_SR`. |
+| `queue` | query | enum `GameQueueType` | no | `RANKED_SOLO_5X5` | Solo/Duo (`RANKED_SOLO_5X5` or alias `TEAM_BUILDER_RANKED_SOLO`), `RANKED_FLEX_SR` or `RANKED_PREMADE_5X5`. |
 | `view` | query | string | no | — | For now only accepts `profile`: the last 10 days, including possible season boundaries. |
 | `season` | query | integer | no | current season | Season year: e.g. `2024`, `2025` or `2026`. |
 | `patch` | query | string | no | — | Exact patch `major.minor`, e.g. `14.10`. |
@@ -75,6 +75,12 @@ The response is not paginated. Without selectors it returns all persisted matche
 `enemyChampion` and `enemyPuuid` identify the opponent in the same lane. For `BOT` and `UTILITY`, `duoChampion`/`duoPuuid` identify the ally in the complementary lane and `duoEnemyChampion`/`duoEnemyPuuid` the ally's opponent. Otherwise duo fields are `null`.
 
 `metadata` always reports the requested selector and the effective `filter`: so the frontend knows when `timeStart` was truncated to the season boundary. The Redis cache contains the full projection of each season for `region`, `shard`, `puuid` and season, lasts one day and is invalidated in the season of the match when a match is persisted or when its `rankProgress` is updated.
+
+The seasonal source includes Solo/Duo, Flex and Premade. Its Redis key uses
+`rank-history:v2` so older cached sources excluding Premade are not reused;
+old keys expire after their existing one-day TTL. The response model is unchanged.
+Flex and Premade return their persisted snapshots; the LP gain tracker still
+processes Solo/Duo only.
 
 ## Errors
 

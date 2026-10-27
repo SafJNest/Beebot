@@ -32,6 +32,18 @@ Owner-only migration and regeneration commands are implemented in
 - `!test export-match-search` — rebuild `match_facets` from canonical matches.
 - `!test regenerate profiles`, `records`, `champions` or `indexables` — rebuild
   the selected derived data.
+- `!test regenerate champion [patch]` (`champions` is also accepted) uses the same
+  background `CHAMPION` job as the tracking scheduler's daily 23:00 refresh
+  (server timezone). The default is the current patch; an explicit patch such as
+  `16.20` rebuilds only that patch. Queue discovery uses `distinct("queue",
+  {patchMajor: patch})` on stored matches and retains only Solo/Duo (both enum
+  names), Flex, Draft, ARAM and Arena. It forces their statistics matrices, replacing ready documents in place and
+  invalidating their Redis statistics/page/tier-list caches after persistence,
+  before rebuilding build filters for the same patch and queues. Mongo aggregates remain
+  available during calculation; there is no preliminary delete. Progress is
+  reported through the existing job. Queue discovery reuses the patch-prefix
+  index. Persistence schemas, remaining queries, indexes,
+  public API payloads and command presentation remain unchanged.
 - `!test regenerate aggregates [type]` — queue separate count/distribution jobs;
   omit the type to rebuild all six aggregate families.
 - `!test fix-timeline <puuid>` or `!test fix-timeline-patch <patch>` — restore

@@ -84,7 +84,7 @@ public class RedisKeyTest {
         assertTrue(summonerActivity.endsWith("los:EUROPE:EUW1:summoner:puuid-1:activity:filter"));
         assertTrue(summonerMatchups.endsWith("los:EUROPE:EUW1:summoner:puuid-1:matchups:filter"));
         assertTrue(summonerFacets.endsWith("los:EUROPE:EUW1:summoner:puuid-1:facets:filter"));
-        assertTrue(rankHistory.endsWith("los:EUROPE:EUW1:summoner:puuid-1:rank-history:16"));
+        assertTrue(rankHistory.endsWith("los:EUROPE:EUW1:summoner:puuid-1:rank-history:v2:16"));
         assertTrue(RedisKey.SUMMONER_SEARCH.of("EUROPE", "EUW1", "query").endsWith("los:EUROPE:EUW1:summoner:search:query"));
         assertTrue(RedisKey.SUMMONER_AUTOCOMPLETE.of("EUROPE", "EUW1", "query").endsWith("los:EUROPE:EUW1:summoner:autocomplete:query"));
         assertTrue(RedisKey.CHAMPION_PAGE.of(157, "page-key").endsWith("los:champion:157:page:page-key"));

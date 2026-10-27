@@ -18,7 +18,7 @@ Leaderboard segments are keyed by canonical queue, `GLOBAL` or `LeagueShard`, an
 
 Exact-rank counts use one Mongo aggregation per canonical queue, grouping by region and MMR. Java assigns grouped MMR values to canonical divisions and sums global counts, then persists all scope maps in `aggregates` before publishing their Redis hashes. Existing snapshots are reused and updated incrementally in Mongo before Redis. Absolute leaderboard rank is the sum of higher exact-rank counts plus the one-based ZSET ordinal within the exact division.
 
-Records are returned directly from Mongo sorted by their actual `value`, descending for highest metrics and ascending for earliest-time metrics, with `occurredAt ASC, puuid ASC` ties. `ProfileRecord` has no normalized score or positional fields. Record Redis ZSETs, build jobs and ranking calculations are removed. The only record Redis cache stores paginated totals per filter/metric/region/champion for 60 seconds, backed by durable `aggregates`. Row-count changes invalidate both stores. Expiry reloads the persisted snapshot without recalculation. `HIGHEST_MASTERY` remains a rebuildable projection of canonical `summoner.masteries`.
+Records are returned directly from Mongo sorted by their actual `value`, descending for highest metrics and ascending for earliest-time metrics, with `occurredAt ASC` ties. `ProfileRecord` has no normalized score or positional fields. Record Redis ZSETs, build jobs and ranking calculations are removed. The only record Redis cache stores paginated totals per filter/metric/region/champion for 60 seconds, backed by durable `aggregates`. Row-count changes invalidate both stores. Expiry reloads the persisted snapshot without recalculation. `HIGHEST_MASTERY` remains a rebuildable projection of canonical `summoner.masteries`.
 
 `Rank.globalRanking` and `Rank.regionRanking` are nullable derived response fields, not persisted in `summoner.ranks`. `SummonerLeaderboard.position` continues to mean the position in the requested filtered/page leaderboard.
 
@@ -46,3 +46,17 @@ replaces leaderboard-specific snapshot persistence. Mongo `aggregates` contains
 one document per cached count/distribution key, never player positions or ZSETs.
 No new automatic counter hooks are introduced. Existing incremental division
 updates and record count invalidations synchronize Mongo before Redis.
+
+## Amendment 2026-10-27: smaller record indexes
+
+At the owner's explicit request, record sorting no longer uses PUUID as a
+third criterion. Value and occurrence time remain ordered as above; exact ties
+have no guaranteed order and can move between offset-based pages. The six
+record sort indexes omit PUUID. The existing unique
+`{puuid, filterKey, metric, championId}` identity index remains the sole PUUID
+index for profile reads, upserts and deletions; no standalone PUUID index is
+needed. Operators replace indexes after deploying the query change, following
+[the record index guide](../../mongo/12-profile-record-indexes.md).
+
+Controllers, canonical response models, parameters, totals and presentation
+remain unchanged. Only the exact-tie ordering contract changes.
