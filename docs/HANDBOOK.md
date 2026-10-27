@@ -17,8 +17,10 @@ the affected symbol and its impact before editing.
 
 - Canonical LoL success models live in `lol.model`; Spring owns controllers,
   configuration and HTTP errors.
-- `Summoner`, `Rank`, `Mastery`, `Match`, `Participant` and `MatchResult` are
-  canonical. Reuse existing mapping utilities.
+- `Summoner`, `Rank`, `Mastery`, `Match` and `Participant` are canonical. Reuse
+  existing mapping utilities. Match pages contain complete `Match` values with
+  bans and all participants; only the detail loads timeline `events`.
+  `MatchResult` remains an internal statistics compatibility input.
 - Mongo owns all LoL persistence, including the rebuildable `match_facets`
   projection maintained after match insert/upsert and rebuilt by
   `!test export-match-search`. LoL has no MariaDB runtime or historical

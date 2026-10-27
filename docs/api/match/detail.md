@@ -31,25 +31,99 @@ actual response contains all available participants for the match.
 
 ```json
 {
-  "id": 6789012345,
+  "id": 0,
   "gameId": "EUW1_6789012345",
   "leagueShard": "EUW1",
   "queue": "TEAM_BUILDER_RANKED_SOLO",
   "rank": "DIAMOND",
   "lastUpdate": 1714521600000,
   "bans": {
-    "BLUE": [157, 238, 64, 555, 121],
-    "RED": [122, 84, 67, 39, 157]
+    "BLUE": [
+      157,
+      238,
+      64,
+      555,
+      121
+    ],
+    "RED": [
+      122,
+      84,
+      67,
+      39,
+      157
+    ]
   },
   "events": {
-    "kills": [
+    "participants": {
+      "1": "Qx7m2vW8-example-puuid",
+      "2": "opponent-puuid"
+    },
+    "champion_kills": [
       {
         "timestamp": 184000,
-        "killerPuuid": "Qx7m2vW8-example-puuid",
-        "victimPuuid": "opponent-puuid"
+        "killer": 1,
+        "victim": 2,
+        "assists": [],
+        "killer_team": "BLUE",
+        "bounty": 300,
+        "shutdown_bounty": 0
       }
     ],
-    "objectives": []
+    "item_events": [
+      {
+        "timestamp": 60000,
+        "event": "ITEM_PURCHASED",
+        "participant": 1,
+        "item": 1055,
+        "before": 0,
+        "after": 0,
+        "gold_gain": 0
+      }
+    ],
+    "skill_events": [
+      {
+        "timestamp": 30000,
+        "participant": 1,
+        "skill_slot": 3
+      }
+    ],
+    "level_events": [
+      {
+        "timestamp": 30000,
+        "participant": 1,
+        "level": 2
+      }
+    ],
+    "monster_events": [
+      {
+        "timestamp": 600000,
+        "monster": "DRAGON",
+        "subtype": "FIRE_DRAGON",
+        "killer": 1,
+        "killer_team": "BLUE",
+        "assists": []
+      }
+    ],
+    "building_events": [],
+    "ward_events": [],
+    "turret_plate_events": [],
+    "objective_events": [],
+    "game_events": [],
+    "snapshots": [
+      {
+        "timestamp": 300000,
+        "participants": {
+          "1": {
+            "total_gold": 2300,
+            "current_gold": 500,
+            "cs": 40,
+            "xp": 2000,
+            "level": 5
+          }
+        }
+      }
+    ],
+    "dragon_soul": null
   },
   "timeStart": 1714514400000,
   "timeEnd": 1714521600000,
@@ -57,8 +131,8 @@ actual response contains all available participants for the match.
   "participants": [
     {
       "id": 1,
-      "summonerId": 12345678,
-      "matchId": 6789012345,
+      "summonerId": 0,
+      "matchId": 0,
       "win": true,
       "kda": "8/3/11",
       "champion": 157,
@@ -81,13 +155,15 @@ actual response contains all available participants for the match.
       "ward": 7,
       "wardKilled": 3,
       "visionScore": 27,
-      "pings": {"danger": 2, "onMyWay": 1},
+      "pings": {
+        "danger": 2,
+        "onMyWay": 1
+      },
       "subTeam": 0,
       "subTeamPlacement": 0,
       "puuid": "Qx7m2vW8-example-puuid",
       "riotId": "Player",
       "riotTag": "EUW",
-      "level": 18,
       "doubles": 1,
       "triples": 0,
       "quadruples": 0,
@@ -108,20 +184,50 @@ actual response contains all available participants for the match.
       "f": 2,
       "summonerSpell1": 4,
       "summonerSpell2": 14,
-      "primaryRunes": [8010, 9111, 9104, 8014],
-      "secondaryRunes": [8347, 8304],
-      "statsRunes": [5005, 5008, 5001],
-      "skillOrder": [1, 3, 2, 1, 1, 4],
+      "primaryRunes": [
+        8000,
+        8010,
+        9111,
+        9104,
+        8014
+      ],
+      "secondaryRunes": [
+        8300,
+        8347,
+        8304
+      ],
+      "statsRunes": [
+        5005,
+        5008,
+        5001
+      ],
+      "skillOrder": [
+        1,
+        3,
+        2,
+        1,
+        1,
+        4
+      ],
       "augments": [],
-      "starterItems": [1055],
-      "buildPath": [3031, 6673],
+      "starterItems": [
+        1055
+      ],
+      "buildPath": [
+        3031,
+        6673
+      ],
       "boots": 3006,
-      "supportItem": 0
+      "supportItem": 0,
+      "championLevel": 18,
+      "kills": 8,
+      "deaths": 3,
+      "assists": 11
     },
     {
       "id": 2,
-      "summonerId": 87654321,
-      "matchId": 6789012345,
+      "summonerId": 0,
+      "matchId": 0,
       "win": false,
       "kda": "3/8/4",
       "champion": 412,
@@ -144,13 +250,14 @@ actual response contains all available participants for the match.
       "ward": 31,
       "wardKilled": 8,
       "visionScore": 68,
-      "pings": {"danger": 5},
+      "pings": {
+        "danger": 5
+      },
       "subTeam": 0,
       "subTeamPlacement": 0,
       "puuid": "opponent-puuid",
       "riotId": "Opponent",
       "riotTag": "EUW",
-      "level": 17,
       "doubles": 0,
       "triples": 0,
       "quadruples": 0,
@@ -171,15 +278,44 @@ actual response contains all available participants for the match.
       "f": 2,
       "summonerSpell1": 4,
       "summonerSpell2": 3,
-      "primaryRunes": [8360, 8304, 8347, 8345],
-      "secondaryRunes": [8210, 8237],
-      "statsRunes": [5008, 5001, 5001],
-      "skillOrder": [3, 2, 1, 3, 3, 4],
+      "primaryRunes": [
+        8000,
+        8360,
+        8304,
+        8347,
+        8345
+      ],
+      "secondaryRunes": [
+        8300,
+        8210,
+        8237
+      ],
+      "statsRunes": [
+        5008,
+        5001,
+        5001
+      ],
+      "skillOrder": [
+        3,
+        2,
+        1,
+        3,
+        3,
+        4
+      ],
       "augments": [],
-      "starterItems": [3850],
-      "buildPath": [3107],
+      "starterItems": [
+        3850
+      ],
+      "buildPath": [
+        3107
+      ],
       "boots": 3110,
-      "supportItem": 3870
+      "supportItem": 3870,
+      "championLevel": 17,
+      "kills": 3,
+      "deaths": 8,
+      "assists": 4
     }
   ]
 }
@@ -199,6 +335,41 @@ missing-snapshot completion read local ranks only; they never start a Riot rank
 refresh. Explicit refresh/profile flows and the tracker retain rank-refresh ownership.
 The former top-level `rank`, `lp` and `gain` participant fields
 have been intentionally removed from the public JSON.
+
+## Shared match contract and timeline
+
+The payload has the same match fields, bans and complete participants as one
+`items[]` entry of the [match list](../summoner/matches.md). Only the detail adds
+`events`. The requested profile's statistics are never copied to the match root.
+All stored canonical participant fields are returned, including augments,
+`starterItems`, `buildPath`, `skillOrder`, `boots`, `supportItem`, subteam and
+placement. These lists describe IDs, not purchase timestamps or Arena rounds.
+
+`events` is the entire stored `match_events` payload, decoded without a response
+projection. Timestamp values are elapsed milliseconds within the match. Numeric
+participant references (`participant`, `killer`, `victim`, `creator`, `assists`)
+resolve through `events.participants`, whose keys are participant IDs and values
+are PUUIDs. It contains the groups available in storage:
+
+| Field | Contents |
+|---|---|
+| `participants` | Participant ID to PUUID mapping. |
+| `champion_kills` | Killer, victim, assists, bounty, first blood/multikill information when available. |
+| `item_events` | Purchases, sales, destroys and undo with item/before/after IDs and timestamp. |
+| `skill_events`, `level_events` | Ability upgrades and champion level changes. |
+| `monster_events`, `building_events` | Monsters, structures and their team/participant references. |
+| `ward_events`, `turret_plate_events` | Ward actions and turret plates. |
+| `objective_events`, `game_events` | Recorded objective and game events. |
+| `snapshots` | Per-participant gold, CS, XP and level, normally sampled every five minutes plus final and available 15-minute frames. |
+| `dragon_soul` | Recorded soul information or the existing last-non-elder-dragon inference with its `source`. |
+
+Absent timeline storage returns `events: {}` while retaining match data and bans.
+Missing groups in older timelines are not fabricated. Invalid stored encoding,
+size, checksum or JSON remains an explicit read failure. A persisted match with
+no timeline is not re-fetched on every detail request; existing owner timeline
+repair commands retain that responsibility. Bans, participant fields and timeline
+values are limited to data actually stored; this contract change does not
+backfill missing data or add rune performance metrics or Arena round metadata.
 
 ## States and errors
 

@@ -36,28 +36,221 @@ Riot calls, lookups or statistic regenerations.
 {
   "items": [
     {
+      "id": 0,
       "gameId": "EUW1_6789012345",
-      "queue": "RANKED_SOLO_5X5",
+      "leagueShard": "EUW1",
+      "queue": "TEAM_BUILDER_RANKED_SOLO",
+      "rank": "DIAMOND",
+      "lastUpdate": 1714521600000,
+      "bans": {
+        "BLUE": [
+          157,
+          238,
+          64,
+          555,
+          121
+        ],
+        "RED": [
+          122,
+          84,
+          67,
+          39,
+          157
+        ]
+      },
       "timeStart": 1714514400000,
-      "timeEnd": 1714516500000,
-      "win": true,
-      "kda": "8/2/11",
-      "championId": 103,
+      "timeEnd": 1714521600000,
+      "patch": "14.10",
       "participants": [
         {
-          "puuid": "Qx7m2vW8-example-puuid",
+          "id": 1,
+          "summonerId": 0,
+          "matchId": 0,
+          "win": true,
+          "kda": "8/3/11",
+          "champion": 157,
+          "lane": "MID",
+          "team": "BLUE",
+          "roleQuestId": 0,
           "rankProgress": {
             "rank": "DIAMOND_II",
             "lp": 74,
             "gain": 21,
             "previousRank": "DIAMOND_II",
             "previousLp": 53
-          }
+          },
+          "damage": 18432,
+          "damageTaken": 14987,
+          "damageBuilding": 4210,
+          "healing": 912,
+          "cs": 241,
+          "goldEarned": 15321,
+          "ward": 7,
+          "wardKilled": 3,
+          "visionScore": 27,
+          "pings": {
+            "danger": 2,
+            "onMyWay": 1
+          },
+          "subTeam": 0,
+          "subTeamPlacement": 0,
+          "puuid": "Qx7m2vW8-example-puuid",
+          "riotId": "Player",
+          "riotTag": "EUW",
+          "doubles": 1,
+          "triples": 0,
+          "quadruples": 0,
+          "pentas": 0,
+          "item0": 3031,
+          "item1": 6673,
+          "item2": 3006,
+          "item3": 3036,
+          "item4": 0,
+          "item5": 0,
+          "item6": 3363,
+          "turretKills": 4,
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3,
+          "d": 2,
+          "f": 2,
+          "summonerSpell1": 4,
+          "summonerSpell2": 14,
+          "primaryRunes": [
+            8000,
+            8010,
+            9111,
+            9104,
+            8014
+          ],
+          "secondaryRunes": [
+            8300,
+            8347,
+            8304
+          ],
+          "statsRunes": [
+            5005,
+            5008,
+            5001
+          ],
+          "skillOrder": [
+            1,
+            3,
+            2,
+            1,
+            1,
+            4
+          ],
+          "augments": [],
+          "starterItems": [
+            1055
+          ],
+          "buildPath": [
+            3031,
+            6673
+          ],
+          "boots": 3006,
+          "supportItem": 0,
+          "championLevel": 18,
+          "kills": 8,
+          "deaths": 3,
+          "assists": 11
+        },
+        {
+          "id": 2,
+          "summonerId": 0,
+          "matchId": 0,
+          "win": false,
+          "kda": "3/8/4",
+          "champion": 412,
+          "lane": "UTILITY",
+          "team": "RED",
+          "roleQuestId": 2011,
+          "rankProgress": {
+            "rank": "DIAMOND_III",
+            "lp": 52,
+            "gain": -18,
+            "previousRank": "DIAMOND_III",
+            "previousLp": 70
+          },
+          "damage": 8432,
+          "damageTaken": 22001,
+          "damageBuilding": 1021,
+          "healing": 120,
+          "cs": 34,
+          "goldEarned": 9234,
+          "ward": 31,
+          "wardKilled": 8,
+          "visionScore": 68,
+          "pings": {
+            "danger": 5
+          },
+          "subTeam": 0,
+          "subTeamPlacement": 0,
+          "puuid": "opponent-puuid",
+          "riotId": "Opponent",
+          "riotTag": "EUW",
+          "doubles": 0,
+          "triples": 0,
+          "quadruples": 0,
+          "pentas": 0,
+          "item0": 3870,
+          "item1": 3190,
+          "item2": 3107,
+          "item3": 3110,
+          "item4": 0,
+          "item5": 0,
+          "item6": 3364,
+          "turretKills": 0,
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3,
+          "d": 2,
+          "f": 2,
+          "summonerSpell1": 4,
+          "summonerSpell2": 3,
+          "primaryRunes": [
+            8000,
+            8360,
+            8304,
+            8347,
+            8345
+          ],
+          "secondaryRunes": [
+            8300,
+            8210,
+            8237
+          ],
+          "statsRunes": [
+            5008,
+            5001,
+            5001
+          ],
+          "skillOrder": [
+            3,
+            2,
+            1,
+            3,
+            3,
+            4
+          ],
+          "augments": [],
+          "starterItems": [
+            3850
+          ],
+          "buildPath": [
+            3107
+          ],
+          "boots": 3110,
+          "supportItem": 3870,
+          "championLevel": 17,
+          "kills": 3,
+          "deaths": 8,
+          "assists": 4
         }
-      ],
-      "primaryRunes": [8112, 8143, 8138, 8105],
-      "secondaryRunes": [8347, 8304],
-      "statsRunes": [5008, 5008, 5011]
+      ]
     }
   ],
   "limit": 20,
@@ -66,25 +259,67 @@ Riot calls, lookups or statistic regenerations.
   "hasMore": true,
   "facets": {
     "queue": [
-      { "value": "RANKED_SOLO_5X5", "total": 80, "selected": true }
+      {
+        "value": "RANKED_SOLO_5X5",
+        "total": 80,
+        "selected": true
+      }
     ],
     "lane": [
-      { "value": "MID", "total": 27, "selected": true },
-      { "value": "TOP", "total": 14, "selected": false }
+      {
+        "value": "MID",
+        "total": 27,
+        "selected": true
+      },
+      {
+        "value": "TOP",
+        "total": 14,
+        "selected": false
+      }
     ],
     "champion": [
-      { "value": 103, "total": 27, "selected": true },
-      { "value": 238, "total": 12, "selected": false }
+      {
+        "value": 103,
+        "total": 27,
+        "selected": true
+      },
+      {
+        "value": 238,
+        "total": 12,
+        "selected": false
+      }
     ],
     "patch": [
-      { "value": "16.18", "total": 27, "selected": false }
+      {
+        "value": "16.18",
+        "total": 27,
+        "selected": false
+      }
     ],
     "season": [
-      { "value": "current", "year": 2026, "total": 80, "selected": false },
-      { "value": "previous", "year": 2025, "total": 27, "selected": true },
-      { "value": "all", "year": null, "total": 107, "selected": false }
+      {
+        "value": "current",
+        "year": 2026,
+        "total": 80,
+        "selected": false
+      },
+      {
+        "value": "previous",
+        "year": 2025,
+        "total": 27,
+        "selected": true
+      },
+      {
+        "value": "all",
+        "year": null,
+        "total": 107,
+        "selected": false
+      }
     ],
-    "range": { "min": 1714514400000, "max": 1791763200000 }
+    "range": {
+      "min": 1714514400000,
+      "max": 1791763200000
+    }
   }
 }
 ```
@@ -120,12 +355,27 @@ matches that satisfy the same filters as `items` (`shard`, `queue`, `champion`,
 or through `season`), before applying `limit` and `offset`. The page items are
 read from `match`; the page lookup and facet aggregation run concurrently.
 
-Each result exposes the requested summoner's runes: the first entry of
-`primaryRunes` and `secondaryRunes` is the tree, the others are the chosen runes;
-`statsRunes` contains the three stat shards. Participants remain a
-lightweight projection and do not include these configurations; when available,
-each includes the already-persisted `rankProgress`. Top-level participant
-fields `rank`, `lp` or `gain` no longer exist.
+Each `items[]` element is a complete canonical `Match`, with general match
+fields, bans and every stored `Participant` field. It uses the same model and
+Mongo mapper as the [single-match detail](../match/detail.md); only the detail
+loads the timeline under `events`. The list never reads `match_events` and omits
+`events` entirely. Mongo `match` documents are read without a field projection.
+
+The PUUID selects the matches; consumers locate their participant by
+`participants[].puuid`. Requested-player `win`, `kda`, `championId`, `lane`,
+`damage`, `cs`, `gold`, `vision`, `teamKills`, `items`, spells and rune fields
+are no longer duplicated at the match root. Participant names remain canonical:
+`champion`, `goldEarned`, `visionScore`, `item0`–`item6`, `summonerSpell1` and
+`summonerSpell2`. Team kills and ratios can be calculated from the participants,
+using `subTeam` where appropriate for Arena. This is a breaking list contract.
+
+Full participants include IDs, champion level, rank progress, damage taken,
+healing, wards, pings, spell counters, Arena subteam/placement, augments, starter
+items, build path, boots, support item, skill order and all rune configurations.
+The first primary/secondary rune entry is the tree and the remainder are the
+selected runes. Timed purchases and skill upgrades remain in detail `events`.
+No backfill, new Riot lookup, persistence schema change or Discord restyle is
+part of this response change.
 
 The page keeps existing fields and adds root `metadata` with
 `pagination` (`limit`, `offset`, `total`, `hasMore`), the requested filter and
@@ -140,6 +390,6 @@ The page keeps existing fields and adds root `metadata` with
 ## Owner
 
 `MatchService.getPage(puuid, Filter, ..., MatchFacetQuery)` composes the page
-items from `MongoDB.findMatchResults` with total and facets from
+complete `Match` items from `MongoDB.findMatchPage` with total and facets from
 `FacetsService.get`. The `Filter` and `MatchFacetQuery` carry the same shard and
 match selectors; pagination and ordering stay separate.

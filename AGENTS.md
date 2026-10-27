@@ -70,7 +70,8 @@ The separator is the only structural comment required. Remove comments that do n
 - `SummonerLeaderboard` wraps one `SummonerView` with leaderboard position data.
 - `Match` is the complete match model.
 - `Participant` is the complete global participant model.
-- `MatchResult` is the lightweight match projection used by lists and overviews.
+- Match lists and single-match HTTP responses both use `Match` with complete `Participant` values and bans; only the single-match response includes timeline `events`.
+- `MatchResult` remains an internal compatibility input for statistics; do not use it for public match responses.
 
 Use existing utilities before adding new mapping logic, especially `ChampionUtils`, `LaneTypeUtils`, `GameQueueTypeUtils`, `LeagueShardUtils`, `TierDivisionUtils` and `LeagueHandler`.
 

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.nosql.AbstractEntity;
 import com.safjnest.lol.tracker.Tracker;
@@ -34,6 +35,7 @@ public class Match extends AbstractEntity<Match> {
     @JsonIgnore
     public JSONObject events;
     @JsonProperty("events")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, Object> eventData;
     public long timeStart;
     public long timeEnd;

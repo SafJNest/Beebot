@@ -169,3 +169,11 @@ This is an intentional public JSON change. No compatibility aliases for old DTO 
 - Profile and leaderboard share the same serialized summoner shape.
 - Pagination, default region, queue defaults and aggregate endpoints remain explicit and tested.
 - HTTP status mapping is centralized and storage-only fields are not exposed accidentally.
+
+### Amendment 2026-10-27: complete match list items
+
+Match pages retain pagination, facets and metadata but now expose `List<Match>`
+items with bans and all participant fields. Requested-player fields are not
+duplicated at the match root. The detail returns the same `Match` plus the
+stored `events` timeline. See ADR-0003 and both match endpoint pages for the
+breaking field migration and timeline schema. No presentation changes are made.

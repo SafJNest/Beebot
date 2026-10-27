@@ -10,7 +10,10 @@ derived-index store.
 - `summoner._id` is the PUUID. Ranks and masteries are stored on the canonical
   summoner record.
 - `match._id` is the full Riot match ID. Events live separately in
-  `match_events`.
+  `match_events`. Match pages read complete `match` documents without a field
+  projection and omit events; the single-match detail adds the stored timeline.
+  Bans and all participant fields are shared by both HTTP responses. No stored
+  schema, indexes, writer ownership or Discord presentation changes are needed.
 - Profile statistics, activity and matchups use `{ puuid, filterKey }` as their
   logical identity. The corresponding unique indexes protect that pair.
 - Champion statistics and builds are rebuildable aggregates. CHERRY persistence

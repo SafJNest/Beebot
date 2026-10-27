@@ -43,6 +43,7 @@ public class MongoDBTest {
         match.patch = "14.2.1";
         match.bans = Map.of(TeamType.BLUE, List.of(157), TeamType.RED, List.of(238));
         Participant participant = new Participant();
+        participant.id = 3;
         participant.puuid = "p1";
         participant.item0 = 1055;
         participant.rankProgress = new RankProgress(TierDivisionType.GOLD_II, 73, 21, null, null);
@@ -71,7 +72,7 @@ public class MongoDBTest {
         assertFalse(savedParticipant.containsKey("lp"));
         assertFalse(savedParticipant.containsKey("gain"));
         assertFalse(savedParticipant.containsKey("build"));
-        assertFalse(savedParticipant.containsKey("id"));
+        assertEquals(3, savedParticipant.getInteger("id").intValue());
         assertFalse(savedParticipant.containsKey("summonerId"));
         assertFalse(savedParticipant.containsKey("matchId"));
         assertFalse(savedParticipant.containsKey("legacyParticipantId"));

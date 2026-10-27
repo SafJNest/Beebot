@@ -4,14 +4,14 @@ import java.util.List;
 
 import com.safjnest.lol.model.ResponseMetadata;
 
-public record MatchPage(List<MatchResult> items, int limit, int offset, long total, boolean hasMore,
+public record MatchPage(List<Match> items, int limit, int offset, long total, boolean hasMore,
                         MatchFacets.Facets facets, ResponseMetadata metadata) {
 
-    public MatchPage(List<MatchResult> items, int limit, int offset, long total, boolean hasMore) {
+    public MatchPage(List<Match> items, int limit, int offset, long total, boolean hasMore) {
         this(items, limit, offset, total, hasMore, null, null);
     }
 
-    public MatchPage(List<MatchResult> items, int limit, int offset, long total, boolean hasMore,
+    public MatchPage(List<Match> items, int limit, int offset, long total, boolean hasMore,
                      ResponseMetadata metadata) {
         this(items, limit, offset, total, hasMore, null, metadata);
     }

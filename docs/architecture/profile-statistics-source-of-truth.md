@@ -28,8 +28,9 @@ season alone.
 rates, averages and view-specific rankings are derived by consumers. Activity
 and matchups are separate rebuildable projections in `profile_activity` and
 `profile_matchups`, with the same `{ puuid, filterKey }` identity. Match lists
-remain a paginated `MatchResult` query over raw match data; events and full match
-details are never reconstructed from aggregates.
+return paginated complete `Match` values, including bans and participants but
+excluding events. The single-match detail adds the stored timeline. Neither
+response is reconstructed from aggregates (ADR-0003, amendment 2026-10-27).
 
 `isOtp` is derived from the queue's champion leaves. A champion qualifies when
 there are at least 20 games, its share is at least `0.50 + 0.30 * exp(-N/250)`,

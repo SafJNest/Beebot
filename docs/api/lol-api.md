@@ -20,7 +20,7 @@ Examples use `http://localhost:8080` as the base URL.
 - [Profile refresh](summoner/profile-refresh.md) — `POST /api/lol/{shard}/profile/{puuid}/refresh`
 - [Profile by Riot ID](summoner/profile-by-name.md) — `GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}`
 - [Live game](summoner/livegame.md) — `GET /api/lol/{shard}/livegame/{puuid}` and `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
-- [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`; supports `season=current|previous|all` as a shortcut for the time bounds.
+- [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`; complete matches with bans and participants, without timeline; supports `season=current|previous|all` as a shortcut for the time bounds. The [single-match detail](match/detail.md) returns the same match plus timeline `events`.
 - [Match facets](summoner/match-facets.md) — `GET /api/lol/{shard}/profile/{puuid}/facets`; supports repeated filter values for disjunctive counts.
 - [Rank history](lol-api/summoner/rank-history.md) — `GET /api/lol/{shard}/profile/{puuid}/rank-history`; supports Solo/Duo, Flex and Premade.
 - [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`

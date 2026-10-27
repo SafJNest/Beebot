@@ -82,7 +82,6 @@ import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.lol.utils.KdaUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.NumberUtils;
 import com.safjnest.lol.utils.PatchUtils;
@@ -1286,36 +1285,34 @@ public final class MongoDB {
         return null;
     }
 
-    public static List<com.safjnest.lol.model.match.MatchResult> findMatchResults(
+    public static List<Match> findMatchPage(
             String puuid,
             Filter filter,
             int offset,
             int limit,
             boolean ascending) {
-        traceRead("match.findResults", "puuid=" + puuid + " queue=" + (filter == null ? null : filter.queue())
+        traceRead("match.findPage", "puuid=" + puuid + " queue=" + (filter == null ? null : filter.queue())
             + " offset=" + offset + " limit=" + limit);
-        List<com.safjnest.lol.model.match.MatchResult> result = new ArrayList<>();
+        List<Match> result = new ArrayList<>();
         if (puuid == null || puuid.isBlank() || filter == null) return result;
         int boundedOffset = Math.max(0, offset);
         int boundedLimit = Math.max(0, Math.min(101, limit));
         if (boundedLimit == 0) return result;
         boolean relationalFilter = filter.opponent() != 0 || filter.duo() != 0;
         FindIterable<Document> documents = matches().find(buildMatchFilter(puuid, null, filter, 0, 0))
-            .projection(relationalFilter ? profileStatisticsMatchProjection() : matchResultProjection())
             .sort(ascending ? Sorts.ascending("timeStart") : Sorts.descending("timeStart"))
             .skip(relationalFilter ? 0 : boundedOffset);
         if (!relationalFilter) documents = documents.limit(boundedLimit);
         int skipped = 0;
         for (Document document : documents) {
-            com.safjnest.lol.model.match.Match match = relationalFilter
-                ? readMatch(matchRecord(document))
-                : read(matchRecord(document), Match.class);
+            Match match = read(matchRecord(document), Match.class);
             if (relationalFilter) {
                 if (!ProfileStatistics.matchesFilter(match, puuid, filter)) continue;
                 if (skipped++ < boundedOffset) continue;
             }
-            com.safjnest.lol.model.match.MatchResult matchResult = toMatchResult(match, puuid);
-            if (matchResult != null) result.add(matchResult);
+            match.eventData = null;
+            match.events = null;
+            result.add(match);
             if (result.size() >= boundedLimit) break;
         }
         return result;
@@ -3610,22 +3607,6 @@ public final class MongoDB {
         return result.toString();
     }
 
-    private static MatchResult toMatchResult(Match match, String puuid) {
-        List<Participant> participants = match.participants == null ? List.of() : match.participants;
-        Participant player = null;
-        for (Participant participant : participants) if (participant != null && puuid != null && puuid.equals(participant.puuid)) { player = participant; break; }
-        if (player == null) return null;
-        int teamKills = 0;
-        for (Participant participant : participants) if (participant != null && participant.team == player.team) teamKills += kills(participant.kda);
-        return new MatchResult(match.gameId, match.queue, match.timeStart, match.timeEnd, player.win, player.kda, player.champion, player.lane, player.damage, player.cs, player.goldEarned, player.visionScore, teamKills,
-                List.of(player.item0, player.item1, player.item2, player.item3, player.item4, player.item5, player.item6), List.of(player.summonerSpell1, player.summonerSpell2),
-                player.primaryRunes, player.secondaryRunes, player.statsRunes, participants);
-    }
-
-    private static int kills(String kda) {
-        return KdaUtils.getKills(kda);
-    }
-
     private static void traceRead(String operation, String details) {
         //if (App.isTesting()) BotLogger.trace("[MONGO] " + operation + " " + details);
     }
@@ -3827,18 +3808,6 @@ public final class MongoDB {
         List<String> ranks = new ArrayList<>();
         for (TierType tier : TierType.values()) if (tier.ordinal() <= filter.rank().ordinal()) ranks.add(tier.name());
         return Filters.in("rank", ranks);
-    }
-
-    private static Bson matchResultProjection() {
-        return Projections.include(
-                "_id", "queue", "timeStart", "timeEnd",
-                "participants.puuid", "participants.riotId", "participants.riotTag", "participants.championLevel",
-                "participants.win", "participants.kda", "participants.champion", "participants.lane",
-                "participants.team", "participants.rankProgress", "participants.damage", "participants.cs", "participants.goldEarned",
-                "participants.visionScore", "participants.item0", "participants.item1", "participants.item2",
-                "participants.item3", "participants.item4", "participants.item5", "participants.item6",
-                "participants.summonerSpell1", "participants.summonerSpell2", "participants.primaryRunes",
-                "participants.secondaryRunes", "participants.statsRunes");
     }
 
     private static Bson rankHistoryProjection() {

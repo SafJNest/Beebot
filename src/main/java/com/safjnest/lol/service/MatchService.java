@@ -19,7 +19,6 @@ import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.match.MatchFacets;
 import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchPage;
-import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankHistory;
 import com.safjnest.lol.model.match.RankHistoryMatch;
@@ -335,8 +334,8 @@ public final class MatchService {
             return CompletableFuture.completedFuture(new MatchPage(List.of(), limit, offset, 0, false));
         }
 
-        CompletableFuture<List<MatchResult>> page = CompletableFuture.supplyAsync(
-            () -> MongoDB.findMatchResults(puuid, filter, offset, limit + 1, order.ascending()),
+        CompletableFuture<List<Match>> page = CompletableFuture.supplyAsync(
+            () -> MongoDB.findMatchPage(puuid, filter, offset, limit + 1, order.ascending()),
             MATCH_READ_EXECUTOR
         );
         CompletableFuture<MatchFacets> facets = CompletableFuture.supplyAsync(
@@ -507,6 +506,17 @@ public final class MatchService {
         return result;
     }
 
+    public static String matchListRequestKey(
+            GameQueueType queue,
+            int count,
+            long startTime,
+            MatchlistMatchType type) {
+        return "queue=" + (queue == null ? "null" : queue.name())
+            + ":count=" + count
+            + ":startTime=" + startTime
+            + ":type=" + (type == null ? "null" : type.name());
+    }
+
     // ============================================================================
 
     private static void localRanking(Match match) {
@@ -644,17 +654,6 @@ public final class MatchService {
         if (startTime > 0) builder = builder.withStartTime(startTime);
         if (type != null) builder = builder.withType(type);
         return queue == null ? builder : builder.withQueue(queue);
-    }
-
-    public static String matchListRequestKey(
-            GameQueueType queue,
-            int count,
-            long startTime,
-            MatchlistMatchType type) {
-        return "queue=" + (queue == null ? "null" : queue.name())
-            + ":count=" + count
-            + ":startTime=" + startTime
-            + ":type=" + (type == null ? "null" : type.name());
     }
 
     private static LOLMatch getCachedR4JMatch(String gameId, LeagueShard shard) {

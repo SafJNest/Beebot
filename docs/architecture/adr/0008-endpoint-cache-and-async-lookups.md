@@ -28,7 +28,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
 - Profile reads use saved getters for rank and mastery: Redis first, then Mongo. When either component is absent, `GET` queues its initial Riot fetch through the existing R4J scheduling path and returns the available profile as `PARTIAL` with `metadata.refresh=true`. Existing components are not refreshed by `GET`; `POST /profile/{puuid}/refresh` remains the explicit forced refresh.
 - `ProfileService` starts a summoner Future only when the profile base is absent. When Riot ID resolution is pending, its completion also starts base-profile loading so a second request is not required to advance the flow. The Spring `GET` does not wait for rank, mastery or statistics work: once the summoner base is available, it returns the available view while missing statistics are queued through the existing compute scheduler and missing rank/mastery through their existing services. `202` is reserved for Riot ID resolution or base-profile loading still in progress.
-- `SUMMONER_OVERVIEW` caches the summoner components and aggregate without the volatile `recentMatches` list. The HTTP profile request loads up to five lightweight `MatchResult` rows separately, without events, and composes them into the response.
+- `SUMMONER_OVERVIEW` caches summoner components and aggregates without match history. The profile response has no `recentMatches` field. Match history is requested separately through the paginated matches endpoint, which returns complete `Match` values without timeline events (ADR-0003, amendment 2026-10-27).
 - The synchronous bot wrappers wait for the same Futures. A successful component Future persists the canonical value in Redis and Mongo once; a Riot error is retried later and is never persisted as an empty list.
 - Champion build reads the single persisted aggregate before allowing command/refresh computation.
 - Match detail follows `Redis -> Mongo -> MatchService background fetch -> insert`.
@@ -47,7 +47,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
   prevents R4J from reading or writing its filesystem cache.
 - Tracker timeline cache entries are match-scoped, shared by the two analysis passes, and explicitly invalidated when tracking completes.
 - Redis expiration is an optimization and never the correctness mechanism: explicit invalidation and successful Mongo writes remain authoritative.
-- Profile statistics are keyed by the complete `Filter.toSummonerKey()` together with the PUUID; recent matches are loaded separately from the same filter.
+- Profile statistics are keyed by the complete `Filter.toSummonerKey()` together with the PUUID; match pages apply their requested filters separately over canonical matches.
 - Mongo persists profile statistics flat. The application uses `{ puuid, filterKey }` as the logical identity; `_id` is a random ObjectId created only on insert and is not used for lookup.
 
 ## Rejected alternatives

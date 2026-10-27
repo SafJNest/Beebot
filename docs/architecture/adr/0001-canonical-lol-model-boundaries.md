@@ -17,7 +17,7 @@ Profile, search, leaderboard and match responses currently duplicate domain data
 Canonical model packages are:
 
 - `lol/model/summoner` for summoner identity, ranks, mastery and views;
-- `lol/model/match` for complete matches, participants and lightweight results;
+- `lol/model/match` for complete matches and participants;
 - `lol/model/leaderboard` for pages and aggregates;
 - `lol/model/statistics` for reusable statistics aggregates.
 
@@ -29,7 +29,9 @@ Controllers return canonical models directly. A new DTO is allowed only when an 
 - Use `Rank`, never `SummonerRank`.
 - Use `Mastery`, never `ChampionMastery`.
 - Keep `riotId` as a `String`.
-- Use `Match`, `Participant` and `MatchResult` as the only match data levels.
+- Use `Match` and `Participant` for public match data. Lists omit timeline events;
+  the detail adds them (ADR-0003, amendment 2026-10-27). Existing `MatchResult`
+  remains an internal statistics compatibility input, not a public response.
 
 ## Ownership
 
