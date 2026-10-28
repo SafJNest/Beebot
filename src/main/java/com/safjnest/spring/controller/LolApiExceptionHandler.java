@@ -2,6 +2,7 @@ package com.safjnest.spring.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingPathVariableException;
@@ -13,11 +14,15 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.safjnest.spring.dto.LolApiError;
 
 @RestControllerAdvice
 public class LolApiExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LolApiExceptionHandler.class);
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<LolApiError> handleResponseStatus(ResponseStatusException exception) {
@@ -66,6 +71,11 @@ public class LolApiExceptionHandler {
 
     @ExceptionHandler({ NoHandlerFoundException.class, NoResourceFoundException.class })
     public ResponseEntity<LolApiError> handleNotFound(Exception exception) {
+        if (exception instanceof NoHandlerFoundException noHandler) {
+            LOGGER.warn("No endpoint mapped for {} {}", noHandler.getHttpMethod(), noHandler.getRequestURL());
+        } else if (exception instanceof NoResourceFoundException noResource) {
+            LOGGER.warn("No resource found: {}", noResource.getResourcePath());
+        }
         return error(HttpStatus.NOT_FOUND, "not_found", "Endpoint not found");
     }
 
@@ -83,7 +93,9 @@ public class LolApiExceptionHandler {
         String errorMessage = message != null && !message.isBlank()
             ? message
             : HttpStatus.valueOf(status.value()).getReasonPhrase();
-        return ResponseEntity.status(status).body(new LolApiError(status.value(), code, errorMessage));
+        return ResponseEntity.status(status)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(new LolApiError(status.value(), code, errorMessage));
     }
 
     private String codeFor(HttpStatusCode status) {

@@ -2,11 +2,15 @@ package com.safjnest.spring;
 
 import java.io.File;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.catalina.Context;
 import org.apache.catalina.Wrapper;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.apache.catalina.startup.Tomcat;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import com.safjnest.spring.config.LolApiConfig;
 
@@ -44,11 +48,27 @@ public class SpringServer {
         AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
         applicationContext.register(LolApiConfig.class);
 
-        DispatcherServlet dispatcherServlet = new DispatcherServlet(applicationContext);
+        DispatcherServlet dispatcherServlet = new ApiDispatcherServlet(applicationContext);
         Wrapper servlet = Tomcat.addServlet(context, SERVLET_NAME, dispatcherServlet);
         servlet.setLoadOnStartup(LOAD_ON_STARTUP);
         servlet.setAsyncSupported(true);
 
         context.addServletMappingDecoded(SERVLET_MAPPING, SERVLET_NAME);
+    }
+
+    private static final class ApiDispatcherServlet extends DispatcherServlet {
+
+        private ApiDispatcherServlet(AnnotationConfigWebApplicationContext applicationContext) {
+            super(applicationContext);
+        }
+
+        @Override
+        protected void noHandlerFound(HttpServletRequest request, HttpServletResponse response) throws Exception {
+            throw new NoHandlerFoundException(
+                request.getMethod(),
+                request.getRequestURI(),
+                new ServletServerHttpRequest(request).getHeaders()
+            );
+        }
     }
 }
