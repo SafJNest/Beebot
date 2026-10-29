@@ -18,6 +18,7 @@ import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
@@ -246,6 +247,7 @@ public final class RankService {
             int firstPage, Job<?> task) {
         int consecutiveErrors = 0;
         for (int page = firstPage; ; page++) {
+            if (firstPage > 0) TrackerScheduler.awaitTracking(task);
             task.phase("FETCHING");
             task.currentItem("tier=" + tier.name() + " queue=" + queue.name() + " page=" + page);
             List<LeagueEntry> entries;
@@ -263,6 +265,10 @@ public final class RankService {
             if (entries.isEmpty()) return;
             task.phase("PERSISTING");
             for (LeagueEntry entry : entries) {
+                if (firstPage > 0) {
+                    TrackerScheduler.awaitTracking(task);
+                    task.phase("PERSISTING");
+                }
                 String puuid = entry.getPuuid();
                 String item = puuid == null || puuid.isBlank() ? null
                     : tier.name() + ':' + queue.name() + ':' + puuid;

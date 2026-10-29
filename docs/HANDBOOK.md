@@ -179,6 +179,9 @@ Discord presentation remain unchanged; the queue discovery uses the existing
 patch-prefix match index and adds no indexes.
 Rank-entry scans use one LPTracker job per region and process that
 region's ranks and pages sequentially; separate regions can run concurrently.
+The owner all-rank scan pauses before each page and entry while summoner
+tracking is active, including its descendant jobs. Its phase is
+`WAITING_FOR_TRACKER` during the pause; high-elo scans are unaffected.
 An empty page ends the current rank. Page-fetch failures are logged and skipped;
 three consecutive failures move a paginated scan to the next rank. High-elo
 single-page requests move to the next rank after one failure.

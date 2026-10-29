@@ -60,6 +60,9 @@ least one child is active. It is removed as soon as its full subtree is terminal
 no Redis, MongoDB or pub/sub persistence is involved.
 Rank-entry roots create one Sync child per region. Each regional child walks its
 selected ranks and pages sequentially; separate regions can run concurrently.
+The owner all-rank scan waits for an active summoner tracking run and its
+descendants before fetching the next page or processing the next entry. Work
+already in progress finishes before the scan pauses. High-elo scans do not wait.
 
 The HTTP `jobs` projection includes three complete levels and at most 100 jobs
 from the fourth level, ordered by priority and enqueue time. It omits per-item

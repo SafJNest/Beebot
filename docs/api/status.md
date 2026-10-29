@@ -14,7 +14,9 @@ to twenty queued jobs per route. Sync jobs start immediately on virtual threads
 and therefore have no physical queue or worker projection; their lifecycle is
 visible in `jobs`. Job snapshots include `pid` and `ppid`. `runs` is a
 compatibility projection derived from active registry roots for tracking,
-sample games and rank entries; it is not lifecycle state.
+sample games and rank entries; it is not lifecycle state. A regional all-rank
+job uses phase `WAITING_FOR_TRACKER` while it waits for an active summoner
+tracking run and its descendants to finish.
 
 Each `jobs` item has `pid`, `ppid`, scheduler `type`, logical `route`, priority
 and lifecycle state. Physical placement belongs to `dispatchers.queues[].worker`.

@@ -1,11 +1,15 @@
 package com.safjnest.lol.tracker;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CancellationException;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.service.RankService;
+import com.safjnest.lol.queue.job.Job;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
 
@@ -17,6 +21,7 @@ public final class TrackerScheduler {
 
     private static volatile boolean started;
     private static volatile boolean cronScheduled;
+    private static CompletableFuture<Void> tracking;
 
     private TrackerScheduler() {}
 
@@ -34,17 +39,36 @@ public final class TrackerScheduler {
         track.scheduleAtFixedRate(0, TRACKING_INTERVAL, TimeUnit.MILLISECONDS);
 
         ChronoTask retrieveHighEloEntries = TrackerScheduler::retrieveHighEloEntries;
-        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+        //retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshChampionData = TrackerScheduler::refreshChampionData;
         refreshChampionData.scheduleAtFixedTime(23, 0, 0);
     }
 
-    public static void retrieveSummoners() {
+    public static synchronized void retrieveSummoners() {
         long nextUpdate = System.currentTimeMillis() + TRACKING_INTERVAL;
-        Tracker.retrieveSummoners().whenComplete((ignored, failure) -> {
+        tracking = Tracker.retrieveSummoners();
+        tracking.whenComplete((ignored, failure) -> {
             BotLogger.info("[LPTracker] Tracking finished. Next update at " + new java.util.Date(nextUpdate));
         });
+    }
+
+    public static void awaitTracking(Job<?> job) {
+        while (true) {
+            CompletableFuture<Void> current;
+            synchronized (TrackerScheduler.class) {
+                current = tracking;
+                if (current == null || current.isDone()) return;
+            }
+            job.phase("WAITING_FOR_TRACKER");
+            try {
+                current.get();
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Rank entry import interrupted", exception);
+            } catch (ExecutionException | CancellationException ignored) {
+            }
+        }
     }
 
     public static void retrieveSampleGames(GameQueueType queue) {
