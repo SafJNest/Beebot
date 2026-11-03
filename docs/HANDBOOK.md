@@ -182,9 +182,18 @@ region's ranks and pages sequentially; separate regions can run concurrently.
 The owner all-rank scan pauses before each page and entry while summoner
 tracking is active, including its descendant jobs. Its phase is
 `WAITING_FOR_TRACKER` during the pause; high-elo scans are unaffected.
-An empty page ends the current rank. Page-fetch failures are logged and skipped;
-three consecutive failures move a paginated scan to the next rank. High-elo
-single-page requests move to the next rank after one failure.
+An empty page ends the current rank. All-rank progress is checkpointed per
+region in Mongo `migration_runs` as `rank-entries:<region>` with the current
+tier, next page and status. A page advances only after all its entries persist;
+an interrupted or failed page is retried from its beginning. Three consecutive
+page-fetch failures pause that region with its checkpoint intact. A first run
+without checkpoint documents is initialized from the latest operator-provided
+regional progress snapshot; a later run starts from the beginning after every
+region has completed. When no checkpoint exists, the first run seeds its
+one-time regional resume points from the supplied latest log snapshot. All-rank
+jobs keep only the current page in queue status, not a growing item map for
+every PUUID. High-elo single-page requests move to the next rank after one
+failure.
 When `RankService.saveEntry` imports a summoner missing from local storage, it
 waits 350 ms before fetching the Riot identity. Existing summoners have no added
 delay.

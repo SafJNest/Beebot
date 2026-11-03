@@ -365,6 +365,37 @@ public final class MongoDB {
         return document == null ? null : QueryRecordParser.fromDocument(document);
     }
 
+    public static RankEntryCheckpoint findRankEntryCheckpoint(LeagueShard shard) {
+        if (shard == null) return null;
+        QueryRecord record = findRecord("migration_runs", rankEntryCheckpointId(shard));
+        if (record == null) return null;
+        return new RankEntryCheckpoint(record.getAsString("tier"), record.getAsInt("page"), record.getAsString("status"));
+    }
+
+    public static void saveRankEntryCheckpoint(
+            LeagueShard shard,
+            String tier,
+            int page,
+            String status) {
+        if (shard == null || tier == null || tier.isBlank() || page < 1 || status == null || status.isBlank()) {
+            throw new IllegalArgumentException("A region, tier, positive page and status are required for a rank checkpoint");
+        }
+        upsertDocument("migration_runs", new Document("_id", rankEntryCheckpointId(shard))
+                .append("type", "rank-entry-import")
+                .append("region", shard.name())
+                .append("tier", tier)
+                .append("page", page)
+                .append("status", status)
+                .append("updatedAt", System.currentTimeMillis()));
+    }
+
+    private static String rankEntryCheckpointId(LeagueShard shard) {
+        return "rank-entries:" + shard.name();
+    }
+
+    public record RankEntryCheckpoint(String tier, int page, String status) {
+    }
+
     public static Set<String> findExistingIds(String collection, List<String> ids) {
         Set<String> existing = new HashSet<>();
         if (collection == null || collection.isBlank() || ids == null || ids.isEmpty()) return existing;

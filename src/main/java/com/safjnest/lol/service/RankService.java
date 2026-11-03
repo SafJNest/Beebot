@@ -36,6 +36,8 @@ public final class RankService {
 
     private static final int MAX_CONSECUTIVE_PAGE_ERRORS = 3;
     private static final long MISSING_SUMMONER_DELAY_MS = 350;
+    private static final String RANK_ENTRY_CHECKPOINT_RUNNING = "RUNNING";
+    private static final String RANK_ENTRY_CHECKPOINT_COMPLETED = "COMPLETED";
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<Map<GameQueueType, Rank>> RANKS_TYPE = new TypeReference<>() {};
@@ -159,6 +161,7 @@ public final class RankService {
         List<TierDivisionType> allTiers = allEntries ? allEntryTiers() : List.of();
         if (allEntries) BotLogger.info("[LPTracker] Pushing all entries");
         QueueHandler.background(SyncScheduler.class, null, "rank-entries", "RANK_ENTRIES", root -> {
+            boolean resumeExisting = allEntries && hasRunningRankEntryCheckpoint();
             for (LeagueShard shard : LeagueShardUtils.getActives()) {
                 if (highTiers.isEmpty() && allTiers.isEmpty()) continue;
                 QueueHandler.background(SyncScheduler.class, shard, "rank-entries:" + shard.name(),
@@ -168,9 +171,7 @@ public final class RankService {
                                 processTier(shard, tier, queue, 0, regionTask);
                             }
                         }
-                        for (TierDivisionType tier : allTiers) {
-                            processTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, 1, regionTask);
-                        }
+                        if (!allTiers.isEmpty()) processAllEntryTiers(shard, allTiers, regionTask, resumeExisting);
                         return null;
                     });
             }
@@ -243,8 +244,92 @@ public final class RankService {
         });
     }
 
-    private static void processTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue,
+    private static boolean processAllEntryTiers(
+            LeagueShard shard,
+            List<TierDivisionType> tiers,
+            Job<?> task,
+            boolean resumeExisting) {
+        MongoDB.RankEntryCheckpoint checkpoint = resumeExisting ? MongoDB.findRankEntryCheckpoint(shard) : null;
+        if (checkpoint != null && RANK_ENTRY_CHECKPOINT_COMPLETED.equals(checkpoint.status())) {
+            BotLogger.info("[LPTracker] Rank entry import already complete for region=" + shard);
+            return true;
+        }
+
+        int firstTierIndex = 0;
+        int firstPage = 1;
+        if (checkpoint != null && RANK_ENTRY_CHECKPOINT_RUNNING.equals(checkpoint.status())) {
+            try {
+                firstTierIndex = checkpoint.tier() == null ? -1
+                    : tiers.indexOf(TierDivisionType.valueOf(checkpoint.tier()));
+                if (firstTierIndex >= 0) firstPage = Math.max(1, checkpoint.page());
+                else firstTierIndex = 0;
+            } catch (IllegalArgumentException ignored) {
+                firstTierIndex = 0;
+            }
+        }
+
+        for (int tierIndex = firstTierIndex; tierIndex < tiers.size(); tierIndex++) {
+            TierDivisionType tier = tiers.get(tierIndex);
+            int startPage = tierIndex == firstTierIndex ? firstPage : 1;
+            MongoDB.saveRankEntryCheckpoint(shard, tier.name(), startPage, RANK_ENTRY_CHECKPOINT_RUNNING);
+            if (!processTier(shard, tier, GameQueueType.RANKED_SOLO_5X5, startPage, task, true)) {
+                BotLogger.error("[LPTracker] Pausing rank entry import for region=" + shard
+                    + " at tier=" + tier.name() + " page=" + startPage + "; checkpoint retained");
+                return false;
+            }
+        }
+
+        TierDivisionType lastTier = tiers.get(tiers.size() - 1);
+        MongoDB.saveRankEntryCheckpoint(shard, lastTier.name(), 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
+        BotLogger.info("[LPTracker] Rank entry import completed for region=" + shard);
+        return true;
+    }
+
+    private static boolean hasRunningRankEntryCheckpoint() {
+        boolean foundCheckpoint = false;
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
+            MongoDB.RankEntryCheckpoint checkpoint = MongoDB.findRankEntryCheckpoint(shard);
+            if (checkpoint == null) continue;
+            foundCheckpoint = true;
+            if (RANK_ENTRY_CHECKPOINT_RUNNING.equals(checkpoint.status())) return true;
+        }
+        if (!foundCheckpoint) return seedInitialRankEntryCheckpoints();
+        return false;
+    }
+
+    private static boolean seedInitialRankEntryCheckpoints() {
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
+            MongoDB.RankEntryCheckpoint checkpoint = initialRankEntryCheckpoint(shard);
+            MongoDB.saveRankEntryCheckpoint(shard, checkpoint.tier(), checkpoint.page(), checkpoint.status());
+        }
+        return true;
+    }
+
+    private static MongoDB.RankEntryCheckpoint initialRankEntryCheckpoint(LeagueShard shard) {
+        return switch (shard) {
+            case BR1 -> new MongoDB.RankEntryCheckpoint("BRONZE_II", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case EUN1 -> new MongoDB.RankEntryCheckpoint("BRONZE_III", 17, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case EUW1 -> new MongoDB.RankEntryCheckpoint("IRON_I", 315, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case JP1, SG2 -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
+            case KR -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 266, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case LA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 88, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case LA2 -> new MongoDB.RankEntryCheckpoint("SILVER_IV", 205, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case ME1, OC1, RU -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
+            case NA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 353, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case TR1 -> new MongoDB.RankEntryCheckpoint("SILVER_III", 168, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case TW2 -> new MongoDB.RankEntryCheckpoint("EMERALD_I", 9, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case VN2 -> new MongoDB.RankEntryCheckpoint("SILVER_IV", 149, RANK_ENTRY_CHECKPOINT_RUNNING);
+            default -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
+        };
+    }
+
+    private static boolean processTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue,
             int firstPage, Job<?> task) {
+        return processTier(shard, tier, queue, firstPage, task, false);
+    }
+
+    private static boolean processTier(LeagueShard shard, TierDivisionType tier, GameQueueType queue,
+            int firstPage, Job<?> task, boolean saveCheckpoint) {
         int consecutiveErrors = 0;
         for (int page = firstPage; ; page++) {
             if (firstPage > 0) TrackerScheduler.awaitTracking(task);
@@ -256,14 +341,15 @@ public final class RankService {
             } catch (RuntimeException failure) {
                 BotLogger.error("[LPTracker] Failed to fetch page " + page + " of " + tier.name()
                     + " queue=" + queue.name() + " for region " + shard + " | " + failure);
-                if (firstPage == 0 || ++consecutiveErrors >= MAX_CONSECUTIVE_PAGE_ERRORS) return;
+                if (firstPage == 0 || ++consecutiveErrors >= MAX_CONSECUTIVE_PAGE_ERRORS) return false;
                 continue;
             }
             consecutiveErrors = 0;
             if (firstPage > 0) BotLogger.info("[LPTracker] Start analyzing page " + page
                 + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
-            if (entries.isEmpty()) return;
+            if (entries.isEmpty()) return true;
             task.phase("PERSISTING");
+            boolean pageFailed = false;
             for (LeagueEntry entry : entries) {
                 if (firstPage > 0) {
                     TrackerScheduler.awaitTracking(task);
@@ -272,16 +358,23 @@ public final class RankService {
                 String puuid = entry.getPuuid();
                 String item = puuid == null || puuid.isBlank() ? null
                     : tier.name() + ':' + queue.name() + ':' + puuid;
-                task.trackItem(item);
-                task.labelItem(item, puuid);
+                if (firstPage == 0) task.trackItem(item);
                 try {
                     saveEntry(shard, entry);
-                    task.done(item);
+                    if (firstPage == 0) task.done(item);
                 } catch (Exception exception) {
-                    task.failed(item);
+                    if (firstPage == 0) task.failed(item);
+                    else pageFailed = true;
                 }
             }
-            if (firstPage == 0) return;
+            if (firstPage == 0) return true;
+            if (pageFailed) {
+                BotLogger.error("[LPTracker] Keeping checkpoint at page " + page + " of " + tier.name()
+                    + " for region " + shard + " because one or more entries failed");
+                return false;
+            }
+            if (saveCheckpoint) MongoDB.saveRankEntryCheckpoint(
+                shard, tier.name(), page + 1, RANK_ENTRY_CHECKPOINT_RUNNING);
         }
     }
 

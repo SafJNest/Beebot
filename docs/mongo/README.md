@@ -56,6 +56,14 @@ Mongo rank-history migrations use bounded batches and checkpoints; the facets
 rebuild uses idempotent upserts. Review the
 command implementation before running an operation; these commands write data.
 
+The owner `getallrank` scan stores one checkpoint per region in
+`migration_runs`, keyed by `rank-entries:<region>`. It records tier, next page,
+status and update time. A page checkpoint advances only after every entry on
+that page has been saved; after a restart, the last incomplete page is repeated
+idempotently. A first run without checkpoints is seeded from the supplied
+latest regional log snapshot. No secondary index is needed because reads and
+writes use `_id`.
+
 ## Indexes and queries
 
 Mongo initialization creates missing collections. Secondary indexes are

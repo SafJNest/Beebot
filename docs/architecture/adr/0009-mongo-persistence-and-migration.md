@@ -107,6 +107,15 @@ unchanged; the previously discussed facets endpoint and history integration
 are not implemented by this storage replacement. The schema, rebuild and
 operational index are documented in `docs/mongo/15-match-facets-projection.md`.
 
+## Amendment 2026-11-03: all-rank import checkpoints
+
+The owner `getallrank` import stores one resume checkpoint per region in the
+existing `migration_runs` collection. The document records the tier, next page,
+status and update time under `_id: "rank-entries:<region>"`; Mongo's `_id`
+index is the only lookup required. A page advances only after its entries have
+been persisted, so a restart repeats an incomplete page. This is internal
+operational state and does not change rank models, public APIs or presentation.
+
 ## Amendment 2026-07-26
 
 The leaderboard keeps `summoner.ranks` as the sole canonical source of ranks and does not save duplicate rows or materialized pages. Mongo may however keep the derived collection `leaderboard_aggregates` for rank distribution, top-region and leaderboard count: each document contains only the aggregated result and the key filter, and is always rebuildable from summoners. Materialized snapshots are rebuilt every 12 hours; new filters are built lazily on first read. The page uses a limited and ordered `find()` on the queue's MMR path; the total follows Redis, Mongo aggregates and only finally `countDocuments()`. Redis is invalidated together with the rebuild. The HTTP contract of `LeaderboardPage`, `SummonerLeaderboard`, distribution, top-region and `202` status remains unchanged.
