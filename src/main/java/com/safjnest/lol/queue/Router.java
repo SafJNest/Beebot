@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.AbstractScheduler;
+import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.utils.log.BotLogger;
 
 public final class Router {
@@ -47,20 +48,39 @@ public final class Router {
         CompletableFuture<T> future = registry.future(job);
         if (!registry.following(job)) {
             try {
-                scheduler.enqueue(job);
+                synchronized (this) {
+                    scheduler.enqueue(job);
+                }
             } catch (Throwable failure) {
                 registry.cancelled(job, failure);
                 registry.released(job);
             }
         } else {
             Job<?> source = registry.source(job);
-            JobPriority before = source == null ? null : source.priority();
-            if (source != null && scheduler.promote(source, job.priority())) {
-                BotLogger.info("[Queue] Promoted key=" + source.key() + " route=" + source.route()
-                    + " " + before + " -> " + source.priority());
+            if (source != null) {
+                if (source.scheduler() == SyncScheduler.class && source.key().startsWith("match:")) {
+                    promote(source, job.priority());
+                } else {
+                    scheduler.promote(source, job.priority());
+                }
             }
             registry.released(job);
         }
         return future;
+    }
+
+    private synchronized void promote(Job<?> job, JobPriority priority) {
+        Job<?> source = registry.source(job);
+        if (source != null) job = source;
+        AbstractScheduler<?> scheduler;
+        synchronized (this) {
+            scheduler = schedulers.get(job.scheduler());
+        }
+        JobPriority before = job.priority();
+        boolean promoted = scheduler != null && scheduler.promote(job, priority);
+        if (!promoted) promoted = job.promote(priority);
+        if (promoted) BotLogger.info("[Queue] Promoted key=" + job.key() + " route=" + job.route()
+            + " " + before + " -> " + job.priority());
+        for (Job<?> child : registry.children(job)) promote(child, priority);
     }
 }

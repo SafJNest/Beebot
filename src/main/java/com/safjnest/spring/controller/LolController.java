@@ -80,7 +80,22 @@ public class LolController {
 
         SummonerService.refresh(profilePuuid, shard);
         ProfileService.markManuallySeen(profilePuuid);
+        MatchService.queueMatchHistory(profilePuuid, shard, false);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/profile/{puuid}/history")
+    public ResponseEntity<Void> refreshHistory(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("puuid") String puuid
+    ) {
+        LeagueShard shard = LolApiParameters.requiredShard(shardValue);
+        String profilePuuid = LolApiParameters.requiredText(puuid, "puuid");
+        if (SummonerService.find(profilePuuid, shard) == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
+        }
+        MatchService.queueMatchHistory(profilePuuid, shard, true);
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/profile/{puuid}/matches")

@@ -81,9 +81,21 @@ public final class Registry {
     }
 
     public Job<?> source(Job<?> job) {
-        Entry<?> entry = entry(job);
+        Entry<?> entry = entries.get(job.pid());
+        if (entry == null) return null;
         Entry<?> source = entry.followingPid == null ? null : entries.get(entry.followingPid);
         return source == null ? null : source.job;
+    }
+
+    synchronized List<Job<?>> children(Job<?> job) {
+        Entry<?> entry = entries.get(job.pid());
+        if (entry == null) return List.of();
+        List<Job<?>> children = new ArrayList<>();
+        for (Long pid : entry.children) {
+            Entry<?> child = entries.get(pid);
+            if (child != null && !child.state.terminal()) children.add(child.job);
+        }
+        return children;
     }
 
     public void started(Job<?> job) {

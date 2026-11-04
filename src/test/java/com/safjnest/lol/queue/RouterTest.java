@@ -421,7 +421,7 @@ public class RouterTest {
 
         fourthRelease.countDown();
         root.get(2, TimeUnit.SECONDS);
-        assertTrue(registry.snapshot().isEmpty());
+        assertTrue(awaitEmpty(registry));
     }
 
     private static final class SyncTestScheduler extends TestScheduler {

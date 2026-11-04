@@ -55,7 +55,7 @@ public final class Job<T> {
     public String key() { return key; }
     public String name() { return name; }
     public JobPriority priority() { return priority; }
-    public boolean promote(JobPriority requested) {
+    public synchronized boolean promote(JobPriority requested) {
         if (requested == null || requested.ordinal() >= priority.ordinal()) return false;
         priority = requested;
         return true;

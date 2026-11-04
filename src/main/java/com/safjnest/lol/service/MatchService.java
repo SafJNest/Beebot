@@ -11,7 +11,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
@@ -43,7 +42,6 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.JsonCodec;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -96,7 +94,7 @@ public final class MatchService {
                 shard,
                 "match:" + gameId,
                 "match analysis id=" + gameId,
-                ignored -> insert(fetch(gameId, shard))
+                task -> fetchAndInsert(task, shard, gameId)
             );
     }
 
@@ -167,11 +165,11 @@ public final class MatchService {
         String gameId = MatchUtils.fullGameId(source);
         return switch (priority == null ? JobPriority.NORMAL : priority) {
             case IMMEDIATE -> QueueHandler.immediate(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, task -> insert(source, task.priority()));
             case NORMAL -> QueueHandler.normal(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, task -> insert(source, task.priority()));
             case BACKGROUND -> QueueHandler.background(SyncScheduler.class, source.getPlatform(), "match:" + gameId,
-                "match insert id=" + gameId, ignored -> insert(source));
+                "match insert id=" + gameId, task -> insert(source, task.priority()));
         };
     }
 
@@ -263,63 +261,22 @@ public final class MatchService {
             "match fetch id=" + gameId, task -> fetchAndInsert(task, shard, gameId));
     }
 
-    public static void queueRecentMatches(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, int limit) {
-        if (summoner == null || summoner.getPUUID() == null || summoner.getPlatform() == null || limit < 1) return;
-        String key = "recent-matches:" + summoner.getPlatform().name() + ':' + summoner.getPUUID();
-        QueueHandler.background(SyncScheduler.class, summoner.getPlatform(), key,
-            "recent matches puuid=" + summoner.getPUUID(), task -> {
-                QueueHandler.retain(task);
-                getMatchlistAsync(summoner, null, 0, limit, 0, null).whenComplete((matchIds, failure) ->
-                    QueueHandler.resume(task, () -> queueMissingMatches(summoner.getPlatform(), matchIds, failure)));
-                return null;
-            });
-    }
-
-    public static void importHistory(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner, GameQueueType queue) {
-        importHistory(summoner, queue, JobPriority.IMMEDIATE);
+    public static void queueMatchHistory(String puuid, LeagueShard shard, boolean all) {
+        if (!valid(puuid, shard)) return;
+        String key = "match-history:" + shard.name() + ':' + puuid + ':' + (all ? "all" : "recent");
+        QueueHandler.background(SyncScheduler.class, shard, key, key, task -> {
+            var summoner = SummonerService.getRiotSummoner(puuid, shard, task.priority());
+            if (summoner == null) throw new IllegalStateException("Summoner unavailable: " + puuid);
+            importHistory(summoner, null, task.priority(), all);
+            return null;
+        });
     }
 
     public static void importHistory(
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
             GameQueueType queue,
             JobPriority priority) {
-        if (summoner == null || summoner.getPlatform() == null) return;
-        JobPriority effectivePriority = priority == null ? JobPriority.IMMEDIATE : priority;
-        try {
-            List<String> matchIds = new ArrayList<>();
-            List<String> page;
-            do {
-                page = getMatchlist(summoner, queue, matchIds.size(), MATCH_LIST_BATCH_SIZE, 0, null, effectivePriority);
-                if (page == null) page = List.of();
-                matchIds.addAll(page);
-                Thread.sleep(350);
-            } while (!page.isEmpty());
-
-            int total = matchIds.size();
-            int done = 0;
-            for (String matchId : matchIds) {
-                if (LeagueHandler.isMatchDBCached(matchId)) continue;
-                LOLMatch match;
-                try {
-                    match = fetchAsync(matchId, summoner.getPlatform(), effectivePriority).join();
-                    Thread.sleep(500);
-                } catch (CompletionException exception) {
-                    BotLogger.error("Match fetch failed: " + matchId + " message=" + exception.getMessage());
-                    continue;
-                }
-                if (match == null) continue;
-                try {
-                    Match result = insert(match, effectivePriority);
-                    done++;
-                    BotLogger.info("[" + done + "/" + total + "] " + match.getGameId() + " - "
-                        + match.getPlatform() + " - " + match.getQueue() + " rank=" + (result == null ? "null" : result.rank));
-                } catch (Throwable throwable) {
-                    BotLogger.error("Import insert failed: " + matchId + " " + throwable);
-                }
-            }
-        } catch (Exception exception) {
-            BotLogger.error("Match history import failed for puuid=" + summoner.getPUUID() + " message=" + exception.getMessage());
-        }
+        importHistory(summoner, queue, priority, true);
     }
 
     public static CompletableFuture<MatchPage> getPage(
@@ -545,19 +502,38 @@ public final class MatchService {
     private static Match fetchAndInsert(Job<?> task, LeagueShard shard, String gameId) {
         task.phase("FETCH");
         task.trackItem(gameId);
-        Match match = insert(fetch(gameId, shard));
+        Match existing = find(gameId, shard);
+        if (existing != null) {
+            task.done(gameId);
+            return existing;
+        }
+        Match match = insert(fetchAsync(gameId, shard, task.priority()).join(), task.priority());
         if (match != null) task.done(gameId);
         else task.missing(gameId);
         return match;
     }
 
-    private static void queueMissingMatches(LeagueShard shard, List<String> matchIds, Throwable failure) {
-        if (failure != null) throw new IllegalStateException("Recent matches lookup failed", failure);
-        if (matchIds == null) return;
-        for (String matchId : matchIds) {
-            if (MongoDB.hasMatch(matchId)) continue;
-            queue(MatchUtils.matchShard(matchId, shard), matchId);
-        }
+    private static void importHistory(no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner,
+            GameQueueType queue, JobPriority priority, boolean all) {
+        if (summoner == null || summoner.getPlatform() == null) throw new IllegalArgumentException("Summoner unavailable");
+        LeagueShard shard = summoner.getPlatform();
+        java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+        int index = 0;
+        List<String> page;
+        do {
+            int offset = index;
+            String key = shard.name() + ":match-list:" + summoner.getPUUID() + ':'
+                + matchListRequestKey(queue, MATCH_LIST_BATCH_SIZE, 0, null) + ':' + offset;
+            page = QueueHandler.<List<String>>submit(RiotScheduler.class, shard, key, "match list puuid=" + summoner.getPUUID(),
+                priority, task -> {
+                    List<String> result = matchListBuilder(summoner, queue, offset, MATCH_LIST_BATCH_SIZE, 0, null).get();
+                    if (result == null) throw new IllegalStateException("Riot returned no match list");
+                    return result;
+                }).join();
+            ids.addAll(page);
+            index += page.size();
+        } while (all && page.size() == MATCH_LIST_BATCH_SIZE);
+        for (String id : ids) if (!MongoDB.hasMatch(id)) queue(MatchUtils.matchShard(id, shard), id);
     }
 
     private static List<RankHistoryMatch> rankHistorySource(
