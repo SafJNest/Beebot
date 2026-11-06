@@ -186,11 +186,15 @@ An empty page ends the current rank. All-rank progress is checkpointed per
 region in Mongo `migration_runs` as `rank-entries:<region>` with the current
 tier, next page and status. A page advances only after all its entries persist;
 an interrupted or failed page is retried from its beginning. Three consecutive
-page-fetch failures pause that region with its checkpoint intact. A first run
+page-fetch failures retry the same page and then pause that region with its checkpoint intact.
+The scan excludes nonexistent division V; an existing V checkpoint resumes at
+the corresponding division IV. A first run
 without checkpoint documents is initialized from the latest operator-provided
 regional progress snapshot; a later run starts from the beginning after every
-region has completed. When no checkpoint exists, the first run seeds its
-one-time regional resume points from the supplied latest log snapshot. All-rank
+region has completed. The 2026-11-06 snapshot seeds EUW1 at Bronze IV page 1, LA2 and TR1 at Gold IV page 1,
+TW2 at Diamond IV page 1, and LA1 at Bronze I page 94. Other unfinished
+regions resume from their last logged page; previously completed regions stay completed.
+These seeds do not overwrite existing Mongo checkpoints. All-rank
 jobs keep only the current page in queue status, not a growing item map for
 every PUUID. High-elo single-page requests move to the next rank after one
 failure.

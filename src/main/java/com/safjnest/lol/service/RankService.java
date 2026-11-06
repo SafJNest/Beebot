@@ -259,8 +259,12 @@ public final class RankService {
         int firstPage = 1;
         if (checkpoint != null && RANK_ENTRY_CHECKPOINT_RUNNING.equals(checkpoint.status())) {
             try {
-                firstTierIndex = checkpoint.tier() == null ? -1
-                    : tiers.indexOf(TierDivisionType.valueOf(checkpoint.tier()));
+                String checkpointTier = checkpoint.tier();
+                if (checkpointTier != null && checkpointTier.endsWith("_V")) {
+                    checkpointTier = checkpointTier.substring(0, checkpointTier.length() - 2) + "_IV";
+                }
+                firstTierIndex = checkpointTier == null ? -1
+                    : tiers.indexOf(TierDivisionType.valueOf(checkpointTier));
                 if (firstTierIndex >= 0) firstPage = Math.max(1, checkpoint.page());
                 else firstTierIndex = 0;
             } catch (IllegalArgumentException ignored) {
@@ -307,18 +311,16 @@ public final class RankService {
 
     private static MongoDB.RankEntryCheckpoint initialRankEntryCheckpoint(LeagueShard shard) {
         return switch (shard) {
-            case BR1 -> new MongoDB.RankEntryCheckpoint("BRONZE_II", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case EUN1 -> new MongoDB.RankEntryCheckpoint("BRONZE_III", 17, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case EUW1 -> new MongoDB.RankEntryCheckpoint("IRON_I", 315, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case JP1, SG2 -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
-            case KR -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 266, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case LA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 88, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case LA2 -> new MongoDB.RankEntryCheckpoint("SILVER_IV", 205, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case ME1, OC1, RU -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
-            case NA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 353, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case TR1 -> new MongoDB.RankEntryCheckpoint("SILVER_III", 168, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case TW2 -> new MongoDB.RankEntryCheckpoint("EMERALD_I", 9, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case VN2 -> new MongoDB.RankEntryCheckpoint("SILVER_IV", 149, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case BR1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 39, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case EUN1 -> new MongoDB.RankEntryCheckpoint("BRONZE_II", 164, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case EUW1 -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case KR -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 632, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case LA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 94, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case LA2 -> new MongoDB.RankEntryCheckpoint("GOLD_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case NA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_III", 209, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case TR1 -> new MongoDB.RankEntryCheckpoint("GOLD_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case TW2 -> new MongoDB.RankEntryCheckpoint("DIAMOND_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case VN2 -> new MongoDB.RankEntryCheckpoint("SILVER_II", 179, RANK_ENTRY_CHECKPOINT_RUNNING);
             default -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
         };
     }
@@ -342,6 +344,7 @@ public final class RankService {
                 BotLogger.error("[LPTracker] Failed to fetch page " + page + " of " + tier.name()
                     + " queue=" + queue.name() + " for region " + shard + " | " + failure);
                 if (firstPage == 0 || ++consecutiveErrors >= MAX_CONSECUTIVE_PAGE_ERRORS) return false;
+                page--;
                 continue;
             }
             consecutiveErrors = 0;
@@ -403,7 +406,8 @@ public final class RankService {
         List<TierDivisionType> result = new ArrayList<>(List.of(TierDivisionType.values()));
         Collections.reverse(result);
         result.remove(0);
-        result.removeIf(tier -> TierDivisionUtils.isHighElo(tier) || tier == TierDivisionType.UNRANKED);
+        result.removeIf(tier -> TierDivisionUtils.isHighElo(tier) || tier == TierDivisionType.UNRANKED
+            || tier.name().endsWith("_V"));
         return result;
     }
 

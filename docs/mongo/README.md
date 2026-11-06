@@ -61,7 +61,8 @@ The owner `getallrank` scan stores one checkpoint per region in
 status and update time. A page checkpoint advances only after every entry on
 that page has been saved; after a restart, the last incomplete page is repeated
 idempotently. A first run without checkpoints is seeded from the supplied
-latest regional log snapshot. No secondary index is needed because reads and
+latest regional log snapshot; existing checkpoints take precedence. Legacy division V
+checkpoints resume at the corresponding division IV. No secondary index is needed because reads and
 writes use `_id`.
 
 ## Indexes and queries
