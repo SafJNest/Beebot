@@ -311,16 +311,16 @@ public final class RankService {
 
     private static MongoDB.RankEntryCheckpoint initialRankEntryCheckpoint(LeagueShard shard) {
         return switch (shard) {
-            case BR1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 39, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case EUN1 -> new MongoDB.RankEntryCheckpoint("BRONZE_II", 164, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case EUW1 -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case KR -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 632, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case LA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 94, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case LA2 -> new MongoDB.RankEntryCheckpoint("GOLD_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case NA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_III", 209, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case TR1 -> new MongoDB.RankEntryCheckpoint("GOLD_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case TW2 -> new MongoDB.RankEntryCheckpoint("DIAMOND_IV", 1, RANK_ENTRY_CHECKPOINT_RUNNING);
-            case VN2 -> new MongoDB.RankEntryCheckpoint("SILVER_II", 179, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case BR1 -> new MongoDB.RankEntryCheckpoint("BRONZE_I", 193, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case EUN1 -> new MongoDB.RankEntryCheckpoint("BRONZE_II", 311, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case EUW1 -> new MongoDB.RankEntryCheckpoint("BRONZE_IV", 155, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case KR -> new MongoDB.RankEntryCheckpoint("BRONZE_III", 154, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case LA1 -> new MongoDB.RankEntryCheckpoint("SILVER_IV", 120, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case LA2 -> new MongoDB.RankEntryCheckpoint("GOLD_II", 105, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case NA1 -> new MongoDB.RankEntryCheckpoint("BRONZE_II", 6, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case TR1 -> new MongoDB.RankEntryCheckpoint("GOLD_II", 64, RANK_ENTRY_CHECKPOINT_RUNNING);
+            case TW2 -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
+            case VN2 -> new MongoDB.RankEntryCheckpoint("GOLD_IV", 336, RANK_ENTRY_CHECKPOINT_RUNNING);
             default -> new MongoDB.RankEntryCheckpoint("DIAMOND_I", 1, RANK_ENTRY_CHECKPOINT_COMPLETED);
         };
     }

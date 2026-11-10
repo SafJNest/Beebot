@@ -64,6 +64,8 @@ public enum RedisKey {
     STATUS_RANKS_BY_QUEUE("status:ranks-by-queue", Duration.ofDays(10)),
     STATUS_TRACKED_SUMMONERS("status:tracked-summoners", Duration.ofDays(10));
 
+    private static final int TEMPORARY_CACHE_TTL_SECONDS = 60;
+
     private final String pattern;
     private final Duration ttl;
 
@@ -81,6 +83,10 @@ public enum RedisKey {
     }
 
     public int ttlSeconds() {
-        return Math.toIntExact(ttl.toSeconds());
+        return switch (this) {
+            case R4J_SUMMONER_REFRESH_COOLDOWN, LEADERBOARD_COUNT_LOCK, CONTEXTUAL_LEADERBOARD_BUILD ->
+                Math.toIntExact(ttl.toSeconds());
+            default -> ttl.isZero() ? 0 : TEMPORARY_CACHE_TTL_SECONDS;
+        };
     }
 }
