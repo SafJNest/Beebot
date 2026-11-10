@@ -1,11 +1,11 @@
 package com.safjnest.commands.audio.sound;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.audio.SoundStorage;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -16,8 +16,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SoundDownload extends SlashCommand{
-    String path = "rsc" + File.separator + "sounds" + File.separator;
-
     public SoundDownload(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
@@ -67,10 +65,14 @@ public class SoundDownload extends SlashCommand{
             message = "Downloaded a random sound named **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** ";
         }
 
-        fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
-
-        event.deferReply(false).addContent(message)
-            .setFiles(FileUpload.fromData(new File(fileName)))
-            .queue();
+        event.deferReply(false).queue();
+        try {
+            fileName = SoundStorage.getLocalPath(toDownload.get("id") + "." + toDownload.get("extension"));
+            event.getHook().editOriginal(message)
+                .setFiles(FileUpload.fromData(new java.io.File(fileName)))
+                .queue();
+        } catch (RuntimeException e) {
+            event.getHook().editOriginal("Could not download the sound from Cloudflare R2.").queue();
+        }
     }
 }
