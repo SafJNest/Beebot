@@ -133,7 +133,10 @@ representative Gold/Emerald data: an indexed count can still inspect many keys.
 
 Declare the key and TTL in `RedisKey`. Use `RedisClient` and invalidate through
 `CacheInvalidationService` after the durable write succeeds. Keep cache values
-rebuildable from Mongo. Record reads use Mongo ordering by `value`; their only
+rebuildable from Mongo. Expiring data caches temporarily use a one-minute TTL;
+permanent keys, operational locks and the refresh cooldown retain their policies.
+Existing Redis entries retain their original expiration until rewritten or expired.
+The public API shapes and presentation are unchanged. Record reads use Mongo ordering by `value`; their only
 Redis cache is the paginated total, backed by durable `aggregates`, with a 60-second TTL and invalidation of both stores on row-count changes.
 
 ### 5.9 New aggregate or analyzer
@@ -191,10 +194,13 @@ The scan excludes nonexistent division V; an existing V checkpoint resumes at
 the corresponding division IV. A first run
 without checkpoint documents is initialized from the latest operator-provided
 regional progress snapshot; a later run starts from the beginning after every
-region has completed. The 2026-11-06 snapshot seeds EUW1 at Bronze IV page 1, LA2 and TR1 at Gold IV page 1,
-TW2 at Diamond IV page 1, and LA1 at Bronze I page 94. Other unfinished
-regions resume from their last logged page; previously completed regions stay completed.
-These seeds do not overwrite existing Mongo checkpoints. All-rank
+region has completed. The 2026-11-08 log snapshot seeds BR1 at Bronze I page 193,
+EUN1 at Bronze II page 311, EUW1 at Bronze IV page 155, KR at Bronze III page 154,
+LA1 at Silver IV page 120, LA2 at Gold II page 105, NA1 at Bronze II page 6,
+TR1 at Gold II page 64 and VN2 at Gold IV page 336. These are the last pages
+started, so they are repeated; TW2 and previously completed regions stay completed.
+The seeds apply only when no checkpoint documents exist and do not overwrite
+existing Mongo checkpoints. This internal change leaves the public API and presentation unchanged. All-rank
 jobs keep only the current page in queue status, not a growing item map for
 every PUUID. High-elo single-page requests move to the next rank after one
 failure.
@@ -214,7 +220,7 @@ of live Mongo, Redis, Riot or Discord behavior.
 |---|---|---|
 | Summoner, ranks, masteries | `SummonerService`, `RankService`, `MasteryService` | `summoner` |
 | Matches and events | `MatchService`, `Tracker` | `match`, `match_events` |
-| Match facets projection and APIs | `MongoDB.insertFacets`, `FacetsService.get` / `count`, `!test export-match-search` | Mongo `match_facets`, Redis 10s cache; included in `/matches` and `/facets` |
+| Match facets projection and APIs | `MongoDB.insertFacets`, `FacetsService.get` / `count`, `!test export-match-search` | Mongo `match_facets`, Redis 60s cache; included in `/matches` and `/facets` |
 | Profile statistics, activity, matchups | `ProfileService`, `ProfileAnalyzer` | `profile_statistics`, `profile_activity`, `profile_matchups` |
 | Champion statistics and builds | `ChampionService`, `ChampionAnalyzer` | `champion_statistics`, `champion_builds` |
 | Competitive ranks and leaderboard indexes | `CompetitiveService`, `LeaderboardService` | `competitive`, Redis |

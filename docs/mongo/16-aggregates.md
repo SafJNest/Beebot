@@ -43,9 +43,10 @@ dimensions remain encoded by the canonical `Filter.toSummonerKey()`.
 
 Reads use Redis, then `aggregates`, then the source calculation if both are
 missing. A Mongo hit repopulates Redis without scanning the source. There is no
-Mongo expiry or periodic recalculation. Existing Redis TTLs remain unchanged:
-record totals 60 seconds, leaderboard totals/distributions 12 hours, metrics
-10 days, division hashes persistent. Expiry only reloads the durable snapshot.
+Mongo expiry or periodic recalculation. Redis data caches temporarily use a
+one-minute TTL, including record totals, leaderboard totals/distributions and
+metrics; division hashes remain persistent. Existing Redis entries retain their
+previous expiration until rewritten or expired. Expiry only reloads the durable snapshot.
 Startup uses these same reads; there is no collection-wide cache preload.
 
 Calculation completes before the acknowledged Mongo replacement; only then is

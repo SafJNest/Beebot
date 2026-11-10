@@ -2339,7 +2339,9 @@ public final class MongoDB {
         String riotId = participant.getRiotIdName();
         String riotTag = participant.getRiotIdTagline();
         if (riotId != null && !riotId.isBlank() && riotTag != null && !riotTag.isBlank()) riotId += "#" + riotTag;
-        return upsertSummoner(participant.getPuuid(), shard, riotId, participant.getSummonerLevel(), participant.getProfileIcon(), null);
+        Summoner summoner = new Summoner(participant.getPuuid(), riotId, shard, participant.getSummonerLevel(), participant.getProfileIcon());
+        return summoners().updateOne(Filters.eq("_id", summoner.puuid()), summonerUpdate(summoner, null, true),
+            new UpdateOptions().upsert(true)).wasAcknowledged();
     }
 
     public static boolean upsertSummoner(SpectatorParticipant participant, LeagueShard shard) {
@@ -4211,14 +4213,20 @@ public final class MongoDB {
     }
 
     private static Bson summonerUpdate(Summoner summoner, String userId) {
+        return summonerUpdate(summoner, userId, false);
+    }
+
+    private static Bson summonerUpdate(Summoner summoner, String userId, boolean historical) {
         Document fields = write(summoner);
         fields.remove("_id");
         Object ranks = fields.remove("ranks");
         List<Bson> updates = new ArrayList<>(fields.size() + 2);
-        for (Map.Entry<String, Object> field : fields.entrySet()) updates.add(Updates.set(field.getKey(), field.getValue()));
+        for (Map.Entry<String, Object> field : fields.entrySet())
+            updates.add(historical && field.getKey().equals("riotId")
+                ? Updates.setOnInsert(field.getKey(), field.getValue()) : Updates.set(field.getKey(), field.getValue()));
         if (ranks instanceof Document rankValues && !rankValues.isEmpty()) updates.add(Updates.set("ranks", rankValues));
         String riotSearch = normalizedRiotId(summoner.riotId());
-        if (!riotSearch.isBlank()) updates.add(Updates.set("riotSearch", riotSearch));
+        if (!riotSearch.isBlank()) updates.add(historical ? Updates.setOnInsert("riotSearch", riotSearch) : Updates.set("riotSearch", riotSearch));
         if (userId != null) updates.add(Updates.set("userId", userId));
         return Updates.combine(updates);
     }

@@ -68,8 +68,9 @@ on `_id`. `total` is resolved from Redis, then from `aggregates`, then with
 `countDocuments()` on `competitive` only when the durable snapshot is missing.
 Role and OTP filters have their own snapshots under the same flow. Redis expiry
 reloads the stored snapshot; it does not refresh it.
-Leaderboard page cache entries retain their existing one-day TTL and are not
-invalidated when a competitive entry changes.
+New leaderboard page cache entries temporarily expire after one minute and are
+not invalidated when a competitive entry changes. Previously cached entries
+retain their existing expiration until rewritten or expired.
 Cached pages still resolve contextual rankings from Redis on every request,
 queuing missing segments only; nullable rankings are not frozen by the page cache.
 The `summoner` path bypasses this page cache. It uses a resident exact-division

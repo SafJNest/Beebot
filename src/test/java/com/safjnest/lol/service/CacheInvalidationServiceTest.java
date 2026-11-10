@@ -18,11 +18,11 @@ public class CacheInvalidationServiceTest {
     }
 
     @Test
-    public void staticDataKeysHaveOneDayTtl() {
-        assertEquals(86_400, RedisKey.DDRAGON_ITEMS.ttlSeconds());
-        assertEquals(86_400, RedisKey.DDRAGON_CHAMPIONS.ttlSeconds());
-        assertEquals(86_400, RedisKey.DDRAGON_SUMMONER_SPELLS.ttlSeconds());
-        assertEquals(86_400, RedisKey.DDRAGON_RUNES.ttlSeconds());
-        assertEquals(86_400, RedisKey.DDRAGON_VERSIONS.ttlSeconds());
+    public void staticDataKeysTemporarilyHaveOneMinuteTtl() {
+        assertEquals(60, RedisKey.DDRAGON_ITEMS.ttlSeconds());
+        assertEquals(60, RedisKey.DDRAGON_CHAMPIONS.ttlSeconds());
+        assertEquals(60, RedisKey.DDRAGON_SUMMONER_SPELLS.ttlSeconds());
+        assertEquals(60, RedisKey.DDRAGON_RUNES.ttlSeconds());
+        assertEquals(60, RedisKey.DDRAGON_VERSIONS.ttlSeconds());
     }
 }

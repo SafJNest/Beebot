@@ -76,7 +76,7 @@ period. `range.min` and `range.max` are the earliest match start and latest
 match end after the categorical filters and shard, ignoring the selected
 period. Options are ordered by count descending, then value ascending.
 
-The response is cached in Redis for 10 seconds per summoner, shard and complete
+The response is temporarily cached in Redis for 60 seconds per summoner, shard and complete
 facet query. The query is encoded into the cache key so different selections
 cannot reuse one another's response.
 

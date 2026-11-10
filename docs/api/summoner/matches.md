@@ -332,7 +332,7 @@ values and counts come from the cached `FacetsService` result, shared with the
 dedicated `/facets` endpoint; the page's root `total` remains the exact count
 for the selected filters. The page lookup and facet lookup run concurrently;
 the endpoint combines their results into one asynchronous HTTP response. Since
-the facets result is cached for 10 seconds, root `total` may also be up to 10
+the facets result is temporarily cached for 60 seconds, root `total` may also be up to 60
 seconds behind a newly written or rebuilt match projection.
 
 Sorting uses `timeStart`; matches with the same start time have no guaranteed
