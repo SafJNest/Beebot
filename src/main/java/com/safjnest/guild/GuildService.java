@@ -34,6 +34,10 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel;
+import net.dv8tion.jda.api.entities.channel.attribute.IPositionableChannel;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import org.springframework.http.HttpStatus;
 
@@ -95,9 +99,13 @@ public class GuildService {
             entry.put("id", channel.getId());
             entry.put("name", channel.getName());
             entry.put("type", channel.getType().name());
+            entry.put("parentId", channel instanceof ICategorizableChannel categorized ? categorized.getParentCategoryId() : null);
+            entry.put("position", channel instanceof IPositionableChannel positioned ? positioned.getPositionRaw() : null);
             discordChannels.add(entry);
         }
         List<Map<String, Object>> roles = new ArrayList<>();
+        Member self = guild.getSelfMember();
+        boolean canManageRoles = self.hasPermission(Permission.MANAGE_ROLES);
         for (Role role : guild.getRoles()) {
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("id", role.getId());
@@ -105,6 +113,7 @@ public class GuildService {
             entry.put("color", role.getColorRaw());
             entry.put("position", role.getPosition());
             entry.put("managed", role.isManaged());
+            entry.put("assignable", canManageRoles && !role.isManaged() && !role.isPublicRole() && self.canInteract(role));
             roles.add(entry);
         }
         return new GuildSettings(guildId, guild.getName(), guild.getIconUrl(), discordChannels, roles, settings);

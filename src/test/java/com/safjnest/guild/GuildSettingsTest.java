@@ -22,8 +22,12 @@ import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.database.GuildSettingsDB;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.SelfMember;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel;
+import net.dv8tion.jda.api.entities.channel.attribute.IPositionableChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,8 +57,9 @@ public class GuildSettingsTest {
         }
         database = new GuildSettingsDB(this::connection);
         GuildChannel channel = proxy(GuildChannel.class, Map.of("getId", "10", "getName", "general", "getType", ChannelType.TEXT));
-        Role role = proxy(Role.class, Map.of("getId", "20", "getName", "member", "getColorRaw", 0, "getPosition", 1, "isManaged", false));
-        Guild guild = proxy(Guild.class, Map.of("getId", "1", "getName", "Test guild", "getChannels", List.of(channel), "getRoles", List.of(role)));
+        Role role = proxy(Role.class, Map.of("getId", "20", "getName", "member", "getColorRaw", 0, "getPosition", 1, "isManaged", false, "isPublicRole", false));
+        Member self = proxy(SelfMember.class, Map.of("hasPermission", true, "canInteract", true));
+        Guild guild = proxy(Guild.class, Map.of("getId", "1", "getName", "Test guild", "getChannels", List.of(channel), "getRoles", List.of(role), "getSelfMember", self));
         service = new GuildService(database, id -> id.equals("1") ? guild : null,
             id -> invalidations.incrementAndGet(), subscriptions::add);
     }
@@ -70,6 +75,25 @@ public class GuildSettingsTest {
         assertTrue(database.load("1").guild().isEmpty());
         assertEquals("10", guild.channels().get(0).get("id"));
         assertEquals("20", guild.roles().get(0).get("id"));
+        assertEquals(true, guild.roles().get(0).get("assignable"));
+    }
+
+    @Test
+    public void exposesChannelStructureAndRoleAssignability() {
+        GuildChannel category = proxy(IPositionableChannel.class, Map.of("getId", "30", "getName", "Group", "getType", ChannelType.CATEGORY, "getPositionRaw", 2));
+        GuildChannel channel = proxy(ICategorizableChannel.class, Map.of("getId", "31", "getName", "chat", "getType", ChannelType.TEXT, "getPositionRaw", 4, "getParentCategoryId", "30"));
+        Role managed = proxy(Role.class, Map.of("getId", "21", "getName", "managed", "getColorRaw", 0, "getPosition", 2, "isManaged", true));
+        Role everyone = proxy(Role.class, Map.of("getId", "1", "getName", "everyone", "getColorRaw", 0, "getPosition", 0, "isManaged", false, "isPublicRole", true));
+        Role high = proxy(Role.class, Map.of("getId", "22", "getName", "high", "getColorRaw", 0, "getPosition", 3, "isManaged", false, "isPublicRole", false));
+        Member self = proxy(SelfMember.class, Map.of("hasPermission", true, "canInteract", false));
+        Guild guild = proxy(Guild.class, Map.of("getId", "1", "getName", "Test", "getChannels", List.of(category, channel), "getRoles", List.of(managed, everyone, high), "getSelfMember", self));
+        GuildSettings result = new GuildService(database, id -> guild, id -> {}, id -> {}).getGuild("1");
+        assertEquals("CATEGORY", result.channels().get(0).get("type"));
+        assertNull(result.channels().get(0).get("parentId"));
+        assertEquals(2, result.channels().get(0).get("position"));
+        assertEquals("30", result.channels().get(1).get("parentId"));
+        assertEquals(4, result.channels().get(1).get("position"));
+        for (Map<String, Object> role : result.roles()) assertEquals(false, role.get("assignable"));
     }
 
     @Test

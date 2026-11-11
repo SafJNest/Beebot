@@ -6,8 +6,8 @@ Base URL: `https://api.safjnest.com/beebot`. Both endpoints accept application `
 
 Returns `{ id, name, iconUrl, channels, roles, settings }`.
 
-- `channels`: all guild channels known to JDA, each with string `id`, `name` and `type` (JDA channel type name).
-- `roles`: guild roles with string `id`, `name`, numeric `color`, numeric `position` and boolean `managed`.
+- `channels`: all guild channels known to JDA, including `CATEGORY` entries. Each has string `id`, `name`, `type` (JDA channel type name), nullable string `parentId` (category ID), and nullable numeric `position` (Discord's raw channel position). Categories and uncategorized channels have a null `parentId`; `position` is null for channel types without a position.
+- `roles`: guild roles with string `id`, `name`, numeric `color`, numeric `position`, boolean `managed` and boolean `assignable`. `assignable` requires the bot's Manage Roles permission, a role below its highest role, and a role that is neither managed nor `@everyone`. It reflects the current Discord state and may change before use.
 - `settings.general`: `prefix`, `experienceEnabled`, `voice`, derived read-only `language`, and `leagueShard` as its enum name, for example `EUW1`.
 - `settings.blacklist`: `enabled`, `threshold`, nullable `channelId`.
 - `settings.channels`: persisted channel overrides indexed by channel ID, with `experienceEnabled`, `experienceModifier`, `statisticsEnabled`, and nullable `leagueShard`. Channels without a row use the bot defaults: experience and statistics enabled, modifier 1, inherited guild shard.
