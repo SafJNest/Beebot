@@ -1,6 +1,8 @@
 package com.safjnest.spring;
 
 import java.io.File;
+import java.util.Properties;
+import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,6 +15,12 @@ import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import com.safjnest.spring.config.LolApiConfig;
+import com.safjnest.spring.config.BeebotAuthFilter;
+import com.safjnest.auth.DiscordAuthService;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
 
 public class SpringServer {
 
@@ -28,12 +36,31 @@ public class SpringServer {
     }
 
     public static SpringServer start(int port) throws Exception {
+        return start(port, new Properties());
+    }
+
+    public static SpringServer start(int port, Properties properties) throws Exception {
         Tomcat tomcat = new Tomcat();
         tomcat.setPort(port);
         tomcat.getConnector();
 
         Context context = tomcat.addContext(CONTEXT_PATH, new File(".").getAbsolutePath());
-        registerDispatcher(context);
+        FilterDef filter = new FilterDef();
+        filter.setFilterName("beebotAuth");
+        filter.setFilter(new BeebotAuthFilter(new DiscordAuthService(properties.getProperty("DISCORD_CLIENT_ID"),
+            properties.getProperty("DISCORD_CLIENT_SECRET"), properties.getProperty("AUTH_ENCRYPTION_KEY"))::authenticate));
+        filter.setAsyncSupported("true");
+        context.addFilterDef(filter);
+        FilterMap mapping = new FilterMap();
+        mapping.setFilterName("beebotAuth");
+        mapping.addURLPattern("/*");
+        mapping.setDispatcher("REQUEST");
+        mapping.setDispatcher("ASYNC");
+        mapping.setDispatcher("FORWARD");
+        mapping.setDispatcher("INCLUDE");
+        mapping.setDispatcher("ERROR");
+        context.addFilterMap(mapping);
+        registerDispatcher(context, properties);
 
         tomcat.start();
         return new SpringServer(tomcat);
@@ -44,8 +71,9 @@ public class SpringServer {
         tomcat.destroy();
     }
 
-    private static void registerDispatcher(Context context) {
+    private static void registerDispatcher(Context context, Properties properties) {
         AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
+        applyProperties(applicationContext.getEnvironment(), properties);
         applicationContext.register(LolApiConfig.class);
 
         DispatcherServlet dispatcherServlet = new ApiDispatcherServlet(applicationContext);
@@ -54,6 +82,14 @@ public class SpringServer {
         servlet.setAsyncSupported(true);
 
         context.addServletMappingDecoded(SERVLET_MAPPING, SERVLET_NAME);
+    }
+
+    static void applyProperties(ConfigurableEnvironment environment, Properties properties) {
+        environment.getPropertySources().addFirst(new MapPropertySource("beebotSpringProperties",
+            Map.of("DISCORD_CLIENT_ID", properties.getProperty("DISCORD_CLIENT_ID", ""),
+                "DISCORD_CLIENT_SECRET", properties.getProperty("DISCORD_CLIENT_SECRET", ""),
+                "AUTH_ENCRYPTION_KEY", properties.getProperty("AUTH_ENCRYPTION_KEY", ""),
+                "AUTH_ALLOWED_REDIRECT_URIS", properties.getProperty("AUTH_ALLOWED_REDIRECT_URIS", ""))));
     }
 
     private static final class ApiDispatcherServlet extends DispatcherServlet {
