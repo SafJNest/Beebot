@@ -1,0 +1,2405 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Beebot Sounds API",
+    "version": "1.0.0",
+    "description": "Canonical Sound, SQL analytics, ID-only Redis query cache and personal greet settings. See beebot-sounds.md for privacy and aggregation rules."
+  },
+  "servers": [
+    {
+      "url": "https://api.safjnest.com/beebot"
+    }
+  ],
+  "security": [
+    {
+      "ApplicationKey": [],
+      "Session": []
+    },
+    {
+      "PersonalKey": []
+    }
+  ],
+  "paths": {
+    "/guilds/{guildId}/sounds": {
+      "get": {
+        "operationId": "soundOperation0",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "all"
+              ],
+              "default": "30d"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Europe/Rome"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "guildId": "123",
+                  "counts": {
+                    "all": 1,
+                    "mine": 0,
+                    "others": 1
+                  },
+                  "tags": [
+                    {
+                      "id": "1",
+                      "name": "meme",
+                      "soundCount": 1
+                    }
+                  ],
+                  "summary": {
+                    "period": "30d",
+                    "plays": 50,
+                    "listeners": 10,
+                    "averagePlaysPerListener": 5.0,
+                    "myPlays": 4,
+                    "likes": 8,
+                    "dislikes": 1,
+                    "soundCount": 1,
+                    "previousPlays": 40,
+                    "playsChangePercent": 25.0
+                  },
+                  "sounds": [
+                    {
+                      "id": "42",
+                      "name": "airhorn",
+                      "guildId": "123",
+                      "userId": "456",
+                      "uploader": {
+                        "id": "456",
+                        "name": "Luna",
+                        "avatarUrl": null
+                      },
+                      "public": true,
+                      "createdAt": "2026-03-02T10:00:00Z",
+                      "url": "https://cdn.example.com/sounds/42.mp3",
+                      "durationMs": null,
+                      "tags": [
+                        {
+                          "id": "1",
+                          "name": "meme"
+                        }
+                      ],
+                      "plays": 50,
+                      "listeners": 10,
+                      "likes": 8,
+                      "dislikes": 1,
+                      "myPlays": 4,
+                      "likedByMe": true,
+                      "dislikedByMe": false,
+                      "ownedByMe": false,
+                      "canEdit": false,
+                      "canDelete": false,
+                      "soundboardCount": 2
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds/me": {
+      "get": {
+        "operationId": "soundOperation1",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "all"
+              ],
+              "default": "30d"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Europe/Rome"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "counts": {
+                    "all": 1
+                  },
+                  "tags": [
+                    {
+                      "id": "1",
+                      "name": "meme",
+                      "soundCount": 1
+                    }
+                  ],
+                  "summary": {
+                    "period": "30d",
+                    "plays": 50,
+                    "listeners": 10,
+                    "averagePlaysPerListener": 5.0,
+                    "myPlays": 4,
+                    "likes": 8,
+                    "dislikes": 1,
+                    "soundCount": 1,
+                    "previousPlays": 40,
+                    "playsChangePercent": 25.0
+                  },
+                  "guilds": {
+                    "123": {
+                      "name": "Night Shift",
+                      "sounds": [
+                        {
+                          "id": "42",
+                          "name": "airhorn",
+                          "guildId": "123",
+                          "userId": "999",
+                          "uploader": {
+                            "id": "999",
+                            "name": "You",
+                            "avatarUrl": null
+                          },
+                          "public": true,
+                          "createdAt": "2026-03-02T10:00:00Z",
+                          "url": "https://cdn.example.com/sounds/42.mp3",
+                          "durationMs": null,
+                          "tags": [
+                            {
+                              "id": "1",
+                              "name": "meme"
+                            }
+                          ],
+                          "plays": 50,
+                          "listeners": 10,
+                          "likes": 8,
+                          "dislikes": 1,
+                          "myPlays": 4,
+                          "likedByMe": true,
+                          "dislikedByMe": false,
+                          "ownedByMe": true,
+                          "canEdit": true,
+                          "canDelete": true,
+                          "soundboardCount": 2
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}": {
+      "get": {
+        "operationId": "soundOperation2",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sound"
+                },
+                "example": {
+                  "id": "42",
+                  "name": "airhorn",
+                  "guildId": "123",
+                  "userId": "456",
+                  "uploader": {
+                    "id": "456",
+                    "name": "Luna",
+                    "avatarUrl": null
+                  },
+                  "public": true,
+                  "createdAt": "2026-03-02T10:00:00Z",
+                  "url": "https://cdn.example.com/sounds/42.mp3",
+                  "durationMs": null,
+                  "tags": [
+                    {
+                      "id": "1",
+                      "name": "meme"
+                    }
+                  ],
+                  "plays": 50,
+                  "listeners": 10,
+                  "likes": 8,
+                  "dislikes": 1,
+                  "myPlays": 4,
+                  "likedByMe": true,
+                  "dislikedByMe": false,
+                  "ownedByMe": false,
+                  "canEdit": false,
+                  "canDelete": false,
+                  "soundboardCount": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "soundOperation9",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sound"
+                },
+                "example": {
+                  "id": "42",
+                  "name": "airhorn nuovo",
+                  "guildId": "123",
+                  "userId": "999",
+                  "uploader": {
+                    "id": "999",
+                    "name": "You",
+                    "avatarUrl": null
+                  },
+                  "public": true,
+                  "createdAt": "2026-03-02T10:00:00Z",
+                  "url": "https://cdn.example.com/sounds/42.mp3",
+                  "durationMs": null,
+                  "tags": [
+                    {
+                      "id": "1",
+                      "name": "meme"
+                    }
+                  ],
+                  "plays": 50,
+                  "listeners": 10,
+                  "likes": 8,
+                  "dislikes": 1,
+                  "myPlays": 4,
+                  "likedByMe": true,
+                  "dislikedByMe": false,
+                  "ownedByMe": true,
+                  "canEdit": true,
+                  "canDelete": true,
+                  "soundboardCount": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "public": {
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    }
+                  }
+                }
+              },
+              "example": {
+                "name": "airhorn nuovo",
+                "public": true,
+                "tags": [
+                  "meme"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "soundOperation10",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds": {
+      "get": {
+        "operationId": "soundOperation3",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "plays",
+                "likes",
+                "dislikes"
+              ],
+              "default": "plays"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sounds": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Sound"
+                      }
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  },
+                  "required": [
+                    "sounds",
+                    "limit"
+                  ]
+                },
+                "example": {
+                  "sounds": [
+                    {
+                      "id": "42",
+                      "name": "airhorn",
+                      "guildId": "123",
+                      "userId": "456",
+                      "uploader": {
+                        "id": "456",
+                        "name": "Luna",
+                        "avatarUrl": null
+                      },
+                      "public": true,
+                      "createdAt": "2026-03-02T10:00:00Z",
+                      "url": "https://cdn.example.com/sounds/42.mp3",
+                      "durationMs": null,
+                      "tags": [
+                        {
+                          "id": "1",
+                          "name": "meme"
+                        }
+                      ],
+                      "plays": 50,
+                      "listeners": 10,
+                      "likes": 8,
+                      "dislikes": 1,
+                      "myPlays": 4,
+                      "likedByMe": true,
+                      "dislikedByMe": false,
+                      "ownedByMe": false,
+                      "canEdit": false,
+                      "canDelete": false,
+                      "soundboardCount": 2
+                    }
+                  ],
+                  "limit": 100
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "At least one nonblank q or tag is required."
+      }
+    },
+    "/tags": {
+      "get": {
+        "operationId": "soundOperation4",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tag"
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags"
+                  ]
+                },
+                "example": {
+                  "tags": [
+                    {
+                      "id": "1",
+                      "name": "meme"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds/{guildId}/sounds/analytics": {
+      "get": {
+        "operationId": "soundOperation5",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "all"
+              ],
+              "default": "30d"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Europe/Rome"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "guildId": "123",
+                  "period": "30d",
+                  "timezone": "Europe/Rome",
+                  "from": "2026-10-12T12:00:00Z",
+                  "to": "2026-11-11T12:00:00Z",
+                  "summary": {
+                    "plays": 50,
+                    "listeners": 10,
+                    "averagePlaysPerListener": 5.0,
+                    "myPlays": 4,
+                    "likes": 8,
+                    "dislikes": 1,
+                    "soundCount": 1
+                  },
+                  "playsPerDay": [
+                    {
+                      "date": "2026-11-10",
+                      "plays": 50
+                    }
+                  ],
+                  "topSounds": [
+                    {
+                      "soundId": "42",
+                      "plays": 50
+                    }
+                  ],
+                  "mostLiked": [
+                    {
+                      "soundId": "42",
+                      "likes": 8
+                    }
+                  ],
+                  "users": [
+                    {
+                      "user": {
+                        "id": "456",
+                        "name": "Luna",
+                        "avatarUrl": null
+                      },
+                      "plays": 50,
+                      "soundCount": 1
+                    }
+                  ],
+                  "sounds": [
+                    {
+                      "soundId": "42",
+                      "plays": 50,
+                      "listeners": 10,
+                      "averagePlaysPerListener": 5.0,
+                      "playsPerDay": [
+                        {
+                          "date": "2026-11-10",
+                          "plays": 50
+                        }
+                      ],
+                      "heatmap": [
+                        {
+                          "weekday": 2,
+                          "hour": 21,
+                          "plays": 50
+                        }
+                      ],
+                      "sources": [
+                        {
+                          "source": "AUDIO",
+                          "plays": 50
+                        }
+                      ],
+                      "replayDistribution": [
+                        {
+                          "min": 1,
+                          "max": 1,
+                          "users": 0
+                        },
+                        {
+                          "min": 2,
+                          "max": 5,
+                          "users": 10
+                        },
+                        {
+                          "min": 6,
+                          "max": 20,
+                          "users": 0
+                        },
+                        {
+                          "min": 21,
+                          "max": 50,
+                          "users": 0
+                        },
+                        {
+                          "min": 51,
+                          "max": null,
+                          "users": 0
+                        }
+                      ],
+                      "likes": 8,
+                      "dislikes": 1,
+                      "previousPlays": 40,
+                      "playsChangePercent": 25.0,
+                      "users": [
+                        {
+                          "user": {
+                            "id": "456",
+                            "name": "Luna",
+                            "avatarUrl": null
+                          },
+                          "plays": 50,
+                          "soundCount": 1
+                        }
+                      ],
+                      "my": {
+                        "plays": 4,
+                        "history": [
+                          {
+                            "id": "900",
+                            "playedAt": "2026-11-10T20:30:00Z",
+                            "guildId": "123",
+                            "source": "AUDIO"
+                          }
+                        ],
+                        "nextCursor": null
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/analytics": {
+      "get": {
+        "operationId": "soundOperation6",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "all"
+              ],
+              "default": "30d"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Europe/Rome"
+            }
+          },
+          {
+            "name": "guildId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "soundId": "42",
+                  "period": "30d",
+                  "timezone": "Europe/Rome",
+                  "from": "2026-10-12T12:00:00Z",
+                  "to": "2026-11-11T12:00:00Z",
+                  "totals": {
+                    "plays": 50,
+                    "listeners": 10,
+                    "averagePlaysPerListener": 5.0,
+                    "playsPerDay": [
+                      {
+                        "date": "2026-11-10",
+                        "plays": 50
+                      }
+                    ],
+                    "heatmap": [
+                      {
+                        "weekday": 2,
+                        "hour": 21,
+                        "plays": 50
+                      }
+                    ],
+                    "sources": [
+                      {
+                        "source": "AUDIO",
+                        "plays": 50
+                      }
+                    ],
+                    "replayDistribution": [
+                      {
+                        "min": 1,
+                        "max": 1,
+                        "users": 0
+                      },
+                      {
+                        "min": 2,
+                        "max": 5,
+                        "users": 10
+                      },
+                      {
+                        "min": 6,
+                        "max": 20,
+                        "users": 0
+                      },
+                      {
+                        "min": 21,
+                        "max": 50,
+                        "users": 0
+                      },
+                      {
+                        "min": 51,
+                        "max": null,
+                        "users": 0
+                      }
+                    ],
+                    "likes": 8,
+                    "dislikes": 1,
+                    "previousPlays": 40,
+                    "playsChangePercent": 25.0
+                  },
+                  "guilds": {
+                    "123": {
+                      "plays": 50,
+                      "listeners": 10,
+                      "averagePlaysPerListener": 5.0,
+                      "playsPerDay": [
+                        {
+                          "date": "2026-11-10",
+                          "plays": 50
+                        }
+                      ],
+                      "heatmap": [
+                        {
+                          "weekday": 2,
+                          "hour": 21,
+                          "plays": 50
+                        }
+                      ],
+                      "sources": [
+                        {
+                          "source": "AUDIO",
+                          "plays": 50
+                        }
+                      ],
+                      "replayDistribution": [
+                        {
+                          "min": 1,
+                          "max": 1,
+                          "users": 0
+                        },
+                        {
+                          "min": 2,
+                          "max": 5,
+                          "users": 10
+                        },
+                        {
+                          "min": 6,
+                          "max": 20,
+                          "users": 0
+                        },
+                        {
+                          "min": 21,
+                          "max": 50,
+                          "users": 0
+                        },
+                        {
+                          "min": 51,
+                          "max": null,
+                          "users": 0
+                        }
+                      ],
+                      "users": [
+                        {
+                          "user": {
+                            "id": "456",
+                            "name": "Luna",
+                            "avatarUrl": null
+                          },
+                          "plays": 50,
+                          "soundCount": 1
+                        }
+                      ]
+                    }
+                  },
+                  "otherGuilds": {
+                    "plays": 0,
+                    "listeners": 0,
+                    "averagePlaysPerListener": 0.0,
+                    "playsPerDay": [
+                      {
+                        "date": "2026-11-10",
+                        "plays": 0
+                      }
+                    ],
+                    "heatmap": [
+                      {
+                        "weekday": 2,
+                        "hour": 21,
+                        "plays": 0
+                      }
+                    ],
+                    "sources": [],
+                    "replayDistribution": [
+                      {
+                        "min": 1,
+                        "max": 1,
+                        "users": 0
+                      },
+                      {
+                        "min": 2,
+                        "max": 5,
+                        "users": 0
+                      },
+                      {
+                        "min": 6,
+                        "max": 20,
+                        "users": 0
+                      },
+                      {
+                        "min": 21,
+                        "max": 50,
+                        "users": 0
+                      },
+                      {
+                        "min": 51,
+                        "max": null,
+                        "users": 0
+                      }
+                    ]
+                  },
+                  "my": {
+                    "plays": 4,
+                    "history": [
+                      {
+                        "id": "900",
+                        "playedAt": "2026-11-10T20:30:00Z",
+                        "guildId": "123",
+                        "source": "AUDIO"
+                      }
+                    ],
+                    "nextCursor": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds/me/analytics": {
+      "get": {
+        "operationId": "soundOperation8",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "all"
+              ],
+              "default": "30d"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Europe/Rome"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "period": "30d",
+                  "timezone": "Europe/Rome",
+                  "from": "2026-10-12T12:00:00Z",
+                  "to": "2026-11-11T12:00:00Z",
+                  "summary": {
+                    "period": "30d",
+                    "plays": 50,
+                    "listeners": 10,
+                    "averagePlaysPerListener": 5.0,
+                    "myPlays": 4,
+                    "likes": 8,
+                    "dislikes": 1,
+                    "soundCount": 1,
+                    "previousPlays": 40,
+                    "playsChangePercent": 25.0
+                  },
+                  "sounds": [
+                    {
+                      "soundId": "42",
+                      "period": "30d",
+                      "timezone": "Europe/Rome",
+                      "from": "2026-10-12T12:00:00Z",
+                      "to": "2026-11-11T12:00:00Z",
+                      "totals": {
+                        "plays": 50,
+                        "listeners": 10,
+                        "averagePlaysPerListener": 5.0,
+                        "playsPerDay": [
+                          {
+                            "date": "2026-11-10",
+                            "plays": 50
+                          }
+                        ],
+                        "heatmap": [
+                          {
+                            "weekday": 2,
+                            "hour": 21,
+                            "plays": 50
+                          }
+                        ],
+                        "sources": [
+                          {
+                            "source": "AUDIO",
+                            "plays": 50
+                          }
+                        ],
+                        "replayDistribution": [
+                          {
+                            "min": 1,
+                            "max": 1,
+                            "users": 0
+                          },
+                          {
+                            "min": 2,
+                            "max": 5,
+                            "users": 10
+                          },
+                          {
+                            "min": 6,
+                            "max": 20,
+                            "users": 0
+                          },
+                          {
+                            "min": 21,
+                            "max": 50,
+                            "users": 0
+                          },
+                          {
+                            "min": 51,
+                            "max": null,
+                            "users": 0
+                          }
+                        ],
+                        "likes": 8,
+                        "dislikes": 1,
+                        "previousPlays": 40,
+                        "playsChangePercent": 25.0
+                      },
+                      "guilds": {
+                        "123": {
+                          "plays": 50,
+                          "listeners": 10,
+                          "averagePlaysPerListener": 5.0,
+                          "playsPerDay": [
+                            {
+                              "date": "2026-11-10",
+                              "plays": 50
+                            }
+                          ],
+                          "heatmap": [
+                            {
+                              "weekday": 2,
+                              "hour": 21,
+                              "plays": 50
+                            }
+                          ],
+                          "sources": [
+                            {
+                              "source": "AUDIO",
+                              "plays": 50
+                            }
+                          ],
+                          "replayDistribution": [
+                            {
+                              "min": 1,
+                              "max": 1,
+                              "users": 0
+                            },
+                            {
+                              "min": 2,
+                              "max": 5,
+                              "users": 10
+                            },
+                            {
+                              "min": 6,
+                              "max": 20,
+                              "users": 0
+                            },
+                            {
+                              "min": 21,
+                              "max": 50,
+                              "users": 0
+                            },
+                            {
+                              "min": 51,
+                              "max": null,
+                              "users": 0
+                            }
+                          ],
+                          "users": [
+                            {
+                              "user": {
+                                "id": "456",
+                                "name": "Luna",
+                                "avatarUrl": null
+                              },
+                              "plays": 50,
+                              "soundCount": 1
+                            }
+                          ]
+                        }
+                      },
+                      "otherGuilds": {
+                        "plays": 0,
+                        "listeners": 0,
+                        "averagePlaysPerListener": 0.0,
+                        "playsPerDay": [
+                          {
+                            "date": "2026-11-10",
+                            "plays": 0
+                          }
+                        ],
+                        "heatmap": [
+                          {
+                            "weekday": 2,
+                            "hour": 21,
+                            "plays": 0
+                          }
+                        ],
+                        "sources": [],
+                        "replayDistribution": [
+                          {
+                            "min": 1,
+                            "max": 1,
+                            "users": 0
+                          },
+                          {
+                            "min": 2,
+                            "max": 5,
+                            "users": 0
+                          },
+                          {
+                            "min": 6,
+                            "max": 20,
+                            "users": 0
+                          },
+                          {
+                            "min": 21,
+                            "max": 50,
+                            "users": 0
+                          },
+                          {
+                            "min": 51,
+                            "max": null,
+                            "users": 0
+                          }
+                        ]
+                      },
+                      "my": {
+                        "plays": 4,
+                        "history": [
+                          {
+                            "id": "900",
+                            "playedAt": "2026-11-10T20:30:00Z",
+                            "guildId": "123",
+                            "source": "AUDIO"
+                          }
+                        ],
+                        "nextCursor": null
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/like": {
+      "patch": {
+        "operationId": "soundOperation11",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vote"
+                },
+                "example": {
+                  "soundId": "42",
+                  "likes": 9,
+                  "dislikes": 1,
+                  "likedByMe": true,
+                  "dislikedByMe": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/dislike": {
+      "patch": {
+        "operationId": "soundOperation12",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vote"
+                },
+                "example": {
+                  "soundId": "42",
+                  "likes": 8,
+                  "dislikes": 2,
+                  "likedByMe": false,
+                  "dislikedByMe": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "soundOperation13",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "user": {
+                    "id": "999",
+                    "username": "sunyx",
+                    "globalName": "Sunyx",
+                    "avatarUrl": null
+                  },
+                  "servers": [],
+                  "greets": {
+                    "0": {
+                      "id": "42",
+                      "name": "airhorn",
+                      "guildId": "123",
+                      "userId": "999",
+                      "uploader": {
+                        "id": "999",
+                        "name": "You",
+                        "avatarUrl": null
+                      },
+                      "public": true,
+                      "createdAt": "2026-03-02T10:00:00Z",
+                      "url": "https://cdn.example.com/sounds/42.mp3",
+                      "durationMs": null,
+                      "tags": [
+                        {
+                          "id": "1",
+                          "name": "meme"
+                        }
+                      ],
+                      "plays": 50,
+                      "listeners": 10,
+                      "likes": 8,
+                      "dislikes": 1,
+                      "myPlays": 4,
+                      "likedByMe": true,
+                      "dislikedByMe": false,
+                      "ownedByMe": true,
+                      "canEdit": true,
+                      "canDelete": true,
+                      "soundboardCount": 2
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/settings": {
+      "post": {
+        "operationId": "soundOperation14",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "greets": {
+                    "0": {
+                      "status": "ok",
+                      "errors": []
+                    },
+                    "123": {
+                      "status": "error",
+                      "errors": [
+                        {
+                          "field": "soundId",
+                          "code": "private_sound_wrong_guild",
+                          "message": "Private sound cannot be used in this context"
+                        }
+                      ]
+                    },
+                    "789": {
+                      "status": "ok",
+                      "errors": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or dependency error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "greets": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                },
+                "required": [
+                  "greets"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "greets": {
+                  "0": "42",
+                  "123": "73",
+                  "789": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Sound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "guildId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "uploader": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "avatarUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "avatarUrl"
+            ]
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "plays": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "listeners": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dislikes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "myPlays": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "soundboardCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "likedByMe": {
+            "type": "boolean"
+          },
+          "dislikedByMe": {
+            "type": "boolean"
+          },
+          "ownedByMe": {
+            "type": "boolean"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "guildId",
+          "userId",
+          "uploader",
+          "public",
+          "createdAt",
+          "url",
+          "durationMs",
+          "tags",
+          "plays",
+          "listeners",
+          "likes",
+          "dislikes",
+          "myPlays",
+          "soundboardCount",
+          "likedByMe",
+          "dislikedByMe",
+          "ownedByMe",
+          "canEdit",
+          "canDelete"
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "Vote": {
+        "type": "object",
+        "properties": {
+          "soundId": {
+            "type": "string"
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dislikes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "likedByMe": {
+            "type": "boolean"
+          },
+          "dislikedByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "soundId",
+          "likes",
+          "dislikes",
+          "likedByMe",
+          "dislikedByMe"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "ApplicationKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "PersonalKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "Session": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

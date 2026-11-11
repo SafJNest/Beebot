@@ -6,3 +6,8 @@
 - [MongoDB](mongo/README.md) — persistence and migration.
 - [Arena builds](arena-build/README.md) — CHERRY schema and processing.
 - [SQL](sql/README.md) — legacy migration adapter.
+
+## Audio APIs
+
+- [Sounds, analytics and personal greet settings](api/beebot-sounds.md)
+- [Sound history and backfill](sound-history.md)

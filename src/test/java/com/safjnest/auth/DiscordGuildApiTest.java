@@ -33,7 +33,8 @@ public class DiscordGuildApiTest {
         var fixture = fixture(fake);
         var response = fixture.mvc.perform(get("/beebot/me")).andExpect(status().isOk()).andReturn().getResponse();
         var body = json.readTree(response.getContentAsString());
-        assertEquals(2, body.size());
+        assertEquals(3, body.size());
+        assertTrue(body.get("greets").isObject());
         assertEquals("42", body.get("user").get("id").asText());
         assertEquals(3, body.get("servers").size());
         for (String route : List.of("/beebot/guilds", "/beebot/servers")) {
@@ -113,7 +114,7 @@ public class DiscordGuildApiTest {
         var settings = new GuildService(null, null, null, null) {
             @Override public GuildSettings getGuild(String id) { return new GuildSettings(id, "Guild", null, List.of(), List.of(), Map.of()); }
         };
-        MockMvc mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(new DiscordAuthService(), directory),
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(new DiscordAuthService(), directory, contextValue -> Map.of()),
             new GuildController(settings, directory::requireAdministrator)).setControllerAdvice(new AuthExceptionHandler())
             .addFilters(new BeebotAuthFilter((key, bearer, required) -> context)).build();
         return new Fixture(mvc);

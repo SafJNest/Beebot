@@ -3,3 +3,6 @@ DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 AUTH_ENCRYPTION_KEY=
 AUTH_ALLOWED_REDIRECT_URIS=https://safjnest.com/auth/callback/,http://localhost:5173/auth/callback/
+
+# Public Cloudflare CDN origin; audio keys are sounds/{id}.{extension}.
+CDN_URL=

@@ -263,3 +263,7 @@ The unique profile identity index is `profile_statistics_identity` on
 CHERRY uses the existing champion API and build flow. Its approved schema and
 processing rules live in [`docs/arena-build`](arena-build/README.md) and
 ADR-0012.
+
+## Audio API operations
+
+Sounds HTTP routes use `SoundCache` as the facade, canonical `Sound` response copies, `SoundDB` prepared SQL (streamed history grouped in Java on one read session) and ID-only `SoundQueryCache` Redis entries. They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.

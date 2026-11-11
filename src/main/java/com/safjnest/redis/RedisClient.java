@@ -77,6 +77,10 @@ public class RedisClient {
         }
     }
 
+    public static boolean setValue(String key, String value, int ttlSeconds) {
+        return set(key, value, ttlSeconds);
+    }
+
     private static boolean set(String key, String value, int ttlSeconds) {
         if (key == null || value == null || !canUseRedis()) return false;
         try (Jedis jedis = pool.getResource()) {

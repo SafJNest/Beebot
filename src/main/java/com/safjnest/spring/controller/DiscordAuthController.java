@@ -23,12 +23,13 @@ import org.springframework.core.env.Environment;
 public class DiscordAuthController {
     private final DiscordAuthService auth;
     private final DiscordGuildService guilds;
+    private final java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.model.sound.Sound>> greets;
 
     public record AuthorizeRequest(String state, String redirectUri) {}
 
     public record ExchangeRequest(String code, String state, String redirectUri) {}
 
-    public record Me(AuthUser user, List<Server> servers) {}
+    public record Me(AuthUser user, List<Server> servers, java.util.Map<String, com.safjnest.model.sound.Sound> greets) {}
 
     public DiscordAuthController() { this(new DiscordAuthService(), new DiscordGuildService(null)); }
 
@@ -38,7 +39,16 @@ public class DiscordAuthController {
             environment.getProperty("AUTH_ENCRYPTION_KEY")), new DiscordGuildService(environment.getProperty("AUTH_ENCRYPTION_KEY")));
     }
 
-    public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds) { this.auth = auth; this.guilds = guilds; }
+    public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds) {
+        this(auth, guilds, context -> {
+            var sounds = com.safjnest.core.cache.managers.SoundCache.getInstance();
+            return sounds.greets(sounds.context(context.user().id()));
+        });
+    }
+    public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds,
+            java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.model.sound.Sound>> greets) {
+        this.auth = auth; this.guilds = guilds; this.greets = greets;
+    }
 
     @ModelAttribute
     public void preventCaching(HttpServletResponse response) {
@@ -61,7 +71,7 @@ public class DiscordAuthController {
 
     @GetMapping("/me")
     public Me me(@RequestAttribute(BeebotAuthFilter.AUTH_CONTEXT) AuthContext context) {
-        return new Me(context.user(), guilds.servers(context));
+        return new Me(context.user(), guilds.servers(context), greets.apply(context));
     }
 
     @GetMapping({"/guilds", "/servers"})

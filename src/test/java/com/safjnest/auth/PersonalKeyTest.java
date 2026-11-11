@@ -134,7 +134,7 @@ public class PersonalKeyTest {
                         case "getStatus" -> net.dv8tion.jda.api.JDA.Status.CONNECTED;
                         case "getGuilds" -> java.util.List.of();
                         default -> null;
-                    })), com.safjnest.guild.DiscordGuildCache.memory(), null)))
+                    })), com.safjnest.guild.DiscordGuildCache.memory(), null), contextValue -> java.util.Map.of()))
             .setControllerAdvice(new com.safjnest.spring.controller.AuthExceptionHandler())
             .addFilters(new com.safjnest.spring.config.BeebotAuthFilter(auth::authenticate)).build();
         var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders

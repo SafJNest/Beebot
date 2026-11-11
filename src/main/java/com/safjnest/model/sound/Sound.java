@@ -1,5 +1,10 @@
 package com.safjnest.model.sound;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
+import java.util.ArrayList;
+
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -8,23 +13,71 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public class Sound {
+    @JsonProperty("id")
     private final String ID;
+    @JsonProperty("guildId")
     private final String GUILD_ID;
+    @JsonProperty("userId")
     private final String USER_ID;
 
-    private String name;
+    @JsonProperty("name")
+    private volatile String name;
     private String extension;
-    private boolean isPublic;
+    @JsonProperty("public")
+    private volatile boolean isPublic;
     private Timestamp timestamp;
 
-    private int plays;
-    private int likes;
-    private int dislikes;
+    @JsonProperty("plays")
+    private volatile int plays;
+    @JsonProperty("likes")
+    private volatile int likes;
+    @JsonProperty("dislikes")
+    private volatile int dislikes;
 
     private AudioTrack track;
 
-    private List<Tag> tags;
+    private volatile List<Tag> tags;
+
+    @JsonProperty private Map<String, Object> uploader;
+    @JsonProperty private String url;
+    @JsonProperty private Long durationMs;
+    @JsonProperty private long listeners;
+    @JsonProperty private long myPlays;
+    @JsonProperty private boolean likedByMe;
+    @JsonProperty private boolean dislikedByMe;
+    @JsonProperty private boolean ownedByMe;
+    @JsonProperty private boolean canEdit;
+    @JsonProperty private boolean canDelete;
+    @JsonProperty private long soundboardCount;
+
+    public static Sound forResponse(Sound source, QueryRecord current, List<Tag> tags, QueryRecord extra,
+            String viewerId, boolean administrator, String cdn, Map<String, Object> uploader) {
+        Sound result = new Sound(current, tags);
+        result.uploader = uploader;
+        result.url = cdn == null || cdn.isBlank() ? null : cdn.replaceAll("/+$", "") + "/sounds/" + result.ID + "." + result.extension;
+        result.durationMs = source.durationMs;
+        result.listeners = extra.getAsLong("listeners");
+        result.myPlays = extra.getAsLong("my_plays");
+        result.likedByMe = extra.getAsInt("vote") == 1;
+        result.dislikedByMe = extra.getAsInt("vote") == -1;
+        result.ownedByMe = viewerId.equals(result.USER_ID);
+        result.canEdit = result.ownedByMe;
+        result.canDelete = result.ownedByMe || administrator;
+        result.soundboardCount = extra.getAsLong("boards");
+        return result;
+    }
+
+    @JsonProperty("createdAt")
+    public String getCreatedAt() { return timestamp == null ? null : timestamp.toInstant().toString(); }
+
+    @JsonProperty("tags")
+    public List<Tag> getJsonTags() {
+        ArrayList<Tag> result = new ArrayList<>();
+        if (tags != null) for (Tag tag : tags) if (!tag.isEmpty()) result.add(tag);
+        return result;
+    }
 
     public Sound() {
         this.ID = null;
@@ -102,7 +155,7 @@ public class Sound {
         return extension.equals("opus");
     }
 
-    public boolean setName(String name) {
+    public synchronized boolean setName(String name) {
         boolean result = BotDB.updateSound(this.ID, name);
         if (result) {
             this.name = name;
@@ -110,7 +163,7 @@ public class Sound {
         return result;  
     }
 
-    public boolean setPublic(boolean isPublic) {
+    public synchronized boolean setPublic(boolean isPublic) {
         boolean result = BotDB.updateSound(this.ID, isPublic);
         if (result) {
             this.isPublic = isPublic;
@@ -118,7 +171,7 @@ public class Sound {
         return result;
     }
 
-    public boolean setTags(List<Tag> tags) {
+    public synchronized boolean setTags(List<Tag> tags) {
         boolean result = BotDB.setSoundTags(this.ID, tags);
         if (result) {
             this.tags = tags;
@@ -126,18 +179,19 @@ public class Sound {
         return result;
     }
 
-    public boolean increaseUserPlays(String userId) {
-        return increaseUserPlays(userId, AudioType.AUDIO);
+    public boolean increaseUserPlays(String userId, String guildId) {
+        return increaseUserPlays(userId, guildId, AudioType.AUDIO);
     }
 
-    public boolean increaseUserPlays(String userId, AudioType source) {
-        boolean result = BotDB.updateUserPlays(this.ID, userId, source.ordinal());
+    public synchronized boolean increaseUserPlays(String userId, String guildId, AudioType source) {
+        boolean result = BotDB.updateUserPlays(this.ID, userId, guildId, source.ordinal());
         if (result) plays++;
         return result;
     }
 
     public void setTrack(AudioTrack track) {
         this.track = track;
+        this.durationMs = track == null ? null : track.getDuration();
     }
 
     public String getFormattedTags() {
@@ -207,7 +261,7 @@ public class Sound {
     
 
 
-    public boolean like(String userId, boolean like) {
+    public synchronized boolean like(String userId, boolean like) {
         boolean result = BotDB.setLikeDislike(this.ID, userId, (like ? 1 : 0));
         if (result) {
             updateLikeDislike();
@@ -215,7 +269,7 @@ public class Sound {
         return result;
     }
 
-    public boolean dislike(String userId, boolean dislike) {
+    public synchronized boolean dislike(String userId, boolean dislike) {
         boolean result = BotDB.setLikeDislike(this.ID, userId, (dislike ? -1 : 0));
         if (result) {
             updateLikeDislike();

@@ -309,7 +309,7 @@ import net.dv8tion.jda.api.modals.Modal;
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
 
-                sound.increaseUserPlays(event.getMember().getId(), AudioType.SOUNDBOARD);
+                sound.increaseUserPlays(event.getMember().getId(), guild.getId(), AudioType.SOUNDBOARD);
                 track.setUserData(new TrackData(AudioType.SOUNDBOARD));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUNDBOARD);
                 event.getHook().editOriginalComponents(finalTree).useComponentsV2().queue();

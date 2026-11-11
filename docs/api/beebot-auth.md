@@ -13,9 +13,12 @@ Discord redirects the browser to Qwik's callback with its temporary code and sta
 ```json
 {
   "user": { "id": "42", "username": "tester", "globalName": null, "avatarUrl": null },
-  "servers": [{ "id": "1", "name": "Guild", "iconUrl": null, "owner": true }]
+  "servers": [{ "id": "1", "name": "Guild", "iconUrl": null, "owner": true }],
+  "greets": {}
 }
 ```
+
+`greets` maps configured scope IDs (`"0"` globally) to canonical Sound objects. `POST /me/settings` updates these settings with independent results per scope; see [Sounds and greet settings](beebot-sounds.md). Ordinary membership for audio is verified separately from the administrative server list.
 
 `GET /guilds` returns a JSON array directly (`[{ "id": "1", "name": "Guild", "iconUrl": null, "owner": true }]`); `GET /servers` remains an alias with the same array response. There is no `{servers: ...}` wrapper on these two list endpoints. All three routes use the same authorized list for the authenticated session. Owners and members with Administrator **or Manage Server** permission are included. OAuth lists may include guilds without the bot; personal keys list only guilds shared with the bot. `iconUrl` is a Discord HTTPS CDN URL or null. The profile comes from the session/issued personal key, with no extra `/users/@me` request per page.
 

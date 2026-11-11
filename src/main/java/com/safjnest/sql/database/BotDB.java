@@ -196,27 +196,42 @@ public class BotDB extends AbstractDB {
                 }
             }
         }
+        if (soundId != null) com.safjnest.core.cache.managers.SoundCache.catalogChanged(soundId);
         return soundId;
     }
 
     public static boolean updateSound(String id, String name, boolean isPublic) {
-        return instance.defaultQuery("UPDATE sound SET name = '" + name + "', public = '" + (isPublic ? "1" : "0") + "' WHERE id = '" + id + "';");
+        return updateSoundMetadata(id, java.util.Map.of("name", name, "public", isPublic), null);
     }
 
     public static boolean updateSound(String id, String name) {
-        return instance.defaultQuery("UPDATE sound SET name = '" + name + "' WHERE id = '" + id + "';");
+        return updateSoundMetadata(id, java.util.Map.of("name", name), null);
     }
 
     public static boolean updateSound(String id, boolean isPublic) {
-        return instance.defaultQuery("UPDATE sound SET public = '" + (isPublic ? "1" : "0") + "' WHERE id = '" + id + "';");
+        return updateSoundMetadata(id, java.util.Map.of("public", isPublic), null);
+    }
+
+    private static boolean updateSoundMetadata(String id, java.util.Map<String,Object> values, java.util.List<String> tags) {
+        try {
+            SoundDB database = new SoundDB();
+            var rows = database.sounds(java.util.List.of(id));
+            if (rows.isEmpty()) return false;
+            database.patch(id, rows.get(0).get("user_id"), values, tags);
+            com.safjnest.core.cache.managers.SoundCache.catalogChanged(id);
+            return true;
+        } catch (com.safjnest.auth.AuthException exception) { return false; }
     }
 
     public static boolean deleteSound(String id) {
-        return instance.defaultQuery("DELETE FROM sound WHERE id = " + id + ";");
+        boolean result = instance.defaultQuery("DELETE FROM sound WHERE id = " + id + ";");
+        if (result) com.safjnest.core.cache.managers.SoundCache.catalogChanged(id);
+        return result;
     }
 
-    public static boolean updateUserPlays(String sound_id, String user_id, int source) {
-        return instance.defaultQuery("INSERT INTO sound_history(user_id, sound_id, source) VALUES('" + user_id + "', '" + sound_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
+    public static boolean updateUserPlays(String sound_id, String user_id, String guild_id, int source) {
+        try { new SoundDB().play(sound_id, user_id, guild_id, source); return true; }
+        catch (com.safjnest.auth.AuthException exception) { return false; }
     }
 
     public static QueryRecord getPlays(String sound_id, String user_id) {
@@ -459,7 +474,8 @@ public class BotDB extends AbstractDB {
     }
 
     public static boolean setGreet(String user_id, String guild_id, String sound_id) {
-        return instance.defaultQuery("INSERT INTO greeting (user_id, guild_id, sound_id) VALUES ('" + user_id + "', '" + guild_id + "', '" + sound_id + "') ON DUPLICATE KEY UPDATE sound_id = '" + sound_id + "';");
+        try { new SoundDB().greet(user_id, guild_id, sound_id); return true; }
+        catch (com.safjnest.auth.AuthException exception) { return false; }
     }
 
     public static boolean deleteGreet(String user_id, String guild_id) {
@@ -938,15 +954,9 @@ public class BotDB extends AbstractDB {
     }
 
     public static boolean setSoundTags(String sound_id, List<Tag> tags) {
-        String values = "";
-        for(Tag tag : tags) {
-            if (tag.getId() != 0) values += "('" + sound_id + "', '" + tag.getId() + "'), ";
-        }
-        if (!values.isEmpty()) {
-            values = values.substring(0, values.length() - 2);
-        }
-        instance.defaultQuery("DELETE FROM tag_sounds WHERE sound_id = '" + sound_id + "';");
-        return instance.defaultQuery("INSERT INTO tag_sounds(sound_id, tag_id) VALUES " + values + ";");
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (Tag tag : tags) if (!tag.isEmpty()) names.add(tag.getName());
+        return updateSoundMetadata(sound_id, java.util.Map.of(), names);
     }
 
     public static int insertTag(String tag) {
@@ -997,7 +1007,14 @@ public class BotDB extends AbstractDB {
 
 
     public static boolean setLikeDislike(String sound_id, String user_id, int value) {
-        return instance.defaultQuery("INSERT INTO sound_interactions(sound_id, user_id, value) VALUES('" + sound_id + "', '" + user_id + "', '" + value + "') ON DUPLICATE KEY UPDATE value = '" + value + "';", "UPDATE sound SET likes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1), dislikes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) WHERE id = '" + sound_id + "';");
+        try {
+            SoundDB database = new SoundDB();
+            var rows = database.sounds(java.util.List.of(sound_id));
+            if (rows.isEmpty()) return false;
+            database.vote(sound_id, user_id, java.util.Set.of(rows.get(0).get("guild_id")), value, true);
+            com.safjnest.core.cache.managers.SoundCache.catalogChanged(sound_id);
+            return true;
+        } catch (com.safjnest.auth.AuthException exception) { return false; }
     }
 
     public static QueryRecord hasInterectedSound(String sound_id, String user_id) {

@@ -10,8 +10,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(assignableTypes = {DiscordAuthController.class, GuildController.class})
+@RestControllerAdvice(assignableTypes = {DiscordAuthController.class, GuildController.class, SoundController.class})
 public class AuthRequestExceptionHandler {
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<AuthError> parameter(Exception exception) {
+        return ResponseEntity.badRequest().body(new AuthError("invalid_request", "Invalid request parameter"));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<AuthError> handle(HttpMessageNotReadableException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
