@@ -89,7 +89,8 @@ public class SpringServer {
             Map.of("DISCORD_CLIENT_ID", properties.getProperty("DISCORD_CLIENT_ID", ""),
                 "DISCORD_CLIENT_SECRET", properties.getProperty("DISCORD_CLIENT_SECRET", ""),
                 "AUTH_ENCRYPTION_KEY", properties.getProperty("AUTH_ENCRYPTION_KEY", ""),
-                "AUTH_ALLOWED_REDIRECT_URIS", properties.getProperty("AUTH_ALLOWED_REDIRECT_URIS", ""))));
+                "AUTH_ALLOWED_REDIRECT_URIS", properties.getProperty("AUTH_ALLOWED_REDIRECT_URIS", ""),
+                "CDN_URL", properties.getProperty("CDN_URL", environment.getProperty("CDN_URL", "")))));
     }
 
     private static final class ApiDispatcherServlet extends DispatcherServlet {

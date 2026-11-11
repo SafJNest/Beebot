@@ -13,6 +13,32 @@ import com.safjnest.spring.controller.DiscordAuthController;
 
 public class SpringPropertiesTest {
     @Test
+    public void cdnFilePropertyReachesSoundController() throws Exception {
+        Properties properties = new Properties();
+        properties.load(new StringReader("CDN_URL=https://cdn.example.com\n"));
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            SpringServer.applyProperties(context.getEnvironment(), properties);
+            context.register(com.safjnest.spring.controller.SoundController.class);
+            context.refresh();
+            assertEquals("https://cdn.example.com", context.getEnvironment().getProperty("CDN_URL"));
+            Field field = com.safjnest.core.cache.managers.SoundCache.class.getDeclaredField("cdnUrl");
+            field.setAccessible(true);
+            assertEquals("https://cdn.example.com", field.get(com.safjnest.core.cache.managers.SoundCache.getInstance()));
+        } finally {
+            com.safjnest.core.cache.managers.SoundCache.getInstance().setCdnUrl("");
+        }
+    }
+
+    @Test
+    public void missingCdnFilePropertyPreservesEnvironmentValue() {
+        org.springframework.core.env.StandardEnvironment environment = new org.springframework.core.env.StandardEnvironment();
+        environment.getPropertySources().addFirst(new org.springframework.core.env.MapPropertySource("cdnTestEnvironment",
+            java.util.Map.of("CDN_URL", "https://environment.example.com")));
+        SpringServer.applyProperties(environment, new Properties());
+        assertEquals("https://environment.example.com", environment.getProperty("CDN_URL"));
+    }
+
+    @Test
     public void filePropertyReachesAuthController() throws Exception {
         Properties properties = new Properties();
         String encryptionKey = Base64.getEncoder().encodeToString(new byte[32]);
