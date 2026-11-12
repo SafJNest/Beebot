@@ -138,14 +138,14 @@ public class PersonalKeyTest {
             .setControllerAdvice(new com.safjnest.spring.controller.AuthExceptionHandler())
             .addFilters(new com.safjnest.spring.config.BeebotAuthFilter(auth::authenticate)).build();
         var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-            .get("/beebot/me").servletPath("/beebot/me").header("X-API-Key", key);
+            .get("/api/beebot/me").servletPath("/api/beebot/me").header("X-API-Key", key);
         var response = mvc.perform(request)
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
             .andReturn().getResponse();
         assertTrue(response.getContentAsString().contains("\"id\":\"42\""));
         assertEquals("no-store", response.getHeader("Cache-Control"));
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-            .post("/beebot/auth/session").servletPath("/beebot/auth/session").header("X-API-Key", key))
+            .post("/api/beebot/auth/session").servletPath("/api/beebot/auth/session").header("X-API-Key", key))
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
         keys.revokePersonalKey("http");
         mvc.perform(request).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isUnauthorized());

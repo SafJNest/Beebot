@@ -31,18 +31,18 @@ public class DiscordGuildApiTest {
     public void meAndBothListRoutesShareOneFetchAndPermissionRules() throws Exception {
         var fake = new Transport();
         var fixture = fixture(fake);
-        var response = fixture.mvc.perform(get("/beebot/me")).andExpect(status().isOk()).andReturn().getResponse();
+        var response = fixture.mvc.perform(get("/api/beebot/me")).andExpect(status().isOk()).andReturn().getResponse();
         var body = json.readTree(response.getContentAsString());
         assertEquals(3, body.size());
         assertTrue(body.get("greets").isObject());
         assertEquals("42", body.get("user").get("id").asText());
         assertEquals(3, body.get("servers").size());
-        for (String route : List.of("/beebot/guilds", "/beebot/servers")) {
+        for (String route : List.of("/api/beebot/guilds", "/api/beebot/servers")) {
             var list = fixture.mvc.perform(get(route)).andExpect(status().isOk()).andReturn().getResponse();
             assertEquals(body.get("servers"), json.readTree(list.getContentAsString()));
         }
-        for (String guild : List.of("1", "2", "3")) fixture.mvc.perform(get("/beebot/guilds/" + guild)).andExpect(status().isOk());
-        fixture.mvc.perform(get("/beebot/guilds/4")).andExpect(status().isForbidden());
+        for (String guild : List.of("1", "2", "3")) fixture.mvc.perform(get("/api/beebot/guilds/" + guild)).andExpect(status().isOk());
+        fixture.mvc.perform(get("/api/beebot/guilds/4")).andExpect(status().isForbidden());
         assertEquals(1, fake.calls.get());
     }
 
@@ -51,9 +51,9 @@ public class DiscordGuildApiTest {
         var fake = new Transport(); fake.entered = new CountDownLatch(1); fake.release = new CountDownLatch(1);
         var fixture = fixture(fake);
         try (var executor = Executors.newFixedThreadPool(2)) {
-            var me = executor.submit(() -> fixture.mvc.perform(get("/beebot/me")).andExpect(status().isOk()));
+            var me = executor.submit(() -> fixture.mvc.perform(get("/api/beebot/me")).andExpect(status().isOk()));
             assertTrue(fake.entered.await(2, TimeUnit.SECONDS));
-            var guild = executor.submit(() -> fixture.mvc.perform(get("/beebot/guilds/1")).andExpect(status().isOk()));
+            var guild = executor.submit(() -> fixture.mvc.perform(get("/api/beebot/guilds/1")).andExpect(status().isOk()));
             fake.release.countDown();
             me.get(3, TimeUnit.SECONDS); guild.get(3, TimeUnit.SECONDS);
             assertEquals(1, fake.calls.get());
@@ -65,7 +65,7 @@ public class DiscordGuildApiTest {
         var fake = new Transport(); fake.status = 429; fake.body = "{\"retry_after\":1.25}";
         var fixture = fixture(fake);
         for (int i = 0; i < 2; i++) {
-            var response = fixture.mvc.perform(get("/beebot/me")).andExpect(status().isServiceUnavailable()).andReturn().getResponse();
+            var response = fixture.mvc.perform(get("/api/beebot/me")).andExpect(status().isServiceUnavailable()).andReturn().getResponse();
             var body = json.readTree(response.getContentAsString());
             assertEquals("discord_rate_limited", body.get("code").asText());
             assertEquals(1.25, body.get("retryAfter").asDouble(), 0);
@@ -74,7 +74,7 @@ public class DiscordGuildApiTest {
         }
         assertEquals(2, fake.calls.get());
         fake.status = 200; fake.body = GUILDS;
-        fixture.mvc.perform(get("/beebot/me")).andExpect(status().isOk());
+        fixture.mvc.perform(get("/api/beebot/me")).andExpect(status().isOk());
         assertEquals(3, fake.calls.get());
     }
 
@@ -83,12 +83,12 @@ public class DiscordGuildApiTest {
         for (int code : new int[]{401, 403, 500}) {
             var fake = new Transport(); fake.status = code;
             var fixture = fixture(fake);
-            var response = fixture.mvc.perform(get("/beebot/me")).andReturn().getResponse();
+            var response = fixture.mvc.perform(get("/api/beebot/me")).andReturn().getResponse();
             assertEquals(code == 500 ? 503 : 401, response.getStatus());
             assertEquals(code == 500 ? "discord_unavailable" : "discord_token_expired", json.readTree(response.getContentAsString()).get("code").asText());
         }
         var fake = new Transport(); fake.networkFailure = true;
-        fixture(fake).mvc.perform(get("/beebot/me")).andExpect(status().isServiceUnavailable());
+        fixture(fake).mvc.perform(get("/api/beebot/me")).andExpect(status().isServiceUnavailable());
     }
 
     @Test
@@ -96,9 +96,9 @@ public class DiscordGuildApiTest {
         for (String invalid : List.of("not-json", "null", "[{}]")) {
             var fake = new Transport(); fake.body = invalid;
             var fixture = fixture(fake);
-            fixture.mvc.perform(get("/beebot/me")).andExpect(status().isBadGateway());
+            fixture.mvc.perform(get("/api/beebot/me")).andExpect(status().isBadGateway());
             fake.body = GUILDS;
-            fixture.mvc.perform(get("/beebot/me")).andExpect(status().isOk());
+            fixture.mvc.perform(get("/api/beebot/me")).andExpect(status().isOk());
             assertEquals(2, fake.calls.get());
         }
     }

@@ -50,17 +50,17 @@ public class GuildControllerTest {
             throw new AuthException(HttpStatus.FORBIDDEN, "guild_forbidden", "Guild access denied");
         });
         MockMvc mvc = mvc(controller);
-        var response = mvc.perform(get("/beebot/guilds/1").servletPath("/beebot/guilds/1"))
+        var response = mvc.perform(get("/api/beebot/guilds/1").servletPath("/api/beebot/guilds/1"))
             .andExpect(status().isOk()).andReturn().getResponse();
         assertEquals("no-store", response.getHeader("Cache-Control"));
         assertTrue(response.getContentAsString().contains("\"id\":\"1\""));
-        mvc.perform(post("/beebot/guilds/1/settings").servletPath("/beebot/guilds/1/settings")
+        mvc.perform(post("/api/beebot/guilds/1/settings").servletPath("/api/beebot/guilds/1/settings")
             .contentType(MediaType.APPLICATION_JSON).content("{\"leave\":{}}"))
             .andExpect(status().isOk());
         servers.set(List.of());
-        mvc.perform(get("/beebot/guilds/1").servletPath("/beebot/guilds/1"))
+        mvc.perform(get("/api/beebot/guilds/1").servletPath("/api/beebot/guilds/1"))
             .andExpect(status().isForbidden());
-        mvc.perform(post("/beebot/guilds/1/settings").servletPath("/beebot/guilds/1/settings")
+        mvc.perform(post("/api/beebot/guilds/1/settings").servletPath("/api/beebot/guilds/1/settings")
             .contentType(MediaType.APPLICATION_JSON).content("{\"leave\":{}}"))
             .andExpect(status().isForbidden());
         assertEquals(4, checks.get());
@@ -70,12 +70,12 @@ public class GuildControllerTest {
     @Test
     public void rejectsMalformedJsonAndPathWithoutEchoingRequestContents() throws Exception {
         GuildController controller = new GuildController(null, (context, guildId) -> { throw new AuthException(HttpStatus.FORBIDDEN, "guild_forbidden", "Guild access denied"); });
-        var response = mvc(controller).perform(post("/beebot/guilds/1/settings")
-            .servletPath("/beebot/guilds/1/settings").contentType(MediaType.APPLICATION_JSON)
+        var response = mvc(controller).perform(post("/api/beebot/guilds/1/settings")
+            .servletPath("/api/beebot/guilds/1/settings").contentType(MediaType.APPLICATION_JSON)
             .content("{\"do-not-echo\":")).andExpect(status().isBadRequest()).andReturn().getResponse();
         assertFalse(response.getContentAsString().contains("do-not-echo"));
         assertTrue(response.getContentAsString().contains("invalid_request"));
-        mvc(controller).perform(get("/beebot/guilds/invalid").servletPath("/beebot/guilds/invalid"))
+        mvc(controller).perform(get("/api/beebot/guilds/invalid").servletPath("/api/beebot/guilds/invalid"))
             .andExpect(status().isBadRequest());
     }
 
@@ -84,7 +84,7 @@ public class GuildControllerTest {
         GuildController controller = new GuildController(null, (context, guildId) -> {
             throw new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "discord_unavailable", "Discord is unavailable");
         });
-        mvc(controller).perform(get("/beebot/guilds/1").servletPath("/beebot/guilds/1"))
+        mvc(controller).perform(get("/api/beebot/guilds/1").servletPath("/api/beebot/guilds/1"))
             .andExpect(status().isServiceUnavailable());
     }
 
@@ -95,8 +95,8 @@ public class GuildControllerTest {
             assertTrue(required);
             throw new AuthException(HttpStatus.UNAUTHORIZED, "invalid_session", "Missing credentials");
         })).build();
-        mvc.perform(get("/beebot/guilds/1").servletPath("/beebot/guilds/1")).andExpect(status().isUnauthorized());
-        mvc.perform(post("/beebot/guilds/1/settings").servletPath("/beebot/guilds/1/settings")
+        mvc.perform(get("/api/beebot/guilds/1").servletPath("/api/beebot/guilds/1")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/beebot/guilds/1/settings").servletPath("/api/beebot/guilds/1/settings")
             .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isUnauthorized());
     }
 

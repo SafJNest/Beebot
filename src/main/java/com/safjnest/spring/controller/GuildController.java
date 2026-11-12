@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/beebot/guilds")
+@RequestMapping("/api/beebot/guilds")
 public class GuildController {
 
     private final GuildService guilds;

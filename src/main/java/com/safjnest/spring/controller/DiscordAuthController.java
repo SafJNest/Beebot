@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 
 @RestController
-@RequestMapping("/beebot")
+@RequestMapping("/api/beebot")
 public class DiscordAuthController {
     private final DiscordAuthService auth;
     private final DiscordGuildService guilds;

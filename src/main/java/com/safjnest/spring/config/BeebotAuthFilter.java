@@ -30,7 +30,7 @@ public final class BeebotAuthFilter implements Filter {
         HttpServletResponse result = (HttpServletResponse) response;
         String includedPath = (String) http.getAttribute("jakarta.servlet.include.servlet_path");
         String path = includedPath == null ? http.getServletPath() : includedPath;
-        if (!path.equals("/beebot") && !path.startsWith("/beebot/")) { chain.doFilter(request, response); return; }
+        if (!path.equals("/api/beebot") && !path.startsWith("/api/beebot/")) { chain.doFilter(request, response); return; }
         result.setHeader("Cache-Control", "no-store");
         String rawPath = http.getRequestURI().substring(http.getContextPath().length());
         if (rawPath.indexOf(';') >= 0 || rawPath.indexOf('\\') >= 0 || rawPath.contains("//") || rawPath.contains("%")) {
@@ -38,7 +38,7 @@ public final class BeebotAuthFilter implements Filter {
             return;
         }
         boolean preSession = "POST".equals(http.getMethod())
-            && ("/beebot/auth/discord/authorize".equals(path) || "/beebot/auth/session".equals(path));
+            && ("/api/beebot/auth/discord/authorize".equals(path) || "/api/beebot/auth/session".equals(path));
         try { http.setAttribute(AUTH_CONTEXT, verifier.verify(http.getHeader("X-API-Key"), http.getHeader("Authorization"), !preSession)); }
         catch (AuthException exception) {
             error(result, exception.getStatusCode().value(), exception.code(), exception.getReason());

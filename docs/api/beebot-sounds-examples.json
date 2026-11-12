@@ -4,7 +4,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/guilds/123/sounds?period=30d"
+        "url": "/api/beebot/guilds/123/sounds?period=30d"
       },
       "status": 200,
       "response": {
@@ -72,7 +72,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds/me?period=30d"
+        "url": "/api/beebot/sounds/me?period=30d"
       },
       "status": 200,
       "response": {
@@ -142,7 +142,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds/42"
+        "url": "/api/beebot/sounds/42"
       },
       "status": 200,
       "response": {
@@ -181,7 +181,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds?q=air&tag=meme&sort=plays&order=desc&limit=100"
+        "url": "/api/beebot/sounds?q=air&tag=meme&sort=plays&order=desc&limit=100"
       },
       "status": 200,
       "response": {
@@ -225,7 +225,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/tags?q=me"
+        "url": "/api/beebot/tags?q=me"
       },
       "status": 200,
       "response": {
@@ -240,7 +240,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/guilds/123/sounds/analytics?period=30d"
+        "url": "/api/beebot/guilds/123/sounds/analytics?period=30d"
       },
       "status": 200,
       "response": {
@@ -373,7 +373,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds/42/analytics?period=30d"
+        "url": "/api/beebot/sounds/42/analytics?period=30d"
       },
       "status": 200,
       "response": {
@@ -564,7 +564,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds/42/analytics?guildId=123&period=30d"
+        "url": "/api/beebot/sounds/42/analytics?guildId=123&period=30d"
       },
       "status": 200,
       "response": {
@@ -755,7 +755,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds/me/analytics?period=30d"
+        "url": "/api/beebot/sounds/me/analytics?period=30d"
       },
       "status": 200,
       "response": {
@@ -966,7 +966,7 @@
     {
       "request": {
         "method": "PATCH",
-        "url": "/beebot/sounds/42",
+        "url": "/api/beebot/sounds/42",
         "body": {
           "name": "airhorn nuovo",
           "public": true,
@@ -1012,7 +1012,7 @@
     {
       "request": {
         "method": "DELETE",
-        "url": "/beebot/sounds/42"
+        "url": "/api/beebot/sounds/42"
       },
       "status": 204,
       "response": null
@@ -1020,7 +1020,7 @@
     {
       "request": {
         "method": "PATCH",
-        "url": "/beebot/sounds/42/like",
+        "url": "/api/beebot/sounds/42/like",
         "body": {
           "enabled": true
         }
@@ -1037,7 +1037,7 @@
     {
       "request": {
         "method": "PATCH",
-        "url": "/beebot/sounds/42/dislike",
+        "url": "/api/beebot/sounds/42/dislike",
         "body": {
           "enabled": true
         }
@@ -1054,7 +1054,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/me"
+        "url": "/api/beebot/me"
       },
       "status": 200,
       "response": {
@@ -1104,7 +1104,7 @@
     {
       "request": {
         "method": "POST",
-        "url": "/beebot/me/settings",
+        "url": "/api/beebot/me/settings",
         "body": {
           "greets": {
             "0": "42",
@@ -1140,7 +1140,7 @@
     {
       "request": {
         "method": "GET",
-        "url": "/beebot/sounds"
+        "url": "/api/beebot/sounds"
       },
       "status": 400,
       "response": {

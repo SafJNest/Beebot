@@ -1,6 +1,6 @@
 # LoL HTTP API
 
-The separate Discord dashboard API (`/beebot/me`, `/beebot/guilds`, and the `/beebot/servers` alias) is documented in [Beebot authentication](beebot-auth.md). Guild configuration is documented in [Beebot guild settings](beebot-guilds.md).
+The separate Discord dashboard API (`/api/beebot/me`, `/api/beebot/guilds`, and the `/api/beebot/servers` alias) is documented in [Beebot authentication](beebot-auth.md). Guild configuration is documented in [Beebot guild settings](beebot-guilds.md).
 
 Index of the public LoL HTTP documentation. The documentation is organized
 by scope and each endpoint has a dedicated file with the same template:

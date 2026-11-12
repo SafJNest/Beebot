@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://api.safjnest.com/beebot"
+      "url": "https://api.safjnest.com/api/beebot"
     }
   ],
   "security": [

@@ -33,7 +33,7 @@ public class BeebotAuthFilterTest {
             assertTrue(sessionRequired);
             throw new AuthException(HttpStatus.UNAUTHORIZED, "invalid_api_key", "Application credentials are missing or invalid");
         });
-        MockHttpServletResponse protectedResponse = execute(filter, "GET", "/beebot/new-route", "/beebot/new-route");
+        MockHttpServletResponse protectedResponse = execute(filter, "GET", "/api/beebot/new-route", "/api/beebot/new-route");
         assertTrue(invoked.get());
         assertEquals(401, protectedResponse.getStatus());
         assertTrue(protectedResponse.getContentAsString().contains("invalid_api_key"));
@@ -46,16 +46,16 @@ public class BeebotAuthFilterTest {
     public void onlyExactPostLoginEndpointsArePreSession() throws Exception {
         AtomicBoolean session = new AtomicBoolean(true);
         BeebotAuthFilter filter = new BeebotAuthFilter((key, bearer, required) -> { session.set(required); return null; });
-        execute(filter, "POST", "/beebot/auth/session", "/beebot/auth/session");
+        execute(filter, "POST", "/api/beebot/auth/session", "/api/beebot/auth/session");
         assertFalse(session.get());
-        execute(filter, "POST", "/beebot/auth/discord/authorize", "/beebot/auth/discord/authorize");
+        execute(filter, "POST", "/api/beebot/auth/discord/authorize", "/api/beebot/auth/discord/authorize");
         assertFalse(session.get());
-        execute(filter, "GET", "/beebot/auth/session", "/beebot/auth/session");
+        execute(filter, "GET", "/api/beebot/auth/session", "/api/beebot/auth/session");
         assertTrue(session.get());
-        execute(filter, "GET", "/beebot", "/beebot");
+        execute(filter, "GET", "/api/beebot", "/api/beebot");
         assertTrue(session.get());
-        assertEquals(400, execute(filter, "POST", "/beebot/auth/session", "/beebot/auth/session;x=1").getStatus());
-        assertEquals(400, execute(filter, "POST", "/beebot/auth/session", "/beebot/auth/%73ession").getStatus());
+        assertEquals(400, execute(filter, "POST", "/api/beebot/auth/session", "/api/beebot/auth/session;x=1").getStatus());
+        assertEquals(400, execute(filter, "POST", "/api/beebot/auth/session", "/api/beebot/auth/%73ession").getStatus());
     }
 
     @Test
@@ -67,9 +67,9 @@ public class BeebotAuthFilterTest {
             return context;
         });
         var mvc = MockMvcBuilders.standaloneSetup(new NewController()).addFilters(filter).build();
-        mvc.perform(get("/beebot/new-controller").servletPath("/beebot/new-controller"))
+        mvc.perform(get("/api/beebot/new-controller").servletPath("/api/beebot/new-controller"))
             .andExpect(status().isUnauthorized());
-        mvc.perform(get("/beebot/new-controller").servletPath("/beebot/new-controller").header("X-API-Key", "valid"))
+        mvc.perform(get("/api/beebot/new-controller").servletPath("/api/beebot/new-controller").header("X-API-Key", "valid"))
             .andExpect(status().isOk()).andExpect(content().string("dashboard"));
     }
 
@@ -80,7 +80,7 @@ public class BeebotAuthFilterTest {
         var mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController())
             .setControllerAdvice(new AuthExceptionHandler(), new AuthRequestExceptionHandler())
             .addFilters(new BeebotAuthFilter((key, bearer, required) -> context)).build();
-        for (String path : new String[]{"/beebot/auth/session", "/beebot/auth/discord/authorize"}) {
+        for (String path : new String[]{"/api/beebot/auth/session", "/api/beebot/auth/discord/authorize"}) {
             for (String body : new String[]{"null", "{\"secret\":\"do-not-echo\"", ""}) {
                 var response = mvc.perform(post(path).servletPath(path).contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
@@ -92,7 +92,7 @@ public class BeebotAuthFilterTest {
 
     @RestController
     static class NewController {
-        @GetMapping("/beebot/new-controller")
+        @GetMapping("/api/beebot/new-controller")
         public String get(@RequestAttribute(BeebotAuthFilter.AUTH_CONTEXT) AuthContext context) {
             return context.client().name();
         }

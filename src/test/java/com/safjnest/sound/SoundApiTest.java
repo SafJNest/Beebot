@@ -194,13 +194,13 @@ public class SoundApiTest {
         assertEquals(1,queries.stream().filter(query -> query.contains("JOIN tag t")).count());
     }
     @Test public void httpRoutesValidateAndReturnCanonicalSound()throws Exception{
-        var response=mvc.perform(get("/beebot/sounds/1").servletPath("/beebot/sounds/1")).andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store")).andReturn().getResponse();
+        var response=mvc.perform(get("/api/beebot/sounds/1").servletPath("/api/beebot/sounds/1")).andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store")).andReturn().getResponse();
         assertEquals("1",JSON.readTree(response.getContentAsString()).path("id").asText());
-        mvc.perform(get("/beebot/sounds").servletPath("/beebot/sounds")).andExpect(status().isBadRequest());
-        mvc.perform(get("/beebot/sounds").servletPath("/beebot/sounds").param("q","air").param("limit","bad")).andExpect(status().isBadRequest());
-        mvc.perform(get("/beebot/guilds/20/sounds").servletPath("/beebot/guilds/20/sounds")).andExpect(status().isForbidden());
-        mvc.perform(patch("/beebot/sounds/1").servletPath("/beebot/sounds/1").contentType("application/json").content("{" )).andExpect(status().isBadRequest());
-        var mine=mvc.perform(get("/beebot/sounds/me").servletPath("/beebot/sounds/me")).andExpect(status().isOk()).andReturn().getResponse();
+        mvc.perform(get("/api/beebot/sounds").servletPath("/api/beebot/sounds")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/beebot/sounds").servletPath("/api/beebot/sounds").param("q","air").param("limit","bad")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/beebot/guilds/20/sounds").servletPath("/api/beebot/guilds/20/sounds")).andExpect(status().isForbidden());
+        mvc.perform(patch("/api/beebot/sounds/1").servletPath("/api/beebot/sounds/1").contentType("application/json").content("{" )).andExpect(status().isBadRequest());
+        var mine=mvc.perform(get("/api/beebot/sounds/me").servletPath("/api/beebot/sounds/me")).andExpect(status().isOk()).andReturn().getResponse();
         assertEquals(2,JSON.readTree(mine.getContentAsString()).at("/counts/all").asInt());
     }
 }

@@ -1,6 +1,6 @@
 # Sounds, analytics and personal greet settings
 
-Base path: `/beebot`. Authentication is the existing application key plus user session, or personal key alone. Responses use `Cache-Control: no-store`. IDs are strings. See [authentication](beebot-auth.md), [request/response examples](beebot-sounds-examples.json), and [OpenAPI](beebot-sounds.openapi.json).
+Base path: `/api/beebot`. Authentication is the existing application key plus user session, or personal key alone. Responses use `Cache-Control: no-store`. IDs are strings. See [authentication](beebot-auth.md), [request/response examples](beebot-sounds-examples.json), and [OpenAPI](beebot-sounds.openapi.json).
 
 ## Canonical Sound
 

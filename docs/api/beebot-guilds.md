@@ -1,6 +1,6 @@
 # Beebot guild settings
 
-Base URL: `https://api.safjnest.com/beebot`. Both endpoints accept application `X-API-Key` plus `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` alone, through the existing [authentication flow](beebot-auth.md). Each request checks the requested guild ID against the per-session authorized list shared by `/me`, `/guilds` and the `/servers` alias. Owners and members with Administrator or Manage Server permission are allowed. The list has a 60-second Redis/in-memory cache and single-flight loading; valid cache hits do not contact Discord. The bot must be present. Responses use `Cache-Control: no-store`.
+Base URL: `https://api.safjnest.com/api/beebot`. Both endpoints accept application `X-API-Key` plus `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` alone, through the existing [authentication flow](beebot-auth.md). Each request checks the requested guild ID against the per-session authorized list shared by `/me`, `/guilds` and the `/servers` alias. Owners and members with Administrator or Manage Server permission are allowed. The list has a 60-second Redis/in-memory cache and single-flight loading; valid cache hits do not contact Discord. The bot must be present. Responses use `Cache-Control: no-store`.
 
 ## GET /guilds/{guildId}
 
