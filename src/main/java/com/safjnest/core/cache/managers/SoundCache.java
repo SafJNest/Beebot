@@ -7,6 +7,7 @@ import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.auth.AuthException;
 import com.safjnest.core.cache.CacheAdapter;
 import com.safjnest.model.sound.Sound;
+import com.safjnest.core.audio.SoundStorage;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sound.SoundAccess;
 import com.safjnest.sound.SoundAnalytics;
@@ -221,8 +222,16 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public static boolean deleteSound(String id) {
+        Sound sound = getSoundById(id);
         boolean result = BotDB.deleteSound(id);
-        if (result) instance.remove(id);
+        if (result) {
+            instance.remove(id);
+            try {
+                SoundStorage.delete(sound.getId() + "." + sound.getExtension());
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
         return result;
     }
 

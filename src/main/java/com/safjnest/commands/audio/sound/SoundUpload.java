@@ -1,6 +1,7 @@
 package com.safjnest.commands.audio.sound;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.core.audio.SoundStorage;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
@@ -83,11 +85,32 @@ public class SoundUpload extends SlashCommand{
             return;
         }
 
-        String id = BotDB.insertSound(soundName, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
+        event.deferReply(false).queue();
+        Path uploadFile = null;
+        String id = null;
+        try {
+            uploadFile = Files.createTempFile("beebot-sound-", "." + attachment.getFileExtension());
+            attachment.getProxy().downloadToFile(uploadFile.toFile()).get();
 
-        if(id == null){
-            event.deferReply(true).addContent("Something went wrong.").queue();
+            id = BotDB.insertSound(soundName, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
+            if (id == null) {
+                event.getHook().editOriginal("Something went wrong.").queue();
+                return;
+            }
+
+            SoundStorage.upload(uploadFile, id + "." + attachment.getFileExtension());
+        } catch (Exception e) {
+            if (id != null) BotDB.deleteSound(id);
+            event.getHook().editOriginal("Could not store the sound in Cloudflare R2.").queue();
             return;
+        } finally {
+            if (uploadFile != null) {
+                try {
+                    Files.deleteIfExists(uploadFile);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         List<Tag> tags = new ArrayList<>();
@@ -102,9 +125,6 @@ public class SoundUpload extends SlashCommand{
         }
         if (tags.size() > 0) SoundCache.getSoundById(id).setTags(tags);
 
-        File saveFile = new File("rsc" + File.separator + "sounds" + File.separator + (id + "." + attachment.getFileExtension()));
-
-        attachment.getProxy().downloadToFile(saveFile);
-        event.deferReply(false).addContent("Sound uploaded succesfully").queue();
+		event.getHook().editOriginal("Sound uploaded succesfully").queue();
 	}
 }

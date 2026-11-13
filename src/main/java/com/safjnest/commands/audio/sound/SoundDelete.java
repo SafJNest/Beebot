@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
@@ -67,7 +68,7 @@ public class SoundDelete extends SlashCommand{
             return;
         }
 
-        BotDB.deleteSound(toDelete.get("id"));
+        SoundCache.deleteSound(toDelete.get("id"));
 
         event.deferReply(false).addContent(name + " (ID: " + toDelete.get("id") +  ") has been deleted.").queue();
 	}
