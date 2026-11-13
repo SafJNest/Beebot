@@ -14,6 +14,7 @@ import org.springframework.web.context.request.async.AsyncRequestNotUsableExcept
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.spring.dto.LolApiError;
+import com.safjnest.spring.exception.LolApiExceptionHandler;
 
 public class LolApiExceptionHandlerTest {
 

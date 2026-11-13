@@ -26,6 +26,7 @@ public class App {
     private static Bot bot;
     private static SpringServer springServer;
     private static Boolean trackingEnabled;
+    private static String authAllowedRedirectUris;
 
     public static void main(String args[]) {
         SafJNest.bee();
@@ -56,13 +57,18 @@ public class App {
         }
 
         int port = Integer.parseInt(springProperties.getProperty("server.port", "8080"));
+        authAllowedRedirectUris = springProperties.getProperty("AUTH_ALLOWED_REDIRECT_URIS");
 
         try {
-            springServer = SpringServer.start(port);
+            springServer = SpringServer.start(port, springProperties);
             BotLogger.info("Spring API started on port " + port);
         } catch (Exception e) {
             BotLogger.error("Failed to start Spring API: " + e.getMessage());
         }
+    }
+
+    public static String getAuthAllowedRedirectUris() {
+        return authAllowedRedirectUris;
     }
 
     public static void shutdown() {

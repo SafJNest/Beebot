@@ -213,6 +213,16 @@ public class PermissionHandler {
         return false;
     }
 
+    public static boolean hasPermission(String permissions, Permission permission) {
+        if (permissions == null || !permissions.matches("[0-9]+") || permission == null) return false;
+        try {
+            return new java.math.BigInteger(permissions)
+                .and(java.math.BigInteger.valueOf(Permission.getRaw(permission))).signum() != 0;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
+    }
+
     public static User getMentionedUser(CommandEvent event, String name){
         User user = null;
         if(event.getMessage().getMentions().getMembers().size() > 0)

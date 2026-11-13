@@ -38,6 +38,7 @@ import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.nosql.MongoMigration;
 import com.safjnest.nosql.MongoDB;
 import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.PermissionHandler;
 import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
@@ -70,7 +71,6 @@ public class Test extends Command {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
-        this.ownerCommand = true;
         this.hidden = true;
         commandData.setThings(this);
     }
@@ -79,6 +79,8 @@ public class Test extends Command {
     protected void execute(CommandEvent event) {
         String[] arguments = event.getArgs().trim().split("\\s+", 2);
         String operation = arguments.length == 0 ? "" : arguments[0].toLowerCase();
+        if (!canExecute(event, operation, arguments)) return;
+
         switch (operation) {
             case "list" -> event.reply("gc | tracking | log | ranking | regenerate <"
                 + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
@@ -86,7 +88,8 @@ public class Test extends Command {
                 + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
                 + "] | regenerate aggregates [all|" + String.join("|", AggregateService.types())
-                + "] | regenerate champion [patch] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>");
+                + "] | regenerate champion [patch] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>"
+                + " | generate apikey <name> | revoke apikey <name> | generate personalkey <name> | revoke personalkey <name> | cleanup auth");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -99,6 +102,9 @@ public class Test extends Command {
             case "log" -> event.reply("Riot scheduler logging "
                 + (RiotScheduler.toggleLogging() ? "enabled" : "disabled") + ".");
             case "ranking" -> replyRankingStatus(event);
+            case "generate" -> manageApiKey(event, arguments, true);
+            case "revoke" -> manageApiKey(event, arguments, false);
+            case "cleanup" -> cleanupAuth(event, arguments);
             case "13" -> printGuildCache(event);
             case "14" -> warmGuildCaches(event);
             case "getblacklist" -> System.out.println(GuildCache.getGuildOrPut(event.getGuild().getId()).getBlacklistData());
@@ -139,6 +145,76 @@ public class Test extends Command {
     }
 
     // ============================================================================
+
+    static boolean canExecute(CommandEvent event, String operation, String[] arguments) {
+        if (("generate".equals(operation) || "revoke".equals(operation)) && arguments.length > 1) {
+            String keyType = arguments[1].trim().split("\\s+", 2)[0];
+            if ("apikey".equalsIgnoreCase(keyType) || "personalkey".equalsIgnoreCase(keyType)) {
+                String userId = event.getAuthor().getId();
+                if (PermissionHandler.isUntouchable(userId) || PermissionHandler.isEpria(userId)) return true;
+                event.replyInDm("Who do you think you are? 🤨");
+                return false;
+            }
+        }
+        return event.isOwner();
+    }
+
+    private static void cleanupAuth(CommandEvent event, String[] arguments) {
+        if (arguments.length != 2 || !"auth".equalsIgnoreCase(arguments[1].trim())) {
+            event.reply("Usage: !test cleanup auth.");
+            return;
+        }
+        try {
+            com.safjnest.sql.database.AuthDB database = com.safjnest.sql.database.AuthDB.get();
+            long now = System.currentTimeMillis();
+            int sessions = database.cleanupSessions(now);
+            int transactions = database.cleanupTransactions(now);
+            event.reply("Removed " + sessions + " expired or revoked sessions and " + transactions
+                + " expired login transactions. Repeat if either count is 1000.");
+        } catch (RuntimeException failure) { event.reply("Authentication session cleanup failed."); }
+    }
+
+    private static void manageApiKey(CommandEvent event, String[] arguments, boolean generate) {
+        String[] values = arguments.length < 2 ? new String[0] : arguments[1].trim().split("\\s+");
+        if (values.length != 2 || !("apikey".equalsIgnoreCase(values[0]) || "personalkey".equalsIgnoreCase(values[0]))
+                || !values[1].matches("[A-Za-z0-9_-]{1,100}")) {
+            event.reply("Usage: !test " + (generate ? "generate" : "revoke") + " <apikey|personalkey> <name>.");
+            return;
+        }
+        String name = values[1];
+        boolean personal = "personalkey".equalsIgnoreCase(values[0]);
+        String type = personal ? "Personal key" : "Application key";
+        com.safjnest.sql.database.AuthDB service = com.safjnest.sql.database.AuthDB.get();
+        boolean created = false;
+        try {
+            if (!generate) {
+                boolean revoked = personal ? service.revokePersonalKey(name) : service.revokeClient(name) != null;
+                event.reply(revoked ? type + " revoked." : "Active " + type.toLowerCase(Locale.ROOT) + " not found.");
+                return;
+            }
+            net.dv8tion.jda.api.entities.User author = event.getAuthor();
+            String key = personal
+                ? service.generatePersonal(name, new com.safjnest.auth.DiscordApi.AuthUser(
+                    author.getId(), author.getName(), author.getGlobalName(), author.getEffectiveAvatarUrl()))
+                : service.generate(name, App.getAuthAllowedRedirectUris());
+            created = true;
+            event.getAuthor().openPrivateChannel().queue(channel -> channel.sendMessage(type + " for " + name + ": `" + key + "`").queue(
+                sent -> event.reply(type + " delivered privately."),
+                failure -> keyDeliveryFailed(event, service, name, personal)
+            ), failure -> keyDeliveryFailed(event, service, name, personal));
+        } catch (RuntimeException failure) {
+            if (created) keyDeliveryFailed(event, service, name, personal);
+            else event.reply(type + " operation failed.");
+        }
+    }
+
+    private static void keyDeliveryFailed(CommandEvent event, com.safjnest.sql.database.AuthDB service, String name, boolean personal) {
+        try {
+            if (personal) service.revokePersonalKey(name);
+            else service.revokeClient(name);
+        } catch (RuntimeException ignored) { }
+        event.reply("Private delivery failed; key cannot be retrieved.");
+    }
 
     private static void queueRegeneration(CommandEvent event, String[] arguments) {
         String[] options = arguments.length < 2 ? new String[0] : arguments[1].trim().toLowerCase(Locale.ROOT).split("\\s+");

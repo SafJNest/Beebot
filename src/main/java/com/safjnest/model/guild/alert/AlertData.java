@@ -1,5 +1,6 @@
 package com.safjnest.model.guild.alert;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -86,7 +87,27 @@ public class AlertData {
      * @return true if the alert is valid, false otherwise
      */
     public boolean isValid() {
-        return (hasMessage() || hasPrivateMessage()) && (this.type == AlertType.LEVEL_UP || this.type == AlertType.REWARD ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
+        return (hasMessage() || hasPrivateMessage()) && hasRequiredChannel() && this.enabled;
+    }
+
+    public List<AlertProblem> getProblems(boolean experienceEnabled) {
+        List<AlertProblem> problems = new ArrayList<>();
+
+        if (!hasMessage() && !hasPrivateMessage())
+            problems.add(new AlertProblem("missing_message", "message", "Manca un messaggio pubblico o privato"));
+        if (!hasRequiredChannel())
+            problems.add(new AlertProblem("missing_channel", "channelId", "Manca il canale"));
+        if (!this.enabled)
+            problems.add(new AlertProblem("disabled", "enabled", "Alert disabilitato"));
+        if (this.type == AlertType.LEVEL_UP && !experienceEnabled)
+            problems.add(new AlertProblem("experience_disabled", "experienceEnabled", "Esperienza disabilitata per la guild"));
+
+        return problems;
+    }
+
+    private boolean hasRequiredChannel() {
+        return this.type == AlertType.LEVEL_UP || this.type == AlertType.REWARD
+            || this.channelId != null || this.sendType == AlertSendType.PRIVATE;
     }
 
     public boolean isValid(GuildData guild) {

@@ -1,0 +1,1152 @@
+{
+  "notes": "Illustrative examples: daily series, heatmaps and personal history are abbreviated. IDs and CDN origin are examples. Each request is independent.",
+  "examples": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/guilds/123/sounds?period=30d"
+      },
+      "status": 200,
+      "response": {
+        "guildId": "123",
+        "counts": {
+          "all": 1,
+          "mine": 0,
+          "others": 1
+        },
+        "tags": [
+          {
+            "id": "1",
+            "name": "meme",
+            "soundCount": 1
+          }
+        ],
+        "summary": {
+          "period": "30d",
+          "plays": 50,
+          "listeners": 10,
+          "averagePlaysPerListener": 5.0,
+          "myPlays": 4,
+          "likes": 8,
+          "dislikes": 1,
+          "soundCount": 1,
+          "previousPlays": 40,
+          "playsChangePercent": 25.0
+        },
+        "sounds": [
+          {
+            "id": "42",
+            "name": "airhorn",
+            "guildId": "123",
+            "userId": "456",
+            "uploader": {
+              "id": "456",
+              "name": "Luna",
+              "avatarUrl": null
+            },
+            "public": true,
+            "createdAt": "2026-03-02T10:00:00Z",
+            "url": "https://cdn.example.com/sounds/42.mp3",
+            "durationMs": null,
+            "tags": [
+              {
+                "id": "1",
+                "name": "meme"
+              }
+            ],
+            "plays": 50,
+            "listeners": 10,
+            "likes": 8,
+            "dislikes": 1,
+            "myPlays": 4,
+            "likedByMe": true,
+            "dislikedByMe": false,
+            "ownedByMe": false,
+            "canEdit": false,
+            "canDelete": false,
+            "soundboardCount": 2
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds/me?period=30d"
+      },
+      "status": 200,
+      "response": {
+        "counts": {
+          "all": 1
+        },
+        "tags": [
+          {
+            "id": "1",
+            "name": "meme",
+            "soundCount": 1
+          }
+        ],
+        "summary": {
+          "period": "30d",
+          "plays": 50,
+          "listeners": 10,
+          "averagePlaysPerListener": 5.0,
+          "myPlays": 4,
+          "likes": 8,
+          "dislikes": 1,
+          "soundCount": 1,
+          "previousPlays": 40,
+          "playsChangePercent": 25.0
+        },
+        "guilds": {
+          "123": {
+            "name": "Night Shift",
+            "sounds": [
+              {
+                "id": "42",
+                "name": "airhorn",
+                "guildId": "123",
+                "userId": "999",
+                "uploader": {
+                  "id": "999",
+                  "name": "You",
+                  "avatarUrl": null
+                },
+                "public": true,
+                "createdAt": "2026-03-02T10:00:00Z",
+                "url": "https://cdn.example.com/sounds/42.mp3",
+                "durationMs": null,
+                "tags": [
+                  {
+                    "id": "1",
+                    "name": "meme"
+                  }
+                ],
+                "plays": 50,
+                "listeners": 10,
+                "likes": 8,
+                "dislikes": 1,
+                "myPlays": 4,
+                "likedByMe": true,
+                "dislikedByMe": false,
+                "ownedByMe": true,
+                "canEdit": true,
+                "canDelete": true,
+                "soundboardCount": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds/42"
+      },
+      "status": 200,
+      "response": {
+        "id": "42",
+        "name": "airhorn",
+        "guildId": "123",
+        "userId": "456",
+        "uploader": {
+          "id": "456",
+          "name": "Luna",
+          "avatarUrl": null
+        },
+        "public": true,
+        "createdAt": "2026-03-02T10:00:00Z",
+        "url": "https://cdn.example.com/sounds/42.mp3",
+        "durationMs": null,
+        "tags": [
+          {
+            "id": "1",
+            "name": "meme"
+          }
+        ],
+        "plays": 50,
+        "listeners": 10,
+        "likes": 8,
+        "dislikes": 1,
+        "myPlays": 4,
+        "likedByMe": true,
+        "dislikedByMe": false,
+        "ownedByMe": false,
+        "canEdit": false,
+        "canDelete": false,
+        "soundboardCount": 2
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds?q=air&tag=meme&sort=plays&order=desc&limit=100"
+      },
+      "status": 200,
+      "response": {
+        "sounds": [
+          {
+            "id": "42",
+            "name": "airhorn",
+            "guildId": "123",
+            "userId": "456",
+            "uploader": {
+              "id": "456",
+              "name": "Luna",
+              "avatarUrl": null
+            },
+            "public": true,
+            "createdAt": "2026-03-02T10:00:00Z",
+            "url": "https://cdn.example.com/sounds/42.mp3",
+            "durationMs": null,
+            "tags": [
+              {
+                "id": "1",
+                "name": "meme"
+              }
+            ],
+            "plays": 50,
+            "listeners": 10,
+            "likes": 8,
+            "dislikes": 1,
+            "myPlays": 4,
+            "likedByMe": true,
+            "dislikedByMe": false,
+            "ownedByMe": false,
+            "canEdit": false,
+            "canDelete": false,
+            "soundboardCount": 2
+          }
+        ],
+        "limit": 100
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/tags?q=me"
+      },
+      "status": 200,
+      "response": {
+        "tags": [
+          {
+            "id": "1",
+            "name": "meme"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/guilds/123/sounds/analytics?period=30d"
+      },
+      "status": 200,
+      "response": {
+        "guildId": "123",
+        "period": "30d",
+        "timezone": "Europe/Rome",
+        "from": "2026-10-12T12:00:00Z",
+        "to": "2026-11-11T12:00:00Z",
+        "summary": {
+          "plays": 50,
+          "listeners": 10,
+          "averagePlaysPerListener": 5.0,
+          "myPlays": 4,
+          "likes": 8,
+          "dislikes": 1,
+          "soundCount": 1
+        },
+        "playsPerDay": [
+          {
+            "date": "2026-11-10",
+            "plays": 50
+          }
+        ],
+        "topSounds": [
+          {
+            "soundId": "42",
+            "plays": 50
+          }
+        ],
+        "mostLiked": [
+          {
+            "soundId": "42",
+            "likes": 8
+          }
+        ],
+        "users": [
+          {
+            "user": {
+              "id": "456",
+              "name": "Luna",
+              "avatarUrl": null
+            },
+            "plays": 50,
+            "soundCount": 1
+          }
+        ],
+        "sounds": [
+          {
+            "soundId": "42",
+            "plays": 50,
+            "listeners": 10,
+            "averagePlaysPerListener": 5.0,
+            "playsPerDay": [
+              {
+                "date": "2026-11-10",
+                "plays": 50
+              }
+            ],
+            "heatmap": [
+              {
+                "weekday": 2,
+                "hour": 21,
+                "plays": 50
+              }
+            ],
+            "sources": [
+              {
+                "source": "AUDIO",
+                "plays": 50
+              }
+            ],
+            "replayDistribution": [
+              {
+                "min": 1,
+                "max": 1,
+                "users": 0
+              },
+              {
+                "min": 2,
+                "max": 5,
+                "users": 10
+              },
+              {
+                "min": 6,
+                "max": 20,
+                "users": 0
+              },
+              {
+                "min": 21,
+                "max": 50,
+                "users": 0
+              },
+              {
+                "min": 51,
+                "max": null,
+                "users": 0
+              }
+            ],
+            "likes": 8,
+            "dislikes": 1,
+            "previousPlays": 40,
+            "playsChangePercent": 25.0,
+            "users": [
+              {
+                "user": {
+                  "id": "456",
+                  "name": "Luna",
+                  "avatarUrl": null
+                },
+                "plays": 50,
+                "soundCount": 1
+              }
+            ],
+            "my": {
+              "plays": 4,
+              "history": [
+                {
+                  "id": "900",
+                  "playedAt": "2026-11-10T20:30:00Z",
+                  "guildId": "123",
+                  "source": "AUDIO"
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds/42/analytics?period=30d"
+      },
+      "status": 200,
+      "response": {
+        "soundId": "42",
+        "period": "30d",
+        "timezone": "Europe/Rome",
+        "from": "2026-10-12T12:00:00Z",
+        "to": "2026-11-11T12:00:00Z",
+        "totals": {
+          "plays": 50,
+          "listeners": 10,
+          "averagePlaysPerListener": 5.0,
+          "playsPerDay": [
+            {
+              "date": "2026-11-10",
+              "plays": 50
+            }
+          ],
+          "heatmap": [
+            {
+              "weekday": 2,
+              "hour": 21,
+              "plays": 50
+            }
+          ],
+          "sources": [
+            {
+              "source": "AUDIO",
+              "plays": 50
+            }
+          ],
+          "replayDistribution": [
+            {
+              "min": 1,
+              "max": 1,
+              "users": 0
+            },
+            {
+              "min": 2,
+              "max": 5,
+              "users": 10
+            },
+            {
+              "min": 6,
+              "max": 20,
+              "users": 0
+            },
+            {
+              "min": 21,
+              "max": 50,
+              "users": 0
+            },
+            {
+              "min": 51,
+              "max": null,
+              "users": 0
+            }
+          ],
+          "likes": 8,
+          "dislikes": 1,
+          "previousPlays": 40,
+          "playsChangePercent": 25.0
+        },
+        "guilds": {
+          "123": {
+            "plays": 50,
+            "listeners": 10,
+            "averagePlaysPerListener": 5.0,
+            "playsPerDay": [
+              {
+                "date": "2026-11-10",
+                "plays": 50
+              }
+            ],
+            "heatmap": [
+              {
+                "weekday": 2,
+                "hour": 21,
+                "plays": 50
+              }
+            ],
+            "sources": [
+              {
+                "source": "AUDIO",
+                "plays": 50
+              }
+            ],
+            "replayDistribution": [
+              {
+                "min": 1,
+                "max": 1,
+                "users": 0
+              },
+              {
+                "min": 2,
+                "max": 5,
+                "users": 10
+              },
+              {
+                "min": 6,
+                "max": 20,
+                "users": 0
+              },
+              {
+                "min": 21,
+                "max": 50,
+                "users": 0
+              },
+              {
+                "min": 51,
+                "max": null,
+                "users": 0
+              }
+            ],
+            "users": [
+              {
+                "user": {
+                  "id": "456",
+                  "name": "Luna",
+                  "avatarUrl": null
+                },
+                "plays": 50,
+                "soundCount": 1
+              }
+            ]
+          }
+        },
+        "otherGuilds": {
+          "plays": 0,
+          "listeners": 0,
+          "averagePlaysPerListener": 0.0,
+          "playsPerDay": [
+            {
+              "date": "2026-11-10",
+              "plays": 0
+            }
+          ],
+          "heatmap": [
+            {
+              "weekday": 2,
+              "hour": 21,
+              "plays": 0
+            }
+          ],
+          "sources": [],
+          "replayDistribution": [
+            {
+              "min": 1,
+              "max": 1,
+              "users": 0
+            },
+            {
+              "min": 2,
+              "max": 5,
+              "users": 0
+            },
+            {
+              "min": 6,
+              "max": 20,
+              "users": 0
+            },
+            {
+              "min": 21,
+              "max": 50,
+              "users": 0
+            },
+            {
+              "min": 51,
+              "max": null,
+              "users": 0
+            }
+          ]
+        },
+        "my": {
+          "plays": 4,
+          "history": [
+            {
+              "id": "900",
+              "playedAt": "2026-11-10T20:30:00Z",
+              "guildId": "123",
+              "source": "AUDIO"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds/42/analytics?guildId=123&period=30d"
+      },
+      "status": 200,
+      "response": {
+        "soundId": "42",
+        "period": "30d",
+        "timezone": "Europe/Rome",
+        "from": "2026-10-12T12:00:00Z",
+        "to": "2026-11-11T12:00:00Z",
+        "totals": {
+          "plays": 50,
+          "listeners": 10,
+          "averagePlaysPerListener": 5.0,
+          "playsPerDay": [
+            {
+              "date": "2026-11-10",
+              "plays": 50
+            }
+          ],
+          "heatmap": [
+            {
+              "weekday": 2,
+              "hour": 21,
+              "plays": 50
+            }
+          ],
+          "sources": [
+            {
+              "source": "AUDIO",
+              "plays": 50
+            }
+          ],
+          "replayDistribution": [
+            {
+              "min": 1,
+              "max": 1,
+              "users": 0
+            },
+            {
+              "min": 2,
+              "max": 5,
+              "users": 10
+            },
+            {
+              "min": 6,
+              "max": 20,
+              "users": 0
+            },
+            {
+              "min": 21,
+              "max": 50,
+              "users": 0
+            },
+            {
+              "min": 51,
+              "max": null,
+              "users": 0
+            }
+          ],
+          "likes": 8,
+          "dislikes": 1,
+          "previousPlays": 40,
+          "playsChangePercent": 25.0
+        },
+        "guilds": {
+          "123": {
+            "plays": 50,
+            "listeners": 10,
+            "averagePlaysPerListener": 5.0,
+            "playsPerDay": [
+              {
+                "date": "2026-11-10",
+                "plays": 50
+              }
+            ],
+            "heatmap": [
+              {
+                "weekday": 2,
+                "hour": 21,
+                "plays": 50
+              }
+            ],
+            "sources": [
+              {
+                "source": "AUDIO",
+                "plays": 50
+              }
+            ],
+            "replayDistribution": [
+              {
+                "min": 1,
+                "max": 1,
+                "users": 0
+              },
+              {
+                "min": 2,
+                "max": 5,
+                "users": 10
+              },
+              {
+                "min": 6,
+                "max": 20,
+                "users": 0
+              },
+              {
+                "min": 21,
+                "max": 50,
+                "users": 0
+              },
+              {
+                "min": 51,
+                "max": null,
+                "users": 0
+              }
+            ],
+            "users": [
+              {
+                "user": {
+                  "id": "456",
+                  "name": "Luna",
+                  "avatarUrl": null
+                },
+                "plays": 50,
+                "soundCount": 1
+              }
+            ]
+          }
+        },
+        "otherGuilds": {
+          "plays": 0,
+          "listeners": 0,
+          "averagePlaysPerListener": 0.0,
+          "playsPerDay": [
+            {
+              "date": "2026-11-10",
+              "plays": 0
+            }
+          ],
+          "heatmap": [
+            {
+              "weekday": 2,
+              "hour": 21,
+              "plays": 0
+            }
+          ],
+          "sources": [],
+          "replayDistribution": [
+            {
+              "min": 1,
+              "max": 1,
+              "users": 0
+            },
+            {
+              "min": 2,
+              "max": 5,
+              "users": 0
+            },
+            {
+              "min": 6,
+              "max": 20,
+              "users": 0
+            },
+            {
+              "min": 21,
+              "max": 50,
+              "users": 0
+            },
+            {
+              "min": 51,
+              "max": null,
+              "users": 0
+            }
+          ]
+        },
+        "my": {
+          "plays": 4,
+          "history": [
+            {
+              "id": "900",
+              "playedAt": "2026-11-10T20:30:00Z",
+              "guildId": "123",
+              "source": "AUDIO"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds/me/analytics?period=30d"
+      },
+      "status": 200,
+      "response": {
+        "period": "30d",
+        "timezone": "Europe/Rome",
+        "from": "2026-10-12T12:00:00Z",
+        "to": "2026-11-11T12:00:00Z",
+        "summary": {
+          "period": "30d",
+          "plays": 50,
+          "listeners": 10,
+          "averagePlaysPerListener": 5.0,
+          "myPlays": 4,
+          "likes": 8,
+          "dislikes": 1,
+          "soundCount": 1,
+          "previousPlays": 40,
+          "playsChangePercent": 25.0
+        },
+        "sounds": [
+          {
+            "soundId": "42",
+            "period": "30d",
+            "timezone": "Europe/Rome",
+            "from": "2026-10-12T12:00:00Z",
+            "to": "2026-11-11T12:00:00Z",
+            "totals": {
+              "plays": 50,
+              "listeners": 10,
+              "averagePlaysPerListener": 5.0,
+              "playsPerDay": [
+                {
+                  "date": "2026-11-10",
+                  "plays": 50
+                }
+              ],
+              "heatmap": [
+                {
+                  "weekday": 2,
+                  "hour": 21,
+                  "plays": 50
+                }
+              ],
+              "sources": [
+                {
+                  "source": "AUDIO",
+                  "plays": 50
+                }
+              ],
+              "replayDistribution": [
+                {
+                  "min": 1,
+                  "max": 1,
+                  "users": 0
+                },
+                {
+                  "min": 2,
+                  "max": 5,
+                  "users": 10
+                },
+                {
+                  "min": 6,
+                  "max": 20,
+                  "users": 0
+                },
+                {
+                  "min": 21,
+                  "max": 50,
+                  "users": 0
+                },
+                {
+                  "min": 51,
+                  "max": null,
+                  "users": 0
+                }
+              ],
+              "likes": 8,
+              "dislikes": 1,
+              "previousPlays": 40,
+              "playsChangePercent": 25.0
+            },
+            "guilds": {
+              "123": {
+                "plays": 50,
+                "listeners": 10,
+                "averagePlaysPerListener": 5.0,
+                "playsPerDay": [
+                  {
+                    "date": "2026-11-10",
+                    "plays": 50
+                  }
+                ],
+                "heatmap": [
+                  {
+                    "weekday": 2,
+                    "hour": 21,
+                    "plays": 50
+                  }
+                ],
+                "sources": [
+                  {
+                    "source": "AUDIO",
+                    "plays": 50
+                  }
+                ],
+                "replayDistribution": [
+                  {
+                    "min": 1,
+                    "max": 1,
+                    "users": 0
+                  },
+                  {
+                    "min": 2,
+                    "max": 5,
+                    "users": 10
+                  },
+                  {
+                    "min": 6,
+                    "max": 20,
+                    "users": 0
+                  },
+                  {
+                    "min": 21,
+                    "max": 50,
+                    "users": 0
+                  },
+                  {
+                    "min": 51,
+                    "max": null,
+                    "users": 0
+                  }
+                ],
+                "users": [
+                  {
+                    "user": {
+                      "id": "456",
+                      "name": "Luna",
+                      "avatarUrl": null
+                    },
+                    "plays": 50,
+                    "soundCount": 1
+                  }
+                ]
+              }
+            },
+            "otherGuilds": {
+              "plays": 0,
+              "listeners": 0,
+              "averagePlaysPerListener": 0.0,
+              "playsPerDay": [
+                {
+                  "date": "2026-11-10",
+                  "plays": 0
+                }
+              ],
+              "heatmap": [
+                {
+                  "weekday": 2,
+                  "hour": 21,
+                  "plays": 0
+                }
+              ],
+              "sources": [],
+              "replayDistribution": [
+                {
+                  "min": 1,
+                  "max": 1,
+                  "users": 0
+                },
+                {
+                  "min": 2,
+                  "max": 5,
+                  "users": 0
+                },
+                {
+                  "min": 6,
+                  "max": 20,
+                  "users": 0
+                },
+                {
+                  "min": 21,
+                  "max": 50,
+                  "users": 0
+                },
+                {
+                  "min": 51,
+                  "max": null,
+                  "users": 0
+                }
+              ]
+            },
+            "my": {
+              "plays": 4,
+              "history": [
+                {
+                  "id": "900",
+                  "playedAt": "2026-11-10T20:30:00Z",
+                  "guildId": "123",
+                  "source": "AUDIO"
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "PATCH",
+        "url": "/api/beebot/sounds/42",
+        "body": {
+          "name": "airhorn nuovo",
+          "public": true,
+          "tags": [
+            "meme"
+          ]
+        }
+      },
+      "status": 200,
+      "response": {
+        "id": "42",
+        "name": "airhorn nuovo",
+        "guildId": "123",
+        "userId": "999",
+        "uploader": {
+          "id": "999",
+          "name": "You",
+          "avatarUrl": null
+        },
+        "public": true,
+        "createdAt": "2026-03-02T10:00:00Z",
+        "url": "https://cdn.example.com/sounds/42.mp3",
+        "durationMs": null,
+        "tags": [
+          {
+            "id": "1",
+            "name": "meme"
+          }
+        ],
+        "plays": 50,
+        "listeners": 10,
+        "likes": 8,
+        "dislikes": 1,
+        "myPlays": 4,
+        "likedByMe": true,
+        "dislikedByMe": false,
+        "ownedByMe": true,
+        "canEdit": true,
+        "canDelete": true,
+        "soundboardCount": 2
+      }
+    },
+    {
+      "request": {
+        "method": "DELETE",
+        "url": "/api/beebot/sounds/42"
+      },
+      "status": 204,
+      "response": null
+    },
+    {
+      "request": {
+        "method": "PATCH",
+        "url": "/api/beebot/sounds/42/like",
+        "body": {
+          "enabled": true
+        }
+      },
+      "status": 200,
+      "response": {
+        "soundId": "42",
+        "likes": 9,
+        "dislikes": 1,
+        "likedByMe": true,
+        "dislikedByMe": false
+      }
+    },
+    {
+      "request": {
+        "method": "PATCH",
+        "url": "/api/beebot/sounds/42/dislike",
+        "body": {
+          "enabled": true
+        }
+      },
+      "status": 200,
+      "response": {
+        "soundId": "42",
+        "likes": 8,
+        "dislikes": 2,
+        "likedByMe": false,
+        "dislikedByMe": true
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/me"
+      },
+      "status": 200,
+      "response": {
+        "user": {
+          "id": "999",
+          "username": "sunyx",
+          "globalName": "Sunyx",
+          "avatarUrl": null
+        },
+        "servers": [],
+        "greets": {
+          "0": {
+            "id": "42",
+            "name": "airhorn",
+            "guildId": "123",
+            "userId": "999",
+            "uploader": {
+              "id": "999",
+              "name": "You",
+              "avatarUrl": null
+            },
+            "public": true,
+            "createdAt": "2026-03-02T10:00:00Z",
+            "url": "https://cdn.example.com/sounds/42.mp3",
+            "durationMs": null,
+            "tags": [
+              {
+                "id": "1",
+                "name": "meme"
+              }
+            ],
+            "plays": 50,
+            "listeners": 10,
+            "likes": 8,
+            "dislikes": 1,
+            "myPlays": 4,
+            "likedByMe": true,
+            "dislikedByMe": false,
+            "ownedByMe": true,
+            "canEdit": true,
+            "canDelete": true,
+            "soundboardCount": 2
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "url": "/api/beebot/me/settings",
+        "body": {
+          "greets": {
+            "0": "42",
+            "123": "73",
+            "789": null
+          }
+        }
+      },
+      "status": 200,
+      "response": {
+        "greets": {
+          "0": {
+            "status": "ok",
+            "errors": []
+          },
+          "123": {
+            "status": "error",
+            "errors": [
+              {
+                "field": "soundId",
+                "code": "private_sound_wrong_guild",
+                "message": "Private sound cannot be used in this context"
+              }
+            ]
+          },
+          "789": {
+            "status": "ok",
+            "errors": []
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/sounds"
+      },
+      "status": 400,
+      "response": {
+        "code": "invalid_request",
+        "message": "Specify q or tag"
+      }
+    }
+  ]
+}

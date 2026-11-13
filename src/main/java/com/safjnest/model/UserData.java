@@ -158,18 +158,20 @@ public class UserData {
     }
 
     public boolean setGreet(String guildId, String soundId) {
+        if (!BotDB.setGreet(this.USER_ID, guildId, soundId)) return false;
         if (guildId.equals("0")) globalGreetId = soundId;
         else guildGreetIds.put(guildId, soundId);
-        return BotDB.setGreet(this.USER_ID, guildId, soundId);
+        return true;
     }
 
     public boolean unsetGreet(String guildId) {
+        if (!BotDB.deleteGreet(this.USER_ID, guildId)) return false;
         if (guildId.equals("0")) {
             globalGreetId = null;
         } else {
             guildGreetIds.remove(guildId);
         }
-        return BotDB.deleteGreet(this.USER_ID, guildId);
+        return true;
     }
 
     public HashMap<String, String> getGreets() {

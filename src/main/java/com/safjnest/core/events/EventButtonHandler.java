@@ -412,7 +412,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 AudioChannel channelJoin = event.getMember().getVoiceState().getChannel();
                 if (channelJoin == null)  return;
 
-                sound.increaseUserPlays(event.getUser().getId());
+                sound.increaseUserPlays(event.getUser().getId(), guild.getId());
 
                 pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
                     @Override

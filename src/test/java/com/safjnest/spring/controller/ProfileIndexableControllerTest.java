@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.safjnest.spring.controller.lol.ProfileIndexableController;
+
 public class ProfileIndexableControllerTest {
 
     @Test

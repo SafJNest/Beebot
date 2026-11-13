@@ -23,6 +23,7 @@ import redis.clients.jedis.params.SetParams;
 public class RedisClient {
 
     public record SortedSetEntry(byte[] member, double score) {}
+    public record AuthValue<T>(boolean available, T value) {}
 
     public static final int SORTED_SET_BATCH_SIZE = 1_000;
     private static final int CONNECTION_TIMEOUT_MS = 500;
@@ -76,6 +77,10 @@ public class RedisClient {
         }
     }
 
+    public static boolean setValue(String key, String value, int ttlSeconds) {
+        return set(key, value, ttlSeconds);
+    }
+
     private static boolean set(String key, String value, int ttlSeconds) {
         if (key == null || value == null || !canUseRedis()) return false;
         try (Jedis jedis = pool.getResource()) {
@@ -98,6 +103,54 @@ public class RedisClient {
         } catch (Exception e) {
             markUnavailable();
             return null;
+        }
+    }
+
+    public static AuthValue<Object> authEval(String script, List<String> keys, List<String> arguments) {
+        if (!canUseRedis()) return new AuthValue<>(false, null);
+        try (Jedis jedis = pool.getResource()) {
+            Object value = jedis.eval(script, keys, arguments);
+            markAvailable();
+            return new AuthValue<>(true, value);
+        } catch (Exception exception) {
+            markUnavailable();
+            return new AuthValue<>(false, null);
+        }
+    }
+
+    public static AuthValue<String> authGet(String key) {
+        if (key == null || !canUseRedis()) return new AuthValue<>(false, null);
+        try (Jedis jedis = pool.getResource()) {
+            String value = jedis.get(key);
+            markAvailable();
+            return new AuthValue<>(true, value);
+        } catch (Exception ignored) {
+            markUnavailable();
+            return new AuthValue<>(false, null);
+        }
+    }
+
+    public static boolean authSet(String key, String value, int ttlSeconds) {
+        if (key == null || value == null || ttlSeconds < 1 || !canUseRedis()) return false;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.setex(key, ttlSeconds, value);
+            markAvailable();
+            return true;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return false;
+        }
+    }
+
+    public static boolean authDelete(String key) {
+        if (key == null || !canUseRedis()) return false;
+        try (Jedis jedis = pool.getResource()) {
+            jedis.del(key);
+            markAvailable();
+            return true;
+        } catch (Exception ignored) {
+            markUnavailable();
+            return false;
         }
     }
 

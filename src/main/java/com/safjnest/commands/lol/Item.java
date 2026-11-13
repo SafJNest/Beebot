@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;

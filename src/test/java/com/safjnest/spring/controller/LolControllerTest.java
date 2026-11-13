@@ -21,6 +21,10 @@ import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.statistics.ProfileMatchups;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.spring.controller.lol.LolApiParameters;
+import com.safjnest.spring.controller.lol.LolApiResponses;
+import com.safjnest.spring.controller.lol.LolController;
+
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;

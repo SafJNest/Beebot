@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
+import com.safjnest.spring.controller.lol.LolApiResponses;
 import com.safjnest.spring.dto.LolApiError;
 
 public class LolApiResponsesTest {

@@ -77,6 +77,22 @@ owning service and preserve the existing presentation.
 
 ### 5.2 New HTTP endpoint
 
+Discord dashboard authentication and its `/beebot` endpoints are documented in
+[Beebot dashboard authentication](api/beebot-auth.md). `AuthDB` selects the
+`auth` database and stores OAuth transactions and sessions. Redis is an optional
+cache; protected requests accept the application API key plus user bearer token,
+or a permanent personal API key linked to the issuing Discord user. Generate it
+with `!test generate personalkey <name>` after manually applying
+`database/auth/003-api-key-types.sql`; revoke it with `!test revoke personalkey <name>`.
+Both key types live in `api_key`: `ApiKey` is the canonical typed key model and `AuthDB` owns persistence, generation and revocation. Authentication resolves either credential type into `DiscordAuthService.AuthContext`. Key generation and revocation are restricted to Untouchables and Epria; other `test` operations remain owner/co-owner only.
+
+`GET /beebot/me` returns `{user, servers}`. `GET /beebot/guilds` returns a plain `List<DiscordApi.Server>` (JSON array), with `/beebot/servers` retained as an alias. Records are nested in their owning API, service or controller rather than split into record-only files. `DiscordApi` owns Discord HTTP/JDA access and image URLs; `DiscordGuildService` shares the authorized list between these endpoints and single-guild GET/POST. `DiscordGuildCache` stores it for 60 seconds in Redis with process-local fallback, single-flight loading and invalidation fencing. Personal keys use JDA caches before any missing-member lookup; OAuth uses one `/users/@me/guilds?limit=200` request per successful cache load. SQL continues to decide credential/session revocation. Logout invalidates the guild list. Owner, Administrator and Manage Server grant access. Discord rate limits return `discord_rate_limited` with retry metadata; see the API page for error details.
+
+Guild dashboard reads and partial updates are documented in
+[Beebot guild settings](api/beebot-guilds.md). `GuildSettingsDB` owns the per-block
+SQL transactions; alert operational problems come from `AlertData`, and successful
+writes invalidate the local `GuildCache`. Warning actions are read-only here.
+
 Use the existing scope controller where possible. Parse every path and query
 parameter with `LolApiParameters`, call the owning service and return canonical
 models through `LolApiResponses`. Update the endpoint page and API index when
@@ -247,3 +263,7 @@ The unique profile identity index is `profile_statistics_identity` on
 CHERRY uses the existing champion API and build flow. Its approved schema and
 processing rules live in [`docs/arena-build`](arena-build/README.md) and
 ADR-0012.
+
+## Audio API operations
+
+Sounds HTTP routes use `SoundCache` as the facade, canonical `Sound` response copies, `SoundDB` prepared SQL (streamed history grouped in Java on one read session) and ID-only `SoundQueryCache` Redis entries. They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.

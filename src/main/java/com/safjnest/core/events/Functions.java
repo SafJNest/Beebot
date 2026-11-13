@@ -398,10 +398,7 @@ public class Functions {
 
 
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
-        String sound_id = UserCache.getUser(theGuy.getId()).getGreet(guild.getId());
-        if (sound_id == null || sound_id.isEmpty()) return;
-        
-        Sound sound = SoundCache.getSoundById(sound_id);
+        Sound sound = SoundCache.greetForPlayback(theGuy.getId(), guild.getId());
 
         if(sound == null)  return;
 
@@ -415,7 +412,7 @@ public class Functions {
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
 
-                sound.increaseUserPlays(theGuy.getId(), AudioType.GREET);
+                sound.increaseUserPlays(theGuy.getId(), guild.getId(), AudioType.GREET);
                 track.setUserData(new TrackData(AudioType.GREET));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.GREET);
             }
