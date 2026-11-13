@@ -15,7 +15,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import com.safjnest.spring.config.LolApiConfig;
-import com.safjnest.spring.config.BeebotAuthFilter;
+import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.auth.DiscordAuthService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
@@ -47,7 +47,7 @@ public class SpringServer {
         Context context = tomcat.addContext(CONTEXT_PATH, new File(".").getAbsolutePath());
         FilterDef filter = new FilterDef();
         filter.setFilterName("beebotAuth");
-        filter.setFilter(new BeebotAuthFilter(new DiscordAuthService(properties.getProperty("DISCORD_CLIENT_ID"),
+        filter.setFilter(new AuthFilter(new DiscordAuthService(properties.getProperty("DISCORD_CLIENT_ID"),
             properties.getProperty("DISCORD_CLIENT_SECRET"), properties.getProperty("AUTH_ENCRYPTION_KEY"))::authenticate));
         filter.setAsyncSupported("true");
         context.addFilterDef(filter);

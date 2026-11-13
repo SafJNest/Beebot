@@ -18,7 +18,11 @@ import com.safjnest.auth.DiscordApi.AuthUser;
 import com.safjnest.auth.DiscordApi.Server;
 import com.safjnest.guild.GuildService;
 import com.safjnest.model.guild.GuildSettings;
-import com.safjnest.spring.config.BeebotAuthFilter;
+import com.safjnest.spring.config.AuthFilter;
+import com.safjnest.spring.controller.beebot.GuildController;
+import com.safjnest.spring.exception.AuthExceptionHandler;
+import com.safjnest.spring.exception.AuthRequestExceptionHandler;
+
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -91,7 +95,7 @@ public class GuildControllerTest {
     @Test
     public void guildRoutesRequireApplicationAndUserCredentials() throws Exception {
         GuildController controller = new GuildController(null, (context, guildId) -> { throw new AssertionError("Must not authorize"); });
-        var mvc = MockMvcBuilders.standaloneSetup(controller).addFilters(new BeebotAuthFilter((key, bearer, required) -> {
+        var mvc = MockMvcBuilders.standaloneSetup(controller).addFilters(new AuthFilter((key, bearer, required) -> {
             assertTrue(required);
             throw new AuthException(HttpStatus.UNAUTHORIZED, "invalid_session", "Missing credentials");
         })).build();
@@ -105,6 +109,6 @@ public class GuildControllerTest {
             new AuthUser("2", "admin", null, null));
         return MockMvcBuilders.standaloneSetup(controller)
             .setControllerAdvice(new AuthExceptionHandler(), new AuthRequestExceptionHandler())
-            .addFilters(new BeebotAuthFilter((key, bearer, required) -> context)).build();
+            .addFilters(new AuthFilter((key, bearer, required) -> context)).build();
     }
 }

@@ -1,4 +1,4 @@
-package com.safjnest.spring.controller;
+package com.safjnest.spring.controller.lol;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

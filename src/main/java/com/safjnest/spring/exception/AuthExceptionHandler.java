@@ -1,4 +1,4 @@
-package com.safjnest.spring.controller;
+package com.safjnest.spring.exception;
 
 import com.safjnest.auth.AuthException;
 import com.fasterxml.jackson.annotation.JsonInclude;

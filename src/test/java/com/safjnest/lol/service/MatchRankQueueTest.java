@@ -27,7 +27,7 @@ import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.match.RankProgress;
 import com.safjnest.nosql.MongoDB;
-import com.safjnest.spring.controller.LolApiParameters;
+import com.safjnest.spring.controller.lol.LolApiParameters;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

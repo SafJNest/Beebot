@@ -12,8 +12,10 @@ import com.safjnest.auth.DiscordApi.AuthUser;
 import com.safjnest.auth.DiscordAuthService.AuthContext;
 import com.safjnest.guild.*;
 import com.safjnest.model.guild.GuildSettings;
-import com.safjnest.spring.config.BeebotAuthFilter;
-import com.safjnest.spring.controller.*;
+import com.safjnest.spring.config.AuthFilter;
+import com.safjnest.spring.controller.beebot.DiscordAuthController;
+import com.safjnest.spring.controller.beebot.GuildController;
+import com.safjnest.spring.exception.AuthExceptionHandler;
 import com.safjnest.utils.CryptoUtils;
 import org.junit.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -116,7 +118,7 @@ public class DiscordGuildApiTest {
         };
         MockMvc mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(new DiscordAuthService(), directory, contextValue -> Map.of()),
             new GuildController(settings, directory::requireAdministrator)).setControllerAdvice(new AuthExceptionHandler())
-            .addFilters(new BeebotAuthFilter((key, bearer, required) -> context)).build();
+            .addFilters(new AuthFilter((key, bearer, required) -> context)).build();
         return new Fixture(mvc);
     }
     private record Fixture(MockMvc mvc) {}

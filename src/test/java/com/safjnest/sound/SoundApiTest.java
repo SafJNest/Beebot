@@ -15,7 +15,10 @@ import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.sql.database.SoundDB;
 import com.safjnest.spring.controller.*;
-import com.safjnest.spring.config.BeebotAuthFilter;
+import com.safjnest.spring.controller.beebot.SoundController;
+import com.safjnest.spring.exception.AuthExceptionHandler;
+import com.safjnest.spring.exception.AuthRequestExceptionHandler;
+import com.safjnest.spring.config.AuthFilter;
 import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -56,7 +59,7 @@ public class SoundApiTest {
         cache=new SoundCache(db,access,queries,tick::get);cache.setCdnUrl("https://cdn.example.com/");viewer=cache.context("100");
         var auth=new AuthContext(new ApiKey("app","test",""),"session",null,Long.MAX_VALUE,new AuthUser("100","tester",null,null));
         mvc=MockMvcBuilders.standaloneSetup(new SoundController(cache)).setControllerAdvice(new AuthExceptionHandler(),new AuthRequestExceptionHandler())
-            .addFilters(new BeebotAuthFilter((key,bearer,required)->auth)).build();
+            .addFilters(new AuthFilter((key,bearer,required)->auth)).build();
     }
     private Connection connection() {
         try {

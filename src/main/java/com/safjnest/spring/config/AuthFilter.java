@@ -1,10 +1,11 @@
 package com.safjnest.spring.config;
 
 import com.safjnest.auth.DiscordAuthService.AuthContext;
+import com.safjnest.spring.exception.AuthExceptionHandler.AuthError;
+
 import java.io.IOException;
 import com.safjnest.auth.AuthException;
 import com.safjnest.auth.DiscordAuthService;
-import com.safjnest.spring.controller.AuthExceptionHandler.AuthError;
 import com.safjnest.utils.JsonCodec;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -15,14 +16,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 
-public final class BeebotAuthFilter implements Filter {
+public final class AuthFilter implements Filter {
     @FunctionalInterface
     public interface Verifier { AuthContext verify(String key, String bearer, boolean sessionRequired); }
     public static final String AUTH_CONTEXT = "com.safjnest.auth.context";
     private final Verifier verifier;
 
-    public BeebotAuthFilter() { this(new DiscordAuthService()::authenticate); }
-    public BeebotAuthFilter(Verifier verifier) { this.verifier = verifier; }
+    public AuthFilter() { this(new DiscordAuthService()::authenticate); }
+    public AuthFilter(Verifier verifier) { this.verifier = verifier; }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {

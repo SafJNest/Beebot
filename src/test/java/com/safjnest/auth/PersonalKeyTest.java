@@ -1,7 +1,5 @@
 package com.safjnest.auth;
 
-import com.safjnest.auth.DiscordApi.Server;
-import java.util.List;
 import com.safjnest.utils.CryptoUtils;
 import static org.junit.Assert.*;
 
@@ -128,15 +126,15 @@ public class PersonalKeyTest {
     public void personalKeyAuthenticatesProtectedHttpRoutesWithOnlyApiKeyHeader() throws Exception {
         String key = keys.generatePersonal("http", user);
         var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
-            .standaloneSetup(new com.safjnest.spring.controller.DiscordAuthController(auth, new com.safjnest.guild.DiscordGuildService(
+            .standaloneSetup(new com.safjnest.spring.controller.beebot.DiscordAuthController(auth, new com.safjnest.guild.DiscordGuildService(
                 new DiscordApi(request -> { throw new AssertionError("No OAuth expected"); }, () -> (net.dv8tion.jda.api.JDA) java.lang.reflect.Proxy.newProxyInstance(
                     getClass().getClassLoader(), new Class<?>[]{net.dv8tion.jda.api.JDA.class}, (proxy, method, args) -> switch (method.getName()) {
                         case "getStatus" -> net.dv8tion.jda.api.JDA.Status.CONNECTED;
                         case "getGuilds" -> java.util.List.of();
                         default -> null;
                     })), com.safjnest.guild.DiscordGuildCache.memory(), null), contextValue -> java.util.Map.of()))
-            .setControllerAdvice(new com.safjnest.spring.controller.AuthExceptionHandler())
-            .addFilters(new com.safjnest.spring.config.BeebotAuthFilter(auth::authenticate)).build();
+            .setControllerAdvice(new com.safjnest.spring.exception.AuthExceptionHandler())
+            .addFilters(new com.safjnest.spring.config.AuthFilter(auth::authenticate)).build();
         var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders
             .get("/api/beebot/me").servletPath("/api/beebot/me").header("X-API-Key", key);
         var response = mvc.perform(request)

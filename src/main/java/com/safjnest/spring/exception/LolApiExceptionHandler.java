@@ -1,4 +1,4 @@
-package com.safjnest.spring.controller;
+package com.safjnest.spring.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;

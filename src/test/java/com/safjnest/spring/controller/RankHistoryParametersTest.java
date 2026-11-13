@@ -11,6 +11,7 @@ import com.safjnest.lol.model.match.MatchOrder;
 import com.safjnest.lol.model.match.RankHistoryQuery;
 import com.safjnest.lol.model.match.RankHistoryView;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.spring.controller.lol.LolApiParameters;
 
 public class RankHistoryParametersTest {
 

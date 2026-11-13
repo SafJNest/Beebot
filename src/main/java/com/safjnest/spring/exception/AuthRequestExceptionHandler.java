@@ -1,6 +1,5 @@
-package com.safjnest.spring.controller;
+package com.safjnest.spring.exception;
 
-import com.safjnest.spring.controller.AuthExceptionHandler.AuthError;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -8,6 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.safjnest.spring.controller.beebot.DiscordAuthController;
+import com.safjnest.spring.controller.beebot.GuildController;
+import com.safjnest.spring.controller.beebot.SoundController;
+import com.safjnest.spring.exception.AuthExceptionHandler.AuthError;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = {DiscordAuthController.class, GuildController.class, SoundController.class})

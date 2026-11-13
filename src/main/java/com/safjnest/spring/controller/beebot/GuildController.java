@@ -1,4 +1,4 @@
-package com.safjnest.spring.controller;
+package com.safjnest.spring.controller.beebot;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -8,7 +8,7 @@ import com.safjnest.auth.AuthException;
 import com.safjnest.auth.DiscordAuthService.AuthContext;
 import com.safjnest.guild.GuildService;
 import com.safjnest.model.guild.GuildSettings;
-import com.safjnest.spring.config.BeebotAuthFilter;
+import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.guild.DiscordGuildService;
 import org.springframework.core.env.Environment;
 
@@ -49,14 +49,14 @@ public class GuildController {
 
     @GetMapping("/{guildId}")
     public GuildSettings getGuild(@PathVariable("guildId") String guildId,
-            @RequestAttribute(BeebotAuthFilter.AUTH_CONTEXT) AuthContext context) {
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
         requireAdministrator(context, guildId);
         return guilds.getGuild(guildId);
     }
 
     @PostMapping("/{guildId}/settings")
     public Map<String, Object> updateSettings(@PathVariable("guildId") String guildId,
-            @RequestAttribute(BeebotAuthFilter.AUTH_CONTEXT) AuthContext context,
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context,
             @RequestBody(required = false) JsonNode body) {
         requireAdministrator(context, guildId);
         return guilds.updateSettings(guildId, body);

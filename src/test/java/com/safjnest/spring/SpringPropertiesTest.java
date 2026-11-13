@@ -9,7 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import com.safjnest.auth.DiscordAuthService;
-import com.safjnest.spring.controller.DiscordAuthController;
+import com.safjnest.spring.controller.beebot.DiscordAuthController;
 
 public class SpringPropertiesTest {
     @Test
@@ -18,7 +18,7 @@ public class SpringPropertiesTest {
         properties.load(new StringReader("CDN_URL=https://cdn.example.com\n"));
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
             SpringServer.applyProperties(context.getEnvironment(), properties);
-            context.register(com.safjnest.spring.controller.SoundController.class);
+            context.register(com.safjnest.spring.controller.beebot.SoundController.class);
             context.refresh();
             assertEquals("https://cdn.example.com", context.getEnvironment().getProperty("CDN_URL"));
             Field field = com.safjnest.core.cache.managers.SoundCache.class.getDeclaredField("cdnUrl");

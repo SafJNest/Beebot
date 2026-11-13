@@ -6,6 +6,10 @@ import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.safjnest.spring.controller.lol.ChampionController;
+import com.safjnest.spring.controller.lol.LolApiParameters;
+
 import org.springframework.web.bind.annotation.GetMapping;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
