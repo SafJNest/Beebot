@@ -2,6 +2,10 @@
 
 Questo documento raccoglie la discussione sull'organizzazione del core del bot, sulle API della dashboard e sulle modifiche da analizzare. È un'analisi e una proposta di lavoro, non una descrizione di modifiche già implementate né una decisione architetturale accettata.
 
+Il [piano aggiornato del 15 novembre 2026](repository-review.md) precisa il perimetro e la destinazione dei file. Il proprietario ha confermato che `GuildData`, `AlertData`, `Sound` e `UserData` mantengono le modifiche persistenti nei propri metodi; bot e API devono ottenere gli stessi oggetti tramite cache locali con caricamento singolo e bulk coordinati. `GuildService` e `GuildSettingsDB` sono percorsi da assorbire nei proprietari esistenti, senza nuovi service/repository intermedi. La struttura SQL generale e MongoDB restano invariati; i rilievi storici qui sotto non riaprono gli interventi esclusi dal piano aggiornato. Anche il contenuto di questo aggiornamento è una proposta: non descrive modifiche operative già applicate.
+
+La struttura finale concordata distingue `com.safjnest.beebot`, `com.safjnest.lol` e `com.safjnest.spring`, con autenticazione API in `spring.auth` e meccanismi condivisi negli altri package indicati dal piano. Gli spostamenti dei file esistenti sono a cura del proprietario; l'assistente crea i file nuovi nelle destinazioni finali e assorbe i percorsi duplicati successivamente. Le posizioni riportate nell'analisi storica sottostante descrivono il codice prima del riordino; per le destinazioni vale soltanto il piano aggiornato.
+
 ## Principi richiesti
 
 - Il core guild e sound è parte del bot da anni. Ogni modifica va studiata rispetto al codice esistente, ai suoi chiamanti e al comportamento attuale.

@@ -4,6 +4,12 @@ This directory contains accepted architecture decisions for the LoL domain.
 Repository-wide implementation rules live in [`AGENTS.md`](../../AGENTS.md);
 operational steps live in the [developer handbook](../HANDBOOK.md).
 
+The [agreed repository reorganization plan](repository-review.md) records the
+decisions discussed with the owner, including the final `beebot`/`lol`/`spring`
+layout, API authentication in `spring.auth`, file moves, consolidation steps,
+scope exclusions and verification requirements. It is the canonical plan for
+this work; it does not describe an implemented refactor or amend an accepted ADR.
+
 ## Ownership
 
 - `lol.model` owns canonical LoL success models.

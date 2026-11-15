@@ -1,0 +1,4 @@
+interface:
+  display_name: "Improve Codebase Architecture"
+  short_description: "Analisi globale di responsabilità, riuso e dipendenze"
+  default_prompt: "Usa $improve-codebase-architecture per esaminare Beebot, confrontare i concetti tra package e proporre una pulizia con evidenze e copertura esplicita."

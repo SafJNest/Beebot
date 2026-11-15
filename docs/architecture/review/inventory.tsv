@@ -1,0 +1,647 @@
+path	area	language	indexed_nodes	review_depth	baseline
+.github/dependabot.yml	.github	yaml	0	inventariato	48c43d58
+docs/mongo/scripts/match-count-indexes-v4.mongosh.js	docs	javascript	8	inventariato	48c43d58
+pom.xml	pom.xml	xml	1	inventariato	48c43d58
+rsc/backup/old-memories/old-beebot-version/scriptOfBeeBox.py	archive	python	6	inventariato	48c43d58
+rsc/backup/old-memories/site-v1/script.js	archive	javascript	5	inventariato	48c43d58
+rsc/backup/old-memories/site-v2/assets/js/commands.js	archive	javascript	2	inventariato	48c43d58
+rsc/backup/old-memories/site-v2/assets/js/freelancer.js	archive	javascript	1	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/js/functions.js	archive	javascript	3	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/js/jquery-3.6.0.js	archive	javascript	75	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/js/oauth2.js	archive	javascript	3	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/js/script.js	archive	javascript	2	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/js/websocket.js	archive	javascript	4	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/php/database.php	archive	php	8	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/php/session.php	archive	php	1	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/assets/php/utilities.php	archive	php	3	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/dashboard.php	archive	php	2	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/dashboard_files/goodbye.php	archive	php	1	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/dashboard_files/home.php	archive	php	2	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/dashboard_files/levels.php	archive	php	1	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/dashboard_files/prefix.php	archive	php	1	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/dashboard_files/welcome.php	archive	php	1	inventariato	48c43d58
+rsc/backup/old-memories/site-v3/guild.php	archive	php	2	inventariato	48c43d58
+rsc/logback.xml	rsc	xml	1	inventariato	48c43d58
+rsc/testing/lol_testing/downloadAugment.py	rsc	python	9	inventariato	48c43d58
+src/main/java/com/safjnest/App.java	(root)	java	34	sorgente	48c43d58
+src/main/java/com/safjnest/auth/ApiKey.java	auth	java	34	inventariato	48c43d58
+src/main/java/com/safjnest/auth/AuthException.java	auth	java	11	sorgente	48c43d58
+src/main/java/com/safjnest/auth/DiscordApi.java	auth	java	56	sorgente parziale	48c43d58
+src/main/java/com/safjnest/auth/DiscordAuthService.java	auth	java	63	sorgente parziale	48c43d58
+src/main/java/com/safjnest/commands/audio/Connect.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/Disconnect.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/Stop.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/TTS.java	commands	java	51	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/greet/Greet.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/greet/GreetSet.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/greet/GreetUnset.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/greet/GreetView.java	commands	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/list/List.java	commands	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/list/ListGuild.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/list/ListUser.java	commands	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/play/Play.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/play/PlaySound.java	commands	java	42	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/play/PlayYoutube.java	commands	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/Playlist.java	commands	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistAddQueue.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistAddSong.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistCreate.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistDelete.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistList.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistOrder.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistPlay.java	commands	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistRemoveSong.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/playlist/PlaylistView.java	commands	java	27	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/search/Search.java	commands	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/search/SearchSound.java	commands	java	49	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/search/SearchYoutube.java	commands	java	54	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/sound/Sound.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/sound/SoundCustomize.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/sound/SoundDelete.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/sound/SoundDownload.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/sound/SoundUpload.java	commands	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/Soundboard.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/SoundboardAdd.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/SoundboardCreate.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/SoundboardDelete.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/SoundboardPlay.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/SoundboardRemove.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/audio/soundboard/SoundboardThumbnail.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/ChannelInfo.java	commands	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/Clear.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/EmojiInfo.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/Leaderboard.java	commands	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/MemberInfo.java	commands	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/ServerInfo.java	commands	java	28	inventariato	48c43d58
+src/main/java/com/safjnest/commands/guild/Warn.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Augment.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Champion.java	commands	java	67	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Champions.java	commands	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Item.java	commands	java	28	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Livegame.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Opgg.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/Region.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/UltimateBravery.java	commands	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/Summoner.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/SummonerChampion.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/SummonerLink.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/SummonerOverview.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/SummonerProfile.java	commands	java	20	sorgente	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/SummonerTrack.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/lol/summoner/SummonerUnlink.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/math/Calculator.java	commands	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/commands/math/Dice.java	commands	java	28	inventariato	48c43d58
+src/main/java/com/safjnest/commands/math/Prime.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Ban.java	commands	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Blacklist.java	commands	java	29	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Image.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Kick.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Mute.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Nickname.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Permissions.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/UnMute.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/Unban.java	commands	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/move/Move.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/move/MoveChannel.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/members/move/MoveUser.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/APOD.java	commands	java	31	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/Alias.java	commands	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/Bug.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/Help.java	commands	java	31	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/InviteBot.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/Msg.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/Ping.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/QRCode.java	commands	java	27	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/SpecialChar.java	commands	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/Weather.java	commands	java	27	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/omegle/Omegle.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/omegle/OmegleConnect.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/omegle/OmegleDisconnect.java	commands	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/omegle/OmegleStop.java	commands	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/spotify/Spotify.java	commands	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/spotify/SpotifyAlbums.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/spotify/SpotifyArtists.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/spotify/SpotifyLink.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/spotify/SpotifyTracks.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/spotify/SpotifyUpload.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/twitch/Twitch.java	commands	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/twitch/TwitchLink.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/twitch/TwitchMenu.java	commands	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/twitch/TwitchMessage.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/twitch/TwitchUnlink.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/misc/twitch/TwitchUser.java	commands	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/ChampionStats.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Chat.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Jelly.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/ListGuild.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/PrintCache.java	commands	java	31	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Query.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Ram.java	commands	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/RandomMove.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Restart.java	commands	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Shutdown.java	commands	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/Test.java	commands	java	86	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/TrackerStatus.java	commands	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/commands/owner/VandalizeServer.java	commands	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/JumpTo.java	commands	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/Pause.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/PlayYoutubeForce.java	commands	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/Player.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/Previous.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/Queue.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/Resume.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/queue/Skip.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/AutomatedAction.java	commands	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/Boost.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/Leave.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/LevelUp.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/Prefix.java	commands	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/Reward.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/Voice.java	commands	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/commands/settings/Welcome.java	commands	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/core/Bot.java	core	java	82	sorgente parziale	48c43d58
+src/main/java/com/safjnest/core/Chronos.java	core	java	30	sorgente	48c43d58
+src/main/java/com/safjnest/core/audio/AudioForwarder.java	core	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/ByteArraySeekableInputStream.java	core	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/GuildMusicManager.java	core	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/PlayerManager.java	core	java	76	sorgente parziale	48c43d58
+src/main/java/com/safjnest/core/audio/QueueHandler.java	core	java	65	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/QueueMessage.java	core	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/ResultHandler.java	core	java	40	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/SafjAudioPlaylist.java	core	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/SoundAnalytics.java	core	java	26	sorgente	48c43d58
+src/main/java/com/safjnest/core/audio/SoundEmbed.java	core	java	46	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/TrackData.java	core	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/TrackScheduler.java	core	java	90	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/tts/TTSHandler.java	core	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/tts/TTSVoices.java	core	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/types/AudioType.java	core	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/types/EmbedType.java	core	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/types/PlayTiming.java	core	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/core/audio/types/ReplyType.java	core	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/core/cache/AbstractCache.java	core	java	38	sorgente	48c43d58
+src/main/java/com/safjnest/core/cache/CacheAdapter.java	core	java	27	sorgente	48c43d58
+src/main/java/com/safjnest/core/cache/managers/GenericCache.java	core	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/core/cache/managers/GuildCache.java	core	java	28	sorgente	48c43d58
+src/main/java/com/safjnest/core/cache/managers/SoundCache.java	core	java	114	sorgente parziale	48c43d58
+src/main/java/com/safjnest/core/cache/managers/UserCache.java	core	java	13	sorgente	48c43d58
+src/main/java/com/safjnest/core/chat/ChatHandler.java	core	java	51	inventariato	48c43d58
+src/main/java/com/safjnest/core/chat/OmegleChannel.java	core	java	44	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/CommandEventHandler.java	core	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/EventAutoCompleteInteractionHandler.java	core	java	60	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/EventButtonHandler.java	core	java	83	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/EventComponentsHandler.java	core	java	57	sorgente parziale	48c43d58
+src/main/java/com/safjnest/core/events/EventHandler.java	core	java	44	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/EventHandlerBeebot.java	core	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/EventModalInteractionHandler.java	core	java	46	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/EventUtils.java	core	java	23	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/Functions.java	core	java	64	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/interfaces/BeebotListenerAdapter.java	core	java	25	inventariato	48c43d58
+src/main/java/com/safjnest/core/events/types/WarningEvent.java	core	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/guild/DiscordGuildCache.java	guild	java	53	inventariato	48c43d58
+src/main/java/com/safjnest/guild/DiscordGuildService.java	guild	java	20	sorgente	48c43d58
+src/main/java/com/safjnest/guild/GuildService.java	guild	java	77	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/LeagueHandler.java	lol	java	108	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/arena/ArenaGameParser.java	lol	java	33	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/arena/ArenaItemCatalog.java	lol	java	34	inventariato	48c43d58
+src/main/java/com/safjnest/lol/arena/ParsedArenaGame.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/champion/BuildSignature.java	lol	java	36	inventariato	48c43d58
+src/main/java/com/safjnest/lol/champion/ChampionBuildData.java	lol	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/lol/champion/ChampionBuildProvider.java	lol	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/lol/champion/ChampionStatsData.java	lol	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/lol/champion/ChampionStatsProvider.java	lol	java	32	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/champion/RuneSignature.java	lol	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/lol/message/LeagueEventHandler.java	lol	java	40	inventariato	48c43d58
+src/main/java/com/safjnest/lol/message/LeagueMessage.java	lol	java	143	inventariato	48c43d58
+src/main/java/com/safjnest/lol/message/LeagueMessageParameter.java	lol	java	66	inventariato	48c43d58
+src/main/java/com/safjnest/lol/message/LeagueMessageType.java	lol	java	23	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ActivityFilter.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ApiResult.java	lol	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ArenaBuildData.java	lol	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/Augment.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/Build.java	lol	java	73	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ChampionIndexable.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ChampionStatistics.java	lol	java	40	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ChampionTierList.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ChampionTierSource.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ChampionView.java	lol	java	4	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/Filter.java	lol	java	63	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/model/PlayerChampionStats.java	lol	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ProfileIndexable.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/ResponseMetadata.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/competitive/CompetitiveEntry.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/leaderboard/LeaderboardDistribution.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/leaderboard/LeaderboardPage.java	lol	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/LiveGame.java	lol	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/Match.java	lol	java	57	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/MatchFacetQuery.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/MatchFacets.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/MatchOrder.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/MatchPage.java	lol	java	8	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/MatchResult.java	lol	java	49	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/Participant.java	lol	java	71	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/RankHistory.java	lol	java	4	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/RankHistoryMatch.java	lol	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/RankHistoryMetadata.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/RankHistoryQuery.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/RankHistoryView.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/match/RankProgress.java	lol	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/ProfileRecord.java	lol	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/ProfileRecordPage.java	lol	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/RecordMetric.java	lol	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/RecordOrder.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/RecordOwner.java	lol	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/RecordPage.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/record/RecordsOverview.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/rune/PageRunes.java	lol	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/rune/Rune.java	lol	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/CanonicalQueue.java	lol	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/ChampionStatsDocument.java	lol	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/ProfileActivity.java	lol	java	69	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/ProfileMatchupLeaf.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/ProfileMatchups.java	lol	java	49	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/ProfileStatistics.java	lol	java	61	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/ProfileStatisticsRow.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/StatisticalLeaf.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/ChampionLeafStats.java	lol	java	25	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/ChampionNode.java	lol	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/ChampionStatsScope.java	lol	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/LeafStats.java	lol	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/MatchupStats.java	lol	java	39	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/ProfileLeafStats.java	lol	java	98	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/TrendStats.java	lol	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/statistics/shared/WinLossStats.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/BotStatus.java	lol	java	4	sorgente	48c43d58
+src/main/java/com/safjnest/lol/model/status/JobProgress.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/JobStatus.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/JvmMetrics.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/LeagueMetrics.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoCollectionPerformance.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoHottestCollection.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoMemoryMetrics.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoMetrics.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoOperationRates.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoOperationSample.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoOperationsMetrics.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoPerformanceMetrics.java	lol	java	4	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/MongoSlowOperation.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/QueueStatus.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/RedisMetrics.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/RunStatus.java	lol	java	4	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/SchedulerStatus.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/SystemMetrics.java	lol	java	3	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/status/WorkerStatus.java	lol	java	4	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/summoner/Mastery.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/summoner/Rank.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/summoner/Summoner.java	lol	java	53	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/summoner/SummonerLeaderboard.java	lol	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/summoner/SummonerOverview.java	lol	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/lol/model/summoner/SummonerView.java	lol	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/QueueHandler.java	lol	java	23	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/Registry.java	lol	java	86	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/Router.java	lol	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/job/Job.java	lol	java	54	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/job/JobPriority.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/job/JobState.java	lol	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/scheduler/AbstractScheduler.java	lol	java	53	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/scheduler/ChampionMatrixRequest.java	lol	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/scheduler/ComputeScheduler.java	lol	java	75	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/scheduler/DatabaseWorkerType.java	lol	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/scheduler/RiotScheduler.java	lol	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/scheduler/SyncScheduler.java	lol	java	18	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/queue/worker/JobQueue.java	lol	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/worker/JobWorker.java	lol	java	27	inventariato	48c43d58
+src/main/java/com/safjnest/lol/queue/worker/WorkerState.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/AggregateService.java	lol	java	56	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ArenaChampionAnalyzer.java	lol	java	70	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/CacheInvalidationService.java	lol	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ChampionAnalyzer.java	lol	java	211	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ChampionBuildEngine.java	lol	java	117	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ChampionService.java	lol	java	103	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ChampionTierAnalyzer.java	lol	java	59	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/CompetitiveService.java	lol	java	34	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/FacetsService.java	lol	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/LeaderboardService.java	lol	java	77	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/MasteryService.java	lol	java	43	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/MatchService.java	lol	java	106	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/MatchupRankingAnalyzer.java	lol	java	55	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ProfileAnalyzer.java	lol	java	36	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ProfileRecordAnalyzer.java	lol	java	42	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/service/ProfileRecordService.java	lol	java	36	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/ProfileService.java	lol	java	72	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/RankService.java	lol	java	77	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/StaticDataService.java	lol	java	35	inventariato	48c43d58
+src/main/java/com/safjnest/lol/service/SummonerService.java	lol	java	95	inventariato	48c43d58
+src/main/java/com/safjnest/lol/tracker/Tracker.java	lol	java	86	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/tracker/TrackerScheduler.java	lol	java	28	sorgente	48c43d58
+src/main/java/com/safjnest/lol/utils/AugmentUtils.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/BuildUtils.java	lol	java	30	sorgente parziale	48c43d58
+src/main/java/com/safjnest/lol/utils/ChampionBuildTimelineUtils.java	lol	java	25	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/ChampionUtils.java	lol	java	24	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/FilterCodec.java	lol	java	22	sorgente	48c43d58
+src/main/java/com/safjnest/lol/utils/GameQueueTypeUtils.java	lol	java	24	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/ItemUtils.java	lol	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/KdaUtils.java	lol	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/LaneTypeUtils.java	lol	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/LeagueConstants.java	lol	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/LeagueMessageUtils.java	lol	java	41	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/LeagueShardUtils.java	lol	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/MatchMemoryUtils.java	lol	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/MatchUtils.java	lol	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/MatchupTimelineUtils.java	lol	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/NumberUtils.java	lol	java	24	sorgente	48c43d58
+src/main/java/com/safjnest/lol/utils/OPTUtils.java	lol	java	25	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/ParticipantBuildCodec.java	lol	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/PatchUtils.java	lol	java	24	sorgente	48c43d58
+src/main/java/com/safjnest/lol/utils/RankProgressUtils.java	lol	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/SeasonUtils.java	lol	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/TierDivisionUtils.java	lol	java	28	inventariato	48c43d58
+src/main/java/com/safjnest/lol/utils/TierMathUtils.java	lol	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/model/AliasData.java	model	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/AWSSettings.java	model	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/AppConfig.java	model	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/BotSettings.java	model	java	53	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/DatabaseSettings.java	model	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/JsonSettings.java	model	java	70	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/LavalinkSettings.java	model	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/OpenAISettings.java	model	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/PoTokenSettings.java	model	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/RiotSettings.java	model	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/Settings.java	model	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/SpotifyApiSettings.java	model	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/SpotifySettings.java	model	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/model/BotSettings/TwitchSettings.java	model	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/model/UserData.java	model	java	41	sorgente parziale	48c43d58
+src/main/java/com/safjnest/model/customemoji/CustomEmoji.java	model	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/model/customemoji/CustomEmojiHandler.java	model	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/AutomatedAction.java	model	java	31	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/BlacklistData.java	model	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/ChannelData.java	model	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/GuildData.java	model	java	102	sorgente parziale	48c43d58
+src/main/java/com/safjnest/model/guild/GuildSettings.java	model	java	9	sorgente	48c43d58
+src/main/java/com/safjnest/model/guild/MemberData.java	model	java	31	sorgente parziale	48c43d58
+src/main/java/com/safjnest/model/guild/alert/AlertData.java	model	java	54	sorgente parziale	48c43d58
+src/main/java/com/safjnest/model/guild/alert/AlertKey.java	model	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/alert/AlertProblem.java	model	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/alert/AlertSendType.java	model	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/alert/AlertType.java	model	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/alert/RewardData.java	model	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/model/guild/alert/TwitchData.java	model	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/model/sound/Sound.java	model	java	75	sorgente parziale	48c43d58
+src/main/java/com/safjnest/model/sound/Tag.java	model	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/model/spotify/SpotifyAlbum.java	model	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/model/spotify/SpotifyArtist.java	model	java	26	inventariato	48c43d58
+src/main/java/com/safjnest/model/spotify/SpotifyTrack.java	model	java	35	inventariato	48c43d58
+src/main/java/com/safjnest/model/spotify/SpotifyTrackStreaming.java	model	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/model/util/ColorDeserializer.java	model	java	9	inventariato	48c43d58
+src/main/java/com/safjnest/nosql/AbstractEntity.java	nosql	java	46	inventariato	48c43d58
+src/main/java/com/safjnest/nosql/MongoCommandMonitor.java	nosql	java	85	inventariato	48c43d58
+src/main/java/com/safjnest/nosql/MongoDB.java	nosql	java	489	inventariato	48c43d58
+src/main/java/com/safjnest/nosql/MongoMigration.java	nosql	java	39	inventariato	48c43d58
+src/main/java/com/safjnest/nosql/MongoServerStatusSnapshot.java	nosql	java	2	inventariato	48c43d58
+src/main/java/com/safjnest/nosql/NoSqlEntityExecutor.java	nosql	java	13	inventariato	48c43d58
+src/main/java/com/safjnest/redis/RedisClient.java	redis	java	78	inventariato	48c43d58
+src/main/java/com/safjnest/redis/RedisKey.java	redis	java	66	inventariato	48c43d58
+src/main/java/com/safjnest/redis/RedisMemoryParser.java	redis	java	5	inventariato	48c43d58
+src/main/java/com/safjnest/sound/SoundAccess.java	sound	java	15	sorgente	48c43d58
+src/main/java/com/safjnest/sound/SoundAnalytics.java	sound	java	58	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sound/SoundPeriod.java	sound	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/sound/SoundQueryCache.java	sound	java	30	inventariato	48c43d58
+src/main/java/com/safjnest/sound/SoundValues.java	sound	java	11	sorgente	48c43d58
+src/main/java/com/safjnest/spring/SpringServer.java	spring	java	36	sorgente	48c43d58
+src/main/java/com/safjnest/spring/config/AuthFilter.java	spring	java	25	sorgente	48c43d58
+src/main/java/com/safjnest/spring/config/LolApiConfig.java	spring	java	41	sorgente	48c43d58
+src/main/java/com/safjnest/spring/controller/StatusController.java	spring	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/beebot/DiscordAuthController.java	spring	java	38	sorgente	48c43d58
+src/main/java/com/safjnest/spring/controller/beebot/GuildController.java	spring	java	35	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/beebot/SoundController.java	spring	java	48	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/AiTrainingController.java	spring	java	19	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/ChampionController.java	spring	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/LeaderboardController.java	spring	java	22	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/LolApiParameters.java	spring	java	80	sorgente parziale	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/LolApiResponses.java	spring	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/LolController.java	spring	java	68	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/ProfileIndexableController.java	spring	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/RecordsController.java	spring	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/spring/controller/lol/SummonerSearchController.java	spring	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/spring/dto/LolApiError.java	spring	java	4	inventariato	48c43d58
+src/main/java/com/safjnest/spring/exception/AuthExceptionHandler.java	spring	java	12	sorgente	48c43d58
+src/main/java/com/safjnest/spring/exception/AuthRequestExceptionHandler.java	spring	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/spring/exception/LolApiExceptionHandler.java	spring	java	31	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sql/AbstractDB.java	sql	java	31	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sql/DatabaseHandler.java	sql	java	12	inventariato	48c43d58
+src/main/java/com/safjnest/sql/QueryRecord.java	sql	java	55	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sql/QueryRecordParser.java	sql	java	32	sorgente	48c43d58
+src/main/java/com/safjnest/sql/database/AuthDB.java	sql	java	35	sorgente	48c43d58
+src/main/java/com/safjnest/sql/database/BotDB.java	sql	java	172	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sql/database/GuildSettingsDB.java	sql	java	43	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sql/database/SoundDB.java	sql	java	49	sorgente parziale	48c43d58
+src/main/java/com/safjnest/sql/database/SpotifyDB.java	sql	java	34	inventariato	48c43d58
+src/main/java/com/safjnest/sql/database/WebsiteDB.java	sql	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/status/LeagueMetricsStore.java	status	java	27	inventariato	48c43d58
+src/main/java/com/safjnest/status/MongoMetricsSampler.java	status	java	39	inventariato	48c43d58
+src/main/java/com/safjnest/status/SampledMetrics.java	status	java	7	inventariato	48c43d58
+src/main/java/com/safjnest/status/StatusRates.java	status	java	7	sorgente	48c43d58
+src/main/java/com/safjnest/status/StatusService.java	status	java	22	sorgente	48c43d58
+src/main/java/com/safjnest/status/SystemMetricsSampler.java	status	java	70	sorgente parziale	48c43d58
+src/main/java/com/safjnest/utils/Accumulator.java	utils	java	8	inventariato	48c43d58
+src/main/java/com/safjnest/utils/AlertMessage.java	utils	java	38	inventariato	48c43d58
+src/main/java/com/safjnest/utils/AutomatedActionTimer.java	utils	java	27	inventariato	48c43d58
+src/main/java/com/safjnest/utils/BotCommand.java	utils	java	58	inventariato	48c43d58
+src/main/java/com/safjnest/utils/CommandsLoader.java	utils	java	17	inventariato	48c43d58
+src/main/java/com/safjnest/utils/CryptoUtils.java	utils	java	21	inventariato	48c43d58
+src/main/java/com/safjnest/utils/DateHandler.java	utils	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/utils/ExperienceSystem.java	utils	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/utils/HttpUtils.java	utils	java	15	sorgente	48c43d58
+src/main/java/com/safjnest/utils/JsonCodec.java	utils	java	20	sorgente	48c43d58
+src/main/java/com/safjnest/utils/PermissionHandler.java	utils	java	44	inventariato	48c43d58
+src/main/java/com/safjnest/utils/SafJNest.java	utils	java	68	sorgente parziale	48c43d58
+src/main/java/com/safjnest/utils/SettingsLoader.java	utils	java	20	inventariato	48c43d58
+src/main/java/com/safjnest/utils/TableHandler.java	utils	java	11	inventariato	48c43d58
+src/main/java/com/safjnest/utils/TimeConstant.java	utils	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/utils/ValidationUtils.java	utils	java	5	sorgente	48c43d58
+src/main/java/com/safjnest/utils/log/BotLogger.java	utils	java	18	inventariato	48c43d58
+src/main/java/com/safjnest/utils/log/BotLoggerColorConverter.java	utils	java	6	inventariato	48c43d58
+src/main/java/com/safjnest/utils/log/LoggerIDpair.java	utils	java	15	inventariato	48c43d58
+src/main/java/com/safjnest/utils/spotify/SpotifyException.java	utils	java	14	inventariato	48c43d58
+src/main/java/com/safjnest/utils/spotify/SpotifyHandler.java	utils	java	35	inventariato	48c43d58
+src/main/java/com/safjnest/utils/spotify/SpotifyMessage.java	utils	java	37	inventariato	48c43d58
+src/main/java/com/safjnest/utils/spotify/SpotifyTokenManager.java	utils	java	23	inventariato	48c43d58
+src/main/java/com/safjnest/utils/spotify/type/SpotifyMessageType.java	utils	java	10	inventariato	48c43d58
+src/main/java/com/safjnest/utils/spotify/type/SpotifyTimeRange.java	utils	java	16	inventariato	48c43d58
+src/main/java/com/safjnest/utils/twitch/TwitchClient.java	utils	java	48	inventariato	48c43d58
+src/main/java/com/safjnest/utils/twitch/TwitchEventsHandler.java	utils	java	24	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Audio/AudioCodec.java	src	java	8	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Audio/AudioFormat.java	src	java	66	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Languages.java	src	java	53	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Speech/SpeechDataEvent.java	src	java	7	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Speech/SpeechDataEventListener.java	src	java	4	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Speech/SpeechErrorEvent.java	src	java	7	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Speech/SpeechErrorEventListener.java	src	java	4	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Voice/VoiceParameters.java	src	java	28	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Voice/VoiceProvider.java	src	java	38	inventariato	48c43d58
+src/main/java/org/voicerss/tts/Voice/Voices.java	src	java	253	inventariato	48c43d58
+src/main/resources/logback-spring.xml	src	xml	1	inventariato	48c43d58
+src/test/java/com/safjnest/auth/AuthDBPersistenceTest.java	tests	java	15	inventariato	48c43d58
+src/test/java/com/safjnest/auth/DiscordApiGuildsTest.java	tests	java	25	inventariato	48c43d58
+src/test/java/com/safjnest/auth/DiscordAuthFlowTest.java	tests	java	35	inventariato	48c43d58
+src/test/java/com/safjnest/auth/DiscordAuthServiceTest.java	tests	java	9	inventariato	48c43d58
+src/test/java/com/safjnest/auth/DiscordGuildApiTest.java	tests	java	43	inventariato	48c43d58
+src/test/java/com/safjnest/auth/PersonalKeyTest.java	tests	java	37	inventariato	48c43d58
+src/test/java/com/safjnest/commands/owner/TestAccessTest.java	tests	java	19	inventariato	48c43d58
+src/test/java/com/safjnest/guild/DiscordGuildCacheTest.java	tests	java	28	inventariato	48c43d58
+src/test/java/com/safjnest/guild/GuildSettingsTest.java	tests	java	59	inventariato	48c43d58
+src/test/java/com/safjnest/lol/arena/ArenaGameParserTest.java	tests	java	22	inventariato	48c43d58
+src/test/java/com/safjnest/lol/champion/BuildSignatureTest.java	tests	java	17	inventariato	48c43d58
+src/test/java/com/safjnest/lol/champion/ChampionBuildProviderTest.java	tests	java	15	inventariato	48c43d58
+src/test/java/com/safjnest/lol/champion/RuneSignatureTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/lol/message/LeagueMessageOpggTitleTest.java	tests	java	23	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ActivityFilterTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ApiResultTest.java	tests	java	7	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ArenaBuildApiTest.java	tests	java	14	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/BuildTest.java	tests	java	9	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ChampionLeafStatsTest.java	tests	java	10	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ChampionStatisticsTest.java	tests	java	12	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/FilterTest.java	tests	java	16	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/LiveGameTest.java	tests	java	22	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ProfileActivityTest.java	tests	java	14	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ProfileIndexableTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ProfileMatchupsTest.java	tests	java	33	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/ProfileStatisticsTest.java	tests	java	28	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/RankHistoryMatchTest.java	tests	java	15	inventariato	48c43d58
+src/test/java/com/safjnest/lol/model/status/MongoMetricsSnapshotTest.java	tests	java	9	inventariato	48c43d58
+src/test/java/com/safjnest/lol/queue/MatchPromotionTest.java	tests	java	15	inventariato	48c43d58
+src/test/java/com/safjnest/lol/queue/RouterTest.java	tests	java	50	inventariato	48c43d58
+src/test/java/com/safjnest/lol/queue/scheduler/ChampionMatrixRequestTest.java	tests	java	18	inventariato	48c43d58
+src/test/java/com/safjnest/lol/queue/scheduler/ComputeSchedulerArenaTest.java	tests	java	34	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/AggregateServiceTest.java	tests	java	68	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ArenaChampionAnalyzerTest.java	tests	java	14	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/CacheInvalidationServiceTest.java	tests	java	9	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionAnalyzerTest.java	tests	java	38	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionArenaRawFlowTest.java	tests	java	70	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionBuildEngineTest.java	tests	java	26	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionServiceArenaTest.java	tests	java	34	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionServiceIndexableTest.java	tests	java	7	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionServiceMatrixTest.java	tests	java	21	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ChampionTierAnalyzerTest.java	tests	java	30	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/CompetitiveServiceTest.java	tests	java	20	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/LeaderboardScoreOrderingTest.java	tests	java	11	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/LeaderboardServiceTest.java	tests	java	24	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/MatchRankQueueTest.java	tests	java	56	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/MatchupRankingAnalyzerTest.java	tests	java	29	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ProfileRecordAnalyzerTest.java	tests	java	25	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/ProfileServiceTest.java	tests	java	23	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/StaticDataServicePatchTest.java	tests	java	7	inventariato	48c43d58
+src/test/java/com/safjnest/lol/service/SummonerServiceTest.java	tests	java	14	inventariato	48c43d58
+src/test/java/com/safjnest/lol/tracker/TrackerTest.java	tests	java	16	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/BuildUtilsTest.java	tests	java	10	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/ChampionBuildTimelineUtilsTest.java	tests	java	10	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/ItemUtilsTest.java	tests	java	7	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/LaneTypeUtilsTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/MatchMemoryUtilsTest.java	tests	java	17	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/MatchupTimelineUtilsTest.java	tests	java	11	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/PatchUtilsTest.java	tests	java	13	inventariato	48c43d58
+src/test/java/com/safjnest/lol/utils/TierMathUtilsTest.java	tests	java	10	inventariato	48c43d58
+src/test/java/com/safjnest/mongo/LeagueDbRuntimeGuardTest.java	tests	java	12	inventariato	48c43d58
+src/test/java/com/safjnest/mongo/MongoDBTest.java	tests	java	45	inventariato	48c43d58
+src/test/java/com/safjnest/mongo/MongoMigrationTest.java	tests	java	9	inventariato	48c43d58
+src/test/java/com/safjnest/mongo/SummonerWarmingTest.java	tests	java	49	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/AbstractEntityTest.java	tests	java	38	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoChampionArenaPersistenceTest.java	tests	java	64	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoChampionArenaSourceTest.java	tests	java	34	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoChampionBuildRecordTest.java	tests	java	19	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoChampionStatisticsDocumentTest.java	tests	java	17	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoCommandMonitorTest.java	tests	java	19	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoCompetitivePersistenceTest.java	tests	java	36	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoDBTrackingTest.java	tests	java	11	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoLeaderboardTest.java	tests	java	23	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoMatchFacetsTest.java	tests	java	21	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoMatchFilterTest.java	tests	java	24	inventariato	48c43d58
+src/test/java/com/safjnest/nosql/MongoSummonerHistoryTest.java	tests	java	14	inventariato	48c43d58
+src/test/java/com/safjnest/redis/RedisKeyTest.java	tests	java	11	inventariato	48c43d58
+src/test/java/com/safjnest/redis/RedisMemoryParserTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/sound/SoundApiTest.java	tests	java	60	inventariato	48c43d58
+src/test/java/com/safjnest/sound/SoundQueryCacheTest.java	tests	java	15	inventariato	48c43d58
+src/test/java/com/safjnest/sound/SoundVolumeTest.java	tests	java	12	inventariato	48c43d58
+src/test/java/com/safjnest/spring/SpringPropertiesTest.java	tests	java	16	inventariato	48c43d58
+src/test/java/com/safjnest/spring/config/BeebotAuthFilterTest.java	tests	java	32	inventariato	48c43d58
+src/test/java/com/safjnest/spring/config/LolApiConfigTest.java	tests	java	30	inventariato	48c43d58
+src/test/java/com/safjnest/spring/config/MatchApiContractTest.java	tests	java	54	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/ChampionControllerTest.java	tests	java	24	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/GuildControllerTest.java	tests	java	36	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/LolApiExceptionHandlerTest.java	tests	java	19	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/LolApiResponsesTest.java	tests	java	15	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/LolControllerTest.java	tests	java	49	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/ProfileIndexableControllerTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/RankHistoryParametersTest.java	tests	java	17	inventariato	48c43d58
+src/test/java/com/safjnest/spring/controller/StatusControllerTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/sql/QueryRecordParserTest.java	tests	java	20	inventariato	48c43d58
+src/test/java/com/safjnest/sql/database/AuthDBTest.java	tests	java	6	inventariato	48c43d58
+src/test/java/com/safjnest/status/LeagueMetricsStoreTest.java	tests	java	9	inventariato	48c43d58
+src/test/java/com/safjnest/status/MongoMetricsSamplerTest.java	tests	java	10	inventariato	48c43d58
+src/test/java/com/safjnest/status/StatusRatesTest.java	tests	java	8	inventariato	48c43d58
+src/test/java/com/safjnest/status/SystemMetricsSamplerTest.java	tests	java	13	inventariato	48c43d58
+src/test/java/com/safjnest/utils/CryptoUtilsTest.java	tests	java	7	inventariato	48c43d58
+src/test/java/com/safjnest/utils/ValidationUtilsTest.java	tests	java	7	inventariato	48c43d58
+system.properties	system.properties	properties	0	inventariato	48c43d58
+database/auth/001-dashboard-auth.sql	database	sql		inventariato	48c43d58
+database/auth/002-oauth-transaction.sql	database	sql		inventariato	48c43d58
+database/auth/003-api-key-types.sql	database	sql		inventariato	48c43d58
+database/berbit/blacklist.sql	database	sql		inventariato	48c43d58
+database/berbit/command.sql	database	sql		inventariato	48c43d58
+database/berbit/experience.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/Channel.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/alert/alert.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/alert/alert_reward.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/alert/alert_role.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/alert/alert_twitch.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/guild.sql	database	sql		inventariato	48c43d58
+database/berbit/setting/user.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/001-sound-history-guild.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/002-sound-api.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/Soundboard/soundboard.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/Soundboard/soundboard_sound.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/greeting.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/playlist/playlist.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/playlist/playlist_track.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/sound.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/sound_history.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/sound_interactions.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/tag.sql	database	sql		inventariato	48c43d58
+database/berbit/sound/tag_sounds.sql	database	sql		inventariato	48c43d58
+database/berbit/twitch_subscription.sql	database	sql		inventariato	48c43d58
+database/berbit/warning/automated_action.sql	database	sql		inventariato	48c43d58
+database/berbit/warning/automated_action_expiration.sql	database	sql		inventariato	48c43d58
+database/berbit/warning/warning.sql	database	sql		inventariato	48c43d58
+database/spotify/album_artists.sql	database	sql		inventariato	48c43d58
+database/spotify/albums.sql	database	sql		inventariato	48c43d58
+database/spotify/artists.sql	database	sql		inventariato	48c43d58
+database/spotify/spotifyDB.sql	database	sql		inventariato	48c43d58
+database/spotify/tracks.sql	database	sql		inventariato	48c43d58
+database/spotify/tracks_streamings.sql	database	sql		inventariato	48c43d58
+database/spotify/users.sql	database	sql		inventariato	48c43d58
+database/website/ApiKey.sql	database	sql		inventariato	48c43d58
+database/website/DiscordToken.sql	database	sql		inventariato	48c43d58
+database/website/User.sql	database	sql		inventariato	48c43d58
+database/website/UserSession.sql	database	sql		inventariato	48c43d58
+rsc/backup/deprecated/OldAlert/old_alert_export_2024-03-04_094807.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/Old Alert/Welcome/welcome_message.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/Old Alert/Welcome/welcome_roles.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/Old Alert/boost_message.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/Old Alert/left_message.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/Old Alert/levelup_message.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/commands/command_option.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/commands/command_option_value.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/commands/command_task.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/commands/command_task_message.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/commands/command_task_value.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/commands/commands.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/lol/summoner.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/lol/summoner_match.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/lol/summoner_tracking.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/reward.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/room.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/rooms_nickname.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/SQL/tts_guilds.sql	rsc	sql		inventariato	48c43d58
+rsc/backup/deprecated/customcommand/queries.sql	rsc	sql		inventariato	48c43d58
+rsc/testing/custom_command_db/query.sql	rsc	sql		inventariato	48c43d58
