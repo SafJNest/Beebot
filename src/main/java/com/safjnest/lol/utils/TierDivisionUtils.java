@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
-import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
+
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;

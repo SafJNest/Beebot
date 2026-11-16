@@ -29,7 +29,7 @@ The current scheduler contract is [ADR-0014](adr/0014-global-job-scheduler.md).
 The profile aggregate identity and ownership are summarized in
 [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md).
 Mongo persistence details are in [`docs/mongo`](../mongo/README.md); CHERRY
-build ownership is in [`docs/arena-build`](../arena-build/README.md).
+build ownership is in [`docs/arena-build`](../arena-build/contracts.md).
 The Mongo match-facets projection is documented in
 [`docs/mongo/15-match-facets-projection.md`](../mongo/15-match-facets-projection.md).
 

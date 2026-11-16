@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
@@ -23,9 +26,6 @@ import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.SeasonUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.TimeConstant;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;

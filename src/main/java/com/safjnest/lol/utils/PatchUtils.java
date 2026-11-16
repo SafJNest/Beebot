@@ -7,8 +7,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 
 import com.safjnest.utils.HttpUtils;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.service.StaticDataService;
-import com.safjnest.redis.RedisKey;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;

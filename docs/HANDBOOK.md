@@ -261,7 +261,7 @@ The unique profile identity index is `profile_statistics_identity` on
 ## Arena builds
 
 CHERRY uses the existing champion API and build flow. Its approved schema and
-processing rules live in [`docs/arena-build`](arena-build/README.md) and
+processing rules live in [`docs/arena-build`](arena-build/contracts.md) and
 ADR-0012.
 
 ## Audio API operations

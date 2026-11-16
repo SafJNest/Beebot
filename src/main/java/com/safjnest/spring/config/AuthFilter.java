@@ -1,11 +1,12 @@
 package com.safjnest.spring.config;
 
-import com.safjnest.auth.DiscordAuthService.AuthContext;
+import com.safjnest.discord.auth.AuthException;
+import com.safjnest.discord.auth.DiscordAuthService;
+import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.spring.exception.AuthExceptionHandler.AuthError;
 
 import java.io.IOException;
-import com.safjnest.auth.AuthException;
-import com.safjnest.auth.DiscordAuthService;
+
 import com.safjnest.utils.JsonCodec;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;

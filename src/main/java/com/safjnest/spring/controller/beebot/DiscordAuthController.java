@@ -1,14 +1,16 @@
 package com.safjnest.spring.controller.beebot;
 
 import java.util.List;
-import com.safjnest.auth.DiscordAuthService;
-import com.safjnest.auth.AuthException;
-import com.safjnest.auth.DiscordApi.AuthUser;
-import com.safjnest.auth.DiscordApi.Server;
-import com.safjnest.auth.DiscordAuthService.AuthContext;
-import com.safjnest.auth.DiscordAuthService.Authorization;
-import com.safjnest.auth.DiscordAuthService.Session;
-import com.safjnest.guild.DiscordGuildService;
+
+import com.safjnest.discord.auth.AuthException;
+import com.safjnest.discord.auth.DiscordAuthService;
+import com.safjnest.discord.auth.DiscordApi.AuthUser;
+import com.safjnest.discord.auth.DiscordApi.Server;
+import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
+import com.safjnest.discord.auth.DiscordAuthService.Authorization;
+import com.safjnest.discord.auth.DiscordAuthService.Session;
+import com.safjnest.discord.guild.DiscordGuildService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +25,13 @@ import org.springframework.core.env.Environment;
 public class DiscordAuthController {
     private final DiscordAuthService auth;
     private final DiscordGuildService guilds;
-    private final java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.model.sound.Sound>> greets;
+    private final java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.sound.model.Sound>> greets;
 
     public record AuthorizeRequest(String state, String redirectUri) {}
 
     public record ExchangeRequest(String code, String state, String redirectUri) {}
 
-    public record Me(AuthUser user, List<Server> servers, java.util.Map<String, com.safjnest.model.sound.Sound> greets) {}
+    public record Me(AuthUser user, List<Server> servers, java.util.Map<String, com.safjnest.sound.model.Sound> greets) {}
 
     public DiscordAuthController() { this(new DiscordAuthService(), new DiscordGuildService(null)); }
 
@@ -41,12 +43,12 @@ public class DiscordAuthController {
 
     public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds) {
         this(auth, guilds, context -> {
-            var sounds = com.safjnest.core.cache.managers.SoundCache.getInstance();
+            var sounds = com.safjnest.bot.cache.managers.SoundCache.getInstance();
             return sounds.greets(sounds.context(context.user().id()));
         });
     }
     public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds,
-            java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.model.sound.Sound>> greets) {
+            java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.sound.model.Sound>> greets) {
         this.auth = auth; this.guilds = guilds; this.greets = greets;
     }
 

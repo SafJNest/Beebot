@@ -6,12 +6,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.CancellationException;
 
 import com.safjnest.App;
-import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.bot.Chronos.ChronoTask;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.service.RankService;
+import com.safjnest.status.log.BotLogger;
 import com.safjnest.lol.queue.job.Job;
 import com.safjnest.utils.TimeConstant;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
@@ -39,7 +39,7 @@ public final class TrackerScheduler {
         track.scheduleAtFixedRate(0, TRACKING_INTERVAL, TimeUnit.MILLISECONDS);
 
         ChronoTask retrieveHighEloEntries = TrackerScheduler::retrieveHighEloEntries;
-        //retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+        retrieveHighEloEntries.scheduleAtFixedRate(TimeConstant.MINUTE * 5, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshChampionData = TrackerScheduler::refreshChampionData;
         refreshChampionData.scheduleAtFixedTime(23, 0, 0);

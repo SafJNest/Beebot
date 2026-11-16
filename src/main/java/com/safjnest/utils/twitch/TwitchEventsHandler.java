@@ -6,12 +6,13 @@ import java.util.List;
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.events.EventSocketConnectionStateEvent;
 import com.github.twitch4j.helix.domain.User;
-import com.safjnest.core.Bot;
-import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.alert.TwitchData;
-import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.database.BotDB;
-import com.safjnest.utils.log.BotLogger;
+import com.safjnest.bot.Bot;
+import com.safjnest.bot.cache.managers.GuildCache;
+import com.safjnest.bot.model.guild.GuildData;
+import com.safjnest.bot.model.guild.alert.TwitchData;
+import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.status.log.BotLogger;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -21,8 +22,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import com.github.twitch4j.helix.domain.Stream;
-
-import com.safjnest.core.cache.managers.GuildCache;
 
 class TwitchEventsHandler {
 

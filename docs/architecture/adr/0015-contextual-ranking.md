@@ -28,7 +28,30 @@ Records are returned directly from Mongo sorted by their actual `value`, descend
 
 After changing the competitive projection, including adding `score`, run `!test regenerate competitive` before serving contextual rankings. Run `!test regenerate aggregates [type]` separately for count/distribution snapshots. It submits one background Compute/MONGO child per selected aggregate family; the parent releases its worker and Registry owns descendant completion. A member-encoding change requires explicit removal of affected Redis indexes; ordinary startup never clears them. A resident key skips both job submission and its Mongo scan. Redis loss rebuilds missing indexes on startup or demand.
 
-`LeaderboardService.indexStatus()` provides resident segment counts, per-key cardinality, `MEMORY USAGE`, TTL and in-progress build state. It contains no player-level logging and does not clean up Redis as a side effect.
+A valid rank always creates a competitive row; absent `primary` and `otpChampionId` fields are omitted and an existing known value is retained when a later refresh cannot derive a replacement.
+
+Redis keys are derived only:
+
+```text
+beebot:lol:los:leaderboard:<queue>:GLOBAL|<region>:<exact-tier>
+beebot:lol:los:leaderboard:counts:<queue>:GLOBAL|<region>
+beebot:lol:los:leaderboard:segments
+beebot:lol:los:leaderboard:access
+beebot:lol:los:leaderboard:building:<build-id>
+```
+
+The segment registry and access hash are Redis-only observability metadata.
+
+Operator-managed indexes, applied after checking existing names and running `explain("executionStats")`. Keep equivalent existing compound keys, including `competitive_queue_mmr` and `competitive_queue_region_mmr`; do not duplicate them under new names.
+
+```javascript
+db.competitive.createIndex({queue: 1, mmr: -1, score: -1}, {name: "competitive_contextual_global"})
+db.competitive.createIndex({queue: 1, region: 1, mmr: -1, score: -1}, {name: "competitive_contextual_regional"})
+```
+
+The cold-segment count-before fallback can still examine many index keys in Gold/Emerald; verify on representative data before deciding to prewarm these lower divisions.
+
+`LeaderboardService.indexStatus()` (`!test ranking`) provides resident segment counts, per-key cardinality, `MEMORY USAGE`, TTL and in-progress build state. It contains no player-level logging and does not clean up Redis as a side effect.
 
 ## Consequences
 

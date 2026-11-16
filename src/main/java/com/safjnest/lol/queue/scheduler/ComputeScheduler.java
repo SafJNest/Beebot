@@ -18,8 +18,8 @@ import com.safjnest.lol.service.ChampionService;
 import com.safjnest.lol.service.ProfileService;
 import com.safjnest.lol.service.ProfileRecordService;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.status.log.BotLogger;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

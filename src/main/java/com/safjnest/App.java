@@ -5,19 +5,19 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import com.safjnest.core.Bot;
+import com.safjnest.bot.Bot;
+import com.safjnest.bot.model.BotSettings.Settings;
+import com.safjnest.database.nosql.MongoDB;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.service.LeaderboardService;
-import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.nosql.MongoDB;
 import com.safjnest.spring.SpringServer;
 import com.safjnest.status.SystemMetricsSampler;
+import com.safjnest.status.log.BotLogger;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
-import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.twitch.TwitchClient;
 
 public class App {

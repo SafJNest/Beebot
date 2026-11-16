@@ -4,12 +4,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.model.match.MatchFacetQuery;
 import com.safjnest.lol.model.match.MatchFacets;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.JsonCodec;
 
 public final class FacetsService {

@@ -6,14 +6,14 @@ import java.util.List;
 
 import java.awt.Color;
 
-import com.safjnest.core.Bot;
-import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.model.guild.ChannelData;
-import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.alert.AlertData;
-import com.safjnest.model.guild.alert.AlertSendType;
-import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.guild.alert.RewardData;
+import com.safjnest.bot.Bot;
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
+import com.safjnest.bot.model.guild.ChannelData;
+import com.safjnest.bot.model.guild.GuildData;
+import com.safjnest.bot.model.guild.alert.AlertData;
+import com.safjnest.bot.model.guild.alert.AlertSendType;
+import com.safjnest.bot.model.guild.alert.AlertType;
+import com.safjnest.bot.model.guild.alert.RewardData;
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;

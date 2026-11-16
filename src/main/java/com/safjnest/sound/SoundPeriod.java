@@ -1,9 +1,9 @@
 package com.safjnest.sound;
 import java.time.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.sql.QueryRecord;
+import com.safjnest.database.sql.QueryRecord;
+
 import static com.safjnest.sound.SoundValues.*;
 
 public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, Instant before, String beforeId) {
@@ -39,7 +39,7 @@ public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, 
             if (before != null && from != null && before.isBefore(from)) throw bad("Invalid cursor interval");
             return new SoundPeriod(period, zone, from, to, before, beforeId);
         }
-        catch (com.safjnest.auth.AuthException exception) {
+        catch (com.safjnest.discord.auth.AuthException exception) {
             throw exception;
         }
         catch (Exception exception) {

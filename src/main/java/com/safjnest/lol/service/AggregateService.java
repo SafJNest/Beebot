@@ -14,6 +14,9 @@ import java.util.function.Supplier;
 import org.bson.Document;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
@@ -22,9 +25,6 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
 import com.safjnest.status.LeagueMetricsStore;
 import com.safjnest.utils.JsonCodec;
 
@@ -213,7 +213,7 @@ public final class AggregateService {
             } catch (RuntimeException exception) {
                 job.failed(scope.id());
                 failed++;
-                com.safjnest.utils.log.BotLogger.error("Aggregate rebuild failed: " + scope.id() + " " + exception.getMessage());
+                com.safjnest.status.log.BotLogger.error("Aggregate rebuild failed: " + scope.id() + " " + exception.getMessage());
             }
             job.phase("REBUILD total=" + scopes.size() + " completed=" + completed + " missing=" + missing + " failed=" + failed);
         }

@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.App;
-import com.safjnest.redis.RedisClient;
+import com.safjnest.database.redis.RedisClient;
 
 public class SoundQueryCache {
 

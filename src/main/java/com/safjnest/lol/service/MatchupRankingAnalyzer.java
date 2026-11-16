@@ -19,15 +19,6 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 public final class MatchupRankingAnalyzer {
 
     private static final int WINRATE = 0;
-    private static final int KDA = 1;
-    private static final int GOLD_PER_MINUTE = 2;
-    private static final int KILL_PARTICIPATION = 3;
-    private static final int DEATH_SHARE = 4;
-    private static final int GOLD_DIFF_15 = 5;
-    private static final int CS_DIFF_15 = 6;
-    private static final int XP_DIFF_15 = 7;
-    private static final int KILL_DIFF_15 = 8;
-    private static final int PLATE_DIFF_15 = 9;
     private static final int METRIC_COUNT = 10;
     private static final double[] WEIGHTS = {0.275, 0.10, 0.05, 0.05, -0.025, 0.125, 0.10, 0.10, 0.125, 0.05};
 

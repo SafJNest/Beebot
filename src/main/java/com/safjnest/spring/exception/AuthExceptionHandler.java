@@ -1,7 +1,8 @@
 package com.safjnest.spring.exception;
 
-import com.safjnest.auth.AuthException;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.safjnest.discord.auth.AuthException;
+
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;

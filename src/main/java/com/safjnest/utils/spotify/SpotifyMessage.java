@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import com.safjnest.core.Bot;
-import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.model.spotify.SpotifyAlbum;
-import com.safjnest.model.spotify.SpotifyArtist;
-import com.safjnest.model.spotify.SpotifyTrack;
+import com.safjnest.bot.Bot;
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.spotify.model.SpotifyAlbum;
+import com.safjnest.utils.spotify.model.SpotifyArtist;
+import com.safjnest.utils.spotify.model.SpotifyTrack;
 import com.safjnest.utils.spotify.type.SpotifyMessageType;
 import com.safjnest.utils.spotify.type.SpotifyTimeRange;
 

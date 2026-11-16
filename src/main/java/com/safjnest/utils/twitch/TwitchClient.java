@@ -18,9 +18,9 @@ import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
 import com.safjnest.App;
-import com.safjnest.core.cache.managers.GenericCache;
+import com.safjnest.bot.cache.managers.GenericCache;
+import com.safjnest.status.log.BotLogger;
 import com.safjnest.utils.SettingsLoader;
-import com.safjnest.utils.log.BotLogger;
 
 public class TwitchClient {
     private static String clientId;

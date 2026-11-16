@@ -159,8 +159,7 @@ Explains must verify `executionTimeMillis`, `totalKeysExamined`,
 `COLLSCAN` and of a blocking `SORT`. Compare the before/after baseline with `collStats` and
 `indexSizes`. The leaderboard uses `competitive` for MMR/range/role and then a
 `$in` on the `summoner` primary key; contextual segment ownership and rebuilds
-are described in [`13-contextual-ranking.md`](13-contextual-ranking.md) and
-[ADR-0015](../architecture/adr/0015-contextual-ranking.md).
+are described in [ADR-0015](../architecture/adr/0015-contextual-ranking.md).
 
 Summoner leaderboard mode keeps only queue and optional region from the
 request. It resolves an exact PUUID or exact stored `Riot ID#tag`, obtains the

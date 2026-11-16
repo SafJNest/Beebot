@@ -3,7 +3,7 @@ package com.safjnest.lol.utils;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
 
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.OptionType;

@@ -15,8 +15,9 @@ import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import com.safjnest.spring.config.LolApiConfig;
+import com.safjnest.discord.auth.DiscordAuthService;
 import com.safjnest.spring.config.AuthFilter;
-import com.safjnest.auth.DiscordAuthService;
+
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.apache.tomcat.util.descriptor.web.FilterDef;

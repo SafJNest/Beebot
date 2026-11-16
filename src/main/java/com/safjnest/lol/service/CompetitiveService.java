@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.safjnest.database.nosql.MongoDB;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.competitive.CompetitiveEntry;
 import com.safjnest.lol.model.statistics.CanonicalQueue;
@@ -16,7 +17,6 @@ import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.nosql.MongoDB;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

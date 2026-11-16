@@ -1,12 +1,12 @@
 package com.safjnest.lol.champion;
 
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.sql.QueryRecord;
 
 import java.util.List;
 import java.util.LinkedHashMap;

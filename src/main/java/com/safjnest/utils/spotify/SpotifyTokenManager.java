@@ -5,7 +5,7 @@ import org.springframework.web.client.RestTemplate;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.safjnest.sql.database.WebsiteDB;
+import com.safjnest.database.sql.database.WebsiteDB;
 import com.safjnest.utils.SettingsLoader;
 
 import org.springframework.http.*;

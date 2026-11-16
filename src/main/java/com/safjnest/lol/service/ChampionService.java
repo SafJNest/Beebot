@@ -12,6 +12,9 @@ import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.arena.ArenaItemCatalog;
 import com.safjnest.lol.champion.ChampionBuildProvider;
 import com.safjnest.lol.model.ApiResult;
@@ -39,11 +42,8 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
+import com.safjnest.status.log.BotLogger;
 import com.safjnest.utils.TimeConstant;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

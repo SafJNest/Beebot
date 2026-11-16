@@ -8,6 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.ResponseMetadata;
@@ -20,8 +22,6 @@ import com.safjnest.lol.model.record.RecordsOverview;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisKey;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 

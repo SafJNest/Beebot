@@ -4,12 +4,13 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.safjnest.auth.AuthException;
-import com.safjnest.auth.DiscordAuthService.AuthContext;
-import com.safjnest.guild.GuildService;
-import com.safjnest.model.guild.GuildSettings;
 import com.safjnest.spring.config.AuthFilter;
-import com.safjnest.guild.DiscordGuildService;
+import com.safjnest.bot.model.guild.GuildSettings;
+import com.safjnest.discord.auth.AuthException;
+import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
+import com.safjnest.discord.guild.DiscordGuildService;
+import com.safjnest.discord.guild.GuildService;
+
 import org.springframework.core.env.Environment;
 
 import jakarta.servlet.http.HttpServletResponse;

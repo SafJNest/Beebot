@@ -12,13 +12,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.App;
+import com.safjnest.database.redis.RedisClient;
 import com.safjnest.lol.model.status.JvmMetrics;
 import com.safjnest.lol.model.status.MongoMetrics;
 import com.safjnest.lol.model.status.RedisMetrics;
 import com.safjnest.lol.model.status.SystemMetrics;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.utils.log.BotLogger;
-
+import com.safjnest.status.log.BotLogger;
 import com.sun.management.OperatingSystemMXBean;
 
 import oshi.SystemInfo;

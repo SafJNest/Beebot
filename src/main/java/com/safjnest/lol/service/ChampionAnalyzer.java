@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.database.nosql.MongoDB;
 import com.safjnest.lol.champion.ChampionStatsData;
 import com.safjnest.lol.champion.ChampionStatsProvider;
 import com.safjnest.lol.model.ChampionStatistics;
@@ -25,8 +26,6 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.MatchupTimelineUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -388,7 +387,7 @@ public final class ChampionAnalyzer {
             for (ChampionBuildEngine.BuildAccumulator acc : builds.values()) {
                 java.util.List<com.safjnest.lol.model.Build> res = ChampionBuildEngine.finish(acc);
                 if (res.isEmpty()) res = ChampionBuildEngine.emptyResult(acc.filter());
-                com.safjnest.nosql.MongoDB.upsertChampionBuilds(res);
+                com.safjnest.database.nosql.MongoDB.upsertChampionBuilds(res);
             }
             for (var entry : arenas.entrySet()) {
                 ArenaBuildData arena = entry.getValue().finish();
@@ -421,22 +420,11 @@ public final class ChampionAnalyzer {
             : metadata.rank().ordinal() <= filter.rank().ordinal();
     }
 
-    private static ChampionLeafStats leaf(ChampionNode node, LaneType lane) {
-        if (node == null) return null;
-        return lane == null ? node.overall() : node.lanes.get(lane.name());
-    }
-
     private static List<LaneType> persistedLanes(ChampionStatsScope scope) {
         if (scope.queue() == null || !GameQueueTypeUtils.hasLane(scope.queue())) return List.of(LaneType.NONE);
         List<LaneType> result = new ArrayList<>(LaneTypeUtils.playables());
         result.add(LaneType.NONE);
         return result;
-    }
-
-    private static Filter copyFilter(Filter source, int champion) {
-        return new Filter().setChampion(champion).setLane(source.lane()).setQueue(source.queue())
-            .setRank(source.rank()).setRankBehavior(source.rankBehavior()).setPatch(source.patch())
-            .setRegion(source.region()).setPeriod(source.timeStart(), source.timeEnd());
     }
 
     private static void addPreviousTrend(ChampionStatsDocument document) {
@@ -661,41 +649,6 @@ public final class ChampionAnalyzer {
         Map<Integer, Map<String, int[]>> arenaSubteamIds,
         Map<Integer, Map<String, Integer>> arenaPlacements
     ) {}
-
-    private static final class MatrixMetrics {
-        private long baseScanNanos;
-        private long eventScanNanos;
-        private long parseNanos;
-        private long baseAggregationNanos;
-        private long eventAggregationNanos;
-        private long rollupNanos;
-        private long trendNanos;
-        private long assembleNanos;
-        private long writeNanos;
-        private int rawBuckets;
-        private int rawValues;
-        private int peakBucketValues;
-
-        private String message(int filters) {
-            return "[ChampionStats] filters=" + filters
-                + " scanBaseMs=" + milliseconds(baseScanNanos)
-                + " scanEventsMs=" + milliseconds(eventScanNanos)
-                + " parseMs=" + milliseconds(parseNanos)
-                + " aggregateBaseMs=" + milliseconds(baseAggregationNanos)
-                + " aggregateEventsMs=" + milliseconds(eventAggregationNanos)
-                + " rollupMs=" + milliseconds(rollupNanos)
-                + " trendMs=" + milliseconds(trendNanos)
-                + " assembleMs=" + milliseconds(assembleNanos)
-                + " writeMs=" + milliseconds(writeNanos)
-                + " rawBuckets=" + rawBuckets
-                + " rawValues=" + rawValues
-                + " peakBucketValues=" + peakBucketValues;
-        }
-
-        private static long milliseconds(long nanos) {
-            return nanos / 1_000_000L;
-        }
-    }
 
     static final class RawMatrix {
 
@@ -1043,20 +996,6 @@ public final class ChampionAnalyzer {
                 buckets.put(key, result);
             }
             return result;
-        }
-
-        private int bucketCount() {
-            return buckets.size();
-        }
-
-        private int valueCount() {
-            int result = 0;
-            for (RawBucket bucket : buckets.values()) result += bucket.valueCount();
-            return result;
-        }
-
-        private int peakBucketValues() {
-            return peakBucketValues;
         }
 
         private void recordBucketPeak(RawBucket bucket) {

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.safjnest.lol.champion.RuneSignature;
-import com.safjnest.lol.model.statistics.shared.ProfileLeafStats;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;

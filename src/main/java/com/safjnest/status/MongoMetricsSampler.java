@@ -3,15 +3,15 @@ package com.safjnest.status;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.safjnest.database.nosql.MongoCommandMonitor;
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.nosql.MongoServerStatusSnapshot;
 import com.safjnest.lol.model.status.MongoMemoryMetrics;
 import com.safjnest.lol.model.status.MongoMetrics;
 import com.safjnest.lol.model.status.MongoOperationRates;
 import com.safjnest.lol.model.status.MongoOperationSample;
 import com.safjnest.lol.model.status.MongoOperationsMetrics;
 import com.safjnest.lol.model.status.MongoPerformanceMetrics;
-import com.safjnest.nosql.MongoCommandMonitor;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.nosql.MongoServerStatusSnapshot;
 
 public final class MongoMetricsSampler {
 

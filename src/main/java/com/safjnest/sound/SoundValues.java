@@ -1,8 +1,10 @@
 package com.safjnest.sound;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import com.safjnest.auth.AuthException;
+
 import org.springframework.http.HttpStatus;
+
+import com.safjnest.discord.auth.AuthException;
 
 public final class SoundValues {
 

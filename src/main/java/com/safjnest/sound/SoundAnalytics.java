@@ -1,8 +1,10 @@
 package com.safjnest.sound;
 import java.time.*;
 import java.util.*;
-import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.database.SoundDB;
+
+import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.database.sql.database.SoundDB;
+
 import static com.safjnest.sound.SoundValues.*;
 
 public final class SoundAnalytics {
@@ -26,7 +28,6 @@ public final class SoundAnalytics {
         History history = load(ids, guildId, userId, period, true);
         var users = history.userRows;
         var times = history.timeRows;
-        var sources = history.sourceRows;
         Instant first = history.first(null);
         List<Map<String, Object>> details = new ArrayList<>();
         for (QueryRecord sound : sounds) {

@@ -9,10 +9,10 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.safjnest.nosql.AbstractEntity;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.NumberUtils;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.database.nosql.AbstractEntity;
 import com.safjnest.lol.model.ResponseMetadata;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;

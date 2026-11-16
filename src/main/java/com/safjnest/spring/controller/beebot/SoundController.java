@@ -1,11 +1,11 @@
 package com.safjnest.spring.controller.beebot;
 import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.safjnest.auth.AuthException;
-import com.safjnest.auth.DiscordAuthService.AuthContext;
-import com.safjnest.core.cache.managers.SoundCache;
-import com.safjnest.model.sound.Sound;
+import com.safjnest.bot.cache.managers.SoundCache;
+import com.safjnest.discord.auth.AuthException;
+import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.sound.SoundPeriod;
+import com.safjnest.sound.model.Sound;
 import com.safjnest.spring.config.AuthFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,5 @@
 package com.safjnest.lol.model.statistics.shared;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 public class LeafStats {
 
     public long games;

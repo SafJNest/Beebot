@@ -1,8 +1,10 @@
 package com.safjnest.sound;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import com.safjnest.auth.AuthException;
-import com.safjnest.core.Bot;
+
+import com.safjnest.bot.Bot;
+import com.safjnest.discord.auth.AuthException;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;

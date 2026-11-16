@@ -2,9 +2,9 @@ package com.safjnest.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.model.BotSettings.AppConfig;
-import com.safjnest.model.BotSettings.BotSettings;
-import com.safjnest.model.BotSettings.JsonSettings;
+import com.safjnest.bot.model.BotSettings.AppConfig;
+import com.safjnest.bot.model.BotSettings.BotSettings;
+import com.safjnest.bot.model.BotSettings.JsonSettings;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +15,7 @@ public class SettingsLoader {
     private static final String settingsPath = "rsc" + File.separator + "settings.json";
     private static final String configPath = "config.properties";
 
-    private static com.safjnest.model.BotSettings.Settings settings;
+    private static com.safjnest.bot.model.BotSettings.Settings settings;
 
     public static AppConfig loadConfig(String filePath) throws IOException {
         Properties properties = new Properties();
@@ -56,10 +56,10 @@ public class SettingsLoader {
         AppConfig config = loadConfig(configPath);
         JsonSettings jsonSettings = loadJsonSettings(settingsPath);
         BotSettings botSettings = loadBotSettings(settingsPath, config.getBot());
-        settings = new com.safjnest.model.BotSettings.Settings(config, jsonSettings, botSettings);
+        settings = new com.safjnest.bot.model.BotSettings.Settings(config, jsonSettings, botSettings);
     }
 
-    public static com.safjnest.model.BotSettings.Settings getSettings() {
+    public static com.safjnest.bot.model.BotSettings.Settings getSettings() {
         if (settings == null) {
             try {
                 loadSettings(settingsPath, configPath);

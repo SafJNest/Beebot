@@ -24,7 +24,7 @@ L’esito della build conserva `participant.win || subTeamPlacement >= 3`. Stats
 
 ChampionAnalyzer accumula sinergie esatte per lo stesso `subTeam`, dimensioni 2/3 e ID Arena 1–8, senza ruoli o team BLUE/RED. Aggiunge in modo indipendente la distribuzione `overview.placements` e la media pesata `overview.averagePlacement` usando `subTeamPlacement`; queste statistiche non cambiano le sinergie. I bucket rank/region mantengono la selezione canonica. I contatori sono raw e non ricevono il ranking lane-based.
 
-Il controller esistente e i parametri rimangono invariati. Il mapper HTTP espone `build` direttamente e solo i campi stats dello schema CHERRY. Altre queue usano la serializzazione esistente. Non si introducono DTO di successo duplicati né si modifica la presentazione Discord.
+Il controller esistente e i parametri rimangono invariati. Il comando Discord `/champion` non mostra il campo “Skill Order” per la coda CHERRY; le build normali mantengono la visualizzazione. Il mapper HTTP espone `build` direttamente e solo i campi stats dello schema CHERRY. Altre queue usano la serializzazione esistente. Non si introducono DTO di successo duplicati né si modifica la presentazione Discord.
 
 ## Persistenza e rilascio
 

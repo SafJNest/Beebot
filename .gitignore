@@ -27,6 +27,13 @@ target/
 index/
 node_modules/
 
+.agents/
+.claude/
+.codegraph/
+.codex/
+.cursor/
+.opencode/
+
 rsc/Upload/*
 rsc/tts/*
 .fleet/
