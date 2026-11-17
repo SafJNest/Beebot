@@ -86,7 +86,7 @@ with `!test generate personalkey <name>` after manually applying
 `database/auth/003-api-key-types.sql`; revoke it with `!test revoke personalkey <name>`.
 Both key types live in `api_key`: `ApiKey` is the canonical typed key model and `AuthDB` owns persistence, generation and revocation. Authentication resolves either credential type into `DiscordAuthService.AuthContext`. Key generation and revocation are restricted to Untouchables and Epria; other `test` operations remain owner/co-owner only.
 
-`GET /beebot/me` returns `{user, servers}`. `GET /beebot/guilds` returns a plain `List<DiscordApi.Server>` (JSON array), with `/beebot/servers` retained as an alias. Records are nested in their owning API, service or controller rather than split into record-only files. `DiscordApi` owns Discord HTTP/JDA access and image URLs; `DiscordGuildService` shares the authorized list between these endpoints and single-guild GET/POST. `DiscordGuildCache` stores it for 60 seconds in Redis with process-local fallback, single-flight loading and invalidation fencing. Personal keys use JDA caches before any missing-member lookup; OAuth uses one `/users/@me/guilds?limit=200` request per successful cache load. SQL continues to decide credential/session revocation. Logout invalidates the guild list. Owner, Administrator and Manage Server grant access. Discord rate limits return `discord_rate_limited` with retry metadata; see the API page for error details.
+`GET /beebot/me` returns `{user, servers, greets}` from `MeController`; `POST /beebot/me/settings` belongs to the same controller. `GET /beebot/guilds` returns a plain `List<DiscordApi.Server>` (JSON array), with `/beebot/servers` retained as an alias. Records are nested in their owning API, service or controller rather than split into record-only files. `DiscordApi` owns Discord HTTP/JDA access and image URLs; `DiscordGuildService` shares the authorized list between these endpoints and single-guild GET/POST. `DiscordGuildCache` stores it for 60 seconds in Redis with process-local fallback, single-flight loading and invalidation fencing. Personal keys use JDA caches before any missing-member lookup; OAuth uses one `/users/@me/guilds?limit=200` request per successful cache load. SQL continues to decide credential/session revocation. Logout invalidates the guild list. Owner, Administrator and Manage Server grant access. Discord rate limits return `discord_rate_limited` with retry metadata; see the API page for error details.
 
 Guild dashboard reads and partial updates are documented in
 [Beebot guild settings](api/beebot-guilds.md). Bot and API use the same
@@ -106,6 +106,25 @@ Use the existing scope controller where possible. Parse every path and query
 parameter with `LolApiParameters`, call the owning service and return canonical
 models through `LolApiResponses`. Update the endpoint page and API index when
 the public contract changes.
+
+User aliases and greets use `UserCache.withUser` and the persistent `UserData`
+methods. Each greet scope is an independent transaction; API writes retain the
+same object. `getAllGreets()` completes lazy settings loading and returns a copy.
+Sound metadata writes use `SoundCache.withSound`, `deferEdit()`, setters and
+`update()`; the API passes the authenticated actor to the update. `Sound` owns
+votes, play increments and deletion; derived selection invalidation follows the
+commit. SQL lives in `BotDB`, including the former `SoundDB` streaming/read-session
+operations. `Sound` reads personal plays and votes through
+`BotDB.readSoundUserPlays` and `readSoundInteraction`, never SQL literals. A
+metadata refresh invalidates pending edits only when name, visibility or the tag
+set changed; tag order, empty slots and play/vote counters do not count. Successful
+metadata saves still consume the draft. `Tag` is immutable: an empty name is an
+unused slot, ID zero with a name is new, and a positive ID with a name is stored.
+Keep the five Discord slots and omit only empty slots from JSON; internal state
+predicates are not API fields. These changes preserve HTTP and presentation.
+For XP use `GuildCache.receiveExperience`: `MemberData` coordinates
+cooldown, calculation, counts and persistence; inspect its saved/leveled-up result
+before sending rewards. Keep Discord calls outside the coordinated operation.
 
 ### 5.3 New service
 
@@ -291,11 +310,23 @@ before that entry is discarded. Cache map/list views do not expose the backing
 for direct writes. Old raw object getters remain compatible but do not retain an
 entry beyond the getter call. Guild settings, blacklist, channels and alerts now
 use scoped operations and copied snapshots (plan step 2). Do not mutate maps
-returned by `GuildData`; use its creation/deletion methods. Member XP, user and
-sound mutations still require step 3; authentication caches retain their
-separate policies.
+returned by `GuildData`; use its creation/deletion methods. User/greet and sound
+writes now use those same scoped objects (step 3). Member XP uses the retained
+guild entry and a coordinated operation on the member; authentication caches
+retain their separate policies.
 See the [implementation plan](architecture/repository-review.md).
 
 ## Audio API operations
 
-Sounds HTTP routes use `SoundCache` as the facade, canonical `Sound` response copies, `SoundDB` prepared SQL (streamed history grouped in Java on one read session) and ID-only `SoundQueryCache` Redis entries. They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.
+Sounds HTTP routes use `SoundCache` as the read facade/loader, `SoundController` and `MeController` for HTTP parsing, `Sound`/`UserData` for shared writes, canonical `Sound` response copies, and `BotDB` prepared SQL (streamed history grouped in Java on one read session) and ID-only `SoundQueryCache` Redis entries. They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.
+
+
+## Sound statistics
+
+`com.safjnest.sound.SoundAnalytics` owns `getSummary`, `getGuildAnalytics`,
+`getSoundAnalytics` and `getUserAnalytics`. `SoundCache` reuses these methods.
+`SoundHistory` is a package-private in-memory accumulator: it indexes typed counts
+by sound/guild and keeps only the newest 101 personal events per sound. Keep SQL
+streaming in `BotDB`, cursor encoding in `SoundPeriod` and source resolution in
+`AudioType.getFromOrdinal`. Response builders preserve the documented JSON and
+privacy rules; add characterization checks before changing their behavior.

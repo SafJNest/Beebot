@@ -1,6 +1,6 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è implementato nel working tree con il modello `deferEdit()` concordato. Restano i passaggi 3–6.
+Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è implementato nel working tree, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Restano i passaggi 4–6.
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -18,13 +18,13 @@ L'obiettivo principale è che bot e API usino le stesse cache, gli stessi oggett
 | Chronos secondario | `bot.Chronos` conserva nome e comportamento; rimozione o sostituzione rimandata. Una future rappresenta un risultato e non sostituisce la pianificazione periodica |
 | Priorità | Cache/oggetti e coerenza bot/API; errori e Spring/auth; trasporto HTTP e parsing comune con LoL |
 | Stile Java | Tipi espliciti nelle variabili locali; `var` soltanto eventualmente nelle lambda; singleton `instance` minuscolo. Conservare spaziatura, raggruppamenti e banner ASCII esistenti. Separare per responsabilità anche campi e inizializzazioni dei costruttori, applicando lo stesso criterio ai blocchi nuovi. Mettere il corpo di `if`/`for`/`while` sulla riga successiva. Operazioni delimitate con lambda come `withGuild`, senza comprimere i metodi |
-| SoundAnalytics rimandato | Nessuna riscrittura di `sound()`, `guild()` o delle classi `SoundAnalytics` in questo passaggio |
+| SoundAnalytics | Riordino di `com.safjnest.sound.SoundAnalytics` riaperto e autorizzato dal proprietario dopo il passaggio 3; `bot.audio.SoundAnalytics` resta escluso |
 
 Le esclusioni non impediscono di leggere un chiamante per capire un contratto. Impediscono di trasformare ogni dipendenza osservata in un ulteriore refactoring.
 
 ## Problemi individuati nella baseline
 
-Questi rilievi descrivono il punto di partenza. Il passaggio 1 ha risolto la base comune, i caricamenti coordinati e la durata delle operazioni sulle cache; il passaggio 2 unifica mutazioni e snapshot di guild/alert. User e sound restano nel passaggio 3.
+Questi rilievi descrivono il punto di partenza. Il passaggio 1 ha risolto la base comune, i caricamenti coordinati e la durata delle operazioni sulle cache; il passaggio 2 unifica mutazioni e snapshot di guild/alert. Il passaggio 3 unifica ora user, XP e sound; i rilievi sotto conservano la baseline originaria.
 
 ### 1. Le modifiche guild e sound hanno ancora percorsi paralleli
 
@@ -126,7 +126,7 @@ La proposta usa l'infrastruttura della cache già esistente, senza un nuovo lock
 6. **Fallimenti e scadenza.** Un caricamento fallito non diventa un oggetto vuoto o un'assenza; le entry in corso vengono completate con errore e possono essere ritentate. Una entry occupata non viene eliminata e ricreata con un'altra istanza. Nessun lock/future/generation viene rimosso mentre protegge ancora un'operazione.
 7. **Niente accessi laterali.** Bot e API devono entrambi passare qui, incluse le scritture dei figli. Gli handler mantengono struttura e presentazione, ma le chiamate dirette come `guild.getAlerts().put(...)` devono diventare operazioni del proprietario se si vuole la garanzia completa.
 
-Il passaggio 1 implementa le entry private, i caricamenti coordinati e il mantenimento dell’identità durante `with`/`withAll`. Le operazioni singole sincronizzano sul valore; quelle bulk mantengono tutte le entry, ma richiedono il coordinamento del singolo proprietario per modificarle. I vecchi chiamanti che trattengono oggetti da getter o scrivono nelle mappe non acquisiscono automaticamente queste garanzie: il passaggio 2 migra impostazioni guild, canali, blacklist e alert. User, sound e XP rimangono nel passaggio 3. È coordinamento locale al processo; non dimostra coerenza tra due bot o scrittori esterni sullo stesso DB.
+Il passaggio 1 implementa le entry private, i caricamenti coordinati e il mantenimento dell’identità durante `with`/`withAll`. Le operazioni singole sincronizzano sul valore; quelle bulk mantengono tutte le entry, ma richiedono il coordinamento del singolo proprietario per modificarle. I vecchi chiamanti che trattengono oggetti da getter o scrivono nelle mappe non acquisiscono automaticamente queste garanzie: il passaggio 2 migra impostazioni guild, canali, blacklist e alert. User, sound e XP sono migrati nel passaggio 3 descritto in fondo al documento. È coordinamento locale al processo; non dimostra coerenza tra due bot o scrittori esterni sullo stesso DB.
 
 ### Bulk: 10 presenti, 20 richiesti
 
@@ -142,7 +142,7 @@ Interfacce indicative: `GuildCache.getGuilds(ids)`, `UserCache.getUsers(ids)`, `
 
 Il risultato completo HTTP attende soltanto i dati mancanti; gli hit sono già disponibili internamente. Non cambia il contratto dell'endpoint per introdurre risposte parziali non richieste.
 
-**Idratazione nei passaggi 1–2:** le cache usano `GuildData.fromRows` e `UserData.fromRows`, che ricevono canali/azioni/alias già caricati. I costruttori pubblici precedenti restano compatibili; il bulk non li usa per avviare query per ogni oggetto. Il loader SQL restituisce assenza per una guild non salvata; `withGuild` può conservarne un contenitore predefinito solo in memoria. Una GET non crea righe: la prima modifica valida salva il blocco e crea la guild nella stessa transazione. `getGuildOrPut`/`withGuildOrPut` mantengono la richiesta esplicita di creazione sul DB. `GuildData.getMemberData` può ancora creare membri: i percorsi XP e le letture di sola consultazione richiedono il passaggio 3. I profili LoL mantengono il caricamento lazy esistente, senza modifiche a Mongo.
+**Idratazione nei passaggi 1–2:** le cache usano `GuildData.fromRows` e `UserData.fromRows`, che ricevono canali/azioni/alias già caricati. I costruttori pubblici precedenti restano compatibili; il bulk non li usa per avviare query per ogni oggetto. Il loader SQL restituisce assenza per una guild non salvata; `withGuild` può conservarne un contenitore predefinito solo in memoria. Una GET non crea righe: la prima modifica valida salva il blocco e crea la guild nella stessa transazione. `getGuildOrPut`/`withGuildOrPut` mantengono la richiesta esplicita di creazione sul DB. `GuildData.getMemberData` costruisce un membro solo in memoria quando assente; il passaggio 3 salva il membro insieme al primo aggiornamento valido. I profili LoL mantengono il caricamento lazy esistente, senza modifiche a Mongo.
 
 Le viste autorizzate e i campi personali di Sound non vanno memorizzati sugli oggetti globali condivisi. I dati dell'utente che guarda la risposta restano su copie di risposta, come previsto dal contratto attuale.
 
@@ -253,6 +253,7 @@ com/safjnest/
 ├── sound/
 │   ├── SoundAccess.java                  da assorbire
 │   ├── SoundAnalytics.java
+│   ├── SoundHistory.java                 accumulatore interno analytics
 │   ├── SoundPeriod.java
 │   ├── SoundQueryCache.java              da assorbire
 │   ├── SoundValues.java                  da assorbire
@@ -266,7 +267,7 @@ com/safjnest/
 │   │   └── LolApiConfig.java
 │   ├── controller/
 │   │   ├── StatusController.java
-│   │   ├── beebot/                       ... DiscordAuthController, GuildController, SoundController
+│   │   ├── beebot/                       ... DiscordAuthController, MeController, GuildController, SoundController
 │   │   └── lol/                          ... controller e helper HTTP esistenti
 │   ├── dto/                              ... LolApiError da assorbire
 │   └── exception/                        ... handler da unificare qui
@@ -325,7 +326,7 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 | `database/sql/database/GuildSettingsDB.java` — rimosso nel passaggio 2 | Query necessarie in `BotDB`, mantenendo transazioni per blocco, ruoli vuoti, campi omessi, null e creazione di alert ancora non validi |
 | `bot/model/guild/GuildSettings.java` — rimosso nel passaggio 2 | Record di vista/risultato annidati nel proprietario `bot.model.guild.GuildData`, con forma HTTP e validità attuali |
 | `sound/SoundAccess.java` | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
-| `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; eliminazione della catena `BotDB → SoundDB` |
+| `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; catena `BotDB → SoundDB` eliminata, file assorbito e rimosso nel passaggio 3 |
 | `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `bot.cache.managers.SoundCache` |
 | `sound/SoundValues.java` | Errori all'eccezione comune, validazione al confine/proprietario e rappresentazioni nei tipi appropriati; nessun nuovo generico `MapUtils` |
 | `spring/exception/AuthExceptionHandler.java` | Gestione applicativa in `spring.exception.ApiExceptionHandler`; record di errore in `ApiErrors` |
@@ -373,13 +374,13 @@ Download concorrenti, file incompleti, durata della copia locale e cleanup duran
 
 ## Sequenza di implementazione proposta
 
-Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è implementato nel working tree. Il prossimo intervento è il passaggio 3: user, XP e sound sul percorso comune. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è implementato nel working tree: user, XP e sound usano il percorso comune. Il prossimo intervento è il passaggio 4: errori e Spring/auth. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
 | 1 — Cache e identità, implementato | Una base per istanza; singolo/bulk coordinati; viste della cache e operazioni delimitate. Snapshot di dominio nei passaggi 2–3 | 10 hit+10 miss; richiesta singola sovrapposta; scadenza durante mutazione; errore loader; stessa istanza durante l'operazione |
 | 2 — Guild e alert, implementato | API sugli oggetti della cache; eliminazione `GuildService`/`GuildSettingsDB` dopo la migrazione delle funzionalità | Bot→API e API→bot immediati; ruoli vuoti; rollback per blocco; letture durante modifiche; Twitch dopo il commit e fuori dal lock |
-| 3 — User e sound | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
+| 3 — User e sound, implementato | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
 | 4 — Errori e Spring/auth | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
 | 5 — HTTP e parsing | Helper già esistenti estesi e riusati; niente cambi a Mongo o al framework SQL | Timeout/status/header Discord e Data Dragon; input numerici limite e fallback; filtri e chiavi invariati |
 | 6 — Allineamento query auth/API | Record/parser per le letture nuove e rimozione dei doppioni residui | Query parametrizzate, righe modificate, consumo OAuth una sola volta, revoca autorevole anche con cache piena |
@@ -396,7 +397,7 @@ Le eliminazioni avvengono soltanto quando chiamanti, registrazioni e test sono m
 - `withGuild`, `withUser`, `withSound` e le varianti plurali delimitano l'uso. Una scadenza o eviction non sostituisce l'istanza occupata. La variante singola usa il monitor dell'oggetto; la plurale mantiene le entry e consente di acquisire il singolo proprietario durante le modifiche.
 - Invalidazione e `clear` impediscono che un vecchio caricamento ripubblichi dati in cache. I partecipanti già sull'entry possono terminare; la rimozione definitiva avviene all'ultimo rilascio. Un `put` sostitutivo viene applicato al rilascio, rispettando successive invalidazioni. Gli errori completano le attese e permettono il retry.
 - Guild precarica impostazioni, canali e azioni con query preparate in gruppi di massimo 500 ID; user precarica gli alias. Le factory dai record evitano query e dipendenze Discord durante l'idratazione. Il caricamento completo iniziale delle guild seleziona anche voce, lingua e shard, richiesti dal modello.
-- Sound riusa la stessa base sia dal player sia dalle risposte API già precaricate; conserva controlli di visibilità, dati freschi per richiesta e copie con dati personali. Le mutazioni API restano ancora nella facade, da migrare nel passaggio 3. Le liste e mappe esposte dalla cache sono viste copiate, non accessi modificabili al backing.
+- Sound riusa la stessa base sia dal player sia dalle risposte API già precaricate; conserva controlli di visibilità, dati freschi per richiesta e copie con dati personali. Alla fine di quel passaggio le mutazioni API restavano nella facade; il passaggio 3 le migra agli oggetti. Le liste e mappe esposte dalla cache sono viste copiate, non accessi modificabili al backing.
 - I riferimenti di converter e logger nei due XML sono stati aggiornati a `com.safjnest.status.log`.
 
 Sono stati riesaminati `GuildController`, `SoundController` e i loro percorsi: endpoint, payload, autorizzazione e presentazione restano invariati. Questa era la verifica del passaggio 1: il percorso guild separato è stato successivamente migrato nel passaggio 2 descritto sotto. Nessuna modifica a modelli/servizi/API LoL, Mongo, Redis LoL, metriche, `SoundAnalytics` o nomi storici. Framework SQL e schema conservati; le sole query nuove servono al bulk delle cache.
@@ -426,7 +427,7 @@ boolean saved = GuildCache.withGuild(guildId, guild -> {
 - Le mappe restituite da `getAlerts()` e `getChannels()` sono copie: l'inserimento passa da `createAlert` oppure da `newAlert` → `update` → `addAlert`, la rimozione dai metodi di `GuildData`. Gli ID SQL indicizzano internamente gli alert, così modificare il livello reward non richiede un riferimento al padre.
 - `GuildService`, `GuildSettingsDB` e il file di soli record `GuildSettings` sono rimossi dopo la migrazione. I record di risposta rimangono annidati in `GuildData`; endpoint, campi HTTP, validazione e presentazione Discord sono conservati.
 
-La garanzia riguarda il processo che condivide queste entry della cache. Non è un protocollo di sincronizzazione con scrittori esterni o altre istanze del bot. XP, membri, user e sound rimangono nel passaggio 3; auth, errori comuni, HTTP/parsing e R2 mantengono la sequenza concordata.
+La garanzia riguarda il processo che condivide queste entry della cache. Non è un protocollo di sincronizzazione con scrittori esterni o altre istanze del bot. XP, membri, user e sound sono stati poi migrati nel passaggio 3; auth, errori comuni, HTTP/parsing e R2 mantengono la sequenza concordata.
 
 ## Stato delle verifiche
 
@@ -463,3 +464,327 @@ Verifica finale del passaggio 2 sul working tree del 17 novembre 2026:
 
 
 Rifinitura dello stile del passaggio 2, richiesta dal proprietario il 17 novembre 2026: riesaminati i 20 file Java presenti nel diff, incluso il nuovo file di test. Sistemati 13 file con raggruppamenti di campi, inizializzazioni e fasi dei metodi; ripristinati i sei banner ASCII di `GuildData`, il separatore preesistente del controller e le attribuzioni delle classi riscritte. Il confronto lessicale con lo stato immediatamente precedente conferma la stessa sequenza di token Java in tutti i 20 file, ignorando solo spaziatura e commenti. Nessuna modifica funzionale, al contratto API, alla persistenza o alla presentazione; la documentazione funzionale rimane valida. `git diff --check` e `mvn -o -DskipTests clean compile` completati con successo; compilazione pulita dei 454 sorgenti principali. Non sono stati aggiunti o rieseguiti test per la sola formattazione.
+
+## Passaggio 3 implementato: user, XP e sound
+
+Baseline del passaggio: `21b62a32`, working tree inizialmente pulito. Il modello
+concordato continua a usare oggetti persistenti e cache condivise, senza nuovi
+service/repository. Nessuna modifica di schema o migrazione.
+
+- `UserData` possiede alias e greet: le query preparate sono in `BotDB`, la
+  memoria cambia dopo il commit e le mappe esposte sono copie. La cancellazione
+  di un alias usa il suo ID persistito e lo user proprietario. `UserCache`
+  conserva il caricamento bulk dei soli alias mancanti e passa lo stesso DB
+  agli oggetti idratati.
+- Ogni greet è una singola associazione scope → sound e conserva una propria
+  transazione e un proprio risultato; non serve una copia differita dell'intero
+  user per modificare un solo valore. `getAllGreets()` completa il caricamento
+  sulla stessa istanza, distingue lo stato completo dai lookup lazy e conserva
+  override di guild e fallback globale. Una lettura fallita non viene pubblicata
+  come assenza. Bot, API e playback passano da questo oggetto; i salvataggi API
+  non invalidano più `UserCache`.
+- `MeController` possiede `/me` e `/me/settings`, con gli stessi URL, campi e
+  risultati precedenti. Il parsing HTTP e gli errori per scope escono da
+  `SoundCache`; membership ordinaria e lista amministrativa restano distinte.
+  L'advice dei body malformati comprende il nuovo controller. Le rotte
+  `/guilds` e `/servers` rimangono nel controller attuale fino al passaggio 4.
+- `MemberData.receiveExperience()` coordina cooldown, calcolo tramite
+  `ExperienceSystem`, messaggi, XP/livello e salvataggio. ID, contatori e cooldown
+  vengono pubblicati dopo il commit. `GuildCache.receiveExperience()` mantiene
+  l'entry della guild durante il lavoro; normalmente rilascia il monitor della
+  guild prima del salvataggio e coordina sul singolo membro. Per una guild
+  inizialmente assente usa il percorso di creazione già esistente. Le scritture
+  SQL continuano a usare il lock della riga guild. L'identità resta guild+user.
+  `Functions` invia ricompense e level-up soltanto dopo un esito salvato.
+- `Sound` possiede metadati, voti, conteggio delle riproduzioni e cancellazione.
+  I setter restano persistenti; `deferEdit()`/`update()` raggruppano nome,
+  pubblicazione e tag in una sola transazione, riscrivendo anche i campi non
+  cambiati. I tag sono copiati e gli ID vengono restituiti dal salvataggio.
+  Copie obsolete o oggetti cancellati non sovrascrivono lo stato. Contatori e
+  voti hanno operazioni dedicate e non vengono riscritti da un edit dei metadati.
+- `SoundController` valida il JSON e usa l'oggetto trattenuto dalla cache.
+  Prima delle mutazioni API, la cache verifica visibilità e ricarica i metadati
+  correnti sotto il monitor dell'oggetto: i campi omessi del PATCH conservano i
+  valori riletti. Proprietà/visibilità vengono ricontrollate sotto lock SQL
+  durante i salvataggi. I voti restituiscono `Sound.Vote` con gli stessi campi
+  JSON, mantenendo idempotenza e la semantica di disabilitazione del solo voto
+  richiesto. Le risposte personali restano copie separate dai Sound condivisi.
+- `SoundDB` è assorbito in `BotDB` e rimosso dopo la migrazione dei consumatori.
+  Sono conservati statement preparati, blocchi da 500 ID, streaming a 256 righe,
+  sessione repeatable-read e impostazione/ripristino UTC. `SoundAnalytics` cambia
+  soltanto il riferimento al DB, i nomi dei record e del metodo di lettura;
+  calcoli, formati e metodi `sound()`/`guild()` restano invariati. Le API di
+  compatibilità di `BotDB` delegano agli stessi oggetti della cache.
+- Le modifiche proprie invalidano soltanto le selezioni derivate Redis, dopo il
+  commit; non sostituiscono il Sound in uso. La cancellazione marca l'oggetto e
+  rimuove l'entry. Comandi, pulsanti, modal e callback audio acquisiscono di nuovo
+  l'istanza corrente prima di scrivere. Nomi, testi, embed e componenti Discord
+  restano quelli esistenti.
+
+I contratti pubblici, la presentazione e gli ADR accettati sono invariati.
+Associazioni/profili LoL in `UserData`, Mongo, controller/API LoL, metriche,
+status e algoritmi `SoundAnalytics` sono stati riesaminati come consumatori e
+non richiedono cambi funzionali. `SoundAccess`, `SoundValues` e `SoundQueryCache`
+restano disponibili per gli assorbimenti successivi; R2 e cleanup dei file
+restano lavoro futuro. Il coordinamento descritto è locale al processo e non
+introduce sincronizzazione della memoria tra bot diversi.
+
+Verifiche del passaggio: suite locale precedente conservata e prove mirate
+aggiunte per identità bot/API, edit differiti e obsoleti, rollback di metadati,
+tag, voti, cronologia e greet; autorizzazione; risultati indipendenti per scope;
+caricamenti completi/lazy; concorrenza XP e voti; streaming sulla stessa sessione;
+contratti HTTP e JSON malformato. Le prove SQL usano H2 in modalità MariaDB e le
+integrazioni Discord/Redis sono sostituite localmente: non sono verifiche live
+MariaDB, Discord, Redis o R2.
+
+Esito verifiche locali: `mvn -o clean test` riuscito, 454 sorgenti principali e
+6 file di test compilati; 81 test passati (51 esistenti e 30 nuovi).
+`git diff --check` senza errori. Nessun avvio live delle integrazioni.
+
+## Revisione del package sound, 17 novembre 2026
+
+Analisi richiesta dal proprietario dopo il passaggio 3. Questa sezione registra
+rilievi e proposte: non introduce modifiche operative né approva una nuova
+architettura. Riapre l'analisi di `com.safjnest.sound.SoundAnalytics`, prima
+rimandata; `bot.audio.SoundAnalytics` resta fuori dal perimetro.
+
+### Copertura e fonti
+
+Letti integralmente i sette file del package `com.safjnest.sound`, compreso
+`model`, e i tipi annidati. Verificati ingressi e consumatori pertinenti in
+`SoundCache`, `SoundController`, `MeController`, `SoundEmbed`, comandi/eventi,
+`BotDB`, `DiscordApi`, `RedisClient` e test correnti. CodeGraph aggiornato.
+Questi consumatori sono stati esaminati per i flussi coinvolti, non revisionati
+integralmente come sottosistemi autonomi. Nessun test o servizio è stato avviato
+in questa analisi; gli 81 test citati sopra appartengono alla verifica precedente.
+
+Le regole applicate sono quelle concordate: tipi espliciti nei metodi,
+controlli e cicli su più righe, spazi tra passi logici, nomi comprensibili,
+oggetti persistenti, stessa cache per bot/API, SQL in `BotDB`, riuso dei
+proprietari esistenti e nessun nuovo service/repository di passaggio.
+Conteggio statico dei token `var` nei sette sorgenti: 29 in `SoundAnalytics`,
+2 in `SoundAccess`, 1 in `SoundPeriod`; le occorrenze sono fuori dalle lambda.
+
+### Valutazione per classe
+
+| Classe | Serve per | Intervento proposto | Esito sul file |
+|---|---|---|---|
+| `SoundAnalytics` | Statistiche per guild, sound, utente e riepiloghi; aggregazione streaming e cronologia personale limitata | Riordinare interamente metodi e tipi locali; separare caricamento, calcolo e costruzione delle risposte; riusare aggregati tipizzati invece dei passaggi mappa → `QueryRecord` sintetico → parsing; nomi espliciti al posto di `guild`, `sound`, `mine` | Conservare e ripulire |
+| `SoundPeriod` | Intervallo temporale, timezone, intervallo precedente e cursore della cronologia | Conservare il record; dividere la factory in passi privati di parsing/validazione, eliminare `var`, import wildcard, dichiarazioni e controlli compressi; riusare l'errore applicativo comune quando implementato | Conservare e ripulire |
+| `SoundAccess` | Membership ordinaria, permesso di cancellazione e identità Discord da mostrare | Assorbire lookup JDA, proiezioni e gestione errori in `discord.auth.DiscordApi`; mantenere distinte membership ordinaria, amministrazione e Manage Server | Eliminare dopo migrazione |
+| `SoundQueryCache` | Cache Redis di liste ordinate di ID, TTL e generazione del catalogo | Assorbire come dettaglio interno di selezione di `SoundCache`, come già previsto dal piano; conservare la distinzione dalla cache locale degli oggetti, le chiavi e l'invalidazione dopo commit | Eliminare come file autonomo dopo migrazione |
+| `SoundValues` | Costruzione di mappe, validazione ID ed errori HTTP | Distribuire le tre responsabilità ai proprietari: risultati tipizzati nel loro contesto, validazione al confine/proprietario, errori all'eccezione comune; nessun nuovo `MapUtils` generico | Eliminare dopo migrazione di tutti gli usi |
+| `model.Sound` | Identità canonica, metadati persistenti, copie differite, voti, riproduzioni e copie di risposta personali | Conservare il modello concordato; togliere SQL letterale e dipendenze HTTP, chiarire refresh/revisioni, raggruppare operazioni e presentazione; uniformare i risultati delle letture composte | Conservare e correggere |
+| `model.Tag` | Tag canonico, serializzazione dell'ID e slot vuoti della personalizzazione Discord | Rendere esplicita la distinzione tra tag vuoto e tag nuovo non salvato; rendere immutabile `name`; conservare ID stringa nel JSON e compatibilità dei pulsanti | Conservare, intervento piccolo |
+
+### Rilievi da affrontare prima
+
+I rilievi seguenti conservano la fotografia dell'audit. I punti 1–2 sono risolti
+dal riordino analytics documentato sotto; i punti 3–5 dalla chiusura Sound/Tag
+prima del passaggio 4. Il punto 6 e gli accorpamenti successivi restano aperti.
+
+1. **Il riordino di `SoundAnalytics` non è una sola formattazione.**
+   `guild()` e `sound()` mescolano caricamento, filtri di privacy, calcoli e
+   risposta. `group()` costruisce insieme serie, heatmap, distribuzione delle
+   sorgenti, replay e leaderboard. I risultati usano `Map<String, Object>` e
+   `map(Object...)`; per esempio il sort dei più riprodotti recupera `plays`
+   con un cast a `Number`. I campi stabili meritano tipi annidati e riuso
+   all'interno del proprietario, conservando forma e ordine del JSON attuale.
+   Non serve un file o un layer per ogni risultato.
+
+2. **Gli aggregati di analytics fanno passaggi e scansioni evitabili.**
+   `History` possiede già chiavi tipizzate per sound/guild/user, tempo e sorgente.
+   `finish()` le converte in righe `QueryRecord` sintetiche; altri metodi
+   rileggono numeri tramite stringhe di colonna. `guildRows()` e `other()`
+   filtrano nuovamente le liste, e `counts()` ricostruisce conteggi usati da
+   totali, replay e leaderboard. È lavoro osservabile nel sorgente; non è una
+   misura di latenza. Riutilizzare l'accumulatore e indici già disponibili,
+   evitando una nuova gerarchia di analyzer e DTO.
+
+3. **Nel modello `Sound` è rimasto SQL letterale.**
+   `getPlays()` e `currentVote()` costruiscono SELECT e passano SQL arbitrario
+   a `BotDB.readSoundRows()`. Spostare questi statement in operazioni nominate
+   di `BotDB`, lasciando al modello il comportamento. Il principio concordato
+   non è rispettato da quei due metodi, inclusi nel lavoro recente.
+
+4. **Refresh e revisione dei metadati sono confusi.**
+   `Sound.refreshMetadata()` incrementa sempre `revision`.
+   `SoundCache.withVisibleSound()` lo invoca prima di PATCH, voto e cancellazione,
+   e prima del parsing/validazione del body. Di conseguenza anche un voto o una
+   richiesta poi respinta può rendere obsoleta una copia dei metadati senza
+   averne cambiato i valori. Distinguere rilettura, modifica dei metadati e
+   modifica dei contatori, preservando le protezioni contro copie obsolete.
+   È una conseguenza del percorso letto, non una regressione riprodotta live.
+
+5. **Tag nuovo e tag vuoto hanno oggi stati sovrapposti.**
+   `Sound.setTagNames()` costruisce `new Tag(0, name)`, mentre `Tag.isEmpty()`
+   restituisce true quando l'ID è zero. Il salvataggio riesce perché `BotDB`
+   controlla il nome; `getJsonTags()` scarta invece quel tag prima del commit.
+   La definizione è incoerente tra consumatori e va resa esplicita. Gli slot
+   vuoti non vanno rimossi alla cieca: `SoundEmbed.getSoundButton()` li usa
+   per costruire i cinque pulsanti di personalizzazione.
+
+6. **HTTP e identità Discord ricompaiono nel dominio sound.**
+   `SoundValues.bad()` costruisce `AuthException` con `HttpStatus`;
+   `SoundPeriod` lo usa per parametri/cursore e `Sound` importa lo stesso errore,
+   arrivando a costruire un 404 nel voto. Allineare all'errore applicativo
+   comune del passaggio 4. `SoundAccess.guilds()` ripete parte del lookup di
+   `DiscordApi.guildsForUser()`; quest'ultimo però filtra amministratori e
+   Manage Server, quindi non è un sostituto diretto della membership audio.
+
+### Accorpamenti con condizioni precise
+
+- `SoundAccess`: spostare `GuildAccess` e le due operazioni nel client Discord,
+  condividendo il lookup e la classificazione degli errori. Migrare costruzione
+  del contesto audio, uploader, leaderboard e fake dei test; solo allora
+  rimuovere il file. Conservare fallback `Unknown`/avatar null e permessi attuali.
+- `SoundValues`: migrare tutti gli usi in `SoundCache`, `SoundAnalytics`,
+  `SoundPeriod`, `SoundController` e `MeController`. La rimozione dipende anche
+  dall'errore comune, ancora da implementare. Il codice non sparisce sostituendo
+  semplicemente la utility con altre mappe anonime sparse.
+- `SoundQueryCache`: ha un solo consumatore produttivo, `SoundCache`; mantenere
+  un meccanismo interno verificabile per ID, TTL e generazione. Non sommare
+  indistintamente questo codice alle responsabilità già presenti nella facade.
+  `SoundCache` compone ancora raccolte, risposte personali e routing analytics:
+  la cache Redis va assorbita come meccanismo, non come ulteriore service.
+  `CryptoUtils.sha256()` è un riuso possibile, ma restituisce Base64URL mentre
+  il codice corrente usa esadecimale: cambierebbero le chiavi, quindi il riuso
+  richiede una migrazione/versione consapevole, non una sostituzione automatica.
+
+`SoundPeriod`, l'accumulatore streaming di `SoundAnalytics`, `Sound` e `Tag`
+hanno responsabilità effettive e non sono candidati a cancellazione per
+ridurre il numero di file. I dati personali restano su copie del Sound
+canonico, senza introdurre `SoundDTO` o un secondo modello parallelo.
+Percorsi/file audio e `AudioTrack` richiedono la futura integrazione R2;
+nessuna nuova catena di storage viene proposta in questa revisione.
+
+`Sound.isOpus()` non ha chiamanti nel grafo corrente: è un candidato secondario,
+non una prova autonoma di codice morto. Anche il costruttore senza argomenti,
+che produce un Sound con identità nulla, richiede verifica degli usi di
+deserializzazione prima di una possibile rimozione. Altri getter hanno
+consumatori concreti negli embed e nei comandi e non vanno eliminati per nome.
+
+### Sequenza raccomandata e verifiche mancanti
+
+Prima allineare `SoundAnalytics` con risultati di caratterizzazione per guild,
+sound e utente, privacy, all-time, confronti precedenti, timezone/DST e cursori.
+Poi correggere `Sound`/`Tag` su SQL, revisioni e stati dei tag. Infine assorbire
+accesso Discord e utility in coordinamento col passaggio 4, quindi il dettaglio
+Redis senza alterarne il ciclo di vita. Metodi e import dei consumatori devono
+cambiare nello stesso intervento; nessuna alias API permanente solo per
+conservare nomi poco chiari.
+
+I test correnti coprono mutazioni, cache locale e una lettura streaming SQL,
+ma non esercitano direttamente `SoundAnalytics` e `SoundPeriod`; i test dei
+salvataggi usano uno store Redis finto e non coprono il ciclo completo delle
+selezioni di `SoundQueryCache`. Questa lacuna va chiusa prima di ristrutturare
+gli algoritmi o il protocollo dei cursori. Contratti API, dati persistiti,
+presentazione e codice operativo rimangono invariati da questa analisi.
+
+## Riordino di SoundAnalytics implementato
+
+Intervento autorizzato dal proprietario dopo la revisione del package, includendo
+la richiesta di separare classi e singoli metodi quando utile. Questa sezione
+aggiorna la precedente esclusione della sola `com.safjnest.sound.SoundAnalytics`.
+Le altre proposte dell'audit restano proposte; non viene cambiata la classe
+storica `bot.audio.SoundAnalytics`.
+
+- `SoundAnalytics` carica la cronologia e compone i risultati. Gli ingressi sono
+  `getSummary`, `getGuildAnalytics`, `getSoundAnalytics`, `getUserAnalytics`;
+  `SoundCache` è adeguata a questi nomi senza alias permanenti.
+- `SoundHistory` è un accumulatore package-private in memoria. `recordPlay`
+  distingue il periodo precedente, aggiorna il gruppo sound/guild e raccoglie
+  l'eventuale cronologia personale. Il controllo del cursore e il mantenimento
+  della coda hanno metodi separati. Non accede a DB, Discord o HTTP.
+- I conteggi sono tipizzati per sound/utente e indicizzati per guild. Le viste
+  totali riusano i conteggi già aggregati; le statistiche non vengono convertite
+  in `QueryRecord` sintetici o rifiltrate con stream per ciascuna membership.
+- Serie giornaliere, heatmap, sorgenti, replay, leaderboard, classifiche e
+  cronologia personale hanno metodi e record annidati dedicati. Le mappe con
+  chiavi JSON rimangono nella composizione delle risposte; i calcoli non leggono
+  valori da `Map<String, Object>` con cast. Non vengono introdotti service,
+  repository, gerarchie o file contenenti soltanto un record.
+- Tipi espliciti, import espliciti, spaziatura per passi logici e guardie su più
+  righe sono applicati a entrambi i file. Dimensioni delle pagine e dei bucket
+  temporali hanno costanti nominate. La coda conserva al massimo 101 eventi
+  personali per sound, restituendone 100 e usando il successivo come lookahead.
+- `SoundPeriod.cursor` riceve ID e istante tipizzati dell'evento, senza richiedere
+  una riga SQL artificiale. Formato Base64URL, campi, ordine, binding e intervallo
+  del cursore rimangono gli stessi. Il record mantiene factory e controlli
+  precedenti con tipi espliciti e formattazione leggibile.
+- Le sorgenti sono risolte da `AudioType.getFromOrdinal()` e `name()`: l'enum
+  conserva i quattro valori e il loro ordine. Il nuovo resolver restituisce
+  null fuori intervallo; la risposta analytics mantiene `UNKNOWN` per i dati
+  storici non riconosciuti. Nessuna seconda tabella ordinale → nome.
+
+La caratterizzazione è stata eseguita sull'implementazione precedente prima
+del riordino: 16 risposte complete (quattro ingressi in UTC, Europe/Rome,
+Asia/Kathmandu e Australia/Lord_Howe) sono confrontate con le impronte JSON
+registrate. Gli oggetti sono normalizzati per chiave nel confronto; l'ordine
+delle liste rimane significativo e l'ordine dei campi principali è controllato
+separatamente. Le asserzioni esplicite coprono privacy, listener condivisi tra
+guild, periodo precedente/all-time, DST, offset di quarto d'ora, replay,
+cursor numerico su timestamp uguale e conservazione dei totali tra pagine.
+Le prove dell'accumulatore coprono anche 10.000 eventi con buffer limitato,
+indici per guild, distinzione sound/user, modalità solo riepilogo e sorgenti
+canoniche/fuori intervallo.
+
+Le rotte e i payload HTTP, autorizzazione, presentazione Discord, ordinamenti,
+finestra temporale e SQL/streaming restano invariati. Riesaminati controller e
+mapper HTTP: nessun aggiornamento del contratto o di OpenAPI richiesto.
+Il nuovo accumulatore è un dettaglio del dominio sound; nessun cambiamento a
+modelli/API LoL, Mongo, persistenza, cache auth o R2.
+
+Verifica finale del riordino: `mvn -o clean test` riuscito, 96 test passati
+(81 precedenti e 15 aggiunti per analytics, accumulatore, cursori e ordini
+canonici). Confermati i 16 confronti delle risposte precedenti.
+`git diff --check` senza errori. Nessuna prova live o misura di prestazioni:
+il confronto riguarda comportamento e contratti negli scenari locali descritti.
+
+## Chiusura Sound/Tag prima del passaggio 4
+
+Sono implementati i punti 3–5 dell'audit sound. Il lavoro resta nei proprietari
+esistenti, senza aggiungere cache, service o repository.
+
+- `Sound.getPlays()` e `currentVote()` usano `BotDB.readSoundUserPlays()` e
+  `readSoundInteraction()`, che contengono SELECT preparate e restituiscono
+  `QueryRecord`. La vecchia entrata statica `BotDB.getPlays()` delega alla stessa
+  lettura. `Sound` non contiene più SQL letterale. Le letture riusano la sessione
+  corrente; assenza di dati significa zero/nessun voto, un errore SQL continua
+  invece a propagare l'indisponibilità dello storage.
+- `Sound.refreshMetadata()` confronta nome, visibilità e insieme dei tag prima
+  di avanzare la revisione. Ordine dei tag e slot vuoti non costituiscono una
+  modifica: il DB li ricarica ordinati per nome e può differire dall'ordine della
+  copia in modifica. Contatori e voti vengono aggiornati senza invalidare quella
+  copia. Un refresh equivalente, anche prima di una richiesta poi respinta o
+  fallita, la lascia utilizzabile; un cambiamento effettivo dei metadati la rende
+  obsoleta. Un salvataggio riuscito continua a consumare la propria copia anche
+  quando riscrive gli stessi valori. Cancellazione e protezioni contro copie
+  superate restano invariate.
+- `Tag` è immutabile e confrontabile per ID e nome. Uno slot vuoto ha nome vuoto;
+  un tag nuovo ha ID zero e nome valorizzato; un tag salvato ha ID positivo e
+  nome valorizzato. `isEmpty()`, `isNew()` e `isStored()` esprimono questi stati
+  senza nuovi campi o tipi. Anche il salvataggio usa la stessa definizione di
+  vuoto. Dopo il commit l'originale riceve i tag con ID del DB; il rollback
+  conserva i precedenti tag e associazioni. La lista restituita resta una copia.
+- I cinque slot del modello usati dai pulsanti Discord sono conservati. Il JSON
+  esclude gli slot vuoti e mantiene solo nome e ID stringa; i nuovi predicati
+  interni non aggiungono campi. Verificata anche la serializzazione del `Tag`
+  precedente per mantenere l'ordine dei campi già prodotto da Jackson.
+
+Verifica finale: `mvn -o clean test`, 110 test superati, zero fallimenti/errori
+o casi saltati. I 14 nuovi casi coprono refresh equivalenti con tag riordinati,
+voti e contatori, richieste respinte/fallite, modifiche effettive esterne,
+stati/uguaglianza/JSON dei tag, assegnazione ID dopo commit, rollback, rimozione,
+slot vuoti e letture nominate con parametri preparati e guasti SQL. La prova
+esistente della sessione condivisa include anche le due nuove letture.
+
+Riesaminati controller, serializzazione e consumatori dei tag: nessun cambiamento
+al contratto HTTP/OpenAPI, ai permessi o alla presentazione Discord. Aggiornati
+contratto audio e handbook per il comportamento interno. Nessuna modifica a
+modelli/API LoL, Mongo, schema DB, R2 o scheduler storico. Le prove usano H2 e
+dipendenze finte locali; non sono verifiche live di MariaDB, Redis o Discord.
+
+Il prossimo passaggio resta il 4, errori applicativi e Spring/auth. Gli assorbimenti
+di `SoundAccess`, `SoundValues` e `SoundQueryCache` mantengono le condizioni
+dell'audit e non sono anticipati da questa chiusura.

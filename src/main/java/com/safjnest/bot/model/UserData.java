@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.safjnest.bot.Bot;
 import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.discord.auth.AuthException;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -20,19 +21,23 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 public class UserData {
     
     private final String USER_ID;
-    private HashMap<String, AliasData> aliases;
+    private final BotDB database;
+
+    private final HashMap<String, AliasData> aliases;
     private LinkedHashMap<String, Summoner> riotAccounts;
 
     private String globalGreetId;
-    private HashMap<String, String> guildGreetIds;
+    private final HashMap<String, String> guildGreetIds;
+    private boolean allGreetsLoaded;
 
     public UserData(String USER_ID) {
-        this(USER_ID, BotDB.getAliases(USER_ID));
+        this(USER_ID, BotDB.getAliases(USER_ID), BotDB.get());
         BotLogger.debug("Retriving UserData => {0}", new LoggerIDpair(USER_ID, LoggerIDpair.IDType.USER));
     }
 
-    private UserData(String USER_ID, List<QueryRecord> aliasRows) {
+    private UserData(String USER_ID, List<QueryRecord> aliasRows, BotDB database) {
         this.USER_ID = USER_ID;
+        this.database = database;
 
         this.aliases = new HashMap<>();
         for (QueryRecord row : aliasRows) {
@@ -40,13 +45,17 @@ public class UserData {
         }
 
         globalGreetId = null;
-        guildGreetIds = new HashMap<>();
+        guildGreetIds = new LinkedHashMap<>();
     }
 
     public static UserData fromRows(String userId, List<QueryRecord> aliasRows) {
-        return new UserData(userId, aliasRows);
+        return fromRows(userId, aliasRows, BotDB.get());
     }
 
+
+    public static UserData fromRows(String userId, List<QueryRecord> aliasRows, BotDB database) {
+        return new UserData(userId, aliasRows, database);
+    }
 
     /* -------------------------------------------------------------------------- */
 
@@ -76,23 +85,39 @@ public class UserData {
 //    ███    █▀  █████▄▄██ █▀     ███    █▀   ▄████████▀  
 //               ▀                                        
 
-    public boolean addAlias(String name, String command) {
-        int id = BotDB.createAlias(USER_ID, name, command);
-        if (id == 0) {
+    public synchronized boolean addAlias(String name, String command) {
+        if (aliases.containsKey(name))
+            return false;
+
+        try {
+            int id = database.saveUserAlias(USER_ID, name, command);
+            aliases.put(name, new AliasData(id, name, command));
+
+            return true;
+        } catch (IllegalStateException exception) {
             return false;
         }
-        AliasData alias = new AliasData(id, name, command);
-        aliases.put(name, alias);
-        return true;
     }
 
-    public HashMap<String, AliasData> getAliases() {
-        return aliases;
+    public synchronized HashMap<String, AliasData> getAliases() {
+        return new HashMap<>(aliases);
     }
 
-    public boolean deleteAlias(String toDelete) {
-        getAliases().remove(toDelete);
-        return BotDB.deleteAlias(toDelete);
+    public synchronized boolean deleteAlias(String name) {
+        AliasData alias = aliases.get(name);
+        if (alias == null)
+            return false;
+
+        try {
+            if (!database.deleteUserAlias(USER_ID, alias.getID()))
+                return false;
+
+            aliases.remove(name);
+
+            return true;
+        } catch (IllegalStateException exception) {
+            return false;
+        }
     }
 
 
@@ -106,73 +131,106 @@ public class UserData {
 //    ████████▀    ███    ███   ██████████   ██████████    ▄████▀   
 //                 ███    ███                                       
 
-    public String getGreet(String guildId) {
-        if (guildGreetIds.containsKey(guildId)) {
-            return guildGreetIds.get(guildId).isEmpty() ? getGlobalGreet() : guildGreetIds.get(guildId);
-        }
-        QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
+    public synchronized String getGreet(String guildId) {
+        String guildGreet = getGuildGreet(guildId);
 
-        if (possibleGreet == null || possibleGreet.emptyValues()) {
-            guildGreetIds.put(guildId, "");
-            return getGlobalGreet();
-        }
-
-        String guildGreet = possibleGreet.get("id");
-        guildGreetIds.put(guildId, guildGreet);
-
-        return guildGreet;
+        return guildGreet == null || guildGreet.isEmpty() ? getGlobalGreet() : guildGreet;
     }
 
-    public String getGuildGreet(String guildId) {
-        if (guildGreetIds.containsKey(guildId)) 
-            return guildGreetIds.get(guildId);
-        
-        QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
-        if (possibleGreet.emptyValues()) {
-            guildGreetIds.put(guildId, "");
-            return null;
-        }
+    public synchronized String getGuildGreet(String guildId) {
+        if (!guildGreetIds.containsKey(guildId)) {
+            String soundId = "";
 
-        String guildGreet = possibleGreet.get("id");
-        guildGreetIds.put(guildId, guildGreet);
-
-        return guildGreet;
-        
-    }
-
-    public String getGlobalGreet() {
-        if (globalGreetId == null) {
-            QueryRecord possibleGreet = BotDB.getGlobalGreet(USER_ID);
-            if (possibleGreet.emptyValues()) {
-                this.globalGreetId = "";
-                return null;
+            if (!allGreetsLoaded) {
+                List<QueryRecord> rows = database.readGreet(USER_ID, guildId);
+                if (!rows.isEmpty())
+                    soundId = rows.get(0).get("sound_id");
             }
-            globalGreetId = possibleGreet.get("id");
+
+            guildGreetIds.put(guildId, soundId);
         }
-        else if (globalGreetId.isEmpty()) return null;
-        
-        return globalGreetId;
+
+        String soundId = guildGreetIds.get(guildId);
+
+        return soundId.isEmpty() ? null : soundId;
     }
 
-    public boolean setGreet(String guildId, String soundId) {
-        if (!BotDB.setGreet(this.USER_ID, guildId, soundId)) return false;
-        if (guildId.equals("0")) globalGreetId = soundId;
-        else guildGreetIds.put(guildId, soundId);
-        return true;
-    }
+    public synchronized String getGlobalGreet() {
+        if (globalGreetId == null) {
+            String soundId = "";
 
-    public boolean unsetGreet(String guildId) {
-        if (!BotDB.deleteGreet(this.USER_ID, guildId)) return false;
-        if (guildId.equals("0")) {
-            globalGreetId = null;
-        } else {
-            guildGreetIds.remove(guildId);
+            if (!allGreetsLoaded) {
+                List<QueryRecord> rows = database.readGreet(USER_ID, "0");
+                if (!rows.isEmpty())
+                    soundId = rows.get(0).get("sound_id");
+            }
+
+            globalGreetId = soundId;
         }
-        return true;
+
+        return globalGreetId.isEmpty() ? null : globalGreetId;
     }
 
-    public HashMap<String, String> getGreets() {
-        return guildGreetIds != null ? guildGreetIds : new HashMap<>();
+    public synchronized boolean setGreet(String scope, String soundId) {
+        try {
+            saveGreet(scope, soundId);
+
+            return true;
+        } catch (AuthException exception) {
+            return false;
+        }
+    }
+
+    public synchronized boolean unsetGreet(String scope) {
+        return setGreet(scope, null);
+    }
+
+    public synchronized void saveGreet(String scope, String soundId) {
+        database.saveGreet(USER_ID, scope, soundId);
+
+        if (scope.equals("0"))
+            globalGreetId = soundId == null ? "" : soundId;
+        else
+            guildGreetIds.put(scope, soundId == null ? "" : soundId);
+    }
+
+    public synchronized HashMap<String, String> getGreets() {
+        HashMap<String, String> result = new HashMap<>(guildGreetIds);
+        result.values().removeIf(String::isEmpty);
+
+        return result;
+    }
+
+    public synchronized Map<String, String> getAllGreets() {
+        if (!allGreetsLoaded) {
+            List<QueryRecord> rows = database.readGreets(USER_ID);
+            HashMap<String, String> guilds = new LinkedHashMap<>();
+            String global = "";
+
+            for (QueryRecord row : rows) {
+                String scope = row.get("guild_id");
+                if (scope.equals("0"))
+                    global = row.get("sound_id");
+                else
+                    guilds.put(scope, row.get("sound_id"));
+            }
+
+            globalGreetId = global;
+            guildGreetIds.clear();
+            guildGreetIds.putAll(guilds);
+            allGreetsLoaded = true;
+        }
+
+        Map<String, String> result = new LinkedHashMap<>();
+        if (globalGreetId != null && !globalGreetId.isEmpty())
+            result.put("0", globalGreetId);
+
+        for (Map.Entry<String, String> entry : guildGreetIds.entrySet()) {
+            if (!entry.getValue().isEmpty())
+                result.put(entry.getKey(), entry.getValue());
+        }
+
+        return java.util.Collections.unmodifiableMap(result);
     }
 
 

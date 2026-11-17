@@ -6,7 +6,6 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.utils.ExperienceSystem;
 import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.audio.TrackData;
 import com.safjnest.bot.audio.types.AudioType;
@@ -84,25 +83,11 @@ public class Functions {
         Guild guild = e.getGuild();
         User newGuy = e.getAuthor();
 
-        if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getId())) 
+        MemberData.Experience result = GuildCache.receiveExperience(guild.getId(), newGuy.getId(), channel.getId());
+        if (!result.saved() || !result.leveledUp())
             return;
-    
-        double modifier = guildData.getExperienceModifier(channel.getId());
-        
-        MemberData member = guildData.getMemberData(newGuy.getIdLong());
 
-
-        int exp = member.getExperience();
-        int currentLevel = member.getLevel();
-        exp = ExperienceSystem.calculateExp(exp, modifier);
-        int lvl = ExperienceSystem.isLevelUp(exp, currentLevel);
-
-        if(lvl == ExperienceSystem.NOT_LEVELED_UP) {
-            member.setExpData(exp, currentLevel);
-            return;
-        }
-        member.setExpData(exp, lvl);
-
+        int lvl = result.level();
 
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
         if (reward != null && reward.isValid()) {
@@ -406,7 +391,7 @@ public class Functions {
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
 
-                sound.increaseUserPlays(theGuy.getId(), guild.getId(), AudioType.GREET);
+                SoundCache.withSound(sound.getId(), current -> current.increaseUserPlays(theGuy.getId(), guild.getId(), AudioType.GREET));
                 track.setUserData(new TrackData(AudioType.GREET));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.GREET);
             }

@@ -70,7 +70,7 @@ Single-sound analytics return `{soundId,period,timezone,from,to,totals,guilds,ot
 
 `my` has `{plays,history,nextCursor}`. Only the authenticated caller's individual history is returned, at most 100 events ordered by `(time DESC,id DESC)`. Each event contains `{id,playedAt,guildId,source}`. `guildId` is null for a guild the caller cannot access. The next page is fetched from `/sounds/{soundId}/analytics` using `cursor` and the original `period`, `timezone` and optional `guildId`. The cursor binds caller, sound, scope and original interval; totals continue to describe the full interval. Collection endpoints include the first page per sound. A complete personal history of sounds outside the selected collection is out of scope.
 
-All analytics use one streaming SQL history read per block of up to 500 sound IDs, with grouping in Java; raw plays are never exported to the client. Current and previous intervals are read together. Only aggregate maps and the newest 101 personal events per sound are retained, rather than a list of all history rows. There is no analytics cache in v1. Personal history pages and collection summaries reuse the same pass; there is no per-sound history query or per-sound aggregate query. No per-guild or temporal likes/dislikes are inferred: the interaction table stores only current state.
+All analytics use one streaming SQL history read per block of up to 500 sound IDs, with grouping in Java; raw plays are never exported to the client. `SoundAnalytics` owns calculation and response composition; its package-private `SoundHistory` accumulator keeps typed counts indexed by sound/guild, plus bounded personal events. Daily series, heatmap, source/replay distribution and leaderboard have separate builders. Source ordinals resolve through the existing `AudioType` enum, with `UNKNOWN` for invalid stored values. Current and previous intervals are read together. Only aggregate maps and the newest 101 personal events per sound are retained, rather than a list of all history rows. There is no analytics cache in v1. Personal history pages and collection summaries reuse the same pass; there is no per-sound history query or per-sound aggregate query. No per-guild or temporal likes/dislikes are inferred: the interaction table stores only current state.
 
 ## Writes
 
@@ -82,7 +82,7 @@ All analytics use one streaming SQL history read per block of up to 500 sound ID
 
 ## Profile and greet settings
 
-Existing `GET /me` keeps `user` and administrative `servers` unchanged and adds `greets:{scope:Sound}`. Scope `0` is global; other keys are explicit guild overrides. Only configured entries are returned, with canonical Sound values, not inherited copies. Deleted or no-longer-visible target sounds are omitted. The full greeting table is read, not only the lazy user cache.
+Existing `GET /me` keeps `user` and administrative `servers` unchanged and adds `greets:{scope:Sound}`. Scope `0` is global; other keys are explicit guild overrides. Only configured entries are returned, with canonical Sound values, not inherited copies. Deleted or no-longer-visible target sounds are omitted. The canonical `UserData` instance completes its greet loading through `getAllGreets()`; a full-load flag distinguishes this snapshot from scopes loaded lazily. The returned map is copied.
 
 `POST /me/settings` accepts exactly one top-level `greets` object. Values are string sound IDs or null to delete; omitted keys stay unchanged. A parsed request returns HTTP 200 and independent `{status,errors}` results per scope. SQL failure for one scope does not roll back successful others.
 
@@ -92,17 +92,40 @@ Existing `GET /me` keeps `user` and administrative `servers` unchanged and adds 
 
 Global: public sound or caller-owned private. The latter is explicitly permitted globally outside its original guild. Guild-specific: caller membership and bot presence; a private must originate in that exact guild, including when owned by the caller; a public may originate elsewhere. Removing a guild override restores global fallback. Removing global leaves no global fallback.
 
-Validation is repeated against current sound visibility at playback. Explicit guild setting takes precedence; otherwise global. Invalid configured targets are not played. The bot's successful greet writes update UserData only after persistence succeeds; API writes invalidate that user's local cache after commit. The existing cached administrative guild list is never used as proof of ordinary membership.
+Validation is repeated against current sound visibility at playback. Explicit guild setting takes precedence; otherwise global. Invalid configured targets are not played. Bot and API greet writes update the same `UserData` instance only after persistence succeeds. Own writes retain the cached object; playback resolves the same settings and rechecks current sound visibility. The existing cached administrative guild list is never used as proof of ordinary membership.
 
 Bulk has no product limit on scope count. The caller's memberships are resolved once per request. Each write locks/revalidates its sound in an independent transaction; no HTTP request is made per sound. Very large HTTP payloads remain subject to deployment resources and server timeouts; 100,000 scopes are not a measured guarantee.
 
 ## Cache and compatibility
 
-`SoundCache` remains the API facade and canonical loader. Its instance-local Caffeine backing now reuses `bot.cache.CacheAdapter`, with 100-entry capacity and expiration 60 seconds after write. Single/bulk and preloaded API rows share coordinated loads of missing IDs. Scoped callbacks retain active entries across expiration/eviction, and invalidation prevents an older load from repopulating the cache. Bulk results retain request-local references so evictions never truncate a response. Missing IDs are omitted from bulk loading and produce 404 for detail. Response copies still use fresh authorized SQL rows and never put viewer-specific state on a cached object. This changes internal coordination only; HTTP routes, payloads and authorization remain unchanged.
+`SoundCache` remains the canonical loader and read facade. HTTP parsing belongs to `SoundController` and `MeController`; mutations belong to `Sound` and `UserData`, with prepared SQL in `BotDB`. The former `SoundDB` implementation has been absorbed into `BotDB`. Its instance-local Caffeine backing now reuses `bot.cache.CacheAdapter`, with 100-entry capacity and expiration 60 seconds after write. Single/bulk and preloaded API rows share coordinated loads of missing IDs. Scoped callbacks retain active entries across expiration/eviction, and invalidation prevents an older load from repopulating the cache. Bulk results retain request-local references so evictions never truncate a response. Missing IDs are omitted from bulk loading and produce 404 for detail. Response copies still use fresh authorized SQL rows and never put viewer-specific state on a cached object. This changes internal coordination only; HTTP routes, payloads and authorization remain unchanged.
 
-`SoundQueryCache` stores only ordered ID arrays in Redis, for 60 seconds, including empty results. Keys include version, caller, current membership set, original guild/ownership scope, normalized filters, ordering and limit. A catalog generation token makes old selections unreachable after metadata/vote changes or deletion; older keys expire naturally. Inserts and Discord mutations use the same invalidation path. Play-based rankings may lag by at most 60 seconds. Redis failure falls back to SQL. Cached IDs are rechecked against fresh sound metadata before response; they never authorize a private sound.
+`SoundQueryCache` stores only ordered ID arrays in Redis, for 60 seconds, including empty results. Keys include version, caller, current membership set, original guild/ownership scope, normalized filters, ordering and limit. A catalog generation token makes old selections unreachable after metadata/vote changes or deletion; older keys expire naturally. Inserts and Discord mutations use the same invalidation path. Metadata/vote writes keep the canonical Sound object and invalidate only derived selections after commit. A deletion marks the object and removes its entry. Play-based rankings may lag by at most 60 seconds. Redis failure falls back to SQL. Cached IDs are rechecked against fresh sound metadata before response; they never authorize a private sound.
 
-All SQL reads for one facade call share a read-only repeatable-read connection; schema selection and timezone setup/restoration happen once per read request. Collection tags are loaded once and reused for objects and tag counts. Response copies use fresh metadata, global counts and batched personal enrichment. No database operations happen inside JSON getters. There is no public response containing a cached user's private state. Cache invalidation is local for object/UserData caches; Redis generation is shared. This does not introduce a cross-instance pub/sub protocol.
+All SQL reads for one facade call share a read-only repeatable-read connection; schema selection and timezone setup/restoration happen once per read request. Collection tags are loaded once and reused for objects and tag counts. Personal play counts and current votes use the named prepared reads `BotDB.readSoundUserPlays()` and `readSoundInteraction()`, including when called by the bot model; `Sound` contains no SQL literals. Missing data gives zero plays/no vote, while storage failures remain errors. Response copies use fresh metadata, global counts and batched personal enrichment. No database operations happen inside JSON getters. There is no public response containing a cached user's private state. Object-cache coordination is local; Redis generation is shared. This does not introduce a cross-instance pub/sub protocol.
+
+`Sound.deferEdit()` makes a private metadata copy. Its setters do not write SQL;
+`update()` saves name, visibility and the complete tag set in one transaction,
+then publishes to the original object. A normal setter performs that save
+immediately. Revision checks reject stale drafts. A successful metadata save
+consumes its draft even when writing identical values. API mutations refresh
+current metadata under the object's monitor before preparing the edit, preserving
+omitted PATCH fields. A refresh advances the revision only if name, visibility
+or the tag set changed; tag order and empty slots are ignored in this comparison.
+Equivalent refreshes, including those before votes or rejected/failed requests,
+do not invalidate another pending draft. Changes to play/vote counters alone do
+not invalidate it either. Vote, play-history and deletion operations use dedicated transactions
+with the existing SQL ownership/visibility locks. SQL failure leaves the prior
+object state intact. `/me` and `/me/settings` now belong to `MeController`; their
+URLs and response shapes are unchanged.
+
+`Tag` is an immutable value with internal empty/new/stored predicates: an empty
+name represents an unused slot, ID zero with a name represents a new tag, and a
+positive ID with a name represents a stored tag. Saved tags replace the originals
+only after commit. The bot model retains five slots for its existing Discord
+buttons; public JSON omits empty slots and still exposes only name and string ID,
+without these internal predicates. No HTTP/OpenAPI or Discord presentation change
+is required by this internal cleanup.
 
 ## Errors and deployment
 
@@ -122,6 +145,6 @@ Debug logs report membership resolution time (`Sound memberships`), history rows
 
 ## Validation evidence
 
-The previous regression suite covered sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets; its 101 test files were removed during the owner’s repository cleanup. The current cache step adds focused local tests for coordinated bulk loading, expiration/eviction, invalidation, loader failures, hydration, prepared SQL with H2 and viewer-state isolation. The historical checks below are previous evidence, not a current re-execution of that deleted suite. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. MariaDB migration execution, live Redis/Discord/Cloudflare integration and extreme bulk HTTP payloads have not been verified.
+The previous regression suite covered sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets; its 101 test files were removed during the owner’s repository cleanup. The cache and shared-mutation steps add focused local tests for coordinated bulk loading, expiration/eviction, invalidation, loader failures, hydration, prepared SQL with H2 and viewer-state isolation. The historical checks below are previous evidence, not a current re-execution of that deleted suite. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. MariaDB migration execution, live Redis/Discord/Cloudflare integration and extreme bulk HTTP payloads have not been verified.
 
 The migration uses [MariaDB ALTER TABLE](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table) conditionals; it is not advertised as a portable MySQL/H2 migration.

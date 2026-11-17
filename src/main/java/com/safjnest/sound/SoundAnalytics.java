@@ -1,336 +1,389 @@
 package com.safjnest.sound;
-import java.time.*;
-import java.util.*;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import com.safjnest.bot.audio.types.AudioType;
 import com.safjnest.database.sql.QueryRecord;
-import com.safjnest.database.sql.database.SoundDB;
-
-import static com.safjnest.sound.SoundValues.*;
+import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.database.sql.database.BotDB.SoundPlay;
+import com.safjnest.sound.SoundHistory.Group;
+import com.safjnest.sound.SoundHistory.UserTotals;
 
 public final class SoundAnalytics {
 
-    private final SoundDB database;
+    private static final int TOP_SOUND_LIMIT = 5;
+    private static final int DAYS_PER_WEEK = 7;
+    private static final int HOURS_PER_DAY = 24;
 
+    private static final List<Integer> REPLAY_MINIMUMS = List.of(1, 2, 6, 21, 51);
+    private static final List<Integer> REPLAY_MAXIMUMS = Arrays.asList(1, 5, 20, 50, null);
+
+    private final BotDB database;
     private final SoundAccess access;
 
-    public SoundAnalytics(SoundDB database, SoundAccess access) {
+    public SoundAnalytics(BotDB database, SoundAccess access) {
         this.database = database;
         this.access = access;
     }
 
-    public Map<String, Object> summary(List<QueryRecord> sounds, String userId, String guildId, SoundPeriod period) {
-        List<String> ids = ids(sounds);
-        return summary(sounds, userId, period, load(ids, guildId, userId, period, false));
+    public record DailyPlays(String date, long plays) {}
+    public record HeatmapCell(int weekday, int hour, long plays) {}
+
+    public record SourcePlays(String source, long plays) {}
+    public record ReplayBucket(int min, Integer max, long users) {}
+
+    public record Listener(Map<String, Object> user, long plays, int soundCount) {}
+    public record RankedSound(String soundId, long plays) {}
+    public record LikedSound(String soundId, long likes) {}
+
+    public record HistoryPlay(String id, String playedAt, String guildId, String source) {}
+    public record PersonalHistory(long plays, List<HistoryPlay> history, String nextCursor) {}
+
+    public Map<String, Object> getSummary(List<QueryRecord> sounds, String userId, String guildId, SoundPeriod period) {
+        SoundHistory history = loadHistory(sounds, guildId, userId, period, false);
+
+        return buildSummary(sounds, userId, period, history);
     }
 
-    public Map<String, Object> guild(List<QueryRecord> sounds, String userId, String guildId, SoundPeriod period, Set<String> memberships) {
-        List<String> ids = ids(sounds);
-        History history = load(ids, guildId, userId, period, true);
-        var users = history.userRows;
-        var times = history.timeRows;
-        Instant first = history.first(null);
+    public Map<String, Object> getGuildAnalytics(List<QueryRecord> sounds, String userId, String guildId,
+            SoundPeriod period, Set<String> memberships) {
+        SoundHistory history = loadHistory(sounds, guildId, userId, period, true);
+        Group totals = history.getTotals();
+        Instant firstPlay = history.getFirstPlay();
+
         List<Map<String, Object>> details = new ArrayList<>();
-        for (QueryRecord sound : sounds) {
-            String id = sound.get("id");
-            var soundUsers = history.usersBySound.getOrDefault(id, List.of());
-            var detail = group(soundUsers, history.timesBySound.getOrDefault(id, List.of()), history.sourcesBySound.getOrDefault(id, List.of()), userId, period, first, true);
-            detail.put("soundId",id);
-            detail.put("likes",sound.getAsLong("likes"));
-            detail.put("dislikes",sound.getAsLong("dislikes"));
-            long old = history.previous(id);
-            detail.put("previousPlays",period.from()==null?null:old);
-            detail.put("playsChangePercent",period.from()==null?null:change(plays(soundUsers),old));
-            detail.put("my",personal(id,userId,guildId,period,memberships,soundUsers,history.personal(id)));
-            details.add(detail);
-        }
-        List<Map<String,Object>> top = new ArrayList<>(details);
-        top.sort(Comparator.comparingLong(d -> -((Number)d.get("plays")).longValue()));
-        List<QueryRecord> liked = new ArrayList<>(sounds);
-        liked.sort(Comparator.comparingLong(s -> -s.getAsLong("likes")));
-        List<Map<String,Object>> mostLiked = new ArrayList<>();
-        for(var row:liked.subList(0,Math.min(5,liked.size()))) mostLiked.add(map("soundId",row.get("id"),"likes",row.getAsLong("likes")));
-        List<Map<String,Object>> topSounds = new ArrayList<>();
-        for(var row:top.subList(0,Math.min(5,top.size()))) topSounds.add(map("soundId",row.get("soundId"),"plays",row.get("plays")));
-        var summary=totals(users,userId);
-        summary.put("likes",sum(sounds,"likes"));
-        summary.put("dislikes",sum(sounds,"dislikes"));
-        summary.put("soundCount",sounds.size());
-        return map("guildId",guildId,"period",period.period(),"timezone",period.zone().getId(),"from",text(period.from()),"to",text(period.to()),
-        "summary",summary,"playsPerDay",series(times,period,first),"topSounds",topSounds,"mostLiked",mostLiked,"users",leaderboard(users),"sounds",details);
+        for (QueryRecord sound : sounds)
+            details.add(buildGuildSoundAnalytics(sound, userId, guildId, period, memberships, history, firstPlay));
+
+        Map<String, Object> summary = buildTotals(totals, userId, true);
+        summary.put("likes", sumSoundValues(sounds, "likes"));
+        summary.put("dislikes", sumSoundValues(sounds, "dislikes"));
+        summary.put("soundCount", sounds.size());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("guildId", guildId);
+        result.putAll(buildPeriodFields(period));
+        result.put("summary", summary);
+        result.put("playsPerDay", buildDailySeries(totals, period, firstPlay));
+        result.put("topSounds", buildTopPlayedSounds(sounds, history));
+        result.put("mostLiked", buildMostLikedSounds(sounds));
+        result.put("users", buildLeaderboard(totals));
+        result.put("sounds", details);
+
+        return result;
     }
 
-    public Map<String,Object> sound(QueryRecord sound, String userId, String guildId, SoundPeriod period, Set<String> memberships) {
-        return sound(sound, userId, guildId, period, memberships, load(List.of(sound.get("id")), guildId, userId, period, true));
+    public Map<String, Object> getSoundAnalytics(QueryRecord sound, String userId, String guildId,
+            SoundPeriod period, Set<String> memberships) {
+        SoundHistory history = loadHistory(List.of(sound), guildId, userId, period, true);
+
+        return buildSoundAnalytics(sound, userId, guildId, period, memberships, history);
     }
 
-    public Map<String, Object> mine(List<QueryRecord> sounds, String userId, SoundPeriod period, Set<String> memberships) {
-        History history = load(ids(sounds), null, userId, period, true);
-        List<Object> details = new ArrayList<>();
-        for (QueryRecord sound : sounds) details.add(sound(sound, userId, null, period, memberships, history));
-        return map("period", period.period(), "timezone", period.zone().getId(), "from", text(period.from()), "to", text(period.to()),
-            "summary", summary(sounds, userId, period, history), "sounds", details);
+    public Map<String, Object> getUserAnalytics(List<QueryRecord> sounds, String userId,
+            SoundPeriod period, Set<String> memberships) {
+        SoundHistory history = loadHistory(sounds, null, userId, period, true);
+        List<Map<String, Object>> details = new ArrayList<>();
+
+        for (QueryRecord sound : sounds)
+            details.add(buildSoundAnalytics(sound, userId, null, period, memberships, history));
+
+        Map<String, Object> result = buildPeriodFields(period);
+        result.put("summary", buildSummary(sounds, userId, period, history));
+        result.put("sounds", details);
+
+        return result;
     }
 
-    // ================================================================================================================
+    /* -------------------------------------------------------------------------- */
 
-    private Map<String, Object> sound(QueryRecord sound, String userId, String guildId, SoundPeriod period, Set<String> memberships, History history) {
-        String id = sound.get("id");
-        var users = history.usersBySound.getOrDefault(id, List.of());
-        var times = history.timesBySound.getOrDefault(id, List.of());
-        var sources = history.sourcesBySound.getOrDefault(id, List.of());
-        Instant first = history.first(id);
-        Map<String,Object> guilds=new LinkedHashMap<>();
-        for(String guild:memberships) {
-            if(guildId!=null&&!guildId.equals(guild)) continue;
-            var rows=guildRows(users,guild);
-            if(rows.isEmpty()) continue;
-            guilds.put(guild,group(rows,guildRows(times,guild),guildRows(sources,guild),userId,period,first,true));
-        }
-        var otherUsers=other(users,memberships);
-        var otherTimes=other(times,memberships);
-        var otherSources=other(sources,memberships);
-        var totals=group(users,times,sources,userId,period,first,false);
-        totals.put("likes",sound.getAsLong("likes"));
-        totals.put("dislikes",sound.getAsLong("dislikes"));
-        long previous = history.previous(id);
-        totals.put("previousPlays",period.from()==null?null:previous);
-        totals.put("playsChangePercent",period.from()==null?null:change(plays(users),previous));
-        return map("soundId",id,"period",period.period(),"timezone",period.zone().getId(),"from",text(period.from()),"to",text(period.to()),
-        "totals",totals,"guilds",guilds,"otherGuilds",group(otherUsers,otherTimes,otherSources,userId,period,first,false),"my",personal(id,userId,guildId,period,memberships,users,history.personal(id)));
-    }
+    private SoundHistory loadHistory(List<QueryRecord> sounds, String guildId, String userId,
+            SoundPeriod period, boolean detailed) {
+        List<String> ids = new ArrayList<>();
+        for (QueryRecord sound : sounds)
+            ids.add(sound.get("id"));
 
-    private Map<String, Object> summary(List<QueryRecord> sounds, String userId, SoundPeriod period, History history) {
-        var users = history.userRows;
-        Map<String, Object> totals = totals(users, userId);
-        long previous = history.previous(null);
-        totals.put("period", period.period());
-        totals.put("likes", sum(sounds, "likes"));
-        totals.put("dislikes", sum(sounds, "dislikes"));
-        totals.put("soundCount", sounds.size());
-        totals.put("previousPlays", period.from() == null ? null : previous);
-        totals.put("playsChangePercent", period.from() == null ? null : change(plays(users), previous));
-        return totals;
-    }
+        SoundHistory history = new SoundHistory(period, userId, detailed);
+        Instant previousStart = period.from() == null ? null : period.previous().from();
+        database.forEachSoundPlay(ids, guildId, previousStart, period.to(), history::recordPlay);
 
-    private record UserKey(String sound, String guild, String user) {}
-    private record TimeKey(String sound, String guild, long bucket) {}
-    private record SourceKey(String sound, String guild, int source) {}
-
-    private static final class History {
-        private static final int PERSONAL_LIMIT = 101;
-        private static final Comparator<SoundDB.Play> CHRONOLOGICAL = Comparator.comparing(SoundDB.Play::time)
-            .thenComparingLong(play -> Long.parseLong(play.id()));
-        private final SoundPeriod period;
-        private final String viewer;
-        private final boolean detailed;
-        private final Map<UserKey, Long> users = new HashMap<>();
-        private final Map<TimeKey, Long> times = new HashMap<>();
-        private final Map<SourceKey, Long> sources = new HashMap<>();
-        private final Map<String, Long> previous = new HashMap<>();
-        private final Map<String, Instant> first = new HashMap<>();
-        private final Map<String, PriorityQueue<SoundDB.Play>> personal = new HashMap<>();
-        private List<QueryRecord> userRows;
-        private List<QueryRecord> timeRows;
-        private List<QueryRecord> sourceRows;
-        private Map<String, List<QueryRecord>> usersBySound;
-        private Map<String, List<QueryRecord>> timesBySound;
-        private Map<String, List<QueryRecord>> sourcesBySound;
-
-        private History(SoundPeriod period, String viewer, boolean detailed) {
-            this.period = period;
-            this.viewer = viewer;
-            this.detailed = detailed;
-        }
-
-        private void accept(SoundDB.Play play) {
-            if (period.from() != null && play.time().isBefore(period.from())) {
-                previous.merge(play.soundId(), 1L, Long::sum);
-                return;
-            }
-            users.merge(new UserKey(play.soundId(), play.guildId(), play.userId()), 1L, Long::sum);
-            if (!detailed) return;
-            first.merge(play.soundId(), play.time(), (a, b) -> a.isBefore(b) ? a : b);
-            times.merge(new TimeKey(play.soundId(), play.guildId(), Math.floorDiv(play.time().getEpochSecond(), 900)), 1L, Long::sum);
-            sources.merge(new SourceKey(play.soundId(), play.guildId(), play.source()), 1L, Long::sum);
-            if (!viewer.equals(play.userId())) return;
-            if (period.before() != null && (play.time().isAfter(period.before())
-                    || play.time().equals(period.before()) && Long.parseLong(play.id()) >= Long.parseLong(period.beforeId()))) return;
-            PriorityQueue<SoundDB.Play> queue = personal.computeIfAbsent(play.soundId(), ignored -> new PriorityQueue<>(PERSONAL_LIMIT, CHRONOLOGICAL));
-            if (queue.size() < PERSONAL_LIMIT) queue.add(play);
-            else if (CHRONOLOGICAL.compare(play, queue.peek()) > 0) { queue.poll(); queue.add(play); }
-        }
-
-        private void finish() {
-            userRows = new ArrayList<>(users.size());
-            users.forEach((key, count) -> userRows.add(row("sound_id", key.sound(), "guild_id", key.guild(), "user_id", key.user(), "plays", count)));
-            timeRows = new ArrayList<>(times.size());
-            times.forEach((key, count) -> timeRows.add(row("sound_id", key.sound(), "guild_id", key.guild(), "bucket", key.bucket(), "plays", count)));
-            sourceRows = new ArrayList<>(sources.size());
-            sources.forEach((key, count) -> sourceRows.add(row("sound_id", key.sound(), "guild_id", key.guild(), "source", key.source(), "plays", count)));
-            usersBySound = index(userRows); timesBySound = index(timeRows); sourcesBySound = index(sourceRows);
-            users.clear(); times.clear(); sources.clear();
-        }
-
-        private Instant first(String id) {
-            if (period.from() != null) return period.from();
-            if (id != null) return first.getOrDefault(id, period.to());
-            Instant earliest = period.to();
-            for (Instant time : first.values()) if (time.isBefore(earliest)) earliest = time;
-            return earliest;
-        }
-
-        private List<QueryRecord> personal(String id) {
-            List<SoundDB.Play> ordered = new ArrayList<>(personal.getOrDefault(id, new PriorityQueue<>(CHRONOLOGICAL)));
-            ordered.sort(CHRONOLOGICAL.reversed());
-            List<QueryRecord> rows = new ArrayList<>(ordered.size());
-            for (SoundDB.Play play : ordered) rows.add(row("id", play.id(), "guild_id", play.guildId(),
-                "time", java.sql.Timestamp.from(play.time()), "source", play.source()));
-            return rows;
-        }
-
-        private long previous(String id) {
-            if (id != null) return previous.getOrDefault(id, 0L);
-            long result = 0; for (long count : previous.values()) result += count; return result;
-        }
-
-        private static Map<String, List<QueryRecord>> index(List<QueryRecord> rows) {
-            Map<String, List<QueryRecord>> result = new HashMap<>();
-            for (QueryRecord row : rows) result.computeIfAbsent(row.get("sound_id"), ignored -> new ArrayList<>()).add(row);
-            return result;
-        }
-
-        private static QueryRecord row(Object... values) {
-            QueryRecord row = new QueryRecord();
-            for (int i = 0; i < values.length; i += 2) row.put((String) values[i], values[i+1]);
-            return row;
-        }
-    }
-
-    private History load(List<String> ids, String guildId, String userId, SoundPeriod period, boolean detailed) {
-        History history = new History(period, userId, detailed);
-        database.forEachPlay(ids, guildId, period.from() == null ? null : period.previous().from(), period.to(), history::accept);
-        history.finish();
         return history;
     }
 
-    private Map<String,Object> personal(String id,String user,String guild,SoundPeriod period,Set<String> memberships,List<QueryRecord> users,List<QueryRecord> rows) {
-        long count=0;
-        for(var row:users) if(user.equals(row.get("user_id"))) count+=row.getAsLong("plays");
-        String cursor=rows.size()>100?period.cursor(rows.get(99),id,user,guild):null;
-        List<Map<String,Object>> history=new ArrayList<>();
-        for(var row:rows.subList(0,Math.min(100,rows.size()))) history.add(map("id",row.get("id"),"playedAt",row.getAsTimestamp("time").toInstant().toString(),
-        "guildId",memberships.contains(row.get("guild_id"))?row.get("guild_id"):null,"source",source(row.getAsInt("source"))));
-        return map("plays",count,"history",history,"nextCursor",cursor);
+    private Map<String, Object> buildGuildSoundAnalytics(QueryRecord sound, String userId, String guildId,
+            SoundPeriod period, Set<String> memberships, SoundHistory history, Instant firstPlay) {
+        String soundId = sound.get("id");
+        Group totals = history.getSoundTotals(soundId);
+        Map<String, Object> result = buildGroupAnalytics(totals, period, firstPlay, true);
+
+        result.put("soundId", soundId);
+        result.put("likes", sound.getAsLong("likes"));
+        result.put("dislikes", sound.getAsLong("dislikes"));
+        addPreviousPeriod(result, totals.getPlayCount(), history.getPreviousPlays(soundId), period);
+        result.put("my", buildPersonalHistory(soundId, userId, guildId, period, memberships, history));
+
+        return result;
     }
 
-    private Map<String,Object> group(List<QueryRecord> users,List<QueryRecord> times,List<QueryRecord> sources,String user,SoundPeriod period,Instant first,boolean identities) {
-        var result=totals(users,user);
-        result.remove("myPlays");
-        result.put("playsPerDay",series(times,period,first));
-        long[][] cells=new long[7][24];
-        for(var row:times) {
-            var time=Instant.ofEpochSecond(row.getAsLong("bucket")*900).atZone(period.zone());
-            cells[time.getDayOfWeek().getValue()-1][time.getHour()]+=row.getAsLong("plays");
+    private Map<String, Object> buildSoundAnalytics(QueryRecord sound, String userId, String guildId,
+            SoundPeriod period, Set<String> memberships, SoundHistory history) {
+        String soundId = sound.get("id");
+        Instant firstPlay = history.getFirstPlay(soundId);
+        Group soundTotals = history.getSoundTotals(soundId);
+        Group otherGuilds = history.getOtherGuildTotals(soundId, memberships);
+
+        Map<String, Object> guilds = new LinkedHashMap<>();
+        for (String membership : memberships) {
+            if (guildId != null && !guildId.equals(membership))
+                continue;
+
+            Group guild = history.getGuildTotals(soundId, membership);
+            if (guild.getPlayCount() == 0)
+                continue;
+
+            guilds.put(membership, buildGroupAnalytics(guild, period, firstPlay, true));
         }
-        List<Map<String,Object>> heat=new ArrayList<>();
-        for(int d=0;d<7;d++)for(int h=0;h<24;h++)heat.add(map("weekday",d+1,"hour",h,"plays",cells[d][h]));
-        result.put("heatmap",heat);
-        Map<String,Long> modes=new TreeMap<>();
-        for(var row:sources)modes.merge(source(row.getAsInt("source")),row.getAsLong("plays"),Long::sum);
-        List<Map<String,Object>> modesList=new ArrayList<>();
-        modes.forEach((key,value)->modesList.add(map("source",key,"plays",value)));
-        result.put("sources",modesList);
-        Map<String,Long> counts=counts(users);
-        long[] buckets=new long[5];
-        for(long n:counts.values())buckets[n==1?0:n<=5?1:n<=20?2:n<=50?3:4]++;
-        List<Map<String,Object>> replay=new ArrayList<>();
-        int[] lower= {
-            1,2,6,21,51
-        };
-        Integer[] upper= {
-            1,5,20,50,null
-        };
-        for(int i=0;i<5;i++)replay.add(map("min",lower[i],"max",upper[i],"users",buckets[i]));
-        result.put("replayDistribution",replay);
-        if(identities)result.put("users",leaderboard(users));
+
+        Map<String, Object> totals = buildGroupAnalytics(soundTotals, period, firstPlay, false);
+        totals.put("likes", sound.getAsLong("likes"));
+        totals.put("dislikes", sound.getAsLong("dislikes"));
+        addPreviousPeriod(totals, soundTotals.getPlayCount(), history.getPreviousPlays(soundId), period);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("soundId", soundId);
+        result.putAll(buildPeriodFields(period));
+        result.put("totals", totals);
+        result.put("guilds", guilds);
+        result.put("otherGuilds", buildGroupAnalytics(otherGuilds, period, firstPlay, false));
+        result.put("my", buildPersonalHistory(soundId, userId, guildId, period, memberships, history));
+
         return result;
     }
 
-    private Map<String,Object> totals(List<QueryRecord> rows,String user) {
-        long plays=plays(rows),mine=0;
-        for(var row:rows)if(user.equals(row.get("user_id")))mine+=row.getAsLong("plays");
-        int listeners=counts(rows).size();
-        return map("plays",plays,"listeners",listeners,"averagePlaysPerListener",listeners==0?0.0:(double)plays/listeners,"myPlays",mine);
-    }
+    private Map<String, Object> buildSummary(List<QueryRecord> sounds, String userId, SoundPeriod period, SoundHistory history) {
+        Group totals = history.getTotals();
+        Map<String, Object> result = buildTotals(totals, userId, true);
 
-    private List<Map<String,Object>> leaderboard(List<QueryRecord> rows) {
-        Map<String,Long> counts=counts(rows);
-        Map<String,Set<String>> distinct=new HashMap<>();
-        for(var row:rows)distinct.computeIfAbsent(row.get("user_id"),k->new HashSet<>()).add(row.get("sound_id"));
-        List<String> ids=new ArrayList<>(counts.keySet());
-        ids.sort(Comparator.<String>comparingLong(counts::get).reversed().thenComparing(Comparator.naturalOrder()));
-        List<Map<String,Object>> result=new ArrayList<>();
-        for(String id:ids)result.add(map("user",access.user(id),"plays",counts.get(id),"soundCount",distinct.get(id).size()));
+        result.put("period", period.period());
+        result.put("likes", sumSoundValues(sounds, "likes"));
+        result.put("dislikes", sumSoundValues(sounds, "dislikes"));
+        result.put("soundCount", sounds.size());
+        addPreviousPeriod(result, totals.getPlayCount(), history.getPreviousPlays(), period);
+
         return result;
     }
 
-    private List<Map<String,Object>> series(List<QueryRecord> rows,SoundPeriod period,Instant first) {
-        Map<LocalDate,Long> counts=new HashMap<>();
-        for(var row:rows) {
-            var date=Instant.ofEpochSecond(row.getAsLong("bucket")*900).atZone(period.zone()).toLocalDate();
-            counts.merge(date,row.getAsLong("plays"),Long::sum);
+    private Map<String, Object> buildGroupAnalytics(Group group, SoundPeriod period, Instant firstPlay, boolean includeUsers) {
+        Map<String, Object> result = buildTotals(group, null, false);
+
+        result.put("playsPerDay", buildDailySeries(group, period, firstPlay));
+        result.put("heatmap", buildHeatmap(group, period));
+        result.put("sources", buildSourceDistribution(group));
+        result.put("replayDistribution", buildReplayDistribution(group));
+
+        if (includeUsers)
+            result.put("users", buildLeaderboard(group));
+
+        return result;
+    }
+
+    private Map<String, Object> buildTotals(Group group, String userId, boolean includePersonal) {
+        long plays = group.getPlayCount();
+        Map<String, UserTotals> users = group.getUserTotals();
+        int listeners = users.size();
+        double average = listeners == 0 ? 0.0 : (double) plays / listeners;
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("plays", plays);
+        result.put("listeners", listeners);
+        result.put("averagePlaysPerListener", average);
+
+        if (includePersonal) {
+            UserTotals personal = users.get(userId);
+            result.put("myPlays", personal == null ? 0L : personal.plays());
         }
-        List<Map<String,Object>> result=new ArrayList<>();
-        LocalDate start=first.atZone(period.zone()).toLocalDate(),end=period.to().minusNanos(1).atZone(period.zone()).toLocalDate();
-        for(LocalDate date=start;!date.isAfter(end);date=date.plusDays(1))result.add(map("date",date.toString(),"plays",counts.getOrDefault(date,0L)));
+
         return result;
     }
 
-    private Map<String,Long> counts(List<QueryRecord> rows) {
-        Map<String,Long> result=new HashMap<>();
-        for(var row:rows)result.merge(row.get("user_id"),row.getAsLong("plays"),Long::sum);
+    private PersonalHistory buildPersonalHistory(String soundId, String userId, String guildId, SoundPeriod period,
+            Set<String> memberships, SoundHistory history) {
+        UserTotals personal = history.getSoundTotals(soundId).getUserTotals().get(userId);
+        long plays = personal == null ? 0L : personal.plays();
+        List<SoundPlay> rows = history.getPersonalPlays(soundId);
+        String nextCursor = null;
+
+        if (rows.size() > SoundHistory.PAGE_SIZE) {
+            SoundPlay last = rows.get(SoundHistory.PAGE_SIZE - 1);
+            nextCursor = period.cursor(last.id(), last.time(), soundId, userId, guildId);
+        }
+
+        List<HistoryPlay> entries = new ArrayList<>();
+        int pageSize = Math.min(SoundHistory.PAGE_SIZE, rows.size());
+
+        for (SoundPlay play : rows.subList(0, pageSize)) {
+            String visibleGuild = memberships.contains(play.guildId()) ? play.guildId() : null;
+            entries.add(new HistoryPlay(play.id(), play.time().toString(), visibleGuild, getSourceName(play.source())));
+        }
+
+        return new PersonalHistory(plays, entries, nextCursor);
+    }
+
+    private List<DailyPlays> buildDailySeries(Group group, SoundPeriod period, Instant firstPlay) {
+        Map<LocalDate, Long> counts = new HashMap<>();
+
+        for (Map.Entry<Long, Long> entry : group.getTimeBuckets().entrySet()) {
+            LocalDate date = getBucketTime(entry.getKey(), period).toLocalDate();
+            counts.merge(date, entry.getValue(), Long::sum);
+        }
+
+        LocalDate start = firstPlay.atZone(period.zone()).toLocalDate();
+        LocalDate end = period.to().minusNanos(1).atZone(period.zone()).toLocalDate();
+        List<DailyPlays> result = new ArrayList<>();
+
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1))
+            result.add(new DailyPlays(date.toString(), counts.getOrDefault(date, 0L)));
+
         return result;
     }
 
-    private List<String> ids(List<QueryRecord> rows) {
-        List<String> result=new ArrayList<>();
-        for(var row:rows)result.add(row.get("id"));
+    private List<HeatmapCell> buildHeatmap(Group group, SoundPeriod period) {
+        long[][] cells = new long[DAYS_PER_WEEK][HOURS_PER_DAY];
+
+        for (Map.Entry<Long, Long> entry : group.getTimeBuckets().entrySet()) {
+            ZonedDateTime time = getBucketTime(entry.getKey(), period);
+            int weekday = time.getDayOfWeek().getValue() - 1;
+            cells[weekday][time.getHour()] += entry.getValue();
+        }
+
+        List<HeatmapCell> result = new ArrayList<>();
+        for (int day = 0; day < DAYS_PER_WEEK; day++) {
+            for (int hour = 0; hour < HOURS_PER_DAY; hour++)
+                result.add(new HeatmapCell(day + 1, hour, cells[day][hour]));
+        }
+
         return result;
     }
 
-    private List<QueryRecord> guildRows(List<QueryRecord> rows,String guild) {
-        return rows.stream().filter(row->guild.equals(row.get("guild_id"))).toList();
-    }
+    private List<SourcePlays> buildSourceDistribution(Group group) {
+        Map<String, Long> counts = new TreeMap<>();
+        for (Map.Entry<Integer, Long> entry : group.getSources().entrySet())
+            counts.merge(getSourceName(entry.getKey()), entry.getValue(), Long::sum);
 
-    private List<QueryRecord> other(List<QueryRecord> rows,Set<String> guilds) {
-        return rows.stream().filter(row->!guilds.contains(row.get("guild_id"))).toList();
-    }
+        List<SourcePlays> result = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : counts.entrySet())
+            result.add(new SourcePlays(entry.getKey(), entry.getValue()));
 
-    private long plays(List<QueryRecord> rows) {
-        return sum(rows,"plays");
-    }
-
-    private long sum(List<QueryRecord> rows,String key) {
-        long result=0;
-        for(var row:rows)result+=row.getAsLong(key);
         return result;
     }
 
-    private Double change(long current,long previous) {
-        return previous==0?null:100.0*(current-previous)/previous;
+    private List<ReplayBucket> buildReplayDistribution(Group group) {
+        long[] counts = new long[REPLAY_MINIMUMS.size()];
+        for (UserTotals user : group.getUserTotals().values())
+            counts[getReplayBucket(user.plays())]++;
+
+        List<ReplayBucket> result = new ArrayList<>();
+        for (int index = 0; index < counts.length; index++)
+            result.add(new ReplayBucket(REPLAY_MINIMUMS.get(index), REPLAY_MAXIMUMS.get(index), counts[index]));
+
+        return result;
     }
 
-    private String text(Instant instant) {
-        return instant==null?null:instant.toString();
+    private List<Listener> buildLeaderboard(Group group) {
+        Map<String, UserTotals> counts = group.getUserTotals();
+        List<String> ids = new ArrayList<>(counts.keySet());
+        ids.sort(Comparator.<String>comparingLong(id -> counts.get(id).plays()).reversed()
+            .thenComparing(Comparator.naturalOrder()));
+
+        List<Listener> result = new ArrayList<>();
+        for (String id : ids) {
+            UserTotals user = counts.get(id);
+            result.add(new Listener(access.user(id), user.plays(), user.soundCount()));
+        }
+
+        return result;
     }
 
-    private String source(int ordinal) {
-        return switch(ordinal) {
-            case 0->"AUDIO";
-            case 1->"SOUND";
-            case 2->"GREET";
-            case 3->"SOUNDBOARD";
-            default->"UNKNOWN";
-        };
+    private List<RankedSound> buildTopPlayedSounds(List<QueryRecord> sounds, SoundHistory history) {
+        List<RankedSound> ranked = new ArrayList<>();
+        for (QueryRecord sound : sounds) {
+            String id = sound.get("id");
+            ranked.add(new RankedSound(id, history.getSoundTotals(id).getPlayCount()));
+        }
+
+        ranked.sort(Comparator.comparingLong(RankedSound::plays).reversed());
+
+        return new ArrayList<>(ranked.subList(0, Math.min(TOP_SOUND_LIMIT, ranked.size())));
+    }
+
+    private List<LikedSound> buildMostLikedSounds(List<QueryRecord> sounds) {
+        List<LikedSound> ranked = new ArrayList<>();
+        for (QueryRecord sound : sounds)
+            ranked.add(new LikedSound(sound.get("id"), sound.getAsLong("likes")));
+
+        ranked.sort(Comparator.comparingLong(LikedSound::likes).reversed());
+
+        return new ArrayList<>(ranked.subList(0, Math.min(TOP_SOUND_LIMIT, ranked.size())));
+    }
+
+    private Map<String, Object> buildPeriodFields(SoundPeriod period) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("period", period.period());
+        result.put("timezone", period.zone().getId());
+        result.put("from", period.from() == null ? null : period.from().toString());
+        result.put("to", period.to().toString());
+
+        return result;
+    }
+
+    private void addPreviousPeriod(Map<String, Object> result, long current, long previous, SoundPeriod period) {
+        result.put("previousPlays", period.from() == null ? null : previous);
+        result.put("playsChangePercent", period.from() == null || previous == 0 ? null : 100.0 * (current - previous) / previous);
+    }
+
+    private ZonedDateTime getBucketTime(long bucket, SoundPeriod period) {
+        return Instant.ofEpochSecond(bucket * SoundHistory.TIME_BUCKET_SECONDS).atZone(period.zone());
+    }
+
+    private int getReplayBucket(long plays) {
+        if (plays == 1)
+            return 0;
+
+        if (plays <= 5)
+            return 1;
+
+        if (plays <= 20)
+            return 2;
+
+        if (plays <= 50)
+            return 3;
+
+        return 4;
+    }
+
+    private long sumSoundValues(List<QueryRecord> sounds, String column) {
+        long total = 0;
+
+        for (QueryRecord sound : sounds)
+            total += sound.getAsLong(column);
+
+        return total;
+    }
+
+    private String getSourceName(int ordinal) {
+        AudioType source = AudioType.getFromOrdinal(ordinal);
+
+        return source == null ? "UNKNOWN" : source.name();
     }
 }

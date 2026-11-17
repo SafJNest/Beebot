@@ -100,7 +100,8 @@ public class SoundUpload extends SlashCommand{
                 }
             }
         }
-        if (tags.size() > 0) SoundCache.getSoundById(id).setTags(tags);
+        if (!tags.isEmpty())
+            SoundCache.withSound(id, sound -> sound.setTags(tags));
 
         File saveFile = new File("rsc" + File.separator + "sounds" + File.separator + (id + "." + attachment.getFileExtension()));
 

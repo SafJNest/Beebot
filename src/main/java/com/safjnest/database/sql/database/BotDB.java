@@ -1,5 +1,13 @@
 package com.safjnest.database.sql.database;
 
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TimeZone;
+
+import com.safjnest.discord.auth.AuthException;
+import org.springframework.http.HttpStatus;
+
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,7 +58,12 @@ public class BotDB extends AbstractDB {
 
     private static BotDB instance;
 
+    private static final org.slf4j.Logger SOUND_LOG = org.slf4j.LoggerFactory.getLogger(BotDB.class);
+    private static final int SOUND_BATCH_SIZE = 500;
+    private static final int SOUND_HISTORY_FETCH_SIZE = 256;
+
     private final Supplier<Connection> connections;
+    private final ThreadLocal<SoundSession> soundReadSession = new ThreadLocal<>();
 
     static {
         instance = new BotDB();
@@ -229,41 +242,40 @@ public class BotDB extends AbstractDB {
     }
 
     public static boolean updateSound(String id, String name, boolean isPublic) {
-        return updateSoundMetadata(id, java.util.Map.of("name", name, "public", isPublic), null);
+        return com.safjnest.bot.cache.managers.SoundCache.withSound(id, sound -> {
+            if (sound == null)
+                return false;
+
+            Sound edit = sound.deferEdit();
+            edit.setName(name);
+            edit.setPublic(isPublic);
+
+            return edit.update();
+        });
     }
 
     public static boolean updateSound(String id, String name) {
-        return updateSoundMetadata(id, java.util.Map.of("name", name), null);
+        return com.safjnest.bot.cache.managers.SoundCache.withSound(id,
+            sound -> sound != null && sound.setName(name));
     }
 
     public static boolean updateSound(String id, boolean isPublic) {
-        return updateSoundMetadata(id, java.util.Map.of("public", isPublic), null);
-    }
-
-    private static boolean updateSoundMetadata(String id, java.util.Map<String,Object> values, java.util.List<String> tags) {
-        try {
-            SoundDB database = new SoundDB();
-            var rows = database.sounds(java.util.List.of(id));
-            if (rows.isEmpty()) return false;
-            database.patch(id, rows.get(0).get("user_id"), values, tags);
-            com.safjnest.bot.cache.managers.SoundCache.catalogChanged(id);
-            return true;
-        } catch (com.safjnest.discord.auth.AuthException exception) { return false; }
+        return com.safjnest.bot.cache.managers.SoundCache.withSound(id,
+            sound -> sound != null && sound.setPublic(isPublic));
     }
 
     public static boolean deleteSound(String id) {
-        boolean result = instance.defaultQuery("DELETE FROM sound WHERE id = " + id + ";");
-        if (result) com.safjnest.bot.cache.managers.SoundCache.catalogChanged(id);
-        return result;
+        return com.safjnest.bot.cache.managers.SoundCache.deleteSound(id);
     }
 
-    public static boolean updateUserPlays(String sound_id, String user_id, String guild_id, int source) {
-        try { new SoundDB().play(sound_id, user_id, guild_id, source); return true; }
-        catch (com.safjnest.discord.auth.AuthException exception) { return false; }
+    public static boolean updateUserPlays(String soundId, String userId, String guildId, int source) {
+        return com.safjnest.bot.cache.managers.SoundCache.withSound(soundId,
+            sound -> sound != null && sound.increaseUserPlays(userId, guildId,
+                com.safjnest.bot.audio.types.AudioType.values()[source]));
     }
 
     public static QueryRecord getPlays(String sound_id, String user_id) {
-        return instance.lineQuery("SELECT count(id) as times FROM sound_history WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
+        return instance.readSoundUserPlays(sound_id, user_id);
     }
 
     public static QueryRecord getGlobalPlays(String sound_id) {
@@ -489,7 +501,53 @@ public class BotDB extends AbstractDB {
     }
 
     public static List<QueryRecord> getAliases(Collection<String> userIds) {
-        return instance.cacheRows("SELECT id, user_id, name, command FROM alias WHERE user_id IN (%s)", userIds);
+        return instance.readUserAliases(userIds);
+    }
+
+    public List<QueryRecord> readUserAliases(Collection<String> userIds) {
+        return cacheRows("SELECT id, user_id, name, command FROM alias WHERE user_id IN (%s)", userIds);
+    }
+
+    public int saveUserAlias(String userId, String name, String command) {
+        return guildTransaction(false, connection -> guildInsert(connection,
+            "INSERT INTO alias(user_id, name, command) VALUES (?, ?, ?)", userId, name, command));
+    }
+
+    public boolean deleteUserAlias(String userId, int id) {
+        return guildTransaction(false, connection -> guildExecute(connection,
+            "DELETE FROM alias WHERE user_id = ? AND id = ?", userId, id) == 1);
+    }
+
+    public List<QueryRecord> readGreet(String userId, String scope) {
+        return readSoundRows("SELECT guild_id, sound_id FROM greeting WHERE user_id = ? AND guild_id = ?", userId, scope);
+    }
+
+    public QueryRecord readMember(String guildId, String userId) {
+        return guildTransaction(true, connection -> {
+            List<QueryRecord> rows = guildQuery(connection,
+                "SELECT id, user_id, guild_id, experience, level, messages, update_time FROM member WHERE guild_id = ? AND user_id = ?",
+                guildId, userId);
+
+            return rows.isEmpty() ? new QueryRecord() : rows.get(0);
+        });
+    }
+
+    public String saveMember(String guildId, String userId, String prefix,
+            int experience, int level, int messages, int updateTime) {
+        return guildTransaction(false, connection -> {
+            lockGuild(connection, guildId, prefix);
+
+            List<QueryRecord> rows = guildQuery(connection,
+                "SELECT id FROM member WHERE guild_id = ? AND user_id = ? FOR UPDATE", guildId, userId);
+            String id = rows.isEmpty()
+                ? String.valueOf(guildInsert(connection, "INSERT INTO member(guild_id, user_id) VALUES (?, ?)", guildId, userId))
+                : rows.get(0).get("id");
+
+            guildExecute(connection, "UPDATE member SET experience = ?, level = ?, messages = ?, update_time = ? WHERE id = ?",
+                experience, level, messages, updateTime, id);
+
+            return id;
+        });
     }
 
     public static boolean updateVoiceGuild(String guild_id, String language, String voice) {
@@ -529,13 +587,14 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("UPDATE guild SET prefix = '" + prefix + "' WHERE guild_id = '" + guild_id + "';");
     }
 
-    public static boolean setGreet(String user_id, String guild_id, String sound_id) {
-        try { new SoundDB().greet(user_id, guild_id, sound_id); return true; }
-        catch (com.safjnest.discord.auth.AuthException exception) { return false; }
+    public static boolean setGreet(String userId, String guildId, String soundId) {
+        return com.safjnest.bot.cache.managers.UserCache.withUser(userId,
+            user -> user.setGreet(guildId, soundId));
     }
 
-    public static boolean deleteGreet(String user_id, String guild_id) {
-        return instance.defaultQuery("DELETE from greeting WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "';");
+    public static boolean deleteGreet(String userId, String guildId) {
+        return com.safjnest.bot.cache.managers.UserCache.withUser(userId,
+            user -> user.unsetGreet(guildId));
     }
 
     public static boolean setBlacklistChannel(String blacklist_channel, String guild_id) {
@@ -1009,10 +1068,9 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT id, name FROM tag WHERE id = '" + tag_id + "';");
     }
 
-    public static boolean setSoundTags(String sound_id, List<Tag> tags) {
-        java.util.List<String> names = new java.util.ArrayList<>();
-        for (Tag tag : tags) if (!tag.isEmpty()) names.add(tag.getName());
-        return updateSoundMetadata(sound_id, java.util.Map.of(), names);
+    public static boolean setSoundTags(String soundId, List<Tag> tags) {
+        return com.safjnest.bot.cache.managers.SoundCache.withSound(soundId,
+            sound -> sound != null && sound.setTags(tags));
     }
 
     public static int insertTag(String tag) {
@@ -1062,15 +1120,9 @@ public class BotDB extends AbstractDB {
     }
 
 
-    public static boolean setLikeDislike(String sound_id, String user_id, int value) {
-        try {
-            SoundDB database = new SoundDB();
-            var rows = database.sounds(java.util.List.of(sound_id));
-            if (rows.isEmpty()) return false;
-            database.vote(sound_id, user_id, java.util.Set.of(rows.get(0).get("guild_id")), value, true);
-            com.safjnest.bot.cache.managers.SoundCache.catalogChanged(sound_id);
-            return true;
-        } catch (com.safjnest.discord.auth.AuthException exception) { return false; }
+    public static boolean setLikeDislike(String soundId, String userId, int value) {
+        return com.safjnest.bot.cache.managers.SoundCache.withSound(soundId,
+            sound -> sound != null && (value == -1 ? sound.dislike(userId) : sound.like(userId, value == 1)));
     }
 
     public static QueryRecord hasInterectedSound(String sound_id, String user_id) {
@@ -1716,6 +1768,327 @@ public class BotDB extends AbstractDB {
         return result;
     }
 
+    public record SoundPlay(String id, String soundId, String userId, String guildId, Instant time, int source) {}
+
+    public record SoundSelection(String userId, Set<String> guilds, String guildId, boolean mine,
+            String q, String tag, String sort, String order, int limit) {
+    }
+
+    public List<String> selectSounds(SoundSelection selection) {
+        List<Object> args = new ArrayList<>();
+        String where;
+
+        if (selection.guildId() != null) {
+            where = "s.guild_id = ?";
+            args.add(selection.guildId());
+        }
+        else if (selection.mine()) {
+            where = "s.user_id = ?";
+            args.add(selection.userId());
+        }
+        else {
+            where = soundVisibility(selection.userId(), selection.guilds(), args);
+        }
+
+        if (!selection.q().isEmpty()) {
+            where += " AND LOWER(s.name) LIKE ? ESCAPE '!'";
+            args.add("%" + escapeSoundQuery(selection.q()) + "%");
+        }
+
+        if (!selection.tag().isEmpty()) {
+            where += " AND EXISTS (SELECT 1 FROM tag_sounds ts JOIN tag t ON t.id = ts.tag_id WHERE ts.sound_id = s.id AND LOWER(t.name) = ?)";
+            args.add(selection.tag());
+        }
+
+        String sort = switch (selection.sort()) {
+            case "likes" -> "likes";
+            case "dislikes" -> "dislikes";
+            default -> "plays";
+        };
+
+        String order = selection.order().equals("asc") ? "ASC" : "DESC";
+        String sql = "SELECT s.id FROM sound s WHERE " + where + " ORDER BY s." + sort + " " + order + ", s.id ASC";
+
+        if (selection.limit() > 0) {
+            sql += " LIMIT ?";
+            args.add(selection.limit());
+        }
+
+        List<String> result = new ArrayList<>();
+
+        for (QueryRecord row : readSoundRows(sql, args.toArray()))
+            result.add(row.get("id"));
+
+        return result;
+    }
+
+    public List<QueryRecord> readSounds(Collection<String> ids) {
+        List<QueryRecord> result = new ArrayList<>();
+
+        soundBatches(ids, batch -> result.addAll(readSoundRows(
+            "SELECT * FROM sound WHERE id IN (" + soundMarks(batch.size()) + ")", batch.toArray())));
+
+        return result;
+    }
+
+    public List<QueryRecord> readSoundTags(Collection<String> ids) {
+        List<QueryRecord> result = new ArrayList<>();
+
+        soundBatches(ids, batch -> result.addAll(readSoundRows(
+            "SELECT DISTINCT ts.sound_id, t.id AS tag_id, t.name FROM tag_sounds ts JOIN tag t ON t.id = ts.tag_id WHERE ts.sound_id IN ("
+                + soundMarks(batch.size()) + ") ORDER BY t.name, t.id", batch.toArray())));
+
+        return result;
+    }
+
+    public List<QueryRecord> searchSoundTags(String q, String userId, Set<String> guilds) {
+        List<Object> args = new ArrayList<>();
+        args.add(escapeSoundQuery(q) + "%");
+        String visible = soundVisibility(userId, guilds, args);
+
+        return readSoundRows("SELECT DISTINCT t.id, t.name FROM tag t JOIN tag_sounds ts ON ts.tag_id=t.id JOIN sound s ON s.id=ts.sound_id WHERE LOWER(t.name) LIKE ? ESCAPE '!' AND " + visible + " ORDER BY t.name, t.id LIMIT 100", args.toArray());
+    }
+
+    public List<QueryRecord> readSoundEnrichment(Collection<String> ids, String userId) {
+        List<QueryRecord> result = new ArrayList<>();
+
+        soundBatches(ids, batch -> {
+            List<Object> args = new ArrayList<>();
+            args.add(userId);
+            args.add(userId);
+            args.addAll(batch);
+
+            result.addAll(readSoundRows("SELECT s.id, (SELECT COUNT(DISTINCT h.user_id) FROM sound_history h WHERE h.sound_id=s.id) AS listeners, "
+            + "(SELECT COUNT(*) FROM sound_history h WHERE h.sound_id=s.id AND h.user_id=?) AS my_plays, "
+            + "(SELECT value FROM sound_interactions i WHERE i.sound_id=s.id AND i.user_id=?) AS vote, "
+            + "(SELECT COUNT(DISTINCT bs.id) FROM soundboard_sounds bs WHERE bs.sound_id=s.id) AS boards "
+            + "FROM sound s WHERE s.id IN (" + soundMarks(batch.size()) + ")", args.toArray()));
+        });
+
+        return result;
+    }
+
+    public <T> T withSoundReadSession(Supplier<T> work) {
+        if (soundReadSession.get() != null)
+            return work.get();
+
+        try (SoundSession session = connectSound()) {
+            session.connection().setAutoCommit(false);
+            session.connection().setReadOnly(true);
+            session.connection().setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+            soundReadSession.set(session);
+
+            try {
+                return work.get();
+            } finally {
+                soundReadSession.remove();
+                session.connection().rollback();
+            }
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
+    }
+
+    public void forEachSoundPlay(Collection<String> ids, String guildId, Instant from, Instant to,
+            java.util.function.Consumer<SoundPlay> consumer) {
+        if (ids.isEmpty())
+            return;
+
+        withSoundReadSession(() -> {
+            Connection connection = soundReadSession.get().connection();
+            Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            long started = System.nanoTime();
+            long rowsRead = 0;
+
+            try {
+                for (List<String> batch : soundPartition(ids)) {
+                    List<Object> args = new ArrayList<>(batch);
+                    String where = "sound_id IN (" + soundMarks(batch.size()) + ") AND time < ?";
+                    args.add(Timestamp.from(to));
+
+                    if (from != null) {
+                        where += " AND time >= ?";
+                        args.add(Timestamp.from(from));
+                    }
+
+                    if (guildId != null) {
+                        where += " AND guild_id = ?";
+                        args.add(guildId);
+                    }
+
+                    try (PreparedStatement statement = connection.prepareStatement(
+                            "SELECT id, sound_id, user_id, guild_id, time, source FROM sound_history WHERE " + where,
+                            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+                        statement.setFetchSize(SOUND_HISTORY_FETCH_SIZE);
+                        bindSound(statement, args.toArray());
+
+                        try (ResultSet rows = statement.executeQuery()) {
+                            while (rows.next()) {
+                                consumer.accept(new SoundPlay(rows.getString("id"), rows.getString("sound_id"), rows.getString("user_id"),
+                                    rows.getString("guild_id"), rows.getTimestamp("time", utc).toInstant(), rows.getInt("source")));
+                                rowsRead++;
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            } catch (SQLException exception) {
+                throw soundUnavailable(exception);
+            } finally {
+                SOUND_LOG.debug("Sound history: {} rows processed in {} ms", rowsRead, (System.nanoTime() - started) / 1_000_000);
+            }
+        });
+    }
+
+    public List<QueryRecord> readGreets(String userId) {
+        return readSoundRows("SELECT guild_id, sound_id FROM greeting WHERE user_id=?", userId);
+    }
+
+    public QueryRecord readSoundUserPlays(String soundId, String userId) {
+        List<QueryRecord> rows = readSoundRows(
+            "SELECT COUNT(*) AS times FROM sound_history WHERE sound_id = ? AND user_id = ?", soundId, userId);
+
+        return rows.isEmpty() ? new QueryRecord() : rows.get(0);
+    }
+
+    public QueryRecord readSoundInteraction(String soundId, String userId) {
+        List<QueryRecord> rows = readSoundRows(
+            "SELECT value FROM sound_interactions WHERE sound_id = ? AND user_id = ?", soundId, userId);
+
+        return rows.isEmpty() ? new QueryRecord() : rows.get(0);
+    }
+
+    public List<Tag> saveSound(Sound edit, String userId) {
+        List<Tag> saved = new ArrayList<>();
+
+        soundTransaction(connection -> {
+            QueryRecord current = lockSound(connection, edit.getId());
+            if (!userId.equals(current.get("user_id")))
+                throw soundForbidden();
+
+            if (!edit.getName().equals(current.get("name")) && !soundQuery(connection,
+                    "SELECT id FROM sound WHERE id <> ? AND name = ? AND (guild_id = ? OR user_id = ?)",
+                    edit.getId(), edit.getName(), current.get("guild_id"), userId).isEmpty())
+                throw new AuthException(HttpStatus.BAD_REQUEST, "duplicate_sound_name", "Sound name is already in use");
+
+            soundExecute(connection, "UPDATE sound SET name = ?, public = ? WHERE id = ?",
+                edit.getName(), edit.isPublic(), edit.getId());
+            soundExecute(connection, "DELETE FROM tag_sounds WHERE sound_id = ?", edit.getId());
+
+            for (Tag tag : edit.getTags()) {
+                if (tag.isEmpty())
+                    continue;
+
+                List<QueryRecord> existing = soundQuery(connection,
+                    "SELECT id FROM tag WHERE name = ? ORDER BY id LIMIT 1", tag.getName());
+                int tagId = existing.isEmpty()
+                    ? guildInsert(connection, "INSERT INTO tag(name) VALUES (?)", tag.getName())
+                    : existing.get(0).getAsInt("id");
+
+                soundExecute(connection, "INSERT INTO tag_sounds(sound_id, tag_id) VALUES (?, ?)", edit.getId(), tagId);
+                saved.add(new Tag(tagId, tag.getName()));
+            }
+        });
+
+        return saved;
+    }
+
+    public Sound.Vote voteSound(String id, String userId, Set<String> guilds, int value, boolean enabled) {
+        Sound.Vote[] saved = new Sound.Vote[1];
+
+        soundTransaction(connection -> {
+            QueryRecord sound = lockSound(connection, id);
+
+            if (!isSoundVisible(sound, userId, guilds))
+                throw soundMissing();
+
+            List<QueryRecord> old = soundQuery(connection, "SELECT value FROM sound_interactions WHERE sound_id=? AND user_id=?", id, userId);
+            int current = old.isEmpty() ? 0 : old.get(0).getAsInt("value");
+            int next = enabled ? value : current == value ? 0 : current;
+
+            if (old.isEmpty())
+                soundExecute(connection, "INSERT INTO sound_interactions(sound_id,user_id,value) VALUES (?,?,?)", id, userId, next);
+            else
+                soundExecute(connection, "UPDATE sound_interactions SET value=? WHERE sound_id=? AND user_id=?", next, id, userId);
+
+            soundExecute(connection, "UPDATE sound SET likes=(SELECT COUNT(*) FROM sound_interactions WHERE sound_id=? AND value=1), dislikes=(SELECT COUNT(*) FROM sound_interactions WHERE sound_id=? AND value=-1) WHERE id=?", id, id, id);
+            QueryRecord counts = soundQuery(connection, "SELECT likes, dislikes FROM sound WHERE id = ?", id).get(0);
+            saved[0] = new Sound.Vote(id, counts.getAsLong("likes"), counts.getAsLong("dislikes"), next == 1, next == -1);
+        });
+
+        return saved[0];
+    }
+
+    public QueryRecord deleteSoundData(String id, String userId, Set<String> administrators) {
+        QueryRecord[] removed = new QueryRecord[1];
+
+        soundTransaction(connection -> {
+            QueryRecord row = lockSound(connection, id);
+            if (!userId.equals(row.get("user_id")) && !administrators.contains(row.get("guild_id")))
+                throw soundForbidden();
+            soundExecute(connection, "DELETE FROM sound WHERE id=?", id);
+            removed[0] = row;
+        });
+
+        return removed[0];
+    }
+
+    public void saveGreet(String userId, String guildId, String soundId) {
+        soundTransaction(connection -> {
+            if (soundId == null) {
+                soundExecute(connection, "DELETE FROM greeting WHERE user_id=? AND guild_id=?", userId, guildId);
+                return;
+            }
+
+            QueryRecord sound = lockSound(connection, soundId);
+            boolean allowed = guildId.equals("0") ? sound.getAsBoolean("public") || userId.equals(sound.get("user_id"))
+                : sound.getAsBoolean("public") || guildId.equals(sound.get("guild_id"));
+
+            if (!allowed)
+                throw new AuthException(HttpStatus.BAD_REQUEST, "private_sound_wrong_guild", "Private sound cannot be used in this context");
+
+            soundExecute(connection, "INSERT INTO greeting(user_id,guild_id,sound_id) VALUES (?,?,?) ON DUPLICATE KEY UPDATE sound_id=VALUES(sound_id)", userId, guildId, soundId);
+        });
+    }
+
+    public int recordSoundPlay(String id, String userId, String guildId, int source) {
+        int[] plays = new int[1];
+
+        soundTransaction(connection -> {
+            lockSound(connection, id);
+            soundExecute(connection, "INSERT INTO sound_history(user_id,sound_id,guild_id,source) VALUES (?,?,?,?)", userId, id, guildId, source);
+            soundExecute(connection, "UPDATE sound SET plays=plays+1 WHERE id=?", id);
+            plays[0] = soundQuery(connection, "SELECT plays FROM sound WHERE id = ?", id).get(0).getAsInt("plays");
+        });
+
+        return plays[0];
+    }
+
+    public static boolean isSoundVisible(QueryRecord sound, String userId, Set<String> guilds) {
+        return sound.getAsBoolean("public") || userId.equals(sound.get("user_id")) || guilds.contains(sound.get("guild_id"));
+    }
+
+    public List<QueryRecord> readSoundRows(String sql, Object... args) {
+        SoundSession existing = soundReadSession.get();
+
+        if (existing != null) {
+            try {
+                return soundQuery(existing.connection(), sql, args);
+            } catch (SQLException exception) {
+                throw soundUnavailable(exception);
+            }
+        }
+
+        try (SoundSession session = connectSound()) {
+            Connection connection = session.connection();
+            return soundQuery(connection, sql, args);
+        }
+        catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
+    }
+
     /* -------------------------------------------------------------------------- */
 
     private <T> T guildTransaction(boolean readOnly, GuildWork<T> work) {
@@ -1866,4 +2239,166 @@ public class BotDB extends AbstractDB {
         return values;
     }
 
+
+    private String soundVisibility(String user, Set<String> guilds, List<Object> args) {
+        args.add(user);
+
+        String where = "(s.public=1 OR s.user_id=?";
+
+        if (!guilds.isEmpty()) {
+            where += " OR s.guild_id IN (" + soundMarks(guilds.size()) + ")";
+            args.addAll(guilds);
+        }
+
+        return where + ")";
+    }
+
+    private record SoundSession(Connection connection, String timeZone) implements AutoCloseable {
+        public void close() throws SQLException {
+            try {
+                if (timeZone != null) {
+                    try (PreparedStatement statement = connection.prepareStatement("SET time_zone = ?")) {
+                        statement.setString(1, timeZone);
+                        statement.execute();
+                    }
+                }
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    private SoundSession connectSound() throws SQLException {
+        Connection connection = getConnection();
+        if (connection == null)
+            throw new SQLException("No database connection");
+
+        try {
+            String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+            String originalZone = null;
+
+            if (product.contains("mariadb") || product.contains("mysql")) {
+                try (Statement statement = connection.createStatement()) {
+                    try (ResultSet result = statement.executeQuery("SELECT @@session.time_zone")) {
+                        result.next();
+                        originalZone = result.getString(1);
+                    }
+                    statement.execute("SET time_zone = '+00:00'");
+                }
+            }
+
+            return new SoundSession(connection, originalZone);
+        } catch (SQLException | RuntimeException exception) {
+            connection.close();
+
+            throw exception;
+        }
+    }
+
+    private interface SoundWork {
+        void run(Connection connection) throws SQLException;
+    }
+
+    private void soundTransaction(SoundWork work) {
+        try (SoundSession session = connectSound()) {
+            Connection connection = session.connection();
+            connection.setAutoCommit(false);
+
+            try {
+                work.run(connection);
+
+                connection.commit();
+            }
+            catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            }
+        }
+        catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
+    }
+
+    private QueryRecord lockSound(Connection connection, String id) throws SQLException {
+        List<QueryRecord> rows = soundQuery(connection, "SELECT * FROM sound WHERE id=? FOR UPDATE", id);
+        if (rows.isEmpty())
+            throw soundMissing();
+
+        return rows.get(0);
+    }
+
+    private List<QueryRecord> soundQuery(Connection connection, String sql, Object... args) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bindSound(statement, args);
+
+            try (ResultSet result = statement.executeQuery()) {
+                List<QueryRecord> rows = new ArrayList<>();
+
+                while (result.next()) {
+                    QueryRecord row = new QueryRecord();
+                    for (int i = 1; i <= result.getMetaData().getColumnCount(); i++)
+                        row.put(result.getMetaData().getColumnLabel(i).toLowerCase(Locale.ROOT),
+                            result.getMetaData().getColumnType(i) == Types.TIMESTAMP
+                                ? result.getTimestamp(i, Calendar.getInstance(TimeZone.getTimeZone("UTC"))) : result.getObject(i));
+
+                    rows.add(row);
+                }
+
+                return rows;
+            }
+        }
+    }
+
+    private void soundExecute(Connection connection, String sql, Object... args) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bindSound(statement, args);
+            statement.executeUpdate();
+        }
+    }
+
+    private void bindSound(PreparedStatement statement, Object[] args) throws SQLException {
+        Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof Timestamp timestamp)
+                statement.setTimestamp(i + 1, timestamp, utc);
+            else
+                statement.setObject(i + 1, args[i]);
+        }
+    }
+
+    private List<List<String>> soundPartition(Collection<String> ids) {
+        List<String> list = new ArrayList<>(new LinkedHashSet<>(ids));
+        List<List<String>> soundBatches = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i += SOUND_BATCH_SIZE)
+            soundBatches.add(list.subList(i, Math.min(i + SOUND_BATCH_SIZE, list.size())));
+
+        return soundBatches;
+    }
+
+    private void soundBatches(Collection<String> ids, java.util.function.Consumer<List<String>> consumer) {
+        for (List<String> batch : soundPartition(ids))
+            consumer.accept(batch);
+    }
+
+    private String soundMarks(int size) {
+        return String.join(",", Collections.nCopies(size, "?"));
+    }
+
+    private String escapeSoundQuery(String text) {
+        return text.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    }
+
+    private AuthException soundUnavailable(Exception cause) {
+        return new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "sound_storage_unavailable", "Sound storage is unavailable");
+    }
+
+    private AuthException soundMissing() {
+        return new AuthException(HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+    }
+
+    private AuthException soundForbidden() {
+        return new AuthException(HttpStatus.FORBIDDEN, "sound_forbidden", "Sound operation is not permitted");
+    }
 }

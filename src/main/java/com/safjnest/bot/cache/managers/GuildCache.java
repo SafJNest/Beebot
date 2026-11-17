@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 import com.safjnest.bot.Bot;
 import com.safjnest.bot.cache.CacheAdapter;
 import com.safjnest.bot.model.guild.GuildData;
+import com.safjnest.bot.model.guild.MemberData;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 
@@ -77,6 +78,19 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
         return instance.withAll(ids, operation);
     }
 
+    public static MemberData.Experience receiveExperience(String guildId, String userId, String channelId) {
+        return instance.receiveMemberExperience(guildId, userId, channelId);
+    }
+
+    public MemberData.Experience receiveMemberExperience(String guildId, String userId, String channelId) {
+        return withAll(List.of(guildId), guilds -> {
+            if (guilds.isEmpty())
+                return withGuildData(guildId, guild -> receiveExperience(guild, userId, channelId));
+
+            return receiveExperience(guilds.get(0), userId, channelId);
+        });
+    }
+
     public static <R> R withGuildOrPut(String id, Function<? super GuildData, ? extends R> operation) {
         return instance.withGuildData(id, guild -> {
             guild.ensureStored();
@@ -120,6 +134,21 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private MemberData.Experience receiveExperience(GuildData guild, String userId, String channelId) {
+        MemberData member;
+        double modifier;
+
+        synchronized (guild) {
+            if (!guild.isExperienceEnabled() || !guild.getExpSystemRoom(channelId))
+                return new MemberData.Experience(false, false, 0);
+
+            member = guild.getMemberData(userId);
+            modifier = guild.getExperienceModifier(channelId);
+        }
+
+        return member.receiveExperience(modifier);
+    }
 
     private Map<String, GuildData> hydrate(List<QueryRecord> rows) {
         if (rows.isEmpty())

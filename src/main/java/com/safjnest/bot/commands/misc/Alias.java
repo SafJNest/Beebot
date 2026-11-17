@@ -56,7 +56,7 @@ public class Alias extends Command {
 
         if(args.startsWith("delete")) {
             String toDelete = args.split(" ", 2)[1];
-            if(userData.deleteAlias(toDelete))
+            if(UserCache.withUser(author.getId(), user -> user.deleteAlias(toDelete)))
                 event.reply(toDelete + " deleted");
             else
                 event.reply("No such alias or error deleting alias " + toDelete);
@@ -71,7 +71,7 @@ public class Alias extends Command {
             return;
         }
 
-        if (!userData.addAlias(aliasName, command)) {
+        if (!UserCache.withUser(author.getId(), user -> user.addAlias(aliasName, command))) {
             event.reply("Failed to create alias.");
             return;
         }

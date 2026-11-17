@@ -4,52 +4,67 @@ import java.time.LocalDateTime;
 
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.status.log.BotLogger;
-import com.safjnest.status.log.LoggerIDpair;
+import com.safjnest.utils.ExperienceSystem;
 
 public class MemberData {
     private String ID;
     private final String USER_ID;
     private final String GUILD_ID;
 
+    private final BotDB database;
+    private final String defaultPrefix;
+
     private int experience;
     private int level;
+
     private int messages;
+
     private int updateTime;
     private LocalDateTime lastMessageTime;
 
     public MemberData(String USER_ID, String GUILD_ID) {
+        this(USER_ID, GUILD_ID, "!", BotDB.get());
+    }
+
+    public MemberData(String USER_ID, String GUILD_ID, String defaultPrefix, BotDB database) {
+        this.database = database;
+        this.defaultPrefix = defaultPrefix;
+
         this.ID = "0";
         this.USER_ID = USER_ID;
         this.GUILD_ID = GUILD_ID;
 
         this.experience = 0;
         this.level = 1;
+
         this.messages = 0;
+
         this.updateTime = 60;
         this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
     }
 
     public MemberData(QueryRecord data) {
+        this(data, "!", BotDB.get());
+    }
+
+    public MemberData(QueryRecord data, String defaultPrefix, BotDB database) {
+        this.database = database;
+        this.defaultPrefix = defaultPrefix;
+
         this.ID = data.get("id");
         this.USER_ID = data.get("user_id");
         this.GUILD_ID = data.get("guild_id");
 
         this.experience = data.getAsInt("experience");
         this.level = data.getAsInt("level");
+
         this.messages = data.getAsInt("messages");
+
         this.updateTime = data.getAsInt("update_time");
         this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
     }
 
-    private void handleEmptyID() {
-        if (this.ID.equals("0")) {
-            BotLogger.info("Pushing local UserData into Database => {0}", new LoggerIDpair(String.valueOf(this.USER_ID), LoggerIDpair.IDType.USER));
-            this.ID = BotDB.insertUserData(this.GUILD_ID, this.USER_ID);
-        }
-    }
-
-    public String getId() {
+    public synchronized String getId() {
         return ID;
     }
 
@@ -57,66 +72,83 @@ public class MemberData {
         return USER_ID;
     }
 
-    public int getExperience() {
+    public synchronized int getExperience() {
         return experience;
     }
 
-    public int getLevel() {
+    public synchronized int getLevel() {
         return level;
     }
 
-    public int getMessages() {
+    public synchronized int getMessages() {
         return messages;
     }
 
-    public int getUpdateTime() {
+    public synchronized int getUpdateTime() {
         return updateTime;
     }
 
-    public LocalDateTime getLastMessageTime() {
+    public synchronized LocalDateTime getLastMessageTime() {
         return lastMessageTime;
     }
 
-    public boolean canReceiveExperience() {
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isAfter(lastMessageTime.plusSeconds(updateTime))) {
-            lastMessageTime = now;
-            return true;
-        }
-        return false;
+    public synchronized boolean canReceiveExperience() {
+        return LocalDateTime.now().isAfter(lastMessageTime.plusSeconds(updateTime));
     }
 
-    public boolean setExpData(int experience, int level) {
-        handleEmptyID();
-        this.messages++;
-        boolean result = BotDB.updateUserDataExperience(this.ID, experience, level, this.messages);
+    public record Experience(boolean saved, boolean leveledUp, int level) {}
 
-        if (result) {
+    public synchronized Experience receiveExperience(double modifier) {
+        LocalDateTime now = LocalDateTime.now();
+        if (!now.isAfter(lastMessageTime.plusSeconds(updateTime)))
+            return new Experience(false, false, level);
+
+        int nextExperience = ExperienceSystem.calculateExp(experience, modifier);
+        int calculatedLevel = ExperienceSystem.isLevelUp(nextExperience, level);
+        int nextLevel = calculatedLevel == ExperienceSystem.NOT_LEVELED_UP ? level : calculatedLevel;
+
+        if (!setExpData(nextExperience, nextLevel))
+            return new Experience(false, false, level);
+
+        lastMessageTime = now;
+
+        return new Experience(true, calculatedLevel != ExperienceSystem.NOT_LEVELED_UP, level);
+    }
+
+    public synchronized boolean setExpData(int experience, int level) {
+        try {
+            String id = database.saveMember(GUILD_ID, USER_ID, defaultPrefix,
+                experience, level, messages + 1, updateTime);
+
+            this.ID = id;
             this.experience = experience;
             this.level = level;
-        }
-        else {
-            this.messages--;
-        }
-        return result;
+            this.messages++;
 
+            return true;
+        } catch (IllegalStateException exception) {
+            return false;
+        }
     }
 
-    public boolean setUpdateTime(int updateTime) {
-        handleEmptyID();
-        boolean result = BotDB.updateUserDataUpdateTime(this.ID, updateTime);
-        if (result) {
+    public synchronized boolean setUpdateTime(int updateTime) {
+        try {
+            String id = database.saveMember(GUILD_ID, USER_ID, defaultPrefix,
+                experience, level, messages, updateTime);
+
+            this.ID = id;
             this.updateTime = updateTime;
+
+            return true;
+        } catch (IllegalStateException exception) {
+            return false;
         }
-        return result;
     }
 
-    public int warn(String reason) {
+    public synchronized int warn(String reason) {
         handleEmptyID();
         return BotDB.insertWarn(this.ID, reason);
     }
-
-
 
     @Override
     public String toString() {
@@ -130,5 +162,13 @@ public class MemberData {
                 ", lastMessageTime=" + lastMessageTime +
                 '}';
     }
+
+    /* -------------------------------------------------------------------------- */
+
+    private void handleEmptyID() {
+        if (ID.equals("0"))
+            ID = database.saveMember(GUILD_ID, USER_ID, defaultPrefix, experience, level, messages, updateTime);
+    }
+
 
 }

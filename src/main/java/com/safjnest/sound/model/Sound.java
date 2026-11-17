@@ -1,16 +1,22 @@
 package com.safjnest.sound.model;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
-import java.util.ArrayList;
-
-import java.sql.Timestamp;
-import java.util.List;
-
 import com.safjnest.bot.audio.types.AudioType;
+import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.discord.auth.AuthException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
@@ -36,13 +42,20 @@ public class Sound {
     @JsonProperty("dislikes")
     private volatile int dislikes;
 
+    private final BotDB database;
+    private final Runnable catalogChanged;
+
+    private Sound original;
+    private long revision;
+    private boolean deleted;
+
     private AudioTrack track;
 
     private volatile List<Tag> tags;
 
     @JsonProperty private Map<String, Object> uploader;
     @JsonProperty private String url;
-    @JsonProperty private Long durationMs;
+    @JsonProperty private volatile Long durationMs;
     @JsonProperty private long listeners;
     @JsonProperty private long myPlays;
     @JsonProperty private boolean likedByMe;
@@ -58,28 +71,42 @@ public class Sound {
         result.uploader = uploader;
         result.url = cdn == null || cdn.isBlank() ? null : cdn.replaceAll("/+$", "") + "/sounds/" + result.ID + "." + result.extension;
         result.durationMs = source.durationMs;
+
         result.listeners = extra.getAsLong("listeners");
         result.myPlays = extra.getAsLong("my_plays");
         result.likedByMe = extra.getAsInt("vote") == 1;
         result.dislikedByMe = extra.getAsInt("vote") == -1;
+
         result.ownedByMe = viewerId.equals(result.USER_ID);
         result.canEdit = result.ownedByMe;
         result.canDelete = result.ownedByMe || administrator;
         result.soundboardCount = extra.getAsLong("boards");
+
         return result;
     }
 
     @JsonProperty("createdAt")
-    public String getCreatedAt() { return timestamp == null ? null : timestamp.toInstant().toString(); }
+    public String getCreatedAt() {
+        return timestamp == null ? null : timestamp.toInstant().toString();
+    }
 
     @JsonProperty("tags")
     public List<Tag> getJsonTags() {
         ArrayList<Tag> result = new ArrayList<>();
-        if (tags != null) for (Tag tag : tags) if (!tag.isEmpty()) result.add(tag);
+        if (tags != null) {
+            for (Tag tag : tags) {
+                if (!tag.isEmpty())
+                    result.add(new Tag(tag.getId(), tag.getName()));
+            }
+        }
+
         return result;
     }
 
     public Sound() {
+        this.database = BotDB.get();
+        this.catalogChanged = () -> SoundCache.catalogChanged(null);
+
         this.ID = null;
         this.GUILD_ID = null;
         this.USER_ID = null;
@@ -91,6 +118,13 @@ public class Sound {
     }
 
     public Sound(QueryRecord data, List<Tag> tags) {
+        this(data, tags, BotDB.get(), () -> SoundCache.catalogChanged(null));
+    }
+
+    public Sound(QueryRecord data, List<Tag> tags, BotDB database, Runnable catalogChanged) {
+        this.database = database;
+        this.catalogChanged = catalogChanged;
+
         this.ID = data.get("id");
         this.GUILD_ID = data.get("guild_id");
         this.USER_ID = data.get("user_id");
@@ -104,7 +138,93 @@ public class Sound {
         this.likes = data.getAsInt("likes");
         this.dislikes = data.getAsInt("dislikes");
         
-        this.tags = tags;
+        this.tags = copyTags(tags);
+    }
+
+    private Sound(Sound original) {
+        this.ID = original.ID;
+        this.GUILD_ID = original.GUILD_ID;
+        this.USER_ID = original.USER_ID;
+
+        this.database = original.database;
+        this.catalogChanged = original.catalogChanged;
+
+        this.name = original.name;
+        this.isPublic = original.isPublic;
+        this.tags = copyTags(original.tags);
+
+        this.extension = original.extension;
+        this.timestamp = original.timestamp;
+        this.durationMs = original.durationMs;
+
+        this.plays = original.plays;
+        this.likes = original.likes;
+        this.dislikes = original.dislikes;
+
+        this.original = original;
+        this.revision = original.revision;
+    }
+
+    public record Vote(String soundId, long likes, long dislikes, boolean likedByMe, boolean dislikedByMe) {}
+
+    public synchronized Sound deferEdit() {
+        if (original != null)
+            throw new IllegalStateException("This sound is already an edit");
+
+        return new Sound(this);
+    }
+
+    public boolean update() {
+        try {
+            return update(USER_ID);
+        } catch (AuthException exception) {
+            return false;
+        }
+    }
+
+    public boolean update(String userId) {
+        if (original == null)
+            return deferEdit().update(userId);
+
+        synchronized (original) {
+            if (original.deleted || revision != original.revision)
+                return false;
+
+            List<Tag> savedTags = database.saveSound(this, userId);
+
+            original.name = name;
+            original.isPublic = isPublic;
+            original.tags = copyTags(savedTags);
+            original.revision++;
+        }
+
+        catalogChanged.run();
+
+        return true;
+    }
+
+    public synchronized void refreshMetadata(QueryRecord current, List<Tag> currentTags) {
+        if (!ID.equals(current.get("id")) || original != null || deleted)
+            throw new IllegalStateException("Cannot refresh this sound");
+
+        String refreshedName = current.get("name");
+        boolean refreshedPublic = current.getAsBoolean("public");
+        List<Tag> refreshedTags = copyTags(currentTags);
+
+        boolean metadataChanged = !Objects.equals(name, refreshedName)
+            || isPublic != refreshedPublic
+            || !getTagSet(tags).equals(getTagSet(refreshedTags));
+
+        name = refreshedName;
+        isPublic = refreshedPublic;
+        tags = refreshedTags;
+
+        plays = current.getAsInt("plays");
+        likes = current.getAsInt("likes");
+        dislikes = current.getAsInt("dislikes");
+
+        if (metadataChanged)
+            revision++;
     }
 
     public String getId() {
@@ -132,19 +252,19 @@ public class Sound {
     }
 
     public Timestamp getTimestamp() {
-        return timestamp;
+        return timestamp == null ? null : new Timestamp(timestamp.getTime());
     }
 
     public long getTimestampSecond() {
         return timestamp.getTime() / 1000;
     }
 
-    public AudioTrack getAsTrack() {
+    public synchronized AudioTrack getAsTrack() {
         return track;
     }
 
     public List<Tag> getTags() {
-        return tags;
+        return copyTags(tags);
     }
 
     public String getPath() {
@@ -155,28 +275,25 @@ public class Sound {
         return extension.equals("opus");
     }
 
-    public synchronized boolean setName(String name) {
-        boolean result = BotDB.updateSound(this.ID, name);
-        if (result) {
-            this.name = name;
-        }
-        return result;  
+    public boolean setName(String name) {
+        return change(edit -> edit.name = name);
     }
 
-    public synchronized boolean setPublic(boolean isPublic) {
-        boolean result = BotDB.updateSound(this.ID, isPublic);
-        if (result) {
-            this.isPublic = isPublic;
-        }
-        return result;
+    public boolean setPublic(boolean isPublic) {
+        return change(edit -> edit.isPublic = isPublic);
     }
 
-    public synchronized boolean setTags(List<Tag> tags) {
-        boolean result = BotDB.setSoundTags(this.ID, tags);
-        if (result) {
-            this.tags = tags;
-        }
-        return result;
+    public boolean setTags(List<Tag> tags) {
+        return change(edit -> edit.tags = copyTags(tags));
+    }
+
+    public boolean setTagNames(List<String> names) {
+        List<Tag> tags = new ArrayList<>();
+
+        for (String name : new LinkedHashSet<>(names))
+            tags.add(new Tag(0, name));
+
+        return setTags(tags);
     }
 
     public boolean increaseUserPlays(String userId, String guildId) {
@@ -184,63 +301,65 @@ public class Sound {
     }
 
     public synchronized boolean increaseUserPlays(String userId, String guildId, AudioType source) {
-        boolean result = BotDB.updateUserPlays(this.ID, userId, guildId, source.ordinal());
-        if (result) plays++;
-        return result;
+        if (deleted || original != null)
+            return false;
+
+        try {
+            plays = database.recordSoundPlay(ID, userId, guildId, source.ordinal());
+
+            return true;
+        } catch (AuthException exception) {
+            return false;
+        }
     }
 
-    public void setTrack(AudioTrack track) {
+    public synchronized void setTrack(AudioTrack track) {
         this.track = track;
         this.durationMs = track == null ? null : track.getDuration();
     }
 
     public String getFormattedTags() {
-        StringBuilder sb = new StringBuilder();
-        for (Tag tag : tags) {
-            if (!tag.isEmpty()) sb.append(tag.getName()).append(", ");
+        StringBuilder result = new StringBuilder();
+
+        for (Tag tag : getTags()) {
+            if (!tag.isEmpty())
+                result.append(tag.getName()).append(", ");
         }
-        return sb.length() > 2 ? sb.toString().substring(0, sb.length() - 2) : "";
+
+        return result.length() > 2 ? result.substring(0, result.length() - 2) : "";
     }
 
-    /**
-     * 0 total 1 user
-     * @param userId
-     * @return
-     */
     public int[] getPlays(String userId) {
-        QueryRecord plays = BotDB.getPlays(this.ID, userId);
-        if (plays.emptyValues()) return new int[] {this.plays, 0};
+        QueryRecord personal = database.readSoundUserPlays(ID, userId);
 
-        return new int[] {this.plays, plays.getAsInt("times")};
+        return new int[] {plays, personal.getAsInt("times")};
     }
 
     public int getGlobalPlays() {
-        return this.plays;
+        return plays;
     }
 
-    public int retriveGlobalPlays() {
-        QueryRecord plays = BotDB.getGlobalPlays(this.ID);
-        if (plays.emptyValues()) return 0;
-        this.plays = plays.getAsInt("times");
+    public synchronized int retriveGlobalPlays() {
+        List<QueryRecord> rows = database.readSounds(List.of(ID));
+        if (rows.isEmpty())
+            return 0;
 
-        return this.plays;
+        plays = rows.get(0).getAsInt("plays");
+
+        return plays;
     }
 
-    public int[] getLikesDislikes(boolean retrive) {
-        return retrive ? retriveLikeDislike() : new int[] {likes, dislikes};
-    }
+    public synchronized int[] getLikesDislikes(boolean retrieve) {
+        if (retrieve) {
+            List<QueryRecord> rows = database.readSounds(List.of(ID));
+            if (rows.isEmpty())
+                return new int[] {0, 0};
 
-    private int[] retriveLikeDislike() {
-        QueryRecord likes = BotDB.getLikeDislike(this.ID);
-        if (likes.emptyValues()) return new int[] {0, 0};
+            likes = rows.get(0).getAsInt("likes");
+            dislikes = rows.get(0).getAsInt("dislikes");
+        }
 
-        return new int[] {likes.getAsInt("likes"), likes.getAsInt("dislikes")};
-    }
-
-    private void updateLikeDislike() {
-        int[] likeDislike = retriveLikeDislike();
-        this.likes = likeDislike[0];
-        this.dislikes = likeDislike[1];
+        return new int[] {likes, dislikes};
     }
 
     public int getLikes() {
@@ -254,43 +373,115 @@ public class Sound {
     public boolean like(String userId) {
         return like(userId, true);
     }
-    
+
     public boolean dislike(String userId) {
         return dislike(userId, true);
     }
-    
 
-
-    public synchronized boolean like(String userId, boolean like) {
-        boolean result = BotDB.setLikeDislike(this.ID, userId, (like ? 1 : 0));
-        if (result) {
-            updateLikeDislike();
-        }
-        return result;
+    public boolean like(String userId, boolean enabled) {
+        return vote(userId, 1, enabled);
     }
 
-    public synchronized boolean dislike(String userId, boolean dislike) {
-        boolean result = BotDB.setLikeDislike(this.ID, userId, (dislike ? -1 : 0));
-        if (result) {
-            updateLikeDislike();
-        }
-        return result;
+    public boolean dislike(String userId, boolean enabled) {
+        return vote(userId, -1, enabled);
+    }
+
+    public synchronized Vote vote(String userId, Set<String> guilds, int value, boolean enabled) {
+        if (deleted || original != null)
+            throw new AuthException(org.springframework.http.HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+
+        Vote saved = database.voteSound(ID, userId, guilds, value, enabled);
+        likes = (int) saved.likes();
+        dislikes = (int) saved.dislikes();
+        catalogChanged.run();
+
+        return saved;
     }
 
     public boolean hasLiked(String userId) {
-        return BotDB.hasInterectedSound(this.ID, userId).getAsBoolean("like");
+        return currentVote(userId) == 1;
     }
 
     public boolean hasDisliked(String userId) {
-        return BotDB.hasInterectedSound(this.ID, userId).getAsBoolean("dislike");
+        return currentVote(userId) == -1;
     }
 
+    public boolean delete() {
+        try {
+            return delete(USER_ID, Set.of());
+        } catch (AuthException exception) {
+            return false;
+        }
+    }
+
+    public synchronized boolean delete(String userId, Set<String> administrators) {
+        if (deleted || original != null)
+            return false;
+
+        database.deleteSoundData(ID, userId, administrators);
+        deleted = true;
+        revision++;
+        catalogChanged.run();
+
+        return true;
+    }
 
     @Override
     public String toString() {
         return "ID: " + ID;
     }
 
+    /* -------------------------------------------------------------------------- */
+
+    private synchronized boolean change(Consumer<Sound> mutation) {
+        if (original != null) {
+            mutation.accept(this);
+
+            return true;
+        }
+
+        Sound edit = deferEdit();
+        mutation.accept(edit);
+
+        return edit.update();
+    }
+
+    private boolean vote(String userId, int value, boolean enabled) {
+        try {
+            vote(userId, Set.of(GUILD_ID), value, enabled);
+
+            return true;
+        } catch (AuthException exception) {
+            return false;
+        }
+    }
+
+    private int currentVote(String userId) {
+        return database.readSoundInteraction(ID, userId).getAsInt("value");
+    }
+
+    private static Set<Tag> getTagSet(List<Tag> tags) {
+        Set<Tag> result = new HashSet<>();
+
+        if (tags != null) {
+            for (Tag tag : tags) {
+                if (!tag.isEmpty())
+                    result.add(tag);
+            }
+        }
+
+        return result;
+    }
+
+    private static List<Tag> copyTags(List<Tag> tags) {
+        List<Tag> result = new ArrayList<>();
+
+        if (tags != null)
+            result.addAll(tags);
+
+        while (result.size() < Tag.MAX_TAG_SOUND)
+            result.add(new Tag());
+
+        return result;
+    }
 }
-
-

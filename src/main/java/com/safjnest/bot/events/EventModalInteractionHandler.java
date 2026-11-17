@@ -85,9 +85,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             return;
         }
         if (type.equals("global"))
-            UserCache.getUser(event.getUser().getId()).setGreet("0", sound.getId());
+            UserCache.withUser(event.getUser().getId(), user -> user.setGreet("0", sound.getId()));
         else 
-            UserCache.getUser(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
+            UserCache.withUser(event.getUser().getId(), user -> user.setGreet(event.getGuild().getId(), sound.getId()));
         
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(SoundEmbed.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
@@ -100,7 +100,12 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         EmbedBuilder eb = null;
         Sound sound = SoundCache.getSoundById(soundId);
         String newName = event.getValue("sound-name").getAsString();
-        sound.setName(newName);
+        SoundCache.withSound(soundId, current -> {
+            Sound edit = current.deferEdit();
+            edit.setName(newName);
+
+            return edit.update(event.getUser().getId());
+        });
 
         eb = SoundCustomize.getEmbed(event.getUser(), sound);
         event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId)).queue();
@@ -113,14 +118,21 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         Sound sound = SoundCache.getSoundById(soundId.split("-")[0]);
         String newTagName = event.getValue("tag-name").getAsString();
         Tag tag = SoundCache.getTagByName(newTagName);
-        List<Tag> tags = sound.getTags();
-        for (int i = 0; i < tags.size(); i++) {
-            if (tags.get(i).getId() == Integer.parseInt(soundId.split("-")[1])) {
-                tags.set(i, tag);
-                break;
+        SoundCache.withSound(sound.getId(), current -> {
+            List<Tag> tags = current.getTags();
+
+            for (int i = 0; i < tags.size(); i++) {
+                if (tags.get(i).getId() == Integer.parseInt(soundId.split("-")[1])) {
+                    tags.set(i, tag);
+                    break;
+                }
             }
-        }
-        sound.setTags(tags);
+
+            Sound edit = current.deferEdit();
+            edit.setTags(tags);
+
+            return edit.update(event.getUser().getId());
+        });
 
         eb = SoundCustomize.getEmbed(event.getUser(), sound);
         event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId.split("-")[0])).queue();

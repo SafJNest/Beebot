@@ -175,9 +175,13 @@ public class SearchSound extends SlashCommand {
     
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
     
-                sound.increaseUserPlays(author.getId(), guild.getId());
+                Sound played = SoundCache.withSound(sound.getId(), current -> {
+                    current.increaseUserPlays(author.getId(), guild.getId());
+
+                    return current;
+                });
                     
-                menuEvent.editMessageEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();
+                menuEvent.editMessageEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
             }
     
             @Override

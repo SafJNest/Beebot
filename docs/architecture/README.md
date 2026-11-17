@@ -8,7 +8,7 @@ The [agreed repository reorganization plan](repository-review.md) records the
 decisions discussed with the owner. The owner confirmed the current `bot`,
 `database`, `discord`, `lol`, `sound`, `spring`, `status` and `utils` layout on
 17 November 2026, including authentication in `discord.auth`. The document
-separates completed file moves, the implemented local-cache and guild/alert steps from the
+separates completed file moves, the implemented local-cache, guild/alert and user/XP/sound steps from the
 remaining consolidation, scope exclusions and verification requirements. It is
 the canonical plan for this work and does not amend an accepted ADR.
 

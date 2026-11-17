@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.springframework.http.HttpStatus;
 
 import com.safjnest.database.sql.QueryRecord;
-import com.safjnest.database.sql.database.SoundDB;
+import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.discord.auth.AuthException;
 import com.safjnest.sound.SoundAccess;
 import com.safjnest.sound.SoundQueryCache;
@@ -128,7 +128,7 @@ public class SoundCacheLoadingTest {
         return row;
     }
 
-    private static final class RecordingDatabase extends SoundDB {
+    private static final class RecordingDatabase extends BotDB {
         private final List<String> sounds = new ArrayList<>();
         private final List<String> tags = new ArrayList<>();
         private AuthException failure;
@@ -138,7 +138,7 @@ public class SoundCacheLoadingTest {
         }
 
         @Override
-        public List<QueryRecord> sounds(Collection<String> ids) {
+        public List<QueryRecord> readSounds(Collection<String> ids) {
             if (failure != null)
                 throw failure;
             sounds.addAll(ids);
@@ -149,18 +149,18 @@ public class SoundCacheLoadingTest {
         }
 
         @Override
-        public List<QueryRecord> tags(Collection<String> ids) {
+        public List<QueryRecord> readSoundTags(Collection<String> ids) {
             tags.addAll(ids);
             return List.of();
         }
 
         @Override
-        public List<QueryRecord> enrichment(Collection<String> ids, String userId) {
+        public List<QueryRecord> readSoundEnrichment(Collection<String> ids, String userId) {
             return List.of();
         }
 
         @Override
-        public <T> T withReadSession(Supplier<T> operation) {
+        public <T> T withSoundReadSession(Supplier<T> operation) {
             return operation.get();
         }
     }

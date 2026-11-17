@@ -786,22 +786,23 @@ public class GuildData {
         return getMemberData(String.valueOf(userId));
     }
 
-    public MemberData getMemberData(String userId) {
+    public synchronized MemberData getMemberData(String userId) {
         MemberData member = this.members.get(userId);
         if (member != null) {
             return member;
         }
+
         member = retriveMemberData(userId);
         if (member == null) {
-            member = new MemberData(userId, this.getId());
-            BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
+            member = new MemberData(userId, this.getId(), prefix, database);
         }
         this.members.put(userId, member);
+
         return member;
     }
 
-    public HashMap<String, MemberData> getMembers() {
-        return this.members;
+    public synchronized HashMap<String, MemberData> getMembers() {
+        return new HashMap<>(members);
     }
 
     public boolean canReceiveExperience(long userId, String channelId) {
@@ -839,13 +840,12 @@ public class GuildData {
 
     private MemberData retriveMemberData(String userId) {
         MemberData member = null;
-        QueryRecord result = BotDB.getUserData(String.valueOf(ID), userId);
+        QueryRecord result = database.readMember(ID, userId);
         if (result.emptyValues()) {
             return null;
         }
 
-        BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
-        member = new MemberData(result);
+        member = new MemberData(result, prefix, database);
         return member;
     }
 

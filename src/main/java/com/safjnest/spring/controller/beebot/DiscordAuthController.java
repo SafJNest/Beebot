@@ -25,13 +25,11 @@ import org.springframework.core.env.Environment;
 public class DiscordAuthController {
     private final DiscordAuthService auth;
     private final DiscordGuildService guilds;
-    private final java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.sound.model.Sound>> greets;
 
     public record AuthorizeRequest(String state, String redirectUri) {}
 
     public record ExchangeRequest(String code, String state, String redirectUri) {}
 
-    public record Me(AuthUser user, List<Server> servers, java.util.Map<String, com.safjnest.sound.model.Sound> greets) {}
 
     public DiscordAuthController() { this(new DiscordAuthService(), new DiscordGuildService(null)); }
 
@@ -42,14 +40,8 @@ public class DiscordAuthController {
     }
 
     public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds) {
-        this(auth, guilds, context -> {
-            var sounds = com.safjnest.bot.cache.managers.SoundCache.getInstance();
-            return sounds.greets(sounds.context(context.user().id()));
-        });
-    }
-    public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds,
-            java.util.function.Function<AuthContext, java.util.Map<String, com.safjnest.sound.model.Sound>> greets) {
-        this.auth = auth; this.guilds = guilds; this.greets = greets;
+        this.auth = auth;
+        this.guilds = guilds;
     }
 
     @ModelAttribute
@@ -69,11 +61,6 @@ public class DiscordAuthController {
             @RequestBody(required = false) ExchangeRequest request) {
         if (request == null) throw new AuthException(HttpStatus.BAD_REQUEST, "invalid_request", "A JSON request body is required");
         return auth.exchangeSession(context, request.code(), request.state(), request.redirectUri());
-    }
-
-    @GetMapping("/me")
-    public Me me(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
-        return new Me(context.user(), guilds.servers(context), greets.apply(context));
     }
 
     @GetMapping({"/guilds", "/servers"})

@@ -10,11 +10,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.safjnest.spring.controller.beebot.DiscordAuthController;
 import com.safjnest.spring.controller.beebot.GuildController;
+import com.safjnest.spring.controller.beebot.MeController;
 import com.safjnest.spring.controller.beebot.SoundController;
 import com.safjnest.spring.exception.AuthExceptionHandler.AuthError;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(assignableTypes = {DiscordAuthController.class, GuildController.class, SoundController.class})
+@RestControllerAdvice(assignableTypes = {DiscordAuthController.class, GuildController.class, SoundController.class, MeController.class})
 public class AuthRequestExceptionHandler {
     @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
     public ResponseEntity<AuthError> parameter(Exception exception) {

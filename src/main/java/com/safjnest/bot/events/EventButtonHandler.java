@@ -220,9 +220,9 @@ public class EventButtonHandler extends ListenerAdapter {
             case "delete":
                 type = clicked.getCustomId().split("-")[2];
                 if (type.equals("global"))
-                    UserCache.getUser(event.getUser().getId()).unsetGreet("0");
+                    UserCache.withUser(event.getUser().getId(), user -> user.unsetGreet("0"));
                 else
-                    UserCache.getUser(event.getUser().getId()).unsetGreet(event.getGuild().getId());
+                    UserCache.withUser(event.getUser().getId(), user -> user.unsetGreet(event.getGuild().getId()));
         }
 
         List<MessageTopLevelComponent> buttons = soundSwitch ? SoundEmbed.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundEmbed.getGreetButton(event.getUser().getId(), event.getGuild().getId());
@@ -401,17 +401,17 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "like":
-                sound.like(event.getUser().getId(), !sound.hasLiked(event.getUser().getId()));
+                SoundCache.withSound(soundId, current -> current.like(event.getUser().getId(), !current.hasLiked(event.getUser().getId())));
                 break;
             case "dislike":
-                sound.dislike(event.getUser().getId(), !sound.hasDisliked(event.getUser().getId()));
+                SoundCache.withSound(soundId, current -> current.dislike(event.getUser().getId(), !current.hasDisliked(event.getUser().getId())));
                 break;
             case "replay":
                 String path = sound.getPath();
                 AudioChannel channelJoin = event.getMember().getVoiceState().getChannel();
                 if (channelJoin == null)  return;
 
-                sound.increaseUserPlays(event.getUser().getId(), guild.getId());
+                SoundCache.withSound(soundId, current -> current.increaseUserPlays(event.getUser().getId(), guild.getId()));
 
                 pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
                     @Override
@@ -471,14 +471,21 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "delete":
-                List<Tag> tags = soundData.getTags();
-                for (int i = 0; i < tags.size(); i++) {
-                    if (tags.get(i).getId() == Integer.parseInt(tagId)) {
-                        tags.set(i, new Tag());
-                        break;
+                SoundCache.withSound(soundId, current -> {
+                    List<Tag> tags = current.getTags();
+
+                    for (int i = 0; i < tags.size(); i++) {
+                        if (tags.get(i).getId() == Integer.parseInt(tagId)) {
+                            tags.set(i, new Tag());
+                            break;
+                        }
                     }
-                }
-                soundData.setTags(tags);
+
+                    Sound edit = current.deferEdit();
+                    edit.setTags(tags);
+
+                    return edit.update(event.getUser().getId());
+                });
                 tagSwitch = false;
                 break;
             default:
@@ -524,8 +531,12 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "private":
-                boolean isPrivate = !soundData.isPublic();
-                soundData.setPublic(isPrivate);
+                SoundCache.withSound(soundId, current -> {
+                    Sound edit = current.deferEdit();
+                    edit.setPublic(!current.isPublic());
+
+                    return edit.update(event.getUser().getId());
+                });
                 break;
             case "delete":
                 String response = SoundCache.deleteSound(soundId) ? "Sound deleted" : "Error deleting sound";

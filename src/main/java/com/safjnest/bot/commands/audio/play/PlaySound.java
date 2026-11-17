@@ -171,14 +171,17 @@ public class PlaySound extends SlashCommand{
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-            sound.increaseUserPlays(author.getId(), guild.getId());
-            sound.setTrack(track);
+            Sound played = SoundCache.withSound(sound.getId(), current -> {
+                current.increaseUserPlays(author.getId(), guild.getId());
+                current.setTrack(track);
 
+                return current;
+            });
 
             if (commandEvent != null) 
-                commandEvent.getChannel().sendMessageEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();
+                commandEvent.getChannel().sendMessageEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
             else 
-                slashEvent.deferReply(false).addEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).addComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();
+                slashEvent.deferReply(false).addEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).addComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
         }
 
         @Override

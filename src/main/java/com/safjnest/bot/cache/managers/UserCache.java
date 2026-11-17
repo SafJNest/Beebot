@@ -18,8 +18,16 @@ public class UserCache extends CacheAdapter<String, UserData> {
 
     private static final UserCache instance = new UserCache();
 
+    private final BotDB database;
+
     public UserCache() {
+        this(BotDB.get());
+    }
+
+    public UserCache(BotDB database) {
         super(2000, 12, TimeUnit.HOURS);
+
+        this.database = database;
     }
 
     public static UserCache getInstance() {
@@ -50,14 +58,14 @@ public class UserCache extends CacheAdapter<String, UserData> {
     protected Map<String, UserData> loadValues(Collection<String> ids) {
         Map<String, List<QueryRecord>> aliases = new HashMap<>();
 
-        for (QueryRecord row : BotDB.getAliases(ids)) {
+        for (QueryRecord row : database.readUserAliases(ids)) {
             aliases.computeIfAbsent(row.get("user_id"), key -> new ArrayList<>()).add(row);
         }
 
         Map<String, UserData> result = new LinkedHashMap<>();
 
         for (String id : ids)
-            result.put(id, UserData.fromRows(id, aliases.getOrDefault(id, List.of())));
+            result.put(id, UserData.fromRows(id, aliases.getOrDefault(id, List.of()), database));
 
         return result;
     }
