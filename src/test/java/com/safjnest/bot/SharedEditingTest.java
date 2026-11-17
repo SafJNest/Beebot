@@ -33,22 +33,21 @@ import com.safjnest.bot.model.UserData;
 import com.safjnest.bot.model.guild.MemberData;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
-import com.safjnest.sound.SoundAccess;
+import com.safjnest.discord.auth.DiscordApi;
 import com.safjnest.sound.SoundQueryCache;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.spring.controller.beebot.MeController;
 import com.safjnest.spring.controller.beebot.SoundController;
-import com.safjnest.spring.exception.AuthExceptionHandler;
-import com.safjnest.spring.exception.AuthRequestExceptionHandler;
+import com.safjnest.spring.exception.ApiExceptionHandler;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -72,7 +71,7 @@ public class SharedEditingTest {
     private MeController meController;
 
     @Before
-    public void setup() throws Exception {
+    public void setup() throws java.lang.Exception {
         url = "jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=MariaDB;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=-1";
 
         try (Connection connection = connection()) {
@@ -114,9 +113,9 @@ public class SharedEditingTest {
                 });
         });
 
-        SoundAccess access = new SoundAccess() {
+        DiscordApi access = new DiscordApi() {
             @Override
-            public Map<String, GuildAccess> guilds(String userId) {
+            public Map<String, GuildAccess> guildAccess(String userId) {
                 return Map.of("1", new GuildAccess("Guild", false), "3", new GuildAccess("Other", false));
             }
 
@@ -204,15 +203,15 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void failedPatchDoesNotPublishAnyField() throws Exception {
+    public void failedPatchDoesNotPublishAnyField() throws java.lang.Exception {
         Sound sound = sound();
-        assertThrows(AuthException.class, () -> soundController.patch(AUTH, "10", json("{\"name\":\"valid\",\"tags\":null}")));
+        assertThrows(Exception.class, () -> soundController.patch(AUTH, "10", json("{\"name\":\"valid\",\"tags\":null}")));
         assertEquals("first", sound.getName());
         assertEquals("first", row("SELECT name FROM sound WHERE id = 10").get("name"));
     }
 
     @Test
-    public void botAndApiObserveTheSameSoundAndOmittedFieldsSurvive() throws Exception {
+    public void botAndApiObserveTheSameSoundAndOmittedFieldsSurvive() throws java.lang.Exception {
         Sound sound = sound();
         assertTrue(sound.setTagNames(List.of("kept")));
         Sound response = soundController.patch(AUTH, "10", json("{\"name\":\"api\"}"));
@@ -226,14 +225,14 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void duplicateAndOwnershipChecksStayInsideTheSave() throws Exception {
+    public void duplicateAndOwnershipChecksStayInsideTheSave() throws java.lang.Exception {
         Sound sound = sound();
-        assertEquals("duplicate_sound_name", assertThrows(AuthException.class,
-            () -> soundController.patch(AUTH, "10", json("{\"name\":\"second\"}"))).code());
+        assertEquals("duplicate_sound_name", assertThrows(Exception.class,
+            () -> soundController.patch(AUTH, "10", json("{\"name\":\"second\"}"))).getCode());
         AuthContext other = new AuthContext(null, "hash", "encrypted", Long.MAX_VALUE,
             new AuthUser("9", "other", null, null));
-        assertEquals(HttpStatus.FORBIDDEN, assertThrows(AuthException.class,
-            () -> soundController.patch(other, "10", json("{\"name\":\"forbidden\"}"))).getStatusCode());
+        assertEquals(Type.FORBIDDEN, assertThrows(Exception.class,
+            () -> soundController.patch(other, "10", json("{\"name\":\"forbidden\"}"))).getType());
         assertEquals("first", sound.getName());
     }
 
@@ -265,8 +264,8 @@ public class SharedEditingTest {
     public void voteRevalidatesCurrentVisibility() {
         Sound sound = sound();
         execute("UPDATE sound SET public = FALSE WHERE id = 10");
-        assertEquals("sound_not_found", assertThrows(AuthException.class,
-            () -> sound.vote("9", Set.of(), 1, true)).code());
+        assertEquals("sound_not_found", assertThrows(Exception.class,
+            () -> sound.vote("9", Set.of(), 1, true)).getCode());
     }
 
     @Test
@@ -305,7 +304,7 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void bulkGreetsHaveIndependentOutcomesAndUpdateCurrentUser() throws Exception {
+    public void bulkGreetsHaveIndependentOutcomesAndUpdateCurrentUser() throws java.lang.Exception {
         UserData user = users.getOrLoad("2");
         Map<String, Object> response = meController.settings(AUTH,
             json("{\"greets\":{\"0\":\"11\",\"1\":\"12\",\"3\":\"10\"}}"));
@@ -333,7 +332,7 @@ public class SharedEditingTest {
     public void failedFullGreetLoadDoesNotPoisonCompleteness() {
         UserData user = users.getOrLoad("2");
         failedSql.set("FROM greeting");
-        assertThrows(AuthException.class, user::getAllGreets);
+        assertThrows(Exception.class, user::getAllGreets);
         failedSql.set(null);
         execute("INSERT INTO greeting VALUES ('2', '3', 10)");
         assertEquals(Map.of("3", "10"), user.getAllGreets());
@@ -355,7 +354,7 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void concurrentExperienceConsumesCooldownOnce() throws Exception {
+    public void concurrentExperienceConsumesCooldownOnce() throws java.lang.Exception {
         MemberData member = guilds.withGuildData("1", guild -> guild.getMemberData("2"));
         List<MemberData.Experience> results = concurrently(20, () -> guilds.receiveMemberExperience("1", "2", "100"));
         int saved = 0;
@@ -413,9 +412,9 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void httpRoutesKeepContractsAndMalformedJsonHandling() throws Exception {
+    public void httpRoutesKeepContractsAndMalformedJsonHandling() throws java.lang.Exception {
         MockMvc mvc = MockMvcBuilders.standaloneSetup(soundController, meController)
-            .setControllerAdvice(new AuthExceptionHandler(), new AuthRequestExceptionHandler()).build();
+            .setControllerAdvice(new ApiExceptionHandler()).build();
         mvc.perform(patch("/api/beebot/sounds/10").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"http\"}"))
             .andExpect(status().isOk());
@@ -431,7 +430,7 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void apiPatchPreservesFreshOmittedFields() throws Exception {
+    public void apiPatchPreservesFreshOmittedFields() throws java.lang.Exception {
         Sound sound = sound();
         execute("UPDATE sound SET name = 'external' WHERE id = 10");
 
@@ -442,7 +441,7 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void concurrentVotesKeepAllCounts() throws Exception {
+    public void concurrentVotesKeepAllCounts() throws java.lang.Exception {
         Sound sound = sound();
         AtomicInteger userIds = new AtomicInteger(100);
         concurrently(20, () -> sounds.with("10", current -> current.vote(
@@ -455,8 +454,8 @@ public class SharedEditingTest {
     @Test
     public void deletionRequiresUploaderOrAdministratorAndKeepsStateOnFailure() {
         Sound sound = sound();
-        assertEquals(HttpStatus.FORBIDDEN, assertThrows(AuthException.class,
-            () -> sound.delete("9", Set.of())).getStatusCode());
+        assertEquals(Type.FORBIDDEN, assertThrows(Exception.class,
+            () -> sound.delete("9", Set.of())).getType());
         failedSql.set("DELETE FROM sound WHERE");
         assertFalse(sound.delete());
         failedSql.set(null);
@@ -465,7 +464,7 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void sqlFailureForOneGreetDoesNotUndoOtherScopes() throws Exception {
+    public void sqlFailureForOneGreetDoesNotUndoOtherScopes() throws java.lang.Exception {
         UserData user = users.getOrLoad("2");
         assertTrue(user.setGreet("0", "10"));
         assertTrue(user.setGreet("1", "10"));
@@ -555,7 +554,7 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void draftSurvivesVotesCountersAndReorderedTagHydration() throws Exception {
+    public void draftSurvivesVotesCountersAndReorderedTagHydration() throws java.lang.Exception {
         Sound sound = sound();
         assertTrue(sound.setTagNames(List.of("zebra", "alpha")));
         Sound edit = sound.deferEdit();
@@ -573,25 +572,25 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void rejectedPatchDoesNotInvalidatePendingMetadataEdit() throws Exception {
+    public void rejectedPatchDoesNotInvalidatePendingMetadataEdit() throws java.lang.Exception {
         Sound sound = sound();
         Sound edit = sound.deferEdit();
         edit.setName("pending");
 
-        assertThrows(AuthException.class, () -> soundController.patch(AUTH, "10", json("{\"name\":\"rejected\",\"tags\":null}")));
+        assertThrows(Exception.class, () -> soundController.patch(AUTH, "10", json("{\"name\":\"rejected\",\"tags\":null}")));
 
         assertTrue(edit.update());
         assertEquals("pending", sound.getName());
     }
 
     @Test
-    public void failedPatchDoesNotInvalidateAnotherPendingEdit() throws Exception {
+    public void failedPatchDoesNotInvalidateAnotherPendingEdit() throws java.lang.Exception {
         Sound sound = sound();
         Sound edit = sound.deferEdit();
         edit.setName("pending");
         failedSql.set("UPDATE sound SET name");
 
-        assertThrows(AuthException.class, () -> soundController.patch(AUTH, "10", json("{\"name\":\"failed\"}")));
+        assertThrows(Exception.class, () -> soundController.patch(AUTH, "10", json("{\"name\":\"failed\"}")));
         failedSql.set(null);
 
         assertTrue(edit.update());
@@ -712,9 +711,9 @@ public class SharedEditingTest {
     public void namedPlayAndVoteReadsPropagateStorageFailures() {
         Sound sound = sound();
         failedSql.set("FROM sound_history WHERE");
-        assertEquals("sound_storage_unavailable", assertThrows(AuthException.class, () -> sound.getPlays("2")).code());
+        assertEquals("sound_storage_unavailable", assertThrows(Exception.class, () -> sound.getPlays("2")).getCode());
         failedSql.set("FROM sound_interactions WHERE");
-        assertEquals("sound_storage_unavailable", assertThrows(AuthException.class, () -> sound.hasLiked("2")).code());
+        assertEquals("sound_storage_unavailable", assertThrows(Exception.class, () -> sound.hasLiked("2")).getCode());
     }
 
     /* -------------------------------------------------------------------------- */
@@ -723,7 +722,7 @@ public class SharedEditingTest {
         return sounds.getOrLoad("10");
     }
 
-    private JsonNode json(String value) throws Exception {
+    private JsonNode json(String value) throws java.lang.Exception {
         return JSON.readTree(value);
     }
 
@@ -758,7 +757,7 @@ public class SharedEditingTest {
         }
     }
 
-    private <T> List<T> concurrently(int count, java.util.concurrent.Callable<T> operation) throws Exception {
+    private <T> List<T> concurrently(int count, java.util.concurrent.Callable<T> operation) throws java.lang.Exception {
         ExecutorService executor = Executors.newFixedThreadPool(count);
         CountDownLatch start = new CountDownLatch(1);
         List<Future<T>> futures = new ArrayList<>();

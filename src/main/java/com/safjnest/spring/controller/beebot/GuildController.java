@@ -26,9 +26,11 @@ import com.safjnest.bot.model.guild.alert.AlertSendType;
 import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.bot.model.guild.alert.RewardData;
 import com.safjnest.bot.model.guild.alert.TwitchData;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
-import com.safjnest.discord.guild.DiscordGuildService;
+import com.safjnest.discord.auth.DiscordAuthService;
+import com.safjnest.discord.auth.DiscordApi.Server;
 import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.status.log.BotLogger;
 import com.safjnest.utils.twitch.TwitchClient;
@@ -46,7 +48,6 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,7 +58,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/beebot/guilds")
+@RequestMapping("/api/beebot")
 public class GuildController {
 
     private static final Set<String> SINGLE_ALERTS = Set.of("welcome", "leave", "boost", "levelUp");
@@ -72,22 +73,31 @@ public class GuildController {
 
     private final Function<String, Guild> discordGuilds;
     private final BiConsumer<AuthContext, String> guildAccess;
+    private final Function<AuthContext, List<Server>> guildDirectory;
 
     private final Consumer<String> registerTwitch;
 
     @Autowired
     public GuildController(Environment environment) {
         this(GuildCache.getInstance(), id -> Bot.getJDA() == null ? null : Bot.getJDA().getGuildById(id),
-            new DiscordGuildService(environment.getProperty("AUTH_ENCRYPTION_KEY"))::requireAdministrator,
+            new DiscordAuthService(environment.getProperty("DISCORD_CLIENT_ID"), environment.getProperty("DISCORD_CLIENT_SECRET"),
+                environment.getProperty("AUTH_ENCRYPTION_KEY")),
             TwitchClient::registerSubEvent);
     }
 
+    private GuildController(GuildCache cache, Function<String, Guild> discordGuilds,
+            DiscordAuthService auth, Consumer<String> registerTwitch) {
+        this(cache, discordGuilds, auth::requireAdministrator, auth::servers, registerTwitch);
+    }
+
     public GuildController(GuildCache cache, Function<String, Guild> discordGuilds,
-            BiConsumer<AuthContext, String> guildAccess, Consumer<String> registerTwitch) {
+            BiConsumer<AuthContext, String> guildAccess, Function<AuthContext, List<Server>> guildDirectory,
+            Consumer<String> registerTwitch) {
         this.cache = cache;
 
         this.discordGuilds = discordGuilds;
         this.guildAccess = guildAccess;
+        this.guildDirectory = guildDirectory;
 
         this.registerTwitch = registerTwitch;
     }
@@ -97,7 +107,12 @@ public class GuildController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
     }
 
-    @GetMapping("/{guildId}")
+    @GetMapping({"/guilds", "/servers"})
+    public List<Server> servers(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
+        return guildDirectory.apply(context);
+    }
+
+    @GetMapping("/guilds/{guildId}")
     public Settings getGuild(@PathVariable("guildId") String guildId,
             @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
         requireAdministrator(context, guildId);
@@ -135,7 +150,7 @@ public class GuildController {
         return new Settings(guildId, guild.getName(), guild.getIconUrl(), discordChannels, roles, settings);
     }
 
-    @PostMapping("/{guildId}/settings")
+    @PostMapping("/guilds/{guildId}/settings")
     public Map<String, Object> updateSettings(@PathVariable("guildId") String guildId,
             @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context,
             @RequestBody(required = false) JsonNode body) {
@@ -144,7 +159,7 @@ public class GuildController {
         Guild guild = requireGuild(guildId);
 
         if (body == null || !body.isObject() || body.isEmpty())
-            throw new AuthException(HttpStatus.BAD_REQUEST, "invalid_request", "A non-empty JSON object is required");
+            throw new Exception(Type.INVALID_REQUEST, "invalid_request", "A non-empty JSON object is required");
 
         Map<String, Object> results = new LinkedHashMap<>();
 
@@ -171,10 +186,10 @@ public class GuildController {
 
     private void requireAdministrator(AuthContext context, String guildId) {
         if (context == null || context.user() == null)
-            throw new AuthException(HttpStatus.UNAUTHORIZED, "invalid_session", "A user session is required");
+            throw new Exception(Type.UNAUTHENTICATED, "invalid_session", "A user session is required");
 
         if (!isGuildId(guildId))
-            throw new AuthException(HttpStatus.BAD_REQUEST, "invalid_guild_id", "Invalid guild ID");
+            throw new Exception(Type.INVALID_REQUEST, "invalid_guild_id", "Invalid guild ID");
 
         guildAccess.accept(context, guildId);
     }
@@ -194,7 +209,7 @@ public class GuildController {
         Guild guild = discordGuilds.apply(id);
 
         if (guild == null)
-            throw new AuthException(HttpStatus.NOT_FOUND, "guild_not_found", "The bot is not present in this guild");
+            throw new Exception(Type.NOT_FOUND, "guild_not_found", "The bot is not present in this guild");
 
         return guild;
     }
@@ -203,7 +218,7 @@ public class GuildController {
         try {
             return cache.withGuildData(id, operation);
         } catch (IllegalStateException exception) {
-            throw new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "settings_unavailable", "Guild settings storage is unavailable");
+            throw new Exception(Type.UNAVAILABLE, "settings_unavailable", "Guild settings storage is unavailable");
         }
     }
 

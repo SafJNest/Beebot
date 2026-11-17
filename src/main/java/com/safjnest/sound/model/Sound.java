@@ -16,7 +16,8 @@ import com.safjnest.bot.audio.types.AudioType;
 import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
@@ -177,7 +178,7 @@ public class Sound {
     public boolean update() {
         try {
             return update(USER_ID);
-        } catch (AuthException exception) {
+        } catch (Exception exception) {
             return false;
         }
     }
@@ -308,7 +309,7 @@ public class Sound {
             plays = database.recordSoundPlay(ID, userId, guildId, source.ordinal());
 
             return true;
-        } catch (AuthException exception) {
+        } catch (Exception exception) {
             return false;
         }
     }
@@ -388,7 +389,7 @@ public class Sound {
 
     public synchronized Vote vote(String userId, Set<String> guilds, int value, boolean enabled) {
         if (deleted || original != null)
-            throw new AuthException(org.springframework.http.HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+            throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
 
         Vote saved = database.voteSound(ID, userId, guilds, value, enabled);
         likes = (int) saved.likes();
@@ -409,7 +410,7 @@ public class Sound {
     public boolean delete() {
         try {
             return delete(USER_ID, Set.of());
-        } catch (AuthException exception) {
+        } catch (Exception exception) {
             return false;
         }
     }
@@ -451,7 +452,7 @@ public class Sound {
             vote(userId, Set.of(GUILD_ID), value, enabled);
 
             return true;
-        } catch (AuthException exception) {
+        } catch (Exception exception) {
             return false;
         }
     }

@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.safjnest.bot.audio.types.AudioType;
+import com.safjnest.discord.auth.DiscordApi;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.database.sql.database.BotDB.SoundPlay;
@@ -30,9 +31,9 @@ public final class SoundAnalytics {
     private static final List<Integer> REPLAY_MAXIMUMS = Arrays.asList(1, 5, 20, 50, null);
 
     private final BotDB database;
-    private final SoundAccess access;
+    private final DiscordApi access;
 
-    public SoundAnalytics(BotDB database, SoundAccess access) {
+    public SoundAnalytics(BotDB database, DiscordApi access) {
         this.database = database;
         this.access = access;
     }

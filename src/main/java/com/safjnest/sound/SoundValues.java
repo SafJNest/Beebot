@@ -2,9 +2,9 @@ package com.safjnest.sound;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 
 public final class SoundValues {
 
@@ -22,7 +22,7 @@ public final class SoundValues {
         return value;
     }
 
-    public static AuthException bad(String message) {
-        return new AuthException(HttpStatus.BAD_REQUEST, "invalid_request", message);
+    public static Exception bad(String message) {
+        return new Exception(Type.INVALID_REQUEST, "invalid_request", message);
     }
 }

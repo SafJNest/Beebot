@@ -22,6 +22,12 @@ Discord redirects the browser to Qwik's callback with its temporary code and sta
 
 `GET /guilds` returns a JSON array directly (`[{ "id": "1", "name": "Guild", "iconUrl": null, "owner": true }]`); `GET /servers` remains an alias with the same array response. There is no `{servers: ...}` wrapper on these two list endpoints. All three routes use the same authorized list for the authenticated session. Owners and members with Administrator **or Manage Server** permission are included. OAuth lists may include guilds without the bot; personal keys list only guilds shared with the bot. `iconUrl` is a Discord HTTPS CDN URL or null. The profile comes from the session/issued personal key, with no extra `/users/@me` request per page.
 
+`GuildController` owns `/guilds` and `/servers`, while `DiscordAuthController`
+owns only the three authentication POST endpoints. `DiscordAuthService` owns
+both session operations and the shared authorized directory, using the existing
+`DiscordGuildCache`; there is no separate guild service. HTTP URLs, array shape,
+profile shape and permission policy are unchanged.
+
 The guild list is cached for 60 seconds. Keys include the user, application, session identity and a hash of the encrypted Discord credential; separate users, sessions and changed credentials cannot reuse each other's entries. Redis is preferred, with an in-memory fallback that retains the original expiry. A Redis miss after recovery never trusts an older memory entry. Concurrent requests share a single load per cache identity; Redis generation/lease checks coordinate separate application instances and fence invalidated or expired loaders. During a Redis outage, coordination is local to each process. A new session or changed token uses a new identity; logout invalidates the old identity and any in-flight publication. There is currently no token-refresh endpoint; any future in-place token replacement must invalidate the previous context before replacing it. Errors are not cached or automatically retried.
 
 For OAuth, a cache miss performs `GET /users/@me/guilds?limit=200`; Discord documents 200 as the maximum guild count of a non-bot user, so no extra empty pagination request is made. Personal keys use JDA member caches first. Complete member caches can establish absence locally; an incomplete cache triggers a member lookup only when the member is missing. Unknown membership is excluded, while lookup failures fail the request rather than publishing a partial list.
@@ -39,6 +45,15 @@ All responses use `Cache-Control: no-store`. Authentication errors use `{ "code"
 | Guild settings storage unavailable | 503 | `settings_unavailable` |
 
 Malformed inputs return 400, invalid or revoked credentials 401, forbidden callbacks or guild access 403. Invalid Discord payloads or rejected OAuth code exchanges return 502 `discord_unavailable`. A revoked Discord access token is detected on the next remote load. Non-2xx Discord responses log status, rate-limit bucket, remaining requests and retry delay at warn level; credentials are never included.
+
+The filter and controller advice share `spring.exception.ApiErrors` and the
+single `ApiExceptionHandler`. Application failures use
+`com.safjnest.exception.Exception` without Spring dependencies. Retry seconds and
+the rounded-up header are now returned by the filter as well as the advice.
+Malformed bodies, invalid parameters, unknown routes, unsupported methods and
+unexpected errors under `/api/beebot` use this same Beebot envelope; routing and
+generic framework failures no longer fall through to the LoL error shape.
+Unexpected failures return only `internal_error` / `Unexpected server error`.
 
 ## Setup and operations
 

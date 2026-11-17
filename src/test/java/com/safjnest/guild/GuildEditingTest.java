@@ -34,13 +34,13 @@ import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.bot.model.guild.alert.RewardData;
 import com.safjnest.bot.model.guild.alert.TwitchData;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.spring.controller.beebot.GuildController;
-import com.safjnest.spring.exception.AuthExceptionHandler;
-import com.safjnest.spring.exception.AuthRequestExceptionHandler;
+import com.safjnest.spring.exception.ApiExceptionHandler;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -51,7 +51,6 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -77,7 +76,7 @@ public class GuildEditingTest {
     private GuildController controller;
 
     @Before
-    public void setup() throws Exception {
+    public void setup() throws java.lang.Exception {
         url = "jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=MariaDB;DB_CLOSE_DELAY=-1";
 
         try (Connection connection = connection()) {
@@ -119,7 +118,7 @@ public class GuildEditingTest {
             "getRoles", List.of(role), "getSelfMember", self));
 
         controller = new GuildController(cache, id -> id.equals("1") ? discord : null,
-            (context, id) -> {}, subscriptions::add);
+            (context, id) -> {}, context -> List.of(), subscriptions::add);
     }
 
     @Test
@@ -137,7 +136,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void deferredChangesArePrivateAndUseOneWriteConnection() throws Exception {
+    public void deferredChangesArePrivateAndUseOneWriteConnection() throws java.lang.Exception {
         post("{\"leave\":{\"message\":\"before\"}}");
 
         GuildData guild = guild();
@@ -162,7 +161,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void immediateSetterAndApiShareTheSameInstance() throws Exception {
+    public void immediateSetterAndApiShareTheSameInstance() throws java.lang.Exception {
         post("{\"leave\":{}}");
 
         AlertData alert = guild().getAlert(AlertType.LEAVE);
@@ -178,7 +177,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void staleDraftCannotOverwriteNewerChanges() throws Exception {
+    public void staleDraftCannotOverwriteNewerChanges() throws java.lang.Exception {
         post("{\"leave\":{}}");
 
         AlertData alert = guild().getAlert(AlertType.LEAVE);
@@ -199,7 +198,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void sqlFailureRollsBackAllAlertFieldsAndRoles() throws Exception {
+    public void sqlFailureRollsBackAllAlertFieldsAndRoles() throws java.lang.Exception {
         post("{\"welcome\":{\"message\":\"before\",\"roleIds\":[\"20\"]}}");
 
         AlertData alert = guild().getAlert(AlertType.WELCOME);
@@ -232,7 +231,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void rolesCanBeReplacedDeduplicatedAndCleared() throws Exception {
+    public void rolesCanBeReplacedDeduplicatedAndCleared() throws java.lang.Exception {
         post("{\"welcome\":{\"roleIds\":[\"20\",\"20\"]}}");
 
         AlertData alert = guild().getAlert(AlertType.WELCOME);
@@ -246,7 +245,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void validationRejectsOneBlockAndOtherBlocksCommit() throws Exception {
+    public void validationRejectsOneBlockAndOtherBlocksCommit() throws java.lang.Exception {
         post("{\"leave\":{\"message\":\"before\"}}");
 
         Map<String, Object> results = post("{\"leave\":{\"message\":\"after\",\"enabled\":\"yes\"},\"blacklist\":{\"threshold\":5}}");
@@ -259,7 +258,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void storageFailureLeavesCacheIntactAndOtherBlocksCommit() throws Exception {
+    public void storageFailureLeavesCacheIntactAndOtherBlocksCommit() throws java.lang.Exception {
         post("{\"leave\":{\"message\":\"before\"}}");
 
         failAlert.set(true);
@@ -271,7 +270,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void omissionsRetainFieldsAndExplicitNullClears() throws Exception {
+    public void omissionsRetainFieldsAndExplicitNullClears() throws java.lang.Exception {
         post("{\"leave\":{\"message\":\"hello\",\"privateMessage\":\"private\",\"channelId\":\"10\"}}");
 
         AlertState alert = result(post("{\"leave\":{\"enabled\":false}}"), "leave").alert();
@@ -288,7 +287,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void collectionItemsCommitIndependently() throws Exception {
+    public void collectionItemsCommitIndependently() throws java.lang.Exception {
         Map<String, Object> results = post("{\"twitch\":{\"100\":{\"message\":\"live\",\"roleId\":\"20\"},\"101\":{\"enabled\":\"yes\"}},\"reward\":{\"5\":{\"roleIds\":[\"20\"],\"temporary\":true},\"6\":{}}}");
         Map<?, ?> twitch = (Map<?, ?>) results.get("twitch");
 
@@ -306,7 +305,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void otherModelsUsePrivateEditsAndKeepCanonicalIdentity() throws Exception {
+    public void otherModelsUsePrivateEditsAndKeepCanonicalIdentity() throws java.lang.Exception {
         GuildData guild = guild();
         BlacklistData blacklist = guild.getBlacklistData();
         BlacklistData edit = blacklist.deferEdit();
@@ -349,7 +348,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void deletionPublishesOnlyAfterSuccessAndRejectsOldDrafts() throws Exception {
+    public void deletionPublishesOnlyAfterSuccessAndRejectsOldDrafts() throws java.lang.Exception {
         post("{\"leave\":{}}");
 
         GuildData guild = guild();
@@ -370,7 +369,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void validityIncludesFinalExperienceRegardlessOfBlockOrder() throws Exception {
+    public void validityIncludesFinalExperienceRegardlessOfBlockOrder() throws java.lang.Exception {
         Result result = result(post("{\"levelUp\":{\"message\":\"hello\"},\"general\":{\"experienceEnabled\":false}}"), "levelUp");
 
         assertEquals("experience_disabled", result.alert().problems().get(0).code());
@@ -386,9 +385,9 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void twitchRetryUsesCommittedStateAndRunsOutsideGuildLock() throws Exception {
+    public void twitchRetryUsesCommittedStateAndRunsOutsideGuildLock() throws java.lang.Exception {
         GuildData guild = guild();
-        GuildController failing = new GuildController(cache, id -> discord, (context, id) -> {}, id -> {
+        GuildController failing = new GuildController(cache, id -> discord, (context, id) -> {}, context -> List.of(), id -> {
             assertFalse(Thread.holdsLock(guild));
             assertEquals("live", guild.getTwitchdata(id).getMessage());
 
@@ -408,7 +407,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void concurrentBotAndApiUpdatesDoNotLoseFieldsOrDuplicateAlerts() throws Exception {
+    public void concurrentBotAndApiUpdatesDoNotLoseFieldsOrDuplicateAlerts() throws java.lang.Exception {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         CountDownLatch start = new CountDownLatch(1);
 
@@ -446,7 +445,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void validatesReferencesRequestShapeAndMissingBot() throws Exception {
+    public void validatesReferencesRequestShapeAndMissingBot() throws java.lang.Exception {
         Map<String, Object> results = post("{\"leave\":{\"channelId\":\"99\"},\"welcome\":{\"roleIds\":[\"99\"]},\"warning\":{},\"boost\":{\"exists\":true}}");
         for (String key : results.keySet())
             assertEquals("error", result(results, key).status());
@@ -457,30 +456,30 @@ public class GuildEditingTest {
             try {
                 post(body);
                 fail("Expected invalid request");
-            } catch (AuthException exception) {
-                assertEquals(400, exception.getStatusCode().value());
+            } catch (Exception exception) {
+                assertEquals(Type.INVALID_REQUEST, exception.getType());
             }
         }
 
         try {
             controller.getGuild("2", AUTH);
             fail("Expected missing bot");
-        } catch (AuthException exception) {
-            assertEquals(404, exception.getStatusCode().value());
+        } catch (Exception exception) {
+            assertEquals(Type.NOT_FOUND, exception.getType());
         }
     }
 
     @Test
-    public void mvcPreservesPayloadAndChecksAuthorizationOnEveryRequest() throws Exception {
+    public void mvcPreservesPayloadAndChecksAuthorizationOnEveryRequest() throws java.lang.Exception {
         AtomicInteger checks = new AtomicInteger();
         AtomicBoolean allowed = new AtomicBoolean(true);
         GuildController secured = new GuildController(cache, id -> discord, (context, id) -> {
             checks.incrementAndGet();
             if (!allowed.get())
-                throw new AuthException(HttpStatus.FORBIDDEN, "guild_forbidden", "Guild access denied");
-        }, subscriptions::add);
+                throw new Exception(Type.FORBIDDEN, "guild_forbidden", "Guild access denied");
+        }, context -> List.of(), subscriptions::add);
         MockMvc mvc = MockMvcBuilders.standaloneSetup(secured)
-            .setControllerAdvice(new AuthExceptionHandler(), new AuthRequestExceptionHandler())
+            .setControllerAdvice(new ApiExceptionHandler())
             .addFilters(new AuthFilter((key, bearer, required) -> AUTH)).build();
 
         String response = mvc.perform(get("/api/beebot/guilds/1").servletPath("/api/beebot/guilds/1"))
@@ -523,7 +522,7 @@ public class GuildEditingTest {
     }
 
     @Test
-    public void generalAndBlacklistSqlFailuresLeaveOriginalStateIntact() throws Exception {
+    public void generalAndBlacklistSqlFailuresLeaveOriginalStateIntact() throws java.lang.Exception {
         post("{\"general\":{\"prefix\":\"!\"}}");
 
         GuildData guild = guild();
@@ -551,19 +550,19 @@ public class GuildEditingTest {
     @Test
     public void unavailableStorageReturns503InsteadOfEmptySettings() {
         GuildCache unavailable = new GuildCache(new BotDB(() -> null), () -> "!");
-        GuildController failing = new GuildController(unavailable, id -> discord, (context, id) -> {}, id -> {});
+        GuildController failing = new GuildController(unavailable, id -> discord, (context, id) -> {}, context -> List.of(), id -> {});
 
         try {
             failing.getGuild("1", AUTH);
             fail("Expected unavailable storage");
-        } catch (AuthException exception) {
-            assertEquals(503, exception.getStatusCode().value());
+        } catch (Exception exception) {
+            assertEquals(Type.UNAVAILABLE, exception.getType());
         }
     }
 
     /* -------------------------------------------------------------------------- */
 
-    private Map<String, Object> post(String body) throws Exception {
+    private Map<String, Object> post(String body) throws java.lang.Exception {
         return controller.updateSettings("1", AUTH, JSON.readTree(body));
     }
 

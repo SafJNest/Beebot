@@ -8,8 +8,8 @@ The [agreed repository reorganization plan](repository-review.md) records the
 decisions discussed with the owner. The owner confirmed the current `bot`,
 `database`, `discord`, `lol`, `sound`, `spring`, `status` and `utils` layout on
 17 November 2026, including authentication in `discord.auth`. The document
-separates completed file moves, the implemented local-cache, guild/alert and user/XP/sound steps from the
-remaining consolidation, scope exclusions and verification requirements. It is
+separates completed file moves and the implemented cache, guild/alert, user/XP/sound
+and error/auth steps from the remaining consolidation, scope exclusions and verification requirements. It is
 the canonical plan for this work and does not amend an accepted ADR.
 
 ## Ownership
@@ -23,6 +23,8 @@ the canonical plan for this work and does not amend an accepted ADR.
   `!test export-match-search` rebuilds it from Mongo. LoL no longer accesses
   MariaDB, including historical migrations.
 - Spring owns HTTP controllers, configuration and error representations.
+  `exception.Exception` owns application failures without Spring;
+  `spring.exception.ApiErrors` and `ApiExceptionHandler` own HTTP adaptation.
 - `AggregateService` owns indicative count/distribution snapshots in Mongo
   `aggregates` and their Redis caches; see [aggregate snapshots](../mongo/16-aggregates.md).
 - Redis stores disposable caches and derived indexes.

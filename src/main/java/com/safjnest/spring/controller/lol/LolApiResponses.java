@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.lol.model.ApiResult;
-import com.safjnest.spring.dto.LolApiError;
+import com.safjnest.spring.exception.ApiErrors.LolApiError;
 
 public final class LolApiResponses {
 

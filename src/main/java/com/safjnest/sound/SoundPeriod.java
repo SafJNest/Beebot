@@ -12,7 +12,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
 
 public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, Instant before, String beforeId) {
 
@@ -60,9 +60,9 @@ public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, 
                 throw bad("Invalid cursor interval");
 
             return new SoundPeriod(period, zone, from, to, before, beforeId);
-        } catch (AuthException exception) {
-            throw exception;
         } catch (Exception exception) {
+            throw exception;
+        } catch (java.lang.Exception exception) {
             throw bad("Invalid period, timezone or cursor");
         }
     }
@@ -91,7 +91,7 @@ public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, 
             byte[] encoded = JSON.writeValueAsBytes(values);
 
             return Base64.getUrlEncoder().withoutPadding().encodeToString(encoded);
-        } catch (Exception exception) {
+        } catch (java.lang.Exception exception) {
             throw new IllegalStateException(exception);
         }
     }

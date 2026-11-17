@@ -11,12 +11,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
-import org.springframework.http.HttpStatus;
 
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.discord.auth.AuthException;
-import com.safjnest.sound.SoundAccess;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
+import com.safjnest.discord.auth.DiscordApi;
 import com.safjnest.sound.SoundQueryCache;
 import com.safjnest.sound.model.Sound;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,7 +27,7 @@ public class SoundCacheLoadingTest {
     @Test
     public void loadsOnlyMissingSoundsAndTheirTags() {
         RecordingDatabase database = new RecordingDatabase();
-        SoundCache cache = new SoundCache(database, new SoundAccess(), new SoundQueryCache());
+        SoundCache cache = new SoundCache(database, new DiscordApi(), new SoundQueryCache());
         List<String> ids = new ArrayList<>();
         for (int index = 0; index < 20; index++) {
             String id = String.valueOf(index);
@@ -54,7 +54,7 @@ public class SoundCacheLoadingTest {
     public void preservesOneMinuteWriteExpiration() {
         RecordingDatabase database = new RecordingDatabase();
         AtomicLong ticker = new AtomicLong();
-        SoundCache cache = new SoundCache(database, new SoundAccess(), new SoundQueryCache(), ticker::get);
+        SoundCache cache = new SoundCache(database, new DiscordApi(), new SoundQueryCache(), ticker::get);
         Sound first = cache.load(List.of("1")).get(0);
         ticker.set(TimeUnit.SECONDS.toNanos(50));
         assertSame(first, cache.load(List.of("1")).get(0));
@@ -66,9 +66,9 @@ public class SoundCacheLoadingTest {
     @Test
     public void databaseFailureDoesNotBecomeAnEmptySound() {
         RecordingDatabase database = new RecordingDatabase();
-        database.failure = new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "sound_storage_unavailable", "Unavailable");
-        SoundCache cache = new SoundCache(database, new SoundAccess(), new SoundQueryCache());
-        assertSame(database.failure, assertThrows(AuthException.class, () -> cache.load(List.of("1"))));
+        database.failure = new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Unavailable");
+        SoundCache cache = new SoundCache(database, new DiscordApi(), new SoundQueryCache());
+        assertSame(database.failure, assertThrows(Exception.class, () -> cache.load(List.of("1"))));
         assertEquals(0, cache.getSize());
         database.failure = null;
         assertEquals("1", cache.load(List.of("1")).get(0).getId());
@@ -77,7 +77,7 @@ public class SoundCacheLoadingTest {
     @Test
     public void emptyRequestDoesNotQueryStorage() {
         RecordingDatabase database = new RecordingDatabase();
-        SoundCache cache = new SoundCache(database, new SoundAccess(), new SoundQueryCache());
+        SoundCache cache = new SoundCache(database, new DiscordApi(), new SoundQueryCache());
         assertTrue(cache.load(List.of()).isEmpty());
         assertTrue(database.sounds.isEmpty());
         assertTrue(database.tags.isEmpty());
@@ -86,7 +86,7 @@ public class SoundCacheLoadingTest {
     @Test
     public void responseUsesFreshMetadataAndKeepsViewerStateOutOfCachedSound() {
         RecordingDatabase database = new RecordingDatabase();
-        SoundAccess access = new SoundAccess() {
+        DiscordApi access = new DiscordApi() {
             @Override
             public Map<String, Object> user(String id) {
                 return Map.of("id", id, "name", "Uploader");
@@ -131,7 +131,7 @@ public class SoundCacheLoadingTest {
     private static final class RecordingDatabase extends BotDB {
         private final List<String> sounds = new ArrayList<>();
         private final List<String> tags = new ArrayList<>();
-        private AuthException failure;
+        private Exception failure;
 
         private RecordingDatabase() {
             super(() -> { throw new AssertionError("Unexpected external database access"); });

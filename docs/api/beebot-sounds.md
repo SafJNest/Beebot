@@ -127,9 +127,21 @@ buttons; public JSON omits empty slots and still exposes only name and string ID
 without these internal predicates. No HTTP/OpenAPI or Discord presentation change
 is required by this internal cleanup.
 
+Discord membership and display identity lookup now belong to `DiscordApi`,
+shared with authentication. Ordinary membership remains separate from the
+administrative directory, and Manage Server alone still does not permit sound
+deletion. JDA cache loading, `Unknown`/null-avatar fallbacks and response identity
+fields are unchanged. `SoundAccess` has been removed after migrating its callers.
+
 ## Errors and deployment
 
 General errors use `{code,message}`: 400 invalid input, 401 credentials, 403 guild/write permissions, 404 absent or invisible sound, 503 Discord/storage unavailable. Malformed JSON and invalid typed query parameters return the same sanitized error family. Bulk greet item errors use their per-scope result, including storage outages.
+
+`com.safjnest.exception.Exception` carries application failures; HTTP adaptation
+is shared by `AuthFilter` and `ApiExceptionHandler` through `ApiErrors`. The
+Beebot envelope also covers absent routes and framework errors, with retry
+metadata preserved in both filter and advice. This does not alter sound success
+payloads, OpenAPI schemas, independent greet results or Discord presentation.
 
 Before deployment stop the previous application, apply `database/berbit/sound/001-sound-history-guild.sql` if the column is absent, then `002-sound-api.sql`, then start the updated application. No scripts run automatically. Inspect `SHOW CREATE TABLE` first: historical schema dumps omit counters and define a guild foreign key incompatible with global greet scope 0. The second script adds missing counters, rebuilds them from history/interactions, adds query indexes and removes that guild FK; it keeps the sound FK. Its DDL targets MariaDB. The migration backfills `sound_history.guild_id` with the sound's original guild when private and `474935164451946506` when public; this approximation is accepted and existing assigned rows are not overwritten.
 

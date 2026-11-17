@@ -86,6 +86,15 @@ Examples use `http://localhost:8080` as the base URL.
 | `405` | HTTP method not supported. |
 | `500` | Unexpected server error. |
 
+HTTP failures are handled by the shared `spring.exception.ApiExceptionHandler`
+and mapped by `ApiErrors`; the existing record is now nested as
+`ApiErrors.LolApiError`. Its fields, null metadata and endpoint-specific codes
+remain unchanged. Invalid JSON bodies return sanitized `400 invalid_request`,
+including when the failure occurs before controller invocation. Unexpected Java
+exceptions remain sanitized `500 internal_error`. `LolApiResponses` retains the
+existing READY/PARTIAL/PENDING/NOT_FOUND mapping, success models and metadata.
+This is HTTP infrastructure work; no LoL domain or persistence change is required.
+
 `202` responses always use the same format, with scope-specific code
 and message. For example:
 

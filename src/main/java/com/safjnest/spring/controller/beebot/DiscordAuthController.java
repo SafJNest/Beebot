@@ -1,47 +1,47 @@
 package com.safjnest.spring.controller.beebot;
 
-import java.util.List;
-
-import com.safjnest.discord.auth.AuthException;
 import com.safjnest.discord.auth.DiscordAuthService;
-import com.safjnest.discord.auth.DiscordApi.AuthUser;
-import com.safjnest.discord.auth.DiscordApi.Server;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.discord.auth.DiscordAuthService.Authorization;
 import com.safjnest.discord.auth.DiscordAuthService.Session;
-import com.safjnest.discord.guild.DiscordGuildService;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.HttpServletResponse;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.spring.config.AuthFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/beebot")
 public class DiscordAuthController {
-    private final DiscordAuthService auth;
-    private final DiscordGuildService guilds;
 
     public record AuthorizeRequest(String state, String redirectUri) {}
 
     public record ExchangeRequest(String code, String state, String redirectUri) {}
 
+    private final DiscordAuthService auth;
 
-    public DiscordAuthController() { this(new DiscordAuthService(), new DiscordGuildService(null)); }
+    public DiscordAuthController() {
+        this(new DiscordAuthService());
+    }
 
     @Autowired
     public DiscordAuthController(Environment environment) {
         this(new DiscordAuthService(environment.getProperty("DISCORD_CLIENT_ID"), environment.getProperty("DISCORD_CLIENT_SECRET"),
-            environment.getProperty("AUTH_ENCRYPTION_KEY")), new DiscordGuildService(environment.getProperty("AUTH_ENCRYPTION_KEY")));
+            environment.getProperty("AUTH_ENCRYPTION_KEY")));
     }
 
-    public DiscordAuthController(DiscordAuthService auth, DiscordGuildService guilds) {
+    public DiscordAuthController(DiscordAuthService auth) {
         this.auth = auth;
-        this.guilds = guilds;
     }
 
     @ModelAttribute
@@ -52,25 +52,25 @@ public class DiscordAuthController {
     @PostMapping("/auth/discord/authorize")
     public Authorization authorize(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context,
             @RequestBody(required = false) AuthorizeRequest request) {
-        if (request == null) throw new AuthException(HttpStatus.BAD_REQUEST, "invalid_request", "A JSON request body is required");
+        if (request == null)
+            throw new Exception(Type.INVALID_REQUEST, "invalid_request", "A JSON request body is required");
+
         return auth.authorize(context, request.state(), request.redirectUri());
     }
 
     @PostMapping("/auth/session")
     public Session exchange(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context,
             @RequestBody(required = false) ExchangeRequest request) {
-        if (request == null) throw new AuthException(HttpStatus.BAD_REQUEST, "invalid_request", "A JSON request body is required");
-        return auth.exchangeSession(context, request.code(), request.state(), request.redirectUri());
-    }
+        if (request == null)
+            throw new Exception(Type.INVALID_REQUEST, "invalid_request", "A JSON request body is required");
 
-    @GetMapping({"/guilds", "/servers"})
-    public List<Server> servers(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
-        return guilds.servers(context);
+        return auth.exchangeSession(context, request.code(), request.state(), request.redirectUri());
     }
 
     @PostMapping("/auth/logout")
     public ResponseEntity<Void> logout(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
         auth.logout(context);
+
         return ResponseEntity.noContent().build();
     }
 }

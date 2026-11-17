@@ -1,5 +1,6 @@
 package com.safjnest.sound;
 
+import com.safjnest.discord.auth.DiscordApi;
 import static org.junit.Assert.*;
 
 import java.nio.charset.StandardCharsets;
@@ -24,7 +25,8 @@ import com.safjnest.bot.audio.types.AudioType;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.database.sql.database.BotDB.SoundPlay;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 
 import org.junit.Test;
 
@@ -55,23 +57,23 @@ public class SoundAnalyticsTest {
         assertEquals(FROM, parsed.from());
         assertEquals(eventTime, parsed.before());
         assertEquals("20", parsed.beforeId());
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "UTC", cursor, "11", "2", null));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "UTC", cursor, "10", "3", null));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "UTC", cursor, "10", "2", "1"));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("30d", "UTC", cursor, "10", "2", null));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "Europe/Rome", cursor, "10", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "UTC", cursor, "11", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "UTC", cursor, "10", "3", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "UTC", cursor, "10", "2", "1"));
+        assertThrows(Exception.class, () -> SoundPeriod.of("30d", "UTC", cursor, "10", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "Europe/Rome", cursor, "10", "2", null));
     }
 
     @Test
     public void rejectsInvalidPeriodTimezoneAndCursor() {
-        assertThrows(AuthException.class, () -> SoundPeriod.of("1d", "UTC", null, "10", "2", null));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "invalid-zone", null, "10", "2", null));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "UTC", "!", "10", "2", null));
-        assertThrows(AuthException.class, () -> SoundPeriod.of("7d", "UTC", "a".repeat(2049), "10", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("1d", "UTC", null, "10", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "invalid-zone", null, "10", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "UTC", "!", "10", "2", null));
+        assertThrows(Exception.class, () -> SoundPeriod.of("7d", "UTC", "a".repeat(2049), "10", "2", null));
     }
 
     @Test
-    public void preservesCompleteResponsesAcrossScopesAndTimezones() throws Exception {
+    public void preservesCompleteResponsesAcrossScopesAndTimezones() throws java.lang.Exception {
         Map<String, String> expected = Map.ofEntries(
             Map.entry("UTC:summary", "f79d1ab1df5da5c5a88b8922e1da85abed6238f2d34f6487b9c0dd3e097b46f6"),
             Map.entry("UTC:guild", "df9a1a0cca38d4b628c80a8a09a23f3d835297c169c64e2312027edf92a7c279"),
@@ -223,7 +225,7 @@ public class SoundAnalyticsTest {
 
     private Fixture fixture(List<SoundPlay> plays) {
         RecordingDatabase database = new RecordingDatabase(plays);
-        SoundAccess access = new SoundAccess() {
+        DiscordApi access = new DiscordApi() {
             @Override
             public Map<String, Object> user(String id) {
                 return Map.of("id", id, "name", "user " + id);
@@ -278,7 +280,7 @@ public class SoundAnalyticsTest {
         return names;
     }
 
-    private String digest(Object value) throws Exception {
+    private String digest(Object value) throws java.lang.Exception {
         JsonNode tree = json(value);
         byte[] normalized = JSON.writeValueAsString(normalize(tree)).getBytes(StandardCharsets.UTF_8);
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(normalized));

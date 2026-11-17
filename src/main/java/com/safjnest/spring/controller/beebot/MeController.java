@@ -12,26 +12,32 @@ import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.bot.cache.managers.UserCache;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordApi.Server;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
-import com.safjnest.discord.guild.DiscordGuildService;
+import com.safjnest.discord.auth.DiscordAuthService;
 import com.safjnest.sound.SoundValues;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.spring.config.AuthFilter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/beebot")
 public class MeController {
 
-    private final DiscordGuildService guilds;
+    private final DiscordAuthService auth;
     private final SoundCache sounds;
     private final UserCache users;
     private final BotDB database;
@@ -40,12 +46,13 @@ public class MeController {
 
     @Autowired
     public MeController(Environment environment) {
-        this(new DiscordGuildService(environment.getProperty("AUTH_ENCRYPTION_KEY")),
+        this(new DiscordAuthService(environment.getProperty("DISCORD_CLIENT_ID"), environment.getProperty("DISCORD_CLIENT_SECRET"),
+                environment.getProperty("AUTH_ENCRYPTION_KEY")),
             SoundCache.getInstance(), UserCache.getInstance(), BotDB.get());
     }
 
-    public MeController(DiscordGuildService guilds, SoundCache sounds, UserCache users, BotDB database) {
-        this.guilds = guilds;
+    public MeController(DiscordAuthService auth, SoundCache sounds, UserCache users, BotDB database) {
+        this.auth = auth;
         this.sounds = sounds;
         this.users = users;
         this.database = database;
@@ -61,7 +68,7 @@ public class MeController {
         SoundCache.Context context = context(auth);
         Map<String, String> configured = users.with(context.userId(), user -> user.getAllGreets());
 
-        return new Me(auth.user(), guilds.servers(auth), sounds.greets(context, configured));
+        return new Me(auth.user(), this.auth.servers(auth), sounds.greets(context, configured));
     }
 
     @PostMapping("/me/settings")
@@ -78,12 +85,12 @@ public class MeController {
         }
 
         Map<String, QueryRecord> candidates = new HashMap<>();
-        AuthException preloadError = null;
+        Exception preloadError = null;
 
         try {
             for (QueryRecord row : database.readSounds(requestedIds))
                 candidates.put(row.get("id"), row);
-        } catch (AuthException exception) {
+        } catch (Exception exception) {
             preloadError = exception;
         }
 
@@ -106,7 +113,7 @@ public class MeController {
 
                     QueryRecord candidate = candidates.get(id);
                     if (candidate == null || !BotDB.isSoundVisible(candidate, context.userId(), context.guilds().keySet()))
-                        throw new AuthException(HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+                        throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
                 }
 
                 String selected = id;
@@ -117,9 +124,9 @@ public class MeController {
                 });
 
                 results.put(scope, SoundValues.map("status", "ok", "errors", List.of()));
-            } catch (AuthException exception) {
+            } catch (Exception exception) {
                 results.put(scope, SoundValues.map("status", "error", "errors", List.of(
-                    SoundValues.map("field", "soundId", "code", exception.code(), "message", exception.getReason()))));
+                    SoundValues.map("field", "soundId", "code", exception.getCode(), "message", exception.getMessage()))));
             } catch (IllegalStateException exception) {
                 results.put(scope, SoundValues.map("status", "error", "errors", List.of(
                     SoundValues.map("field", "soundId", "code", "sound_storage_unavailable", "message", "Sound storage is unavailable"))));
@@ -133,7 +140,7 @@ public class MeController {
 
     private SoundCache.Context context(AuthContext auth) {
         if (auth == null || auth.user() == null)
-            throw new AuthException(HttpStatus.UNAUTHORIZED, "invalid_session", "User session required");
+            throw new Exception(Type.UNAUTHENTICATED, "invalid_session", "User session required");
 
         return sounds.context(auth.user().id());
     }

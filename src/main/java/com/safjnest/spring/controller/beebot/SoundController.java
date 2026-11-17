@@ -9,7 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.safjnest.sound.SoundValues;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.bot.cache.managers.SoundCache;
-import com.safjnest.discord.auth.AuthException;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.sound.SoundPeriod;
 import com.safjnest.sound.model.Sound;
@@ -18,7 +19,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/beebot")
@@ -100,13 +111,13 @@ public class SoundController {
 
         sounds.withVisibleSound(context, soundId, sound -> {
             if (!context.userId().equals(sound.getUserId()))
-                throw new AuthException(HttpStatus.FORBIDDEN, "sound_forbidden", "Only the uploader can edit");
+                throw new Exception(Type.FORBIDDEN, "sound_forbidden", "Only the uploader can edit");
 
             Sound edit = sound.deferEdit();
             parseSound(edit, body);
 
             if (!edit.update(context.userId()))
-                throw new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "sound_storage_unavailable", "Sound storage is unavailable");
+                throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound storage is unavailable");
 
             return true;
         });
@@ -126,7 +137,7 @@ public class SoundController {
 
         String extension = sounds.withVisibleSound(context, soundId, sound -> {
             if (!sound.delete(context.userId(), administrators))
-                throw new AuthException(HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+                throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
 
             return sound.getExtension();
         });
@@ -204,7 +215,7 @@ public class SoundController {
 
     private SoundCache.Context context(AuthContext auth) {
         if (auth == null || auth.user() == null)
-            throw new AuthException(HttpStatus.UNAUTHORIZED, "invalid_session", "User session required");
+            throw new Exception(Type.UNAUTHENTICATED, "invalid_session", "User session required");
 
         return sounds.context(auth.user().id());
     }

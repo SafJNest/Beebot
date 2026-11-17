@@ -5,8 +5,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.safjnest.discord.auth.AuthException;
-import org.springframework.http.HttpStatus;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -1970,7 +1970,7 @@ public class BotDB extends AbstractDB {
             if (!edit.getName().equals(current.get("name")) && !soundQuery(connection,
                     "SELECT id FROM sound WHERE id <> ? AND name = ? AND (guild_id = ? OR user_id = ?)",
                     edit.getId(), edit.getName(), current.get("guild_id"), userId).isEmpty())
-                throw new AuthException(HttpStatus.BAD_REQUEST, "duplicate_sound_name", "Sound name is already in use");
+                throw new Exception(Type.INVALID_REQUEST, "duplicate_sound_name", "Sound name is already in use");
 
             soundExecute(connection, "UPDATE sound SET name = ?, public = ? WHERE id = ?",
                 edit.getName(), edit.isPublic(), edit.getId());
@@ -2046,7 +2046,7 @@ public class BotDB extends AbstractDB {
                 : sound.getAsBoolean("public") || guildId.equals(sound.get("guild_id"));
 
             if (!allowed)
-                throw new AuthException(HttpStatus.BAD_REQUEST, "private_sound_wrong_guild", "Private sound cannot be used in this context");
+                throw new Exception(Type.INVALID_REQUEST, "private_sound_wrong_guild", "Private sound cannot be used in this context");
 
             soundExecute(connection, "INSERT INTO greeting(user_id,guild_id,sound_id) VALUES (?,?,?) ON DUPLICATE KEY UPDATE sound_id=VALUES(sound_id)", userId, guildId, soundId);
         });
@@ -2390,15 +2390,15 @@ public class BotDB extends AbstractDB {
         return text.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     }
 
-    private AuthException soundUnavailable(Exception cause) {
-        return new AuthException(HttpStatus.SERVICE_UNAVAILABLE, "sound_storage_unavailable", "Sound storage is unavailable");
+    private Exception soundUnavailable(java.lang.Exception cause) {
+        return new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound storage is unavailable", cause, null);
     }
 
-    private AuthException soundMissing() {
-        return new AuthException(HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+    private Exception soundMissing() {
+        return new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
     }
 
-    private AuthException soundForbidden() {
-        return new AuthException(HttpStatus.FORBIDDEN, "sound_forbidden", "Sound operation is not permitted");
+    private Exception soundForbidden() {
+        return new Exception(Type.FORBIDDEN, "sound_forbidden", "Sound operation is not permitted");
     }
 }

@@ -1,6 +1,6 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è nel commit `e7daa3f2`, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Restano i passaggi 4–6.
+Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è nel commit `e7daa3f2`, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Il passaggio 4 (errori e Spring/auth) è implementato nel working tree; restano i passaggi 5–6.
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -148,7 +148,7 @@ Le viste autorizzate e i campi personali di Sound non vanno memorizzati sugli og
 
 ## Errori: una classe applicativa e un adattatore HTTP
 
-Nome concordato nel piano: `com.safjnest.exception.BeebotException`, invece di chiamarla semplicemente `Exception`, che confonderebbe il tipo Java standard.
+Nome richiesto dal proprietario: `com.safjnest.exception.Exception`. È una `RuntimeException` applicativa; nei file che la importano le catch e le firme riferite al tipo Java standard usano esplicitamente `java.lang.Exception`.
 
 Contenuto minimo: categoria, codice stabile, messaggio passato dal chiamante, causa originale ed eventuale `retryAfter`. La categoria può essere un enum annidato nello stesso file. Nessun `HttpStatus`, `ResponseEntity`, dipendenza da Spring o sottoclasse per ogni dominio.
 
@@ -198,7 +198,8 @@ La radice resta `com.safjnest`. Le responsabilità sono:
 
 - `bot`: avvio del bot, comandi, eventi, audio/chat, modelli guild/user/configurazione e infrastruttura delle cache;
 - `database`: SQL, MongoDB e Redis nei rispettivi sottopackage;
-- `discord.auth`: credenziali, flussi di autenticazione e client Discord; `discord.guild`: cache autorizzativa e, temporaneamente, i servizi guild da assorbire;
+- `discord.auth`: credenziali, flussi di autenticazione e client Discord; `discord.guild`: cache autorizzativa;
+- `exception`: errore applicativo comune, senza dipendenze Spring;
 - `lol`: dominio, modelli, servizi, analisi, tracker, code e presentazione LoL; i comandi Discord LoL sono in `bot.commands.lol`;
 - `sound`: operazioni e helper sound, con i modelli in `sound.model`;
 - `spring`: ingressi HTTP, filtro/configurazione e rappresentazione degli errori;
@@ -206,7 +207,7 @@ La radice resta `com.safjnest`. Le responsabilità sono:
 
 La base resta `bot.cache.CacheAdapter`, con `GenericCache`, `GuildCache`, `UserCache` e `SoundCache` in `bot.cache.managers`. I controller Spring useranno queste stesse cache: il loro package non introduce un percorso separato. Le politiche di sicurezza di `discord.guild.DiscordGuildCache` rimangono distinte dalle cache degli oggetti operativi.
 
-L'albero seguente descrive i file attuali rilevanti per il piano, aggiornati dopo il passaggio 1; `...` conserva tutti gli altri file e sottopackage esistenti. I file da assorbire sono presenti finché non è completata la migrazione delle loro funzionalità. Le aggiunte future sono elencate separatamente.
+L'albero seguente descrive i file attuali rilevanti per il piano, aggiornati dopo il passaggio 4; `...` conserva tutti gli altri file e sottopackage esistenti. I file da assorbire sono presenti finché non è completata la migrazione delle loro funzionalità. Le aggiunte future sono elencate separatamente.
 
 ```text
 com/safjnest/
@@ -243,15 +244,14 @@ com/safjnest/
 ├── discord/
 │   ├── auth/
 │   │   ├── ApiKey.java
-│   │   ├── AuthException.java            da assorbire
 │   │   ├── DiscordApi.java
 │   │   └── DiscordAuthService.java
 │   └── guild/
-│       ├── DiscordGuildCache.java
-│       └── DiscordGuildService.java      da assorbire
+│       └── DiscordGuildCache.java
+├── exception/
+│   └── Exception.java
 ├── lol/                                  ... dominio esistente conservato
 ├── sound/
-│   ├── SoundAccess.java                  da assorbire
 │   ├── SoundAnalytics.java
 │   ├── SoundHistory.java                 accumulatore interno analytics
 │   ├── SoundPeriod.java
@@ -269,8 +269,9 @@ com/safjnest/
 │   │   ├── StatusController.java
 │   │   ├── beebot/                       ... DiscordAuthController, MeController, GuildController, SoundController
 │   │   └── lol/                          ... controller e helper HTTP esistenti
-│   ├── dto/                              ... LolApiError da assorbire
-│   └── exception/                        ... handler da unificare qui
+│   └── exception/
+│       ├── ApiErrors.java
+│       └── ApiExceptionHandler.java
 ├── status/
 │   ├── log/                              ... BotLogger, converter e LoggerIDpair
 │   └── ... metriche esistenti
@@ -306,10 +307,10 @@ Le colonne sono relative a `src/main/java/com/safjnest/`. Questa tabella registr
 
 | File da creare | Responsabilità |
 |---|---|
-| `exception/BeebotException.java` | Eccezione applicativa comune senza Spring, con categoria annidata, codice, messaggio, causa ed eventuale retry |
-| `spring/exception/ApiErrors.java` | Mapping e record HTTP annidati, riusati dal filtro, dall'advice e da `LolApiResponses` |
-| `spring/exception/ApiExceptionHandler.java` | Gestione unificata degli errori applicativi, di binding e del framework |
-| `spring/controller/beebot/MeController.java` | Profilo e impostazioni utente; delega al percorso comune degli oggetti |
+| `exception/Exception.java` — creato nel passaggio 4 | Eccezione applicativa comune senza Spring, con categoria annidata, codice, messaggio, causa ed eventuale retry |
+| `spring/exception/ApiErrors.java` — creato nel passaggio 4 | Mapping e record HTTP annidati, riusati dal filtro, dall'advice e da `LolApiResponses` |
+| `spring/exception/ApiExceptionHandler.java` — creato nel passaggio 4 | Gestione unificata degli errori applicativi, di binding e del framework |
+| `spring/controller/beebot/MeController.java` — creato nel passaggio 3 | Profilo e impostazioni utente; delega al percorso comune degli oggetti |
 | `utils/ParseUtils.java` | Nel passaggio 5, solo i meccanismi di conversione effettivamente condivisi estratti dai proprietari esistenti |
 
 L'albero non richiede una nuova classe per ogni errore o un nuovo service/repository per ogni cache. I tipi di sola rappresentazione restano nei proprietari appropriati, annidati quando semplice e utile.
@@ -320,21 +321,21 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 
 | File attuale da mantenere temporaneamente | Assorbimento previsto |
 |---|---|
-| `discord/auth/AuthException.java` | Sostituito dall'errore comune `exception.BeebotException`, con mapping HTTP in `spring.exception` |
-| `discord/guild/DiscordGuildService.java` | Operazioni di lista autorizzata, decrittazione e controllo amministrativo in `discord.auth.DiscordAuthService`, con la stessa cache autorizzativa |
+| `discord/auth/AuthException.java` — rimosso nel passaggio 4 | Sostituito dall'errore comune `exception.Exception`, con mapping HTTP in `spring.exception` |
+| `discord/guild/DiscordGuildService.java` — rimosso nel passaggio 4 | Operazioni di lista autorizzata, decrittazione e controllo amministrativo in `discord.auth.DiscordAuthService`, con la stessa cache autorizzativa |
 | `discord/guild/GuildService.java` — rimosso nel passaggio 2 | Mutazioni e regole in `bot.model.guild.GuildData`/figli; adattamento input/output nel controller. Nessun trasferimento indiscriminato di tutta la classe in un unico altro file |
 | `database/sql/database/GuildSettingsDB.java` — rimosso nel passaggio 2 | Query necessarie in `BotDB`, mantenendo transazioni per blocco, ruoli vuoti, campi omessi, null e creazione di alert ancora non validi |
 | `bot/model/guild/GuildSettings.java` — rimosso nel passaggio 2 | Record di vista/risultato annidati nel proprietario `bot.model.guild.GuildData`, con forma HTTP e validità attuali |
-| `sound/SoundAccess.java` | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
+| `sound/SoundAccess.java` — rimosso nel passaggio 4 | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
 | `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; catena `BotDB → SoundDB` eliminata, file assorbito e rimosso nel passaggio 3 |
 | `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `bot.cache.managers.SoundCache` |
 | `sound/SoundValues.java` | Errori all'eccezione comune, validazione al confine/proprietario e rappresentazioni nei tipi appropriati; nessun nuovo generico `MapUtils` |
-| `spring/exception/AuthExceptionHandler.java` | Gestione applicativa in `spring.exception.ApiExceptionHandler`; record di errore in `ApiErrors` |
-| `spring/exception/AuthRequestExceptionHandler.java` | Binding e body errati nel medesimo handler HTTP |
-| `spring/exception/LolApiExceptionHandler.java` | Gestione HTTP LoL/framework nel medesimo handler, mantenendo il contratto esistente |
-| `spring/dto/LolApiError.java` | Record annidato in `spring.exception.ApiErrors`, conservando `status`, `code`, `message` e `metadata` |
+| `spring/exception/AuthExceptionHandler.java` — rimosso nel passaggio 4 | Gestione applicativa in `spring.exception.ApiExceptionHandler`; record di errore in `ApiErrors` |
+| `spring/exception/AuthRequestExceptionHandler.java` — rimosso nel passaggio 4 | Binding e body errati nel medesimo handler HTTP |
+| `spring/exception/LolApiExceptionHandler.java` — rimosso nel passaggio 4 | Gestione HTTP LoL/framework nel medesimo handler, mantenendo il contratto esistente |
+| `spring/dto/LolApiError.java` — rimosso nel passaggio 4 | Record `LolApiError` annidato in `spring.exception.ApiErrors`, conservando `status`, `code`, `message` e `metadata` |
 
-### Modifiche ai file conservati
+### Modifiche concordate ai file conservati
 
 | Proprietario nella struttura finale | Modifica prevista |
 |---|---|
@@ -352,7 +353,7 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 | `spring.config.LolApiConfig` | Configurazione HTTP comune e personalizzazioni LoL; la scansione continua a includere controller/auth/error HTTP |
 | `spring.controller.beebot.DiscordAuthController` | Solo authorize, session e logout |
 | `spring.controller.beebot.MeController` | `/me` e `/me/settings`, usando gli oggetti ottenuti dalla cache comune |
-| `spring.controller.beebot.GuildController` | Aggiungere `/guilds` e l'alias `/servers`, oggi nel controller auth; impostazioni sui medesimi oggetti del bot |
+| `spring.controller.beebot.GuildController` | Ora possiede anche `/guilds` e l'alias `/servers`, trasferiti dal controller auth; impostazioni sui medesimi oggetti del bot |
 | `spring.controller.beebot.SoundController` | Endpoint sound sul percorso comune; `/me/settings` passa al controller Me |
 | `spring.controller.lol.LolApiParameters/LolApiResponses` | Riuso dei meccanismi comuni senza perdere vincoli HTTP, stati `ApiResult`, metadati o regole LoL |
 | `database.sql.database.AuthDB` | Allineare le letture nuove al parser/record esistente, mantenendo query parametrizzate, revoca autorevole e transazioni |
@@ -363,7 +364,7 @@ Dopo gli assorbimenti si rimuovono soltanto i file le cui funzionalità sono sta
 
 La struttura confermata conserva Spring per controller, filtro/configurazione e mapping HTTP degli errori. L'autenticazione resta in `discord.auth`, la cache autorizzativa in `discord.guild`; non è più previsto l'ampliamento verso `spring.auth` descritto nella versione precedente del piano. I modelli di successo LoL restano in `lol.model` e le decisioni accettate non vengono modificate.
 
-L'autenticazione non viene duplicata per controller LoL o credenziali personali. `discord.auth.DiscordApi` serve anche ai suoni; `exception.BeebotException` è applicativa; `AuthDB` resta in `database.sql.database`. L'handler e il mapper comuni nuovi saranno in `spring.exception`, riusando il package esistente.
+L'autenticazione non viene duplicata per controller LoL o credenziali personali. `discord.auth.DiscordApi` serve anche ai suoni; `exception.Exception` è applicativa; `AuthDB` resta in `database.sql.database`. L'handler e il mapper comuni nuovi saranno in `spring.exception`, riusando il package esistente.
 
 ### Suoni e futuro R2
 
@@ -374,14 +375,14 @@ Download concorrenti, file incompleti, durata della copia locale e cleanup duran
 
 ## Sequenza di implementazione proposta
 
-Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è nel commit `e7daa3f2`: user, XP e sound usano il percorso comune. Il prossimo intervento è il passaggio 4: errori e Spring/auth. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è nel commit `e7daa3f2`: user, XP e sound usano il percorso comune. Il passaggio 4 è implementato nel working tree. Il prossimo intervento è il passaggio 5: HTTP e parsing. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
 | 1 — Cache e identità, implementato | Una base per istanza; singolo/bulk coordinati; viste della cache e operazioni delimitate. Snapshot di dominio nei passaggi 2–3 | 10 hit+10 miss; richiesta singola sovrapposta; scadenza durante mutazione; errore loader; stessa istanza durante l'operazione |
 | 2 — Guild e alert, implementato | API sugli oggetti della cache; eliminazione `GuildService`/`GuildSettingsDB` dopo la migrazione delle funzionalità | Bot→API e API→bot immediati; ruoli vuoti; rollback per blocco; letture durante modifiche; Twitch dopo il commit e fuori dal lock |
 | 3 — User e sound, implementato | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
-| 4 — Errori e Spring/auth | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
+| 4 — Errori e Spring/auth, implementato | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
 | 5 — HTTP e parsing | Helper già esistenti estesi e riusati; niente cambi a Mongo o al framework SQL | Timeout/status/header Discord e Data Dragon; input numerici limite e fallback; filtri e chiavi invariati |
 | 6 — Allineamento query auth/API | Record/parser per le letture nuove e rimozione dei doppioni residui | Query parametrizzate, righe modificate, consumo OAuth una sola volta, revoca autorevole anche con cache piena |
 
@@ -581,7 +582,7 @@ Conteggio statico dei token `var` nei sette sorgenti: 29 in `SoundAnalytics`,
 
 I rilievi seguenti conservano la fotografia dell'audit. I punti 1–2 sono risolti
 dal riordino analytics documentato sotto; i punti 3–5 dalla chiusura Sound/Tag
-prima del passaggio 4. Il punto 6 e gli accorpamenti successivi restano aperti.
+prima del passaggio 4. Il punto 6 è risolto nel passaggio 4 per errori e lookup Discord; restano gli accorpamenti completi di `SoundValues` e `SoundQueryCache`.
 
 1. **Il riordino di `SoundAnalytics` non è una sola formattazione.**
    `guild()` e `sound()` mescolano caricamento, filtri di privacy, calcoli e
@@ -815,3 +816,67 @@ Nessun ADR, contratto API, formato delle risposte o presentazione viene cambiato
 `mvn -o clean test`: 110 test locali superati, zero errori/fallimenti/skipped;
 `git diff --check` superato. Nessuna verifica live di Mongo, MariaDB, Redis,
 Riot o Discord. Il passaggio 4 non viene avviato da questo merge.
+
+
+## Passaggio 4 implementato: errori e Spring/auth
+
+Baseline: merge `357aefbe`. Nome corretto su richiesta del proprietario:
+`com.safjnest.exception.Exception`, senza alias `BeebotException`.
+
+- `Exception` è applicativa e unchecked, con enum annidato `Type`, codice,
+  messaggio del chiamante, causa ed eventuale retry. Auth, cache autorizzativa,
+  modelli e query sound non importano più Spring per costruire i propri errori.
+  Le catch generiche già presenti mantengono il tipo `java.lang.Exception`.
+- `spring.exception.ApiErrors` è il solo mapper di body, status e header,
+  condiviso da `AuthFilter` e `ApiExceptionHandler`. I record HTTP annidati sono
+  `BeebotError` (`code`, `message`, retry opzionale) e `LolApiError` (`status`,
+  `code`, `message`, `metadata`). Il record LoL conserva nome e contratto,
+  compreso `metadata: null`; il tipo autonomo in `spring.dto` è rimosso.
+  `LolApiResponses` continua a possedere il mapping READY/PARTIAL/PENDING/
+  NOT_FOUND di ADR-0007 e riusa il record annidato per il 202.
+- L'handler unico assorbe i tre advice precedenti, mantiene messaggi specifici
+  per i parametri Beebot/LoL e sanitizza body malformati ed errori imprevisti.
+  Il filtro conserva le sole due eccezioni POST pre-sessione, i controlli sui
+  percorsi e `no-store`; include ora retry nel body e nell'header come l'advice.
+  Rotte mancanti, metodi errati ed errori framework su `/api/beebot` ricevono
+  il formato Beebot anziché l'envelope LoL usato prima dall'handler globale.
+  Un JSON illeggibile è 400 anche per LoL, anziché finire nel catch generico 500.
+- `DiscordAuthController` contiene authorize, session e logout;
+  `GuildController` possiede `/guilds` e `/servers` oltre alle rotte della singola
+  guild. `MeController` mantiene `/me` e `/me/settings`. URL, risposte di successo,
+  impostazioni per blocco e presentazione Discord sono conservati.
+- `DiscordAuthService` assorbe `DiscordGuildService`: lista autorizzata,
+  decrittazione e controllo amministrativo condividono `DiscordGuildCache`.
+  Identità utente/applicazione/sessione/credenziale, chiavi Redis, TTL, lease,
+  fencing e revoca SQL rimangono invariati. Il singleton è `instance` e la
+  spaziatura della cache è riallineata senza cambiare il protocollo.
+- `DiscordApi` assorbe `SoundAccess`, il record `GuildAccess` e le proiezioni
+  utente. Un lookup membro comune serve politiche distinte: la directory include
+  owner/Administrator/Manage Server; la membership audio comprende ogni membro,
+  con il flag di cancellazione limitato a owner/Administrator. Cache JDA complete
+  stabiliscono assenza; quelle incomplete recuperano solo membri mancanti.
+  Fallimenti non diventano liste parziali; rate limit mantengono codice e retry.
+  I fallback `Unknown`/avatar null e la forma delle identità sono conservati.
+- Rimossi `AuthException`, i tre handler precedenti, il vecchio `LolApiError`,
+  `DiscordGuildService` e `SoundAccess`. `SoundValues.bad()` costruisce ora
+  l'errore applicativo; la distribuzione dei suoi altri helper e l'assorbimento
+  di `SoundQueryCache` restano lavori successivi, alle condizioni dell'audit.
+
+Verifiche: `mvn -o clean test`, 149 test superati, zero fallimenti/errori/skipped.
+I 39 casi nuovi sono in `ApiErrorsTest` (12), `DiscordAuthServiceTest` (14),
+`DiscordApiTest` (9) e `DiscordGuildCacheTest` (4). Coprono filtro/advice e retry,
+forme HTTP, binding/body/routing, errori Java imprevisti, 202/metadata LoL,
+chiavi personali/OAuth, revoca e scadenza con cache piena, indisponibilità SQL,
+consumo OAuth singolo, directory condivisa e alias, distinzione dei permessi,
+lookup JDA e guasti Discord, TTL, caricamenti concorrenti e invalidazione in volo.
+I test precedenti conservano anche i confronti completi delle risposte analytics.
+
+Le prove usano MockMvc, H2 e dipendenze simulate, senza servizi live. Riesaminati
+ADR-0005/0006/0007, controller, documenti API e OpenAPI sound: nessun cambiamento
+ai success model LoL, a `ApiResult`, ai payload di successo, allo schema DB o a
+Mongo. Il contratto LoL di errori/202 è conservato; le correzioni HTTP Beebot e
+body malformati sono documentate nelle pagine API. Nessuna modifica a scheduler,
+status, trasporto HTTP comune o R2. Nessun nuovo framework o dipendenza.
+
+Il prossimo passaggio è il 5, HTTP e parsing; l'allineamento delle query auth
+rimane nel passaggio 6. Il passaggio 4 resta nel working tree, senza commit/push.

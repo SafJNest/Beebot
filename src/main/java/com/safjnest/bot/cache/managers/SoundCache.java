@@ -5,8 +5,9 @@ import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.bot.cache.CacheAdapter;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
-import com.safjnest.discord.auth.AuthException;
-import com.safjnest.sound.SoundAccess;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
+import com.safjnest.discord.auth.DiscordApi;
 import com.safjnest.sound.SoundAnalytics;
 import com.safjnest.sound.SoundPeriod;
 import com.safjnest.sound.SoundQueryCache;
@@ -39,7 +40,6 @@ import net.dv8tion.jda.api.entities.User;
 import org.gagravarr.ogg.OggFile;
 import org.gagravarr.opus.OpusFile;
 import org.gagravarr.opus.OpusStatistics;
-import org.springframework.http.HttpStatus;
 
 public class SoundCache extends CacheAdapter<String, Sound> {
 
@@ -48,24 +48,24 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
     private final BotDB database;
     private final UserCache users;
-    private final SoundAccess access;
+    private final DiscordApi access;
     private final SoundQueryCache queries;
     private final SoundAnalytics analytics;
     private volatile String cdnUrl = "";
 
     public SoundCache() {
-        this(BotDB.get(), new SoundAccess(), new SoundQueryCache());
+        this(BotDB.get(), new DiscordApi(), new SoundQueryCache());
     }
 
-    public SoundCache(BotDB database, SoundAccess access, SoundQueryCache queries) {
+    public SoundCache(BotDB database, DiscordApi access, SoundQueryCache queries) {
         this(database, access, queries, Ticker.systemTicker());
     }
 
-    public SoundCache(BotDB database, SoundAccess access, SoundQueryCache queries, Ticker ticker) {
+    public SoundCache(BotDB database, DiscordApi access, SoundQueryCache queries, Ticker ticker) {
         this(database, access, queries, ticker, UserCache.getInstance());
     }
 
-    public SoundCache(BotDB database, SoundAccess access, SoundQueryCache queries, Ticker ticker, UserCache users) {
+    public SoundCache(BotDB database, DiscordApi access, SoundQueryCache queries, Ticker ticker, UserCache users) {
         super(100, 1, TimeUnit.MINUTES, ticker, false);
 
         this.database = database;
@@ -270,25 +270,27 @@ public class SoundCache extends CacheAdapter<String, Sound> {
                 return mp3file.getLengthInSeconds();
             }
             else {
-                throw new Exception("MP3 file does not have an ID3v2 tag.");
+                throw new java.lang.Exception("MP3 file does not have an ID3v2 tag.");
             }
         }
-        catch (Exception e) {
+        catch (java.lang.Exception e) {
             e.printStackTrace();
             return 0;
         }
     }
 
-    public record Context(String userId, Map<String,SoundAccess.GuildAccess> guilds) {
+    public record Context(String userId, Map<String, DiscordApi.GuildAccess> guilds) {
     }
 
     public Context context(String userId) {
-        return new Context(userId,access.guilds(userId));
+        return new Context(userId, access.guildAccess(userId));
     }
 
-    public void requireGuild(Context context,String guild) {
+    public void requireGuild(Context context, String guild) {
         SoundValues.id(guild);
-        if(!context.guilds().containsKey(guild))throw new AuthException(HttpStatus.FORBIDDEN,"guild_forbidden","Guild membership and bot presence required");
+
+        if (!context.guilds().containsKey(guild))
+            throw new Exception(Type.FORBIDDEN, "guild_forbidden", "Guild membership and bot presence required");
     }
 
     public Map<String,Object> guildSounds(Context context,String guild,SoundPeriod period) {
@@ -379,7 +381,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
                 return operation.apply(sound);
             });
         } catch (java.util.NoSuchElementException exception) {
-            throw new AuthException(HttpStatus.NOT_FOUND, "sound_not_found", "Sound not found");
+            throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
         }
     }
 
@@ -451,10 +453,13 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return value.trim().toLowerCase(Locale.ROOT);
     }
 
-    private QueryRecord visible(Context context,String id) {
+    private QueryRecord visible(Context context, String id) {
         SoundValues.id(id);
-        var rows=database.readSounds(List.of(id));
-        if(rows.isEmpty()||!BotDB.isSoundVisible(rows.get(0),context.userId(),context.guilds().keySet()))throw new AuthException(HttpStatus.NOT_FOUND,"sound_not_found","Sound not found");
+
+        List<QueryRecord> rows = database.readSounds(List.of(id));
+        if (rows.isEmpty() || !BotDB.isSoundVisible(rows.get(0), context.userId(), context.guilds().keySet()))
+            throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
+
         return rows.get(0);
     }
 

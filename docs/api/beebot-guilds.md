@@ -135,3 +135,12 @@ Malformed JSON, missing body, non-object/empty root or invalid guild ID returns 
 Uses existing guild, channel, alert, alert_role, alert_twitch, alert_reward and automated_action tables via `BotDB`, with prepared statements and explicit per-block/item transactions. The former `GuildService`/`GuildSettingsDB` path has been removed. No new migration or database is introduced. The database must already support the columns used by current bot code (`alert.private_message`, `alert.send_type`, `channel.league_shard`); some historical SQL dumps in this repository omit them. No schema changes are executed automatically.
 
 LoL controllers, models, Mongo collections, Redis caches, command registration and Discord presentation are unchanged. No shard fan-out or queued progress reporting is required for these guild configuration operations.
+
+
+The directory endpoints `/guilds` and `/servers` now belong to `GuildController`,
+with their existing array response. `DiscordAuthService` supplies that directory
+and the administrative check through the unchanged `DiscordGuildCache`.
+Request failures use the shared application exception and `ApiErrors` /
+`ApiExceptionHandler`; filter failures retain retry metadata too. Unknown guild
+routes and framework failures use the Beebot envelope. Settings, per-block
+transactions, permissions and Discord presentation are unchanged.
