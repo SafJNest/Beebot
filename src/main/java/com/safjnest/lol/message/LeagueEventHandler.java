@@ -61,6 +61,11 @@ public class LeagueEventHandler extends EventButtonHandler {
     }
 
     @Override
+    public void onButtonInteraction(ButtonInteractionEvent event) {
+        return;
+    }
+
+    @Override
     public void onModalInteraction(ModalInteractionEvent event) {
         List<Button> buttons = EventUtils.getButtons(event.getMessage().getComponents());
         LeagueContext context = getContext(buttons, event.getUser().getId());

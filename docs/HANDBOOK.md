@@ -238,11 +238,10 @@ The scan excludes nonexistent division V; an existing V checkpoint resumes at
 the corresponding division IV. A first run
 without checkpoint documents is initialized from the latest operator-provided
 regional progress snapshot; a later run starts from the beginning after every
-region has completed. The 2026-11-08 log snapshot seeds BR1 at Bronze I page 193,
-EUN1 at Bronze II page 311, EUW1 at Bronze IV page 155, KR at Bronze III page 154,
-LA1 at Silver IV page 120, LA2 at Gold II page 105, NA1 at Bronze II page 6,
-TR1 at Gold II page 64 and VN2 at Gold IV page 336. These are the last pages
-started, so they are repeated; TW2 and previously completed regions stay completed.
+region has completed. The latest operator-provided snapshot seeds BR1 at Silver III
+page 37, EUN1 at Silver IV page 178, EUW1 at Bronze IV page 658, KR at Bronze I
+page 36, LA1 at Silver I page 96 and NA1 at Bronze I page 92. These pages
+are repeated. LA2, TR1, VN2 and previously completed regions stay completed.
 The seeds apply only when no checkpoint documents exist and do not overwrite
 existing Mongo checkpoints. This internal change leaves the public API and presentation unchanged. All-rank
 jobs keep only the current page in queue status, not a growing item map for

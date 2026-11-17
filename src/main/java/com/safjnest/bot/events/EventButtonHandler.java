@@ -416,7 +416,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
-                        if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
+                        if (!guild.getAudioManager().isConnected())
+                            guild.getAudioManager().openAudioConnection(channelJoin);
 
                         track.setUserData(new TrackData(AudioType.SOUND));
                         pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);

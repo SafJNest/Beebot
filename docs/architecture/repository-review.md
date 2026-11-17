@@ -1,6 +1,6 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è implementato nel working tree, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Restano i passaggi 4–6.
+Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è nel commit `e7daa3f2`, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Restano i passaggi 4–6.
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -374,7 +374,7 @@ Download concorrenti, file incompleti, durata della copia locale e cleanup duran
 
 ## Sequenza di implementazione proposta
 
-Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è implementato nel working tree: user, XP e sound usano il percorso comune. Il prossimo intervento è il passaggio 4: errori e Spring/auth. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è nel commit `e7daa3f2`: user, XP e sound usano il percorso comune. Il prossimo intervento è il passaggio 4: errori e Spring/auth. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
@@ -788,3 +788,30 @@ dipendenze finte locali; non sono verifiche live di MariaDB, Redis o Discord.
 Il prossimo passaggio resta il 4, errori applicativi e Spring/auth. Gli assorbimenti
 di `SoundAccess`, `SoundValues` e `SoundQueryCache` mantengono le condizioni
 dell'audit e non sono anticipati da questa chiusura.
+
+
+## Integrazione main prima del passaggio 4
+
+Integrato `main` al commit `bf0f9d77` nel branch `the-dashboard`, dopo il commit
+`e7daa3f2` che raccoglie il passaggio 3 e la chiusura sound precedente. Risolti
+sei conflitti di contenuto e uno modifica/cancellazione:
+
+- I comandi e gli handler audio mantengono i package nuovi e le operazioni
+  coordinate tramite `SoundCache.withSound`. Tutte le riproduzioni interessate
+  conservano il `guildId` effettivo e la sorgente già previsti da entrambi i rami.
+- Il vecchio `model.sound.Sound` resta rimosso; il modello canonico è
+  `sound.model.Sound`, che possiede già le firme con `guildId` di main.
+- `BotDB.updateUserPlays` conserva la delega al modello attraverso la cache:
+  `recordSoundPlay` registra già guild e sorgente nella stessa transazione
+  dell'incremento del contatore, senza ripristinare SQL concatenato.
+- Integrati i checkpoint di `RankService` e il no-op di
+  `LeagueEventHandler.onButtonInteraction` che evita il dispatch ereditato.
+  Il handbook è allineato ai seed effettivi del sorgente di main, più recenti
+  del suo testo operativo. Gli esistenti checkpoint Mongo non sono modificati.
+
+Riesaminato l'impatto CodeGraph: i cambiamenti LoL riguardano seed operativi e
+dispatch Discord, senza variazioni ai modelli o agli endpoint HTTP.
+Nessun ADR, contratto API, formato delle risposte o presentazione viene cambiato.
+`mvn -o clean test`: 110 test locali superati, zero errori/fallimenti/skipped;
+`git diff --check` superato. Nessuna verifica live di Mongo, MariaDB, Redis,
+Riot o Discord. Il passaggio 4 non viene avviato da questo merge.
