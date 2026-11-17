@@ -171,7 +171,7 @@ public class PlaySound extends SlashCommand{
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-            sound.increaseUserPlays(author.getId());
+            sound.increaseUserPlays(author.getId(), guild.getId());
             sound.setTrack(track);
 
 

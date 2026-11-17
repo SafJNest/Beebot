@@ -415,7 +415,7 @@ public class Functions {
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
 
-                sound.increaseUserPlays(theGuy.getId(), AudioType.GREET);
+                sound.increaseUserPlays(theGuy.getId(), guild.getId(), AudioType.GREET);
                 track.setUserData(new TrackData(AudioType.GREET));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.GREET);
             }

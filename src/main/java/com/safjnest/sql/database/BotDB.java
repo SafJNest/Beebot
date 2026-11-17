@@ -215,8 +215,8 @@ public class BotDB extends AbstractDB {
         return instance.defaultQuery("DELETE FROM sound WHERE id = " + id + ";");
     }
 
-    public static boolean updateUserPlays(String sound_id, String user_id, int source) {
-        return instance.defaultQuery("INSERT INTO sound_history(user_id, sound_id, source) VALUES('" + user_id + "', '" + sound_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
+    public static boolean updateUserPlays(String sound_id, String user_id, String guild_id, int source) {
+        return instance.defaultQuery("INSERT INTO sound_history(user_id, sound_id, guild_id, source) VALUES('" + user_id + "', '" + sound_id + "', '" + guild_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
     }
 
     public static QueryRecord getPlays(String sound_id, String user_id) {

@@ -153,7 +153,7 @@ public class EventButtonHandler extends ListenerAdapter {
         else if (buttonId.startsWith("player-"))
             player(event);
 
-        else if (buttonId.startsWith("soundplay-"))
+        else if (buttonId.startsWith("soundplay-")) 
             soundplay(event);
 
         else if (buttonId.startsWith("help"))
@@ -412,12 +412,13 @@ public class EventButtonHandler extends ListenerAdapter {
                 AudioChannel channelJoin = event.getMember().getVoiceState().getChannel();
                 if (channelJoin == null)  return;
 
-                sound.increaseUserPlays(event.getUser().getId());
+                    sound.increaseUserPlays(event.getUser().getId(), guild.getId());
 
                 pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
-                        if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
+                        if (!guild.getAudioManager().isConnected()) 
+                            guild.getAudioManager().openAudioConnection(channelJoin);
 
                         track.setUserData(new TrackData(AudioType.SOUND));
                         pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);

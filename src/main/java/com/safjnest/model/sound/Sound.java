@@ -126,12 +126,12 @@ public class Sound {
         return result;
     }
 
-    public boolean increaseUserPlays(String userId) {
-        return increaseUserPlays(userId, AudioType.AUDIO);
+    public boolean increaseUserPlays(String userId, String guildId) {
+        return increaseUserPlays(userId, guildId, AudioType.AUDIO);
     }
 
-    public boolean increaseUserPlays(String userId, AudioType source) {
-        boolean result = BotDB.updateUserPlays(this.ID, userId, source.ordinal());
+    public boolean increaseUserPlays(String userId, String guildId, AudioType source) {
+        boolean result = BotDB.updateUserPlays(this.ID, userId, guildId, source.ordinal());
         if (result) plays++;
         return result;
     }
