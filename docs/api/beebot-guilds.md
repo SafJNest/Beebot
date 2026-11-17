@@ -16,7 +16,7 @@ Returns `{ id, name, iconUrl, channels, roles, settings }`.
 - `settings.reward`: alert states indexed by level, with `level` and `temporary`.
 - `settings.warning.actions`: existing automated warning actions, read-only. Uses the existing action model (`id`, `action`, `roleId`, `actionTime`, `infractions`, `infractionsTime`, and derived `actionMessage`). Durations are seconds; action codes retain the bot's values (1 mute, 2 kick, 3 ban).
 
-GET reads SQL and the existing Discord cache without creating guild rows, alerts, roles or channels. If a guild has no stored configuration, it returns the bot's defaults, missing single alerts and empty collections. SQL failures return an unavailable error, not empty configuration.
+GET reads the shared `GuildCache` objects (loading SQL on a cache miss) and the existing Discord cache without creating guild rows, alerts, roles or channels. If a guild has no stored configuration, it returns the bot's defaults, missing single alerts and empty collections. SQL failures return an unavailable error, not empty configuration.
 
 ### Alert state
 
@@ -122,7 +122,7 @@ The response uses HTTP 200 for a parsed request with per-block results, includin
 }
 ```
 
-Validation errors prevent the whole block/item from saving. Each valid block/item is committed in its own SQL transaction, including alert roles and Twitch/reward rows; SQL failure rolls back that whole unit. Other blocks/items continue. Updates change only supplied columns and serialize API writes using the guild row lock. The local `GuildCache` entry is invalidated only after a successful commit. If a scoped cache operation is already using the entry, it retains that instance until its participants finish; an older in-flight load cannot repopulate the invalidated cache. The next load after release reads SQL again. This invalidation is local to the running bot instance. API writes still use the existing settings service; migrating them onto the same persistent objects as bot commands is the next plan step.
+Validation errors prevent the whole block/item from saving. Each valid block/item is committed in its own SQL transaction, including alert roles and Twitch/reward rows; SQL failure rolls back that whole unit. Other blocks/items continue. Omitted fields retain the values copied from the current cached object. `deferEdit()` changes a private copy; `update()` writes all fields of that block with explicit prepared queries in `BotDB`, then publishes to the same original instance after commit. Bot commands and API requests both use scoped `GuildCache` operations. The SQL guild row lock serializes each storage transaction; there is no local invalidation after an own write. A failed save leaves the original object unchanged. In-memory default channel objects are omitted from GET until saved. This is process-local cache coordination, not synchronization with another bot instance or external SQL writers.
 
 An alert can save successfully with `valid: false`: operational `problems` are distinct from request `errors`. Returned alert states are refreshed after processing the complete request so that changes to guild experience are reflected regardless of key order. Rejected updates return the currently stored alert state.
 
@@ -132,6 +132,6 @@ Malformed JSON, missing body, non-object/empty root or invalid guild ID returns 
 
 ## Storage and compatibility
 
-Uses existing guild, channel, alert, alert_role, alert_twitch, alert_reward and automated_action tables via `GuildSettingsDB`, with prepared statements and explicit transactions. No new migration or database is introduced. The database must already support the columns used by current bot code (`alert.private_message`, `alert.send_type`, `channel.league_shard`); some historical SQL dumps in this repository omit them. No schema changes are executed automatically.
+Uses existing guild, channel, alert, alert_role, alert_twitch, alert_reward and automated_action tables via `BotDB`, with prepared statements and explicit per-block/item transactions. The former `GuildService`/`GuildSettingsDB` path has been removed. No new migration or database is introduced. The database must already support the columns used by current bot code (`alert.private_message`, `alert.send_type`, `channel.league_shard`); some historical SQL dumps in this repository omit them. No schema changes are executed automatically.
 
 LoL controllers, models, Mongo collections, Redis caches, command registration and Discord presentation are unchanged. No shard fan-out or queued progress reporting is required for these guild configuration operations.

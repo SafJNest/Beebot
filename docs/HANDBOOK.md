@@ -89,9 +89,18 @@ Both key types live in `api_key`: `ApiKey` is the canonical typed key model and 
 `GET /beebot/me` returns `{user, servers}`. `GET /beebot/guilds` returns a plain `List<DiscordApi.Server>` (JSON array), with `/beebot/servers` retained as an alias. Records are nested in their owning API, service or controller rather than split into record-only files. `DiscordApi` owns Discord HTTP/JDA access and image URLs; `DiscordGuildService` shares the authorized list between these endpoints and single-guild GET/POST. `DiscordGuildCache` stores it for 60 seconds in Redis with process-local fallback, single-flight loading and invalidation fencing. Personal keys use JDA caches before any missing-member lookup; OAuth uses one `/users/@me/guilds?limit=200` request per successful cache load. SQL continues to decide credential/session revocation. Logout invalidates the guild list. Owner, Administrator and Manage Server grant access. Discord rate limits return `discord_rate_limited` with retry metadata; see the API page for error details.
 
 Guild dashboard reads and partial updates are documented in
-[Beebot guild settings](api/beebot-guilds.md). `GuildSettingsDB` owns the per-block
-SQL transactions; alert operational problems come from `AlertData`, and successful
-writes invalidate the local `GuildCache`. Warning actions are read-only here.
+[Beebot guild settings](api/beebot-guilds.md). Bot and API use the same
+`GuildCache` objects. Under `GuildCache.withGuild`, call `deferEdit()` on the
+specific model, apply setters and call `update()`. The private edit saves all
+fields of that block through prepared `BotDB` queries in one transaction, then
+publishes to the original object only after commit. Normal setters remain
+immediately persistent. Failed or stale edits return `false`; create a new edit
+for another update. General settings, blacklist, each channel and each alert are
+separate units. `GuildData.deferEdit()` covers general settings only. Alert roles
+and Twitch/reward fields share their alert's transaction. Response records and
+copied settings snapshots live in `GuildData`; operational problems come from
+`AlertData`. Own writes keep the existing cache object. Twitch registration runs
+after commit and outside the guild lock. Warning actions are read-only here.
 
 Use the existing scope controller where possible. Parse every path and query
 parameter with `LolApiParameters`, call the owning service and return canonical
@@ -280,8 +289,11 @@ prepared statements and `QueryRecord`, with at most 500 IDs per statement.
 Invalidation fences publication by an older load; active participants finish
 before that entry is discarded. Cache map/list views do not expose the backing
 for direct writes. Old raw object getters remain compatible but do not retain an
-entry beyond the getter call. Guild/API mutations and domain snapshots still
-require plan steps 2–3; authentication caches retain their separate policies.
+entry beyond the getter call. Guild settings, blacklist, channels and alerts now
+use scoped operations and copied snapshots (plan step 2). Do not mutate maps
+returned by `GuildData`; use its creation/deletion methods. Member XP, user and
+sound mutations still require step 3; authentication caches retain their
+separate policies.
 See the [implementation plan](architecture/repository-review.md).
 
 ## Audio API operations

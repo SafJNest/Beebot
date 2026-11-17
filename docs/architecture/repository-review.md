@@ -1,6 +1,6 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 del consolidamento funzionale è implementato nel working tree; i passaggi 2–6 restano da implementare.
+Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è implementato nel working tree con il modello `deferEdit()` concordato. Restano i passaggi 3–6.
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -17,14 +17,14 @@ L'obiettivo principale è che bot e API usino le stesse cache, gli stessi oggett
 | Comandi e component handler conservati | Spostamenti in `bot.commands` e `bot.events` eseguiti, senza nuove gerarchie o riscritture; solo adeguamenti delle chiamate indispensabili al percorso comune |
 | Chronos secondario | `bot.Chronos` conserva nome e comportamento; rimozione o sostituzione rimandata. Una future rappresenta un risultato e non sostituisce la pianificazione periodica |
 | Priorità | Cache/oggetti e coerenza bot/API; errori e Spring/auth; trasporto HTTP e parsing comune con LoL |
-| Stile Java | Tipi espliciti nelle variabili locali; `var` soltanto eventualmente nelle lambda; singleton `instance` minuscolo. Separare i blocchi logici con righe vuote e mettere il corpo di `if`/`for`/`while` sulla riga successiva. Operazioni delimitate con lambda come `withGuild`, senza comprimere i metodi |
+| Stile Java | Tipi espliciti nelle variabili locali; `var` soltanto eventualmente nelle lambda; singleton `instance` minuscolo. Conservare spaziatura, raggruppamenti e banner ASCII esistenti. Separare per responsabilità anche campi e inizializzazioni dei costruttori, applicando lo stesso criterio ai blocchi nuovi. Mettere il corpo di `if`/`for`/`while` sulla riga successiva. Operazioni delimitate con lambda come `withGuild`, senza comprimere i metodi |
 | SoundAnalytics rimandato | Nessuna riscrittura di `sound()`, `guild()` o delle classi `SoundAnalytics` in questo passaggio |
 
 Le esclusioni non impediscono di leggere un chiamante per capire un contratto. Impediscono di trasformare ogni dipendenza osservata in un ulteriore refactoring.
 
 ## Problemi individuati nella baseline
 
-Questi rilievi descrivono il punto di partenza. Il passaggio 1 ha risolto la base comune, i caricamenti coordinati e la durata delle operazioni sulle cache; la migrazione delle mutazioni e degli snapshot di dominio resta nei passaggi 2 e 3.
+Questi rilievi descrivono il punto di partenza. Il passaggio 1 ha risolto la base comune, i caricamenti coordinati e la durata delle operazioni sulle cache; il passaggio 2 unifica mutazioni e snapshot di guild/alert. User e sound restano nel passaggio 3.
 
 ### 1. Le modifiche guild e sound hanno ancora percorsi paralleli
 
@@ -126,7 +126,7 @@ La proposta usa l'infrastruttura della cache già esistente, senza un nuovo lock
 6. **Fallimenti e scadenza.** Un caricamento fallito non diventa un oggetto vuoto o un'assenza; le entry in corso vengono completate con errore e possono essere ritentate. Una entry occupata non viene eliminata e ricreata con un'altra istanza. Nessun lock/future/generation viene rimosso mentre protegge ancora un'operazione.
 7. **Niente accessi laterali.** Bot e API devono entrambi passare qui, incluse le scritture dei figli. Gli handler mantengono struttura e presentazione, ma le chiamate dirette come `guild.getAlerts().put(...)` devono diventare operazioni del proprietario se si vuole la garanzia completa.
 
-Il passaggio 1 implementa le entry private, i caricamenti coordinati e il mantenimento dell’identità durante `with`/`withAll`. Le operazioni singole sincronizzano sul valore; quelle bulk mantengono tutte le entry, ma richiedono il coordinamento del singolo proprietario per modificarle. I vecchi chiamanti che trattengono oggetti da getter o scrivono nelle mappe non acquisiscono automaticamente queste garanzie: la loro migrazione, gli snapshot di dominio e le transazioni composte restano nei passaggi 2–3. È coordinamento locale al processo; non dimostra coerenza tra due bot o scrittori esterni sullo stesso DB.
+Il passaggio 1 implementa le entry private, i caricamenti coordinati e il mantenimento dell’identità durante `with`/`withAll`. Le operazioni singole sincronizzano sul valore; quelle bulk mantengono tutte le entry, ma richiedono il coordinamento del singolo proprietario per modificarle. I vecchi chiamanti che trattengono oggetti da getter o scrivono nelle mappe non acquisiscono automaticamente queste garanzie: il passaggio 2 migra impostazioni guild, canali, blacklist e alert. User, sound e XP rimangono nel passaggio 3. È coordinamento locale al processo; non dimostra coerenza tra due bot o scrittori esterni sullo stesso DB.
 
 ### Bulk: 10 presenti, 20 richiesti
 
@@ -142,7 +142,7 @@ Interfacce indicative: `GuildCache.getGuilds(ids)`, `UserCache.getUsers(ids)`, `
 
 Il risultato completo HTTP attende soltanto i dati mancanti; gli hit sono già disponibili internamente. Non cambia il contratto dell'endpoint per introdurre risposte parziali non richieste.
 
-**Idratazione nel passaggio 1:** le cache usano `GuildData.fromRows` e `UserData.fromRows`, che ricevono canali/azioni/alias già caricati. I costruttori pubblici precedenti restano compatibili; il bulk non li usa per avviare query per ogni oggetto. Il caricamento di una guild assente restituisce assenza; soltanto `getGuildOrPut`/`withGuildOrPut` ne richiedono la creazione. `GuildData.getMemberData` può ancora creare membri: i percorsi XP e le letture di sola consultazione richiedono il passaggio 3. I profili LoL mantengono il caricamento lazy esistente, senza modifiche a Mongo.
+**Idratazione nei passaggi 1–2:** le cache usano `GuildData.fromRows` e `UserData.fromRows`, che ricevono canali/azioni/alias già caricati. I costruttori pubblici precedenti restano compatibili; il bulk non li usa per avviare query per ogni oggetto. Il loader SQL restituisce assenza per una guild non salvata; `withGuild` può conservarne un contenitore predefinito solo in memoria. Una GET non crea righe: la prima modifica valida salva il blocco e crea la guild nella stessa transazione. `getGuildOrPut`/`withGuildOrPut` mantengono la richiesta esplicita di creazione sul DB. `GuildData.getMemberData` può ancora creare membri: i percorsi XP e le letture di sola consultazione richiedono il passaggio 3. I profili LoL mantengono il caricamento lazy esistente, senza modifiche a Mongo.
 
 Le viste autorizzate e i campi personali di Sound non vanno memorizzati sugli oggetti globali condivisi. I dati dell'utente che guarda la risposta restano su copie di risposta, come previsto dal contratto attuale.
 
@@ -248,8 +248,7 @@ com/safjnest/
 │   │   └── DiscordAuthService.java
 │   └── guild/
 │       ├── DiscordGuildCache.java
-│       ├── DiscordGuildService.java      da assorbire
-│       └── GuildService.java             da assorbire
+│       └── DiscordGuildService.java      da assorbire
 ├── lol/                                  ... dominio esistente conservato
 ├── sound/
 │   ├── SoundAccess.java                  da assorbire
@@ -322,9 +321,9 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 |---|---|
 | `discord/auth/AuthException.java` | Sostituito dall'errore comune `exception.BeebotException`, con mapping HTTP in `spring.exception` |
 | `discord/guild/DiscordGuildService.java` | Operazioni di lista autorizzata, decrittazione e controllo amministrativo in `discord.auth.DiscordAuthService`, con la stessa cache autorizzativa |
-| `discord/guild/GuildService.java` | Mutazioni e regole in `bot.model.guild.GuildData`/figli; adattamento input/output nel controller. Nessun trasferimento indiscriminato di tutta la classe in un unico altro file |
-| `database/sql/database/GuildSettingsDB.java` | Query necessarie in `BotDB`, mantenendo transazioni per blocco, ruoli vuoti, campi omessi, null e creazione di alert ancora non validi |
-| `bot/model/guild/GuildSettings.java` | Record di vista/risultato annidati nel proprietario `bot.model.guild.GuildData`, con forma HTTP e validità attuali |
+| `discord/guild/GuildService.java` — rimosso nel passaggio 2 | Mutazioni e regole in `bot.model.guild.GuildData`/figli; adattamento input/output nel controller. Nessun trasferimento indiscriminato di tutta la classe in un unico altro file |
+| `database/sql/database/GuildSettingsDB.java` — rimosso nel passaggio 2 | Query necessarie in `BotDB`, mantenendo transazioni per blocco, ruoli vuoti, campi omessi, null e creazione di alert ancora non validi |
+| `bot/model/guild/GuildSettings.java` — rimosso nel passaggio 2 | Record di vista/risultato annidati nel proprietario `bot.model.guild.GuildData`, con forma HTTP e validità attuali |
 | `sound/SoundAccess.java` | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
 | `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; eliminazione della catena `BotDB → SoundDB` |
 | `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `bot.cache.managers.SoundCache` |
@@ -374,12 +373,12 @@ Download concorrenti, file incompleti, durata della copia locale e cleanup duran
 
 ## Sequenza di implementazione proposta
 
-Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è implementato nel working tree, insieme alla correzione dei due XML di logging. Il prossimo intervento è il passaggio 2: migrare guild e alert sul percorso comune. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è implementato nel working tree. Il prossimo intervento è il passaggio 3: user, XP e sound sul percorso comune. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
 | 1 — Cache e identità, implementato | Una base per istanza; singolo/bulk coordinati; viste della cache e operazioni delimitate. Snapshot di dominio nei passaggi 2–3 | 10 hit+10 miss; richiesta singola sovrapposta; scadenza durante mutazione; errore loader; stessa istanza durante l'operazione |
-| 2 — Guild e alert | API sugli oggetti della cache; eliminazione `GuildService`/`GuildSettingsDB` dopo la migrazione delle funzionalità | Bot→API e API→bot immediati; ruoli vuoti; rollback per blocco; letture durante modifiche; Twitch dopo il commit e fuori dal lock |
+| 2 — Guild e alert, implementato | API sugli oggetti della cache; eliminazione `GuildService`/`GuildSettingsDB` dopo la migrazione delle funzionalità | Bot→API e API→bot immediati; ruoli vuoti; rollback per blocco; letture durante modifiche; Twitch dopo il commit e fuori dal lock |
 | 3 — User e sound | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
 | 4 — Errori e Spring/auth | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
 | 5 — HTTP e parsing | Helper già esistenti estesi e riusati; niente cambi a Mongo o al framework SQL | Timeout/status/header Discord e Data Dragon; input numerici limite e fallback; filtri e chiavi invariati |
@@ -400,7 +399,34 @@ Le eliminazioni avvengono soltanto quando chiamanti, registrazioni e test sono m
 - Sound riusa la stessa base sia dal player sia dalle risposte API già precaricate; conserva controlli di visibilità, dati freschi per richiesta e copie con dati personali. Le mutazioni API restano ancora nella facade, da migrare nel passaggio 3. Le liste e mappe esposte dalla cache sono viste copiate, non accessi modificabili al backing.
 - I riferimenti di converter e logger nei due XML sono stati aggiornati a `com.safjnest.status.log`.
 
-Sono stati riesaminati `GuildController`, `SoundController` e i loro percorsi: endpoint, payload, autorizzazione e presentazione restano invariati. Il percorso di scrittura guild usa ancora `GuildService`/`GuildSettingsDB` con invalidazione dopo commit, e sarà migrato nel passaggio 2. Nessuna modifica a modelli/servizi/API LoL, Mongo, Redis LoL, metriche, `SoundAnalytics` o nomi storici. Framework SQL e schema conservati; le sole query nuove servono al bulk delle cache.
+Sono stati riesaminati `GuildController`, `SoundController` e i loro percorsi: endpoint, payload, autorizzazione e presentazione restano invariati. Questa era la verifica del passaggio 1: il percorso guild separato è stato successivamente migrato nel passaggio 2 descritto sotto. Nessuna modifica a modelli/servizi/API LoL, Mongo, Redis LoL, metriche, `SoundAnalytics` o nomi storici. Framework SQL e schema conservati; le sole query nuove servono al bulk delle cache.
+
+## Passaggio 2 implementato: copie di modifica e salvataggi espliciti
+
+La direzione concordata con il proprietario è questa:
+
+```java
+boolean saved = GuildCache.withGuild(guildId, guild -> {
+    AlertData edit = guild.getAlert(AlertType.LEAVE).deferEdit();
+
+    edit.setMessage(message);
+    edit.setPrivateMessage(privateMessage);
+
+    return edit.update();
+});
+```
+
+- `deferEdit()` crea una copia privata, compresi i ruoli e i campi Twitch/reward. I setter sulla copia non eseguono query; i setter sull'oggetto originale continuano a salvare immediatamente.
+- `update()` salva tutti i campi del solo blocco interessato tramite query preparate esplicite in `BotDB`. Non ci sono mappe campo→colonna, aggiornamenti SQL dinamici o transazioni dell'intero JSON. Ruoli e sottotipo dell'alert partecipano alla stessa transazione.
+- Il commit precede la copia dei valori nell'istanza originale. Errore SQL, cancellazione o revisione superata restituiscono `false`, lasciando intatta la memoria. Una copia già salvata va sostituita con una nuova `deferEdit()` per un'altra modifica.
+- `GuildData.deferEdit()` riguarda i campi generali. Blacklist, canali e alert si modificano sulle rispettive copie, ciascuna con il proprio `update()`; non è una copia dell'intera guild da salvare in blocco.
+- `AlertData` non conserva un riferimento a `GuildData`: conserva l'ID della guild e il proprio stato. `GuildData` coordina creazione e rimozione; il monitor della cache mantiene l'istanza durante l'operazione. Un controllo di revisione per oggetto impedisce a due copie obsolete di sovrascriversi.
+- `GuildController` mantiene parsing JSON, verifica dei riferimenti Discord, autorizzazione e adattamento HTTP. Ottiene dalla stessa `GuildCache` gli oggetti usati da comandi ed eventi; non invalida la guild dopo una modifica propria. Gli snapshot copiano lo stato e la serializzazione avviene fuori dal lock.
+- Ogni chiave di blocco e ogni elemento di `channels`/`twitch`/`reward` produce il proprio risultato. L'elaborazione resta sequenziale per guild: le modifiche allo stesso oggetto sono comunque serializzate, senza introdurre future aggiuntive. Twitch viene registrato dopo il commit e fuori dal lock.
+- Le mappe restituite da `getAlerts()` e `getChannels()` sono copie: l'inserimento passa da `createAlert` oppure da `newAlert` → `update` → `addAlert`, la rimozione dai metodi di `GuildData`. Gli ID SQL indicizzano internamente gli alert, così modificare il livello reward non richiede un riferimento al padre.
+- `GuildService`, `GuildSettingsDB` e il file di soli record `GuildSettings` sono rimossi dopo la migrazione. I record di risposta rimangono annidati in `GuildData`; endpoint, campi HTTP, validazione e presentazione Discord sono conservati.
+
+La garanzia riguarda il processo che condivide queste entry della cache. Non è un protocollo di sincronizzazione con scrittori esterni o altre istanze del bot. XP, membri, user e sound rimangono nel passaggio 3; auth, errori comuni, HTTP/parsing e R2 mantengono la sequenza concordata.
 
 ## Stato delle verifiche
 
@@ -415,7 +441,7 @@ Nel controllo degli spostamenti del 17 novembre 2026 sul commit `e9bf1585`:
 - una prova isolata di Logback ha riprodotto due errori nella configurazione caricata da `BotLogger`: `rsc/logback.xml` e `src/main/resources/logback-spring.xml` conservano riferimenti a `com.safjnest.utils.log`, mentre le classi sono in `com.safjnest.status.log`; il logger attuale eredita inoltre `INFO` invece del `TRACE` configurato per il vecchio nome. La correzione è stata applicata nel passaggio 1;
 - i file degli agenti/skill sono stati rimossi dal versionamento e le cartelle ignorate; il piano resta nel documento versionato, mentre la skill locale non è più condivisa dalla repo.
 
-Le prove precedenti non verificano il funzionamento live di bot/API, la concorrenza, le integrazioni o le prestazioni. Il passaggio 1 è implementato; gli accorpamenti dei passaggi 2–6 restano da implementare. Le esclusioni su Mongo, framework SQL, BotStatus, nomi storici e grandi refactoring degli handler rimangono valide.
+Le prove precedenti non verificano il funzionamento live di bot/API, la concorrenza, le integrazioni o le prestazioni. I passaggi 1–2 sono implementati; gli accorpamenti dei passaggi 3–6 restano da implementare. Le esclusioni su Mongo, framework SQL, BotStatus, nomi storici e grandi refactoring degli handler rimangono valide.
 
 Il passaggio 1 modifica la base delle cache, i loader, le factory di idratazione, le sole query bulk necessarie e i riferimenti del logging. I nuovi test locali coprono concorrenza, bulk, scadenza/eviction, invalidazione, errori, creazione, SQL preparato con H2 e isolamento delle risposte sound. La suite precedente di 101 file non è stata ripristinata. Il codice resta compatibile con il target Java 25 configurato; le lambda non richiedono un cambio di versione. Contratti API, presentazione e ADR accettati rimangono invariati.
 
@@ -427,3 +453,13 @@ Verifica finale del passaggio 1 sul working tree del 17 novembre 2026:
 - le prove SQL usano H2 locale e quelle sound sorgenti finte: nessun avvio live di bot/API o verifica con MariaDB, Redis, Discord o R2.
 
 Rifinitura dello stile richiesta dal proprietario: spaziatura applicata ai metodi introdotti/riscritti nello step 1, con gruppi logici separati e controlli su più righe. Verificata l’identità dei token Java rispetto allo stato precedente alla formattazione: logica, API, persistenza e presentazione invariati. I metodi legacy esclusi, inclusi quelli di `SoundAnalytics`, restano fuori dal giro.
+
+Verifica finale del passaggio 2 sul working tree del 17 novembre 2026:
+
+- `mvn -o clean test`: compilazione pulita di 454 sorgenti principali e 5 file di test; 51 test superati, zero errori/fallimenti/skipped. I 22 nuovi casi di `GuildEditingTest` verificano copie private, identità condivisa, setter immediati, revisioni obsolete, rollback SQL e ruoli, creazione/cancellazione, risultati indipendenti, bot/API concorrenti, snapshot e compatibilità HTTP, autorizzazione, indisponibilità SQL e Twitch dopo commit fuori dal lock.
+- `git diff --check` senza errori; CodeGraph aggiornato e impatto di modelli/chiamanti riesaminato. Nessuna scrittura residua tramite `getAlerts().put` o `getChannels().put`; nessun riferimento operativo ai tre file assorbiti.
+- Controllati i consumatori di guild nelle parti bot e LoL. Il comando `Region` cambia soltanto la chiamata alla cache; modelli, servizi, controller e contratti API LoL non richiedono aggiornamenti. Nessuna modifica a Mongo, `SoundAnalytics`, status, `AbstractDB`, schema o presentazione Discord. Documentazione guild/API, handbook e piano sincronizzati.
+- SQL verificato con H2 in modalità MariaDB, HTTP con MockMvc, Discord/Twitch tramite sostituti locali. Nessun avvio live del bot o controllo su MariaDB, Redis, Discord, Twitch o R2 reali; nessuna misura di prestazioni.
+
+
+Rifinitura dello stile del passaggio 2, richiesta dal proprietario il 17 novembre 2026: riesaminati i 20 file Java presenti nel diff, incluso il nuovo file di test. Sistemati 13 file con raggruppamenti di campi, inizializzazioni e fasi dei metodi; ripristinati i sei banner ASCII di `GuildData`, il separatore preesistente del controller e le attribuzioni delle classi riscritte. Il confronto lessicale con lo stato immediatamente precedente conferma la stessa sequenza di token Java in tutti i 20 file, ignorando solo spaziatura e commenti. Nessuna modifica funzionale, al contratto API, alla persistenza o alla presentazione; la documentazione funzionale rimane valida. `git diff --check` e `mvn -o -DskipTests clean compile` completati con successo; compilazione pulita dei 454 sorgenti principali. Non sono stati aggiunti o rieseguiti test per la sola formattazione.

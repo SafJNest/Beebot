@@ -10,8 +10,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import com.safjnest.bot.cache.managers.GuildCache;
-import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.bot.model.guild.alert.AlertSendType;
+import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.bot.model.guild.alert.TwitchData;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -74,23 +74,24 @@ public class TwitchLink extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuildCache.getGuildOrPut(guildId);
+        String error = GuildCache.withGuild(guildId, guild -> {
+            if (guild.getTwitchdata(streamerId) != null)
+                return "This streamer has already being linked.";
 
-        TwitchData twitchData = gs.getTwitchdata(streamerId);
+            return guild.createAlert(AlertType.TWITCH, streamerId, edit -> {
+                edit.setMessage(message);
+                edit.setPrivateMessage(privateMessage);
+                edit.setAlertChannel(channelID);
+                edit.setSendType(sendType);
+                ((TwitchData) edit).setStreamerRole(roleID);
+            }) == null ? "Something went wrong." : null;
+        });
 
-        if(twitchData != null) {
-            event.deferReply(true).addContent("This streamer has already being linked.").queue();
+        if (error != null) {
+            event.deferReply(true).addContent(error).queue();
             return;
         }
 
-        TwitchData newTwitchData = TwitchData.createTwitchData(guildId, streamerId, message, privateMessage, channelID, sendType, roleID);
-
-        if(newTwitchData.getID() == 0) {
-            event.deferReply(true).addContent("Something went wrong.").queue();
-            return;
-        }
-
-        gs.getAlerts().put(newTwitchData.getKey(), newTwitchData);
         TwitchClient.registerSubEvent(streamerId);
         event.deferReply(false).addContent("Streamer linked correctly").queue();
     }

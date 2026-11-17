@@ -137,7 +137,8 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String privateMessage = event.getValue("twitch-changePrivateMessage") != null ? event.getValue("twitch-changePrivateMessage").getAsString() : null;
         
         String channel = event.getValue("twitch-changeChannel") != null ? event.getValue("twitch-changeChannel").getAsString() : null;
-        if (channel != null) channel = channel.substring(channel.lastIndexOf("/") + 1);
+        if (channel != null)
+            channel = channel.substring(channel.lastIndexOf("/") + 1);
 
         String roleID = event.getValue("twitch-changeRole") != null ? event.getValue("twitch-changeRole").getAsString() : null;
         
@@ -155,34 +156,46 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             roleID = null;
         }
 
-        TwitchData twitch = GuildCache.getGuildOrPut(guild).getTwitchdata(streamerId);
-        if (twitch == null) {
-            AlertSendType sendType = (privateMessage != null && !privateMessage.isBlank()) ? AlertSendType.BOTH : AlertSendType.CHANNEL;
-            
-            roleID = roleID.isBlank() ? null : roleID;
-            
-            TwitchData newTwitchData = TwitchData.createTwitchData(event.getGuild().getId(), streamerId, message, privateMessage, channel, sendType, roleID);
+        String selectedStreamerId = streamerId;
+        String selectedChannelId = channel;
+        String selectedRoleId = roleID;
 
-            if(newTwitchData.getID() == 0) {
-                event.deferReply(true).addContent("Something went wrong.").queue();
-                return;
+        Boolean created = GuildCache.withGuild(guild.getId(), cached -> {
+            TwitchData current = cached.getTwitchdata(selectedStreamerId);
+            TwitchData edit = current == null
+                ? (TwitchData) cached.newAlert(AlertType.TWITCH, selectedStreamerId)
+                : current.deferEdit();
+
+            if (message != null)
+                edit.setMessage(message);
+
+            if (privateMessage != null && !privateMessage.isBlank()) {
+                edit.setPrivateMessage(privateMessage);
+                edit.setSendType(AlertSendType.BOTH);
             }
-    
-            GuildCache.getGuildOrPut(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
-            TwitchClient.registerSubEvent(streamerId);
-            event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
-                .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
-                .queue();
+
+            if (selectedChannelId != null)
+                edit.setAlertChannel(selectedChannelId);
+
+            if (selectedRoleId != null)
+                edit.setStreamerRole(selectedRoleId);
+
+            if (!edit.update())
+                return null;
+
+            if (current == null)
+                cached.addAlert(edit);
+
+            return current == null;
+        });
+
+        if (created == null) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
 
-        if (message != null) twitch.setMessage(message);
-        if (privateMessage != null && !privateMessage.isBlank()) {
-            twitch.setPrivateMessage(privateMessage);
-            twitch.setSendType(AlertSendType.BOTH);
-        }
-        if (channel != null) twitch.setAlertChannel(channel);
-        if (roleID != null) twitch.setStreamerRole(roleID);
+        if (created)
+            TwitchClient.registerSubEvent(streamerId);
 
         event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
@@ -203,19 +216,32 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String publicMessage = event.getValue("alert-message-public") != null ? event.getValue("alert-message-public").getAsString() : null;
         String privateMessage = event.getValue("alert-message-private") != null ? event.getValue("alert-message-private").getAsString() : null;
 
-        if (publicMessage != null) alert.setMessage(publicMessage);
-        if (privateMessage != null) alert.setPrivateMessage(privateMessage);
+        String selectedChannelId = channelData == null ? null : channelData.getRoomId();
+        GuildCache.withGuild(event.getGuild().getId(), guild -> {
+            AlertData current = guild.getAlertByID(alertId);
 
-        if (alert.getType() == AlertType.LEVEL_UP && channelData != null) {
-            double modifier = channelData.getExperienceModifier();
-            try {
-                if (event.getValue("alert-modifier") != null) {
-                    modifier = Double.parseDouble(event.getValue("alert-modifier").getAsString());
-                    channelData.setExperienceModifier(modifier);
+            if (publicMessage != null || privateMessage != null) {
+                AlertData edit = current.deferEdit();
+
+                if (publicMessage != null)
+                    edit.setMessage(publicMessage);
+
+                if (privateMessage != null)
+                    edit.setPrivateMessage(privateMessage);
+
+                edit.update();
+            }
+
+            if (current.getType() == AlertType.LEVEL_UP && selectedChannelId != null && event.getValue("alert-modifier") != null) {
+                try {
+                    double modifier = Double.parseDouble(event.getValue("alert-modifier").getAsString());
+                    guild.getChannelData(selectedChannelId).setExperienceModifier(modifier);
+                } catch (NumberFormatException ignore) {
                 }
-            } catch (Exception ignore) { }
+            }
 
-        }
+            return null;
+        });
 
         event.deferEdit().queue();
         event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert, channelData)).useComponentsV2().queue();
@@ -233,7 +259,12 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             return; 
         }
         RewardData reward = RewardData.createRewardData(event.getGuild().getId(), "", "", AlertSendType.CHANNEL, null, level, false);
-        GuildCache.getGuild(event.getGuild().getId()).getAlerts().put(reward.getKey(), reward);
+
+        if (reward == null) {
+            event.deferReply(true).setContent("Something went wrong.").queue();
+            return;
+        }
+
         event.deferEdit().queue();
         event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), reward)).useComponentsV2().queue();
 
@@ -284,7 +315,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
     private void blacklist(ModalInteractionEvent event) {
         try {
             int threshold = Integer.parseInt(event.getValue("blacklist-threshold").getAsString());
-            GuildCache.getGuildOrPut(event.getGuild()).setThreshold(threshold);
+            GuildCache.withGuild(event.getGuild().getId(), guild -> guild.setThreshold(threshold));
         } catch (Exception e) {
             event.deferReply(true).setContent("Insert a valid number").queue();
             return;

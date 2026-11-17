@@ -16,12 +16,20 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import java.util.concurrent.CompletableFuture;
 
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
 import com.safjnest.bot.audio.PlayerManager;
+import com.safjnest.bot.model.guild.GuildData;
+import com.safjnest.bot.model.guild.BlacklistData;
+import com.safjnest.bot.model.guild.ChannelData;
+import com.safjnest.bot.model.guild.alert.AlertData;
+import com.safjnest.bot.model.guild.alert.RewardData;
+import com.safjnest.bot.model.guild.alert.TwitchData;
 import com.safjnest.bot.model.guild.alert.AlertSendType;
 import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.database.sql.AbstractDB;
@@ -39,10 +47,26 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
  */
 public class BotDB extends AbstractDB {
     private static final int CACHE_BATCH_SIZE = 500;
+
     private static BotDB instance;
+
+    private final Supplier<Connection> connections;
 
     static {
         instance = new BotDB();
+    }
+
+    public BotDB() {
+        this(null);
+    }
+
+    public BotDB(Supplier<Connection> connections) {
+        this.connections = connections;
+    }
+
+    @Override
+    public Connection getConnection() {
+        return connections == null ? super.getConnection() : connections.get();
     }
 
     @Override
@@ -441,19 +465,31 @@ public class BotDB extends AbstractDB {
     }
 
     public static List<QueryRecord> getGuildData(Collection<String> guildIds) {
+        return instance.readGuildData(guildIds);
+    }
+
+    public List<QueryRecord> readGuildData(Collection<String> guildIds) {
         return cacheRows("SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id IN (%s)", guildIds);
     }
 
     public static List<QueryRecord> getChannelData(Collection<String> guildIds) {
+        return instance.readGuildChannels(guildIds);
+    }
+
+    public List<QueryRecord> readGuildChannels(Collection<String> guildIds) {
         return cacheRows("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled, league_shard FROM channel WHERE guild_id IN (%s)", guildIds);
     }
 
     public static List<QueryRecord> getWarnings(Collection<String> guildIds) {
+        return instance.readGuildActions(guildIds);
+    }
+
+    public List<QueryRecord> readGuildActions(Collection<String> guildIds) {
         return cacheRows("SELECT id, guild_id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id IN (%s) ORDER BY infractions DESC", guildIds);
     }
 
     public static List<QueryRecord> getAliases(Collection<String> userIds) {
-        return cacheRows("SELECT id, user_id, name, command FROM alias WHERE user_id IN (%s)", userIds);
+        return instance.cacheRows("SELECT id, user_id, name, command FROM alias WHERE user_id IN (%s)", userIds);
     }
 
     public static boolean updateVoiceGuild(String guild_id, String language, String voice) {
@@ -1510,9 +1546,159 @@ public class BotDB extends AbstractDB {
         return instance.insert("sound", values);
     }
 
+    public List<AlertData> readGuildAlerts(String guildId) {
+        return guildTransaction(true, connection -> readGuildAlerts(connection, guildId));
+    }
+
+    public record SavedAlert(int id, Map<Integer, String> roles) {}
+
+    public void saveGeneral(GuildData edit) {
+        guildTransaction(false, connection -> {
+            lockGuild(connection, edit.getId(), edit.getPrefix());
+
+            guildExecute(connection,
+                "UPDATE guild SET prefix = ?, exp_enabled = ?, name_tts = ?, language_tts = ?, league_shard = ? WHERE guild_id = ?",
+                edit.getPrefix(), edit.isExperienceEnabled(), edit.getVoice(), edit.getLanguage(),
+                edit.getLeagueShard().ordinal(), edit.getId());
+
+            return null;
+        });
+    }
+
+    public void saveBlacklist(String guildId, String defaultPrefix, BlacklistData edit) {
+        guildTransaction(false, connection -> {
+            lockGuild(connection, guildId, defaultPrefix);
+
+            guildExecute(connection,
+                "UPDATE guild SET blacklist_enabled = ?, threshold = ?, blacklist_channel = ? WHERE guild_id = ?",
+                edit.isBlacklistEnabled(), edit.getThreshold(), edit.getBlackChannelId(), guildId);
+
+            return null;
+        });
+    }
+
+    public int saveChannel(String guildId, String defaultPrefix, ChannelData edit) {
+        return guildTransaction(false, connection -> {
+            lockGuild(connection, guildId, defaultPrefix);
+
+            List<QueryRecord> rows = guildQuery(connection,
+                "SELECT id FROM channel WHERE guild_id = ? AND channel_id = ?", guildId, edit.getRoomId());
+            int id;
+
+            if (rows.isEmpty()) {
+                id = guildInsert(connection,
+                    "INSERT INTO channel (guild_id, channel_id, exp_enabled, exp_modifier, stats_enabled, league_shard) VALUES (?, ?, ?, ?, ?, ?)",
+                    guildId, edit.getRoomId(), edit.isExpSystemEnabled(), edit.getExperienceModifier(),
+                    edit.getCommand(), edit.getLeagueShard() == null ? 0 : edit.getLeagueShard().ordinal());
+            } else {
+                id = rows.get(0).getAsInt("id");
+
+                guildExecute(connection,
+                    "UPDATE channel SET exp_enabled = ?, exp_modifier = ?, stats_enabled = ?, league_shard = ? WHERE id = ?",
+                    edit.isExpSystemEnabled(), edit.getExperienceModifier(), edit.getCommand(),
+                    edit.getLeagueShard() == null ? 0 : edit.getLeagueShard().ordinal(), id);
+            }
+
+            return id;
+        });
+    }
+
+    public SavedAlert saveAlert(AlertData edit) {
+        return guildTransaction(false, connection -> {
+            lockGuild(connection, edit.getGuildId(), edit.getDefaultPrefix());
+
+            int id = edit.getID();
+
+            if (id == 0) {
+                id = guildInsert(connection,
+                    "INSERT INTO alert (guild_id, message, private_message, channel, enabled, send_type, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    edit.getGuildId(), edit.getMessage(), edit.getPrivateMessage(), edit.getChannelId(),
+                    edit.isEnabled(), edit.getSendType().ordinal(), edit.getType().ordinal());
+            } else {
+                if (guildQuery(connection, "SELECT id FROM alert WHERE id = ? AND guild_id = ? FOR UPDATE", id, edit.getGuildId()).isEmpty())
+                    throw new IllegalStateException("Alert no longer exists");
+
+                guildExecute(connection,
+                    "UPDATE alert SET message = ?, private_message = ?, channel = ?, enabled = ?, send_type = ? WHERE id = ? AND guild_id = ?",
+                    edit.getMessage(), edit.getPrivateMessage(), edit.getChannelId(), edit.isEnabled(),
+                    edit.getSendType().ordinal(), id, edit.getGuildId());
+            }
+
+            if (edit instanceof TwitchData twitch) {
+                if (edit.getID() == 0)
+                    guildExecute(connection,
+                        "INSERT INTO alert_twitch (alert_id, streamer_id, role_id) VALUES (?, ?, ?)",
+                        id, twitch.getStreamer(), twitch.getStreamerRole());
+                else
+                    guildExecute(connection,
+                        "UPDATE alert_twitch SET role_id = ? WHERE alert_id = ?",
+                        twitch.getStreamerRole(), id);
+            }
+
+            if (edit instanceof RewardData reward) {
+                if (!guildQuery(connection,
+                        "SELECT a.id FROM alert a JOIN alert_reward r ON r.alert_id = a.id WHERE a.guild_id = ? AND r.level = ? AND a.id <> ?",
+                        edit.getGuildId(), reward.getLevel(), id).isEmpty())
+                    throw new IllegalStateException("A reward already exists for this level");
+
+                if (edit.getID() == 0)
+                    guildExecute(connection,
+                        "INSERT INTO alert_reward (alert_id, level, temporary) VALUES (?, ?, ?)",
+                        id, reward.getLevel(), reward.isTemporary());
+                else
+                    guildExecute(connection,
+                        "UPDATE alert_reward SET level = ?, temporary = ? WHERE alert_id = ?",
+                        reward.getLevel(), reward.isTemporary(), id);
+            }
+
+            guildExecute(connection, "DELETE FROM alert_role WHERE alert_id = ?", id);
+
+            Map<Integer, String> roles = new LinkedHashMap<>();
+
+            for (String role : edit.getRolesAsArray()) {
+                int roleId = guildInsert(connection, "INSERT INTO alert_role (alert_id, role_id) VALUES (?, ?)", id, role);
+                roles.put(roleId, role);
+            }
+
+            return new SavedAlert(id, roles);
+        });
+    }
+
+    public void ensureGuild(String guildId, String defaultPrefix) {
+        guildTransaction(false, connection -> {
+            lockGuild(connection, guildId, defaultPrefix);
+
+            return null;
+        });
+    }
+
+    public boolean deleteGuildAlert(String guildId, int alertId, String defaultPrefix) {
+        return guildTransaction(false, connection -> {
+            lockGuild(connection, guildId, defaultPrefix);
+
+            if (guildQuery(connection, "SELECT id FROM alert WHERE id = ? AND guild_id = ?", alertId, guildId).isEmpty())
+                return false;
+
+            guildExecute(connection, "DELETE FROM alert_role WHERE alert_id = ?", alertId);
+            guildExecute(connection, "DELETE FROM alert_twitch WHERE alert_id = ?", alertId);
+            guildExecute(connection, "DELETE FROM alert_reward WHERE alert_id = ?", alertId);
+
+            return guildExecute(connection, "DELETE FROM alert WHERE id = ? AND guild_id = ?", alertId, guildId) == 1;
+        });
+    }
+
+    public boolean deleteGuildChannel(String guildId, String channelId, String defaultPrefix) {
+        return guildTransaction(false, connection -> {
+            lockGuild(connection, guildId, defaultPrefix);
+
+            return guildExecute(connection, "DELETE FROM channel WHERE guild_id = ? AND channel_id = ?", guildId, channelId) != 0;
+        });
+    }
+
     static List<QueryRecord> cacheRows(Connection connection, String query, Collection<String> ids) throws SQLException {
         List<String> keys = new ArrayList<>(new LinkedHashSet<>(ids));
         List<QueryRecord> result = new ArrayList<>();
+
         for (int offset = 0; offset < keys.size(); offset += CACHE_BATCH_SIZE) {
             List<String> batch = keys.subList(offset, Math.min(keys.size(), offset + CACHE_BATCH_SIZE));
             String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
@@ -1532,16 +1718,124 @@ public class BotDB extends AbstractDB {
 
     /* -------------------------------------------------------------------------- */
 
-    private static List<QueryRecord> cacheRows(String query, Collection<String> ids) {
+    private <T> T guildTransaction(boolean readOnly, GuildWork<T> work) {
+        try (Connection connection = getConnection()) {
+            if (connection == null)
+                throw new SQLException("No database connection");
+
+            connection.setAutoCommit(false);
+            connection.setReadOnly(readOnly);
+
+            if (readOnly)
+                connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+
+            try {
+                T value = work.run(connection);
+
+                connection.commit();
+
+                return value;
+            } catch (SQLException | RuntimeException exception) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackException) {
+                    exception.addSuppressed(rollbackException);
+                }
+
+                throw exception;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Guild settings storage is unavailable", exception);
+        }
+    }
+
+    private void lockGuild(Connection connection, String guildId, String defaultPrefix) throws SQLException {
+        guildExecute(connection, "INSERT INTO guild (guild_id, prefix) VALUES (?, ?) ON DUPLICATE KEY UPDATE guild_id = guild_id", guildId, defaultPrefix);
+        guildQuery(connection, "SELECT guild_id FROM guild WHERE guild_id = ? FOR UPDATE", guildId);
+    }
+
+    private List<AlertData> readGuildAlerts(Connection connection, String guildId) throws SQLException {
+        List<QueryRecord> rows = guildQuery(connection,
+            "SELECT a.id AS alert_id, a.guild_id, a.message, a.private_message, a.channel, a.enabled, a.send_type, a.type, "
+                + "r.level, r.temporary, t.streamer_id, t.role_id FROM alert a "
+                + "LEFT JOIN alert_reward r ON r.alert_id = a.id LEFT JOIN alert_twitch t ON t.alert_id = a.id "
+                + "WHERE a.guild_id = ? ORDER BY a.id", guildId);
+
+        Map<Integer, HashMap<Integer, String>> roles = new HashMap<>();
+
+        for (QueryRecord row : guildQuery(connection,
+                "SELECT r.id, r.alert_id, r.role_id FROM alert_role r JOIN alert a ON a.id = r.alert_id WHERE a.guild_id = ? ORDER BY r.id", guildId)) {
+            roles.computeIfAbsent(row.getAsInt("alert_id"), ignored -> new LinkedHashMap<>())
+                .put(row.getAsInt("id"), row.get("role_id"));
+        }
+
+        List<AlertData> alerts = new ArrayList<>();
+
+        for (QueryRecord row : rows) {
+            HashMap<Integer, String> alertRoles = roles.get(row.getAsInt("alert_id"));
+            alerts.add(switch (AlertType.getFromOrdinal(row.getAsInt("type"))) {
+                case REWARD -> new RewardData(row, alertRoles, this);
+                case TWITCH -> new TwitchData(row, this);
+                default -> new AlertData(row, alertRoles, this);
+            });
+        }
+
+        return alerts;
+    }
+
+    private int guildInsert(Connection connection, String sql, Object... parameters) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            bindGuild(statement, parameters);
+            statement.executeUpdate();
+
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (!keys.next())
+                    throw new SQLException("Missing generated ID");
+
+                return keys.getInt(1);
+            }
+        }
+    }
+
+    private int guildExecute(Connection connection, String sql, Object... parameters) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bindGuild(statement, parameters);
+
+            return statement.executeUpdate();
+        }
+    }
+
+    private List<QueryRecord> guildQuery(Connection connection, String sql, Object... parameters) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bindGuild(statement, parameters);
+
+            try (ResultSet rows = statement.executeQuery()) {
+                return QueryRecordParser.fromRows(rows);
+            }
+        }
+    }
+
+    private void bindGuild(PreparedStatement statement, Object... parameters) throws SQLException {
+        for (int index = 0; index < parameters.length; index++)
+            statement.setObject(index + 1, parameters[index]);
+    }
+
+    @FunctionalInterface
+    private interface GuildWork<T> {
+        T run(Connection connection) throws SQLException;
+    }
+
+    private List<QueryRecord> cacheRows(String query, Collection<String> ids) {
         if (ids.isEmpty())
             return List.of();
 
-        try (Connection connection = instance.getConnection()) {
+        try (Connection connection = getConnection()) {
             if (connection == null)
                 throw new SQLException("Connection to the database failed");
 
             try {
                 List<QueryRecord> rows = cacheRows(connection, query, ids);
+
                 connection.commit();
 
                 return rows;
@@ -1552,6 +1846,7 @@ public class BotDB extends AbstractDB {
                 catch (SQLException rollbackException) {
                     exception.addSuppressed(rollbackException);
                 }
+
                 throw exception;
             }
         } catch (SQLException exception) {
@@ -1561,8 +1856,13 @@ public class BotDB extends AbstractDB {
 
     private static List<String> columnValues(List<QueryRecord> rows, String column) {
         List<String> values = new ArrayList<>();
-        if (rows == null) return values;
-        for (QueryRecord row : rows) values.add(row.get(column));
+
+        if (rows == null)
+            return values;
+
+        for (QueryRecord row : rows)
+            values.add(row.get(column));
+
         return values;
     }
 

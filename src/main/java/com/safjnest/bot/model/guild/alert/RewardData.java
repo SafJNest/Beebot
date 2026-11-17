@@ -2,11 +2,14 @@ package com.safjnest.bot.model.guild.alert;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import com.safjnest.bot.Bot;
 import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.database.sql.database.BotDB.SavedAlert;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -16,48 +19,71 @@ public class RewardData extends AlertData{
     private boolean temporary;
 
     public RewardData(QueryRecord data, HashMap<Integer, String> roles) {
-        super(data, roles);
+        this(data, roles, BotDB.get());
+    }
+
+    public RewardData(QueryRecord data, HashMap<Integer, String> roles, BotDB database) {
+        super(data, roles, database);
+
         this.level = data.getAsInt("level");
         this.temporary = data.getAsBoolean("temporary");
     }
     
     public RewardData(int ID, String message, String privateMessage, boolean enabled, AlertSendType sendType, HashMap<Integer, String> roles, int level, boolean temporary) {
         super(ID, message, privateMessage, null, enabled, sendType, AlertType.REWARD, roles);
+
         this.level = level;
         this.temporary = temporary;
     }
 
 
-    public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, String[] roles, int level, boolean temporary) {
-        int id = BotDB.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.REWARD);
-        HashMap<Integer, String> rolesMap = roles != null ? BotDB.createRolesAlert(String.valueOf(id), roles) : new HashMap<>();
-        BotDB.createRewardData(String.valueOf(id), level, temporary);
-        return new RewardData(id, message, privateMessage, true, sendType, rolesMap, level, temporary);
+    private RewardData(RewardData original) {
+        super(original);
+
+        this.level = original.level;
+        this.temporary = original.temporary;
     }
 
-    public int getLevel() {
+    public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, String[] roles, int level, boolean temporary) {
+        return GuildCache.withGuild(guild_id, guild -> (RewardData) guild.createAlert(AlertType.REWARD, String.valueOf(level), edit -> {
+            edit.setMessage(message == null ? "" : message);
+            edit.setPrivateMessage(privateMessage);
+            edit.setSendType(sendType);
+            edit.setRoles(roles == null ? List.of() : Arrays.asList(roles));
+            ((RewardData) edit).setTemporary(temporary);
+        }));
+    }
+
+    @Override
+    public synchronized RewardData deferEdit() {
+        return new RewardData(this);
+    }
+
+    public synchronized int getLevel() {
         return level;
     }
-
 
     /**
      * A reward is temporary if it is removed when a higher level reward is achieved
      * @return true if the reward is temporary
      */
-    public boolean isTemporary() {
+    public synchronized boolean isTemporary() {
         return temporary;
     }
 
-    public void setLevel(int level) {
-        this.level = level;
+    public boolean setLevel(int level) {
+        if (level < 1 || level > 100)
+            return false;
+
+        return change(edit -> ((RewardData) edit).level = level);
     }
 
-    public void setTemporary(boolean temporary) {
-        this.temporary = temporary;
+    public boolean setTemporary(boolean temporary) {
+        return change(edit -> ((RewardData) edit).temporary = temporary);
     }
 
     @Override
-    public EmbedBuilder getSampleEmbed(Guild guild) {
+    public synchronized EmbedBuilder getSampleEmbed(Guild guild) {
         List<String> roleNames = this.getRoles().values().stream()
             .map(role -> "@" + guild.getRoleById(role).getName())
             .collect(Collectors.toList());
@@ -105,12 +131,19 @@ public class RewardData extends AlertData{
     }
 
 
-
-
     @Override
-    public AlertKey<Integer> getKey() {
+    public synchronized AlertKey<Integer> getKey() {
         return new AlertKey<>(AlertType.REWARD, this.level);
     }
     
+
+    /* -------------------------------------------------------------------------- */
+
+    @Override
+    protected void copyFrom(AlertData edit, SavedAlert saved) {
+        super.copyFrom(edit, saved);
+        this.level = ((RewardData) edit).level;
+        this.temporary = ((RewardData) edit).temporary;
+    }
 
 }

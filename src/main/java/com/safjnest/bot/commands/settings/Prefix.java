@@ -50,7 +50,7 @@ public class Prefix extends SlashCommand {
         }
         String guildId = event.getGuild().getId();
         
-        if(GuildCache.getGuildOrPut(guildId).setPrefix(prefix)){
+        if(GuildCache.withGuild(guildId, guild -> guild.setPrefix(prefix))){
             event.reply("The new prefix is: " + prefix);
         }
         else
@@ -59,7 +59,7 @@ public class Prefix extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(GuildCache.getGuildOrPut(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
+        if(GuildCache.withGuild(event.getGuild().getId(), guild -> guild.setPrefix(event.getOption("prefix").getAsString())))
             event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();   

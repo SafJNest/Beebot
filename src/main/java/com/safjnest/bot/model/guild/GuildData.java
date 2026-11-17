@@ -1,17 +1,19 @@
 package com.safjnest.bot.model.guild;
 
-
-
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
+import com.safjnest.bot.Bot;
 import com.safjnest.bot.audio.tts.TTSVoices;
 import com.safjnest.bot.model.guild.alert.AlertData;
 import com.safjnest.bot.model.guild.alert.AlertKey;
+import com.safjnest.bot.model.guild.alert.AlertProblem;
 import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.bot.model.guild.alert.RewardData;
 import com.safjnest.bot.model.guild.alert.TwitchData;
@@ -19,7 +21,6 @@ import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.status.log.BotLogger;
 import com.safjnest.status.log.LoggerIDpair;
-import com.safjnest.bot.Bot;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -28,7 +29,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
-
 
 /**
  * Class that stores all the settings for a guild.
@@ -40,10 +40,12 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
  */
 public class GuildData {
 
+    private static final List<String> SINGLE_ALERTS = List.of("welcome", "leave", "boost", "levelUp");
+
     private final String ID;
+    private final BotDB database;
 
     private String prefix;
-
 
     private boolean experience;
 
@@ -52,75 +54,126 @@ public class GuildData {
 
     private String mutedRoleId;
 
+    private final BlacklistData blacklistData;
 
-    private BlacklistData blacklistData;
+    private LinkedHashMap<Integer, AlertData> alerts;
 
-    private HashMap<AlertKey<?>, AlertData> alerts;
-
-    private HashMap<String, ChannelData> channels;
-    private HashMap<String, MemberData> members;
-    private List<AutomatedAction> actions;
+    private final HashMap<String, ChannelData> channels = new LinkedHashMap<>();
+    private final HashMap<String, MemberData> members = new HashMap<>();
+    private final List<AutomatedAction> actions = new ArrayList<>();
 
     private LeagueShard leagueShard;
     private RegionShard reagionShard;
 
-    private LoggerIDpair loggerIDpair;
+    private final LoggerIDpair loggerIDpair;
+
+    private GuildData original;
+    private boolean stored;
+    private long revision;
+
+    public record Settings(String id, String name, String iconUrl, List<Map<String, Object>> channels,
+            List<Map<String, Object>> roles, Map<String, Object> settings) {}
+
+    public record Error(String field, String code, String message) {}
+
+    public record Result(String status, List<Error> errors, AlertState alert) {}
+
+    public record AlertState(Integer id, boolean exists, boolean enabled, boolean valid,
+            String message, String privateMessage, String channelId, String sendType, List<String> roleIds,
+            String streamerId, String roleId, Integer level, Boolean temporary, List<AlertProblem> problems) {
+
+        public static AlertState from(AlertData alert, boolean experienceEnabled) {
+            if (alert == null)
+                return new AlertState(null, false, false, false, null, null, null, null,
+                    List.of(), null, null, null, null, List.of());
+
+            return alert.snapshot(experienceEnabled);
+        }
+    }
 
     public GuildData(String id) {
+        this(id, Bot.getPrefix(), BotDB.get());
+    }
+
+    private GuildData(String id, String defaultPrefix, BotDB database) {
         this.ID = id;
-        this.prefix = Bot.getPrefix();
+        this.database = database;
+
+        this.prefix = defaultPrefix;
         this.experience = true;
-
-        this.members = new HashMap<>();
-        this.channels = new HashMap<>();
-
-        this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
-
-        this.leagueShard = LeagueShard.EUW1;
-        this.reagionShard = this.leagueShard.toRegionShard();
-
-        this.blacklistData = new BlacklistData(this);
 
         this.voice = "John";
         this.language = "en-us";
+
+        this.leagueShard = LeagueShard.EUW1;
+        this.reagionShard = leagueShard.toRegionShard();
+
+        this.loggerIDpair = new LoggerIDpair(id, LoggerIDpair.IDType.GUILD);
+
+        this.blacklistData = new BlacklistData(this);
     }
 
-    public GuildData(QueryRecord data) {
-        this(data, BotDB.getChannelData(data.get("guild_id")), BotDB.getWarnings(data.get("guild_id")));
+    public GuildData(QueryRecord row) {
+        this(row, BotDB.getChannelData(row.get("guild_id")), BotDB.getWarnings(row.get("guild_id")), BotDB.get());
     }
 
-    private GuildData(QueryRecord data, List<QueryRecord> channelRows, List<QueryRecord> actionRows) {
-        this.ID = data.get("guild_id");
-        this.prefix = data.get("prefix");
-        this.experience = data.getAsBoolean("exp_enabled");
+    private GuildData(QueryRecord row, List<QueryRecord> channelRows, List<QueryRecord> actionRows, BotDB database) {
+        this.ID = row.get("guild_id");
+        this.database = database;
 
-        this.members = new HashMap<>();
+        this.prefix = row.get("prefix");
+        this.experience = row.getAsBoolean("exp_enabled");
 
-        this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
+        this.voice = row.get("name_tts") == null ? "John" : row.get("name_tts");
+        this.language = row.get("language_tts") == null ? "en-us" : row.get("language_tts");
 
-        this.leagueShard = LeagueShard.values()[Integer.parseInt(data.get("league_shard"))];
-        this.reagionShard = this.leagueShard.toRegionShard();
+        this.leagueShard = LeagueShard.values()[row.getAsInt("league_shard")];
+        this.reagionShard = leagueShard.toRegionShard();
 
-        this.voice = data.get("name_tts") != null ? data.get("name_tts") : "John";
-        this.language = data.get("language_tts") != null ? data.get("language_tts") : "en-us";
+        this.loggerIDpair = new LoggerIDpair(ID, LoggerIDpair.IDType.GUILD);
+
         this.blacklistData = new BlacklistData(
-            data.getAsInt("threshold"),
-            data.get("blacklist_channel") != null ? data.get("blacklist_channel") : null,
-            data.getAsBoolean("blacklist_enabled"),
+            row.getAsInt("threshold"),
+            row.get("blacklist_channel"),
+            row.getAsBoolean("blacklist_enabled"),
             this
         );
 
-        this.channels = new HashMap<>();
-        for (QueryRecord row : channelRows)
-            channels.put(row.get("channel_id"), new ChannelData(row));
+        this.stored = true;
 
-        this.actions = new ArrayList<>();
-        for (QueryRecord row : actionRows)
-            actions.add(new AutomatedAction(row));
+        for (QueryRecord channel : channelRows)
+            channels.put(channel.get("channel_id"), new ChannelData(channel, database));
+
+        for (QueryRecord action : actionRows)
+            actions.add(new AutomatedAction(action));
     }
 
-    public static GuildData fromRows(QueryRecord data, List<QueryRecord> channelRows, List<QueryRecord> actionRows) {
-        return new GuildData(data, channelRows, actionRows);
+    private GuildData(GuildData original) {
+        this(original.ID, original.prefix, original.database);
+
+        this.experience = original.experience;
+
+        this.voice = original.voice;
+        this.language = original.language;
+
+        this.leagueShard = original.leagueShard;
+        this.reagionShard = original.reagionShard;
+
+        this.stored = original.stored;
+        this.revision = original.revision;
+        this.original = original;
+    }
+
+    public static GuildData defaults(String id, String prefix, BotDB database) {
+        return new GuildData(id, prefix, database);
+    }
+
+    public static GuildData fromRows(QueryRecord row, List<QueryRecord> channels, List<QueryRecord> actions) {
+        return fromRows(row, channels, actions, BotDB.get());
+    }
+
+    public static GuildData fromRows(QueryRecord row, List<QueryRecord> channels, List<QueryRecord> actions, BotDB database) {
+        return new GuildData(row, channels, actions, database);
     }
 
 //     ▄██████▄  ███    █▄   ▄█   ▄█       ████████▄
@@ -133,91 +186,579 @@ public class GuildData {
 //    ████████▀  ████████▀  █▀   █████▄▄██ ████████▀
 //                               ▀
 
+    public synchronized GuildData deferEdit() {
+        if (original != null)
+            throw new IllegalStateException("This guild is already an edit");
+
+        return new GuildData(this);
+    }
+
+    public boolean update() {
+        if (original == null)
+            return deferEdit().update();
+
+        synchronized (original) {
+            if (revision != original.revision)
+                return false;
+
+            try {
+                database.saveGeneral(this);
+            } catch (IllegalStateException exception) {
+                return false;
+            }
+
+            original.prefix = prefix;
+            original.experience = experience;
+
+            original.voice = voice;
+            original.language = language;
+
+            original.leagueShard = leagueShard;
+            original.reagionShard = reagionShard;
+
+            original.stored = true;
+            original.revision++;
+
+            return true;
+        }
+    }
+
+    public synchronized void ensureStored() {
+        if (stored)
+            return;
+
+        database.ensureGuild(ID, prefix);
+        stored = true;
+    }
+
     public String getId() {
         return ID;
     }
 
-    public String getPrefix() {
+    BotDB getDatabase() {
+        return database;
+    }
+
+    public synchronized String getPrefix() {
         return prefix;
     }
 
-    public boolean isExperienceEnabled() {
+    public synchronized boolean isExperienceEnabled() {
         return experience;
     }
 
-
-    public synchronized boolean setPrefix(String prefix) {
-        boolean result = BotDB.updatePrefix(String.valueOf(ID), prefix);
-        if (result) {
-            this.prefix = prefix;
-        }
-        return result;
+    public boolean setPrefix(String prefix) {
+        return change(edit -> edit.prefix = prefix);
     }
 
-    public synchronized boolean setExpSystem(boolean expSystem) {
-        boolean result = BotDB.toggleLevelUp(String.valueOf(this.ID), expSystem);
-        if (result) {
-            this.experience = expSystem;
-        }
-        return result;
+    public boolean setExpSystem(boolean enabled) {
+        return change(edit -> edit.experience = enabled);
     }
 
-    public LeagueShard getLeagueShard() {
-        return this.leagueShard;
+    public synchronized LeagueShard getLeagueShard() {
+        return leagueShard;
     }
 
-    public LeagueShard getLeagueShard(String channelId) {
+    public synchronized LeagueShard getLeagueShard(String channelId) {
         LeagueShard shard = getChannelData(channelId).getLeagueShard();
-        if (shard != null) return shard;
-        return this.leagueShard;
+
+        return shard == null ? leagueShard : shard;
     }
 
-    public RegionShard getRegionShard() {
-        return this.reagionShard;
+    public synchronized RegionShard getRegionShard() {
+        return reagionShard;
     }
 
-    public synchronized boolean setLeagueShard(LeagueShard shard) {
-        boolean result = BotDB.updateShard(String.valueOf(ID), shard);
-        if (result) {
-            this.leagueShard = shard;
-            setRegionShard(shard.toRegionShard());
-        }
-        return result;
+    public boolean setLeagueShard(LeagueShard shard) {
+        return change(edit -> {
+            edit.leagueShard = shard;
+            edit.reagionShard = shard.toRegionShard();
+        });
     }
 
     public synchronized void setRegionShard(RegionShard shard) {
-        this.reagionShard = shard;
+        reagionShard = shard;
     }
 
-    public String getVoice() {
-        return this.voice;
+    public synchronized String getVoice() {
+        return voice;
     }
 
-    public String getLanguage() {
-        return this.language;
+    public synchronized String getLanguage() {
+        return language;
     }
 
-    public synchronized boolean setVoice(String voice) {
+    public boolean setVoice(String voice) {
         String language = TTSVoices.getLanguage(voice);
-        if(language == null) {
+
+        if (language == null)
             return false;
+
+        return change(edit -> {
+            edit.voice = voice;
+            edit.language = language;
+        });
+    }
+
+    public synchronized Map<String, String> getSettings(List<String> keys) {
+        Map<String, String> values = new HashMap<>();
+
+        for (String key : keys) {
+            switch (key) {
+                case "prefix" -> values.put(key, prefix);
+                case "expSystem" -> values.put(key, String.valueOf(experience));
+                case "voice" -> {
+                    values.put("voice", voice);
+                    values.put("language", language);
+                }
+                case "leagueShard" -> values.put(key, String.valueOf(leagueShard.ordinal()));
+                default -> System.out.println("Unknown setting: " + key);
+            }
         }
 
-        boolean result = BotDB.updateVoiceGuild(String.valueOf(ID), language, voice);
-        if (result) {
-            this.voice = voice;
-            this.language = language;
+        return values;
+    }
+
+    public synchronized boolean setSettings(Map<String, String> values) {
+        if (values == null || values.isEmpty())
+            return false;
+
+        GuildData edit = deferEdit();
+
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            switch (entry.getKey()) {
+                case "prefix" -> edit.setPrefix(entry.getValue());
+                case "expSystem" -> edit.setExpSystem(Boolean.parseBoolean(entry.getValue()));
+                case "voice" -> {
+                    if (!edit.setVoice(entry.getValue()))
+                        return false;
+                }
+                case "leagueShard" -> edit.setLeagueShard(LeagueShard.values()[Integer.parseInt(entry.getValue())]);
+                default -> System.out.println("Unknown setting: " + entry.getKey());
+            }
+        }
+
+        return edit.update();
+    }
+
+//     ▄████████  ▄█          ▄████████    ▄████████     ███          ████████▄     ▄████████     ███        ▄████████
+//    ███    ███ ███         ███    ███   ███    ███ ▀█████████▄      ███   ▀███   ███    ███ ▀█████████▄   ███    ███
+//    ███    ███ ███         ███    █▀    ███    ███    ▀███▀▀██      ███    ███   ███    ███    ▀███▀▀██   ███    ███
+//    ███    ███ ███        ▄███▄▄▄      ▄███▄▄▄▄██▀     ███   ▀      ███    ███   ███    ███     ███   ▀   ███    ███
+//  ▀███████████ ███       ▀▀███▀▀▀     ▀▀███▀▀▀▀▀       ███          ███    ███ ▀███████████     ███     ▀███████████
+//    ███    ███ ███         ███    █▄  ▀███████████     ███          ███    ███   ███    ███     ███       ███    ███
+//    ███    ███ ███▌    ▄   ███    ███   ███    ███     ███          ███   ▄███   ███    ███     ███       ███    ███
+//    ███    █▀  █████▄▄██   ██████████   ███    ███    ▄████▀        ████████▀    ███    █▀     ▄████▀     ███    █▀
+//               ▀                        ███    ███
+//
+
+    public synchronized HashMap<AlertKey<?>, AlertData> getAlerts() {
+        loadAlerts();
+
+        HashMap<AlertKey<?>, AlertData> result = new LinkedHashMap<>();
+
+        for (AlertData alert : alerts.values())
+            result.put(alert.getKey(), alert);
+
+        return result;
+    }
+
+    public synchronized AlertData getAlert(AlertType type) {
+        return type == AlertType.REWARD ? getHigherReward(0) : findAlert(type, null);
+    }
+
+    public synchronized AlertData findAlert(AlertType type, String key) {
+        loadAlerts();
+
+        for (AlertData alert : alerts.values()) {
+            if (alert.getType() != type)
+                continue;
+
+            if (alert instanceof TwitchData twitch && !twitch.getStreamer().equals(key))
+                continue;
+
+            if (alert instanceof RewardData reward && !String.valueOf(reward.getLevel()).equals(key))
+                continue;
+
+            return alert;
+        }
+
+        return null;
+    }
+
+    public AlertData getAlertByID(String id) {
+        return id == null || id.isEmpty() ? null : getAlertByID(Integer.parseInt(id));
+    }
+
+    public synchronized AlertData getAlertByID(int id) {
+        loadAlerts();
+
+        return alerts.get(id);
+    }
+
+    public synchronized RewardData getAlert(AlertType type, int level) {
+        AlertData alert = findAlert(type, String.valueOf(level));
+
+        return alert instanceof RewardData reward ? reward : null;
+    }
+
+    public synchronized RewardData getLowerReward(int level) {
+        for (int current = level - 1; current >= 0; current--) {
+            RewardData reward = getAlert(AlertType.REWARD, current);
+
+            if (reward != null)
+                return reward;
+        }
+
+        return null;
+    }
+
+    public synchronized RewardData getHigherReward(int level) {
+        for (int current = level + 1; current <= 100; current++) {
+            RewardData reward = getAlert(AlertType.REWARD, current);
+
+            if (reward != null)
+                return reward;
+        }
+
+        return null;
+    }
+
+    public synchronized List<RewardData> getRewards() {
+        List<RewardData> result = new ArrayList<>();
+
+        for (int level = 1; level <= 100; level++) {
+            RewardData reward = getAlert(AlertType.REWARD, level);
+
+            if (reward != null)
+                result.add(reward);
         }
 
         return result;
     }
+
+    public AlertData getWelcome() {
+        return getAlert(AlertType.WELCOME);
+    }
+
+    public synchronized AlertData newAlert(AlertType type, String key) {
+        loadAlerts();
+
+        return AlertData.draft(ID, type, key, prefix, database);
+    }
+
+    public synchronized void addAlert(AlertData alert) {
+        if (!ID.equals(alert.getGuildId()) || alert.getID() == 0)
+            throw new IllegalArgumentException("Only a saved alert from this guild can be added");
+
+        loadAlerts();
+
+        AlertData current = findAlert(alert.getType(), alert instanceof TwitchData twitch ? twitch.getStreamer()
+            : alert instanceof RewardData reward ? String.valueOf(reward.getLevel()) : null);
+
+        if (current != null && current != alert)
+            throw new IllegalStateException("This alert is already cached");
+
+        alerts.put(alert.getID(), alert);
+        stored = true;
+    }
+
+    public synchronized AlertData createAlert(AlertType type, String key, Consumer<AlertData> configure) {
+        AlertData existing = findAlert(type, key);
+
+        if (existing != null)
+            return existing;
+
+        AlertData edit = newAlert(type, key);
+        configure.accept(edit);
+
+        if (!edit.update())
+            return null;
+
+        addAlert(edit);
+
+        return edit;
+    }
+
+    public boolean deleteAlert(AlertType type) {
+        return deleteAlert(type, 0);
+    }
+
+    public synchronized boolean deleteAlert(AlertType type, int level) {
+        return deleteAlert(findAlert(type, type == AlertType.REWARD ? String.valueOf(level) : null));
+    }
+
+    public synchronized boolean deleteAlert(AlertType type, String key) {
+        return deleteAlert(findAlert(type, key));
+    }
+
+    public synchronized boolean deleteAlert(AlertData alert) {
+        loadAlerts();
+
+        if (alert == null || alerts.get(alert.getID()) != alert || !alert.terminator4LaRinascita())
+            return false;
+
+        alerts.remove(alert.getID());
+
+        return true;
+    }
+
+    public synchronized TwitchData getTwitchdata(String streamerId) {
+        AlertData alert = findAlert(AlertType.TWITCH, streamerId);
+
+        return alert instanceof TwitchData twitch ? twitch : null;
+    }
+
+    public synchronized HashMap<AlertKey<String>, TwitchData> getTwitchDatas() {
+        loadAlerts();
+
+        HashMap<AlertKey<String>, TwitchData> result = new HashMap<>();
+
+        for (AlertData alert : alerts.values()) {
+            if (alert instanceof TwitchData twitch)
+                result.put(twitch.getKey(), twitch);
+        }
+
+        return result;
+    }
+
+//  ▀█████████▄   ▄█          ▄████████  ▄████████    ▄█   ▄█▄  ▄█        ▄█     ▄████████     ███
+//    ███    ███ ███         ███    ███ ███    ███   ███ ▄███▀ ███       ███    ███    ███ ▀█████████▄
+//    ███    ███ ███         ███    ███ ███    █▀    ███▐██▀   ███       ███▌   ███    █▀     ▀███▀▀██
+//   ▄███▄▄▄██▀  ███         ███    ███ ███         ▄█████▀    ███       ███▌   ███            ███   ▀
+//  ▀▀███▀▀▀██▄  ███       ▀███████████ ███        ▀▀█████▄    ███       ███▌ ▀███████████     ███
+//    ███    ██▄ ███         ███    ███ ███    █▄    ███▐██▄   ███       ███           ███     ███
+//    ███    ███ ███▌    ▄   ███    ███ ███    ███   ███ ▀███▄ ███▌    ▄ ███     ▄█    ███     ███
+//  ▄█████████▀  █████▄▄██   ███    █▀  ████████▀    ███   ▀█▀ █████▄▄██ █▀    ▄████████▀     ▄████▀
+//               ▀                                   ▀         ▀
+//
+
+    public BlacklistData getBlacklistData() {
+        return blacklistData;
+    }
+
+    public synchronized boolean setBlackListData(int threshold, String channelId) {
+        BlacklistData edit = blacklistData.deferEdit();
+        edit.setThreshold(threshold);
+        edit.setBlackChannelId(channelId);
+        edit.setBlacklistEnabled(true);
+
+        return edit.update();
+    }
+
+    public int getThreshold() {
+        return blacklistData.getThreshold();
+    }
+
+    public String getBlackChannelId() {
+        return blacklistData.getBlackChannelId();
+    }
+
+    public boolean setBlackChannel(String channelId) {
+        return blacklistData.setBlackChannelId(channelId);
+    }
+
+    public boolean setThreshold(int threshold) {
+        return blacklistData.setThreshold(threshold);
+    }
+
+    public boolean blacklistEnabled() {
+        return blacklistData.isBlacklistEnabled();
+    }
+
+    public boolean setBlacklistEnabled(boolean enabled) {
+        return blacklistData.setBlacklistEnabled(enabled);
+    }
+
+//   ▄████████    ▄█    █▄       ▄████████ ███▄▄▄▄   ███▄▄▄▄      ▄████████  ▄█
+//  ███    ███   ███    ███     ███    ███ ███▀▀▀██▄ ███▀▀▀██▄   ███    ███ ███
+//  ███    █▀    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▀  ███
+//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███ ███   ███  ▄███▄▄▄     ███
+//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███ ███   ███ ▀▀███▀▀▀     ███
+//  ███    █▄    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▄  ███
+//  ███    ███   ███    ███     ███    ███ ███   ███ ███   ███   ███    ███ ███▌    ▄
+//  ████████▀    ███    █▀      ███    █▀   ▀█   █▀   ▀█   █▀    ██████████ █████▄▄██
+//                                                                          ▀
+
+    public synchronized void retriveChannels() {
+        List<QueryRecord> rows = database.readGuildChannels(List.of(ID));
+
+        for (QueryRecord row : rows) {
+            String id = row.get("channel_id");
+            channels.putIfAbsent(id, new ChannelData(row, database));
+        }
+    }
+
+    public synchronized HashMap<String, ChannelData> getChannels() {
+        return new LinkedHashMap<>(channels);
+    }
+
+    public synchronized ChannelData getChannelData(String id) {
+        return channels.computeIfAbsent(id, key -> new ChannelData(key, ID, prefix, database));
+    }
+
+    public synchronized boolean deleteChannelData(String id) {
+        ChannelData channel = channels.get(id);
+
+        if (channel == null)
+            return true;
+
+        if (!channel.terminator5LaRivolta())
+            return false;
+
+        channels.remove(id);
+
+        return true;
+    }
+
+    public Boolean getExpSystemRoom(String id) {
+        return getChannelData(id).isExpSystemEnabled();
+    }
+
+    public Boolean getCommandStatsRoom(String id) {
+        return getChannelData(id).getCommand();
+    }
+
+    public double getExperienceModifier(String id) {
+        return getChannelData(id).getExperienceModifier();
+    }
+
+//     ▄████████  ▄████████     ███      ▄█   ▄██████▄  ███▄▄▄▄
+//    ███    ███ ███    ███ ▀█████████▄ ███  ███    ███ ███▀▀▀██▄
+//    ███    ███ ███    █▀     ▀███▀▀██ ███▌ ███    ███ ███   ███
+//    ███    ███ ███            ███   ▀ ███▌ ███    ███ ███   ███
+//  ▀███████████ ███            ███     ███▌ ███    ███ ███   ███
+//    ███    ███ ███    █▄      ███     ███  ███    ███ ███   ███
+//    ███    ███ ███    ███     ███     ███  ███    ███ ███   ███
+//    ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀
+//
+
+    public synchronized boolean addAction(int action, String roleId, int actionTime, int infractions, int infractionsTime) {
+        AutomatedAction value = AutomatedAction.create(ID, action, roleId, actionTime, infractions, infractionsTime);
+
+        if (value == null)
+            return false;
+
+        actions.add(value);
+
+        return true;
+    }
+
+    public synchronized HashMap<Integer, AutomatedAction> getActionsWithId() {
+        HashMap<Integer, AutomatedAction> result = new HashMap<>();
+
+        for (AutomatedAction action : actions)
+            result.put(action.getId(), action);
+
+        return result;
+    }
+
+    public synchronized List<AutomatedAction> getActions() {
+        return new ArrayList<>(actions);
+    }
+
+    public synchronized AutomatedAction getAction(int id) {
+        for (AutomatedAction action : actions) {
+            if (action.getId() == id)
+                return action;
+        }
+
+        return null;
+    }
+
+    public boolean isBlackListCached() {
+        return true;
+    }
+
+    public synchronized boolean isAlertsCached() {
+        return alerts != null;
+    }
+
+    public synchronized AlertState alertState(AlertType type, String key) {
+        return AlertState.from(findAlert(type, key), experience);
+    }
+
+    public synchronized Map<String, Object> snapshot() {
+        Map<String, Object> general = new LinkedHashMap<>();
+        general.put("prefix", prefix);
+        general.put("experienceEnabled", experience);
+        general.put("voice", voice);
+        general.put("language", language);
+        general.put("leagueShard", leagueShard.name());
+
+        Map<String, Object> channelStates = new LinkedHashMap<>();
+        List<ChannelData> orderedChannels = new ArrayList<>(channels.values());
+        orderedChannels.sort(Comparator.comparingInt(channel -> Integer.parseInt(channel.getId())));
+
+        for (ChannelData channel : orderedChannels) {
+            if (!channel.getId().equals("0"))
+                channelStates.put(channel.getRoomId(), channel.snapshot());
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("general", Collections.unmodifiableMap(general));
+        result.put("blacklist", blacklistData.snapshot());
+        result.put("channels", Collections.unmodifiableMap(channelStates));
+
+        for (String name : SINGLE_ALERTS) {
+            AlertType type = switch (name) {
+                case "welcome" -> AlertType.WELCOME;
+                case "leave" -> AlertType.LEAVE;
+                case "boost" -> AlertType.BOOST;
+                default -> AlertType.LEVEL_UP;
+            };
+
+            result.put(name, alertState(type, null));
+        }
+
+        Map<String, AlertState> twitchStates = new LinkedHashMap<>();
+        Map<String, AlertState> rewardStates = new LinkedHashMap<>();
+
+        for (AlertData alert : alerts.values()) {
+            if (alert instanceof TwitchData twitch)
+                twitchStates.put(twitch.getStreamer(), twitch.snapshot(experience));
+
+            if (alert instanceof RewardData reward)
+                rewardStates.put(String.valueOf(reward.getLevel()), reward.snapshot(experience));
+        }
+
+        result.put("twitch", Collections.unmodifiableMap(twitchStates));
+        result.put("reward", Collections.unmodifiableMap(rewardStates));
+
+        List<AutomatedAction> warningActions = new ArrayList<>();
+
+        for (AutomatedAction action : actions)
+            warningActions.add(new AutomatedAction(action.getId(), action.getAction(), action.getRoleId(),
+                action.getActionTime(), action.getInfractions(), action.getInfractionsTime()));
+
+        warningActions.sort(Comparator.comparingInt(AutomatedAction::getId));
+        result.put("warning", Map.of("actions", List.copyOf(warningActions)));
+
+        return Collections.unmodifiableMap(result);
+    }
+
+    @Override
+    public synchronized String toString() {
+        return "{ID: " + ID + ", Prefix: " + prefix + ", ExpSystem: " + experience + ", Shard: " + leagueShard + "}";
+    }
+
+//     ▄▄▄▄███▄▄▄▄      ▄████████   ▄▄▄▄███▄▄▄▄   ▀█████████▄     ▄████████    ▄████████
+//   ▄██▀▀▀███▀▀▀██▄   ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███   ███    ███   ███    ███
+//   ███   ███   ███   ███    █▀  ███   ███   ███   ███    ███   ███    █▀    ███    ███
+//   ███   ███   ███  ▄███▄▄▄     ███   ███   ███  ▄███▄▄▄██▀   ▄███▄▄▄      ▄███▄▄▄▄██▀
+//   ███   ███   ███ ▀▀███▀▀▀     ███   ███   ███ ▀▀███▀▀▀██▄  ▀▀███▀▀▀     ▀▀███▀▀▀▀▀
+//   ███   ███   ███   ███    █▄  ███   ███   ███   ███    ██▄   ███    █▄  ▀███████████
+//   ███   ███   ███   ███    ███ ███   ███   ███   ███    ███   ███    ███   ███    ███
+//    ▀█   ███   █▀    ██████████  ▀█   ███   █▀  ▄█████████▀    ██████████   ███    ███
+//                                                                            ███    ███
 
     public String getMutedRoleId() {
         if (mutedRoleId != null && !mutedRoleId.isEmpty())
             return mutedRoleId;
 
         mutedRoleId = BotDB.getMutedRole(String.valueOf(ID));
-        if (mutedRoleId == null) mutedRoleId = "";
+        if (mutedRoleId == null)
+            mutedRoleId = "";
 
         if (mutedRoleId.isEmpty()) {
             Guild guild = Bot.getJDA().getGuildById(ID);
@@ -239,355 +780,6 @@ public class GuildData {
             mutedRoleId = BotDB.getMutedRole(String.valueOf(ID));
         }
         return mutedRoleId != null && !mutedRoleId.isEmpty();
-    }
-
-    public Map<String, String> getSettings(List<String> settings) {
-        Map<String, String> result = new HashMap<>();
-
-        for (String setting : settings) {
-            switch (setting) {
-                case "prefix":
-                    result.put("prefix", getPrefix());
-                    break;
-                case "expSystem":
-                    result.put("expSystem", String.valueOf(isExperienceEnabled()));
-                    break;
-                case "voice":
-                    result.put("voice", getVoice());
-                    result.put("language", getLanguage());
-                    break;
-                case "leagueShard":
-                    result.put("leagueShard", String.valueOf(getLeagueShard().ordinal())); //.getRealmValue().toUpperCase()
-                    break;
-                default:
-                    System.out.println("Unknown setting: " + setting);
-                    break;
-            }
-        }
-        return result;
-    }
-
-    public boolean setSettings(Map<String, String> settings) {
-        if (settings == null || settings.isEmpty()) {
-            return false;
-        }
-
-        for (String key : settings.keySet()) {
-            switch (key) {
-                case "prefix":
-                    setPrefix(settings.get(key));
-                    break;
-                case "expSystem":
-                    setExpSystem(Boolean.parseBoolean(settings.get(key)));
-                    break;
-                case "voice":
-                    setVoice(settings.get(key));
-                    break;
-                case "leagueShard":
-                    LeagueShard shard = LeagueShard.values()[Integer.parseInt(settings.get(key))];
-                    setLeagueShard(shard);
-                    break;
-                default:
-                    System.out.println("Unknown setting: " + key);
-                    break;
-            }
-        }
-        return true;
-    }
-
-    public String toString(){
-        return "{ID: " + ID + ", Prefix: " + prefix + ", ExpSystem: " + experience + ", Shard: " + leagueShard + "}";
-    }
-
-//     ▄████████  ▄█          ▄████████    ▄████████     ███          ████████▄     ▄████████     ███        ▄████████
-//    ███    ███ ███         ███    ███   ███    ███ ▀█████████▄      ███   ▀███   ███    ███ ▀█████████▄   ███    ███
-//    ███    ███ ███         ███    █▀    ███    ███    ▀███▀▀██      ███    ███   ███    ███    ▀███▀▀██   ███    ███
-//    ███    ███ ███        ▄███▄▄▄      ▄███▄▄▄▄██▀     ███   ▀      ███    ███   ███    ███     ███   ▀   ███    ███
-//  ▀███████████ ███       ▀▀███▀▀▀     ▀▀███▀▀▀▀▀       ███          ███    ███ ▀███████████     ███     ▀███████████
-//    ███    ███ ███         ███    █▄  ▀███████████     ███          ███    ███   ███    ███     ███       ███    ███
-//    ███    ███ ███▌    ▄   ███    ███   ███    ███     ███          ███   ▄███   ███    ███     ███       ███    ███
-//    ███    █▀  █████▄▄██   ██████████   ███    ███    ▄████▀        ████████▀    ███    █▀     ▄████▀     ███    █▀
-//               ▀                        ███    ███
-//
-
-    /**
-     * If the {@link #alerts alerts map} is null, it will be retrieved from the database and cached.
-     * <p>
-     * The key is the {@link AlertType type} of the alert.
-     * </p>
-     * <p>
-     * If the alert is {@link AlertType#WELCOME WELCOME}, the will be also retrieved the roles, otherwise it will be null.
-     * @return
-     */
-    public HashMap<AlertKey<?>, AlertData> getAlerts() {
-        if (this.alerts == null) {
-            BotLogger.debug("Retriving AlertData from database => {0}", loggerIDpair);
-            this.alerts = new HashMap<>();
-            List<QueryRecord> alertResult = BotDB.getAlerts(String.valueOf(ID));
-            List<QueryRecord> roleResult = BotDB.getAlertsRoles(String.valueOf(ID));
-
-            HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
-            for (QueryRecord row : roleResult) {
-                int alertId = row.getAsInt("alert_id");
-                String roleId = row.get("role_id");
-                int rowId = row.getAsInt("row_id");
-                if (!roles.containsKey(alertId)) {
-                    roles.put(alertId, new HashMap<>());
-                }
-                roles.get(alertId).put(rowId, roleId);
-            }
-
-            for (QueryRecord row : alertResult) {
-                switch (AlertType.getFromOrdinal(row.getAsInt("type"))) {
-                    case REWARD:
-                        RewardData rd = new RewardData(row, roles.get(row.getAsInt("alert_id")));
-                        this.alerts.put(rd.getKey(), rd);
-                        break;
-                    case TWITCH:
-                        TwitchData td = new TwitchData(row);
-                        this.alerts.put(td.getKey(), td);
-                        break;
-
-                    default:
-                        AlertData ad = new AlertData(row, roles.get(row.getAsInt("alert_id")));
-                        this.alerts.put(ad.getKey(), ad);
-                    break;
-                }
-
-            }
-        }
-        return this.alerts;
-    }
-
-    public AlertData getAlert(AlertType type) {
-        if (type == AlertType.REWARD)
-            return getHigherReward(0);
-        return getAlerts().get(new AlertKey<>(type));
-    }
-
-    public AlertData getAlertByID(String id) {
-        return id == null || id.isEmpty() ? null : getAlertByID(Integer.parseInt(id));
-    }
-
-    public AlertData getAlertByID(int id) {
-        for (AlertData ad : getAlerts().values()) {
-            if (ad.getID() == id) {
-                return ad;
-            }
-        }
-        return null;
-    }
-
-    public RewardData getAlert(AlertType type, int level) {
-        AlertKey<?> key = level != 0 ? new AlertKey<Integer>(type, level) : new AlertKey<>(type);
-        AlertData alert = getAlerts().get(key);
-        if (alert instanceof RewardData) {
-            return (RewardData) alert;
-        } else {
-            return null;
-        }
-    }
-
-    public RewardData getLowerReward(int level) {
-        for (int i = level - 1; i >= 0; i--) {
-            RewardData reward = getAlert(AlertType.REWARD, i);
-            if (reward != null) {
-                return reward;
-            }
-        }
-        return null;
-    }
-
-    public RewardData getHigherReward(int level) {
-        for (int i = level + 1; i <= 100; i++) {
-            RewardData reward = getAlert(AlertType.REWARD, i);
-            if (reward != null) {
-                return reward;
-            }
-        }
-        return null;
-    }
-
-    public List<RewardData> getRewards() {
-        List<RewardData> rewards = new ArrayList<>();
-        RewardData reward = null;
-        int level = 0;
-        do {
-            reward = getHigherReward(level);
-            level = reward.getLevel();
-            rewards.add(reward);
-        } while (reward != null);
-
-        return rewards;
-    }
-
-    public AlertData getWelcome() {
-        return getAlert(AlertType.WELCOME);
-    }
-
-    public boolean deleteAlert(AlertType type) {
-        return deleteAlert(type, 0);
-    }
-
-    public boolean deleteAlert(AlertType type, int level) {
-        AlertKey<?> key = level != 0 ? new AlertKey<Integer>(type, level) : new AlertKey<>(type);
-        AlertData toDelete = getAlerts().remove(key);
-        if (toDelete == null) {
-            return false;
-        }
-        return toDelete.terminator4LaRinascita();
-    }
-
-    public boolean deleteAlert(AlertType type, String streamerId) {
-        AlertData toDelete = getAlerts().remove(new AlertKey<String>(type, streamerId));
-        if (toDelete == null) {
-            return false;
-        }
-        return toDelete.terminator4LaRinascita();
-    }
-
-    public TwitchData getTwitchdata(String streamerId) {
-        AlertData alert = getAlerts().get(new AlertKey<String>(AlertType.TWITCH, streamerId));
-        if (alert instanceof TwitchData) {
-            return (TwitchData) alert;
-        } else {
-            return null;
-        }
-    }
-
-    public HashMap<AlertKey<String>, TwitchData> getTwitchDatas() {
-        return getAlerts().values().stream()
-            .filter(alert -> alert instanceof TwitchData)
-            .map(alert -> (TwitchData) alert)
-            .collect(Collectors.toMap(TwitchData::getKey, twitch -> twitch, (a, b) -> a, HashMap::new));
-    }
-
-
-
-//  ▀█████████▄   ▄█          ▄████████  ▄████████    ▄█   ▄█▄  ▄█        ▄█     ▄████████     ███
-//    ███    ███ ███         ███    ███ ███    ███   ███ ▄███▀ ███       ███    ███    ███ ▀█████████▄
-//    ███    ███ ███         ███    ███ ███    █▀    ███▐██▀   ███       ███▌   ███    █▀     ▀███▀▀██
-//   ▄███▄▄▄██▀  ███         ███    ███ ███         ▄█████▀    ███       ███▌   ███            ███   ▀
-//  ▀▀███▀▀▀██▄  ███       ▀███████████ ███        ▀▀█████▄    ███       ███▌ ▀███████████     ███
-//    ███    ██▄ ███         ███    ███ ███    █▄    ███▐██▄   ███       ███           ███     ███
-//    ███    ███ ███▌    ▄   ███    ███ ███    ███   ███ ▀███▄ ███▌    ▄ ███     ▄█    ███     ███
-//  ▄█████████▀  █████▄▄██   ███    █▀  ████████▀    ███   ▀█▀ █████▄▄██ █▀    ▄████████▀     ▄████▀
-//               ▀                                   ▀         ▀
-//
-
-    public BlacklistData getBlacklistData() {
-        return this.blacklistData;
-    }
-
-    public boolean setBlackListData(int threshold, String blackChannelId) {
-        this.blacklistData = new BlacklistData(threshold, blackChannelId, true, this);
-        return this.blacklistData.update();
-    }
-
-
-    public int getThreshold() {
-        return getBlacklistData().getThreshold();
-    }
-
-    public String getBlackChannelId() {
-        return getBlacklistData().getBlackChannelId();
-    }
-
-    public synchronized boolean setBlackChannel(String blackChannel) {
-        return getBlacklistData().setBlackChannelId(blackChannel);
-    }
-
-    public synchronized boolean setThreshold(int threshold) {
-        return getBlacklistData().setThreshold(threshold);
-    }
-
-    public boolean blacklistEnabled() {
-        return getBlacklistData().isBlacklistEnabled();
-    }
-
-    public boolean setBlacklistEnabled(boolean blacklist_enabled) {
-        return getBlacklistData().setBlacklistEnabled(blacklist_enabled);
-    }
-
-
-//   ▄████████    ▄█    █▄       ▄████████ ███▄▄▄▄   ███▄▄▄▄      ▄████████  ▄█
-//  ███    ███   ███    ███     ███    ███ ███▀▀▀██▄ ███▀▀▀██▄   ███    ███ ███
-//  ███    █▀    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▀  ███
-//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███ ███   ███  ▄███▄▄▄     ███
-//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███ ███   ███ ▀▀███▀▀▀     ███
-//  ███    █▄    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▄  ███
-//  ███    ███   ███    ███     ███    ███ ███   ███ ███   ███   ███    ███ ███▌    ▄
-//  ████████▀    ███    █▀      ███    █▀   ▀█   █▀   ▀█   █▀    ██████████ █████▄▄██
-//                                                                          ▀
-
-    public void retriveChannels() {
-        this.channels = new HashMap<>();
-        List<QueryRecord> result = BotDB.getChannelData(String.valueOf(ID));
-        if (result == null) { return; }
-
-        BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
-        for(QueryRecord row : result){
-            this.channels.put(
-                row.get("channel_id"),
-                new ChannelData(row)
-            );
-        }
-
-    }
-
-    public HashMap<String, ChannelData> getChannels() {
-        return this.channels;
-    }
-
-    public ChannelData getChannelData(String channel_id) {
-        ChannelData cd = this.channels.get(channel_id);
-        if (cd == null) {
-            cd = new ChannelData(channel_id, this.getId());
-            BotLogger.debug("Caching local ChannelData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(channel_id), LoggerIDpair.IDType.CHANNEL));
-            this.channels.put(channel_id, cd);
-        }
-        return cd;
-    }
-
-    public boolean deleteChannelData(String channel_id) {
-        ChannelData toDelete = this.channels.remove(channel_id);
-        if (toDelete == null) {
-            return true;
-        }
-        return toDelete.terminator5LaRivolta();
-    }
-
-
-    public Boolean getExpSystemRoom(String id){
-        return getChannelData(id).isExpSystemEnabled();
-    }
-
-    public Boolean getCommandStatsRoom(String id){
-        return getChannelData(id).getCommand();
-    }
-
-    public double getExperienceModifier(String id){
-        return getChannelData(id).getExperienceModifier();
-    }
-
-//     ▄▄▄▄███▄▄▄▄      ▄████████   ▄▄▄▄███▄▄▄▄   ▀█████████▄     ▄████████    ▄████████
-//   ▄██▀▀▀███▀▀▀██▄   ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███   ███    ███   ███    ███
-//   ███   ███   ███   ███    █▀  ███   ███   ███   ███    ███   ███    █▀    ███    ███
-//   ███   ███   ███  ▄███▄▄▄     ███   ███   ███  ▄███▄▄▄██▀   ▄███▄▄▄      ▄███▄▄▄▄██▀
-//   ███   ███   ███ ▀▀███▀▀▀     ███   ███   ███ ▀▀███▀▀▀██▄  ▀▀███▀▀▀     ▀▀███▀▀▀▀▀
-//   ███   ███   ███   ███    █▄  ███   ███   ███   ███    ██▄   ███    █▄  ▀███████████
-//   ███   ███   ███   ███    ███ ███   ███   ███   ███    ███   ███    ███   ███    ███
-//    ▀█   ███   █▀    ██████████  ▀█   ███   █▀  ▄█████████▀    ██████████   ███    ███
-//                                                                            ███    ███
-
-    private MemberData retriveMemberData(String userId) {
-        MemberData member = null;
-        QueryRecord result = BotDB.getUserData(String.valueOf(ID), userId);
-        if (result.emptyValues()) { return null; }
-
-        BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
-        member = new MemberData(result);
-        return member;
     }
 
     public MemberData getMemberData(Long userId) {
@@ -616,54 +808,45 @@ public class GuildData {
         return this.isExperienceEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
     }
 
-//     ▄████████  ▄████████     ███      ▄█   ▄██████▄  ███▄▄▄▄
-//    ███    ███ ███    ███ ▀█████████▄ ███  ███    ███ ███▀▀▀██▄
-//    ███    ███ ███    █▀     ▀███▀▀██ ███▌ ███    ███ ███   ███
-//    ███    ███ ███            ███   ▀ ███▌ ███    ███ ███   ███
-//  ▀███████████ ███            ███     ███▌ ███    ███ ███   ███
-//    ███    ███ ███    █▄      ███     ███  ███    ███ ███   ███
-//    ███    ███ ███    ███     ███     ███  ███    ███ ███   ███
-//    ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀
-//
+    /* -------------------------------------------------------------------------- */
 
-    public boolean addAction(int action, String roleId, int actionTime, int infractions, int infractionsTime) {
-        AutomatedAction aa = AutomatedAction.create(String.valueOf(ID), action, roleId, actionTime, infractions, infractionsTime);
-        if (aa == null) {
-            return false;
+    private synchronized boolean change(Consumer<GuildData> mutation) {
+        if (original != null) {
+            mutation.accept(this);
+
+            return true;
         }
-        actions.add(aa);
-        return true;
+
+        GuildData edit = deferEdit();
+        mutation.accept(edit);
+
+        return edit.update();
     }
 
-    public HashMap <Integer, AutomatedAction> getActionsWithId() {
-        HashMap <Integer, AutomatedAction> map = new HashMap<>();
-        for (AutomatedAction aa : actions) {
-            map.put(aa.getId(), aa);
+    private void loadAlerts() {
+        if (alerts == null) {
+            List<AlertData> rows = database.readGuildAlerts(ID);
+            LinkedHashMap<Integer, AlertData> loaded = new LinkedHashMap<>();
+
+            for (AlertData alert : rows)
+                loaded.put(alert.getID(), alert);
+
+            alerts = loaded;
         }
-        return map;
+
+        alerts.values().removeIf(AlertData::isDeleted);
     }
 
-    public List<AutomatedAction> getActions() {
-        return actions;
-    }
-
-    public AutomatedAction getAction(int id) {
-        for (AutomatedAction aa : actions) {
-            if (aa.getId() == id) {
-                return aa;
-            }
+    private MemberData retriveMemberData(String userId) {
+        MemberData member = null;
+        QueryRecord result = BotDB.getUserData(String.valueOf(ID), userId);
+        if (result.emptyValues()) {
+            return null;
         }
-        return null;
+
+        BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
+        member = new MemberData(result);
+        return member;
     }
-
-
-    public boolean isBlackListCached() {
-        return this.blacklistData != null;
-    }
-
-    public boolean isAlertsCached() {
-        return this.alerts != null;
-    }
-
 
 }

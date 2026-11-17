@@ -43,7 +43,7 @@ public class Voice extends SlashCommand {
             return;
         }
 
-        if (!GuildCache.getGuildOrPut(event.getGuild().getId()).setVoice(voice)) {
+        if (!GuildCache.withGuild(event.getGuild().getId(), guild -> guild.setVoice(voice))) {
             event.deferReply(true).addContent("There was an error while changing the voice.").queue();
             return;
         }

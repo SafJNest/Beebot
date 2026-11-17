@@ -5,7 +5,6 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.cache.managers.GuildCache;
-import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.bot.model.guild.alert.AlertSendType;
 import com.safjnest.bot.model.guild.alert.TwitchData;
 import com.safjnest.utils.BotCommand;
@@ -48,53 +47,45 @@ public class TwitchMessage extends SlashCommand {
             return;
         }
 
-        String message = event.getOption("message") != null ? event.getOption("message").getAsString().replace("'", "''") : null;
+        String message = event.getOption("message") != null ? event.getOption("message").getAsString() : null;
         String privateText = event.getOption("private_message") != null ? event.getOption("private_message").getAsString() : null;
         
         AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
         
         String guildId = event.getGuild().getId();
-        GuildData gs = GuildCache.getGuildOrPut(guildId);
-        
-        TwitchData twitch = gs.getTwitchdata(streamerId);
 
+        String error = GuildCache.withGuild(guildId, guild -> {
+            TwitchData twitch = guild.getTwitchdata(streamerId);
 
+            if (twitch == null)
+                return "This guild doesn't have a twitch subscription for this streamer.";
 
+            if (sendType != AlertSendType.CHANNEL && twitch.getStreamerRole() == null)
+                return "You need to set a role to send private messages";
 
-        if(twitch == null) {
-            event.deferReply(true).addContent("This guild doesn't have a twitch subscription for this streamer.").queue();
+            TwitchData edit = twitch.deferEdit();
+
+            switch (sendType) {
+                case CHANNEL -> edit.setMessage(message);
+                case PRIVATE -> {
+                    edit.setPrivateMessage(privateText);
+                    edit.setSendType(sendType);
+                }
+                case BOTH -> {
+                    edit.setMessage(message);
+                    edit.setPrivateMessage(privateText);
+                    edit.setSendType(sendType);
+                }
+            }
+
+            return edit.update() ? null : "Something went wrong. Use `/help twitch message` for more information";
+        });
+
+        if (error != null) {
+            event.deferReply(true).addContent(error).queue();
             return;
         }
 
-        boolean result = false;
-        switch (sendType) {
-            case CHANNEL:
-                result = twitch.setMessage(message);
-                break;
-            case PRIVATE:
-                if (twitch.getStreamerRole() == null) {
-                    event.deferReply(true).addContent("You need to set a role to send private messages").queue();
-                    return;
-                }
-                result = twitch.setPrivateMessage(privateText) && twitch.setSendType(sendType);
-                break;
-            case BOTH:
-                if (twitch.getStreamerRole() == null) {
-                    event.deferReply(true).addContent("You need to set a role to send private messages").queue();
-                    return;
-                }
-                result = twitch.setMessage(message) && twitch.setPrivateMessage(privateText) && twitch.setSendType(sendType);
-                break;
-        
-            default:
-                break;
-        }
-        
-        if (!result) {
-            event.deferReply(true).addContent("Something went wrong. Use `/help twitch message` for more information").queue();
-            return;
-        }
-        
         event.deferReply(false).addContent("Twitch alert changed correctly.").queue();
     }
 }

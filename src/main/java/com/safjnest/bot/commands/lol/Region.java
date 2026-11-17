@@ -5,7 +5,6 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.cache.managers.GuildCache;
-import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -39,20 +38,19 @@ public class Region extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
 
-        GuildData gs = GuildCache.getGuildOrPut(event.getGuild().getId());
         LeagueShard shard = LeagueShard.valueOf(event.getOption("region").getAsString());
 
         TextChannel channel = event.getOption("channel") != null ? event.getOption("channel").getAsChannel().asTextChannel() : null;
 
         if (channel != null) {
-            if (!gs.getChannelData(channel.getId()).setLeagueShard(shard)) {
+            if (!GuildCache.withGuild(event.getGuild().getId(), guild -> guild.getChannelData(channel.getId()).setLeagueShard(shard))) {
                 event.getHook().sendMessage("Something went wrong.").queue();
                 return;
             }
             event.getHook().sendMessage("Region set for " + channel.getAsMention() + " to " + LeagueShardUtils.getRegionFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
             return;
         }
-        else if(!gs.setLeagueShard(shard)) {
+        else if(!GuildCache.withGuild(event.getGuild().getId(), guild -> guild.setLeagueShard(shard))) {
             event.getHook().sendMessage("Something went wrong.").queue();
             return;
         }

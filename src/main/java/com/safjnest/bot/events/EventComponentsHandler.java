@@ -10,7 +10,6 @@ import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.audio.TrackData;
 import com.safjnest.bot.audio.types.AudioType;
 import com.safjnest.bot.commands.members.Blacklist;
-import com.safjnest.bot.model.guild.BlacklistData;
 import com.safjnest.bot.model.guild.ChannelData;
 import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.bot.model.guild.alert.AlertData;
@@ -145,12 +144,17 @@ import net.dv8tion.jda.api.modals.Modal;
 
 
 
+      String selectedAlertId = alertId;
+      String selectedChannelId = channelData == null ? null : channelData.getRoomId();
+
       EntitySelectInteractionEvent entityEvent;
       Modal modal;
+
       switch (innerType) {
         case "send":
           event.deferEdit().queue();
-          alert.setSendType(AlertSendType.valueOf(args.toUpperCase()));
+          GuildCache.withGuild(guild.getId(),
+            cached -> cached.getAlertByID(selectedAlertId).setSendType(AlertSendType.valueOf(args.toUpperCase())));
           break;
         case "role":
           event.deferEdit().queue();
@@ -159,12 +163,14 @@ import net.dv8tion.jda.api.modals.Modal;
           for (IMentionable entity : entityEvent.getValues()) {
             roles.add(entity.getId());
           }
-          alert.setRoles(roles);
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setRoles(roles));
           break;
         case "channel":
           event.deferEdit().queue();
           entityEvent = (EntitySelectInteractionEvent) event;
-          alert.setAlertChannel(entityEvent.getChannelId());
+          String channelId = entityEvent.getChannelId();
+
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setAlertChannel(channelId));
           break;
         case "levelchannel":
           event.deferEdit().queue();
@@ -173,7 +179,11 @@ import net.dv8tion.jda.api.modals.Modal;
           break;
         case "togglechannel":
           event.deferEdit().queue();
-          channelData.enableExperience(!channelData.isExpSystemEnabled());
+          GuildCache.withGuild(guild.getId(), cached -> {
+            ChannelData channel = cached.getChannelData(selectedChannelId);
+
+            return channel.enableExperience(!channel.isExpSystemEnabled());
+          });
           break;
         case "modifier":
           TextInput modifierInput = TextInput.create("alert-modifier", TextInputStyle.SHORT)
@@ -201,26 +211,20 @@ import net.dv8tion.jda.api.modals.Modal;
         case "type":
           event.deferEdit().queue();
           type = AlertType.valueOf(args.split("-")[0].toUpperCase());
-          alert = guild.getAlert(type);
-          if (alert == null) {
-            AlertData newAlertData = new AlertData(event.getGuild().getId(), "", "", null, AlertSendType.CHANNEL, type);
-            guild.getAlerts().put(newAlertData.getKey(), newAlertData);
-          }
-          alert = guild.getAlert(type);
+          AlertType selectedType = type;
+          alert = GuildCache.withGuild(guild.getId(), cached -> cached.createAlert(selectedType, null, edit -> {}));
           break;
         case "disable":
           event.deferEdit().queue();
-          alert.setEnabled(false);
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setEnabled(false));
           break;
         case "enable":
           event.deferEdit().queue();
-          alert.setEnabled(true);
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setEnabled(true));
           break;
         case "delete":
           event.deferEdit().queue();
-          if (alert.getType() == AlertType.REWARD)
-            guild.deleteAlert(AlertType.REWARD, alert.asReward().getLevel());
-          else guild.deleteAlert(alert.getType());
+          GuildCache.withGuild(guild.getId(), cached -> cached.deleteAlert(cached.getAlertByID(selectedAlertId)));
           
           Container delete = Container.of(TextDisplay.of("Alert deleted correctly")).withAccentColor(Color.GREEN);
           event.getMessage().editMessageComponents(delete)
@@ -229,7 +233,8 @@ import net.dv8tion.jda.api.modals.Modal;
           return;
         case "experience":
           event.deferEdit().queue();
-          guild.setExpSystem(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER ? true : false);
+          GuildCache.withGuild(guild.getId(),
+            cached -> cached.setExpSystem(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER));
           break;
         case "lower":
           event.deferEdit().queue();
@@ -253,7 +258,8 @@ import net.dv8tion.jda.api.modals.Modal;
           return;
         case "temporary":
           event.deferEdit().queue();
-          alert.asReward().setTemporary(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER ? true : false);
+          GuildCache.withGuild(guild.getId(),
+            cached -> cached.getAlertByID(selectedAlertId).asReward().setTemporary(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER));
           break;
         default:
           break;
@@ -333,15 +339,16 @@ import net.dv8tion.jda.api.modals.Modal;
 
     private void blacklist(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       GuildData guild = GuildCache.getGuild(event.getGuild());
-      BlacklistData bl = guild.getBlacklistData();
 
       switch (innerType) {
         case "toggle":
-          bl.setBlacklistEnabled(!bl.isBlacklistEnabled());
+          GuildCache.withGuild(guild.getId(), cached -> cached.setBlacklistEnabled(!cached.blacklistEnabled()));
           break;
         case "channel":
           EntitySelectInteractionEvent entityEvent = (EntitySelectInteractionEvent) event;
-          bl.setBlackChannelId(entityEvent.getValues().get(0).getId());
+          String channelId = entityEvent.getValues().get(0).getId();
+
+          GuildCache.withGuild(guild.getId(), cached -> cached.setBlackChannel(channelId));
           break;
         case "threshold":
           TextInput input = TextInput.create("blacklist-threshold", TextInputStyle.SHORT)

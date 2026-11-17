@@ -19,7 +19,6 @@ import com.safjnest.bot.model.guild.BlacklistData;
 import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.bot.model.guild.MemberData;
 import com.safjnest.bot.model.guild.alert.AlertData;
-import com.safjnest.bot.model.guild.alert.AlertKey;
 import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.bot.model.guild.alert.RewardData;
 import com.safjnest.database.sql.QueryRecord;
@@ -352,29 +351,25 @@ public class Functions {
     }
 
     public static void handleChannelDeleteAlert(Guild guild, String channelID) {
-        GuildData g = GuildCache.getGuildOrPut(guild.getId());
-
         String alertChannel = guild.getDefaultChannel().getId();
-        String alertMessage = "";
-        String content = "";
-        HashMap<AlertKey<?>, AlertData> alerts = g.getAlerts();
-        BlacklistData bld = g.getBlacklistData();
-        if (alerts != null) {
-            for (AlertData data : alerts.values()) {
-                if (data.getChannelId() != null && data.getChannelId().equals(channelID)) {
-                    data.setAlertChannel(null);
-                    content += data.getType().getDescription() + ", ";
-                }
+        String content = GuildCache.withGuild(guild.getId(), cached -> {
+            String changed = "";
+
+            for (AlertData alert : cached.getAlerts().values()) {
+                if (channelID.equals(alert.getChannelId()) && alert.setAlertChannel(null))
+                    changed += alert.getType().getDescription() + ", ";
             }
-        }
-        if (bld != null) {
-            if (bld.getBlackChannelId() != null && bld.getBlackChannelId().equals(channelID)) {
-                bld.setBlackChannelId(null);
-                content += "Blacklist";
-            }
-        }
-        if (!content.equals("")) {
-            alertMessage = "These alerts need to be modified as the channel has been canceled:\n" + content;
+
+            BlacklistData blacklist = cached.getBlacklistData();
+
+            if (channelID.equals(blacklist.getBlackChannelId()) && blacklist.setBlackChannelId(null))
+                changed += "Blacklist";
+
+            return changed;
+        });
+
+        if (!content.isEmpty()) {
+            String alertMessage = "These alerts need to be modified as the channel has been canceled:\n" + content;
             guild.getTextChannelById(alertChannel).sendMessage(alertMessage).queue();
         }
     }
@@ -452,9 +447,11 @@ public class Functions {
     }
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {
-        GuildData g = GuildCache.getGuildOrPut(guild.getId());
-        g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
-            alert.removeRole(role_id);
+        GuildCache.withGuild(guild.getId(), cached -> {
+            for (AlertData alert : cached.getAlerts().values())
+                alert.removeRole(role_id);
+
+            return null;
         });
     }
 

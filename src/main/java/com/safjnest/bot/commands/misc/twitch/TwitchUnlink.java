@@ -44,7 +44,7 @@ public class TwitchUnlink extends SlashCommand{
             return;
         }
 
-        GuildCache.getGuildOrPut(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
+        GuildCache.withGuild(event.getGuild().getId(), guild -> guild.deleteAlert(AlertType.TWITCH, streamerId));
 
         if (BotDB.getTwitchSubscriptions(streamerId).size() == 0)
             TwitchClient.unregisterSubEvent(streamerId);
