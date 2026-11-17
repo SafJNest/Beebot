@@ -34,11 +34,15 @@ Primary stack:
 - Use static utility classes for stateless utilities.
 - Prefer static factories for conversions and model construction.
 - Use `final` for immutable fields.
+- Name singleton fields `instance`, including `static final` singleton fields.
 - Use `List.of` or `Arrays.asList` for static constants.
 - Do not use Lombok in operational classes.
 - Do not introduce dependency injection frameworks.
 - Do not wrap values in `Optional`.
 - Prefer a loop when it is clearer than a stream.
+- Use explicit types for local variables. `var` is permitted only inside lambdas when it improves readability.
+- Separate logical steps with blank lines: guards, data preparation, loading/grouping, transformation and the final return. Keep related declarations together.
+- Put the bodies of `if`, `else`, `for` and `while` on the following indented lines, even for a single statement. Avoid compressed one-line control flow.
 - Avoid unnecessary refactors and comments.
 
 ## Data changes and presentation stability

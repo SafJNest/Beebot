@@ -1,8 +1,6 @@
 package com.safjnest.bot.cache.managers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.bot.cache.CacheAdapter;
@@ -35,8 +33,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
@@ -50,7 +48,6 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SoundCache.class);
     private static final SoundCache instance = new SoundCache();
 
-    private final Cache<String, Sound> objects;
     private final SoundDB database;
     private final SoundAccess access;
     private final SoundQueryCache queries;
@@ -67,10 +64,10 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
     public SoundCache(SoundDB database, SoundAccess access, SoundQueryCache queries,
     Ticker ticker) {
+        super(100, 1, TimeUnit.MINUTES, ticker, false);
         this.database=database;
         this.access=access;
         this.queries=queries;
-        this.objects=Caffeine.newBuilder().maximumSize(100).expireAfterWrite(1,TimeUnit.MINUTES).ticker(ticker).build();
         this.analytics=new SoundAnalytics(database, access);
     }
 
@@ -78,62 +75,13 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         cdnUrl=value == null ? "" : value;
     }
 
-    @Override public void put(String key, Sound value) {
-        objects.put(key,value);
-    }
-
-    @Override public void invalidate(String key) {
-        objects.invalidate(key);
-    }
-
-    @Override public Sound remove(String key) {
-        Sound old=objects.getIfPresent(key);
-        objects.invalidate(key);
-        return old;
-    }
-
-    @Override public boolean contains(String key) {
-        return objects.getIfPresent(key)!=null;
-    }
-
-    @Override public Collection<String> keySet() {
-        return Set.copyOf(objects.asMap().keySet());
-    }
-
-    @Override public ConcurrentMap<String,Sound> asTypedMap() {
-        return objects.asMap();
-    }
-
-    @Override public Collection<Sound> values() {
-        return java.util.List.copyOf(objects.asMap().values());
-    }
-
-    @Override public int getSize() {
-        return objects.asMap().size();
-    }
-
-    @Override public int getMaxSize() {
-        return 100;
-    }
-
-    @Override public void clear() {
-        objects.invalidateAll();
-    }
-
-    @Override public long expiresAfter(String key) {
-        return objects.policy().expireAfterWrite().flatMap(policy->policy.ageOf(key)).map(age->Math.max(0,60_000-age.toMillis())).orElse(0L);
-    }
-
-    @Override public Collection<Sound> get(Collection<String> keys) {
-        return load(new java.util.ArrayList<>(keys));
-    }
-
-    public Sound get(String key) {
-        return objects.getIfPresent(key);
+    @Override
+    public Collection<Sound> get(Collection<String> keys) {
+        return getOrLoadAll(keys);
     }
 
     public List<Sound> get(String... keys) {
-        return load(List.of(keys));
+        return getOrLoadAll(List.of(keys));
     }
 
     public static SoundCache getInstance() {
@@ -198,28 +146,19 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public List<Sound> load(List<String> ids) {
-        Map<String,Sound> resolved=new HashMap<>();
-        List<String> missing=new ArrayList<>();
-        for(String id:ids) {
-            Sound sound=get(id);
-            if(sound==null)missing.add(id);
-            else resolved.put(id,sound);
-        }
-        if(!missing.isEmpty()) {
-            var rows=database.sounds(missing);
-            var tagRows=database.tags(missing);
-            for(var row:rows) {
-                Sound sound=new Sound(row,tags(row.get("id"),tagRows,true));
-                put(sound.getId(),sound);
-                resolved.put(sound.getId(),sound);
-            }
-        }
-        List<Sound> result=new ArrayList<>();
-        for(String id:ids) {
-            Sound sound=resolved.get(id);
-            if(sound!=null)result.add(sound);
-        }
-        return result;
+        return getOrLoadAll(ids);
+    }
+
+    public static List<Sound> getSounds(Collection<String> ids) {
+        return instance.getOrLoadAll(ids);
+    }
+
+    public static <R> R withSound(String id, Function<? super Sound, ? extends R> operation) {
+        return instance.with(id, operation);
+    }
+
+    public static <R> R withSounds(Collection<String> ids, Function<? super List<Sound>, ? extends R> operation) {
+        return instance.withAll(ids, operation);
     }
 
     public static boolean deleteSound(String id) {
@@ -535,7 +474,22 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         if(saved) com.safjnest.bot.cache.managers.UserCache.getInstance().invalidate(context.userId());
         return SoundValues.map("greets",results);
     }
-    // ================================================================================================================
+
+    @Override
+    protected Map<String, Sound> loadValues(Collection<String> ids) {
+        List<QueryRecord> rows = database.sounds(ids);
+        List<QueryRecord> tagRows = database.tags(ids);
+        Map<String, Sound> result = new LinkedHashMap<>();
+
+        for (QueryRecord row : rows) {
+            String id = row.get("id");
+            result.put(id, new Sound(row, tags(id, tagRows, true)));
+        }
+
+        return result;
+    }
+
+    /* -------------------------------------------------------------------------- */
 
     private <T> T readRequest(String operation, java.util.function.Supplier<T> work) {
         long started = System.nanoTime();
@@ -592,20 +546,45 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
     private List<Sound> responses(Context context, List<QueryRecord> rows, List<QueryRecord> tagRows) {
         List<String> ids = rowIds(rows);
-        var extras=database.enrichment(ids,context.userId());
-        Map<String,QueryRecord> extraById=new HashMap<>();
-        for(var extra:extras)extraById.put(extra.get("id"),extra);
-        List<Sound> result=new ArrayList<>();
-        for(var row:rows) {
-            String id=row.get("id");
-            Sound cached=get(id);
-            if(cached==null) {
-                cached=new Sound(row,tags(id,tagRows,true));
-                put(id,cached);
+        List<QueryRecord> extras = database.enrichment(ids, context.userId());
+        Map<String, QueryRecord> extraById = new HashMap<>();
+
+        for (QueryRecord extra : extras)
+            extraById.put(extra.get("id"), extra);
+
+        List<Sound> sounds = getOrLoadAll(ids, missing -> {
+            Set<String> needed = new HashSet<>(missing);
+            Map<String, Sound> loaded = new HashMap<>();
+
+            for (QueryRecord row : rows) {
+                String id = row.get("id");
+                if (needed.contains(id))
+                    loaded.put(id, new Sound(row, tags(id, tagRows, true)));
             }
-            var membership=context.guilds().get(row.get("guild_id"));
-            result.add(Sound.forResponse(cached,row,tags(id,tagRows,false),extraById.getOrDefault(id,new QueryRecord()),context.userId(),membership!=null&&membership.administrator(),cdnUrl,access.user(row.get("user_id"))));
+
+            return loaded;
+        });
+
+        Map<String, Sound> byId = new HashMap<>();
+
+        for (Sound sound : sounds)
+            byId.put(sound.getId(), sound);
+
+        List<Sound> result = new ArrayList<>();
+        for (QueryRecord row : rows) {
+            String id = row.get("id");
+            String guildId = row.get("guild_id");
+            boolean administrator = context.guilds().containsKey(guildId) && context.guilds().get(guildId).administrator();
+            Sound source = byId.get(id);
+
+            if (source == null)
+                source = new Sound(row, tags(id, tagRows, true));
+
+            result.add(Sound.forResponse(source, row, tags(id, tagRows, false),
+                extraById.getOrDefault(id, new QueryRecord()), context.userId(), administrator, cdnUrl,
+                access.user(row.get("user_id"))));
         }
+
         return result;
     }
 

@@ -27,14 +27,24 @@ public class UserData {
     private HashMap<String, String> guildGreetIds;
 
     public UserData(String USER_ID) {
-        this.USER_ID = USER_ID;
-        
+        this(USER_ID, BotDB.getAliases(USER_ID));
         BotLogger.debug("Retriving UserData => {0}", new LoggerIDpair(USER_ID, LoggerIDpair.IDType.USER));
-        
-        retriveAlies();
+    }
+
+    private UserData(String USER_ID, List<QueryRecord> aliasRows) {
+        this.USER_ID = USER_ID;
+
+        this.aliases = new HashMap<>();
+        for (QueryRecord row : aliasRows) {
+            aliases.put(row.get("name"), new AliasData(row.getAsInt("id"), row.get("name"), row.get("command")));
+        }
 
         globalGreetId = null;
         guildGreetIds = new HashMap<>();
+    }
+
+    public static UserData fromRows(String userId, List<QueryRecord> aliasRows) {
+        return new UserData(userId, aliasRows);
     }
 
 
@@ -65,19 +75,6 @@ public class UserData {
 //    ███    ███ ███▌    ▄ ███    ███    ███    ▄█    ███ 
 //    ███    █▀  █████▄▄██ █▀     ███    █▀   ▄████████▀  
 //               ▀                                        
-
-    private void retriveAlies() {
-        this.aliases = new HashMap<>();
-        
-        List<QueryRecord> result = BotDB.getAliases(USER_ID);
-        if (result == null) { return; }
-
-        for(QueryRecord row: result){
-            AliasData alias = new AliasData(row.getAsInt("ID"), row.get("name"), row.get("command"));
-            aliases.put(row.get("name"), alias);
-        }
-
-    }
 
     public boolean addAlias(String name, String command) {
         int id = BotDB.createAlias(USER_ID, name, command);

@@ -264,6 +264,26 @@ CHERRY uses the existing champion API and build flow. Its approved schema and
 processing rules live in [`docs/arena-build`](arena-build/contracts.md) and
 ADR-0012.
 
+## Local bot caches
+
+`bot.cache.CacheAdapter` owns the instance-local Caffeine backing and the shared
+single/bulk loading protocol for guilds, users and sounds. `GenericCache` reuses
+this base. Use `GuildCache.withGuild`, `UserCache.withUser` or
+`SoundCache.withSound` for migrated mutable operations; callbacks retain the
+entry and synchronize on the object. Plural `withGuilds`/`withUsers`/`withSounds`
+retain every entry but require the individual owner's lock for mutations.
+Keep Discord calls and response serialization outside the object's lock.
+
+Bulk loads query only missing IDs and reuse in-flight loads. Guilds hydrate
+channels/actions in batches; users hydrate aliases. The new SQL reads use
+prepared statements and `QueryRecord`, with at most 500 IDs per statement.
+Invalidation fences publication by an older load; active participants finish
+before that entry is discarded. Cache map/list views do not expose the backing
+for direct writes. Old raw object getters remain compatible but do not retain an
+entry beyond the getter call. Guild/API mutations and domain snapshots still
+require plan steps 2–3; authentication caches retain their separate policies.
+See the [implementation plan](architecture/repository-review.md).
+
 ## Audio API operations
 
 Sounds HTTP routes use `SoundCache` as the facade, canonical `Sound` response copies, `SoundDB` prepared SQL (streamed history grouped in Java on one read session) and ID-only `SoundQueryCache` Redis entries. They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.

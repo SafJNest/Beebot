@@ -5,10 +5,12 @@ Repository-wide implementation rules live in [`AGENTS.md`](../../AGENTS.md);
 operational steps live in the [developer handbook](../HANDBOOK.md).
 
 The [agreed repository reorganization plan](repository-review.md) records the
-decisions discussed with the owner, including the final `beebot`/`lol`/`spring`
-layout, API authentication in `spring.auth`, file moves, consolidation steps,
-scope exclusions and verification requirements. It is the canonical plan for
-this work; it does not describe an implemented refactor or amend an accepted ADR.
+decisions discussed with the owner. The owner confirmed the current `bot`,
+`database`, `discord`, `lol`, `sound`, `spring`, `status` and `utils` layout on
+17 November 2026, including authentication in `discord.auth`. The document
+separates completed file moves and the implemented local-cache step from the
+remaining consolidation, scope exclusions and verification requirements. It is
+the canonical plan for this work and does not amend an accepted ADR.
 
 ## Ownership
 
@@ -16,7 +18,7 @@ this work; it does not describe an implemented refactor or amend an accepted ADR
 - `lol.service` owns domain reads, writes, cache coordination and composition.
 - `lol.queue` owns job registration and scheduling; `lol.tracker` owns periodic
   tracking.
-- `nosql.MongoDB` owns canonical Mongo persistence and the rebuildable
+- `database.nosql.MongoDB` owns canonical Mongo persistence and the rebuildable
   `match_facets` participant projection. Match insert/upsert maintains it;
   `!test export-match-search` rebuilds it from Mongo. LoL no longer accesses
   MariaDB, including historical migrations.

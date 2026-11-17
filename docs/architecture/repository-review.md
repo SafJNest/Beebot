@@ -1,8 +1,8 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione del 15 novembre 2026, baseline applicativa `48c43d58`. Questo è il piano completo concordato in chat, aggiornato fino alla scelta di collocare l'autenticazione in `spring.auth`. Sostituisce le strutture e le destinazioni proposte nei passaggi precedenti. Le decisioni sono documentate; nessuno spostamento o cambiamento del codice operativo è stato applicato in questa fase.
+Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 del consolidamento funzionale è implementato nel working tree; i passaggi 2–6 restano da implementare.
 
-Le citazioni dei sorgenti e l'inventario descrivono la baseline prima degli spostamenti. La sezione «Struttura finale concordata dei package» è il riferimento per le destinazioni e distingue file spostati dal proprietario, file nuovi dell'assistente e file da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui e richiamata dalla skill, mantenendo una sola versione del piano.
+I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
 ## Perimetro attivo
 
@@ -10,17 +10,21 @@ L'obiettivo principale è che bot e API usino le stesse cache, gli stessi oggett
 
 | Decisione | Applicazione al piano |
 |---|---|
-| MongoDB resta com'è | Nessuna scomposizione del repository, ottimizzazione delle query o migrazione dei tipi `QueryRecord`/BSON |
-| Struttura SQL conservata | Nessun refactoring generale di `AbstractDB`/`BotDB`; solo allineamento delle query nuove e assorbimento delle operazioni che oggi creano percorsi paralleli guild/sound |
+| MongoDB resta com'è | È ora in `database.nosql`; nessuna scomposizione del repository, ottimizzazione delle query o migrazione dei tipi `QueryRecord`/BSON |
+| Struttura SQL conservata | È ora in `database.sql`; nessun refactoring generale di `AbstractDB`/`BotDB`; solo allineamento delle query nuove e assorbimento delle operazioni che oggi creano percorsi paralleli guild/sound |
 | App e nomi storici conservati | Nessuna ridenominazione di `App.java`, `distruzione_demoniaca` o altre parti per motivi estetici |
-| BotStatus e metriche rimandati | Nessuno spostamento dei relativi modelli o servizi |
-| Comandi e component handler conservati | Cambio di package secondo l'albero finale, senza nuove gerarchie o riscritture; solo adeguamenti delle chiamate indispensabili al percorso comune |
-| Chronos secondario | Il file segue il package finale conservando nome e comportamento; rimozione o sostituzione rimandata. Una future rappresenta un risultato e non sostituisce la pianificazione periodica |
+| BotStatus e metriche rimandati | Struttura `status` attuale confermata, incluso `status.log`; nessun refactoring funzionale |
+| Comandi e component handler conservati | Spostamenti in `bot.commands` e `bot.events` eseguiti, senza nuove gerarchie o riscritture; solo adeguamenti delle chiamate indispensabili al percorso comune |
+| Chronos secondario | `bot.Chronos` conserva nome e comportamento; rimozione o sostituzione rimandata. Una future rappresenta un risultato e non sostituisce la pianificazione periodica |
 | Priorità | Cache/oggetti e coerenza bot/API; errori e Spring/auth; trasporto HTTP e parsing comune con LoL |
+| Stile Java | Tipi espliciti nelle variabili locali; `var` soltanto eventualmente nelle lambda; singleton `instance` minuscolo. Separare i blocchi logici con righe vuote e mettere il corpo di `if`/`for`/`while` sulla riga successiva. Operazioni delimitate con lambda come `withGuild`, senza comprimere i metodi |
+| SoundAnalytics rimandato | Nessuna riscrittura di `sound()`, `guild()` o delle classi `SoundAnalytics` in questo passaggio |
 
 Le esclusioni non impediscono di leggere un chiamante per capire un contratto. Impediscono di trasformare ogni dipendenza osservata in un ulteriore refactoring.
 
-## Problemi confermati, con peso pratico
+## Problemi individuati nella baseline
+
+Questi rilievi descrivono il punto di partenza. Il passaggio 1 ha risolto la base comune, i caricamenti coordinati e la durata delle operazioni sulle cache; la migrazione delle mutazioni e degli snapshot di dominio resta nei passaggi 2 e 3.
 
 ### 1. Le modifiche guild e sound hanno ancora percorsi paralleli
 
@@ -32,7 +36,7 @@ Le esclusioni non impediscono di leggere un chiamante per capire un contratto. I
 
 **Proposta prioritaria:** le operazioni tornano agli oggetti esistenti e i due ingressi li ottengono dalla stessa cache. La cache carica e coordina l'identità; non interpreta il JSON HTTP. Eliminare i percorsi paralleli senza introdurre `GuildRepository`, `GuildMutationService`, `UserRepository` o `SoundService` sostitutivi.
 
-Fonti: [GuildData](../../src/main/java/com/safjnest/model/guild/GuildData.java):136, [AlertData](../../src/main/java/com/safjnest/model/guild/alert/AlertData.java):120, [Sound](../../src/main/java/com/safjnest/model/sound/Sound.java):158, [UserData](../../src/main/java/com/safjnest/model/UserData.java):160, [SoundCache](../../src/main/java/com/safjnest/core/cache/managers/SoundCache.java):413 e :497, [BotDB](../../src/main/java/com/safjnest/sql/database/BotDB.java):215.
+Fonti: [GuildData](../../src/main/java/com/safjnest/bot/model/guild/GuildData.java):136, [AlertData](../../src/main/java/com/safjnest/bot/model/guild/alert/AlertData.java):120, [Sound](../../src/main/java/com/safjnest/sound/model/Sound.java):158, [UserData](../../src/main/java/com/safjnest/bot/model/UserData.java):160, [SoundCache](../../src/main/java/com/safjnest/bot/cache/managers/SoundCache.java):413 e :497, [BotDB](../../src/main/java/com/safjnest/database/sql/database/BotDB.java):215.
 
 ### 2. Il lock sul singolo oggetto non garantisce da solo coerenza
 
@@ -42,7 +46,7 @@ Gli alert espongono altri punti concreti: `GuildData.getAlerts` assegna la mappa
 
 **Decisione proposta:** mutazioni negli oggetti, ciclo di vita nella cache. Usare un'operazione delimitata della cache per ottenere e mantenere l'istanza corrente durante il lavoro; sincronizzare nello stesso proprietario le modifiche, le letture coerenti e i relativi snapshot. Il dettaglio del contratto è descritto sotto. Non dichiarare la garanzia finché tutti gli scrittori, inclusi gli handler esistenti, non usano il percorso concordato.
 
-Fonti: [GuildCache](../../src/main/java/com/safjnest/core/cache/managers/GuildCache.java):40, [UserCache](../../src/main/java/com/safjnest/core/cache/managers/UserCache.java):27, [GuildData](../../src/main/java/com/safjnest/model/guild/GuildData.java):309 e :419, [AlertData](../../src/main/java/com/safjnest/model/guild/alert/AlertData.java):176.
+Fonti: [GuildCache](../../src/main/java/com/safjnest/bot/cache/managers/GuildCache.java):40, [UserCache](../../src/main/java/com/safjnest/bot/cache/managers/UserCache.java):27, [GuildData](../../src/main/java/com/safjnest/bot/model/guild/GuildData.java):309 e :419, [AlertData](../../src/main/java/com/safjnest/bot/model/guild/alert/AlertData.java):176.
 
 ### 3. La base delle cache è condivisa, ma Sound la aggira
 
@@ -62,16 +66,16 @@ Fonti: [GuildCache](../../src/main/java/com/safjnest/core/cache/managers/GuildCa
 
 **Parsing:** `lol.utils.NumberUtils` è priva di dipendenze LoL. `BuildUtils.parseAnyInt` ripete sostanzialmente il suo parsing tollerante di un `Object`. Altre conversioni apparentemente simili hanno regole diverse: `ArenaGameParser.integer` verifica integrità/range, `ChampionStatsProvider.number` accetta soltanto `Number`, `LolApiParameters.page` segnala un parametro HTTP errato. Sostituirle indiscriminatamente con un fallback a zero cambierebbe il comportamento.
 
-Fonti: [HttpUtils](../../src/main/java/com/safjnest/utils/HttpUtils.java), [DiscordApi](../../src/main/java/com/safjnest/auth/DiscordApi.java):35 e :67, [PatchUtils](../../src/main/java/com/safjnest/lol/utils/PatchUtils.java):85, [LeagueHandler](../../src/main/java/com/safjnest/lol/LeagueHandler.java):177, [NumberUtils](../../src/main/java/com/safjnest/lol/utils/NumberUtils.java), [BuildUtils](../../src/main/java/com/safjnest/lol/utils/BuildUtils.java):43, [ArenaGameParser](../../src/main/java/com/safjnest/lol/arena/ArenaGameParser.java):155.
+Fonti: [HttpUtils](../../src/main/java/com/safjnest/utils/HttpUtils.java), [DiscordApi](../../src/main/java/com/safjnest/discord/auth/DiscordApi.java):35 e :67, [PatchUtils](../../src/main/java/com/safjnest/lol/utils/PatchUtils.java):85, [LeagueHandler](../../src/main/java/com/safjnest/lol/LeagueHandler.java):177, [NumberUtils](../../src/main/java/com/safjnest/lol/utils/NumberUtils.java), [BuildUtils](../../src/main/java/com/safjnest/lol/utils/BuildUtils.java):43, [ArenaGameParser](../../src/main/java/com/safjnest/lol/arena/ArenaGameParser.java):155.
 
 ## Percorso unico proposto
 
 ```mermaid
 flowchart LR
-    bot["beebot.commands e beebot.events"] --> cache["beebot.cache: GuildCache UserCache SoundCache"]
+    bot["bot.commands e bot.events"] --> cache["bot.cache.managers: GuildCache UserCache SoundCache"]
     api["spring.controller.beebot"] --> cache
-    cache --> data["beebot.model: GuildData AlertData UserData MemberData Sound"]
-    data --> db["sql.database.BotDB e query esistenti"]
+    cache --> data["bot.model: guild e user; sound.model: Sound"]
+    data --> db["database.sql.database.BotDB e query esistenti"]
     db --> sql[(SQL)]
     cache -. bulk dei soli mancanti .-> db
     data --> view[Snapshot coerenti per le risposte]
@@ -122,7 +126,7 @@ La proposta usa l'infrastruttura della cache già esistente, senza un nuovo lock
 6. **Fallimenti e scadenza.** Un caricamento fallito non diventa un oggetto vuoto o un'assenza; le entry in corso vengono completate con errore e possono essere ritentate. Una entry occupata non viene eliminata e ricreata con un'altra istanza. Nessun lock/future/generation viene rimosso mentre protegge ancora un'operazione.
 7. **Niente accessi laterali.** Bot e API devono entrambi passare qui, incluse le scritture dei figli. Gli handler mantengono struttura e presentazione, ma le chiamate dirette come `guild.getAlerts().put(...)` devono diventare operazioni del proprietario se si vuole la garanzia completa.
 
-Le entry e gli eventuali contatori di utilizzo possono essere tipi privati annidati in `CacheAdapter`. Questa è una proposta di contratto da implementare e provare: l'attuale codice non lo garantisce. È coordinamento locale al processo; non dimostra coerenza tra due bot o scrittori esterni sullo stesso DB.
+Il passaggio 1 implementa le entry private, i caricamenti coordinati e il mantenimento dell’identità durante `with`/`withAll`. Le operazioni singole sincronizzano sul valore; quelle bulk mantengono tutte le entry, ma richiedono il coordinamento del singolo proprietario per modificarle. I vecchi chiamanti che trattengono oggetti da getter o scrivono nelle mappe non acquisiscono automaticamente queste garanzie: la loro migrazione, gli snapshot di dominio e le transazioni composte restano nei passaggi 2–3. È coordinamento locale al processo; non dimostra coerenza tra due bot o scrittori esterni sullo stesso DB.
 
 ### Bulk: 10 presenti, 20 richiesti
 
@@ -138,7 +142,7 @@ Interfacce indicative: `GuildCache.getGuilds(ids)`, `UserCache.getUsers(ids)`, `
 
 Il risultato completo HTTP attende soltanto i dati mancanti; gli hit sono già disponibili internamente. Non cambia il contratto dell'endpoint per introdurre risposte parziali non richieste.
 
-**Attenzione ai costruttori:** `GuildData(QueryRecord)` carica canali e azioni per ogni guild; `UserData(String)` carica gli alias; `GuildData.getMemberData` può creare un membro assente. Servono factory/overload di idratazione da righe aggregate e percorsi di sola lettura distinti dalla creazione. Una query `IN` sulle guild seguita da N caricamenti dei figli non è il bulk richiesto. Per i profili LoL resta il caricamento lazy esistente: non si modificano query Mongo per estendere questo intervento.
+**Idratazione nel passaggio 1:** le cache usano `GuildData.fromRows` e `UserData.fromRows`, che ricevono canali/azioni/alias già caricati. I costruttori pubblici precedenti restano compatibili; il bulk non li usa per avviare query per ogni oggetto. Il caricamento di una guild assente restituisce assenza; soltanto `getGuildOrPut`/`withGuildOrPut` ne richiedono la creazione. `GuildData.getMemberData` può ancora creare membri: i percorsi XP e le letture di sola consultazione richiedono il passaggio 3. I profili LoL mantengono il caricamento lazy esistente, senza modifiche a Mongo.
 
 Le viste autorizzate e i campi personali di Sound non vanno memorizzati sugli oggetti globali condivisi. I dati dell'utente che guarda la risposta restano su copie di risposta, come previsto dal contratto attuale.
 
@@ -166,13 +170,13 @@ In Spring, `ApiErrors` compone body/header/status e può scrivere anche la rispo
 
 ### HTTP
 
-`utils.HttpUtils` resta il punto comune e assorbe costruzione della request, invio, encoding dei form dove utile e trattamento dell'interruzione. `DiscordApi` conserva URL, payload, autenticazione Discord e significato di 401/403/429 o risposta malformata; passa la richiesta al trasporto comune. La seam `Transport` già usata nei test può essere annidata nel proprietario HTTP comune.
+`utils.HttpUtils` resta il punto comune e assorbe costruzione della request, invio, encoding dei form dove utile e trattamento dell'interruzione. `DiscordApi` conserva URL, payload, autenticazione Discord e significato di 401/403/429 o risposta malformata; passa la richiesta al trasporto comune. La seam `Transport` già usata dalla suite precedente può essere annidata nel proprietario HTTP comune; i test precedenti non sono più presenti nel checkout attuale.
 
 Conservare i valori attuali: HttpUtils ha connessione 5 s/richiesta 10 s; Discord usa 15 s. Una factory comune può mantenere client configurati diversamente senza duplicare il codice del builder. Non serve imporre un solo timeout o lo stesso parser JSON. Il trasporto deve restituire anche status/header/body per la politica Discord; non trasformare ogni risposta non 2xx in un errore indistinto prima che venga interpretata.
 
 ### Parsing
 
-Spostamento proposto: `lol.utils.NumberUtils` → `utils.ParseUtils`, perché contiene già sia numeri sia enum e non dipende da LoL. Esporre soltanto le varianti realmente necessarie, distinguendo rigoroso/fallback/null. Mantenere in `FilterCodec` il significato LoL di `*` e la codifica delle chiavi.
+`lol.utils.NumberUtils` resta nella posizione attuale al termine degli spostamenti. Nel passaggio 5, i meccanismi effettivamente condivisi con altri consumatori potranno essere estratti in `utils.ParseUtils`: è un consolidamento del codice, non una rinomina preliminare obbligatoria. Esporre soltanto le varianti realmente necessarie, distinguendo rigoroso/fallback/null. Mantenere in `FilterCodec` il significato LoL di `*` e la codifica delle chiavi.
 
 | Punto attuale | Intervento proposto | Compatibilità da verificare |
 |---|---|---|
@@ -188,180 +192,125 @@ La ricerca non ha individuato un tipo canonico `QueryResult`: il pattern esisten
 
 ## Struttura finale concordata dei package
 
-Questa sezione riporta la struttura scelta in chat, con l'ultima correzione del proprietario: **autenticazione API in `com.safjnest.spring.auth`**. Sostituisce le precedenti proposte con `auth` alla radice, `beebot.auth` o `spring.security`; queste non sono più destinazioni del piano.
+Il 17 novembre 2026 il proprietario ha confermato la struttura già realizzata nel commit `e9bf1585`. Non sono più richiesti gli spostamenti verso `beebot`, `spring.auth`, una `cache` alla radice o i vecchi package database alla radice. Anche i nomi `LolApiConfig` e `DiscordAuthController` rimangono quelli attuali.
 
-La radice resta `com.safjnest`. Il progetto distingue:
+La radice resta `com.safjnest`. Le responsabilità sono:
 
-- `beebot`: comandi ed eventi Discord, audio/chat, oggetti operativi guild/user/sound e relative cache;
-- `lol`: dominio, modelli, servizi, analisi, tracker, code e presentazione LoL esistenti; i comandi Discord LoL vanno invece in `beebot.commands.lol`;
-- `spring`: ingressi HTTP, configurazione, autenticazione delle API e mapping degli errori;
-- `cache`, `discord`, `exception`, `utils`: meccanismi comuni effettivamente riusati;
-- `sql`, `nosql`, `redis`, `status` e i modelli esclusi: posizione conservata secondo il perimetro concordato.
+- `bot`: avvio del bot, comandi, eventi, audio/chat, modelli guild/user/configurazione e infrastruttura delle cache;
+- `database`: SQL, MongoDB e Redis nei rispettivi sottopackage;
+- `discord.auth`: credenziali, flussi di autenticazione e client Discord; `discord.guild`: cache autorizzativa e, temporaneamente, i servizi guild da assorbire;
+- `lol`: dominio, modelli, servizi, analisi, tracker, code e presentazione LoL; i comandi Discord LoL sono in `bot.commands.lol`;
+- `sound`: operazioni e helper sound, con i modelli in `sound.model`;
+- `spring`: ingressi HTTP, filtro/configurazione e rappresentazione degli errori;
+- `status`: metriche e logging; `utils`: utility esistenti e meccanismi comuni verificati.
 
-La base generica `cache.CacheAdapter` è distinta dalle cache operative `beebot.cache.GuildCache/UserCache/SoundCache`. I controller Spring usano queste stesse cache operative; la collocazione in package separati non crea un altro percorso applicativo.
+La base resta `bot.cache.CacheAdapter`, con `GenericCache`, `GuildCache`, `UserCache` e `SoundCache` in `bot.cache.managers`. I controller Spring useranno queste stesse cache: il loro package non introduce un percorso separato. Le politiche di sicurezza di `discord.guild.DiscordGuildCache` rimangono distinte dalle cache degli oggetti operativi.
 
-`[nuovo]` indica un file che creerà l'assistente. `...` indica i file e sottopackage esistenti conservati, oppure trasferiti insieme alla cartella quando indicato nella tabella. I percorsi dell'albero sono relativi a `src/main/java/`.
+L'albero seguente descrive i file attuali rilevanti per il piano, aggiornati dopo il passaggio 1; `...` conserva tutti gli altri file e sottopackage esistenti. I file da assorbire sono presenti finché non è completata la migrazione delle loro funzionalità. Le aggiunte future sono elencate separatamente.
 
 ```text
 com/safjnest/
 ├── App.java
-├── beebot/
-│   ├── core/
-│   │   ├── Bot.java
-│   │   └── Chronos.java
-│   ├── commands/
-│   │   └── ... tutti i comandi Discord, inclusi quelli LoL
-│   ├── events/
-│   │   └── ... handler, interfaces e types esistenti
-│   ├── audio/
-│   │   └── ... classi e sottopackage audio esistenti
-│   ├── chat/
-│   │   └── ... classi chat esistenti
+├── bot/
+│   ├── Bot.java
+│   ├── Chronos.java
+│   ├── commands/                         ... inclusi i comandi LoL
+│   ├── events/                           ... handler esistenti
+│   ├── audio/                            ... sottopackage esistenti
+│   ├── chat/                             ... classi esistenti
 │   ├── cache/
-│   │   ├── GuildCache.java
-│   │   ├── UserCache.java
-│   │   └── SoundCache.java
-│   ├── model/
-│   │   ├── UserData.java
-│   │   ├── guild/
-│   │   │   ├── GuildData.java
-│   │   │   ├── MemberData.java
-│   │   │   ├── ChannelData.java
-│   │   │   ├── BlacklistData.java
-│   │   │   ├── AutomatedAction.java
-│   │   │   └── alert/
-│   │   │       ├── AlertData.java
-│   │   │       ├── AlertKey.java
-│   │   │       ├── AlertProblem.java
-│   │   │       ├── AlertSendType.java
-│   │   │       ├── AlertType.java
-│   │   │       ├── RewardData.java
-│   │   │       └── TwitchData.java
-│   │   └── sound/
-│   │       ├── Sound.java
-│   │       └── Tag.java
-│   └── sound/
-│       ├── SoundAnalytics.java
-│       └── SoundPeriod.java
-├── lol/
-│   ├── model/
-│   ├── service/
-│   ├── champion/
-│   ├── arena/
-│   ├── tracker/
-│   ├── queue/
-│   ├── message/
-│   ├── utils/
-│   └── LeagueHandler.java
-├── spring/
-│   ├── SpringServer.java
+│   │   ├── CacheAdapter.java
+│   │   └── managers/
+│   │       ├── GenericCache.java
+│   │       ├── GuildCache.java
+│   │       ├── UserCache.java
+│   │       └── SoundCache.java
+│   └── model/
+│       ├── AliasData.java
+│       ├── UserData.java
+│       ├── BotSettings/                  ... configurazioni esistenti
+│       ├── customemoji/                  ... modelli esistenti
+│       └── guild/                        ... inclusi GuildData, MemberData e alert/
+├── database/
+│   ├── sql/
+│   │   ├── AbstractDB.java
+│   │   ├── DatabaseHandler.java
+│   │   ├── QueryRecord.java
+│   │   ├── QueryRecordParser.java
+│   │   └── database/                     ... AuthDB, BotDB e altri DB esistenti
+│   ├── nosql/                            ... implementazione conservata
+│   └── redis/                            ... implementazione conservata
+├── discord/
 │   ├── auth/
 │   │   ├── ApiKey.java
-│   │   ├── AuthFilter.java
-│   │   ├── DiscordAuthService.java
-│   │   └── DiscordGuildCache.java
+│   │   ├── AuthException.java            da assorbire
+│   │   ├── DiscordApi.java
+│   │   └── DiscordAuthService.java
+│   └── guild/
+│       ├── DiscordGuildCache.java
+│       ├── DiscordGuildService.java      da assorbire
+│       └── GuildService.java             da assorbire
+├── lol/                                  ... dominio esistente conservato
+├── sound/
+│   ├── SoundAccess.java                  da assorbire
+│   ├── SoundAnalytics.java
+│   ├── SoundPeriod.java
+│   ├── SoundQueryCache.java              da assorbire
+│   ├── SoundValues.java                  da assorbire
+│   └── model/
+│       ├── Sound.java
+│       └── Tag.java
+├── spring/
+│   ├── SpringServer.java
 │   ├── config/
-│   │   └── ApiConfig.java
-│   ├── error/
-│   │   ├── ApiErrors.java                    [nuovo]
-│   │   └── ApiExceptionHandler.java          [nuovo]
-│   └── controller/
-│       ├── StatusController.java
-│       ├── beebot/
-│       │   ├── AuthController.java
-│       │   ├── MeController.java             [nuovo]
-│       │   ├── GuildController.java
-│       │   └── SoundController.java
-│       └── lol/
-│           ├── AiTrainingController.java
-│           ├── ChampionController.java
-│           ├── LeaderboardController.java
-│           ├── LolController.java
-│           ├── ProfileIndexableController.java
-│           ├── RecordsController.java
-│           ├── SummonerSearchController.java
-│           ├── LolApiParameters.java
-│           └── LolApiResponses.java
-├── cache/
-│   ├── CacheAdapter.java
-│   └── GenericCache.java
-├── discord/
-│   └── DiscordApi.java
-├── exception/
-│   └── BeebotException.java                  [nuovo]
-├── utils/
-│   ├── HttpUtils.java
-│   ├── ParseUtils.java
-│   ├── JsonCodec.java
-│   ├── CryptoUtils.java
-│   └── ... utility esistenti non ancora riclassificate
-├── sql/
-│   ├── AbstractDB.java
-│   ├── DatabaseHandler.java
-│   ├── QueryRecord.java
-│   ├── QueryRecordParser.java
-│   └── database/
-│       ├── AuthDB.java
-│       ├── BotDB.java
-│       ├── SpotifyDB.java
-│       └── WebsiteDB.java
-├── nosql/
-│   └── ... invariato
-├── redis/
-│   └── ... invariato
+│   │   ├── AuthFilter.java
+│   │   └── LolApiConfig.java
+│   ├── controller/
+│   │   ├── StatusController.java
+│   │   ├── beebot/                       ... DiscordAuthController, GuildController, SoundController
+│   │   └── lol/                          ... controller e helper HTTP esistenti
+│   ├── dto/                              ... LolApiError da assorbire
+│   └── exception/                        ... handler da unificare qui
 ├── status/
-│   └── ... invariato
-└── model/
-    └── ... configurazioni e altri modelli esclusi da questo riordino
+│   ├── log/                              ... BotLogger, converter e LoggerIDpair
+│   └── ... metriche esistenti
+└── utils/                                ... utility e sottopackage esistenti
 ```
 
-`ExperienceSystem` e `AlertMessage` sono stati riconosciuti come utility specifiche del bot. In chat non è stata ancora fissata la loro sottocartella finale: restano nella posizione attuale finché non viene dettagliata quella riclassificazione, senza inventare qui una destinazione ulteriore. `core.audio.SoundAnalytics` e `sound.SoundAnalytics` sono classi differenti: la prima segue il trasferimento di `core/audio/`, la seconda quello del package sound; non vengono unite sulla sola base del nome.
+`ExperienceSystem` e `AlertMessage` restano in `utils`. `bot.audio.SoundAnalytics` e `sound.SoundAnalytics` sono classi differenti e non vengono unite sulla sola base del nome. `App.java`, `distruzione_demoniaca`, comandi, component handler e presentazione mantengono il comportamento previsto dal perimetro.
 
-### Spostamenti dei file esistenti a cura del proprietario
+### Spostamenti eseguiti dal proprietario
 
-Il proprietario ha scelto di eseguire gli spostamenti e le rinomine dei file già presenti. L'assistente creerà il nuovo codice direttamente nelle destinazioni concordate e proseguirà con gli assorbimenti e le modifiche funzionali richieste. Nessuno spostamento è dichiarato eseguito da questo documento.
+Le colonne sono relative a `src/main/java/com/safjnest/`. Questa tabella registra i movimenti dalla baseline iniziale al checkout confermato; non è una nuova lista di spostamenti da eseguire.
 
-Le due colonne sono relative a `src/main/java/com/safjnest/`. Nei trasferimenti di cartelle si conserva la struttura interna, salvo le eccezioni esplicite.
-
-| Sorgente attuale | Destinazione finale |
+| Posizione nella baseline | Posizione attuale confermata |
 |---|---|
-| `core/Bot.java` | `beebot/core/Bot.java` |
-| `core/Chronos.java` | `beebot/core/Chronos.java` — solo package, nessuna sostituzione del timer |
-| `commands/**` | `beebot/commands/**` — comprese le categorie LoL e owner |
-| `core/events/**` | `beebot/events/**` — stessa organizzazione degli handler |
-| `core/audio/**` | `beebot/audio/**` — stessi sottopackage |
-| `core/chat/**` | `beebot/chat/**` |
-| `model/UserData.java` | `beebot/model/UserData.java` |
-| `model/guild/**`, escluso `GuildSettings.java` | `beebot/model/guild/**` — incluso il sottopackage `alert` |
-| `model/sound/**` | `beebot/model/sound/**` |
-| `core/cache/CacheAdapter.java` | `cache/CacheAdapter.java` |
-| `core/cache/managers/GenericCache.java` | `cache/GenericCache.java` |
-| `core/cache/managers/GuildCache.java` | `beebot/cache/GuildCache.java` |
-| `core/cache/managers/UserCache.java` | `beebot/cache/UserCache.java` |
-| `core/cache/managers/SoundCache.java` | `beebot/cache/SoundCache.java` |
-| `sound/SoundAnalytics.java` | `beebot/sound/SoundAnalytics.java` |
-| `sound/SoundPeriod.java` | `beebot/sound/SoundPeriod.java` |
-| `auth/ApiKey.java` | `spring/auth/ApiKey.java` |
-| `auth/DiscordAuthService.java` | `spring/auth/DiscordAuthService.java` |
-| `guild/DiscordGuildCache.java` | `spring/auth/DiscordGuildCache.java` |
-| `spring/config/AuthFilter.java` | `spring/auth/AuthFilter.java` |
-| `auth/DiscordApi.java` | `discord/DiscordApi.java` |
-| `lol/utils/NumberUtils.java` | `utils/ParseUtils.java` — rinomina anche della classe |
-| `spring/config/LolApiConfig.java` | `spring/config/ApiConfig.java` — rinomina anche della classe |
-| `spring/controller/beebot/DiscordAuthController.java` | `spring/controller/beebot/AuthController.java` — rinomina anche della classe |
+| `core/Bot.java`, `core/Chronos.java` | `bot/Bot.java`, `bot/Chronos.java` |
+| `commands/**` | `bot/commands/**` |
+| `core/events/**` | `bot/events/**` |
+| `core/audio/**` | `bot/audio/**` |
+| `core/chat/**` | `bot/chat/**` |
+| `core/cache/**` | `bot/cache/**`, conservando `managers` |
+| `model/**`, escluso `model/sound/**` | `bot/model/**`, comprese configurazioni, emoji e `GuildSettings` |
+| `model/sound/**` | `sound/model/**` |
+| `auth/**` | `discord/auth/**` |
+| `guild/**` | `discord/guild/**` |
+| `sql/**` | `database/sql/**` |
+| `nosql/**` | `database/nosql/**` |
+| `redis/**` | `database/redis/**` |
+| `utils/log/**` | `status/log/**` |
 
-`App.java`, i restanti file LoL, i controller non elencati, SQL, MongoDB, Redis, status e gli altri modelli restano nelle loro posizioni. I metodi storici, compreso `distruzione_demoniaca`, conservano il nome. Il cambio del package degli handler e dei comandi non autorizza una nuova gerarchia, un restyle o una riscrittura del loro comportamento.
-
-Eseguire i movimenti con il refactoring dell'IDE per aggiornare dichiarazioni `package`, nomi di classe e riferimenti, inclusi quelli dei test. Le registrazioni testuali e la scansione Spring devono essere riesaminate durante l'integrazione; un cambio di package non è dimostrato corretto dai soli import compilabili. Non è richiesto un riordino autonomo della struttura dei test in questa fase.
+`NumberUtils`, `LolApiConfig`, `DiscordAuthController`, `AuthFilter` e gli helper già in `sound` conservano posizione e nome attuali. Nessun ulteriore movimento dei file esistenti è un prerequisito del prossimo passaggio. Le estrazioni e rimozioni funzionali descritte sotto restano successive alla migrazione dei chiamanti.
 
 ### File nuovi a cura dell'assistente
 
 | File da creare | Responsabilità |
 |---|---|
 | `exception/BeebotException.java` | Eccezione applicativa comune senza Spring, con categoria annidata, codice, messaggio, causa ed eventuale retry |
-| `spring/error/ApiErrors.java` | Mapping e record HTTP annidati, riusati dal filtro, dall'advice e da `LolApiResponses` |
-| `spring/error/ApiExceptionHandler.java` | Gestione unificata degli errori applicativi, di binding e del framework |
+| `spring/exception/ApiErrors.java` | Mapping e record HTTP annidati, riusati dal filtro, dall'advice e da `LolApiResponses` |
+| `spring/exception/ApiExceptionHandler.java` | Gestione unificata degli errori applicativi, di binding e del framework |
 | `spring/controller/beebot/MeController.java` | Profilo e impostazioni utente; delega al percorso comune degli oggetti |
+| `utils/ParseUtils.java` | Nel passaggio 5, solo i meccanismi di conversione effettivamente condivisi estratti dai proprietari esistenti |
 
 L'albero non richiede una nuova classe per ogni errore o un nuovo service/repository per ogni cache. I tipi di sola rappresentazione restano nei proprietari appropriati, annidati quando semplice e utile.
 
@@ -371,66 +320,65 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 
 | File attuale da mantenere temporaneamente | Assorbimento previsto |
 |---|---|
-| `auth/AuthException.java` | Sostituito dall'errore comune `exception.BeebotException`, con mapping HTTP in `spring.error` |
-| `guild/DiscordGuildService.java` | Operazioni di lista autorizzata, decrittazione e controllo amministrativo in `spring.auth.DiscordAuthService`, con la stessa cache autorizzativa |
-| `guild/GuildService.java` | Mutazioni e regole in `beebot.model.guild.GuildData`/figli; adattamento input/output nel controller. Nessun trasferimento indiscriminato di tutta la classe in un unico altro file |
-| `sql/database/GuildSettingsDB.java` | Query necessarie in `BotDB`, mantenendo transazioni per blocco, ruoli vuoti, campi omessi, null e creazione di alert ancora non validi |
-| `model/guild/GuildSettings.java` | Record di vista/risultato annidati nel proprietario `beebot.model.guild.GuildData`, con forma HTTP e validità attuali |
-| `core/cache/AbstractCache.java` | Base utile in `cache.CacheAdapter`; rimozione del backing statico e del bookkeeping superfluo, mantenendo le capacità effettivamente usate |
-| `sound/SoundAccess.java` | Lookup/proiezione Discord in `discord.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
-| `sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; eliminazione della catena `BotDB → SoundDB` |
-| `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `beebot.cache.SoundCache` |
+| `discord/auth/AuthException.java` | Sostituito dall'errore comune `exception.BeebotException`, con mapping HTTP in `spring.exception` |
+| `discord/guild/DiscordGuildService.java` | Operazioni di lista autorizzata, decrittazione e controllo amministrativo in `discord.auth.DiscordAuthService`, con la stessa cache autorizzativa |
+| `discord/guild/GuildService.java` | Mutazioni e regole in `bot.model.guild.GuildData`/figli; adattamento input/output nel controller. Nessun trasferimento indiscriminato di tutta la classe in un unico altro file |
+| `database/sql/database/GuildSettingsDB.java` | Query necessarie in `BotDB`, mantenendo transazioni per blocco, ruoli vuoti, campi omessi, null e creazione di alert ancora non validi |
+| `bot/model/guild/GuildSettings.java` | Record di vista/risultato annidati nel proprietario `bot.model.guild.GuildData`, con forma HTTP e validità attuali |
+| `sound/SoundAccess.java` | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
+| `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; eliminazione della catena `BotDB → SoundDB` |
+| `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `bot.cache.managers.SoundCache` |
 | `sound/SoundValues.java` | Errori all'eccezione comune, validazione al confine/proprietario e rappresentazioni nei tipi appropriati; nessun nuovo generico `MapUtils` |
-| `spring/exception/AuthExceptionHandler.java` | Gestione applicativa in `spring.error.ApiExceptionHandler`; record di errore in `ApiErrors` |
+| `spring/exception/AuthExceptionHandler.java` | Gestione applicativa in `spring.exception.ApiExceptionHandler`; record di errore in `ApiErrors` |
 | `spring/exception/AuthRequestExceptionHandler.java` | Binding e body errati nel medesimo handler HTTP |
 | `spring/exception/LolApiExceptionHandler.java` | Gestione HTTP LoL/framework nel medesimo handler, mantenendo il contratto esistente |
-| `spring/dto/LolApiError.java` | Record annidato in `spring.error.ApiErrors`, conservando `status`, `code`, `message` e `metadata` |
+| `spring/dto/LolApiError.java` | Record annidato in `spring.exception.ApiErrors`, conservando `status`, `code`, `message` e `metadata` |
 
 ### Modifiche ai file conservati
 
 | Proprietario nella struttura finale | Modifica prevista |
 |---|---|
-| `beebot.model.guild.GuildData` e figli | Setter persistenti preservati; operazioni composte, proprietà delle mappe e snapshot coerenti |
-| `beebot.model.UserData` | Greet/alias sullo stesso percorso di bot e API; completezza esplicita dei caricamenti e supporto all'idratazione bulk |
-| `beebot.model.guild.MemberData` | Operazione XP coordinata per guild+user, comprendente cooldown, calcolo e salvataggio |
-| `beebot.model.sound.Sound` | Assorbire mutazioni API oggi in `SoundCache`, mantenendo controlli atomici di visibilità/proprietà e setter dei comandi |
-| `beebot.cache.GuildCache/UserCache/SoundCache` | Loader e policy tipizzate sulla base comune; richieste singole/bulk coordinate, senza nuovi service/repository intermedi |
-| `cache.CacheAdapter` | Backing per istanza, identità, durata delle operazioni e caricamenti coordinati; `GenericCache` riusa la medesima base |
+| `bot.model.guild.GuildData` e figli | Setter persistenti preservati; operazioni composte, proprietà delle mappe e snapshot coerenti |
+| `bot.model.UserData` | Greet/alias sullo stesso percorso di bot e API; completezza esplicita dei caricamenti e supporto all'idratazione bulk |
+| `bot.model.guild.MemberData` | Operazione XP coordinata per guild+user, comprendente cooldown, calcolo e salvataggio |
+| `sound.model.Sound` | Assorbire mutazioni API oggi in `SoundCache`, mantenendo controlli atomici di visibilità/proprietà e setter dei comandi |
+| `bot.cache.managers.GuildCache/UserCache/SoundCache` | Loader e policy tipizzate sulla base comune; richieste singole/bulk coordinate, senza nuovi service/repository intermedi |
+| `bot.cache.CacheAdapter` | Backing per istanza, identità, durata delle operazioni e caricamenti coordinati; `GenericCache` riusa la medesima base |
 | `utils.HttpUtils` | Builder/invio comuni anche a Discord, trasporto testabile e timeout compatibili |
-| `discord.DiscordApi` | URL, payload e politica Discord; trasporto sul helper HTTP comune. L'URL OAuth è un dato semplice che il servizio auth avvolge nel proprio risultato |
-| `spring.auth.DiscordAuthService` | Un unico flusso credenziali/sessioni; assorbire la lista amministrativa senza confonderla con la membership sound |
-| `spring.auth.DiscordGuildCache` | Preservare identità utente/applicazione/sessione, revoca, Redis/fallback, lease e fencing |
-| `spring.auth.AuthFilter` | Controllo credenziali/contesto e uso del mapper errori comune; nessun package `spring.security` separato |
-| `spring.config.ApiConfig` | Configurazione HTTP comune e personalizzazioni LoL; la scansione continua a includere controller/auth/error HTTP |
-| `spring.controller.beebot.AuthController` | Solo authorize, session e logout |
+| `discord.auth.DiscordApi` | URL, payload e politica Discord; trasporto sul helper HTTP comune. L'URL OAuth è un dato semplice che il servizio auth avvolge nel proprio risultato |
+| `discord.auth.DiscordAuthService` | Un unico flusso credenziali/sessioni; assorbire la lista amministrativa senza confonderla con la membership sound |
+| `discord.guild.DiscordGuildCache` | Preservare identità utente/applicazione/sessione, revoca, Redis/fallback, lease e fencing |
+| `spring.config.AuthFilter` | Controllo credenziali/contesto e uso del mapper errori comune; nessun package `spring.security` separato |
+| `spring.config.LolApiConfig` | Configurazione HTTP comune e personalizzazioni LoL; la scansione continua a includere controller/auth/error HTTP |
+| `spring.controller.beebot.DiscordAuthController` | Solo authorize, session e logout |
 | `spring.controller.beebot.MeController` | `/me` e `/me/settings`, usando gli oggetti ottenuti dalla cache comune |
 | `spring.controller.beebot.GuildController` | Aggiungere `/guilds` e l'alias `/servers`, oggi nel controller auth; impostazioni sui medesimi oggetti del bot |
 | `spring.controller.beebot.SoundController` | Endpoint sound sul percorso comune; `/me/settings` passa al controller Me |
 | `spring.controller.lol.LolApiParameters/LolApiResponses` | Riuso dei meccanismi comuni senza perdere vincoli HTTP, stati `ApiResult`, metadati o regole LoL |
-| `sql.database.AuthDB` | Allineare le letture nuove al parser/record esistente, mantenendo query parametrizzate, revoca autorevole e transazioni |
+| `database.sql.database.AuthDB` | Allineare le letture nuove al parser/record esistente, mantenendo query parametrizzate, revoca autorevole e transazioni |
 
-Dopo gli assorbimenti spariranno i vecchi package `guild`, `auth` alla radice, `sound` alla radice, `core.cache.managers`, `spring.dto` e `spring.exception`, quando effettivamente vuoti. Le impostazioni operative saranno in `beebot.model.guild`, le cache operative in `beebot.cache` e l'autenticazione delle API in `spring.auth`.
+Dopo gli assorbimenti si rimuovono soltanto i file le cui funzionalità sono state migrate e le cartelle effettivamente vuote. `discord.auth`, `discord.guild`, `sound`, `bot.cache.managers` e `spring.exception` restano destinazioni confermate; non vanno eliminati per conformarsi al vecchio albero.
 
 ### Confine Spring e sincronizzazione delle regole
 
-Il proprietario ha scelto esplicitamente `spring.auth`. Questa scelta pianifica un ampliamento del vincolo attuale che limita Spring a controller, configurazione ed errori HTTP: Spring possiederà anche l'autenticazione delle API. Durante il riordino vanno sincronizzati `AGENTS.md`, handbook e documentazione architetturale pertinente, rendendo esplicito questo perimetro. Questo documento non modifica silenziosamente un ADR accettato e non sposta modelli di successo LoL in Spring.
+La struttura confermata conserva Spring per controller, filtro/configurazione e mapping HTTP degli errori. L'autenticazione resta in `discord.auth`, la cache autorizzativa in `discord.guild`; non è più previsto l'ampliamento verso `spring.auth` descritto nella versione precedente del piano. I modelli di successo LoL restano in `lol.model` e le decisioni accettate non vengono modificate.
 
-L'autenticazione non viene duplicata per i controller LoL o per le credenziali personali: vengono preservati i flussi e gli ambiti esistenti. `DiscordApi` resta fuori da Spring perché serve anche ai suoni; `BeebotException` resta fuori perché è applicativa; `AuthDB` resta nella struttura SQL.
+L'autenticazione non viene duplicata per controller LoL o credenziali personali. `discord.auth.DiscordApi` serve anche ai suoni; `exception.BeebotException` è applicativa; `AuthDB` resta in `database.sql.database`. L'handler e il mapper comuni nuovi saranno in `spring.exception`, riusando il package esistente.
 
 ### Suoni e futuro R2
 
-I metadati e le modifiche restano in `beebot.model.sound.Sound` e la cache locale ne coordina l'istanza. In futuro `beebot.audio.SoundFiles` sarà l'unico proprietario del recupero R2 e della copia temporanea sulla VPS, riusato da player, download e greet. Non una catena `SoundRepository → CachedSoundRepository → R2Repository`.
+I metadati e le modifiche restano in `sound.model.Sound` e la cache locale ne coordina l'istanza. In futuro `bot.audio.SoundFiles` sarà l'unico proprietario del recupero R2 e della copia temporanea sulla VPS, riusato da player, download e greet. Non una catena `SoundRepository → CachedSoundRepository → R2Repository`.
 
 Download concorrenti, file incompleti, durata della copia locale e cleanup durante la riproduzione andranno verificati quando si implementa R2. La conservazione per alcune ore e la pulizia periodica rimangono requisiti del futuro lavoro; non sono implementate da questo piano. `SoundFiles` non va creato durante i soli spostamenti dei file attuali.
 
 
 ## Sequenza di implementazione proposta
 
-Prima degli interventi funzionali, il proprietario esegue i movimenti dei file esistenti elencati nel piano. L'assistente riprende dal working tree risultante, conserva quel lavoro e crea i file nuovi nei package finali. Dopo i movimenti vanno ricontrollati stato Git e CodeGraph, sincronizzando un indice stale e rileggendo i simboli e l'impatto prima delle modifiche pertinenti. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è implementato nel working tree, insieme alla correzione dei due XML di logging. Il prossimo intervento è il passaggio 2: migrare guild e alert sul percorso comune. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
-| 1 — Cache e identità | Una base locale; singolo/bulk concorrenti; snapshot e operazioni delimitate | 10 hit+10 miss; richiesta singola sovrapposta; scadenza durante mutazione; errore loader; stessa istanza durante l'operazione |
+| 1 — Cache e identità, implementato | Una base per istanza; singolo/bulk coordinati; viste della cache e operazioni delimitate. Snapshot di dominio nei passaggi 2–3 | 10 hit+10 miss; richiesta singola sovrapposta; scadenza durante mutazione; errore loader; stessa istanza durante l'operazione |
 | 2 — Guild e alert | API sugli oggetti della cache; eliminazione `GuildService`/`GuildSettingsDB` dopo la migrazione delle funzionalità | Bot→API e API→bot immediati; ruoli vuoti; rollback per blocco; letture durante modifiche; Twitch dopo il commit e fuori dal lock |
 | 3 — User e sound | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
 | 4 — Errori e Spring/auth | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
@@ -441,10 +389,41 @@ Prima degli interventi funzionali, il proprietario esegue i movimenti dei file e
 
 Le eliminazioni avvengono soltanto quando chiamanti, registrazioni e test sono migrati. Il progetto deve compilare tra gruppi coerenti; in fase di implementazione si rileggerà l'impatto CodeGraph e la documentazione API per ogni gruppo. Le API guild hanno transazioni indipendenti per blocco/elemento, non una nuova transazione unica dell'intero body.
 
+## Passaggio 1 implementato
+
+- `CacheAdapter` sostituisce `AbstractCache`: backing Caffeine per istanza, senza prefissi costruiti dal tipo della chiave, reflection sui generics o mappe statiche di bookkeeping. `GenericCache` conserva il costruttore pubblico esistente e riusa la stessa base.
+- Guild e user mantengono rispettivamente limite 60/2000 e scadenza dopo 12 ore di inattività; sound mantiene limite 100 e 60 secondi dalla scrittura. Le entry occupate possono superare temporaneamente la capacità trattenuta dalla cache: restano attive finché termina l'operazione.
+- Singolo, bulk e dati già precaricati riservano le stesse entry. Si caricano soltanto i mancanti, con future condivise; gli ID duplicati non generano altri fetch e l'ordine della risposta è conservato. Le assenze non vengono memorizzate come cache negativa.
+- `withGuild`, `withUser`, `withSound` e le varianti plurali delimitano l'uso. Una scadenza o eviction non sostituisce l'istanza occupata. La variante singola usa il monitor dell'oggetto; la plurale mantiene le entry e consente di acquisire il singolo proprietario durante le modifiche.
+- Invalidazione e `clear` impediscono che un vecchio caricamento ripubblichi dati in cache. I partecipanti già sull'entry possono terminare; la rimozione definitiva avviene all'ultimo rilascio. Un `put` sostitutivo viene applicato al rilascio, rispettando successive invalidazioni. Gli errori completano le attese e permettono il retry.
+- Guild precarica impostazioni, canali e azioni con query preparate in gruppi di massimo 500 ID; user precarica gli alias. Le factory dai record evitano query e dipendenze Discord durante l'idratazione. Il caricamento completo iniziale delle guild seleziona anche voce, lingua e shard, richiesti dal modello.
+- Sound riusa la stessa base sia dal player sia dalle risposte API già precaricate; conserva controlli di visibilità, dati freschi per richiesta e copie con dati personali. Le mutazioni API restano ancora nella facade, da migrare nel passaggio 3. Le liste e mappe esposte dalla cache sono viste copiate, non accessi modificabili al backing.
+- I riferimenti di converter e logger nei due XML sono stati aggiornati a `com.safjnest.status.log`.
+
+Sono stati riesaminati `GuildController`, `SoundController` e i loro percorsi: endpoint, payload, autorizzazione e presentazione restano invariati. Il percorso di scrittura guild usa ancora `GuildService`/`GuildSettingsDB` con invalidazione dopo commit, e sarà migrato nel passaggio 2. Nessuna modifica a modelli/servizi/API LoL, Mongo, Redis LoL, metriche, `SoundAnalytics` o nomi storici. Framework SQL e schema conservati; le sole query nuove servono al bulk delle cache.
+
 ## Stato delle verifiche
 
-L'indice era aggiornato a 587 file prima di questa revisione; l'inventario iniziale dei sorgenti applicativi resta 448 Java `com.safjnest`, più 10 Java incorporati e 101 file di test. [Il registro](review/inventory.tsv) distingue lettura completa, parziale e soli metadati. Non è un audit esaustivo di ogni metodo.
+L'inventario iniziale descriveva 448 Java `com.safjnest`, 10 Java incorporati e 101 file di test. [Il registro](review/inventory.tsv) distingue lettura completa, parziale e soli metadati della baseline: non è un audit esaustivo di ogni metodo.
 
-Sono stati riletti e approfonditi i percorsi citati, inclusi setter, costruttori, cache user, XP membro, query auth, request Discord e parser LoL. Le esclusioni sono applicate al piano corrente: i rilievi precedenti su scomposizione Mongo, ricollocazione dei record SQL, BotStatus, nomi storici e grandi refactoring degli handler non sono attività pendenti.
+Nel controllo degli spostamenti del 17 novembre 2026 sul commit `e9bf1585`:
 
-Questa fase cambia soltanto documentazione e istruzioni della skill. Nessuna migrazione, build/test applicativo, prova di concorrenza, benchmark o integrazione live è stata eseguita; la proposta richiede quelle verifiche durante l'implementazione. Le API, la presentazione e le decisioni architetturali accettate non sono state modificate.
+- CodeGraph risulta aggiornato a 484 file; restano 448 sorgenti applicativi e 10 incorporati;
+- dichiarazioni package, cartelle e import risultano coerenti;
+- `mvn -o -DskipTests clean compile` ha compilato da zero tutti i 458 file Java con `BUILD SUCCESS`;
+- i 101 file di test precedenti sono stati rimossi dal proprietario; quella suite non è stata eseguita e servono verifiche mirate durante l'implementazione dei passaggi funzionali;
+- una prova isolata di Logback ha riprodotto due errori nella configurazione caricata da `BotLogger`: `rsc/logback.xml` e `src/main/resources/logback-spring.xml` conservano riferimenti a `com.safjnest.utils.log`, mentre le classi sono in `com.safjnest.status.log`; il logger attuale eredita inoltre `INFO` invece del `TRACE` configurato per il vecchio nome. La correzione è stata applicata nel passaggio 1;
+- i file degli agenti/skill sono stati rimossi dal versionamento e le cartelle ignorate; il piano resta nel documento versionato, mentre la skill locale non è più condivisa dalla repo.
+
+Le prove precedenti non verificano il funzionamento live di bot/API, la concorrenza, le integrazioni o le prestazioni. Il passaggio 1 è implementato; gli accorpamenti dei passaggi 2–6 restano da implementare. Le esclusioni su Mongo, framework SQL, BotStatus, nomi storici e grandi refactoring degli handler rimangono valide.
+
+Il passaggio 1 modifica la base delle cache, i loader, le factory di idratazione, le sole query bulk necessarie e i riferimenti del logging. I nuovi test locali coprono concorrenza, bulk, scadenza/eviction, invalidazione, errori, creazione, SQL preparato con H2 e isolamento delle risposte sound. La suite precedente di 101 file non è stata ripristinata. Il codice resta compatibile con il target Java 25 configurato; le lambda non richiedono un cambio di versione. Contratti API, presentazione e ADR accettati rimangono invariati.
+
+Verifica finale del passaggio 1 sul working tree del 17 novembre 2026:
+
+- `mvn -o clean test`: compilazione pulita di 457 sorgenti principali, 4 file di test e 29 test superati, zero errori/fallimenti/skipped;
+- prova isolata del logging con classpath aggiornato: zero errori di configurazione e livello effettivo `TRACE` per `BotLogger`;
+- `git diff --check` senza errori; nessuna modifica a `SoundAnalytics`, sorgenti LoL, Mongo, `AbstractDB` o `QueryRecord`;
+- le prove SQL usano H2 locale e quelle sound sorgenti finte: nessun avvio live di bot/API o verifica con MariaDB, Redis, Discord o R2.
+
+Rifinitura dello stile richiesta dal proprietario: spaziatura applicata ai metodi introdotti/riscritti nello step 1, con gruppi logici separati e controlli su più righe. Verificata l’identità dei token Java rispetto allo stato precedente alla formattazione: logica, API, persistenza e presentazione invariati. I metodi legacy esclusi, inclusi quelli di `SoundAnalytics`, restano fuori dal giro.

@@ -10,9 +10,11 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,6 +26,7 @@ import com.safjnest.bot.model.guild.alert.AlertSendType;
 import com.safjnest.bot.model.guild.alert.AlertType;
 import com.safjnest.database.sql.AbstractDB;
 import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.database.sql.QueryRecordParser;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.SettingsLoader;
@@ -35,6 +38,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
  * of the biggest caterpies ever made
  */
 public class BotDB extends AbstractDB {
+    private static final int CACHE_BATCH_SIZE = 500;
     private static BotDB instance;
 
     static {
@@ -427,13 +431,29 @@ public class BotDB extends AbstractDB {
     }
 
     public static List<QueryRecord> getGuildData(){
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild;";
+        String query = "SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild;";
         return instance.query(query);
     }
 
     public static QueryRecord getGuildData(String guild_id) {
         String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
         return instance.lineQuery(query);
+    }
+
+    public static List<QueryRecord> getGuildData(Collection<String> guildIds) {
+        return cacheRows("SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id IN (%s)", guildIds);
+    }
+
+    public static List<QueryRecord> getChannelData(Collection<String> guildIds) {
+        return cacheRows("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled, league_shard FROM channel WHERE guild_id IN (%s)", guildIds);
+    }
+
+    public static List<QueryRecord> getWarnings(Collection<String> guildIds) {
+        return cacheRows("SELECT id, guild_id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id IN (%s) ORDER BY infractions DESC", guildIds);
+    }
+
+    public static List<QueryRecord> getAliases(Collection<String> userIds) {
+        return cacheRows("SELECT id, user_id, name, command FROM alias WHERE user_id IN (%s)", userIds);
     }
 
     public static boolean updateVoiceGuild(String guild_id, String language, String voice) {
@@ -1488,6 +1508,55 @@ public class BotDB extends AbstractDB {
         values.put("user_id", "383358222972616705");
         values.put("extension", "mp3");
         return instance.insert("sound", values);
+    }
+
+    static List<QueryRecord> cacheRows(Connection connection, String query, Collection<String> ids) throws SQLException {
+        List<String> keys = new ArrayList<>(new LinkedHashSet<>(ids));
+        List<QueryRecord> result = new ArrayList<>();
+        for (int offset = 0; offset < keys.size(); offset += CACHE_BATCH_SIZE) {
+            List<String> batch = keys.subList(offset, Math.min(keys.size(), offset + CACHE_BATCH_SIZE));
+            String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
+
+            try (PreparedStatement statement = connection.prepareStatement(String.format(query, placeholders))) {
+                for (int index = 0; index < batch.size(); index++)
+                    statement.setString(index + 1, batch.get(index));
+
+                try (ResultSet rows = statement.executeQuery()) {
+                    result.addAll(QueryRecordParser.fromRows(rows));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    private static List<QueryRecord> cacheRows(String query, Collection<String> ids) {
+        if (ids.isEmpty())
+            return List.of();
+
+        try (Connection connection = instance.getConnection()) {
+            if (connection == null)
+                throw new SQLException("Connection to the database failed");
+
+            try {
+                List<QueryRecord> rows = cacheRows(connection, query, ids);
+                connection.commit();
+
+                return rows;
+            } catch (SQLException | RuntimeException exception) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException rollbackException) {
+                    exception.addSuppressed(rollbackException);
+                }
+                throw exception;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to load cache data", exception);
+        }
     }
 
     private static List<String> columnValues(List<QueryRecord> rows, String column) {

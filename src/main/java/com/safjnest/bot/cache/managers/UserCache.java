@@ -1,19 +1,25 @@
 package com.safjnest.bot.cache.managers;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import com.safjnest.bot.cache.CacheAdapter;
 import com.safjnest.bot.model.UserData;
+import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.database.sql.database.BotDB;
 
 public class UserCache extends CacheAdapter<String, UserData> {
 
-    private static UserCache instance = new UserCache();
+    private static final UserCache instance = new UserCache();
 
     public UserCache() {
-        super();
-        setExpireTime(12, TimeUnit.HOURS);
-        setTypeLimit(2000);
+        super(2000, 12, TimeUnit.HOURS);
     }
 
     public static UserCache getInstance() {
@@ -25,15 +31,34 @@ public class UserCache extends CacheAdapter<String, UserData> {
     }
 
     public static UserData getUser(String id) {
-        UserData userData = instance.get(id);
-        if (userData == null) {
-            userData = new UserData(id);
-            put(userData);
-        }
-        return userData;
+        return instance.getOrLoad(id);
     }
 
-    public ConcurrentMap<String, UserData> asTypedMap() {
-        return super.asTypedMap();
+    public static List<UserData> getUsers(Collection<String> ids) {
+        return instance.getOrLoadAll(ids);
+    }
+
+    public static <R> R withUser(String id, Function<? super UserData, ? extends R> operation) {
+        return instance.with(id, operation);
+    }
+
+    public static <R> R withUsers(Collection<String> ids, Function<? super List<UserData>, ? extends R> operation) {
+        return instance.withAll(ids, operation);
+    }
+
+    @Override
+    protected Map<String, UserData> loadValues(Collection<String> ids) {
+        Map<String, List<QueryRecord>> aliases = new HashMap<>();
+
+        for (QueryRecord row : BotDB.getAliases(ids)) {
+            aliases.computeIfAbsent(row.get("user_id"), key -> new ArrayList<>()).add(row);
+        }
+
+        Map<String, UserData> result = new LinkedHashMap<>();
+
+        for (String id : ids)
+            result.put(id, UserData.fromRows(id, aliases.getOrDefault(id, List.of())));
+
+        return result;
     }
 }

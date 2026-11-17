@@ -4,7 +4,7 @@ Base path: `/api/beebot`. Authentication is the existing application key plus us
 
 ## Canonical Sound
 
-All detail, list and greet responses contain the existing `com.safjnest.model.sound.Sound`. Response copies carry viewer-specific data; cached objects never carry a viewer identity. JSON fields are explicit, so paths, audio tracks, padded empty tags and operational getters are not exposed.
+All detail, list and greet responses contain the existing `com.safjnest.sound.model.Sound`. Response copies carry viewer-specific data; cached objects never carry a viewer identity. JSON fields are explicit, so paths, audio tracks, padded empty tags and operational getters are not exposed.
 
 ```json
 {
@@ -98,7 +98,7 @@ Bulk has no product limit on scope count. The caller's memberships are resolved 
 
 ## Cache and compatibility
 
-`SoundCache` remains the API facade and canonical loader. Its typed Caffeine backing has 100-entry capacity and expires 60 seconds after write. Bulk results retain request-local references so evictions never truncate a response. Missing IDs are omitted from bulk loading and produce 404 for detail.
+`SoundCache` remains the API facade and canonical loader. Its instance-local Caffeine backing now reuses `bot.cache.CacheAdapter`, with 100-entry capacity and expiration 60 seconds after write. Single/bulk and preloaded API rows share coordinated loads of missing IDs. Scoped callbacks retain active entries across expiration/eviction, and invalidation prevents an older load from repopulating the cache. Bulk results retain request-local references so evictions never truncate a response. Missing IDs are omitted from bulk loading and produce 404 for detail. Response copies still use fresh authorized SQL rows and never put viewer-specific state on a cached object. This changes internal coordination only; HTTP routes, payloads and authorization remain unchanged.
 
 `SoundQueryCache` stores only ordered ID arrays in Redis, for 60 seconds, including empty results. Keys include version, caller, current membership set, original guild/ownership scope, normalized filters, ordering and limit. A catalog generation token makes old selections unreachable after metadata/vote changes or deletion; older keys expire naturally. Inserts and Discord mutations use the same invalidation path. Play-based rankings may lag by at most 60 seconds. Redis failure falls back to SQL. Cached IDs are rechecked against fresh sound metadata before response; they never authorize a private sound.
 
@@ -122,6 +122,6 @@ Debug logs report membership resolution time (`Sound memberships`), history rows
 
 ## Validation evidence
 
-Regression tests cover sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. MariaDB migration execution, live Redis/Discord/Cloudflare integration and extreme bulk HTTP payloads have not been verified.
+The previous regression suite covered sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets; its 101 test files were removed during the owner’s repository cleanup. The current cache step adds focused local tests for coordinated bulk loading, expiration/eviction, invalidation, loader failures, hydration, prepared SQL with H2 and viewer-state isolation. The historical checks below are previous evidence, not a current re-execution of that deleted suite. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. MariaDB migration execution, live Redis/Discord/Cloudflare integration and extreme bulk HTTP payloads have not been verified.
 
 The migration uses [MariaDB ALTER TABLE](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table) conditionals; it is not advertised as a portable MySQL/H2 migration.

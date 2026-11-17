@@ -86,6 +86,10 @@ public class GuildData {
     }
 
     public GuildData(QueryRecord data) {
+        this(data, BotDB.getChannelData(data.get("guild_id")), BotDB.getWarnings(data.get("guild_id")));
+    }
+
+    private GuildData(QueryRecord data, List<QueryRecord> channelRows, List<QueryRecord> actionRows) {
         this.ID = data.get("guild_id");
         this.prefix = data.get("prefix");
         this.experience = data.getAsBoolean("exp_enabled");
@@ -106,8 +110,17 @@ public class GuildData {
             this
         );
 
-        retriveChannels();
-        retriveActions();
+        this.channels = new HashMap<>();
+        for (QueryRecord row : channelRows)
+            channels.put(row.get("channel_id"), new ChannelData(row));
+
+        this.actions = new ArrayList<>();
+        for (QueryRecord row : actionRows)
+            actions.add(new AutomatedAction(row));
+    }
+
+    public static GuildData fromRows(QueryRecord data, List<QueryRecord> channelRows, List<QueryRecord> actionRows) {
+        return new GuildData(data, channelRows, actionRows);
     }
 
 //     ▄██████▄  ███    █▄   ▄█   ▄█       ████████▄
@@ -612,16 +625,6 @@ public class GuildData {
 //    ███    ███ ███    ███     ███     ███  ███    ███ ███   ███
 //    ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀
 //
-
-    private void retriveActions() {
-        actions = new ArrayList<>();
-        List<QueryRecord> result = BotDB.getWarnings(String.valueOf(ID));
-        if (result == null) { return; }
-
-        for (QueryRecord row : result) {
-            actions.add(new AutomatedAction(row));
-        }
-    }
 
     public boolean addAction(int action, String roleId, int actionTime, int infractions, int infractionsTime) {
         AutomatedAction aa = AutomatedAction.create(String.valueOf(ID), action, roleId, actionTime, infractions, infractionsTime);

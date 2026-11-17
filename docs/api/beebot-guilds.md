@@ -122,7 +122,7 @@ The response uses HTTP 200 for a parsed request with per-block results, includin
 }
 ```
 
-Validation errors prevent the whole block/item from saving. Each valid block/item is committed in its own SQL transaction, including alert roles and Twitch/reward rows; SQL failure rolls back that whole unit. Other blocks/items continue. Updates change only supplied columns and serialize API writes using the guild row lock. The local `GuildCache` entry is invalidated only after a successful commit; the bot reloads it on next use. This invalidation is local to the running bot instance.
+Validation errors prevent the whole block/item from saving. Each valid block/item is committed in its own SQL transaction, including alert roles and Twitch/reward rows; SQL failure rolls back that whole unit. Other blocks/items continue. Updates change only supplied columns and serialize API writes using the guild row lock. The local `GuildCache` entry is invalidated only after a successful commit. If a scoped cache operation is already using the entry, it retains that instance until its participants finish; an older in-flight load cannot repopulate the invalidated cache. The next load after release reads SQL again. This invalidation is local to the running bot instance. API writes still use the existing settings service; migrating them onto the same persistent objects as bot commands is the next plan step.
 
 An alert can save successfully with `valid: false`: operational `problems` are distinct from request `errors`. Returned alert states are refreshed after processing the complete request so that changes to guild experience are reflected regardless of key order. Rejected updates return the currently stored alert state.
 

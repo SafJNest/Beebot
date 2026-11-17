@@ -1,8 +1,14 @@
 package com.safjnest.bot.cache.managers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import com.safjnest.bot.Bot;
 import com.safjnest.bot.cache.CacheAdapter;
@@ -14,19 +20,12 @@ import com.safjnest.status.log.LoggerIDpair;
 
 import net.dv8tion.jda.api.entities.Guild;
 
-/**
- * Class that stores in a {@link GuildCache#cache guilds} all the settings for a guild.
- * @author <a href="https://github.com/Leon412">Leon412</a>
- * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
- */
 public class GuildCache extends CacheAdapter<String, GuildData> {
 
-    private static GuildCache instance = new GuildCache();
+    private static final GuildCache instance = new GuildCache();
 
     public GuildCache() {
-        super();
-        setExpireTime(12, TimeUnit.HOURS);
-        setTypeLimit(60);
+        super(60, 12, TimeUnit.HOURS);
     }
 
     public static GuildCache getInstance() {
@@ -38,82 +37,103 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     public static GuildData getGuild(String id) {
-        GuildData guild = instance.get(id);
-        if(guild == null) {
-            guild = instance.retriveGuild(id);
-        }
-        return guild;
+        return instance.getOrLoad(id);
+    }
+
+    public static List<GuildData> getGuilds(Collection<String> ids) {
+        return instance.getOrLoadAll(ids);
     }
 
     public static GuildData getGuildOrPut(Guild guild) {
         return getGuildOrPut(guild.getId());
     }
-    
+
     public static GuildData getGuildOrPut(String id) {
-        GuildData guild = instance.get(id);
-        if(guild == null) {
-            guild = instance.retriveGuild(id);
-        }
-        if(guild == null) {
-            guild = putGuild(id);
-        }
-        return guild;
+        return instance.getOrCreate(id, GuildCache::createGuild);
     }
 
-    public static GuildData putGuild(String guildId) {
-        BotDB.insertGuild(guildId, Bot.getPrefix());
-        BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
-
-        GuildData guild = new GuildData(guildId);
-        instance.put(guild);
-        return guild;
+    public static GuildData putGuild(String id) {
+        return getGuildOrPut(id);
     }
 
-    /**
-     * Born deprecated
-     * old getGuildIfCached
-     * @Deprecated
-     * @param id
-     * @return
-     */
-    public GuildData get(String id) {
-        return super.get(id);
+    public static <R> R withGuild(String id, Function<? super GuildData, ? extends R> operation) {
+        return instance.with(id, operation);
     }
 
-    private GuildData retriveGuild(String guildId) {
-        BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
-        QueryRecord guildData = BotDB.getGuildData(guildId);
-        
-        if(guildData.emptyValues()) {
-            return null;
-        }
+    public static <R> R withGuilds(Collection<String> ids, Function<? super List<GuildData>, ? extends R> operation) {
+        return instance.withAll(ids, operation);
+    }
 
-        GuildData guild = new GuildData(guildData);
-        put(guild);
-        return guild;
+    public static <R> R withGuildOrPut(String id, Function<? super GuildData, ? extends R> operation) {
+        return instance.withOrCreate(id, GuildCache::createGuild, operation);
     }
 
     public void retrieveAllGuilds() {
-        List<QueryRecord> guilds = BotDB.getGuildData();
-        
-        for(QueryRecord guildData : guilds){        
-            GuildData guild = new GuildData(guildData);
-            put(guild);
-        }
-    }
+        List<QueryRecord> rows = BotDB.getGuildData();
+        Map<String, QueryRecord> byId = new LinkedHashMap<>();
 
-    private void put(GuildData guild) {
-        super.put(guild.getId(), guild);
+        for (QueryRecord row : rows)
+            byId.put(row.get("guild_id"), row);
+
+        getOrLoadAll(byId.keySet(), missing -> {
+            List<QueryRecord> absent = new ArrayList<>();
+            for (String id : missing)
+                absent.add(byId.get(id));
+
+            return hydrate(absent);
+        });
     }
 
     public ConcurrentMap<String, GuildData> getGuilds() {
-        return super.asTypedMap();
+        return asTypedMap();
     }
 
-    /**
-     * @deprecated
-     */
     public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
         return;
-	}
+    }
+
+    @Override
+    protected Map<String, GuildData> loadValues(Collection<String> ids) {
+        return hydrate(BotDB.getGuildData(ids));
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    private static GuildData createGuild(String id) {
+        if (!BotDB.insertGuild(id, Bot.getPrefix()))
+            throw new IllegalStateException("Failed to create guild " + id);
+
+        BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(id, LoggerIDpair.IDType.GUILD));
+
+        return new GuildData(id);
+    }
+
+    private Map<String, GuildData> hydrate(List<QueryRecord> rows) {
+        if (rows.isEmpty())
+            return Map.of();
+
+        List<String> ids = new ArrayList<>();
+        for (QueryRecord row : rows)
+            ids.add(row.get("guild_id"));
+
+        Map<String, List<QueryRecord>> channels = group(BotDB.getChannelData(ids));
+        Map<String, List<QueryRecord>> actions = group(BotDB.getWarnings(ids));
+        Map<String, GuildData> result = new LinkedHashMap<>();
+
+        for (QueryRecord row : rows) {
+            String id = row.get("guild_id");
+            result.put(id, GuildData.fromRows(row, channels.getOrDefault(id, List.of()), actions.getOrDefault(id, List.of())));
+        }
+
+        return result;
+    }
+
+    private Map<String, List<QueryRecord>> group(List<QueryRecord> rows) {
+        Map<String, List<QueryRecord>> result = new HashMap<>();
+
+        for (QueryRecord row : rows)
+            result.computeIfAbsent(row.get("guild_id"), key -> new ArrayList<>()).add(row);
+
+        return result;
+    }
 }
