@@ -8,10 +8,10 @@ import java.util.TimeZone;
 import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
 
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -26,11 +26,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.concurrent.CompletableFuture;
-
-
-import net.dv8tion.jda.api.entities.Message.Attachment;
 
 import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.model.guild.GuildData;
@@ -308,8 +305,13 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT id from soundboard WHERE (ID = '" + string + "' OR name = '" + string + "') AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "')");
     }
 
-    public static boolean soundboardExists(String id, String guild_id) {
-        return !instance.lineQuery("SELECT id from soundboard WHERE name = '" + id + "' AND guild_id = '" + guild_id + "'").isEmpty();
+    public static boolean soundboardExists(String name, String guildId) {
+        try (SoundSession session = instance.connectSound()) {
+            return !instance.soundQuery(session.connection(), "SELECT id FROM soundboard WHERE name = ? AND guild_id = ?",
+                name, guildId).isEmpty();
+        } catch (SQLException exception) {
+            throw instance.soundUnavailable(exception);
+        }
     }
 
     public static boolean soundboardExists(String id, String guild_id, String user_id) {
@@ -324,8 +326,26 @@ public class BotDB extends AbstractDB {
         return instance.query("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "' order by name");
     }
 
-    public static QueryRecord getSoundboardByID(String id) {
-        return instance.lineQuery("select name, thumbnail from soundboard where id = '" + id + "'");
+    public record SoundboardData(String name, String thumbnailKey, byte[] legacyThumbnail) {}
+
+    public SoundboardData getSoundboardByID(String id) {
+        try (SoundSession session = connectSound();
+                PreparedStatement statement = session.connection().prepareStatement("SELECT * FROM soundboard WHERE id = ?")) {
+            statement.setString(1, id);
+
+            try (ResultSet rows = statement.executeQuery()) {
+                if (!rows.next())
+                    return null;
+
+                String key = rows.getString("thumbnail_key");
+                int legacyColumn = key == null ? findColumn(rows, "thumbnail") : 0;
+                byte[] legacy = legacyColumn == 0 ? null : rows.getBytes(legacyColumn);
+
+                return new SoundboardData(rows.getString("name"), key, legacy);
+            }
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
     }
 
     public static List<QueryRecord> getRandomSoundboard(String guild_id, String user_id) {
@@ -351,105 +371,116 @@ public class BotDB extends AbstractDB {
 
 
 
-    public static boolean insertSoundBoard(String name, Attachment attachment, String guild_id, String user_id, String... sound_ids) {
-        if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
+    public String insertSoundBoard(String name, String guildId, String userId, Function<String, String> uploadThumbnail,
+            String... soundIds) {
+        if (soundIds.length == 0)
+            throw new IllegalArgumentException("soundIds must not be empty");
 
-        StringBuilder sb = new StringBuilder();
+        try (SoundSession session = connectSound()) {
+            Connection connection = session.connection();
+            connection.setAutoCommit(false);
 
-        for (String sound_id : sound_ids)
-            sb.append("(LAST_INSERT_ID(), " + sound_id + "), ");
-        sb.setLength(sb.length() - 2);
-
-        Connection c = instance.getConnection();
-        if(c == null) return false;
-
-        try (Statement stmt = c.createStatement()) {
-            //instance.defaultQuery(stmt, "INSERT INTO soundboard (name, thumbnail, guild_id, user_id) VALUES ('" + name + "', '" + (attachment != null ? attachment.getUrl() : "") + "', '" + guild_id + "', '" + user_id + "'); ");
-
-            String query = "INSERT INTO soundboard (name, thumbnail, guild_id, user_id) VALUES (?, ?, ?, ?);";
-            try (PreparedStatement pstmt = c.prepareStatement(query)) {
-                pstmt.setString(1, name);
-                if (attachment != null) {
-                    CompletableFuture<InputStream> futureInputStream = attachment.getProxy().download();
-                    InputStream thumbnail = futureInputStream.join();
-                    pstmt.setBlob(2, thumbnail);
-                } else {
-                    pstmt.setNull(2, java.sql.Types.BLOB);
+            try {
+                String id = insertSoundboardRow(connection, name, guildId, userId);
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "INSERT INTO soundboard_sounds (id, sound_id) VALUES (?, ?)")) {
+                    for (String soundId : soundIds) {
+                        statement.setString(1, id);
+                        statement.setString(2, soundId);
+                        statement.addBatch();
+                    }
+                    statement.executeBatch();
                 }
-                pstmt.setString(3, guild_id);
-                pstmt.setString(4, user_id);
 
-                pstmt.execute();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return false;
-            }
+                if (uploadThumbnail != null) {
+                    String key = uploadThumbnail.apply(id);
+                    try (PreparedStatement statement = connection.prepareStatement(
+                            "UPDATE soundboard SET thumbnail_key = ? WHERE id = ?")) {
+                        statement.setString(1, key);
+                        statement.setString(2, id);
+                        if (statement.executeUpdate() != 1)
+                            throw new SQLException("Soundboard thumbnail update failed");
+                    }
+                }
 
+                connection.commit();
 
-
-            System.out.println("INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
-            instance.query(stmt, "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
-            c.commit();
-            return true;
-        } catch (SQLException ex) {
-            if (c != null) {
+                return id;
+            } catch (SQLException | RuntimeException failure) {
                 try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                    connection.rollback();
+                } catch (SQLException rollbackFailure) {
+                    failure.addSuppressed(rollbackFailure);
                 }
+
+                throw failure;
             }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
         }
-        return false;
     }
 
-    public static boolean updateSoundboardThumbnail(String id, Attachment thumbnail) {
-        Connection c = instance.getConnection();
-        if(c == null) return false;
+    public boolean updateSoundboardThumbnail(String id, String guildId, String userId, String key) {
+        return writeSoundboardThumbnail(
+            "UPDATE soundboard SET thumbnail_key = ? WHERE id = ? AND (guild_id = ? OR user_id = ?)",
+            key, id, guildId, userId);
+    }
 
-        try (Statement stmt = c.createStatement()) {
-            String query = "UPDATE soundboard SET thumbnail = ? WHERE id = ?;";
-            try (PreparedStatement pstmt = c.prepareStatement(query)) {
-                CompletableFuture<InputStream> futureInputStream = thumbnail.getProxy().download();
-                InputStream thumbnailStream = futureInputStream.join();
-                pstmt.setBlob(1, thumbnailStream);
-                pstmt.setString(2, id);
+    public int countPendingSoundboardThumbnails() {
+        try (SoundSession session = connectSound()) {
+            Connection connection = session.connection();
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM soundboard WHERE 1 = 0");
+                    ResultSet rows = statement.executeQuery()) {
+                if (findColumn(rows, "thumbnail_key") == 0)
+                    throw new SQLException("Soundboard thumbnail key column is missing");
+                if (findColumn(rows, "thumbnail") == 0)
+                    return 0;
+            }
 
-                pstmt.execute();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return false;
-            }
-            c.commit();
-            return true;
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
+            return soundQuery(connection, """
+                SELECT COUNT(*) AS pending FROM soundboard WHERE thumbnail_key IS NULL AND thumbnail IS NOT NULL
+                """).get(0).getAsInt("pending");
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
         }
-        return false;
+    }
+
+    public List<Integer> pendingSoundboardThumbnailIds(int afterId, int limit) {
+        try (SoundSession session = connectSound()) {
+            List<QueryRecord> rows = soundQuery(session.connection(), """
+                SELECT id FROM soundboard
+                WHERE id > ? AND thumbnail_key IS NULL AND thumbnail IS NOT NULL
+                ORDER BY id LIMIT ?
+                """, afterId, limit);
+            List<Integer> ids = new ArrayList<>(rows.size());
+
+            for (QueryRecord row : rows)
+                ids.add(row.getAsInt("id"));
+
+            return ids;
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
+    }
+
+    public byte[] getPendingSoundboardThumbnail(int id) {
+        try (SoundSession session = connectSound();
+                PreparedStatement statement = session.connection().prepareStatement(
+                    "SELECT thumbnail FROM soundboard WHERE id = ? AND thumbnail_key IS NULL")) {
+            statement.setInt(1, id);
+
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next() ? rows.getBytes(1) : null;
+            }
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
+    }
+
+    public boolean migrateSoundboardThumbnail(int id, byte[] legacy, String key) {
+        return writeSoundboardThumbnail("""
+            UPDATE soundboard SET thumbnail_key = ? WHERE id = ? AND thumbnail_key IS NULL AND thumbnail = ?
+            """, key, id, legacy);
     }
 
     public static boolean insertSoundsInSoundBoard(String id, String... sound_ids) {
@@ -2325,6 +2356,57 @@ public class BotDB extends AbstractDB {
             }
         }
         catch (SQLException exception) {
+            throw soundUnavailable(exception);
+        }
+    }
+
+    private String insertSoundboardRow(Connection connection, String name, String guildId, String userId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO soundboard (name, guild_id, user_id) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+            bindSound(statement, new Object[] {name, guildId, userId});
+            if (statement.executeUpdate() != 1)
+                throw new SQLException("Soundboard insert did not create one row");
+
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (!keys.next() || keys.getLong(1) <= 0)
+                    throw new SQLException("Soundboard insert did not return an ID");
+
+                return keys.getString(1);
+            }
+        }
+    }
+
+    private int findColumn(ResultSet rows, String column) throws SQLException {
+        ResultSetMetaData metadata = rows.getMetaData();
+        for (int index = 1; index <= metadata.getColumnCount(); index++) {
+            if (column.equalsIgnoreCase(metadata.getColumnLabel(index)))
+                return index;
+        }
+
+        return 0;
+    }
+
+    private boolean writeSoundboardThumbnail(String sql, Object... args) {
+        try (SoundSession session = connectSound()) {
+            Connection connection = session.connection();
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                bindSound(statement, args);
+                boolean changed = statement.executeUpdate() == 1;
+                connection.commit();
+
+                return changed;
+            } catch (SQLException failure) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackFailure) {
+                    failure.addSuppressed(rollbackFailure);
+                }
+
+                throw failure;
+            }
+        } catch (SQLException exception) {
             throw soundUnavailable(exception);
         }
     }

@@ -1,9 +1,6 @@
 package com.safjnest.bot.audio;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Blob;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +11,10 @@ import com.safjnest.bot.Bot;
 import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.bot.cache.managers.UserCache;
 import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
+import com.safjnest.database.R2;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.database.sql.database.BotDB.SoundboardData;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.SafJNest;
@@ -29,8 +28,8 @@ import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
-import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 
@@ -213,48 +212,52 @@ public class SoundEmbed {
         return SoundCache.getSoundsByIds(soundIds.toArray(new String[0]));
     }
 
-    public static boolean isValidThumbnail(Attachment thumbnail) {
-        if (thumbnail == null)
-            return false;
-        if (thumbnail.getSize() > 1024 * 1024)
-            return false;
-        if (List.of("png", "jpg", "jpeg", "gif").stream().noneMatch(thumbnail.getFileExtension()::equals))
-            return false;
-        return true;
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardId) {
+        SoundboardData board = BotDB.get().getSoundboardByID(soundboardId);
+        if (board == null)
+            return event.deferReply(true).setContent("Soundboard not found");
+
+        Thumbnail thumbnail = soundboardThumbnail(board, event.getJDA().getSelfUser().getAvatarUrl());
+        List<Container> components = soundboardComponents(thumbnail, getSoundboardSounds(soundboardId));
+
+        return event.deferReply().addComponents(components).useComponentsV2();
     }
 
-    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
-        QueryRecord data = BotDB.getSoundboardByID(soundboardID);
-        if (data.emptyValues())
-            return event.deferReply().setContent("Soundboard not found").setEphemeral(true);
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, List<Sound> sounds) {
+        Thumbnail thumbnail = Thumbnail.fromUrl(event.getJDA().getSelfUser().getAvatarUrl());
 
-        String name = data.get("name");
-        Blob thumbnailBlob = data.getAsBlob("thumbnail");
-        InputStream thumbnailStream = null;
+        return event.deferReply().addComponents(soundboardComponents(thumbnail, sounds)).useComponentsV2();
+    }
 
-        if (thumbnailBlob != null) {
-            try {
-                thumbnailStream = thumbnailBlob.getBinaryStream();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    public static void showCreatedSoundboard(InteractionHook hook, String soundboardId, List<Sound> sounds) {
+        SoundboardData board = BotDB.get().getSoundboardByID(soundboardId);
+        if (board == null) {
+            hook.editOriginal("Soundboard not found").queue();
+            return;
         }
 
-        List<Sound> soundList = getSoundboardSounds(soundboardID);
-        return composeSoundboard(event, name, thumbnailStream, soundList);
+        Thumbnail thumbnail = soundboardThumbnail(board, hook.getJDA().getSelfUser().getAvatarUrl());
+        List<Container> components = soundboardComponents(thumbnail, sounds);
+
+        hook.editOriginalComponents(components).useComponentsV2().queue();
     }
 
-    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, List<Sound> sounds) {
-        return composeSoundboard(event, name, null, sounds);
+    private static Thumbnail soundboardThumbnail(SoundboardData board, String avatarUrl) {
+        String url = thumbnailUrl(board);
+        if (url != null)
+            return Thumbnail.fromUrl(url);
+        if (hasLegacyThumbnail(board))
+            return Thumbnail.fromFile(FileUpload.fromData(board.legacyThumbnail(), "thumbnail.png"));
+
+        return Thumbnail.fromUrl(avatarUrl);
     }
 
-    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail, List<Sound> sounds) {
+    private static List<Container> soundboardComponents(Thumbnail thumbnail, List<Sound> sounds) {
         List<Container> containers = new ArrayList<>();
         List<ContainerChildComponent> children = new ArrayList<>();
-        
-        Thumbnail thumb = thumbnail != null ? Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")) : Thumbnail.fromUrl(event.getJDA().getSelfUser().getAvatarUrl());
+
         children.add(Section.of(
-            thumb, 
+            thumbnail,
             TextDisplay.of("Press a button to play a sound.\n" + sounds.size() + " / 25 sounds.")
         ));
         containers.add(Container.of(children).withAccentColor(Bot.getColor()));
@@ -275,35 +278,29 @@ public class SoundEmbed {
         Button stop = Button.danger("soundboard-stop", " ")
                 .withEmoji(CustomEmojiHandler.getRichEmoji("stop"));
         containers.add(Container.of(ActionRow.of(random, stop)).withAccentColor(Bot.getColor()));
-        return event.deferReply().addComponents(containers).useComponentsV2();
+        return containers;
     }
 
-    public static void composeSoundboard(CommandEvent event, String soundboardID) {
-        QueryRecord data = BotDB.getSoundboardByID(soundboardID);
-
-        String name = data.get("name");
-        Blob thumbnailBlob = data.getAsBlob("thumbnail");
-        InputStream thumbnailStream = null;
-
-        if (thumbnailBlob != null) {
-            try {
-                thumbnailStream = thumbnailBlob.getBinaryStream();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    public static void composeSoundboard(CommandEvent event, String soundboardId) {
+        SoundboardData board = BotDB.get().getSoundboardByID(soundboardId);
+        if (board == null) {
+            event.reply("Soundboard not found");
+            return;
         }
 
-        List<Sound> sounds = getSoundboardSounds(soundboardID);
+        List<Sound> sounds = getSoundboardSounds(soundboardId);
+        String url = thumbnailUrl(board);
+        boolean attach = url == null && hasLegacyThumbnail(board);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName() + " requested:", "https://github.com/SafJNest",
                 event.getAuthor().getAvatarUrl());
-        eb.setTitle("**" + name + "**");
+        eb.setTitle("**" + board.name() + "**");
 
-        if (thumbnailStream != null)
+        if (attach)
             eb.setThumbnail("attachment://thumbnail.png");
         else
-            eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
+            eb.setThumbnail(url != null ? url : Bot.getJDA().getSelfUser().getAvatarUrl());
 
         eb.setDescription("Press a button to play a sound");
         eb.setColor(Bot.getColor());
@@ -320,11 +317,19 @@ public class SoundEmbed {
             }
         }
 
-        if (thumbnailStream != null)
+        if (attach)
             event.getChannel().sendMessageEmbeds(eb.build())
-                    .addFiles(FileUpload.fromData(thumbnailStream, "thumbnail.png")).setComponents(rows).queue();
+                    .addFiles(FileUpload.fromData(board.legacyThumbnail(), "thumbnail.png")).setComponents(rows).queue();
         else
             event.getChannel().sendMessageEmbeds(eb.build()).setComponents(rows).queue();
+    }
+
+    private static String thumbnailUrl(SoundboardData board) {
+        return board.thumbnailKey() == null ? null : R2.getInstance().url(board.thumbnailKey());
+    }
+
+    private static boolean hasLegacyThumbnail(SoundboardData board) {
+        return board.legacyThumbnail() != null && board.legacyThumbnail().length > 0;
     }
 
     public static EmbedBuilder getGreetViewEmbed(String userId, String guildId) {

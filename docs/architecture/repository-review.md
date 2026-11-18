@@ -371,11 +371,15 @@ L'autenticazione non viene duplicata per controller LoL o credenziali personali.
 ### Suoni e R2
 
 `bot.audio.SoundFiles` coordina la copia locale sulla VPS per player, download e
-greet. `storage.R2Storage` condivide URL CDN, download e upload S3.
+greet. `database.R2` condivide URL CDN, download e upload S3.
 `sound.model.Sound` conserva i metadati e `SoundCache` ne coordina l'istanza.
 
 Le copie locali vengono mantenute e tutte le letture usano il CDN configurato.
 I dettagli dell'upload e dei setting sono in [Asset storage on R2](../audio-storage-r2.md).
+Le copertine delle soundboard usano lo stesso bucket. `SoundboardThumbnails`
+carica le immagini e coordina la migrazione dai BLOB. `BotDB` salva la chiave
+per la quale l'upload è riuscito e `SoundEmbed` usa il CDN.
+
 
 
 ## Sequenza di implementazione proposta

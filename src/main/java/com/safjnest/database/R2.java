@@ -73,12 +73,16 @@ public final class R2 implements AutoCloseable {
         return cdnBase != null;
     }
 
-    public void upload(String bucket, String key, Path source, String contentType) {
-        if (client == null)
-            throw new IllegalStateException("R2 upload credentials are missing in settings.r2");
+    public boolean canUpload() {
+        return client != null;
+    }
 
-        PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType).build();
-        client.putObject(request, RequestBody.fromFile(source));
+    public void upload(String bucket, String key, Path source, String contentType) {
+        upload(bucket, key, RequestBody.fromFile(source), contentType);
+    }
+
+    public void upload(String bucket, String key, byte[] source, String contentType) {
+        upload(bucket, key, RequestBody.fromBytes(source), contentType);
     }
 
     @Override
@@ -88,6 +92,14 @@ public final class R2 implements AutoCloseable {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private void upload(String bucket, String key, RequestBody source, String contentType) {
+        if (client == null)
+            throw new IllegalStateException("R2 upload credentials are missing in settings.r2");
+
+        PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType).build();
+        client.putObject(request, source);
+    }
 
     private static S3Client uploadClient(R2Settings settings) {
         if (!hasValue(settings.accountId()) && !hasValue(settings.accessKeyId()) && !hasValue(settings.secretAccessKey()))

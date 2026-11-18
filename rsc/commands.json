@@ -724,6 +724,13 @@
         "arguments" : "[prefixlist]"
     },
 
+    "migrate-soundboard-thumbnails": {
+        "alias" : [],
+        "help" : "Copy existing soundboard thumbnails to R2.",
+        "category" : "Owner",
+        "arguments" : "[--dry-run]"
+    },
+
     "shutdown":{
         "alias" : ["kill"],
         "help"  : "Shutdown a bot.",
