@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
@@ -58,7 +58,7 @@ public class SoundFilesTest {
         BotDB database = new BotDB() {
             @Override
             public String insertSound(String name, String guildId, String userId, String extension, boolean isPublic,
-                    long duration, List<String> tags, Consumer<Sound> store) {
+                    long duration, List<String> tags, Function<Sound, String> store) {
                 assertEquals(List.of("arcade"), tags);
                 assertEquals(2088, duration);
                 assertEquals("Ping", name);
@@ -71,7 +71,7 @@ public class SoundFilesTest {
                 row.put("name", name);
                 row.put("duration_ms", duration);
 
-                store.accept(new Sound(row, List.of()));
+                assertNull(store.apply(new Sound(row, List.of())));
 
                 return "42";
             }
@@ -147,8 +147,8 @@ public class SoundFilesTest {
         });
 
         try (ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor()) {
-            Future<Path> first = worker.submit(() -> files.resolve("41", "opus"));
-            Future<Path> second = worker.submit(() -> files.resolve("41", "opus"));
+            Future<Path> first = worker.submit(() -> files.resolve("41", "opus", null));
+            Future<Path> second = worker.submit(() -> files.resolve("41", "opus", null));
 
             try {
                 assertTrue(started.await(5, TimeUnit.SECONDS));
@@ -160,10 +160,28 @@ public class SoundFilesTest {
             assertEquals(target, first.get(5, TimeUnit.SECONDS));
             assertEquals(target, second.get(5, TimeUnit.SECONDS));
             assertEquals("ab", Files.readString(target));
-            assertEquals(target, files.resolve("41", "opus"));
+            assertEquals(target, files.resolve("41", "opus", null));
             assertEquals(1, requests.get());
-            assertEquals(cdn + "sounds/41.opus", files.playbackUrl("41", "opus", "https://old.example"));
+            assertEquals(cdn + "sounds/41.opus", files.playbackUrl("41", "opus", null, "https://old.example"));
         }
+    }
+
+    @Test
+    public void migratedAudioUsesStoredKeyForCdnAndBotDownload() throws IOException {
+        Path directory = temporary.newFolder().toPath();
+        R2 storage = new R2(URI.create("https://cdn.example/"));
+        SoundFiles files = new SoundFiles(directory, storage, "beebot", "sounds/", (key, target) -> {
+            assertEquals("sounds/1/1.mp3", key);
+            Files.writeString(target, "audio");
+        });
+        QueryRecord row = new QueryRecord();
+        row.put("id", "1");
+        row.put("extension", "mp3");
+        row.put("audio_key", "sounds/1/1.mp3");
+
+        assertEquals("audio", Files.readString(files.resolve(new Sound(row, List.of()))));
+        assertEquals("https://cdn.example/sounds/1/1.mp3", files.playbackUrl("1", "mp3", row.get("audio_key"), null));
+        assertEquals("sounds/1/thumbnail-cover.png", files.migratedImageKey("1", "soundboard/thumbnail/2/cover.png"));
     }
 
     @Test
@@ -181,12 +199,12 @@ public class SoundFilesTest {
             Files.writeString(partial, "audio");
         });
 
-        assertThrows(IOException.class, () -> files.resolve("41", "mp3"));
+        assertThrows(IOException.class, () -> files.resolve("41", "mp3", null));
         try (Stream<Path> entries = Files.list(directory)) {
             assertEquals(0, entries.count());
         }
 
-        assertEquals("audio", Files.readString(files.resolve("41", "mp3")));
+        assertEquals("audio", Files.readString(files.resolve("41", "mp3", null)));
         assertEquals(2, requests.get());
     }
 

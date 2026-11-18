@@ -117,3 +117,11 @@ Global agents (Cursor / Claude Code / Codex / Opencode) live in `.agents/agents/
 CodeGraph is mandatory: no LoL change without up-to-date `explore`/`impact`. If `codegraph status` reports a stale or missing index, the agent must sync before proceeding.
 
 Agents must stop and report a conflict instead of silently changing an ADR or an unrelated owner.
+
+## Refactoring Beebot
+
+- Read the [refactor workflow](docs/architecture/refactor-workflow.md) and the [agreed plan](docs/architecture/repository-review.md). The project agent `beebot agent` uses both when explicitly requested.
+- Trace each changed responsibility across Discord commands, API endpoints, caches and persistence before choosing where it belongs. Reuse the existing owner when callers need the same behavior.
+- For substantial changes, show the proposed flow and concrete file moves during analysis. Apply the agreed phase after authorization and preserve unrelated work.
+- Preserve the existing grouping of fields and constructor assignments, blank lines, and ASCII banners. Apply the same spacing to new code and inspect the diff for incidental formatting changes.
+- Commit only the phase the owner explicitly requests. At the end of a refactor phase, say “fai commit prima che inzii con una nuova fase refactor”.

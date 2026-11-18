@@ -169,6 +169,33 @@ public class SoundAnalyticsTest {
     }
 
     @Test
+    public void anonymousWebPlaysOnlyAffectPlaybackTotals() {
+        String time = "2026-03-28T12:00:00Z";
+        Fixture fixture = fixture(List.of(
+            play("1", "10", null, null, time, AudioType.WEB.ordinal()),
+            play("2", "10", "2", null, time, AudioType.WEB.ordinal()),
+            play("3", "10", "2", "1", time, AudioType.SOUND.ordinal())
+        ));
+        JsonNode analytics = json(fixture.analytics.getSoundAnalytics(sounds().getFirst(), "2", null, period("UTC"), MEMBERSHIPS));
+        JsonNode totals = analytics.get("totals");
+
+        assertEquals(3, totals.get("plays").asLong());
+        assertEquals(1, totals.get("listeners").asLong());
+        assertEquals(2.0, totals.get("averagePlaysPerListener").asDouble(), 0.0);
+        assertEquals(2, analytics.get("my").get("plays").asLong());
+        assertEquals(0, analytics.get("otherGuilds").get("plays").asLong());
+        boolean foundWeb = false;
+        for (JsonNode source : totals.get("sources")) {
+            if ("WEB".equals(source.get("source").asText())) {
+                assertEquals(2, source.get("plays").asLong());
+                foundWeb = true;
+            }
+        }
+
+        assertTrue(foundWeb);
+    }
+
+    @Test
     public void fillsDailySeriesAndHeatmapAcrossDstAndQuarterHourZones() {
         Fixture fixture = fixture(plays());
         JsonNode rome = json(fixture.analytics.getSoundAnalytics(sounds().get(0), "2", null, period("Europe/Rome"), MEMBERSHIPS));

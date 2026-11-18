@@ -1,7 +1,7 @@
 CREATE TABLE
   `sound_history` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `sound_id` int(10) unsigned NOT NULL,
+    `sound_id` smallint(6) NOT NULL,
     `user_id` varchar(19) NOT NULL,
     `guild_id` varchar(19) DEFAULT NULL,
     `time` timestamp NOT NULL DEFAULT current_timestamp(),

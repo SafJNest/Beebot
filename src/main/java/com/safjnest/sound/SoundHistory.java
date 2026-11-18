@@ -84,7 +84,7 @@ final class SoundHistory {
             return combined;
 
         for (Map.Entry<String, Group> entry : sound.guilds.entrySet()) {
-            if (!memberships.contains(entry.getKey()))
+            if (entry.getKey() != null && !memberships.contains(entry.getKey()))
                 combined.merge(entry.getValue());
         }
 
@@ -145,7 +145,7 @@ final class SoundHistory {
     }
 
     private boolean isPersonalHistoryEntry(SoundPlay play) {
-        if (!viewerId.equals(play.userId()))
+        if (viewerId == null || !viewerId.equals(play.userId()))
             return false;
 
         if (period.before() == null)
@@ -172,7 +172,12 @@ final class SoundHistory {
         private final Map<Integer, Long> sources = new HashMap<>();
 
         private long playCount;
+        private long identifiedPlayCount;
         private Map<String, UserTotals> userTotals;
+
+        long getIdentifiedPlayCount() {
+            return identifiedPlayCount;
+        }
 
         long getPlayCount() {
             return playCount;
@@ -205,10 +210,14 @@ final class SoundHistory {
         /* -------------------------------------------------------------------------- */
 
         private void recordPlay(SoundPlay play, boolean detailed) {
-            UserKey user = new UserKey(play.soundId(), play.userId());
-            playsBySoundAndUser.merge(user, 1L, Long::sum);
             playCount++;
-            userTotals = null;
+
+            if (play.userId() != null) {
+                UserKey user = new UserKey(play.soundId(), play.userId());
+                playsBySoundAndUser.merge(user, 1L, Long::sum);
+                identifiedPlayCount++;
+                userTotals = null;
+            }
 
             if (!detailed)
                 return;
@@ -220,6 +229,7 @@ final class SoundHistory {
 
         private void merge(Group group) {
             playCount += group.playCount;
+            identifiedPlayCount += group.identifiedPlayCount;
             userTotals = null;
 
             for (Map.Entry<UserKey, Long> entry : group.playsBySoundAndUser.entrySet())

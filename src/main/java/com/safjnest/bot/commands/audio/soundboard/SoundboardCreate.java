@@ -31,7 +31,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 3.0
  */
 public class SoundboardCreate extends SlashCommand{
-    private static final int maxSounds = 20;
+    private static final int maxSounds = BotDB.MAX_SOUNDBOARD_SOUNDS;
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SoundboardCreate.class);
 
     public SoundboardCreate(String father){

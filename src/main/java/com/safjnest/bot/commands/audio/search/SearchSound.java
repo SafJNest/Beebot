@@ -173,10 +173,13 @@ public class SearchSound extends SlashCommand {
             public void trackLoaded(AudioTrack track) {
                 PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
     
-                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+                AudioChannel channel = author.getVoiceState().getChannel();
+
+                guild.getAudioManager().openAudioConnection(channel);
+                String channelId = channel == null ? null : channel.getId();
     
                 Sound played = SoundCache.withSound(sound.getId(), current -> {
-                    current.increaseUserPlays(author.getId(), guild.getId());
+                    current.increaseUserPlays(author.getId(), guild.getId(), channelId, AudioType.AUDIO);
 
                     return current;
                 });

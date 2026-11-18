@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
 import org.gagravarr.ogg.OggFile;
@@ -98,10 +99,10 @@ public final class SoundFiles {
     }
 
     public Path resolve(Sound sound) throws IOException {
-        return resolve(sound.getId(), sound.getExtension());
+        return resolve(sound.getId(), sound.getExtension(), sound.getAudioKey());
     }
 
-    public Path resolve(String id, String extension) throws IOException {
+    Path resolve(String id, String extension, String key) throws IOException {
         String fileName = fileName(id, extension);
         Path target = directory.resolve(fileName);
         if (isReady(target))
@@ -114,7 +115,7 @@ public final class SoundFiles {
             if (isReady(target))
                 return target;
 
-            publish(target, partial -> download.write(prefix + fileName, partial));
+            publish(target, partial -> download.write(key == null ? prefix + fileName : key, partial));
 
             return target;
         }
@@ -193,13 +194,102 @@ public final class SoundFiles {
         }
     }
 
-    public void upload(Sound sound, Path source) {
+    public void syncMetadata(Sound sound) {
+        if (!storage.isEnabled())
+            return;
+
+        try {
+            String key = sound.getAudioKey();
+            if (key == null)
+                key = legacyAudioKey(sound.getId(), sound.getExtension());
+
+            storage.updateMetadata(bucket, key, metadata(sound));
+        } catch (RuntimeException failure) {
+            throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound metadata storage is unavailable", failure, null);
+        }
+    }
+
+    public String uploadImage(String soundId, InputStream input) throws IOException {
+        SoundboardThumbnails.Image image = SoundboardThumbnails.read(input);
+        if (!ValidationUtils.isDecimalId(soundId))
+            throw Exception.invalidRequest("Invalid sound ID");
+
+        String key = prefix + soundId + "/thumbnail-" + UUID.randomUUID() + "." + image.extension();
+        storage.upload(requireBucket(), key, image.bytes(), image.contentType());
+
+        return key;
+    }
+
+    public String imageUrl(String key) {
+        return key == null ? null : storage.url(key);
+    }
+
+    public void deleteImage(String key) {
+        if (key == null)
+            return;
+
+        try {
+            storage.delete(requireBucket(), key);
+        } catch (RuntimeException failure) {
+            LOG.warn("Could not remove sound image {}", key, failure);
+        }
+    }
+
+    public String playbackUrl(String id, String extension, String key, String legacyCdn) {
+        if (extension == null || !extension.matches("[a-zA-Z0-9]+") || !ValidationUtils.isDecimalId(id))
+            return null;
+
+        String fileName = fileName(id, extension);
+        if (storage.isEnabled())
+            return storage.url(key == null ? prefix + fileName : key);
+        if (legacyCdn == null || legacyCdn.isBlank())
+            return null;
+
+        return legacyCdn.replaceAll("/+$", "") + "/sounds/" + fileName;
+    }
+
+    String audioKey(String id, String extension) {
+        return prefix + id + "/" + fileName(id, extension);
+    }
+
+    String legacyAudioKey(String id, String extension) {
+        return prefix + fileName(id, extension);
+    }
+
+    boolean isSoundImageKey(String id, String key) {
+        return key.startsWith(prefix + id + "/thumbnail-");
+    }
+
+    String migratedImageKey(String id, String source) {
+        String filename = source.substring(source.lastIndexOf('/') + 1);
+        if (!filename.matches("[a-zA-Z0-9_-]+\\.(?i:png|jpe?g|gif)"))
+            throw new IllegalArgumentException("Unsupported soundboard thumbnail key");
+
+        return prefix + id + "/thumbnail-" + filename;
+    }
+
+    void copy(String source, String target) {
+        storage.copyVerified(requireBucket(), source, target);
+    }
+
+    String requireBucket() {
+        if (bucket == null || bucket.isBlank() || !storage.canUpload())
+            throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "R2 sound bucket and credentials are required");
+
+        return bucket;
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    private String upload(Sound sound, Path source) {
         String extension = sound.getExtension();
         String fileName = fileName(sound.getId(), extension);
         if (storage.isEnabled()) {
             String contentType = extension.equalsIgnoreCase("mp3") ? "audio/mpeg" : "audio/ogg";
-            storage.upload(bucket, prefix + fileName, source, contentType, metadata(sound));
-            return;
+            String key = audioKey(sound.getId(), extension);
+            storage.upload(requireBucket(), key, source, contentType, metadata(sound));
+
+            return key;
         }
 
         try {
@@ -207,33 +297,9 @@ public final class SoundFiles {
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
+
+        return null;
     }
-
-    public void syncMetadata(Sound sound) {
-        if (!storage.isEnabled())
-            return;
-
-        try {
-            storage.updateMetadata(bucket, prefix + fileName(sound.getId(), sound.getExtension()), metadata(sound));
-        } catch (RuntimeException failure) {
-            throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound metadata storage is unavailable", failure, null);
-        }
-    }
-
-    public String playbackUrl(String id, String extension, String legacyCdn) {
-        if (extension == null || !extension.matches("[a-zA-Z0-9]+") || !ValidationUtils.isDecimalId(id))
-            return null;
-
-        String fileName = fileName(id, extension);
-        if (storage.isEnabled())
-            return storage.url(prefix + fileName);
-        if (legacyCdn == null || legacyCdn.isBlank())
-            return null;
-
-        return legacyCdn.replaceAll("/+$", "") + "/sounds/" + fileName;
-    }
-
-    /* -------------------------------------------------------------------------- */
 
     static Map<String, String> metadata(Sound sound) {
         Map<String, String> values = new LinkedHashMap<>();

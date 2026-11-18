@@ -87,6 +87,10 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         this.analytics = new SoundAnalytics(database, access);
     }
 
+    public String playbackUrl(QueryRecord sound) {
+        return SoundFiles.getInstance().playbackUrl(sound.get("id"), sound.get("extension"), sound.get("audio_key"), cdnUrl);
+    }
+
     public void setCdnUrl(String value) {
         cdnUrl=value == null ? "" : value;
     }
@@ -581,7 +585,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
             String id = row.get("id");
             String guildId = row.get("guild_id");
             boolean administrator = context.guilds().containsKey(guildId) && context.guilds().get(guildId).administrator();
-            String url = SoundFiles.getInstance().playbackUrl(id, row.get("extension"), cdnUrl);
+            String url = playbackUrl(row);
             result.add(Sound.forResponse(row, tags(id, tagRows, false),
                 extraById.getOrDefault(id, new QueryRecord()), context.userId(), administrator, url,
                 access.user(row.get("user_id"))));

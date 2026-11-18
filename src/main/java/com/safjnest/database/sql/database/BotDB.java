@@ -53,7 +53,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
  */
 public class BotDB extends AbstractDB {
     private static final int CACHE_BATCH_SIZE = 500;
-    public static final int MAX_SOUNDBOARD_SOUNDS = 20;
+    public static final int MAX_SOUNDBOARD_SOUNDS = 25;
 
     private static BotDB instance;
 
@@ -63,6 +63,7 @@ public class BotDB extends AbstractDB {
 
     private final Supplier<Connection> connections;
     private final ThreadLocal<SoundSession> soundReadSession = new ThreadLocal<>();
+    private final SoundDB soundDB = new SoundDB(this);
 
     static {
         instance = new BotDB();
@@ -90,6 +91,10 @@ public class BotDB extends AbstractDB {
 
     public static BotDB get() {
         return instance;
+    }
+
+    public SoundDB communitySounds() {
+        return soundDB;
     }
 
     public static List<QueryRecord> getGuildsData(String filter){
@@ -216,7 +221,7 @@ public class BotDB extends AbstractDB {
     }
 
     public String insertSound(String name, String guildId, String userId, String extension, boolean isPublic,
-            long durationMs, List<String> tags, Consumer<Sound> storeFile) {
+            long durationMs, List<String> tags, Function<Sound, String> storeFile) {
         String sql = "INSERT INTO sound(name, guild_id, user_id, extension, public, time, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)";
         String id;
 
@@ -241,7 +246,10 @@ public class BotDB extends AbstractDB {
                 }
 
                 List<Tag> savedTags = saveSoundTags(connection, id, tags);
-                storeFile.accept(new Sound(lockSound(connection, id), savedTags));
+                String key = storeFile.apply(new Sound(lockSound(connection, id), savedTags));
+                if (key != null)
+                    soundExecute(connection, "UPDATE sound SET audio_key=? WHERE id=?", key, id);
+
                 connection.commit();
             } catch (SQLException | RuntimeException failure) {
                 try {
@@ -295,7 +303,7 @@ public class BotDB extends AbstractDB {
     }
 
     public static QueryRecord getGlobalPlays(String sound_id) {
-        return instance.lineQuery("SELECT count(id) as times FROM sound_history WHERE sound_id = '" + sound_id + "'");
+        return instance.lineQuery("SELECT count(id) as times FROM sound_play WHERE sound_id = '" + sound_id + "'");
     }
 
     public static String getSoundsUploadedByUserCount(String user_id) {
@@ -307,7 +315,7 @@ public class BotDB extends AbstractDB {
     }
 
     public static String getTotalPlays(String user_id) {
-        return instance.lineQuery("select count(id) as sum from sound_history where user_id = '" + user_id + "';").get("sum");
+        return instance.lineQuery("select count(id) as sum from sound_play where user_id = '" + user_id + "';").get("sum");
     }
 
     public static QueryRecord searchSoundboard(String string, String guild_id, String user_id) {
@@ -1147,32 +1155,6 @@ public class BotDB extends AbstractDB {
         return rows.isEmpty() ? new QueryRecord() : rows.getFirst();
     }
 
-    public static QueryRecord getLikeDislike(String sound_id) {
-        return instance.lineQuery("SELECT "
-            + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1) AS likes, "
-            + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) AS dislikes;");
-    }
-
-
-    public static boolean setLikeDislike(String soundId, String userId, int value) {
-        return com.safjnest.bot.cache.managers.SoundCache.withSound(soundId,
-            sound -> sound != null && (value == -1 ? sound.dislike(userId) : sound.like(userId, value == 1)));
-    }
-
-    public static QueryRecord hasInterectedSound(String sound_id, String user_id) {
-        String query = "SELECT " +
-                       "CASE WHEN value = 1 THEN 1 ELSE 0 END AS `like`, " +
-                       "CASE WHEN value = -1 THEN 1 ELSE 0 END AS `dislike` " +
-                       "FROM sound_interactions " +
-                       "WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';";
-        return instance.lineQuery(query);
-    }
-
-
-   
-
-
-
 
 
     public static int createPlaylist(String name, String user_id) {
@@ -1802,7 +1784,11 @@ public class BotDB extends AbstractDB {
         return result;
     }
 
-    public record SoundPlay(String id, String soundId, String userId, String guildId, Instant time, int source) {}
+    public record SoundPlay(String id, String soundId, String userId, String guildId, String channelId, Instant time, int source) {
+        public SoundPlay(String id, String soundId, String userId, String guildId, Instant time, int source) {
+            this(id, soundId, userId, guildId, null, time, source);
+        }
+    }
 
     public record SoundSelection(String userId, Set<String> guilds, String guildId, boolean mine,
             String q, String tag, String sort, String order, int limit) {
@@ -1892,9 +1878,9 @@ public class BotDB extends AbstractDB {
             args.add(userId);
             args.addAll(batch);
 
-            result.addAll(readSoundRows("SELECT s.id, (SELECT COUNT(DISTINCT h.user_id) FROM sound_history h WHERE h.sound_id=s.id) AS listeners, "
-            + "(SELECT COUNT(*) FROM sound_history h WHERE h.sound_id=s.id AND h.user_id=?) AS my_plays, "
-            + "(SELECT value FROM sound_interactions i WHERE i.sound_id=s.id AND i.user_id=?) AS vote, "
+            result.addAll(readSoundRows("SELECT s.id, (SELECT COUNT(DISTINCT h.user_id) FROM sound_play h WHERE h.sound_id=s.id) AS listeners, "
+            + "(SELECT COUNT(*) FROM sound_play h WHERE h.sound_id=s.id AND h.user_id=?) AS my_plays, "
+            + "(SELECT value FROM sound_vote i WHERE i.sound_id=s.id AND i.user_id=?) AS vote, "
             + "(SELECT COUNT(DISTINCT bs.id) FROM soundboard_sounds bs WHERE bs.sound_id=s.id) AS boards "
             + "FROM sound s WHERE s.id IN (" + soundMarks(batch.size()) + ")", args.toArray()));
         });
@@ -1951,7 +1937,7 @@ public class BotDB extends AbstractDB {
                     }
 
                     try (PreparedStatement statement = connection.prepareStatement(
-                            "SELECT id, sound_id, user_id, guild_id, time, source FROM sound_history WHERE " + where,
+                            "SELECT id, sound_id, user_id, guild_id, channel_id, time, source FROM sound_play WHERE " + where,
                             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
                         statement.setFetchSize(SOUND_HISTORY_FETCH_SIZE);
                         bindSound(statement, args.toArray());
@@ -1959,7 +1945,7 @@ public class BotDB extends AbstractDB {
                         try (ResultSet rows = statement.executeQuery()) {
                             while (rows.next()) {
                                 consumer.accept(new SoundPlay(rows.getString("id"), rows.getString("sound_id"), rows.getString("user_id"),
-                                    rows.getString("guild_id"), rows.getTimestamp("time", utc).toInstant(), rows.getInt("source")));
+                                    rows.getString("guild_id"), rows.getString("channel_id"), rows.getTimestamp("time", utc).toInstant(), rows.getInt("source")));
                                 rowsRead++;
                             }
                         }
@@ -1981,14 +1967,14 @@ public class BotDB extends AbstractDB {
 
     public QueryRecord readSoundUserPlays(String soundId, String userId) {
         List<QueryRecord> rows = readSoundRows(
-            "SELECT COUNT(*) AS times FROM sound_history WHERE sound_id = ? AND user_id = ?", soundId, userId);
+            "SELECT COUNT(*) AS times FROM sound_play WHERE sound_id = ? AND user_id = ?", soundId, userId);
 
         return rows.isEmpty() ? new QueryRecord() : rows.get(0);
     }
 
     public QueryRecord readSoundInteraction(String soundId, String userId) {
         List<QueryRecord> rows = readSoundRows(
-            "SELECT value FROM sound_interactions WHERE sound_id = ? AND user_id = ?", soundId, userId);
+            "SELECT value FROM sound_vote WHERE sound_id = ? AND user_id = ?", soundId, userId);
 
         return rows.isEmpty() ? new QueryRecord() : rows.get(0);
     }
@@ -2034,18 +2020,7 @@ public class BotDB extends AbstractDB {
             if (!isSoundVisible(sound, userId, guilds))
                 throw soundMissing();
 
-            List<QueryRecord> old = soundQuery(connection, "SELECT value FROM sound_interactions WHERE sound_id=? AND user_id=?", id, userId);
-            int current = old.isEmpty() ? 0 : old.get(0).getAsInt("value");
-            int next = enabled ? value : current == value ? 0 : current;
-
-            if (old.isEmpty())
-                soundExecute(connection, "INSERT INTO sound_interactions(sound_id,user_id,value) VALUES (?,?,?)", id, userId, next);
-            else
-                soundExecute(connection, "UPDATE sound_interactions SET value=? WHERE sound_id=? AND user_id=?", next, id, userId);
-
-            soundExecute(connection, "UPDATE sound SET likes=(SELECT COUNT(*) FROM sound_interactions WHERE sound_id=? AND value=1), dislikes=(SELECT COUNT(*) FROM sound_interactions WHERE sound_id=? AND value=-1) WHERE id=?", id, id, id);
-            QueryRecord counts = soundQuery(connection, "SELECT likes, dislikes FROM sound WHERE id = ?", id).get(0);
-            saved[0] = new Sound.Vote(id, counts.getAsLong("likes"), counts.getAsLong("dislikes"), next == 1, next == -1);
+            saved[0] = SoundDB.setSoundVote(this, connection, sound, userId, value, enabled);
         });
 
         return saved[0];
@@ -2084,20 +2059,37 @@ public class BotDB extends AbstractDB {
     }
 
     public int recordSoundPlay(String id, String userId, String guildId, int source) {
-        int[] plays = new int[1];
+        return recordSoundPlay(id, userId, guildId, null, source);
+    }
 
-        soundTransaction(connection -> {
-            lockSound(connection, id);
-            soundExecute(connection, "INSERT INTO sound_history(user_id,sound_id,guild_id,source) VALUES (?,?,?,?)", userId, id, guildId, source);
-            soundExecute(connection, "UPDATE sound SET plays=plays+1 WHERE id=?", id);
-            plays[0] = soundQuery(connection, "SELECT plays FROM sound WHERE id = ?", id).get(0).getAsInt("plays");
+    public int recordSoundPlay(String id, String userId, String guildId, String channelId, int source) {
+        return writeSound(connection -> {
+            QueryRecord sound = lockSound(connection, id);
+
+            return insertSoundPlay(connection, sound, userId, guildId, channelId, source, null);
         });
+    }
 
-        return plays[0];
+    int insertSoundPlay(Connection connection, QueryRecord sound, String userId, String guildId,
+            String channelId, int source, String playbackId) throws SQLException {
+        String id = sound.get("id");
+        if (playbackId != null && !soundQuery(connection,
+                "SELECT id FROM sound_play WHERE sound_id=? AND playback_id=?", id, playbackId).isEmpty())
+            return sound.getAsInt("plays");
+
+        soundExecute(connection, "INSERT INTO sound_play(user_id,sound_id,guild_id,channel_id,source,playback_id) VALUES (?,?,?,?,?,?)",
+            userId, id, guildId, channelId, source, playbackId);
+        soundExecute(connection, "UPDATE sound SET plays=plays+1 WHERE id=?", id);
+
+        return sound.getAsInt("plays") + 1;
     }
 
     public static boolean isSoundVisible(QueryRecord sound, String userId, Set<String> guilds) {
-        return sound.getAsBoolean("public") || userId.equals(sound.get("user_id")) || guilds.contains(sound.get("guild_id"));
+        String owner = sound.get("user_id");
+        String guild = sound.get("guild_id");
+
+        return sound.getAsBoolean("public") || (userId != null && userId.equals(owner))
+            || (guild != null && guilds.contains(guild));
     }
 
     public List<QueryRecord> readSoundRows(String sql, Object... args) {
@@ -2330,18 +2322,37 @@ public class BotDB extends AbstractDB {
         void run(Connection connection) throws SQLException;
     }
 
+    @FunctionalInterface
+    interface SoundWrite<T> {
+        T run(Connection connection) throws SQLException;
+    }
+
     private void soundTransaction(SoundWork work) {
+        writeSound(connection -> {
+            work.run(connection);
+
+            return null;
+        });
+    }
+
+    <T> T writeSound(SoundWrite<T> work) {
         try (SoundSession session = connectSound()) {
             Connection connection = session.connection();
             connection.setAutoCommit(false);
 
             try {
-                work.run(connection);
-
+                T value = work.run(connection);
                 connection.commit();
+
+                return value;
             }
             catch (SQLException | RuntimeException failure) {
-                connection.rollback();
+                try {
+                    connection.rollback();
+                } catch (SQLException rollback) {
+                    failure.addSuppressed(rollback);
+                }
+
                 throw failure;
             }
         }
@@ -2461,7 +2472,7 @@ public class BotDB extends AbstractDB {
         return saved;
     }
 
-    private QueryRecord lockSound(Connection connection, String id) throws SQLException {
+    QueryRecord lockSound(Connection connection, String id) throws SQLException {
         List<QueryRecord> rows = soundQuery(connection, "SELECT * FROM sound WHERE id=? FOR UPDATE", id);
         if (rows.isEmpty())
             throw soundMissing();
@@ -2469,7 +2480,7 @@ public class BotDB extends AbstractDB {
         return rows.get(0);
     }
 
-    private List<QueryRecord> soundQuery(Connection connection, String sql, Object... args) throws SQLException {
+    List<QueryRecord> soundQuery(Connection connection, String sql, Object... args) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             bindSound(statement, args);
 
@@ -2491,14 +2502,14 @@ public class BotDB extends AbstractDB {
         }
     }
 
-    private void soundExecute(Connection connection, String sql, Object... args) throws SQLException {
+    void soundExecute(Connection connection, String sql, Object... args) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             bindSound(statement, args);
             statement.executeUpdate();
         }
     }
 
-    private void bindSound(PreparedStatement statement, Object[] args) throws SQLException {
+    void bindSound(PreparedStatement statement, Object[] args) throws SQLException {
         Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
         for (int i = 0; i < args.length; i++) {
@@ -2528,7 +2539,7 @@ public class BotDB extends AbstractDB {
         return String.join(",", Collections.nCopies(size, "?"));
     }
 
-    private String escapeSoundQuery(String text) {
+    static String escapeSoundQuery(String text) {
         return text.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     }
 

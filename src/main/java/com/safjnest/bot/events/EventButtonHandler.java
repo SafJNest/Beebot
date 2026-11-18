@@ -422,7 +422,12 @@ public class EventButtonHandler extends ListenerAdapter {
                         if (!guild.getAudioManager().isConnected())
                             guild.getAudioManager().openAudioConnection(channelJoin);
 
-                        SoundCache.withSound(soundId, current -> current.increaseUserPlays(event.getUser().getId(), guild.getId()));
+                        AudioChannel playbackChannel = guild.getAudioManager().getConnectedChannel();
+                        if (playbackChannel == null)
+                            playbackChannel = channelJoin;
+
+                        String channelId = playbackChannel == null ? null : playbackChannel.getId();
+                        SoundCache.withSound(soundId, current -> current.increaseUserPlays(event.getUser().getId(), guild.getId(), channelId, AudioType.AUDIO));
                         track.setUserData(new TrackData(AudioType.SOUND));
                         pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
                         Sound updated = SoundCache.getSoundById(soundId);

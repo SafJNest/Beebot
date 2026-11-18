@@ -4,10 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
+import com.safjnest.bot.audio.SoundStorageMigration;
 import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.bot.cache.managers.UserCache;
 import com.safjnest.bot.model.guild.BlacklistData;
@@ -37,9 +40,14 @@ import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
+import com.safjnest.sound.SoundService;
+import com.safjnest.sound.model.SoundCatalog;
+import com.safjnest.sound.model.SoundComment;
+import com.safjnest.sound.model.SoundVote;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.PermissionHandler;
 import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.ValidationUtils;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -61,6 +69,8 @@ public class Test extends Command {
     private static final List<String> MIGRATION_OPERATIONS = List.of(
         "fix-tracked", "rankprogress [runId]"
     );
+
+    private static final AtomicBoolean SOUND_MIGRATION_RUNNING = new AtomicBoolean();
 
     public Test() {
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -89,7 +99,7 @@ public class Test extends Command {
                 + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
                 + "] | regenerate aggregates [all|" + String.join("|", AggregateService.types())
                 + "] | regenerate champion [patch] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>"
-                + " | generate apikey <name> | revoke apikey <name> | generate personalkey <name> | revoke personalkey <name> | cleanup auth");
+                + " | sound <operation> | generate apikey <name> | revoke apikey <name> | generate personalkey <name> | revoke personalkey <name> | cleanup auth");
             case "gc" -> {
                 System.gc();
                 event.reply("Garbage collection requested.");
@@ -135,6 +145,7 @@ public class Test extends Command {
             case "migrate" -> queueMigration(event, arguments);
             case "fix-timeline" -> queueTimelineRepair(event, arguments);
             case "fix-timeline-patch" -> queueTimelinePatchRepair(event, arguments);
+            case "sound" -> testSound(event, arguments);
             case "test-matchups" -> queueMatchupRegeneration(event, arguments);
             case "export-match-search" -> startMatchSearchExport(event);
             default -> event.reply("Usage: !test regenerate <"
@@ -157,6 +168,129 @@ public class Test extends Command {
             }
         }
         return event.isOwner();
+    }
+
+    private static void testSound(CommandEvent event, String[] arguments) {
+        String[] values = arguments.length == 2 ? arguments[1].strip().split("\\s+", 2) : new String[0];
+        String operation = values.length > 0 ? values[0].toLowerCase(Locale.ROOT) : "";
+        String input = values.length == 2 ? values[1] : "";
+        if ("migrate-storage".equals(operation)) {
+            migrateSoundStorage(event, input);
+
+            return;
+        }
+
+        String[] parts = input.split("\\s+", 3);
+        String viewer = event.getAuthor().getId();
+        SoundService sounds = SoundService.getInstance();
+
+        try {
+            if (List.of("post", "reply", "edit", "pin", "heart", "delete", "vote", "play").contains(operation)
+                    && !App.isTesting()) {
+                event.reply("Sound writes are available only with the test database.");
+
+                return;
+            }
+
+            String result = switch (operation) {
+                case "explore" -> {
+                    SoundCatalog.Explore page = sounds.explore(null);
+
+                    yield "Trending=" + page.trending().size() + ", latest=" + page.latest().size()
+                        + ", tags=" + page.popularTags().size();
+                }
+                case "search" -> {
+                    SoundCatalog.Results page = sounds.search(new SoundCatalog.Search(input, null, null, null, null, null, null, null), viewer);
+
+                    yield "Public=" + page.items().size() + ", mine=" + page.mine().size() + ", next=" + page.nextCursor();
+                }
+                case "suggest" -> {
+                    SoundCatalog.Suggestions matches = sounds.suggestions(input, viewer);
+
+                    yield "Sounds=" + matches.sounds().size() + ", tags=" + matches.tags().size();
+                }
+                case "get" -> {
+                    SoundCatalog.Card sound = sounds.get(input, viewer);
+
+                    yield "Sound " + sound.id() + ", durationMs=" + sound.durationMs() + ", comments=" + sound.commentCount();
+                }
+                case "creator" -> {
+                    SoundCatalog.Creator creator = sounds.creator(input);
+
+                    yield "Public sounds=" + creator.soundCount() + ", plays=" + creator.plays() + ", comments=" + creator.commentCount();
+                }
+                case "comments" -> {
+                    String parent = parts.length > 1 && !"-".equals(parts[1]) ? parts[1] : null;
+                    SoundCatalog.Page<SoundComment> page = sounds.comments(parts[0], viewer, parent, null, null,
+                        parts.length == 3 ? parts[2] : null);
+
+                    yield "Comments=" + page.items().stream().map(SoundComment::id).toList() + ", next=" + page.nextCursor();
+                }
+                case "post" -> testComment(sounds.addComment(parts[0], viewer, null, input.substring(parts[0].length()).strip()));
+                case "reply" -> testComment(sounds.addComment(parts[0], viewer, parts[1], parts[2]));
+                case "edit" -> testComment(sounds.editComment(parts[0], parts[1], viewer, new SoundComment.Edit(parts[2], null, null)));
+                case "pin" -> testComment(sounds.editComment(parts[0], parts[1], viewer, new SoundComment.Edit(null, true, null)));
+                case "heart" -> testComment(sounds.editComment(parts[0], parts[1], viewer, new SoundComment.Edit(null, null, true)));
+                case "delete" -> "Comments=" + sounds.deleteComment(parts[0], parts[1], viewer).commentCount();
+                case "vote" -> {
+                    String comment = "-".equals(parts[1]) ? null : parts[1];
+                    SoundVote vote = "none".equalsIgnoreCase(parts[2]) ? null : SoundVote.valueOf(parts[2].toUpperCase(Locale.ROOT));
+                    SoundVote.Result resultVote = sounds.vote(parts[0], comment, viewer, vote);
+
+                    yield "Vote=" + resultVote.vote() + ", likes=" + resultVote.likes();
+                }
+                case "play" -> {
+                    UUID playbackId = parts.length > 1 ? UUID.fromString(parts[1]) : UUID.randomUUID();
+
+                    yield "Plays=" + sounds.recordWebPlay(parts[0], viewer, playbackId) + ", playbackId=" + playbackId;
+                }
+                default -> "Usage: !test sound explore | search [q] | suggest <q> | get <sound> | creator <user>"
+                    + " | comments <sound> [parent|-] [cursor] | post <sound> <text> | reply/edit <sound> <comment> <text>"
+                    + " | pin/heart/delete <sound> <comment> | vote <sound> <comment|-> <like|dislike|none> | play <sound> [uuid]"
+                    + " | migrate-storage [preview|apply] [sound]";
+            };
+
+            event.replyInDm(result);
+        } catch (com.safjnest.exception.Exception failure) {
+            event.replyInDm(failure.getCode() + " — " + failure.getMessage());
+        } catch (IllegalArgumentException | IndexOutOfBoundsException failure) {
+            event.replyInDm("Invalid sound test arguments. Use !test sound for usage.");
+        }
+    }
+
+    private static void migrateSoundStorage(CommandEvent event, String input) {
+        String[] args = input.isBlank() ? new String[]{"preview"} : input.split("\\s+");
+        boolean apply = "apply".equals(args[0]);
+        String id = args.length == 2 ? args[1] : null;
+        if ((!apply && !"preview".equals(args[0])) || args.length > 2 || (id != null && !ValidationUtils.isDecimalId(id))) {
+            event.replyInDm("Usage: !test sound migrate-storage [preview|apply] [sound]");
+
+            return;
+        }
+
+        if (!SOUND_MIGRATION_RUNNING.compareAndSet(false, true)) {
+            event.replyInDm("A sound storage migration is already running.");
+
+            return;
+        }
+
+        Thread.startVirtualThread(() -> {
+            try {
+                SoundStorageMigration.Report result = new SoundStorageMigration().run(id, apply);
+                String mode = apply ? "Applied" : "Preview";
+
+                event.replyInDm(mode + " — audio=" + result.audio() + ", thumbnails=" + result.thumbnails()
+                    + ", updated sounds=" + result.updated() + ", failures=" + result.failed());
+            } catch (RuntimeException failure) {
+                event.replyInDm("Sound storage migration failed: " + failure.getMessage());
+            } finally {
+                SOUND_MIGRATION_RUNNING.set(false);
+            }
+        });
+    }
+
+    private static String testComment(SoundComment.Change result) {
+        return "Comment " + result.comment().id() + ", total=" + result.commentCount();
     }
 
     private static void cleanupAuth(CommandEvent event, String[] arguments) {

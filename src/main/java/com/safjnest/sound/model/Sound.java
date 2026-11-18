@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -22,7 +23,7 @@ import com.safjnest.exception.Exception.Type;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public class Sound {
-    public static final int MAX_NAME_LENGTH = 255;
+    public static final int MAX_NAME_LENGTH = 32;
 
     @JsonProperty("id")
     private final String ID;
@@ -34,6 +35,7 @@ public class Sound {
     @JsonProperty("name")
     private volatile String name;
     private String extension;
+    private volatile String audioKey;
     @JsonProperty("public")
     private volatile boolean isPublic;
     private Timestamp timestamp;
@@ -67,8 +69,8 @@ public class Sound {
     @JsonProperty private long soundboardCount;
 
     public static String normalizeName(String value) {
-        String name = value.strip();
-        if (name.isEmpty() || name.length() > MAX_NAME_LENGTH || name.matches("[0-9]+"))
+        String name = value == null ? "" : value.strip();
+        if (name.isEmpty() || name.codePointCount(0, name.length()) > MAX_NAME_LENGTH || name.matches("[0-9]+"))
             throw Exception.invalidRequest("Invalid sound name");
 
         return name;
@@ -139,6 +141,7 @@ public class Sound {
 
         this.name = data.get("name");
         this.extension = data.get("extension");
+        this.audioKey = data.get("audio_key");
         this.isPublic = data.getAsBoolean("public");
         this.timestamp = data.getAsTimestamp("time");
         this.durationMs = readDuration(data);
@@ -163,6 +166,7 @@ public class Sound {
         this.tags = copyTags(original.tags);
 
         this.extension = original.extension;
+        this.audioKey = original.audioKey;
         this.timestamp = original.timestamp;
         this.durationMs = original.durationMs;
 
@@ -228,6 +232,7 @@ public class Sound {
         isPublic = refreshedPublic;
         tags = refreshedTags;
         durationMs = readDuration(current);
+        audioKey = current.get("audio_key");
 
         plays = current.getAsInt("plays");
         likes = current.getAsInt("likes");
@@ -251,6 +256,10 @@ public class Sound {
 
     public String getName() {
         return name;
+    }
+
+    public String getAudioKey() {
+        return audioKey;
     }
 
     public String getExtension() {
@@ -282,7 +291,7 @@ public class Sound {
     }
 
     public boolean setName(String name) {
-        return change(edit -> edit.name = name);
+        return change(edit -> edit.name = normalizeName(name));
     }
 
     public boolean setPublic(boolean isPublic) {
@@ -306,17 +315,28 @@ public class Sound {
         return increaseUserPlays(userId, guildId, AudioType.AUDIO);
     }
 
-    public synchronized boolean increaseUserPlays(String userId, String guildId, AudioType source) {
+    public boolean increaseUserPlays(String userId, String guildId, AudioType source) {
+        return increaseUserPlays(userId, guildId, null, source);
+    }
+
+    public synchronized boolean increaseUserPlays(String userId, String guildId, String channelId, AudioType source) {
         if (deleted || original != null)
             return false;
 
         try {
-            plays = database.recordSoundPlay(ID, userId, guildId, source.ordinal());
+            plays = database.recordSoundPlay(ID, userId, guildId, channelId, source.ordinal());
 
             return true;
         } catch (Exception exception) {
             return false;
         }
+    }
+
+    public synchronized int recordWebPlay(String userId, UUID playbackId) {
+        requireCurrent();
+        plays = database.communitySounds().recordWebPlay(ID, userId, playbackId);
+
+        return plays;
     }
 
     public String getFormattedTags() {
@@ -388,12 +408,20 @@ public class Sound {
     }
 
     public synchronized Vote vote(String userId, Set<String> guilds, int value, boolean enabled) {
-        if (deleted || original != null)
-            throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
-
+        requireCurrent();
         Vote saved = database.voteSound(ID, userId, guilds, value, enabled);
         likes = (int) saved.likes();
         dislikes = (int) saved.dislikes();
+        catalogChanged.run();
+
+        return saved;
+    }
+
+    public synchronized SoundVote.Result vote(String userId, SoundVote vote) {
+        requireCurrent();
+        SoundVote.Result saved = database.communitySounds().vote(ID, null, userId, vote);
+        likes = (int) saved.likes();
+        dislikes = saved.dislikes().intValue();
         catalogChanged.run();
 
         return saved;
@@ -411,10 +439,11 @@ public class Sound {
         if (deleted || original != null)
             return false;
 
-        database.deleteSoundData(ID, userId, administrators);
+        QueryRecord removed = database.deleteSoundData(ID, userId, administrators);
         deleted = true;
         revision++;
         catalogChanged.run();
+        SoundFiles.getInstance().deleteImage(removed.get("image_key"));
 
         return true;
     }
@@ -425,6 +454,11 @@ public class Sound {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private void requireCurrent() {
+        if (deleted || original != null)
+            throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
+    }
 
     private static Long readDuration(QueryRecord row) {
         long duration = row.getAsLong("duration_ms");

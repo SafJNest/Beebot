@@ -1,14 +1,17 @@
 package com.safjnest.database;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.safjnest.bot.model.BotSettings.R2Settings;
 import com.safjnest.utils.HttpUtils;
@@ -21,10 +24,14 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public final class R2 implements AutoCloseable {
 
@@ -90,6 +97,38 @@ public final class R2 implements AutoCloseable {
         upload(bucket, key, RequestBody.fromBytes(source), contentType, Map.of());
     }
 
+    public void copyVerified(String bucket, String source, String target) {
+        HeadObjectResponse original = head(bucket, source);
+        if (original.contentLength() == null || original.contentLength() <= 0 || original.eTag() == null)
+            throw new IllegalStateException("Invalid R2 object: " + source);
+
+        HeadObjectResponse current = headIfPresent(bucket, target);
+        if (current != null) {
+            if (!Objects.equals(original.contentLength(), current.contentLength()) ||
+                    (!original.eTag().equals(current.eTag()) && !sameContent(bucket, source, target)))
+                throw new IllegalStateException("Different R2 object already exists at " + target);
+
+            if (sameHeaders(original, current))
+                return;
+        }
+
+        CopyObjectRequest request = CopyObjectRequest.builder()
+            .sourceBucket(bucket).sourceKey(source).destinationBucket(bucket).destinationKey(target)
+            .copySourceIfMatch(original.eTag()).metadataDirective(MetadataDirective.COPY).build();
+        CopyObjectResponse copied = client.copyObject(request);
+        HeadObjectResponse verified = head(bucket, target);
+
+        String copiedTag = copied.copyObjectResult() == null ? null : copied.copyObjectResult().eTag();
+        if (copiedTag == null || !copiedTag.equals(verified.eTag())
+                || !Objects.equals(original.contentLength(), verified.contentLength()) || !sameHeaders(original, verified))
+            throw new IllegalStateException("Could not verify R2 copy to " + target);
+    }
+
+    public void delete(String bucket, String key) {
+        requireClient();
+        client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+    }
+
     public void updateMetadata(String bucket, String key, Map<String, String> values) {
         HeadObjectResponse previous = head(bucket, key);
         Map<String, String> metadata = new HashMap<>(previous.metadata());
@@ -121,6 +160,48 @@ public final class R2 implements AutoCloseable {
         requireClient();
 
         return client.headObject(HeadObjectRequest.builder().bucket(bucket).key(key).build());
+    }
+
+    private HeadObjectResponse headIfPresent(String bucket, String key) {
+        try {
+            return head(bucket, key);
+        } catch (S3Exception failure) {
+            if (failure.statusCode() == 404)
+                return null;
+
+            throw failure;
+        }
+    }
+
+    private boolean sameContent(String bucket, String source, String target) {
+        GetObjectRequest first = GetObjectRequest.builder().bucket(bucket).key(source).build();
+        GetObjectRequest second = GetObjectRequest.builder().bucket(bucket).key(target).build();
+
+        try (InputStream original = client.getObject(first); InputStream copy = client.getObject(second)) {
+            byte[] expected = new byte[64 * 1024];
+            byte[] actual = new byte[expected.length];
+
+            while (true) {
+                int size = original.readNBytes(expected, 0, expected.length);
+                int copied = copy.readNBytes(actual, 0, actual.length);
+                if (size != copied || !Arrays.equals(expected, 0, size, actual, 0, copied))
+                    return false;
+                if (size < expected.length)
+                    return true;
+            }
+        } catch (IOException failure) {
+            throw new IllegalStateException("Could not compare R2 objects", failure);
+        }
+    }
+
+    private static boolean sameHeaders(HeadObjectResponse first, HeadObjectResponse second) {
+        return first.metadata().equals(second.metadata())
+            && Objects.equals(first.contentType(), second.contentType())
+            && Objects.equals(first.cacheControl(), second.cacheControl())
+            && Objects.equals(first.contentDisposition(), second.contentDisposition())
+            && Objects.equals(first.contentEncoding(), second.contentEncoding())
+            && Objects.equals(first.contentLanguage(), second.contentLanguage())
+            && Objects.equals(first.expires(), second.expires());
     }
 
     private void upload(String bucket, String key, RequestBody source, String contentType, Map<String, String> metadata) {

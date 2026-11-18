@@ -1,6 +1,8 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 18 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`. Gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale di `com.safjnest`, con `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a` e il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound), il riordino analytics e la chiusura Sound/Tag sono nel commit `e7daa3f2`. Il passaggio 4 (errori e Spring/auth) è nel commit `f43fc0b8` e il passaggio 5 (HTTP e parsing) in `f4a2d014`. Il passaggio 6 (query auth/API) è implementato nel working tree.
+Revisione aggiornata al 18 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`. Gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale di `com.safjnest`, con `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a` e il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound), il riordino analytics e la chiusura Sound/Tag sono nel commit `e7daa3f2`. Il passaggio 4 (errori e Spring/auth) è nel commit `f43fc0b8` e il passaggio 5 (HTTP e parsing) in `f4a2d014`. Il passaggio 6 (query auth/API) è nel commit `cb644f3a`. La pulizia finale Sound è nel commit `645f746e`.
+
+Il proprietario ha confermato la chiusura di tutte e sei le fasi. Logging, `Chronos` e la possibile rimozione di `Sound.isOpus()` o del costruttore vuoto sono fuori dal perimetro della chiusura. I criteri di lavoro riutilizzabili sono nella [guida al refactor](refactor-workflow.md).
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -387,7 +389,7 @@ per i comandi, con il contesto della gilda corrente.
 
 ## Sequenza di implementazione proposta
 
-I passaggi 1–5 sono nei commit riportati in apertura. Il passaggio 6 è implementato nel working tree. La tabella riporta per ogni intervento il risultato e le verifiche previste.
+I passaggi 1–6 sono nei commit riportati in apertura. La tabella riporta per ogni intervento il risultato e i criteri di verifica.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
@@ -455,7 +457,7 @@ Nel controllo degli spostamenti del 17 novembre 2026 sul commit `e9bf1585`:
 - una prova isolata di Logback ha riprodotto due errori nella configurazione caricata da `BotLogger`: `rsc/logback.xml` e `src/main/resources/logback-spring.xml` conservano riferimenti a `com.safjnest.utils.log`, mentre le classi sono in `com.safjnest.status.log`; il logger attuale eredita inoltre `INFO` invece del `TRACE` configurato per il vecchio nome. La correzione è stata applicata nel passaggio 1;
 - i file degli agenti/skill sono stati rimossi dal versionamento e le cartelle ignorate; il piano resta nel documento versionato, mentre la skill locale non è più condivisa dalla repo.
 
-Le prove precedenti non verificano il funzionamento live di bot/API, la concorrenza, le integrazioni o le prestazioni. I passaggi 1–2 sono implementati; gli accorpamenti dei passaggi 3–6 restano da implementare. Le esclusioni su Mongo, framework SQL, BotStatus, nomi storici e grandi refactoring degli handler rimangono valide.
+Questi controlli risalgono alla verifica degli spostamenti e riguardano compilazione e coerenza dei package. Le verifiche funzionali dei passaggi successivi sono nelle rispettive sezioni.
 
 Il passaggio 1 modifica la base delle cache, i loader, le factory di idratazione, le sole query bulk necessarie e i riferimenti del logging. I nuovi test locali coprono concorrenza, bulk, scadenza/eviction, invalidazione, errori, creazione, SQL preparato con H2 e isolamento delle risposte sound. La suite precedente di 101 file non è stata ripristinata. Il codice resta compatibile con il target Java 25 configurato; le lambda non richiedono un cambio di versione. Contratti API, presentazione e ADR accettati rimangono invariati.
 
@@ -990,5 +992,5 @@ richiesta passano per `Exception.invalidRequest`.
 
 Le rotte, il JSON pubblico, i permessi e la presentazione Discord sono
 conservati. I controlli locali esercitano chiavi e fallback tramite uno store
-Redis simulato e la serializzazione HTTP tramite MockMvc e H2. R2 resta un
-intervento separato.
+Redis simulato e la serializzazione HTTP tramite MockMvc e H2. Il seguito su R2
+è registrato nella sezione [Suoni e R2](#suoni-e-r2).

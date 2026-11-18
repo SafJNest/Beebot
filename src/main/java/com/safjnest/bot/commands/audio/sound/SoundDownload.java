@@ -57,14 +57,14 @@ public class SoundDownload extends SlashCommand{
             message = "Downloaded a random sound named " + description;
 
         event.deferReply(false).queue(hook -> Thread.startVirtualThread(
-            () -> sendFile(hook, message, sound.getId(), sound.getExtension())));
+            () -> sendFile(hook, message, sound)));
     }
 
     /* -------------------------------------------------------------------------- */
 
-    private void sendFile(InteractionHook hook, String message, String id, String extension) {
+    private void sendFile(InteractionHook hook, String message, Sound sound) {
         try {
-            Path file = SoundFiles.getInstance().resolve(id, extension);
+            Path file = SoundFiles.getInstance().resolve(sound);
             hook.editOriginal(message).setFiles(FileUpload.fromData(file.toFile())).queue();
         } catch (IOException | IllegalArgumentException exception) {
             hook.editOriginal("Sound file is unavailable.").queue();

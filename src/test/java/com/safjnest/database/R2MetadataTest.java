@@ -15,11 +15,14 @@ import org.junit.rules.TemporaryFolder;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CopyObjectResult;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class R2MetadataTest {
 
@@ -71,4 +74,49 @@ public class R2MetadataTest {
         assertEquals("STANDARD_IA", request.storageClassAsString());
         assertEquals(Map.of("duration-ms", "2088", "foreign-key", "retained", "name-base64", "updated"), request.metadata());
     }
+    @Test
+    public void migrationCopiesWithSourceConditionAndReusesVerifiedDestination() {
+        String source = "sounds/1.mp3";
+        String target = "sounds/1/1.mp3";
+        HeadObjectResponse original = HeadObjectResponse.builder().contentLength(8L).eTag("\"audio\"")
+            .contentType("audio/mpeg").metadata(Map.of("duration-ms", "2088")).build();
+        AtomicReference<HeadObjectResponse> destination = new AtomicReference<>();
+        AtomicReference<CopyObjectRequest> request = new AtomicReference<>();
+
+        S3Client client = (S3Client) Proxy.newProxyInstance(S3Client.class.getClassLoader(), new Class<?>[] {S3Client.class},
+            (proxy, method, args) -> switch (method.getName()) {
+                case "headObject" -> {
+                    String key = ((HeadObjectRequest) args[0]).key();
+                    if (source.equals(key))
+                        yield original;
+                    if (destination.get() == null)
+                        throw S3Exception.builder().statusCode(404).build();
+
+                    yield destination.get();
+                }
+                case "copyObject" -> {
+                    request.set((CopyObjectRequest) args[0]);
+                    destination.set(original);
+
+                    yield CopyObjectResponse.builder().copyObjectResult(CopyObjectResult.builder().eTag(original.eTag()).build()).build();
+                }
+                default -> throw new AssertionError(method.getName());
+            });
+        R2 storage = new R2(URI.create("https://cdn.example/"), client);
+
+        storage.copyVerified("beebot", source, target);
+        assertEquals(source, request.get().sourceKey());
+        assertEquals(target, request.get().destinationKey());
+        assertEquals(original.eTag(), request.get().copySourceIfMatch());
+        assertEquals(MetadataDirective.COPY, request.get().metadataDirective());
+
+        request.set(null);
+        storage.copyVerified("beebot", source, target);
+        assertNull(request.get());
+
+        destination.set(original.toBuilder().contentLength(9L).build());
+        assertThrows(IllegalStateException.class, () -> storage.copyVerified("beebot", source, target));
+        assertNull(request.get());
+    }
+
 }

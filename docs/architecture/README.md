@@ -12,6 +12,9 @@ records the completed package moves and the six implementation steps through
 the alignment of authentication queries in `AuthDB`. It is the canonical plan
 for this work and does not amend an accepted ADR.
 
+The [refactor workflow](refactor-workflow.md) records the practices and examples
+from that work for future changes and for the `beebot agent` agent.
+
 ## Ownership
 
 - `lol.model` owns canonical LoL success models.

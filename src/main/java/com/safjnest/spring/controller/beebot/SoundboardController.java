@@ -96,7 +96,7 @@ public class SoundboardController {
         Context context = context(auth, guildId);
         if (!body.isObject() || body.size() != 2 || !body.path("soundIds").isArray()
                 || body.path("soundIds").size() > BotDB.MAX_SOUNDBOARD_SOUNDS)
-            throw Exception.invalidRequest("Expected name and soundIds with up to 20 sounds");
+            throw Exception.invalidRequest("Expected name and soundIds with up to " + BotDB.MAX_SOUNDBOARD_SOUNDS + " sounds");
 
         Set<String> ids = new LinkedHashSet<>();
         for (JsonNode value : body.path("soundIds")) {
@@ -200,7 +200,11 @@ public class SoundboardController {
         if (!value.isTextual())
             throw Exception.invalidRequest("Soundboard name required");
 
-        return Sound.normalizeName(value.asText());
+        String name = value.asText().strip();
+        if (name.isEmpty() || name.length() > 255 || name.matches("[0-9]+"))
+            throw Exception.invalidRequest("Invalid soundboard name");
+
+        return name;
     }
 
     private String id(String id) {

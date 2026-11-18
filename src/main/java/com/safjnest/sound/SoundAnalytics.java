@@ -203,7 +203,7 @@ public final class SoundAnalytics {
         long plays = group.getPlayCount();
         Map<String, UserTotals> users = group.getUserTotals();
         int listeners = users.size();
-        double average = listeners == 0 ? 0.0 : (double) plays / listeners;
+        double average = listeners == 0 ? 0.0 : (double) group.getIdentifiedPlayCount() / listeners;
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("plays", plays);
@@ -234,7 +234,7 @@ public final class SoundAnalytics {
         int pageSize = Math.min(SoundHistory.PAGE_SIZE, rows.size());
 
         for (SoundPlay play : rows.subList(0, pageSize)) {
-            String visibleGuild = memberships.contains(play.guildId()) ? play.guildId() : null;
+            String visibleGuild = play.guildId() != null && memberships.contains(play.guildId()) ? play.guildId() : null;
             entries.add(new HistoryPlay(play.id(), play.time().toString(), visibleGuild, getSourceName(play.source())));
         }
 

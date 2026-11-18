@@ -4,7 +4,8 @@ public enum AudioType {
     AUDIO,
     SOUND,
     GREET,
-    SOUNDBOARD;
+    SOUNDBOARD,
+    WEB;
 
     private static final AudioType[] VALUES = values();
 

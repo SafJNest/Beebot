@@ -34,7 +34,7 @@ All detail, list and greet responses contain the existing `com.safjnest.sound.mo
 
 Counts in Sound are global/all time. `listeners` counts distinct users associated with recorded plays, not everyone present in the voice channel. `myPlays` counts the caller's recorded plays. Uploader display data comes from the Discord cache; unavailable names are `Unknown`, avatars null. `durationMs` is the playback duration from MariaDB, in milliseconds. It is available immediately after upload, including on a cold cache, and is null when the row has no persisted duration. `createdAt` can be null for legacy records.
 
-With R2 enabled, `url` is the CDN base from `rsc/settings.json` plus the sound object key, `sounds/{id}.{extension}` by default. The bot uses the same URL on a local-file cache miss. All sounds use the same CDN URL scheme. API authorization continues to govern API responses, while the CDN serves the underlying file directly. With R2 disabled, Spring's existing `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
+With R2 enabled, `url` combines the CDN base with the stored `audio_key`, normally `sounds/{id}/{id}.{extension}`. Rows awaiting migration use the original flat key. The bot resolves the same R2 key on a local-file cache miss. API authorization governs metadata responses and the CDN serves audio directly. With R2 disabled, Spring's `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
 
 Deletion removes the sound and dependent rows from SQL and invalidates the metadata and selection caches. The R2 object and the VPS file are retained.
 
@@ -66,7 +66,7 @@ All accept `period=7d|30d|90d|all` (default `30d`) and `timezone` (default `Euro
 
 Generic analytics include total plays, distinct users, average plays per user, daily series, 168 weekday/hour heatmap cells, source distribution and per-user replay-count buckets (1, 2–5, 6–20, 21–50, 51+). Weekdays are ISO 1 Monday to 7 Sunday; hours 0–23. Days and cells with no plays are zero-filled. Java groups UTC quarter-hours before conversion to the requested zone, preserving modern quarter/half-hour offsets and daylight-saving transitions without requiring MariaDB timezone tables. SQL sessions use UTC and restore the borrowed connection's original timezone before returning it to the shared pool.
 
-Guild analytics also include top five sounds, top five most-liked sounds, aggregate user leaderboard and a result per sound. User leaderboard entries contain display identity, distinct sound count and play count, never timestamps or individual sources. Source names retain `AudioType` meanings: `AUDIO`, `SOUND`, `GREET`, `SOUNDBOARD`, with `UNKNOWN` for unrecognized historical values. Existing AUDIO rows are not reclassified.
+Guild analytics also include top five sounds, top five most-liked sounds, aggregate user leaderboard and a result per sound. User leaderboard entries contain display identity, distinct sound count and play count, never timestamps or individual sources. Source names retain `AudioType` meanings: `AUDIO`, `SOUND`, `GREET`, `SOUNDBOARD`, `WEB`, with `UNKNOWN` for unrecognized historical values. Existing AUDIO rows are not reclassified.
 
 Single-sound analytics return `{soundId,period,timezone,from,to,totals,guilds,otherGuilds,my}`. `totals` and each guild group contain the aggregate distributions. Accessible guilds with plays appear under their IDs with aggregate user counts. Nonmember guilds collapse into one anonymous `otherGuilds`, without guild IDs or user identities. Cross-guild totals deduplicate users. Ownership does not grant access to other users' timestamps.
 
@@ -78,7 +78,7 @@ All analytics use one streaming SQL history read per block of up to 500 sound ID
 
 ### Upload a sound
 
-`POST /guilds/{guildId}/sounds` accepts `multipart/form-data`. Send an MP3 or Opus in `file` and an `application/json` part named `metadata`. The caller must belong to the guild and share it with the bot. Beebot derives the uploader from authentication. `name` is required, `public` defaults to true and `tags` defaults to an empty list. The direct API accepts files up to 25 MiB.
+`POST /guilds/{guildId}/sounds` accepts `multipart/form-data`. Send an MP3 or Opus in `file` and an `application/json` part named `metadata`. The caller must belong to the guild and share it with the bot. Beebot derives the uploader from authentication. `name` is required (maximum 32 characters), `public` defaults to true and `tags` defaults to an empty list. The direct API accepts files up to 25 MiB.
 
 ```sh
 curl -X POST "$BEEBOT_BASE/guilds/123/sounds" \
@@ -118,7 +118,7 @@ curl -X POST "$BEEBOT_BASE/guilds/123/sounds" \
 
 ### Edit, delete, and vote
 
-`PATCH /sounds/{soundId}` accepts a nonempty object with any of `name`, `public`, `tags`. Omitted fields stay unchanged. Name validation is shared with upload. Names are trimmed, nonblank, non-numeric and limited to 255 characters. Duplicates in the existing uploader/original-guild namespace are rejected. Public is boolean. Tags replace the set, `[]` clears it, at most five nonblank names of at most 255 characters, normalized to lowercase and deduplicated. Unknown/read-only fields and nulls are rejected. Only the uploader may edit. The entire patch is atomic. Response is the updated canonical Sound.
+`PATCH /sounds/{soundId}` accepts a nonempty object with any of `name`, `public`, `tags`. Omitted fields stay unchanged. Name validation is shared with upload. Names are trimmed, nonblank, non-numeric and limited to 32 characters. Previously stored longer names remain readable. Duplicates in the existing uploader/original-guild namespace are rejected. Public is boolean. Tags replace the set, `[]` clears it, at most five nonblank names of at most 255 characters, normalized to lowercase and deduplicated. Unknown/read-only fields and nulls are rejected. Only the uploader may edit. The entire patch is atomic. Response is the updated canonical Sound.
 
 `DELETE /sounds/{soundId}` permits the uploader or an Administrator/owner of the original guild. Manage Server alone is insufficient for deletion. Response is 204 with no body.
 
@@ -156,7 +156,7 @@ For detail, creation and rename, `board` is the same object and `sounds` is an a
 }
 ```
 
-Creation takes 1–20 distinct IDs. A duplicate name or an addition above the limit returns 409. Adding an existing association or removing an absent one is safe to retry. Removing the final sound through the API keeps the board. Deleting the board removes its associations and preserves the individual sounds and the existing cover object.
+Creation takes 1–25 distinct IDs. A duplicate name or an addition above the limit returns 409. Adding an existing association or removing an absent one is safe to retry. Removing the final sound through the API keeps the board. Deleting the board removes its associations and preserves the individual sounds and the existing cover object.
 
 ```sh
 curl -X PUT "$BEEBOT_BASE/guilds/123/soundboards/7/thumbnail" \
@@ -230,7 +230,7 @@ Beebot envelope also covers absent routes and framework errors, with retry
 metadata preserved in both filter and advice. This does not alter sound success
 payloads, OpenAPI schemas, independent greet results or Discord presentation.
 
-Before deployment stop the previous application, apply `database/berbit/sound/001-sound-history-guild.sql` if the column is absent, then `002-sound-api.sql`, then start the updated application. No scripts run automatically. Inspect `SHOW CREATE TABLE` first: historical schema dumps omit counters and define a guild foreign key incompatible with global greet scope 0. The second script adds missing counters, rebuilds them from history/interactions, adds query indexes and removes that guild FK; it keeps the sound FK. Its DDL targets MariaDB. The migration backfills `sound_history.guild_id` with the sound's original guild when private and `474935164451946506` when public; this approximation is accepted and existing assigned rows are not overwritten.
+Before deployment stop the previous application, apply `database/berbit/sound/001-sound-history-guild.sql` if the column is absent, then `002-sound-api.sql` if that migration has not been applied, then follow the [community cutover](#schema-cutover) before starting the updated application. No scripts run automatically. Inspect `SHOW CREATE TABLE` first: historical schema dumps omit counters and define a guild foreign key incompatible with global greet scope 0. The second script adds missing counters, rebuilds them from history/interactions, adds query indexes and removes that guild FK; it keeps the sound FK. Its DDL targets MariaDB. The migration backfills `sound_history.guild_id` with the sound's original guild when private and `474935164451946506` when public; this approximation is accepted and existing assigned rows are not overwritten.
 
 The fixed historical public guild ID is treated as a real stored value, as agreed. Historical assignments are approximate. LoL API, Redis namespaces and Discord visual presentation are unchanged. The only new bot behavior is shared invalidation, transactional sound data updates and the agreed greet validity rules.
 
@@ -238,13 +238,87 @@ The fixed historical public guild ID is treated as a real stored value, as agree
 
 For a nonempty collection of up to 500 sounds, guild and personal analytics execute three data queries with an ID-cache miss (ID selection, sound metadata, streaming history), or two with an ID-cache hit. Single-sound analytics execute two (sound metadata and history). These counts exclude authentication, connection/session statements and any retry after invalid cached IDs. Larger collections are read in bounded ID blocks, on the same connection.
 
-The history read selects `id, sound_id, user_id, guild_id, time, source` and filters by selected sounds, upper bound, optional lower bound covering the previous interval, and optional guild. There is no GROUP BY, SQL sort, or personal-history query per sound. MariaDB Connector/J fetch size is 256; processing completes before any further query is issued on that connection, following the [driver streaming guidance](https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j). Network transfer still scales with the selected play count; Java keeps grouped counts and bounded personal queues, not all events. High-cardinality user/group counts and all-time requests can still be expensive.
+The history read selects `id, sound_id, user_id, guild_id, channel_id, time, source` and filters by selected sounds, upper bound, optional lower bound covering the previous interval, and optional guild. There is no GROUP BY, SQL sort, or personal-history query per sound. MariaDB Connector/J fetch size is 256; processing completes before any further query is issued on that connection, following the [driver streaming guidance](https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j). Network transfer still scales with the selected play count; Java keeps grouped counts and bounded personal queues, not all events. High-cardinality user/group counts and all-time requests can still be expensive.
 
 Debug logs report membership resolution time (`Sound memberships`), history rows and processing time (`Sound history`), and total facade read time (`Sound read`). Membership resolution occurs before the read timer; authentication is also outside that timer. These are diagnostics, not an assertion that the live latency has been resolved.
 
+## Sound community backend
+
+The new methods live in `SoundService`. Existing HTTP routes continue to use
+their current contracts. The [next HTTP contract](beebot-sound-community.md)
+lists the paths the dashboard can prepare against.
+
+- `SoundDB` shares BotDB's prepared statements, read session and lock on the
+  sound row. Bot, current HTTP and community vote writes all use `sound_vote`.
+  The transaction changes one user vote and applies its delta to the current
+  counters. Clearing a vote removes the row.
+- Web playback uses `sound_play` and appends ordinal `WEB` to `AudioType`.
+  A retry with the same UUID and sound ID reuses the event. An anonymous event
+  contributes to play totals, time series and source counts. Listener counts,
+  replay distribution, personal history and per-listener averages use
+  identified users. New Discord records can store the voice channel ID.
+- Comment threads use a direct parent ID. Each write checks that the parent
+  belongs to the same sound in the transaction. All comments are owned by the
+  sound through a foreign key, so deleting a sound can cascade independently of
+  thread depth. Deleting a comment keeps a placeholder while it has replies.
+  Removing the last reply prunes any now-empty deleted ancestors.
+- Root and reply pages default to 20 rows. The first root page reserves one slot
+  for the pinned comment. Pin replacement, reply counts and the sound's total
+  comment count are transaction-protected. One query reads the page and its
+  viewer votes. Catalog pages load tags and listener/viewer data in batches.
+- Community visibility is public plus caller-owned private sounds. The catalog,
+  tag popularity and creator totals use public rows. Matching personal results
+  are a separate first-page section, including private uploads. Web comments, votes and plays all check the same visibility policy.
+  Catalog cards use the configured CDN for both media URLs.
+
+### Schema cutover
+
+Inspect the product database with `SHOW CREATE TABLE sound`,
+`SHOW CREATE TABLE sound_history`, and `SHOW CREATE TABLE sound_interactions`.
+Run the new [003 migration](../../database/berbit/sound/003-sound-community.sql)
+after the historical migrations, in one MariaDB session with the old bot and
+API stopped. Apply it to a restored copy first and record the totals before
+and after. The new foreign keys use the actual type of `sound.id`. The migration adds
+`audio_key` and `image_key`. Existing flat audio references stay usable until
+the [storage migration command](../audio-storage-r2.md#move-existing-sounds-to-their-id-prefix)
+verifies the R2 copy and saves the new key.
+
+`sound_history` is renamed to `sound_play` in place. Old IDs, times, sources
+and assigned guilds carry over. `channel_id` and `playback_id` start as null.
+Existing active votes are copied from `sound_interactions`, the counters
+are reconciled, and the source table is preserved as
+`sound_interactions_before_003`. Previous neutral votes have no row in
+`sound_vote`. The script can resume before the application restarts, and a
+repeat after the backup rename leaves the active vote table intact. Keep
+the backup for the cutover. Use a database backup to reverse a deployment
+after writes have resumed.
+
+\`\`\`sql
+SELECT COUNT(*) AS plays, MIN(id) AS first_id, MAX(id) AS last_id FROM sound_play;
+SELECT COUNT(*) AS source_votes FROM sound_interactions_before_003 WHERE value IN (-1, 1);
+SELECT COUNT(*) AS migrated_votes FROM sound_vote WHERE sound_id IS NOT NULL;
+SELECT COUNT(*) AS mismatched_votes
+FROM sound_interactions_before_003 old
+LEFT JOIN sound_vote new ON new.sound_id=old.sound_id AND new.user_id=old.user_id
+WHERE old.value IN (-1, 1) AND (new.id IS NULL OR new.value<>old.value);
+\`\`\`
+
+### Owner test command
+
+`!test sound` lists the operations. Examples include `!test sound explore`,
+`!test sound search arcade`, `!test sound suggest ar`,
+`!test sound comments 42` and `!test sound comments 42 7`. For another page,
+supply the parent ID or `-` for roots, followed by the returned cursor.
+`post`, `reply`, `edit`, `pin`, `heart`, `delete`, `vote` and `play`
+write only with the test database configuration. Repeating
+`!test sound play 42 <uuid>` checks deduplication. The command reports
+results to the owner in a direct message. The `migrate-storage` operation
+previews storage candidates by default. `migrate-storage apply` explicitly
+runs the migration on the database and bucket configured for that bot.
+
 ## Validation evidence
 
-The previous regression suite covered sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets; its 101 test files were removed during the owner’s repository cleanup. The cache and shared-mutation steps add focused local tests for coordinated bulk loading, expiration/eviction, invalidation, loader failures, hydration, prepared SQL with H2 and viewer-state isolation. The historical checks below are previous evidence, not a current re-execution of that deleted suite. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. MariaDB migration execution, live Redis/Discord/Cloudflare integration and extreme bulk HTTP payloads have not been verified.
+The previous regression suite covered sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets; its 101 test files were removed during the owner’s repository cleanup. The cache and shared-mutation steps add focused local tests for coordinated bulk loading, expiration/eviction, invalidation, loader failures, hydration, prepared SQL with H2 and viewer-state isolation. The historical checks below are previous evidence, not a current re-execution of that deleted suite. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. Local community validation uses MariaDB 11.8.10 with disposable schemas. The 003 migration was exercised with signed SMALLINT and unsigned INT sound IDs, preserved play history, copied active votes, enforced vote targets and playback uniqueness, and kept new votes when repeated. The Java service was also exercised against MariaDB for catalog visibility, comment cursors, votes, retries and deletion. Live Redis, Discord, Cloudflare and production migration execution remain outside this verification.
 
 The migration uses [MariaDB ALTER TABLE](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table) conditionals; it is not advertised as a portable MySQL/H2 migration.
 

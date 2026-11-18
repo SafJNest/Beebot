@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 3.0
  */
 public class SoundboardAdd extends SlashCommand{
-    private static final int maxSounds = 20;
+    private static final int maxSounds = BotDB.MAX_SOUNDBOARD_SOUNDS;
 
     public SoundboardAdd(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
