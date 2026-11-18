@@ -12,6 +12,7 @@ import org.bson.Document;
 import com.safjnest.database.nosql.MongoDB;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.MatchMemoryUtils;
+import com.safjnest.utils.ParseUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -60,7 +61,7 @@ public final class ChampionStatsProvider {
         String matchId = String.valueOf(document.get("_id"));
         ChampionStatsData.MatchMeta metadata = new ChampionStatsData.MatchMeta(
                 map(document.get("bans")), document.get("events"),
-                number(document.get("timeStart")), number(document.get("timeEnd")),
+                ParseUtils.longValue(document.get("timeStart")), ParseUtils.longValue(document.get("timeEnd")),
                 region(document.getString("region")), rank(document.getString("rank")), queue(document.getString("queue")));
         List<ChampionStatsData.RawParticipant> participants = new ArrayList<>();
         for (Document participant : participants(document.get("participants"))) {
@@ -87,10 +88,6 @@ public final class ChampionStatsProvider {
             if (entry.getKey() != null) result.put(String.valueOf(entry.getKey()), entry.getValue());
         }
         return result;
-    }
-
-    private static long number(Object value) {
-        return value instanceof Number number ? number.longValue() : 0;
     }
 
     private static LaneType lane(Document participant) {

@@ -107,3 +107,13 @@ Every key lookup reads authoritative SQL, including the current type. Revocation
 For personal requests, the shared guild-list cache uses JDA as described above. Guild GET/POST use that same list and permission policy. Personal keys do not grant global administrator rights or bypass guild permissions. The source-specific choice is confined to loading data: controllers always authenticate, resolve the user context, authorize and execute the requested method.
 
 The `test` key generation and revocation operations are available only to Untouchables or Epria; denied attempts receive a private message. Other `test` operations remain restricted to the bot owner and co-owners.
+
+
+Discord HTTP now uses the common `HttpUtils` transport and GET/form builders;
+`DiscordApi` retains the provider-specific URLs, JSON parsing, authorization and
+error policy. The 15-second timeouts, explicit UTF-8, form fields/escaping,
+non-following of redirects and retry metadata are preserved. Parsing a retry
+header reuses `ParseUtils`, with finite/non-negative checks still in DiscordApi.
+The change is internal: login/session routes, credentials, response shapes and
+SQL/cache revocation behavior are unchanged. Transport tests use simulated
+responses; they do not establish live Discord availability.

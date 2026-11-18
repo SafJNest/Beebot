@@ -162,3 +162,17 @@ and Arena build availability uses data presence. Timestamps can queue background
 refreshes; readers do not require all eight subteam ID counters or placement
 buckets. There are no version fields or version-based cache guards. Other queues, jobs
 and Discord presentation remain unchanged. No live rebuild/explain is claimed.
+
+
+## Shared conversion and transport implementation
+
+`LolApiParameters` retains HTTP validation and messages while reusing
+`utils.ParseUtils`: page strings remain exact integers without whitespace trim,
+season years allow trim, and enum validation keeps its uppercase policy. Invalid
+inputs still return 400 rather than a fallback value. LoL keys retain their
+wildcard/encoding rules in `FilterCodec`; generic conversions no longer depend
+on `lol.utils.NumberUtils`. Canonical models, filters, keys, payloads and ApiResult
+states are unchanged, so no endpoint/schema migration is required.
+Data Dragon version/rune requests continue through `HttpUtils.readUrl`, now backed
+by the same request/sending mechanism used by Discord, with their existing
+5-second connection and 10-second request timeouts and IO failure behavior.

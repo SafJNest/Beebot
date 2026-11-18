@@ -340,3 +340,23 @@ by sound/guild and keeps only the newest 101 personal events per sound. Keep SQL
 streaming in `BotDB`, cursor encoding in `SoundPeriod` and source resolution in
 `AudioType.getFromOrdinal`. Response builders preserve the documented JSON and
 privacy rules; add characterization checks before changing their behavior.
+
+
+## Shared HTTP and parsing
+
+`HttpUtils` owns reusable transports, GET/form request construction and sending.
+`HttpUtils.Transport` returns the complete Java `HttpResponse<String>`; provider
+code interprets status, headers and body. Sending restores an interrupted thread's
+flag before rethrowing. Data Dragon/rune and Spotify facades retain their current
+5-second connect / 10-second request timeouts and header-aware text decoding.
+`DiscordApi` retains its 15-second timeouts, explicit UTF-8 and Discord error/retry
+policy, using the same construction/sending code. Keep OAuth fields ordered.
+
+`utils.ParseUtils` owns the numeric/enum conversions previously shared through
+`lol.utils.NumberUtils` and `BuildUtils.parseAnyInt`. Use `parseIntExactOrNull`
+where whitespace must remain invalid, `parseIntOrNull` where trim is allowed,
+and the tolerant conversions only where fallback is part of the existing data
+contract. `longValue` accepts only Number. `FilterCodec` owns wildcard/key meaning;
+`LolApiParameters` owns HTTP validation and messages. Arena integrity/range rules
+and QueryRecord SQL parsing keep their existing owners. These are internal changes:
+HTTP contracts, persisted shapes and Discord presentation remain unchanged.

@@ -1,26 +1,34 @@
 package com.safjnest.lol.utils;
 
+import com.safjnest.utils.ParseUtils;
 public final class KdaUtils {
 
     private static final int KILLS_INDEX = 0;
     private static final int DEATHS_INDEX = 1;
     private static final int ASSISTS_INDEX = 2;
 
-    private KdaUtils() {}
+    private KdaUtils() {
+    }
 
     public static int[] parse(String kda) {
-        if (kda == null || kda.isBlank()) return new int[3];
+        if (kda == null || kda.isBlank())
+            return new int[3];
+
         String[] parts = kda.split("/");
-        if (parts.length != 3) return new int[3];
+        if (parts.length != 3)
+            return new int[3];
+
         return new int[]{
-            NumberUtils.parseInt(parts[KILLS_INDEX]),
-            NumberUtils.parseInt(parts[DEATHS_INDEX]),
-            NumberUtils.parseInt(parts[ASSISTS_INDEX])
+            ParseUtils.parseInt(parts[KILLS_INDEX]),
+            ParseUtils.parseInt(parts[DEATHS_INDEX]),
+            ParseUtils.parseInt(parts[ASSISTS_INDEX])
         };
     }
 
     public static boolean isValid(String kda) {
-        if (kda == null || kda.isBlank()) return false;
+        if (kda == null || kda.isBlank())
+            return false;
+
         return kda.split("/").length == 3;
     }
 
@@ -37,10 +45,16 @@ public final class KdaUtils {
     }
 
     public static int value(String kda, int index) {
-        if (kda == null || kda.isBlank()) return 0;
-        if (index < KILLS_INDEX || index > ASSISTS_INDEX) return 0;
+        if (kda == null || kda.isBlank())
+            return 0;
+
+        if (index < KILLS_INDEX || index > ASSISTS_INDEX)
+            return 0;
+
         String[] parts = kda.split("/");
-        if (parts.length != 3) return 0;
-        return NumberUtils.parseInt(parts[index]);
+        if (parts.length != 3)
+            return 0;
+
+        return ParseUtils.parseInt(parts[index]);
     }
 }

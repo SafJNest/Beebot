@@ -160,3 +160,10 @@ Debug logs report membership resolution time (`Sound memberships`), history rows
 The previous regression suite covered sound contracts, HTTP/auth integration, cache expiry/capacity, query-cache fallback, privacy, concurrency, transactions, cursors, DST and greets; its 101 test files were removed during the owner’s repository cleanup. The cache and shared-mutation steps add focused local tests for coordinated bulk loading, expiration/eviction, invalidation, loader failures, hydration, prepared SQL with H2 and viewer-state isolation. The historical checks below are previous evidence, not a current re-execution of that deleted suite. A query-budget test distributes 10,000 plays over 60 sounds and checks one history query and one connection for both guild and personal analytics, plus one tag query for the guild library. A separate H2 test streams 1,000,000 plays through the full Java single-sound analytics, checks totals, anonymous guild grouping and the bounded personal page, and verifies index use with EXPLAIN. This is an H2 feasibility check, not a MariaDB latency guarantee. MariaDB migration execution, live Redis/Discord/Cloudflare integration and extreme bulk HTTP payloads have not been verified.
 
 The migration uses [MariaDB ALTER TABLE](https://mariadb.com/docs/server/reference/sql-statements/data-definition/alter/alter-table) conditionals; it is not advertised as a portable MySQL/H2 migration.
+
+
+The shared HTTP/parsing cleanup changes no sound route, response, query, cache
+key or Discord presentation. Discord membership still uses the same JDA flow;
+provider HTTP classification remains in `DiscordApi` over the shared transport.
+The existing full analytics response comparisons remain in the local test suite;
+no sound OpenAPI/schema update is required by this internal change.

@@ -1,8 +1,6 @@
 package com.safjnest.discord.auth;
 
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +19,9 @@ import com.safjnest.bot.Bot;
 import com.safjnest.discord.auth.DiscordAuthService.Authorization;
 import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
+import com.safjnest.utils.HttpUtils;
+import com.safjnest.utils.HttpUtils.Transport;
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.utils.PermissionHandler;
 
 import net.dv8tion.jda.api.JDA;
@@ -41,15 +42,8 @@ public class DiscordApi {
     private static final String API = "https://discord.com/api/v10";
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Logger LOG = LoggerFactory.getLogger(DiscordApi.class);
-    private static final HttpClient HTTP = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-        .followRedirects(HttpClient.Redirect.NEVER)
-        .build();
-
-    @FunctionalInterface
-    public interface Transport {
-        HttpResponse<String> send(HttpRequest request) throws java.lang.Exception;
-    }
+    private static final Transport HTTP = HttpUtils.createTransport(Duration.ofSeconds(TIMEOUT_SECONDS),
+        HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
 
     public record AuthUser(String id, String username, String globalName, String avatarUrl) {}
 
@@ -74,7 +68,7 @@ public class DiscordApi {
     private final Supplier<JDA> discord;
 
     public DiscordApi() {
-        this(request -> HTTP.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)), Bot::getJDA);
+        this(HTTP, Bot::getJDA);
     }
 
     public DiscordApi(Transport transport, Supplier<JDA> discord) {
@@ -90,11 +84,14 @@ public class DiscordApi {
     }
 
     public DiscordToken exchange(String clientId, String secret, String code, String redirectUri) {
-        String body = "client_id=" + encode(clientId) + "&client_secret=" + encode(secret)
-            + "&grant_type=authorization_code&code=" + encode(code) + "&redirect_uri=" + encode(redirectUri);
-        HttpRequest request = HttpRequest.newBuilder(URI.create("https://discord.com/api/oauth2/token"))
-            .timeout(Duration.ofSeconds(TIMEOUT_SECONDS)).header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("client_id", clientId);
+        fields.put("client_secret", secret);
+        fields.put("grant_type", "authorization_code");
+        fields.put("code", code);
+        fields.put("redirect_uri", redirectUri);
+
+        HttpRequest request = HttpUtils.formRequest("https://discord.com/api/oauth2/token", fields, Duration.ofSeconds(TIMEOUT_SECONDS));
         JsonNode response = request(request, false);
 
         try {
@@ -251,7 +248,7 @@ public class DiscordApi {
 
     private JsonNode request(HttpRequest request, boolean bearer) {
         try {
-            HttpResponse<String> response = transport.send(request);
+            HttpResponse<String> response = HttpUtils.send(transport, request);
             int status = response.statusCode();
 
             if (status < 200 || status >= 300) {
@@ -281,8 +278,6 @@ public class DiscordApi {
         } catch (JsonProcessingException exception) {
             throw malformed("Discord returned an invalid response");
         } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-
             throw unavailable("Unable to reach Discord");
         } catch (java.lang.Exception exception) {
             throw unavailable("Unable to reach Discord");
@@ -302,8 +297,8 @@ public class DiscordApi {
         }
 
         try {
-            double value = Double.parseDouble(header(response, "Retry-After"));
-            if (Double.isFinite(value) && value >= 0)
+            Double value = ParseUtils.parseDoubleOrNull(header(response, "Retry-After"));
+            if (value != null && Double.isFinite(value) && value >= 0)
                 return value;
         } catch (RuntimeException ignored) {
         }
@@ -312,8 +307,7 @@ public class DiscordApi {
     }
 
     private static HttpRequest get(String path, String token) {
-        return HttpRequest.newBuilder(URI.create(API + path)).timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-            .header("Authorization", "Bearer " + token).GET().build();
+        return HttpUtils.getRequest(API + path, Map.of("Authorization", "Bearer " + token), Duration.ofSeconds(TIMEOUT_SECONDS));
     }
 
     private static String encode(String value) {

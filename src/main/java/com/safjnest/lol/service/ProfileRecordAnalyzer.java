@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
@@ -224,8 +225,7 @@ public final class ProfileRecordAnalyzer {
         }
 
         private static long number(Map<String, Object> event, String key) {
-            Object value = event.get(key);
-            return value instanceof Number number ? number.longValue() : 0;
+            return ParseUtils.longValue(event.get(key));
         }
 
         private static String string(Map<String, Object> event, String key) {

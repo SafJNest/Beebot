@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.safjnest.lol.tracker.Tracker;
-import com.safjnest.lol.utils.NumberUtils;
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.database.nosql.AbstractEntity;
 import com.safjnest.lol.model.ResponseMetadata;
@@ -172,12 +172,12 @@ public class Match extends AbstractEntity<Match> {
         switch (field) {
             case "win" -> participant.win = booleanValue(value);
             case "kda" -> participant.kda = stringValue(value);
-            case "champion" -> participant.champion = NumberUtils.parseInt(value);
+            case "champion" -> participant.champion = ParseUtils.parseInt(value);
             case "rankProgress" -> participant.rankProgress = rankProgressValue(value);
-            case "damage" -> participant.damage = NumberUtils.parseInt(value);
-            case "cs" -> participant.cs = NumberUtils.parseInt(value);
-            case "goldEarned" -> participant.goldEarned = NumberUtils.parseInt(value);
-            case "visionScore" -> participant.visionScore = NumberUtils.parseInt(value);
+            case "damage" -> participant.damage = ParseUtils.parseInt(value);
+            case "cs" -> participant.cs = ParseUtils.parseInt(value);
+            case "goldEarned" -> participant.goldEarned = ParseUtils.parseInt(value);
+            case "visionScore" -> participant.visionScore = ParseUtils.parseInt(value);
             default -> throw new IllegalArgumentException("Unsupported participant field=" + field);
         }
     }
@@ -201,12 +201,12 @@ public class Match extends AbstractEntity<Match> {
         if (value instanceof RankProgress progress) return progress;
         if (!(value instanceof Map<?, ?> values)) return null;
         TierDivisionType rank = enumValue(values.get("rank"), TierDivisionType.class);
-        Integer lp = values.get("lp") == null ? null : NumberUtils.parseInt(values.get("lp"));
+        Integer lp = values.get("lp") == null ? null : ParseUtils.parseInt(values.get("lp"));
         if (rank == null || lp == null) return null;
         RankProgress progress = new RankProgress(rank, lp,
-                values.get("gain") == null ? null : NumberUtils.parseInt(values.get("gain")),
+                values.get("gain") == null ? null : ParseUtils.parseInt(values.get("gain")),
                 enumValue(values.get("previousRank"), TierDivisionType.class),
-                values.get("previousLp") == null ? null : NumberUtils.parseInt(values.get("previousLp")));
+                values.get("previousLp") == null ? null : ParseUtils.parseInt(values.get("previousLp")));
         return progress;
     }
 }

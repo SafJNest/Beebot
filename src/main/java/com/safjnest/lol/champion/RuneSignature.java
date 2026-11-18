@@ -1,6 +1,6 @@
 package com.safjnest.lol.champion;
 
-import com.safjnest.lol.utils.NumberUtils;
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.lol.utils.BuildUtils;
 
 import java.util.ArrayList;
@@ -54,10 +54,10 @@ public record RuneSignature(
     public static RuneSignature decode(String key) {
         String[] parts = BuildUtils.fromBase64(key).split("\\|", -1);
         return new RuneSignature(
-                NumberUtils.parseInt(parts[0]),
-                NumberUtils.parseInt(parts[1]),
+                ParseUtils.parseInt(parts[0]),
+                ParseUtils.parseInt(parts[1]),
                 parts.length > 2 ? BuildUtils.parseDashList(parts[2]) : List.of(),
-                NumberUtils.parseInt(parts[3]),
+                ParseUtils.parseInt(parts[3]),
                 parts.length > 4 ? BuildUtils.parseDashList(parts[4]) : List.of(),
                 parts.length > 5 ? BuildUtils.parseDashList(parts[5]) : List.of());
     }

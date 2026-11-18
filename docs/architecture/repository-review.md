@@ -1,6 +1,6 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è nel commit `e7daa3f2`, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Il passaggio 4 (errori e Spring/auth) è implementato nel working tree; restano i passaggi 5–6.
+Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è nel commit `e7daa3f2`, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Il passaggio 4 (errori e Spring/auth) è nel commit `f43fc0b8`; il passaggio 5 (HTTP e parsing) è implementato nel working tree. Resta il passaggio 6.
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -66,7 +66,7 @@ Fonti: [GuildCache](../../src/main/java/com/safjnest/bot/cache/managers/GuildCac
 
 **Parsing:** `lol.utils.NumberUtils` è priva di dipendenze LoL. `BuildUtils.parseAnyInt` ripete sostanzialmente il suo parsing tollerante di un `Object`. Altre conversioni apparentemente simili hanno regole diverse: `ArenaGameParser.integer` verifica integrità/range, `ChampionStatsProvider.number` accetta soltanto `Number`, `LolApiParameters.page` segnala un parametro HTTP errato. Sostituirle indiscriminatamente con un fallback a zero cambierebbe il comportamento.
 
-Fonti: [HttpUtils](../../src/main/java/com/safjnest/utils/HttpUtils.java), [DiscordApi](../../src/main/java/com/safjnest/discord/auth/DiscordApi.java):35 e :67, [PatchUtils](../../src/main/java/com/safjnest/lol/utils/PatchUtils.java):85, [LeagueHandler](../../src/main/java/com/safjnest/lol/LeagueHandler.java):177, [NumberUtils](../../src/main/java/com/safjnest/lol/utils/NumberUtils.java), [BuildUtils](../../src/main/java/com/safjnest/lol/utils/BuildUtils.java):43, [ArenaGameParser](../../src/main/java/com/safjnest/lol/arena/ArenaGameParser.java):155.
+Fonti: [HttpUtils](../../src/main/java/com/safjnest/utils/HttpUtils.java), [DiscordApi](../../src/main/java/com/safjnest/discord/auth/DiscordApi.java):35 e :67, [PatchUtils](../../src/main/java/com/safjnest/lol/utils/PatchUtils.java):85, [LeagueHandler](../../src/main/java/com/safjnest/lol/LeagueHandler.java):177, [ParseUtils, che ha assorbito NumberUtils](../../src/main/java/com/safjnest/utils/ParseUtils.java), [BuildUtils](../../src/main/java/com/safjnest/lol/utils/BuildUtils.java):43, [ArenaGameParser](../../src/main/java/com/safjnest/lol/arena/ArenaGameParser.java):155.
 
 ## Percorso unico proposto
 
@@ -170,13 +170,13 @@ In Spring, `ApiErrors` compone body/header/status e può scrivere anche la rispo
 
 ### HTTP
 
-`utils.HttpUtils` resta il punto comune e assorbe costruzione della request, invio, encoding dei form dove utile e trattamento dell'interruzione. `DiscordApi` conserva URL, payload, autenticazione Discord e significato di 401/403/429 o risposta malformata; passa la richiesta al trasporto comune. La seam `Transport` già usata dalla suite precedente può essere annidata nel proprietario HTTP comune; i test precedenti non sono più presenti nel checkout attuale.
+`utils.HttpUtils` è il punto comune per costruzione della request, invio, encoding dei form e trattamento dell'interruzione. `DiscordApi` conserva URL, payload, autenticazione Discord e significato di 401/403/429 o risposta malformata; passa la richiesta al trasporto comune. Il trasporto testabile è ora `HttpUtils.Transport`, riusato dal client Discord e dalle facciate esistenti; non rimane una seconda interfaccia in `DiscordApi`.
 
-Conservare i valori attuali: HttpUtils ha connessione 5 s/richiesta 10 s; Discord usa 15 s. Una factory comune può mantenere client configurati diversamente senza duplicare il codice del builder. Non serve imporre un solo timeout o lo stesso parser JSON. Il trasporto deve restituire anche status/header/body per la politica Discord; non trasformare ogni risposta non 2xx in un errore indistinto prima che venga interpretata.
+I valori restano: HttpUtils ha connessione 5 s/richiesta 10 s; Discord usa 15 s. `createTransport` costruisce i client riusati con profili distinti, senza duplicare il builder. La decodifica ordinaria segue il charset HTTP; Discord mantiene UTF-8 esplicito. Non serve imporre un solo timeout o lo stesso parser JSON. Il trasporto deve restituire anche status/header/body per la politica Discord; non trasformare ogni risposta non 2xx in un errore indistinto prima che venga interpretata.
 
 ### Parsing
 
-`lol.utils.NumberUtils` resta nella posizione attuale al termine degli spostamenti. Nel passaggio 5, i meccanismi effettivamente condivisi con altri consumatori potranno essere estratti in `utils.ParseUtils`: è un consolidamento del codice, non una rinomina preliminare obbligatoria. Esporre soltanto le varianti realmente necessarie, distinguendo rigoroso/fallback/null. Mantenere in `FilterCodec` il significato LoL di `*` e la codifica delle chiavi.
+`utils.ParseUtils` possiede ora le conversioni condivise effettivamente usate. `lol.utils.NumberUtils` è rimosso dopo la migrazione dei chiamanti; le varianti senza consumatori non sono replicate. Restano distinti parsing esatto, trim, fallback e risultato nullable. `FilterCodec` conserva il significato LoL di `*`, delimitatori e codifica delle chiavi.
 
 | Punto attuale | Intervento proposto | Compatibilità da verificare |
 |---|---|---|
@@ -207,7 +207,7 @@ La radice resta `com.safjnest`. Le responsabilità sono:
 
 La base resta `bot.cache.CacheAdapter`, con `GenericCache`, `GuildCache`, `UserCache` e `SoundCache` in `bot.cache.managers`. I controller Spring useranno queste stesse cache: il loro package non introduce un percorso separato. Le politiche di sicurezza di `discord.guild.DiscordGuildCache` rimangono distinte dalle cache degli oggetti operativi.
 
-L'albero seguente descrive i file attuali rilevanti per il piano, aggiornati dopo il passaggio 4; `...` conserva tutti gli altri file e sottopackage esistenti. I file da assorbire sono presenti finché non è completata la migrazione delle loro funzionalità. Le aggiunte future sono elencate separatamente.
+L'albero seguente descrive i file attuali rilevanti per il piano, aggiornati dopo il passaggio 5; `...` conserva tutti gli altri file e sottopackage esistenti. I file da assorbire sono presenti finché non è completata la migrazione delle loro funzionalità. Le aggiunte future sono elencate separatamente.
 
 ```text
 com/safjnest/
@@ -275,7 +275,10 @@ com/safjnest/
 ├── status/
 │   ├── log/                              ... BotLogger, converter e LoggerIDpair
 │   └── ... metriche esistenti
-└── utils/                                ... utility e sottopackage esistenti
+└── utils/
+    ├── HttpUtils.java
+    ├── ParseUtils.java
+    └── ...                               altre utility e sottopackage esistenti
 ```
 
 `ExperienceSystem` e `AlertMessage` restano in `utils`. `bot.audio.SoundAnalytics` e `sound.SoundAnalytics` sono classi differenti e non vengono unite sulla sola base del nome. `App.java`, `distruzione_demoniaca`, comandi, component handler e presentazione mantengono il comportamento previsto dal perimetro.
@@ -301,7 +304,7 @@ Le colonne sono relative a `src/main/java/com/safjnest/`. Questa tabella registr
 | `redis/**` | `database/redis/**` |
 | `utils/log/**` | `status/log/**` |
 
-`NumberUtils`, `LolApiConfig`, `DiscordAuthController`, `AuthFilter` e gli helper già in `sound` conservano posizione e nome attuali. Nessun ulteriore movimento dei file esistenti è un prerequisito del prossimo passaggio. Le estrazioni e rimozioni funzionali descritte sotto restano successive alla migrazione dei chiamanti.
+`LolApiConfig`, `DiscordAuthController`, `AuthFilter` e gli helper ancora in `sound` conservano posizione e nome attuali. `NumberUtils`, mantenuto durante gli spostamenti, è stato assorbito da `ParseUtils` nel passaggio 5. Nessun ulteriore movimento dei file esistenti è un prerequisito del prossimo passaggio. Le estrazioni e rimozioni funzionali descritte sotto restano successive alla migrazione dei chiamanti.
 
 ### File nuovi a cura dell'assistente
 
@@ -311,7 +314,7 @@ Le colonne sono relative a `src/main/java/com/safjnest/`. Questa tabella registr
 | `spring/exception/ApiErrors.java` — creato nel passaggio 4 | Mapping e record HTTP annidati, riusati dal filtro, dall'advice e da `LolApiResponses` |
 | `spring/exception/ApiExceptionHandler.java` — creato nel passaggio 4 | Gestione unificata degli errori applicativi, di binding e del framework |
 | `spring/controller/beebot/MeController.java` — creato nel passaggio 3 | Profilo e impostazioni utente; delega al percorso comune degli oggetti |
-| `utils/ParseUtils.java` | Nel passaggio 5, solo i meccanismi di conversione effettivamente condivisi estratti dai proprietari esistenti |
+| `utils/ParseUtils.java` — creato nel passaggio 5 | Conversioni effettivamente condivise, con regole esatte/trim, fallback e null distinti |
 
 L'albero non richiede una nuova classe per ogni errore o un nuovo service/repository per ogni cache. I tipi di sola rappresentazione restano nei proprietari appropriati, annidati quando semplice e utile.
 
@@ -328,6 +331,7 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 | `bot/model/guild/GuildSettings.java` — rimosso nel passaggio 2 | Record di vista/risultato annidati nel proprietario `bot.model.guild.GuildData`, con forma HTTP e validità attuali |
 | `sound/SoundAccess.java` — rimosso nel passaggio 4 | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
 | `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; catena `BotDB → SoundDB` eliminata, file assorbito e rimosso nel passaggio 3 |
+| `lol/utils/NumberUtils.java` — rimosso nel passaggio 5 | Funzioni effettivamente usate in `utils.ParseUtils`; wildcard e chiavi rimangono in `FilterCodec` |
 | `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `bot.cache.managers.SoundCache` |
 | `sound/SoundValues.java` | Errori all'eccezione comune, validazione al confine/proprietario e rappresentazioni nei tipi appropriati; nessun nuovo generico `MapUtils` |
 | `spring/exception/AuthExceptionHandler.java` — rimosso nel passaggio 4 | Gestione applicativa in `spring.exception.ApiExceptionHandler`; record di errore in `ApiErrors` |
@@ -375,7 +379,7 @@ Download concorrenti, file incompleti, durata della copia locale e cleanup duran
 
 ## Sequenza di implementazione proposta
 
-Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è nel commit `e7daa3f2`: user, XP e sound usano il percorso comune. Il passaggio 4 è implementato nel working tree. Il prossimo intervento è il passaggio 5: HTTP e parsing. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è nel commit `e7daa3f2`: user, XP e sound usano il percorso comune. Il passaggio 4 è nel commit `f43fc0b8`; il passaggio 5 è implementato nel working tree. Il prossimo intervento è il passaggio 6: allineamento delle query auth/API. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
@@ -383,7 +387,7 @@ Gli spostamenti del proprietario sono conclusi e la struttura attuale è conferm
 | 2 — Guild e alert, implementato | API sugli oggetti della cache; eliminazione `GuildService`/`GuildSettingsDB` dopo la migrazione delle funzionalità | Bot→API e API→bot immediati; ruoli vuoti; rollback per blocco; letture durante modifiche; Twitch dopo il commit e fuori dal lock |
 | 3 — User e sound, implementato | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
 | 4 — Errori e Spring/auth, implementato | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
-| 5 — HTTP e parsing | Helper già esistenti estesi e riusati; niente cambi a Mongo o al framework SQL | Timeout/status/header Discord e Data Dragon; input numerici limite e fallback; filtri e chiavi invariati |
+| 5 — HTTP e parsing, implementato | Helper già esistenti estesi e riusati; niente cambi a Mongo o al framework SQL | Timeout/status/header Discord e Data Dragon; input numerici limite e fallback; filtri e chiavi invariati |
 | 6 — Allineamento query auth/API | Record/parser per le letture nuove e rimozione dei doppioni residui | Query parametrizzate, righe modificate, consumo OAuth una sola volta, revoca autorevole anche con cache piena |
 
 È utile realizzare presto la piccola parte condivisa degli errori se serve ai passaggi precedenti; la sequenza non impone di far transitare tutto il riordino da una grande riscrittura preventiva.
@@ -879,4 +883,66 @@ body malformati sono documentate nelle pagine API. Nessuna modifica a scheduler,
 status, trasporto HTTP comune o R2. Nessun nuovo framework o dipendenza.
 
 Il prossimo passaggio è il 5, HTTP e parsing; l'allineamento delle query auth
-rimane nel passaggio 6. Il passaggio 4 resta nel working tree, senza commit/push.
+rimane nel passaggio 6. Il proprietario ha poi raccolto il passaggio 4 nel commit `f43fc0b8`.
+
+
+## Passaggio 5 implementato: HTTP e parsing
+
+Baseline: `f43fc0b8`, working tree inizialmente pulito. Intervento applicato prima
+al trasporto HTTP, poi al parsing con caratterizzazione dei comportamenti precedenti.
+
+- `HttpUtils` possiede client factory, builder GET/POST form, encoding UTF-8 dei
+  form e invio. `Transport` è annidata nello stesso file e dichiara i soli errori
+  IO/interruzione del client Java. `send` restituisce `HttpResponse<String>`
+  completo senza classificare status né fare retry, e ripristina il flag del
+  thread prima di propagare un'interruzione.
+- Le facciate `readUrl` e `sendGetRequest` mantengono firme e comportamento;
+  gli overload con trasporto permettono prove senza rete. Data Dragon/rune
+  conservano User-Agent Beebot, 5 s di connessione, 10 s di richiesta e IOException
+  sui non-2xx. I chiamanti Spotify conservano Bearer/Accept, JSONObject sui 2xx,
+  null e diagnostica per errori di stato/IO. La decodifica ordinaria rimane quella
+  di `BodyHandlers.ofString()`, sensibile al charset della risposta.
+- `DiscordApi` riusa il trasporto comune con client condiviso, 15 s e UTF-8
+  esplicito. URL, token, payload, classificazione degli status e parser JSON
+  restano qui. Il form OAuth mantiene campi, ordine ed escaping; status,
+  body e header restano disponibili per errori e retry. Il vecchio Transport
+  Discord e i builder HTTP duplicati sono rimossi; nessun wrapper della risposta.
+- `ParseUtils` riunisce int tolleranti da String/Number, long da stringa,
+  interi nullable con e senza trim, double nullable, enum e ordinali. Le sole
+  varianti con consumatori vengono esposte. `longValue(Object)` accetta soltanto
+  Number, conservando il comportamento precedente delle letture numeriche
+  di `ChampionStatsProvider` e `ProfileRecordAnalyzer`.
+- Migrati `Filter`, `Match`, `BuildSignature`, `RuneSignature`, `KdaUtils` e
+  `FilterCodec`. `BuildUtils.parseAnyInt` è rimosso e i lettori JSON usano la
+  conversione comune. `NumberUtils` è rimosso dopo l'ultimo chiamante.
+  I Number mantengono il narrowing originale; una stringa decimale non diventa
+  un intero valido. I fallback e i null restano distinti.
+- `FilterCodec` interpreta `*` e continua a possedere codifica, delimitatori,
+  nomi e ordinali delle chiavi. `PatchUtils.patchPart` usa la variante senza
+  trim, con lo stesso fallback. `LolApiParameters` conserva vincoli e messaggi:
+  pagina senza trim, anno stagione con trim, enum normalizzati in uppercase
+  e input errati come 400. `DiscordApi` mantiene finitezza/non negatività
+  sul retry anche dopo la conversione double comune.
+- I parser Arena conservano i controlli di integrità/range e tempi non negativi:
+  hanno una semantica diversa dal narrowing tollerante e non sono migrati.
+  QueryRecord e il framework SQL/BSON restano invariati.
+
+Prima della migrazione sono passati otto casi di `ParsingContractTest` sui
+parser originali, inclusi i due int duplicati. Dopo la migrazione gli stessi
+risultati restano invariati; sono aggiunti i casi dei lettori JSON e dei Number
+long. `HttpUtilsTest` ha dieci casi su richieste, encoding/ordine dei form,
+OAuth completo, status/header/body grezzi, timeout di richiesta, facciate,
+fallimenti IO e interruzioni. I test Discord esistenti conservano anche il
+fallback sui retry invalidi/non finiti e il riconoscimento di token scaduti.
+
+Verifica finale: `mvn -o clean test`, 169 test superati (149 precedenti e 20 nuovi),
+zero errori/fallimenti/skipped; `git diff --check` superato. CodeGraph è aggiornato.
+Le prove sono locali con trasporti simulati, H2 e MockMvc: nessuna richiesta live
+Discord, Data Dragon o Spotify e nessuna misura di latenza o throughput.
+
+Riesaminati ADR-0007, API LoL, auth e sound: parametri accettati, messaggi HTTP,
+status, payload, stati ApiResult e metadati sono conservati. Documentati i nuovi
+proprietari e il motivo per cui schemi/OpenAPI e modelli pubblici non cambiano.
+Nessun cambiamento a Mongo, query SQL/auth, namespace cache, scheduler, status,
+comandi/presentazione o R2; nessuna nuova dipendenza/framework. Le modifiche sono
+nel working tree. Resta il passaggio 6, allineamento delle query auth/API.

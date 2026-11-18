@@ -7,6 +7,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 
 import com.safjnest.utils.HttpUtils;
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.service.StaticDataService;
 
@@ -74,12 +75,12 @@ public class PatchUtils {
 	}
 
 	private static int patchPart(String[] parts, int index) {
-		if (index >= parts.length) return 0;
-		try {
-			return Integer.parseInt(parts[index]);
-		} catch (NumberFormatException ignored) {
+		if (index >= parts.length)
 			return 0;
-		}
+
+		Integer value = ParseUtils.parseIntExactOrNull(parts[index]);
+
+		return value == null ? 0 : value;
 	}
 
 	private static List<String> fetchPatches() {

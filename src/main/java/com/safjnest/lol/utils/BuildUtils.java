@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.lol.model.Augment;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
@@ -37,13 +38,7 @@ public class BuildUtils {
     }
 
     public static int readInt(JSONObject obj, String key) {
-        return (obj == null || !obj.has(key)) ? 0 : parseAnyInt(obj.opt(key));
-    }
-
-    public static int parseAnyInt(Object raw) {
-        if (raw instanceof Number n) return n.intValue();
-        if (raw instanceof String s) { try { return Integer.parseInt(s.trim()); } catch (Exception ignored) {} }
-        return 0;
+        return (obj == null || !obj.has(key)) ? 0 : ParseUtils.parseInt(obj.opt(key));
     }
 
     public static String toBase64(String string) {
@@ -61,9 +56,13 @@ public class BuildUtils {
     }
 
     public static List<Integer> jsonArrayToIntList(JSONArray arr) {
-        if (arr == null) return List.of();
+        if (arr == null)
+            return List.of();
+
         List<Integer> list = new ArrayList<>(arr.length());
-        for (int i = 0; i < arr.length(); i++) list.add(parseAnyInt(arr.opt(i)));
+        for (int i = 0; i < arr.length(); i++)
+            list.add(ParseUtils.parseInt(arr.opt(i)));
+
         return list;
     }
 

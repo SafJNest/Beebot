@@ -13,6 +13,7 @@ import java.util.StringJoiner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.safjnest.utils.ParseUtils;
 import com.safjnest.lol.model.ActivityFilter;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.MatchFacetQuery;
@@ -390,8 +391,11 @@ public final class LolApiParameters {
     }
 
     public static int page(String value) {
-        try { return page(Integer.parseInt(value)); }
-        catch (NumberFormatException exception) { throw invalid("page", "must be an integer"); }
+        Integer page = ParseUtils.parseIntExactOrNull(value);
+        if (page == null)
+            throw invalid("page", "must be an integer");
+
+        return page(page);
     }
 
     public static int limit(int limit) {
@@ -458,17 +462,18 @@ public final class LolApiParameters {
     }
 
     private static SeasonUtils.SeasonRange profileSeason(String value) {
-        if (value == null || value.isBlank()) return null;
-        int year;
-        try {
-            year = Integer.parseInt(value.trim());
-        } catch (NumberFormatException exception) {
+        if (value == null || value.isBlank())
+            return null;
+
+        Integer year = ParseUtils.parseIntOrNull(value);
+        if (year == null)
             throw invalid("season", "must be all or a configured season year; available years are " + rankHistorySeasons());
-        }
+
         SeasonUtils.SeasonRange season = SeasonUtils.getSeasonRange(year);
         if (season == null) {
             throw invalid("season", "must be all or a configured season year; available years are " + rankHistorySeasons());
         }
+
         return season;
     }
 
@@ -482,11 +487,11 @@ public final class LolApiParameters {
     }
 
     private static <T extends Enum<T>> T parseEnum(String value, Class<T> type, String parameter) {
-        try {
-            return Enum.valueOf(type, value.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
+        T parsed = ParseUtils.valueOf(value.trim().toUpperCase(Locale.ROOT), type);
+        if (parsed == null)
             throw invalid(parameter, "must be one of: " + enumNames(type.getEnumConstants()));
-        }
+
+        return parsed;
     }
 
     private static <T extends Enum<T>> String enumNames(T[] values) {

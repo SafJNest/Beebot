@@ -116,9 +116,12 @@ public class DiscordApiTest {
         List<HttpResponse<String>> responses = List.of(
             reply(429, "{\"retry_after\":1.25}", Map.of("Retry-After", List.of("9"))),
             reply(429, "{\"retry_after\":-1}", Map.of("Retry-After", List.of("2.5"))),
-            reply(429, "bad", Map.of("Retry-After", List.of("invalid")))
+            reply(429, "bad", Map.of("Retry-After", List.of("invalid"))),
+            reply(429, "{}", Map.of("Retry-After", List.of("NaN"))),
+            reply(429, "{}", Map.of("Retry-After", List.of("Infinity"))),
+            reply(429, "{}", Map.of("Retry-After", List.of(" +2.5 ")))
         );
-        List<Double> expected = List.of(1.25, 2.5, 1.0);
+        List<Double> expected = List.of(1.25, 2.5, 1.0, 1.0, 1.0, 2.5);
 
         for (int index = 0; index < responses.size(); index++) {
             HttpResponse<String> response = responses.get(index);
