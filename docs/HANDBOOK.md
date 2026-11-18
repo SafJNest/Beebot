@@ -332,7 +332,7 @@ See the [implementation plan](architecture/repository-review.md).
 
 ## Audio API operations
 
-Sounds HTTP routes use `SoundCache` as the read facade/loader, `SoundController` and `MeController` for HTTP parsing, `Sound`/`UserData` for shared writes, canonical `Sound` response copies, and `BotDB` prepared SQL (streamed history grouped in Java on one read session) and ID-only `SoundQueryCache` Redis entries. They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.
+Sounds HTTP routes use `SoundCache` for object loading, typed list responses and ID-only Redis selections, `SoundController` and `MeController` for HTTP parsing, `Sound`/`UserData` for shared writes, canonical `Sound` response copies, and `BotDB` prepared SQL (streamed history grouped in Java on one read session). They use ordinary membership rather than the administrative guild directory. See [the audio API contract](api/beebot-sounds.md) for endpoints, privacy, invalidation and rollout; LoL models and schedulers are not involved.
 
 
 ## Sound statistics

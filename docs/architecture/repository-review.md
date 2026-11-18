@@ -255,8 +255,6 @@ com/safjnest/
 │   ├── SoundAnalytics.java
 │   ├── SoundHistory.java                 accumulatore interno analytics
 │   ├── SoundPeriod.java
-│   ├── SoundQueryCache.java              da assorbire
-│   ├── SoundValues.java                  da assorbire
 │   └── model/
 │       ├── Sound.java
 │       └── Tag.java
@@ -332,8 +330,8 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 | `sound/SoundAccess.java` — rimosso nel passaggio 4 | Lookup/proiezione Discord in `discord.auth.DiscordApi`, con politiche distinte per membership ordinaria e amministrazione |
 | `database/sql/database/SoundDB.java` | Query nuove necessarie in `BotDB`, preservando statement preparati, lock SQL, streaming/batch e sessione di lettura; catena `BotDB → SoundDB` eliminata, file assorbito e rimosso nel passaggio 3 |
 | `lol/utils/NumberUtils.java` — rimosso nel passaggio 5 | Funzioni effettivamente usate in `utils.ParseUtils`; wildcard e chiavi rimangono in `FilterCodec` |
-| `sound/SoundQueryCache.java` | Dettaglio di selezione Redis di soli ID dentro `bot.cache.managers.SoundCache` |
-| `sound/SoundValues.java` | Errori all'eccezione comune, validazione al confine/proprietario e rappresentazioni nei tipi appropriati; nessun nuovo generico `MapUtils` |
+| `sound/SoundQueryCache.java` | Rimosso. Le selezioni Redis di soli ID sono gestite da `bot.cache.managers.SoundCache`. |
+| `sound/SoundValues.java` | Rimosso. I risultati tipizzati sono in `SoundCache` e `MeController`, la validazione in `ValidationUtils`, gli errori in `Exception`. |
 | `spring/exception/AuthExceptionHandler.java` — rimosso nel passaggio 4 | Gestione applicativa in `spring.exception.ApiExceptionHandler`; record di errore in `ApiErrors` |
 | `spring/exception/AuthRequestExceptionHandler.java` — rimosso nel passaggio 4 | Binding e body errati nel medesimo handler HTTP |
 | `spring/exception/LolApiExceptionHandler.java` — rimosso nel passaggio 4 | Gestione HTTP LoL/framework nel medesimo handler, mantenendo il contratto esistente |
@@ -586,7 +584,8 @@ Conteggio statico dei token `var` nei sette sorgenti: 29 in `SoundAnalytics`,
 
 I rilievi seguenti conservano la fotografia dell'audit. I punti 1–2 sono risolti
 dal riordino analytics documentato sotto; i punti 3–5 dalla chiusura Sound/Tag
-prima del passaggio 4. Il punto 6 è risolto nel passaggio 4 per errori e lookup Discord; restano gli accorpamenti completi di `SoundValues` e `SoundQueryCache`.
+prima del passaggio 4. Il punto 6 è risolto dal passaggio 4 e dalla pulizia
+Sound documentata in fondo al piano.
 
 1. **Il riordino di `SoundAnalytics` non è una sola formattazione.**
    `guild()` e `sound()` mescolano caricamento, filtri di privacy, calcoli e
@@ -969,3 +968,17 @@ fallback SQL con Redis indisponibile e il limite esatto di scadenza, il consumo
 OAuth concorrente e la distinzione HTTP tra credenziale invalida e guasto SQL.
 I test già presenti coprono la revoca con cache popolata. Le verifiche usano H2,
 un sostituto locale di Redis e il filtro servlet con richieste simulate.
+
+## Pulizia finale del codice Sound
+
+`SoundCache` gestisce anche le selezioni Redis di soli ID. Conserva il formato
+delle chiavi `v1`, le liste ordinate, il TTL di 60 secondi e l'invalidazione
+dopo commit. `SoundQueryCache` e `SoundValues` sono rimossi. Le risposte delle
+liste e delle ricerche usano record in `SoundCache`, gli esiti dei greet in
+`MeController`. La validazione degli ID riusa `ValidationUtils` e gli errori di
+richiesta passano per `Exception.invalidRequest`.
+
+Le rotte, il JSON pubblico, i permessi e la presentazione Discord sono
+conservati. I controlli locali esercitano chiavi e fallback tramite uno store
+Redis simulato e la serializzazione HTTP tramite MockMvc e H2. R2 resta un
+intervento separato.

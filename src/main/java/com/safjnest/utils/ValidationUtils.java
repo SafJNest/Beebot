@@ -13,4 +13,8 @@ public final class ValidationUtils {
         }
         return true;
     }
+
+    public static boolean isDecimalId(String value) {
+        return value != null && value.matches("[0-9]{1,19}") && !value.matches("0+");
+    }
 }

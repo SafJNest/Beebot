@@ -1,7 +1,6 @@
 package com.safjnest.sound;
 
-import static com.safjnest.sound.SoundValues.bad;
-import static com.safjnest.sound.SoundValues.id;
+import static com.safjnest.exception.Exception.invalidRequest;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -13,6 +12,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.exception.Exception;
+import com.safjnest.utils.ValidationUtils;
 
 public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, Instant before, String beforeId) {
 
@@ -26,7 +26,7 @@ public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, 
                 case "30d" -> 30;
                 case "90d" -> 90;
                 case "all" -> 0;
-                default -> throw bad("Invalid period");
+                default -> throw invalidRequest("Invalid period");
             };
 
             ZoneId zone = ZoneId.of(timezone);
@@ -36,7 +36,7 @@ public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, 
 
             if (cursor != null) {
                 if (cursor.length() > MAX_CURSOR_LENGTH)
-                    throw bad("Invalid cursor");
+                    throw invalidRequest("Invalid cursor");
 
                 JsonNode node = JSON.readTree(Base64.getUrlDecoder().decode(cursor));
                 if (!node.path("user").asText().equals(userId)
@@ -44,26 +44,29 @@ public record SoundPeriod(String period, ZoneId zone, Instant from, Instant to, 
                         || !node.path("guild").asText().equals(guildId == null ? "" : guildId)
                         || !node.path("period").asText().equals(period)
                         || !node.path("zone").asText().equals(zone.getId()))
-                    throw bad("Cursor does not match request");
+                    throw invalidRequest("Cursor does not match request");
 
                 to = Instant.parse(node.path("to").asText());
                 before = Instant.parse(node.path("before").asText());
-                beforeId = id(node.path("id").asText());
+                beforeId = node.path("id").asText();
+                if (!ValidationUtils.isDecimalId(beforeId))
+                    throw invalidRequest("Invalid ID");
+
                 Long.parseLong(beforeId);
 
                 if (to.isAfter(Instant.now()) || !before.isBefore(to))
-                    throw bad("Invalid cursor interval");
+                    throw invalidRequest("Invalid cursor interval");
             }
 
             Instant from = days == 0 ? null : to.minus(Duration.ofDays(days));
             if (before != null && from != null && before.isBefore(from))
-                throw bad("Invalid cursor interval");
+                throw invalidRequest("Invalid cursor interval");
 
             return new SoundPeriod(period, zone, from, to, before, beforeId);
         } catch (Exception exception) {
             throw exception;
         } catch (java.lang.Exception exception) {
-            throw bad("Invalid period, timezone or cursor");
+            throw invalidRequest("Invalid period, timezone or cursor");
         }
     }
 

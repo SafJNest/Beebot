@@ -1,8 +1,12 @@
 package com.safjnest.bot.cache.managers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.mpatric.mp3agic.Mp3File;
+import com.safjnest.App;
 import com.safjnest.bot.cache.CacheAdapter;
+import com.safjnest.database.redis.RedisClient;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.exception.Exception;
@@ -10,21 +14,23 @@ import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordApi;
 import com.safjnest.sound.SoundAnalytics;
 import com.safjnest.sound.SoundPeriod;
-import com.safjnest.sound.SoundQueryCache;
-import com.safjnest.sound.SoundValues;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
+import com.safjnest.utils.ValidationUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,8 +38,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
@@ -44,35 +52,47 @@ import org.gagravarr.opus.OpusStatistics;
 public class SoundCache extends CacheAdapter<String, Sound> {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SoundCache.class);
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final TypeReference<List<String>> SELECTION_IDS = new TypeReference<>() {};
+    private static final int SELECTION_TTL_SECONDS = 60;
+    private static final SelectionStore REDIS = new SelectionStore() {
+        @Override
+        public String get(String key) {
+            return RedisClient.get(key);
+        }
+
+        @Override
+        public void put(String key, String value, int ttl) {
+            RedisClient.setValue(key, value, ttl);
+        }
+    };
+
     private static final SoundCache instance = new SoundCache();
 
     private final BotDB database;
     private final UserCache users;
     private final DiscordApi access;
-    private final SoundQueryCache queries;
+    private final SelectionStore selections;
     private final SoundAnalytics analytics;
+
     private volatile String cdnUrl = "";
 
     public SoundCache() {
-        this(BotDB.get(), new DiscordApi(), new SoundQueryCache());
+        this(BotDB.get(), new DiscordApi(), Ticker.systemTicker());
     }
 
-    public SoundCache(BotDB database, DiscordApi access, SoundQueryCache queries) {
-        this(database, access, queries, Ticker.systemTicker());
+    SoundCache(BotDB database, DiscordApi access, Ticker ticker) {
+        this(database, access, REDIS, ticker, UserCache.getInstance());
     }
 
-    public SoundCache(BotDB database, DiscordApi access, SoundQueryCache queries, Ticker ticker) {
-        this(database, access, queries, ticker, UserCache.getInstance());
-    }
-
-    public SoundCache(BotDB database, DiscordApi access, SoundQueryCache queries, Ticker ticker, UserCache users) {
+    public SoundCache(BotDB database, DiscordApi access, SelectionStore selections, Ticker ticker, UserCache users) {
         super(100, 1, TimeUnit.MINUTES, ticker, false);
 
         this.database = database;
         this.users = users;
 
         this.access = access;
-        this.queries = queries;
+        this.selections = selections;
         this.analytics = new SoundAnalytics(database, access);
     }
 
@@ -151,8 +171,10 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public static void catalogChanged(String id) {
-        if(id!=null)instance.invalidate(id);
-        instance.queries.invalidate();
+        if (id != null)
+            instance.invalidate(id);
+
+        instance.invalidateSelections();
     }
 
     public List<Sound> load(List<String> ids) {
@@ -282,42 +304,76 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     public record Context(String userId, Map<String, DiscordApi.GuildAccess> guilds) {
     }
 
+    public record GuildSounds(String guildId, GuildCounts counts, List<TagCount> tags,
+            Map<String, Object> summary, List<Sound> sounds) {}
+
+    public record PersonalSounds(PersonalCounts counts, List<TagCount> tags,
+            Map<String, Object> summary, Map<String, GuildGroup> guilds) {}
+
+    public record GuildCounts(int all, long mine, long others) {}
+    public record PersonalCounts(int all) {}
+    public record GuildGroup(String name, List<Sound> sounds) {}
+    public record TagCount(String id, String name, int soundCount) {}
+    public record SoundSearch(List<Sound> sounds, int limit) {}
+    public record TagSearch(List<MatchedTag> tags) {}
+    public record MatchedTag(String id, String name) {}
+
+    public interface SelectionStore {
+        String get(String key);
+        void put(String key, String value, int ttl);
+    }
+
     public Context context(String userId) {
         return new Context(userId, access.guildAccess(userId));
     }
 
     public void requireGuild(Context context, String guild) {
-        SoundValues.id(guild);
+        validateId(guild);
 
         if (!context.guilds().containsKey(guild))
             throw new Exception(Type.FORBIDDEN, "guild_forbidden", "Guild membership and bot presence required");
     }
 
-    public Map<String,Object> guildSounds(Context context,String guild,SoundPeriod period) {
+    public GuildSounds guildSounds(Context context, String guild, SoundPeriod period) {
         return readRequest("guildSounds", () -> {
-            requireGuild(context,guild);
-            var rows=selection(context,guild,false,"","","plays","desc",0);
-            var tagRows=database.readSoundTags(rowIds(rows));
-            List<Sound> sounds=responses(context,rows,tagRows);
-            long mine=0;
-            for(var row:rows)if(context.userId().equals(row.get("user_id")))mine++;
-            return SoundValues.map("guildId",guild,"counts",SoundValues.map("all",rows.size(),"mine",mine,"others",rows.size()-mine),
-            "tags",tagCounts(tagRows),"summary",analytics.getSummary(rows,context.userId(),guild,period),"sounds",sounds);
+            requireGuild(context, guild);
+
+            List<QueryRecord> rows = selection(context, guild, false, "", "", "plays", "desc", 0);
+            List<QueryRecord> tagRows = database.readSoundTags(rowIds(rows));
+            List<Sound> sounds = responses(context, rows, tagRows);
+
+            long mine = 0;
+            for (QueryRecord row : rows) {
+                if (context.userId().equals(row.get("user_id")))
+                    mine++;
+            }
+
+            GuildCounts counts = new GuildCounts(rows.size(), mine, rows.size() - mine);
+            Map<String, Object> summary = analytics.getSummary(rows, context.userId(), guild, period);
+
+            return new GuildSounds(guild, counts, tagCounts(tagRows), summary, sounds);
         });
     }
 
-    public Map<String,Object> mySounds(Context context,SoundPeriod period) {
+    public PersonalSounds mySounds(Context context, SoundPeriod period) {
         return readRequest("mySounds", () -> {
-            var rows=selection(context,null,true,"","","plays","desc",0);
-            var tagRows=database.readSoundTags(rowIds(rows));
-            var sounds=responses(context,rows,tagRows);
-            Map<String,Object> guilds=new LinkedHashMap<>();
-            for(Sound sound:sounds) {
-                var membership=context.guilds().get(sound.getGuildId());
-                var group=(Map<String,Object>)guilds.computeIfAbsent(sound.getGuildId(),key->SoundValues.map("name",membership==null?null:membership.name(),"sounds",new ArrayList<Sound>()));
-                ((List<Sound>)group.get("sounds")).add(sound);
+            List<QueryRecord> rows = selection(context, null, true, "", "", "plays", "desc", 0);
+            List<QueryRecord> tagRows = database.readSoundTags(rowIds(rows));
+            List<Sound> sounds = responses(context, rows, tagRows);
+            Map<String, GuildGroup> guilds = new LinkedHashMap<>();
+
+            for (Sound sound : sounds) {
+                GuildGroup group = guilds.computeIfAbsent(sound.getGuildId(), id -> {
+                    DiscordApi.GuildAccess membership = context.guilds().get(id);
+
+                    return new GuildGroup(membership == null ? null : membership.name(), new ArrayList<>());
+                });
+                group.sounds().add(sound);
             }
-            return SoundValues.map("counts",SoundValues.map("all",sounds.size()),"tags",tagCounts(tagRows),"summary",analytics.getSummary(rows,context.userId(),null,period),"guilds",guilds);
+
+            Map<String, Object> summary = analytics.getSummary(rows, context.userId(), null, period);
+
+            return new PersonalSounds(new PersonalCounts(sounds.size()), tagCounts(tagRows), summary, guilds);
         });
     }
 
@@ -327,24 +383,36 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         });
     }
 
-    public Map<String,Object> search(Context context,String q,String tag,String sort,String order,int limit) {
+    public SoundSearch search(Context context, String q, String tag, String sort, String order, int limit) {
         return readRequest("search", () -> {
-            String query=normalize(q);
-            String tagName=normalize(tag);
-            if(query.isEmpty()&&tagName.isEmpty())throw SoundValues.bad("Specify q or tag");
-            if(!Set.of("plays","likes","dislikes").contains(sort)||!Set.of("asc","desc").contains(order)||limit<1||limit>100)
-            throw SoundValues.bad("Invalid sort, order or limit");
-            return SoundValues.map("sounds",responses(context,selection(context,null,false,query,tagName,sort,order,limit)),"limit",limit);
+            String query = normalize(q);
+            String tagName = normalize(tag);
+
+            if (query.isEmpty() && tagName.isEmpty())
+                throw Exception.invalidRequest("Specify q or tag");
+            if (!Set.of("plays", "likes", "dislikes").contains(sort) || !Set.of("asc", "desc").contains(order)
+                    || limit < 1 || limit > 100)
+                throw Exception.invalidRequest("Invalid sort, order or limit");
+
+            List<QueryRecord> rows = selection(context, null, false, query, tagName, sort, order, limit);
+
+            return new SoundSearch(responses(context, rows), limit);
         });
     }
 
-    public Map<String,Object> searchTags(Context context,String q) {
+    public TagSearch searchTags(Context context, String q) {
         return readRequest("searchTags", () -> {
-            String query=normalize(q);
-            if(query.isEmpty())throw SoundValues.bad("Specify a tag prefix");
-            List<Map<String,Object>> result=new ArrayList<>();
-            for(var row:database.searchSoundTags(query,context.userId(),context.guilds().keySet()))result.add(SoundValues.map("id",row.get("id"),"name",row.get("name")));
-            return SoundValues.map("tags",result);
+            String query = normalize(q);
+            if (query.isEmpty())
+                throw Exception.invalidRequest("Specify a tag prefix");
+
+            List<QueryRecord> rows = database.searchSoundTags(query, context.userId(), context.guilds().keySet());
+            List<MatchedTag> tags = new ArrayList<>();
+
+            for (QueryRecord row : rows)
+                tags.add(new MatchedTag(row.get("id"), row.get("name")));
+
+            return new TagSearch(tags);
         });
     }
 
@@ -370,7 +438,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public <R> R withVisibleSound(Context context, String id, Function<Sound, R> operation) {
-        SoundValues.id(id);
+        validateId(id);
 
         try {
             return with(id, sound -> {
@@ -427,7 +495,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
         for (QueryRecord row : rows) {
             String id = row.get("id");
-            result.put(id, new Sound(row, tags(id, tagRows, true), database, queries::invalidate));
+            result.put(id, new Sound(row, tags(id, tagRows, true), database, this::invalidateSelections));
         }
 
         return result;
@@ -435,7 +503,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
     /* -------------------------------------------------------------------------- */
 
-    private <T> T readRequest(String operation, java.util.function.Supplier<T> work) {
+    private <T> T readRequest(String operation, Supplier<T> work) {
         long started = System.nanoTime();
         try { return database.withSoundReadSession(work); }
         finally { LOG.debug("Sound read {} completed in {} ms", operation, (System.nanoTime() - started) / 1_000_000); }
@@ -448,13 +516,21 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     private String normalize(String value) {
-        if(value==null)return "";
-        if(value.length()>255)throw SoundValues.bad("Query too long");
+        if (value == null)
+            return "";
+        if (value.length() > 255)
+            throw Exception.invalidRequest("Query too long");
+
         return value.trim().toLowerCase(Locale.ROOT);
     }
 
+    private void validateId(String id) {
+        if (!ValidationUtils.isDecimalId(id))
+            throw Exception.invalidRequest("Invalid ID");
+    }
+
     private QueryRecord visible(Context context, String id) {
-        SoundValues.id(id);
+        validateId(id);
 
         List<QueryRecord> rows = database.readSounds(List.of(id));
         if (rows.isEmpty() || !BotDB.isSoundVisible(rows.get(0), context.userId(), context.guilds().keySet()))
@@ -463,23 +539,92 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return rows.get(0);
     }
 
-    private List<QueryRecord> selection(Context context,String guild,boolean mine,String q,String tag,String sort,String order,int limit) {
-        var select=new BotDB.SoundSelection(context.userId(),context.guilds().keySet(),guild,mine,q,tag,sort,order,limit);
-        queries.initialize();
-        List<?> key=List.of(context.userId(),new TreeSet<>(context.guilds().keySet()),guild==null?"":guild,mine,q,tag,sort,order,limit);
-        List<String> ids=queries.ids(key,()->database.selectSounds(select));
-        var rows=database.readSounds(ids);
-        Map<String,QueryRecord> byId=new HashMap<>();
-        for(var row:rows)if(BotDB.isSoundVisible(row,context.userId(),context.guilds().keySet())&&(guild==null||guild.equals(row.get("guild_id")))&&(!mine||context.userId().equals(row.get("user_id"))))byId.put(row.get("id"),row);
-        if(byId.size()!=ids.size()) {
-            ids=database.selectSounds(select);
-            rows=database.readSounds(ids);
-            byId.clear();
-            for(var row:rows)if(BotDB.isSoundVisible(row,context.userId(),context.guilds().keySet()))byId.put(row.get("id"),row);
+    private List<QueryRecord> selection(Context context, String guild, boolean mine, String q, String tag,
+            String sort, String order, int limit) {
+        Set<String> memberships = context.guilds().keySet();
+        BotDB.SoundSelection select = new BotDB.SoundSelection(context.userId(), memberships, guild, mine, q, tag, sort, order, limit);
+        List<?> parameters = List.of(context.userId(), new TreeSet<>(memberships), guild == null ? "" : guild,
+            mine, q, tag, sort, order, limit);
+
+        List<String> ids = selectionIds(select, parameters);
+        List<QueryRecord> rows = database.readSounds(ids);
+        Map<String, QueryRecord> byId = new HashMap<>();
+
+        for (QueryRecord row : rows) {
+            if (BotDB.isSoundVisible(row, context.userId(), memberships)
+                    && (guild == null || guild.equals(row.get("guild_id")))
+                    && (!mine || context.userId().equals(row.get("user_id"))))
+                byId.put(row.get("id"), row);
         }
-        List<QueryRecord> ordered=new ArrayList<>();
-        for(String id:ids)if(byId.containsKey(id))ordered.add(byId.get(id));
+
+        if (byId.size() != ids.size()) {
+            ids = database.selectSounds(select);
+            rows = database.readSounds(ids);
+            byId.clear();
+
+            for (QueryRecord row : rows) {
+                if (BotDB.isSoundVisible(row, context.userId(), memberships))
+                    byId.put(row.get("id"), row);
+            }
+        }
+
+        List<QueryRecord> ordered = new ArrayList<>();
+        for (String id : ids) {
+            QueryRecord row = byId.get(id);
+            if (row != null)
+                ordered.add(row);
+        }
+
         return ordered;
+    }
+
+    private List<String> selectionIds(BotDB.SoundSelection select, List<?> parameters) {
+        String prefix = selectionPrefix();
+        String generation = selections.get(prefix + "generation");
+        if (generation == null) {
+            invalidateSelections();
+            generation = selections.get(prefix + "generation");
+        }
+        if (generation == null)
+            return database.selectSounds(select);
+
+        String key = prefix + "v1:" + generation + ":" + selectionHash(parameters);
+        String value = selections.get(key);
+        if (value != null) {
+            try {
+                List<String> ids = JSON.readValue(value, SELECTION_IDS);
+                if (ids != null && ids.stream().allMatch(id -> id != null && id.matches("[0-9]+")))
+                    return ids;
+            } catch (java.lang.Exception ignored) {
+            }
+        }
+
+        List<String> ids = database.selectSounds(select);
+        try {
+            selections.put(key, JSON.writeValueAsString(ids), SELECTION_TTL_SECONDS);
+        } catch (java.lang.Exception ignored) {
+        }
+
+        return ids;
+    }
+
+    private void invalidateSelections() {
+        selections.put(selectionPrefix() + "generation", UUID.randomUUID().toString(), 0);
+    }
+
+    private String selectionPrefix() {
+        return (App.isTesting() ? "beebot_test" : "beebot") + ":sound:query:";
+    }
+
+    private String selectionHash(List<?> parameters) {
+        try {
+            byte[] json = JSON.writeValueAsString(parameters).getBytes(StandardCharsets.UTF_8);
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(json);
+
+            return HexFormat.of().formatHex(digest);
+        } catch (java.lang.Exception exception) {
+            throw new IllegalArgumentException("Invalid query key", exception);
+        }
     }
 
     private List<Sound> responses(Context context,List<QueryRecord> rows) {
@@ -501,7 +646,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
             for (QueryRecord row : rows) {
                 String id = row.get("id");
                 if (needed.contains(id))
-                    loaded.put(id, new Sound(row, tags(id, tagRows, true), database, queries::invalidate));
+                    loaded.put(id, new Sound(row, tags(id, tagRows, true), database, this::invalidateSelections));
             }
 
             return loaded;
@@ -520,7 +665,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
             Sound source = byId.get(id);
 
             if (source == null)
-                source = new Sound(row, tags(id, tagRows, true), database, queries::invalidate);
+                source = new Sound(row, tags(id, tagRows, true), database, this::invalidateSelections);
 
             result.add(Sound.forResponse(source, row, tags(id, tagRows, false),
                 extraById.getOrDefault(id, new QueryRecord()), context.userId(), administrator, cdnUrl,
@@ -537,12 +682,17 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return result;
     }
 
-    private List<Map<String,Object>> tagCounts(List<QueryRecord> tagRows) {
-        Map<String,Map<String,Object>> tags=new LinkedHashMap<>();
-        for(var row:tagRows) {
-            var tag=tags.computeIfAbsent(row.get("tag_id"),key->SoundValues.map("id",key,"name",row.get("name"),"soundCount",0));
-            tag.put("soundCount",((Number)tag.get("soundCount")).intValue()+1);
+    private List<TagCount> tagCounts(List<QueryRecord> tagRows) {
+        Map<String, TagCount> tags = new LinkedHashMap<>();
+        for (QueryRecord row : tagRows) {
+            String id = row.get("tag_id");
+            TagCount previous = tags.get(id);
+            if (previous == null)
+                tags.put(id, new TagCount(id, row.get("name"), 1));
+            else
+                tags.put(id, new TagCount(id, previous.name(), previous.soundCount() + 1));
         }
+
         return new ArrayList<>(tags.values());
     }
 }

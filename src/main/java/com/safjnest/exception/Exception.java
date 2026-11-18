@@ -35,6 +35,10 @@ public final class Exception extends RuntimeException {
         this.retryAfter = retryAfter;
     }
 
+    public static Exception invalidRequest(String message) {
+        return new Exception(Type.INVALID_REQUEST, "invalid_request", message);
+    }
+
     public Type getType() {
         return type;
     }

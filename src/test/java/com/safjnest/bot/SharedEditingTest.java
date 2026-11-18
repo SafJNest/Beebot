@@ -1,6 +1,7 @@
 package com.safjnest.bot;
 
 import static org.junit.Assert.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,7 +39,6 @@ import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.discord.auth.DiscordApi;
-import com.safjnest.sound.SoundQueryCache;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.spring.config.AuthFilter;
@@ -125,7 +125,7 @@ public class SharedEditingTest {
             }
         };
 
-        SoundQueryCache queries = new SoundQueryCache(new SoundQueryCache.Store() {
+        SoundCache.SelectionStore selections = new SoundCache.SelectionStore() {
             public String get(String key) {
                 return null;
             }
@@ -133,10 +133,10 @@ public class SharedEditingTest {
             public void put(String key, String value, int ttl) {
                 generations.incrementAndGet();
             }
-        });
+        };
 
         users = new UserCache(database);
-        sounds = new SoundCache(database, access, queries, com.github.benmanes.caffeine.cache.Ticker.systemTicker(), users);
+        sounds = new SoundCache(database, access, selections, com.github.benmanes.caffeine.cache.Ticker.systemTicker(), users);
         guilds = new GuildCache(database, () -> "!");
         soundController = new SoundController(sounds);
         meController = new MeController(null, sounds, users, database);
@@ -304,9 +304,38 @@ public class SharedEditingTest {
     }
 
     @Test
+    public void soundListsKeepTheirJsonFieldsAndNullableGuildNames() throws java.lang.Exception {
+        try (Connection connection = connection(); java.sql.Statement statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE sound SET guild_id = '44' WHERE id = 11");
+            statement.executeUpdate("INSERT INTO tag(id, name) VALUES (5, 'sample')");
+            statement.executeUpdate("INSERT INTO tag_sounds(sound_id, tag_id) VALUES (10, 5), (11, 5)");
+        }
+
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(soundController).build();
+        JsonNode guild = JSON.readTree(mvc.perform(get("/api/beebot/guilds/1/sounds").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertEquals(List.of("guildId", "counts", "tags", "summary", "sounds"),
+            guild.properties().stream().map(Map.Entry::getKey).toList());
+        assertEquals(json("{\"all\":1,\"mine\":1,\"others\":0}"), guild.get("counts"));
+
+        JsonNode personal = JSON.readTree(mvc.perform(get("/api/beebot/sounds/me").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertEquals(List.of("counts", "tags", "summary", "guilds"),
+            personal.properties().stream().map(Map.Entry::getKey).toList());
+        assertEquals(json("{\"all\":2}"), personal.get("counts"));
+        assertEquals(json("[{\"id\":\"5\",\"name\":\"sample\",\"soundCount\":2}]"), personal.get("tags"));
+        assertTrue(personal.at("/guilds/44/name").isNull());
+        assertEquals("11", personal.at("/guilds/44/sounds/0/id").asText());
+
+        JsonNode tags = JSON.readTree(mvc.perform(get("/api/beebot/tags").param("q", "sam").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertEquals(json("{\"tags\":[{\"id\":\"5\",\"name\":\"sample\"}]}"), tags);
+    }
+
+    @Test
     public void bulkGreetsHaveIndependentOutcomesAndUpdateCurrentUser() throws java.lang.Exception {
         UserData user = users.getOrLoad("2");
-        Map<String, Object> response = meController.settings(AUTH,
+        MeController.GreetSettings response = meController.settings(AUTH,
             json("{\"greets\":{\"0\":\"11\",\"1\":\"12\",\"3\":\"10\"}}"));
         JsonNode result = JSON.valueToTree(response).get("greets");
         assertEquals("ok", result.get("0").get("status").asText());

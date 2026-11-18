@@ -18,9 +18,9 @@ import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordApi.Server;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.discord.auth.DiscordAuthService;
-import com.safjnest.sound.SoundValues;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.spring.config.AuthFilter;
+import com.safjnest.utils.ValidationUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -43,6 +43,9 @@ public class MeController {
     private final BotDB database;
 
     public record Me(AuthUser user, List<Server> servers, Map<String, Sound> greets) {}
+    public record GreetSettings(Map<String, GreetResult> greets) {}
+    public record GreetResult(String status, List<GreetError> errors) {}
+    public record GreetError(String field, String code, String message) {}
 
     @Autowired
     public MeController(Environment environment) {
@@ -72,15 +75,15 @@ public class MeController {
     }
 
     @PostMapping("/me/settings")
-    public Map<String, Object> settings(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+    public GreetSettings settings(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
             @RequestBody(required = false) JsonNode body) {
         SoundCache.Context context = context(auth);
         if (body == null || !body.isObject() || body.size() != 1 || !body.path("greets").isObject())
-            throw SoundValues.bad("greets object required");
+            throw Exception.invalidRequest("greets object required");
 
         Set<String> requestedIds = new LinkedHashSet<>();
         for (JsonNode value : body.get("greets")) {
-            if (value.isTextual() && value.asText().matches("[0-9]{1,19}"))
+            if (value.isTextual() && ValidationUtils.isDecimalId(value.asText()))
                 requestedIds.add(value.asText());
         }
 
@@ -94,7 +97,7 @@ public class MeController {
             preloadError = exception;
         }
 
-        Map<String, Object> results = new LinkedHashMap<>();
+        Map<String, GreetResult> results = new LinkedHashMap<>();
         for (Map.Entry<String, JsonNode> entry : body.get("greets").properties()) {
             String scope = entry.getKey();
 
@@ -105,9 +108,11 @@ public class MeController {
                 String id = null;
                 if (!entry.getValue().isNull()) {
                     if (!entry.getValue().isTextual())
-                        throw SoundValues.bad("Sound ID must be a string");
+                        throw Exception.invalidRequest("Sound ID must be a string");
 
-                    id = SoundValues.id(entry.getValue().asText());
+                    id = entry.getValue().asText();
+                    if (!ValidationUtils.isDecimalId(id))
+                        throw Exception.invalidRequest("Invalid ID");
                     if (preloadError != null)
                         throw preloadError;
 
@@ -123,17 +128,17 @@ public class MeController {
                     return true;
                 });
 
-                results.put(scope, SoundValues.map("status", "ok", "errors", List.of()));
+                results.put(scope, new GreetResult("ok", List.of()));
             } catch (Exception exception) {
-                results.put(scope, SoundValues.map("status", "error", "errors", List.of(
-                    SoundValues.map("field", "soundId", "code", exception.getCode(), "message", exception.getMessage()))));
+                results.put(scope, new GreetResult("error", List.of(
+                    new GreetError("soundId", exception.getCode(), exception.getMessage()))));
             } catch (IllegalStateException exception) {
-                results.put(scope, SoundValues.map("status", "error", "errors", List.of(
-                    SoundValues.map("field", "soundId", "code", "sound_storage_unavailable", "message", "Sound storage is unavailable"))));
+                results.put(scope, new GreetResult("error", List.of(
+                    new GreetError("soundId", "sound_storage_unavailable", "Sound storage is unavailable"))));
             }
         }
 
-        return SoundValues.map("greets", results);
+        return new GreetSettings(results);
     }
 
     /* -------------------------------------------------------------------------- */

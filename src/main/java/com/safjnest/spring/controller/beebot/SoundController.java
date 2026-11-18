@@ -6,7 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.safjnest.sound.SoundValues;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.exception.Exception;
@@ -53,14 +52,14 @@ public class SoundController {
     }
 
     @GetMapping("/guilds/{guildId}/sounds")
-    public Map<String,Object> guildSounds(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+    public SoundCache.GuildSounds guildSounds(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
             @PathVariable("guildId") String guildId,@RequestParam(name="period", defaultValue="30d") String period,@RequestParam(name="timezone", defaultValue="Europe/Rome") String timezone) {
         SoundCache.Context context = context(auth);
         return sounds.guildSounds(context,guildId,period(context,period,timezone,null,null,null));
     }
 
     @GetMapping("/sounds/me")
-    public Map<String,Object> mine(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+    public SoundCache.PersonalSounds mine(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
             @RequestParam(name="period", defaultValue="30d") String period,@RequestParam(name="timezone", defaultValue="Europe/Rome") String timezone) {
         SoundCache.Context context = context(auth);
         return sounds.mySounds(context,period(context,period,timezone,null,null,null));
@@ -72,14 +71,14 @@ public class SoundController {
     }
 
     @GetMapping("/sounds")
-    public Map<String,Object> search(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+    public SoundCache.SoundSearch search(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
             @RequestParam(name="q", required=false) String q,@RequestParam(name="tag", required=false) String tag,
             @RequestParam(name="sort", defaultValue="plays") String sort,@RequestParam(name="order", defaultValue="desc") String order,@RequestParam(name="limit", defaultValue="100") int limit) {
         return sounds.search(context(auth),q,tag,sort,order,limit);
     }
 
     @GetMapping("/tags")
-    public Map<String,Object> tags(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,@RequestParam(name="q", required=false) String q) {
+    public SoundCache.TagSearch tags(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,@RequestParam(name="q", required=false) String q) {
         return sounds.searchTags(context(auth),q);
     }
 
@@ -168,7 +167,7 @@ public class SoundController {
     private Sound.Vote vote(SoundCache.Context context, String id, int value, JsonNode body) {
         return sounds.withVisibleSound(context, id, sound -> {
             if (body == null || !body.isObject() || body.size() != 1 || !body.path("enabled").isBoolean())
-                throw SoundValues.bad("enabled boolean required");
+                throw Exception.invalidRequest("enabled boolean required");
 
             return sound.vote(context.userId(), context.guilds().keySet(), value, body.get("enabled").asBoolean());
         });
@@ -176,7 +175,7 @@ public class SoundController {
 
     private void parseSound(Sound edit, JsonNode body) {
         if (body == null || !body.isObject() || body.isEmpty())
-            throw SoundValues.bad("Nonempty JSON object required");
+            throw Exception.invalidRequest("Nonempty JSON object required");
 
         for (Map.Entry<String, JsonNode> entry : body.properties()) {
             JsonNode value = entry.getValue();
@@ -184,31 +183,31 @@ public class SoundController {
             switch (entry.getKey()) {
                 case "name" -> {
                     if (!value.isTextual() || value.asText().isBlank() || value.asText().length() > 100 || value.asText().matches("[0-9]+"))
-                        throw SoundValues.bad("Invalid sound name");
+                        throw Exception.invalidRequest("Invalid sound name");
 
                     edit.setName(value.asText().trim());
                 }
                 case "public" -> {
                     if (!value.isBoolean())
-                        throw SoundValues.bad("public must be boolean");
+                        throw Exception.invalidRequest("public must be boolean");
 
                     edit.setPublic(value.asBoolean());
                 }
                 case "tags" -> {
                     if (!value.isArray() || value.size() > Tag.MAX_TAG_SOUND)
-                        throw SoundValues.bad("At most five tags required");
+                        throw Exception.invalidRequest("At most five tags required");
 
                     Set<String> names = new LinkedHashSet<>();
                     for (JsonNode tag : value) {
                         if (!tag.isTextual() || tag.asText().isBlank() || tag.asText().length() > 255)
-                            throw SoundValues.bad("Invalid tag");
+                            throw Exception.invalidRequest("Invalid tag");
 
                         names.add(tag.asText().trim().toLowerCase(java.util.Locale.ROOT));
                     }
 
                     edit.setTagNames(new ArrayList<>(names));
                 }
-                default -> throw SoundValues.bad("Unknown sound field");
+                default -> throw Exception.invalidRequest("Unknown sound field");
             }
         }
     }
