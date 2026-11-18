@@ -368,11 +368,14 @@ La struttura confermata conserva Spring per controller, filtro/configurazione e 
 
 L'autenticazione non viene duplicata per controller LoL o credenziali personali. `discord.auth.DiscordApi` serve anche ai suoni; `exception.Exception` è applicativa; `AuthDB` resta in `database.sql.database`. L'handler e il mapper comuni nuovi saranno in `spring.exception`, riusando il package esistente.
 
-### Suoni e futuro R2
+### Suoni e R2
 
-I metadati e le modifiche restano in `sound.model.Sound` e la cache locale ne coordina l'istanza. In futuro `bot.audio.SoundFiles` sarà l'unico proprietario del recupero R2 e della copia temporanea sulla VPS, riusato da player, download e greet. Non una catena `SoundRepository → CachedSoundRepository → R2Repository`.
+`bot.audio.SoundFiles` coordina la copia locale sulla VPS per player, download e
+greet. `storage.R2Storage` condivide URL CDN, download e upload S3.
+`sound.model.Sound` conserva i metadati e `SoundCache` ne coordina l'istanza.
 
-Download concorrenti, file incompleti, durata della copia locale e cleanup durante la riproduzione andranno verificati quando si implementa R2. La conservazione per alcune ore e la pulizia periodica rimangono requisiti del futuro lavoro; non sono implementate da questo piano. `SoundFiles` non va creato durante i soli spostamenti dei file attuali.
+Le copie locali vengono mantenute e tutte le letture usano il CDN configurato.
+I dettagli dell'upload e dei setting sono in [Asset storage on R2](../audio-storage-r2.md).
 
 
 ## Sequenza di implementazione proposta

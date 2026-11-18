@@ -23,6 +23,7 @@ import com.safjnest.App;
 import com.safjnest.bot.model.BotSettings.LavalinkSettings;
 import com.safjnest.bot.model.BotSettings.PoTokenSettings;
 import com.safjnest.bot.model.BotSettings.SpotifySettings;
+import com.safjnest.sound.model.Sound;
 import com.safjnest.utils.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
@@ -129,6 +130,22 @@ public class PlayerManager {
 
     public AudioPlayerManager getAudioPlayerManager() {
         return audioPlayerManager;
+    }
+
+    public void loadSound(Guild guild, Sound sound, AudioLoadResultHandler handler) {
+        if (sound == null) {
+            handler.noMatches();
+            return;
+        }
+
+        Thread.startVirtualThread(() -> {
+            try {
+                String file = SoundFiles.getInstance().resolve(sound).toString();
+                loadItemOrdered(guild, file, handler);
+            } catch (IOException | IllegalArgumentException exception) {
+                handler.loadFailed(new FriendlyException("Sound file is unavailable.", FriendlyException.Severity.COMMON, exception));
+            }
+        });
     }
 
     public Future<Void> loadItemOrdered(Guild guild, String trackURL, AudioLoadResultHandler resultHandler) {

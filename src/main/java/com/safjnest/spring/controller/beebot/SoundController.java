@@ -134,22 +134,14 @@ public class SoundController {
                 administrators.add(id);
         });
 
-        String extension = sounds.withVisibleSound(context, soundId, sound -> {
+        sounds.withVisibleSound(context, soundId, sound -> {
             if (!sound.delete(context.userId(), administrators))
                 throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
 
-            return sound.getExtension();
+            return true;
         });
 
         sounds.removeDeleted(soundId);
-
-        if (extension != null && extension.matches("[a-zA-Z0-9]+")) {
-            try {
-                java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("rsc", "sounds", soundId + "." + extension));
-            } catch (java.io.IOException exception) {
-                org.slf4j.LoggerFactory.getLogger(SoundController.class).warn("Unable to remove deleted sound file {}", soundId, exception);
-            }
-        }
     }
 
     @PatchMapping("/sounds/{soundId}/like")

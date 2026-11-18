@@ -4,6 +4,7 @@ import lombok.Data;
 @Data
 public class JsonSettings {
     private AWSSettings amazonAWS;
+    private R2Settings r2;
     private DatabaseSettings postgreSQL;
     private DatabaseSettings mariaDB;
     private DatabaseSettings localHost;

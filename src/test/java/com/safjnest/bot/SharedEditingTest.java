@@ -143,6 +143,31 @@ public class SharedEditingTest {
     }
 
     @Test
+    public void soundUploadRequiresDatabaseInsertAndRollsBackWhenFileStorageFails() {
+        AtomicInteger uploads = new AtomicInteger();
+        failedSql.set("INSERT INTO sound");
+
+        assertThrows(Exception.class, () -> database.insertSound("new sound", "1", "2", "mp3", true,
+            id -> uploads.incrementAndGet()));
+        assertEquals(0, uploads.get());
+
+        failedSql.set(null);
+        IllegalStateException uploadFailure = new IllegalStateException("R2 unavailable");
+        assertSame(uploadFailure, assertThrows(IllegalStateException.class,
+            () -> database.insertSound("new sound", "1", "2", "mp3", true, id -> {
+                uploads.incrementAndGet();
+                assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'new sound'").getAsInt("n"));
+                throw uploadFailure;
+            })));
+        assertEquals(1, uploads.get());
+        assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'new sound'").getAsInt("n"));
+
+        String id = database.insertSound("new sound", "1", "2", "mp3", true, key -> uploads.incrementAndGet());
+        assertEquals(2, uploads.get());
+        assertEquals(id, row("SELECT id FROM sound WHERE name = 'new sound'").get("id"));
+    }
+
+    @Test
     public void deferredSoundWritesOnceAndKeepsCanonicalIdentity() {
         Sound sound = sound();
         Sound edit = sound.deferEdit();

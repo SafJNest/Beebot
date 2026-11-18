@@ -1,6 +1,7 @@
 package com.safjnest.bot.events;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +12,7 @@ import com.safjnest.utils.twitch.TwitchClient;
 import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.audio.QueueHandler;
 import com.safjnest.bot.audio.SoundEmbed;
+import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.bot.audio.TrackData;
 import com.safjnest.bot.audio.TrackScheduler;
 import com.safjnest.bot.audio.types.AudioType;
@@ -398,6 +400,10 @@ public class EventButtonHandler extends ListenerAdapter {
         Guild guild = event.getGuild();
 
         Sound sound = SoundCache.getSoundById(soundId);
+        if (sound == null) {
+            event.reply("Sound file is unavailable.").setEphemeral(true).queue();
+            return;
+        }
 
         switch (args) {
             case "like":
@@ -407,34 +413,39 @@ public class EventButtonHandler extends ListenerAdapter {
                 SoundCache.withSound(soundId, current -> current.dislike(event.getUser().getId(), !current.hasDisliked(event.getUser().getId())));
                 break;
             case "replay":
-                String path = sound.getPath();
                 AudioChannel channelJoin = event.getMember().getVoiceState().getChannel();
-                if (channelJoin == null)  return;
+                if (channelJoin == null)
+                    return;
 
-                SoundCache.withSound(soundId, current -> current.increaseUserPlays(event.getUser().getId(), guild.getId()));
-
-                pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
+                event.deferEdit().queue(hook -> pm.loadSound(guild, sound, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
                         if (!guild.getAudioManager().isConnected())
                             guild.getAudioManager().openAudioConnection(channelJoin);
 
+                        SoundCache.withSound(soundId, current -> current.increaseUserPlays(event.getUser().getId(), guild.getId()));
                         track.setUserData(new TrackData(AudioType.SOUND));
                         pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
+                        Sound updated = SoundCache.getSoundById(soundId);
+                        if (updated != null)
+                            hook.editOriginalEmbeds(SoundEmbed.getSoundEmbed(updated, event.getUser()).build())
+                                .setComponents(SoundEmbed.getSoundEmbedButtons(updated)).queue();
                     }
 
                     @Override
                     public void playlistLoaded(AudioPlaylist playlist) {}
 
                     @Override
-                    public void noMatches() {}
+                    public void noMatches() {
+                        hook.sendMessage("Sound file is unavailable.").setEphemeral(true).queue();
+                    }
 
                     @Override
                     public void loadFailed(FriendlyException throwable) {
-                        System.out.println("error: " + throwable.getMessage());
+                        hook.sendMessage("Sound file is unavailable.").setEphemeral(true).queue();
                     }
-                });
-                break;
+                }));
+                return;
             case "stop":
                 pm.getGuildMusicManager(guild).getTrackScheduler().stop();
                 break;
@@ -548,9 +559,15 @@ public class EventButtonHandler extends ListenerAdapter {
                 tagSwitch = true;
                 break;
             case "download":
-                File file = new File(soundData.getPath());
-                event.getChannel().sendFiles(FileUpload.fromData(file)).queue();
-                break;
+                event.deferEdit().queue(hook -> Thread.startVirtualThread(() -> {
+                    try {
+                        Path file = SoundFiles.getInstance().resolve(soundData);
+                        event.getChannel().sendFiles(FileUpload.fromData(file.toFile())).queue();
+                    } catch (IOException | IllegalArgumentException exception) {
+                        hook.sendMessage("Sound file is unavailable.").setEphemeral(true).queue();
+                    }
+                }));
+                return;
         }
 
         List<MessageTopLevelComponent> buttons = tagSwitch ? SoundEmbed.getTagButton(soundId, String.valueOf(tagId)) : SoundEmbed.getSoundButton(soundId);

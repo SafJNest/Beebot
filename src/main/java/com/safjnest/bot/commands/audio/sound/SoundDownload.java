@@ -1,22 +1,24 @@
 package com.safjnest.bot.commands.audio.sound;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SoundDownload extends SlashCommand{
-    String path = "rsc" + File.separator + "sounds" + File.separator;
 
     public SoundDownload(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
@@ -67,10 +69,21 @@ public class SoundDownload extends SlashCommand{
             message = "Downloaded a random sound named **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** ";
         }
 
-        fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
+        String id = toDownload.get("id");
+        String extension = toDownload.get("extension");
+        String response = message;
 
-        event.deferReply(false).addContent(message)
-            .setFiles(FileUpload.fromData(new File(fileName)))
-            .queue();
+        event.deferReply(false).queue(hook -> Thread.startVirtualThread(() -> sendFile(hook, response, id, extension)));
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    private void sendFile(InteractionHook hook, String message, String id, String extension) {
+        try {
+            Path file = SoundFiles.getInstance().resolve(id, extension);
+            hook.editOriginal(message).setFiles(FileUpload.fromData(file.toFile())).queue();
+        } catch (IOException | IllegalArgumentException exception) {
+            hook.editOriginal("Sound file is unavailable.").queue();
+        }
     }
 }

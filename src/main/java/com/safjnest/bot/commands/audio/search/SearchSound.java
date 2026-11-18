@@ -28,6 +28,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -122,7 +123,6 @@ public class SearchSound extends SlashCommand {
         
         private SlashCommandEvent slashEvent;
         private String menuID;
-        private StringSelectInteractionEvent menuEvent;
     
         public MenuListener(SlashCommandEvent slashEvent, String menuID) {
             this.slashEvent = slashEvent;
@@ -133,7 +133,6 @@ public class SearchSound extends SlashCommand {
         public void onStringSelectInteraction(StringSelectInteractionEvent event) {
             if (event.getComponentId().equals(menuID)) {
                 Guild guild = event.getGuild();
-                this.menuEvent = event;
             
                 AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
                 AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
@@ -151,19 +150,20 @@ public class SearchSound extends SlashCommand {
                 List<String> selected = event.getValues();
                 Sound sound = SoundCache.getSoundById(selected.get(0));
     
-                PlayerManager.get().loadItemOrdered(guild, sound.getPath(), new ResultHandler(slashEvent, sound));
+                event.deferEdit().queue(hook -> PlayerManager.get().loadSound(guild, sound,
+                    new ResultHandler(slashEvent, hook, sound)));
                 
             }
         }
     
         private class ResultHandler implements AudioLoadResultHandler {
-            private final SlashCommandEvent event;
+            private final InteractionHook hook;
             private final Guild guild;
             private final Member author;
             private final Sound sound;
             
-            private ResultHandler(SlashCommandEvent event, Sound sound) {
-                this.event = event;
+            private ResultHandler(SlashCommandEvent event, InteractionHook hook, Sound sound) {
+                this.hook = hook;
                 this.guild = event.getGuild();
                 this.author = event.getMember();
                 this.sound = sound;
@@ -181,7 +181,7 @@ public class SearchSound extends SlashCommand {
                     return current;
                 });
                     
-                menuEvent.editMessageEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
+                hook.editOriginalEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
             }
     
             @Override
@@ -189,12 +189,12 @@ public class SearchSound extends SlashCommand {
     
             @Override
             public void noMatches() {
-                event.reply("No matches");
+                hook.sendMessage("No matches").setEphemeral(true).queue();
             }
     
             @Override
             public void loadFailed(FriendlyException throwable) {
-                event.reply(throwable.getMessage());
+                hook.sendMessage(throwable.getMessage()).setEphemeral(true).queue();
             }
         }
     }

@@ -126,11 +126,11 @@ public class SoundEmbed {
                 formattedDuration = SafJNest.getFormattedDuration(sound.getAsTrack().getDuration());
             else if (sound.getExtension().equals("opus"))
                 formattedDuration = SafJNest
-                        .getFormattedDuration((Math.round(SoundCache.getOpusDuration(sound.getPath()))) * 1000);
+                        .getFormattedDuration((Math.round(SoundCache.getOpusDuration(SoundFiles.getInstance().localPath(sound).toString()))) * 1000);
             else
                 formattedDuration = SafJNest
-                        .getFormattedDuration((Math.round(SoundCache.getMP3Duration(sound.getPath()))) * 1000);
-        } catch (IOException e) {
+                        .getFormattedDuration((Math.round(SoundCache.getMP3Duration(SoundFiles.getInstance().localPath(sound).toString()))) * 1000);
+        } catch (IOException | IllegalArgumentException e) {
             formattedDuration = "Error";
         }
 

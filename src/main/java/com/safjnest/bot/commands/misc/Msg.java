@@ -6,6 +6,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.Bot;
+import com.safjnest.storage.R2Storage;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -48,13 +49,14 @@ public class Msg extends SlashCommand {
         String title = "NEW MESSAGE FROM " + event.getMember().getEffectiveName();
         
         String img = "punto.jpg";
-        File file = new File("rsc" + File.separator + "assets" + File.separator + img);
+        String cdnImage = R2Storage.getInstance().url("assets/" + img);
+        boolean anonymous = event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean();
 
         EmbedBuilder eb = new EmbedBuilder();
-        if(event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean()){
+        if (anonymous) {
             author = event.getJDA().getSelfUser().getEffectiveName();
 
-            thumb = "attachment://" + img;
+            thumb = cdnImage == null ? "attachment://" + img : cdnImage;
             title = "NEW ANONYMUS MESSAGE";
             
         }
@@ -67,7 +69,8 @@ public class Msg extends SlashCommand {
         eb.setDescription(event.getOption("msg").getAsString());
         eb.setColor(Bot.getColor());
         
-        if(event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean()){
+        if (anonymous && cdnImage == null) {
+            File file = new File("rsc" + File.separator + "assets" + File.separator + img);
             theGuy.openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(
                 eb.build())
                 .addFiles(FileUpload.fromData(file))

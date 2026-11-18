@@ -34,7 +34,9 @@ All detail, list and greet responses contain the existing `com.safjnest.sound.mo
 
 Counts in Sound are global/all time. `listeners` counts distinct users associated with recorded plays, not everyone present in the voice channel. `myPlays` counts the caller's recorded plays. Uploader display data comes from the Discord cache; unavailable names are `Unknown`, avatars null. `durationMs` is currently null unless already known; no file decoding is performed during JSON serialization. `createdAt` can be null for legacy records.
 
-`CDN_URL` is the Cloudflare origin, configured in `spring.properties` or the Spring environment. The Spring bootstrap explicitly forwards this property to the controllers; the file value takes precedence when present, otherwise the environment value is preserved. It is loaded at application startup, so changing it requires a restart. The object key is `sounds/{id}.{extension}`. With no CDN configured `url` is null; API authorization does not secure public CDN URLs. Upload, CDN object protection and remote object deletion are not implemented here. Deletion removes the SQL sound and dependent rows, invalidates caches and attempts local-file cleanup; failure to clean up a local file is logged after the database deletion.
+With R2 enabled, `url` is the CDN base from `rsc/settings.json` plus the sound object key, `sounds/{id}.{extension}` by default. The bot uses the same URL on a local-file cache miss. All sounds use the same CDN URL scheme. API authorization continues to govern API responses, while the CDN serves the underlying file directly. With R2 disabled, Spring's existing `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
+
+Deletion removes the sound and dependent rows from SQL and invalidates the metadata and selection caches. The R2 object and the VPS file are retained.
 
 ## Collections and search
 

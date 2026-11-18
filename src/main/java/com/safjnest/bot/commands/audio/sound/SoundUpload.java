@@ -1,12 +1,18 @@
 package com.safjnest.bot.commands.audio.sound;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
@@ -15,6 +21,7 @@ import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -25,8 +32,8 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 1.2.5
  */
 public class SoundUpload extends SlashCommand{
-    private String soundName;
-    
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SoundUpload.class);
+
     public SoundUpload(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
@@ -52,7 +59,7 @@ public class SoundUpload extends SlashCommand{
     
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        soundName = event.getOption("name").getAsString();
+        String soundName = event.getOption("name").getAsString();
         Attachment attachment = event.getOption("file").getAsAttachment();
 
         boolean isPublic;
@@ -83,29 +90,56 @@ public class SoundUpload extends SlashCommand{
             return;
         }
 
-        String id = BotDB.insertSound(soundName, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
+        event.deferReply(false).queue(hook -> Thread.startVirtualThread(
+            () -> upload(event, hook, soundName, attachment, isPublic)));
+    }
 
-        if(id == null){
-            event.deferReply(true).addContent("Something went wrong.").queue();
-            return;
-        }
+    /* -------------------------------------------------------------------------- */
 
-        List<Tag> tags = new ArrayList<>();
-        for(int i = 1; i <= Tag.MAX_TAG_SOUND; i++){
-            if(event.getOption("tag-" + i) != null){
-                String tagName = event.getOption("tag-" + i) != null ? event.getOption("tag-" + i).getAsString() : "";
-                if(tagName.length() > 0){
-                    int tagId = BotDB.insertTag(tagName);
-                    tags.add(new Tag(tagId, tagName));
+    private void upload(SlashCommandEvent event, InteractionHook hook, String name, Attachment attachment, boolean isPublic) {
+        String extension = attachment.getFileExtension();
+        Path staged = null;
+
+        try {
+            staged = Files.createTempFile("beebot-upload-", "." + extension);
+            try (InputStream input = attachment.getProxy().download().get(30, TimeUnit.SECONDS)) {
+                if (Files.copy(input, staged, StandardCopyOption.REPLACE_EXISTING) == 0)
+                    throw new IOException("Empty attachment");
+            }
+
+            Path source = staged;
+            String id = BotDB.get().insertSound(name, event.getGuild().getId(), event.getUser().getId(), extension, isPublic,
+                soundId -> SoundFiles.getInstance().upload(soundId, extension, source));
+
+            List<Tag> tags = new ArrayList<>();
+            for (int i = 1; i <= Tag.MAX_TAG_SOUND; i++) {
+                String option = "tag-" + i;
+                if (event.getOption(option) == null)
+                    continue;
+
+                String tagName = event.getOption(option).getAsString();
+                if (!tagName.isEmpty())
+                    tags.add(new Tag(BotDB.insertTag(tagName), tagName));
+            }
+
+            if (!tags.isEmpty())
+                SoundCache.withSound(id, sound -> sound.setTags(tags));
+
+            hook.editOriginal("Sound uploaded succesfully").queue();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            hook.editOriginal("Could not upload the sound.").queue();
+        } catch (Exception exception) {
+            LOG.warn("Sound upload failed", exception);
+            hook.editOriginal("Could not upload the sound.").queue();
+        } finally {
+            if (staged != null) {
+                try {
+                    Files.deleteIfExists(staged);
+                } catch (IOException exception) {
+                    LOG.warn("Could not remove sound upload staging file", exception);
                 }
             }
         }
-        if (!tags.isEmpty())
-            SoundCache.withSound(id, sound -> sound.setTags(tags));
-
-        File saveFile = new File("rsc" + File.separator + "sounds" + File.separator + (id + "." + attachment.getFileExtension()));
-
-        attachment.getProxy().downloadToFile(saveFile);
-        event.deferReply(false).addContent("Sound uploaded succesfully").queue();
-	}
+    }
 }

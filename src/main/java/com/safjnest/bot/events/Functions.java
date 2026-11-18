@@ -383,10 +383,7 @@ public class Functions {
 
         PlayerManager pm = PlayerManager.get();
 
-        String path = sound.getPath();
-
-
-        pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
+        pm.loadSound(guild, sound, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);

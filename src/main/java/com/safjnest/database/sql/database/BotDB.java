@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.concurrent.CompletableFuture;
 
@@ -210,35 +211,44 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND user_id = '" + user_id + "'");
     }
 
-    public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
-        Connection c = instance.getConnection();
-        if(c == null) return null;
+    public String insertSound(String name, String guildId, String userId, String extension, boolean isPublic,
+            Consumer<String> storeFile) {
+        String sql = "INSERT INTO sound(name, guild_id, user_id, extension, public, time) VALUES (?, ?, ?, ?, ?, ?)";
+        String id;
 
-        String soundId = null;
-        try (Statement stmt = c.createStatement()) {
-            instance.query(stmt, "INSERT INTO sound(name, guild_id, user_id, extension, public, time) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + ", '" +  Timestamp.from(Instant.now()) + "'); ");
-            soundId = instance.lineQuery(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
-            c.commit();
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+        try (SoundSession session = connectSound()) {
+            Connection connection = session.connection();
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                bindSound(statement, new Object[] {name, guildId, userId, extension, isPublic, Timestamp.from(Instant.now())});
+                if (statement.executeUpdate() != 1)
+                    throw new SQLException("Sound insert did not create one row");
+
+                try (ResultSet keys = statement.getGeneratedKeys()) {
+                    if (!keys.next() || keys.getLong(1) <= 0)
+                        throw new SQLException("Sound insert did not return an ID");
+
+                    id = keys.getString(1);
                 }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
+
+                storeFile.accept(id);
+                connection.commit();
+            } catch (SQLException | RuntimeException failure) {
                 try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                    connection.rollback();
+                } catch (SQLException rollbackFailure) {
+                    failure.addSuppressed(rollbackFailure);
                 }
+
+                throw failure;
             }
+        } catch (SQLException exception) {
+            throw soundUnavailable(exception);
         }
-        if (soundId != null) com.safjnest.bot.cache.managers.SoundCache.catalogChanged(soundId);
-        return soundId;
+
+        com.safjnest.bot.cache.managers.SoundCache.catalogChanged(id);
+        return id;
     }
 
     public static boolean updateSound(String id, String name, boolean isPublic) {

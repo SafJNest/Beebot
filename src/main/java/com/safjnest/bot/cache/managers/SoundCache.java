@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.App;
+import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.bot.cache.CacheAdapter;
 import com.safjnest.database.redis.RedisClient;
 import com.safjnest.database.sql.QueryRecord;
@@ -667,8 +668,9 @@ public class SoundCache extends CacheAdapter<String, Sound> {
             if (source == null)
                 source = new Sound(row, tags(id, tagRows, true), database, this::invalidateSelections);
 
+            String url = SoundFiles.getInstance().playbackUrl(id, row.get("extension"), cdnUrl);
             result.add(Sound.forResponse(source, row, tags(id, tagRows, false),
-                extraById.getOrDefault(id, new QueryRecord()), context.userId(), administrator, cdnUrl,
+                extraById.getOrDefault(id, new QueryRecord()), context.userId(), administrator, url,
                 access.user(row.get("user_id"))));
         }
 

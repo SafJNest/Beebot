@@ -67,10 +67,10 @@ public class Sound {
     @JsonProperty private long soundboardCount;
 
     public static Sound forResponse(Sound source, QueryRecord current, List<Tag> tags, QueryRecord extra,
-            String viewerId, boolean administrator, String cdn, Map<String, Object> uploader) {
+            String viewerId, boolean administrator, String url, Map<String, Object> uploader) {
         Sound result = new Sound(current, tags);
         result.uploader = uploader;
-        result.url = cdn == null || cdn.isBlank() ? null : cdn.replaceAll("/+$", "") + "/sounds/" + result.ID + "." + result.extension;
+        result.url = url;
         result.durationMs = source.durationMs;
 
         result.listeners = extra.getAsLong("listeners");
@@ -266,10 +266,6 @@ public class Sound {
 
     public List<Tag> getTags() {
         return copyTags(tags);
-    }
-
-    public String getPath() {
-        return "rsc" + java.io.File.separator + "sounds" + java.io.File.separator + ID + "." + extension;
     }
 
     public boolean isOpus() {

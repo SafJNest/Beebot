@@ -1,6 +1,5 @@
 package com.safjnest.bot.commands.audio.play;
 
-import java.io.File;
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -19,6 +18,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -93,14 +93,7 @@ public class PlaySound extends SlashCommand{
             return;
         }
 
-        File soundBoard = new File("rsc" + File.separator + "sounds");
-
-        if(!soundBoard.exists())
-            soundBoard.mkdirs();
-
-        fileName = sound.getPath();
-
-        pm.loadItemOrdered(guild, fileName, new ResultHandler(event, sound, fileName));
+        event.deferReply(false).queue(hook -> pm.loadSound(guild, sound, new ResultHandler(event, hook, sound)));
     }
 
     @Override
@@ -132,34 +125,27 @@ public class PlaySound extends SlashCommand{
             return;
         }
 
-        File soundBoard = new File("rsc" + File.separator + "sounds");
-
-        if(!soundBoard.exists())
-            soundBoard.mkdirs();
-
-        fileName = sound.getPath();
-
-        pm.loadItemOrdered(guild, fileName, new ResultHandler(event, sound, fileName));
+        pm.loadSound(guild, sound, new ResultHandler(event, sound));
     }
 
     private class ResultHandler implements AudioLoadResultHandler {
-        private final SlashCommandEvent slashEvent;
+        private final InteractionHook hook;
         private final CommandEvent commandEvent;
         private final Guild guild;
         private final Member author;
         private final Sound sound;
         
-        private ResultHandler(SlashCommandEvent event, Sound sound, String fileName) {
-            this.slashEvent = event;
+        private ResultHandler(SlashCommandEvent event, InteractionHook hook, Sound sound) {
+            this.hook = hook;
             this.commandEvent = null;
             this.guild = event.getGuild();
             this.author = event.getMember();
             this.sound = sound;
         }
 
-        private ResultHandler(CommandEvent event, Sound sound, String fileName) {
+        private ResultHandler(CommandEvent event, Sound sound) {
             this.commandEvent = event;
-            this.slashEvent = null;
+            this.hook = null;
             this.guild = event.getGuild();
             this.author = event.getMember();
             this.sound = sound;
@@ -181,7 +167,7 @@ public class PlaySound extends SlashCommand{
             if (commandEvent != null) 
                 commandEvent.getChannel().sendMessageEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
             else 
-                slashEvent.deferReply(false).addEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).addComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
+                hook.editOriginalEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
         }
 
         @Override
@@ -199,7 +185,7 @@ public class PlaySound extends SlashCommand{
 
         private void reply(String message) {
             if(commandEvent != null) commandEvent.reply(message);
-            else if(slashEvent != null) slashEvent.reply(message).queue();
+            else hook.editOriginal(message).queue();
         }
 
     }

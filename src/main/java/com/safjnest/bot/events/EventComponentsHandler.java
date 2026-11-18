@@ -306,11 +306,10 @@ import net.dv8tion.jda.api.modals.Modal;
         AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
 
         Sound sound = SoundCache.getSoundById(id);
-        String path = sound.getPath();
 
         final MessageComponentTree finalTree = tree;
 
-        pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
+        pm.loadSound(guild, sound, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
