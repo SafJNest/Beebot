@@ -12,6 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.safjnest.database.redis.RedisClient;
@@ -32,6 +37,8 @@ import com.safjnest.utils.JsonCodec;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -128,6 +135,25 @@ public class DiscordAuthServiceTest {
     }
 
     @Test
+    public void sqlFallbackReadsSessionTextAndUsesTheSameExpiryBoundaryAsTheCacheCheck() {
+        store.available = false;
+        String hash = CryptoUtils.sha256(SESSION);
+        AuthDB.Session stored = database.findSession(hash, "generic", 0);
+        assertNotNull(stored);
+
+        AuthContext context = session();
+        assertEquals(USER, context.user());
+        assertEquals(stored.expiresAt(), context.expiresAt());
+        assertTrue(store.values.isEmpty());
+
+        long expiresAt = stored.expiresAt();
+        assertNotNull(database.findSession(hash, "generic", expiresAt - 1));
+        assertTrue(database.sessionActive(hash, "generic", expiresAt - 1));
+        assertNull(database.findSession(hash, "generic", expiresAt));
+        assertFalse(database.sessionActive(hash, "generic", expiresAt));
+    }
+
+    @Test
     public void databaseOutageIsUnavailableEvenWithWarmCaches() {
         session();
         unavailable.set(true);
@@ -135,6 +161,19 @@ public class DiscordAuthServiceTest {
         Exception failure = assertThrows(Exception.class, this::session);
         assertEquals(Type.UNAVAILABLE, failure.getType());
         assertEquals("auth_unavailable", failure.getCode());
+    }
+
+    @Test
+    public void authFilterDistinguishesInvalidCredentialsFromSqlOutage() throws java.lang.Exception {
+        session();
+        MockHttpServletResponse invalid = filteredRequest("z".repeat(43));
+        assertEquals(401, invalid.getStatus());
+        assertEquals("invalid_api_key", JsonCodec.fromJson(invalid.getContentAsString(), Map.class).get("code"));
+
+        execute("DROP TABLE auth_session");
+        MockHttpServletResponse failed = filteredRequest(GENERIC_KEY);
+        assertEquals(503, failed.getStatus());
+        assertEquals("auth_unavailable", JsonCodec.fromJson(failed.getContentAsString(), Map.class).get("code"));
     }
 
     @Test
@@ -225,6 +264,30 @@ public class DiscordAuthServiceTest {
     }
 
     @Test
+    public void concurrentOAuthConsumptionSucceedsOnceForTheBoundClientAndCallback() throws java.lang.Exception {
+        String hash = CryptoUtils.sha256("s".repeat(32));
+        long now = System.currentTimeMillis();
+        database.createTransaction(hash, "generic", REDIRECT, now + 60_000);
+
+        assertFalse(database.consumeTransaction(hash, "other", REDIRECT, now));
+        assertFalse(database.consumeTransaction(hash, "generic", REDIRECT + "/", now));
+
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        try (ExecutorService workers = Executors.newFixedThreadPool(2)) {
+            Future<Boolean> first = workers.submit(() -> consumeState(ready, start, hash, now));
+            Future<Boolean> second = workers.submit(() -> consumeState(ready, start, hash, now));
+
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
+            start.countDown();
+
+            assertNotEquals(first.get(5, TimeUnit.SECONDS), second.get(5, TimeUnit.SECONDS));
+        }
+
+        assertFalse(database.consumeTransaction(hash, "generic", REDIRECT, now));
+    }
+
+    @Test
     public void expiredTransactionAndUnapprovedRedirectStopBeforeDiscord() {
         AuthContext context = auth.authenticate(GENERIC_KEY, null, false);
         String state = "s".repeat(32);
@@ -268,6 +331,27 @@ public class DiscordAuthServiceTest {
         return auth.authenticate(GENERIC_KEY, "Bearer " + SESSION, true);
     }
 
+    private MockHttpServletResponse filteredRequest(String key) throws java.lang.Exception {
+        String path = "/api/beebot/guilds";
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
+        request.setServletPath(path);
+        request.addHeader("X-API-Key", key);
+        request.addHeader("Authorization", "Bearer " + SESSION);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        new AuthFilter(auth::authenticate).doFilter(request, response,
+            (incoming, outgoing) -> fail("Request should have been rejected by authentication"));
+
+        return response;
+    }
+
+    private boolean consumeState(CountDownLatch ready, CountDownLatch start, String hash, long now) throws InterruptedException {
+        ready.countDown();
+        assertTrue(start.await(5, TimeUnit.SECONDS));
+
+        return database.consumeTransaction(hash, "generic", REDIRECT, now);
+    }
+
     private Connection connection() {
         try {
             Connection connection = DriverManager.getConnection(url);
@@ -288,12 +372,16 @@ public class DiscordAuthServiceTest {
 
     private static class MemoryStore implements DiscordAuthService.Store {
         private final Map<String, String> values = new HashMap<>();
+        private boolean available = true;
 
         public RedisClient.AuthValue<String> get(String key) {
-            return new RedisClient.AuthValue<>(true, values.get(key));
+            return new RedisClient.AuthValue<>(available, available ? values.get(key) : null);
         }
 
         public boolean set(String key, String value, int ttl) {
+            if (!available)
+                return false;
+
             values.put(key, value);
             return true;
         }

@@ -1,6 +1,6 @@
 # Beebot: piano concordato di riordino e unificazione
 
-Revisione aggiornata al 17 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`; gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale: `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils` sotto `com.safjnest`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a`; il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound) è nel commit `e7daa3f2`, insieme al riordino analytics e alla chiusura dei punti Sound/Tag preliminari al passaggio 4. Il passaggio 4 (errori e Spring/auth) è nel commit `f43fc0b8`; il passaggio 5 (HTTP e parsing) è implementato nel working tree. Resta il passaggio 6.
+Revisione aggiornata al 18 novembre 2026. L'analisi funzionale iniziale descrive la baseline `48c43d58`. Gli spostamenti eseguiti dal proprietario sono nel commit `e9bf1585`. Il proprietario ha confermato come definitiva la struttura attuale di `com.safjnest`, con `bot`, `database`, `discord`, `lol`, `sound`, `spring`, `status` e `utils`. Questa decisione sostituisce le precedenti destinazioni, compresa `spring.auth`. Il passaggio 1 è nel commit `96d4197a` e il passaggio 2 (guild e alert) è nel commit `21b62a32` con il modello `deferEdit()` concordato. Il passaggio 3 (user, XP e sound), il riordino analytics e la chiusura Sound/Tag sono nel commit `e7daa3f2`. Il passaggio 4 (errori e Spring/auth) è nel commit `f43fc0b8` e il passaggio 5 (HTTP e parsing) in `f4a2d014`. Il passaggio 6 (query auth/API) è implementato nel working tree.
 
 I rilievi funzionali, i numeri di riga delle fonti iniziali e l'inventario descrivono la baseline prima degli spostamenti; i collegamenti ai sorgenti seguono le posizioni attuali. La sezione «Struttura finale concordata dei package» registra i movimenti già eseguiti, i file nuovi da creare e quelli da assorbire soltanto dopo. Ogni ulteriore decisione concordata va aggiornata qui, mantenendo una sola versione del piano.
 
@@ -188,7 +188,7 @@ I valori restano: HttpUtils ha connessione 5 s/richiesta 10 s; Discord usa 15 s.
 | `ArenaGameParser.integer/time` | Conservare i controlli integrità/range/non negatività; estrarre solo se ci sono altri consumatori effettivi | Nessuna conversione frazionaria o fuori range tramite semplice `intValue` |
 | `QueryRecord.getAsInt/getAsLong/getAsDouble` | Restano dove sono; i consumatori di righe riusano questi metodi | Nessun refactoring del framework SQL/BSON |
 
-La ricerca non ha individuato un tipo canonico `QueryResult`: il pattern esistente è `List<QueryRecord>`. Per auth, `findClient` e `findSession` possono riusare il parser delle righe e factory dei modelli, mantenendo prepared statement, controllo delle righe modificate e transazioni. Non devono passare da fallback che nascondono un DB indisponibile come credenziale semplicemente assente.
+Il pattern esistente usa `QueryRecord` per una riga e `List<QueryRecord>` per più righe. `AuthDB.findClient` e `AuthDB.findSession` usano `QueryRecordParser.fromRow()` e costruiscono `ApiKey` e `Session` dalle colonne nominate. Un risultato assente e un errore SQL restano casi distinti.
 
 ## Struttura finale concordata dei package
 
@@ -360,7 +360,7 @@ Questi file non vanno cancellati durante i soli spostamenti. L'assistente li rim
 | `spring.controller.beebot.GuildController` | Ora possiede anche `/guilds` e l'alias `/servers`, trasferiti dal controller auth; impostazioni sui medesimi oggetti del bot |
 | `spring.controller.beebot.SoundController` | Endpoint sound sul percorso comune; `/me/settings` passa al controller Me |
 | `spring.controller.lol.LolApiParameters/LolApiResponses` | Riuso dei meccanismi comuni senza perdere vincoli HTTP, stati `ApiResult`, metadati o regole LoL |
-| `database.sql.database.AuthDB` | Allineare le letture nuove al parser/record esistente, mantenendo query parametrizzate, revoca autorevole e transazioni |
+| `database.sql.database.AuthDB` | Mantiene tutto il SQL auth e usa il parser delle righe per le letture di chiavi e sessioni |
 
 Dopo gli assorbimenti si rimuovono soltanto i file le cui funzionalità sono state migrate e le cartelle effettivamente vuote. `discord.auth`, `discord.guild`, `sound`, `bot.cache.managers` e `spring.exception` restano destinazioni confermate; non vanno eliminati per conformarsi al vecchio albero.
 
@@ -379,7 +379,7 @@ Download concorrenti, file incompleti, durata della copia locale e cleanup duran
 
 ## Sequenza di implementazione proposta
 
-Gli spostamenti del proprietario sono conclusi e la struttura attuale è confermata. Il passaggio 1 è nel commit `96d4197a`, insieme alla correzione dei due XML di logging. Il passaggio 2 è nel commit `21b62a32`. Il passaggio 3 è nel commit `e7daa3f2`: user, XP e sound usano il percorso comune. Il passaggio 4 è nel commit `f43fc0b8`; il passaggio 5 è implementato nel working tree. Il prossimo intervento è il passaggio 6: allineamento delle query auth/API. I package attuali restano confermati; prima di ogni modifica vanno riletti simboli e impatto CodeGraph, sincronizzando un indice stale. Gli assorbimenti non si anticipano cancellando i file ancora usati.
+I passaggi 1–5 sono nei commit riportati in apertura. Il passaggio 6 è implementato nel working tree. La tabella riporta per ogni intervento il risultato e le verifiche previste.
 
 | Passaggio | Risultato concreto | Verifiche necessarie |
 |---|---|---|
@@ -388,7 +388,7 @@ Gli spostamenti del proprietario sono conclusi e la struttura attuale è conferm
 | 3 — User e sound, implementato | Greet e mutazioni sullo stesso percorso dei comandi; eliminazione dei passaggi paralleli | XP concorrente per guild+user; metadata/voti e privacy sound; cache query invalidata dopo commit senza sostituire oggetti ancora in uso |
 | 4 — Errori e Spring/auth, implementato | Eccezione comune, mapper unico e raggruppamento dei controller | Contratti Beebot/LoL, filtro e advice, token scaduti, retry, body errato e rotta non trovata |
 | 5 — HTTP e parsing, implementato | Helper già esistenti estesi e riusati; niente cambi a Mongo o al framework SQL | Timeout/status/header Discord e Data Dragon; input numerici limite e fallback; filtri e chiavi invariati |
-| 6 — Allineamento query auth/API | Record/parser per le letture nuove e rimozione dei doppioni residui | Query parametrizzate, righe modificate, consumo OAuth una sola volta, revoca autorevole anche con cache piena |
+| 6 — Allineamento query auth/API, implementato | Letture tramite `QueryRecord` e condizioni condivise per le sessioni in `AuthDB` | Query parametrizzate, consumo OAuth una sola volta, revoca autorevole anche con cache piena, 401 e 503 distinti |
 
 È utile realizzare presto la piccola parte condivisa degli errori se serve ai passaggi precedenti; la sequenza non impone di far transitare tutto il riordino da una grande riscrittura preventiva.
 
@@ -943,6 +943,29 @@ Discord, Data Dragon o Spotify e nessuna misura di latenza o throughput.
 Riesaminati ADR-0007, API LoL, auth e sound: parametri accettati, messaggi HTTP,
 status, payload, stati ApiResult e metadati sono conservati. Documentati i nuovi
 proprietari e il motivo per cui schemi/OpenAPI e modelli pubblici non cambiano.
-Nessun cambiamento a Mongo, query SQL/auth, namespace cache, scheduler, status,
-comandi/presentazione o R2; nessuna nuova dipendenza/framework. Le modifiche sono
-nel working tree. Resta il passaggio 6, allineamento delle query auth/API.
+Il passaggio 5 riguarda il trasporto e il parsing condivisi ed è nel commit
+`f4a2d014`. È stato completato senza cambiamenti a Mongo, query SQL/auth,
+namespace cache, scheduler, status, comandi, presentazione o R2.
+
+## Passaggio 6 implementato: query auth/API
+
+`AuthDB` mantiene la proprietà di tutte le query di autenticazione. `findClient`
+e `findSession` riusano `QueryRecordParser.fromRow()` per costruire `ApiKey` e
+`Session` usando i nomi delle colonne. La scadenza è letta come `long` e un
+eventuale errore di conversione è trattato come indisponibilità dello storage.
+
+`findSession` e `sessionActive` condividono i filtri per token, applicazione,
+revoca, scadenza e chiave attiva. `sessionActive` usa `SELECT 1` per verificare
+anche le sessioni già in Redis. Le scritture conservano i prepared statement,
+le transazioni e il numero di righe modificate come esito delle operazioni che
+lo usano. Lo stato OAuth è consumato con una singola `DELETE` condizionale.
+
+Il refactoring è interno ad `AuthDB` e conserva schema SQL, contratti HTTP,
+modelli esposti e presentazione. Lo schema e i documenti LoL e Mongo non sono
+coinvolti.
+
+La suite `mvn -o clean test` ha superato 172 test. I tre nuovi casi coprono il
+fallback SQL con Redis indisponibile e il limite esatto di scadenza, il consumo
+OAuth concorrente e la distinzione HTTP tra credenziale invalida e guasto SQL.
+I test già presenti coprono la revoca con cache popolata. Le verifiche usano H2,
+un sostituto locale di Redis e il filtro servlet con richieste simulate.

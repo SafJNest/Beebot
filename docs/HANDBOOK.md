@@ -86,6 +86,10 @@ with `!test generate personalkey <name>` after manually applying
 `database/auth/003-api-key-types.sql`; revoke it with `!test revoke personalkey <name>`.
 Both key types live in `api_key`: `ApiKey` is the canonical typed key model and `AuthDB` owns persistence, generation and revocation. Authentication resolves either credential type into `DiscordAuthService.AuthContext`. Key generation and revocation are restricted to Untouchables and Epria; other `test` operations remain owner/co-owner only.
 
+Keep authentication SQL in `AuthDB`. Key and session reads use
+`QueryRecordParser.fromRow()` and map named columns to `ApiKey` and `AuthDB.Session`.
+Full session reads and `SELECT 1` cache checks share the same validity conditions.
+
 `GET /beebot/me` returns `{user, servers, greets}` from `MeController`; `POST /beebot/me/settings` belongs to the same controller. `GET /beebot/guilds` returns a plain `List<DiscordApi.Server>` (JSON array), with `/beebot/servers` retained as an alias. Records are nested in their owning API, service or controller rather than split into record-only files. `DiscordApi` owns Discord HTTP/JDA access and image URLs; `DiscordAuthService` shares the authorized list between these endpoints and single-guild GET/POST. `DiscordGuildCache` stores it for 60 seconds in Redis with process-local fallback, single-flight loading and invalidation fencing. Personal keys use JDA caches before any missing-member lookup; OAuth uses one `/users/@me/guilds?limit=200` request per successful cache load. SQL continues to decide credential/session revocation. Logout invalidates the guild list. Owner, Administrator and Manage Server grant access. Discord rate limits return `discord_rate_limited` with retry metadata; see the API page for error details.
 
 `GuildController` owns `/guilds` and `/servers`; `DiscordAuthController` owns

@@ -8,10 +8,9 @@ The [agreed repository reorganization plan](repository-review.md) records the
 decisions discussed with the owner. The owner confirmed the current `bot`,
 `database`, `discord`, `lol`, `sound`, `spring`, `status` and `utils` layout on
 17 November 2026, including authentication in `discord.auth`. The document
-records the completed package moves, cache, guild and alert, user and sound,
-error and authentication, and HTTP and parsing work. It also tracks the remaining
-query alignment and its verification requirements. It is the canonical plan for
-this work and does not amend an accepted ADR.
+records the completed package moves and the six implementation steps through
+the alignment of authentication queries in `AuthDB`. It is the canonical plan
+for this work and does not amend an accepted ADR.
 
 ## Ownership
 

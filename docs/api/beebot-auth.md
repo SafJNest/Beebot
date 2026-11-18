@@ -63,6 +63,11 @@ The `!test generate apikey <name>` command, restricted to Untouchables and Epria
 
 `AuthDB` owns SQL access for application status, sessions and OAuth transactions, stored in `auth.api_key`, `auth.auth_session` and `auth.auth_transaction`. OAuth state is stored only as a SHA-256 hash, tied to the client and callback, expires after 600 seconds, and is consumed by one atomic SQL delete. Stored API and session tokens are also SHA-256 hashes; Discord access tokens use AES-256-GCM, and Discord refresh tokens are not stored. A session lasts at most eight hours or until the Discord token expires. API keys are looked up by SHA-256 hash in SQL on every request, including their current type and identity. Redis caches generic user-session data for at most 60 seconds and never beyond session expiry. Session cache hits check authoritative SQL status, preventing stale refill from undoing revocation. Redis outage falls back to SQL throughout login and session handling. SQL outage returns 503. All instances must share SQL and the encryption key; Redis remains an optional cache. Encryption-key rotation requires users to log in again. Cleanup and key creation never log or display the Discord token.
 
+`AuthDB` maps key and session reads by column name through `QueryRecordParser`.
+Full session reads and the `SELECT 1` check on cache hits apply the same SQL
+conditions. The existing HTTP status codes and response bodies apply to both
+paths.
+
 ## Guild configuration
 
 `GET /guilds/{guildId}` and `POST /guilds/{guildId}/settings` use the same application/session authentication and check the requested guild ID against the same authorized list used by `/me` and `/guilds`. See [Beebot guild settings](beebot-guilds.md) for fields, independent update results and alert operational status.

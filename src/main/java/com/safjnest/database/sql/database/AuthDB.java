@@ -4,21 +4,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.safjnest.database.sql.AbstractDB;
-import com.safjnest.discord.auth.ApiKey;
-
 import java.util.function.Supplier;
 
+import com.safjnest.database.sql.AbstractDB;
+import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.database.sql.QueryRecordParser;
+import com.safjnest.discord.auth.ApiKey;
+
 public final class AuthDB extends AbstractDB {
-    private static final AuthDB INSTANCE = new AuthDB();
+
+    private static final String ACTIVE_SESSION = """
+        FROM auth_session s
+        JOIN api_key k ON k.id = s.api_key_id
+        WHERE s.token_hash = ? AND s.api_key_id = ? AND s.revoked_at IS NULL AND s.expires_at > ? AND k.active = 1
+        """;
+
+    private static final AuthDB instance = new AuthDB();
+
     private final Supplier<Connection> connections;
 
     private AuthDB() { this.connections = this::getConnection; }
 
     public AuthDB(Supplier<Connection> connections) { this.connections = connections; }
 
-    public static AuthDB get() { return INSTANCE; }
+    public static AuthDB get() { return instance; }
 
     @Override
     protected String getDatabase() { return "auth"; }
@@ -55,23 +64,47 @@ public final class AuthDB extends AbstractDB {
     }
 
     public ApiKey findClient(String hash) {
-        String sql = "SELECT id,name,redirect_uris,type,discord_user_id,user_json FROM api_key WHERE key_hash=? AND active=1";
+        String sql = "SELECT id, name, redirect_uris, type, discord_user_id, user_json FROM api_key WHERE key_hash = ? AND active = 1";
+
         try (Connection connection = connection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, hash);
+
             try (ResultSet rows = statement.executeQuery()) {
-                if (!rows.next()) return null;
-                ApiKey.Type type = switch (rows.getString(4)) { case "generic" -> ApiKey.Type.GENERIC; case "personal" -> ApiKey.Type.PERSONAL; default -> null; };
-                return type == null ? null : new ApiKey(rows.getString(1), rows.getString(2), rows.getString(3), type, rows.getString(5), rows.getString(6), null, hash);
+                if (!rows.next())
+                    return null;
+
+                QueryRecord row = QueryRecordParser.fromRow(rows);
+                ApiKey.Type type = switch (row.get("type")) {
+                    case "generic" -> ApiKey.Type.GENERIC;
+                    case "personal" -> ApiKey.Type.PERSONAL;
+                    case null, default -> null;
+                };
+
+                if (type == null)
+                    return null;
+
+                return new ApiKey(row.get("id"), row.get("name"), row.get("redirect_uris"), type,
+                    row.get("discord_user_id"), row.get("user_json"), null, hash);
             }
-        } catch (SQLException exception) { throw new IllegalStateException("Authentication database unavailable"); }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Authentication database unavailable");
+        }
     }
 
     public boolean sessionActive(String hash, String clientId, long now) {
-        String sql = "SELECT 1 FROM auth_session s JOIN api_key k ON k.id=s.api_key_id WHERE s.token_hash=? AND s.api_key_id=? AND s.revoked_at IS NULL AND s.expires_at>? AND k.active=1";
+        String sql = "SELECT 1 " + ACTIVE_SESSION;
+
         try (Connection connection = connection(); PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, hash); statement.setString(2, clientId); statement.setLong(3, now);
-            try (ResultSet rows = statement.executeQuery()) { return rows.next(); }
-        } catch (SQLException exception) { throw new IllegalStateException("Authentication database unavailable"); }
+            statement.setString(1, hash);
+            statement.setString(2, clientId);
+            statement.setLong(3, now);
+
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next();
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Authentication database unavailable");
+        }
     }
 
     public String generate(String name, String redirectUris) {
@@ -129,13 +162,26 @@ public final class AuthDB extends AbstractDB {
     }
 
     public Session findSession(String hash, String clientId, long now) {
-        String sql = "SELECT s.api_key_id,s.discord_user_id,s.encrypted_discord_token,s.user_json,s.expires_at FROM auth_session s JOIN api_key k ON k.id=s.api_key_id WHERE s.token_hash=? AND s.api_key_id=? AND s.revoked_at IS NULL AND s.expires_at>? AND k.active=1";
+        String sql = "SELECT s.api_key_id, s.discord_user_id, s.encrypted_discord_token, s.user_json, s.expires_at " + ACTIVE_SESSION;
+
         try (Connection connection = connection(); PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, hash); statement.setString(2, clientId); statement.setLong(3, now);
+            statement.setString(1, hash);
+            statement.setString(2, clientId);
+            statement.setLong(3, now);
+
             try (ResultSet rows = statement.executeQuery()) {
-                return rows.next() ? new Session(rows.getString(1), rows.getString(2), rows.getString(3), rows.getString(4), rows.getLong(5)) : null;
+                if (!rows.next())
+                    return null;
+
+                QueryRecord row = QueryRecordParser.fromRow(rows);
+                long expiresAt = Long.parseLong(row.get("expires_at"));
+
+                return new Session(row.get("api_key_id"), row.get("discord_user_id"), row.get("encrypted_discord_token"),
+                    row.get("user_json"), expiresAt);
             }
-        } catch (SQLException exception) { throw new IllegalStateException("Authentication database unavailable"); }
+        } catch (SQLException | NumberFormatException exception) {
+            throw new IllegalStateException("Authentication database unavailable");
+        }
     }
 
     public boolean revokeSession(String hash, String clientId) {
