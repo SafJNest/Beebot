@@ -1,11 +1,16 @@
 package com.safjnest.spring.controller.beebot;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.exception.Exception;
@@ -18,17 +23,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/beebot")
@@ -56,6 +66,35 @@ public class SoundController {
             @PathVariable("guildId") String guildId,@RequestParam(name="period", defaultValue="30d") String period,@RequestParam(name="timezone", defaultValue="Europe/Rome") String timezone) {
         SoundCache.Context context = context(auth);
         return sounds.guildSounds(context,guildId,period(context,period,timezone,null,null,null));
+    }
+
+    @PostMapping(path = "/guilds/{guildId}/sounds", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Sound> upload(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+            @PathVariable("guildId") String guildId, @RequestPart("file") MultipartFile file,
+            @RequestPart("metadata") JsonNode metadata) throws IOException {
+        SoundCache.Context context = context(auth);
+        if (!metadata.isObject() || !metadata.path("name").isTextual())
+            throw Exception.invalidRequest("Sound metadata with name required");
+
+        for (Map.Entry<String, JsonNode> field : metadata.properties()) {
+            if (!Set.of("name", "public", "tags").contains(field.getKey()))
+                throw Exception.invalidRequest("Unknown sound field");
+        }
+
+        if (metadata.has("public") && !metadata.get("public").isBoolean())
+            throw Exception.invalidRequest("public must be boolean");
+
+        String name = Sound.normalizeName(metadata.get("name").asText());
+        String extension = SoundFiles.uploadExtension(file.getOriginalFilename());
+        boolean isPublic = metadata.path("public").asBoolean(true);
+        List<String> tags = metadata.has("tags") ? parseTags(metadata.get("tags")) : List.of();
+
+        String id;
+        try (InputStream input = file.getInputStream()) {
+            id = sounds.create(context, guildId, name, extension, isPublic, tags, input);
+        }
+
+        return ResponseEntity.created(URI.create("/api/beebot/sounds/" + id)).body(sounds.sound(context, id));
     }
 
     @GetMapping("/sounds/me")
@@ -174,10 +213,10 @@ public class SoundController {
 
             switch (entry.getKey()) {
                 case "name" -> {
-                    if (!value.isTextual() || value.asText().isBlank() || value.asText().length() > 100 || value.asText().matches("[0-9]+"))
+                    if (!value.isTextual())
                         throw Exception.invalidRequest("Invalid sound name");
 
-                    edit.setName(value.asText().trim());
+                    edit.setName(Sound.normalizeName(value.asText()));
                 }
                 case "public" -> {
                     if (!value.isBoolean())
@@ -185,23 +224,25 @@ public class SoundController {
 
                     edit.setPublic(value.asBoolean());
                 }
-                case "tags" -> {
-                    if (!value.isArray() || value.size() > Tag.MAX_TAG_SOUND)
-                        throw Exception.invalidRequest("At most five tags required");
-
-                    Set<String> names = new LinkedHashSet<>();
-                    for (JsonNode tag : value) {
-                        if (!tag.isTextual() || tag.asText().isBlank() || tag.asText().length() > 255)
-                            throw Exception.invalidRequest("Invalid tag");
-
-                        names.add(tag.asText().trim().toLowerCase(java.util.Locale.ROOT));
-                    }
-
-                    edit.setTagNames(new ArrayList<>(names));
-                }
+                case "tags" -> edit.setTagNames(parseTags(value));
                 default -> throw Exception.invalidRequest("Unknown sound field");
             }
         }
+    }
+
+    private List<String> parseTags(JsonNode value) {
+        if (!value.isArray() || value.size() > Tag.MAX_TAG_SOUND)
+            throw Exception.invalidRequest("At most five tags required");
+
+        Set<String> names = new LinkedHashSet<>();
+        for (JsonNode tag : value) {
+            if (!tag.isTextual() || tag.asText().isBlank() || tag.asText().length() > 255)
+                throw Exception.invalidRequest("Invalid tag");
+
+            names.add(tag.asText().trim().toLowerCase(java.util.Locale.ROOT));
+        }
+
+        return new ArrayList<>(names);
     }
 
     private SoundCache.Context context(AuthContext auth) {

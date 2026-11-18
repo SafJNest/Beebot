@@ -2,6 +2,7 @@ package com.safjnest.guild;
 
 import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.lang.reflect.Proxy;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.bot.model.guild.BlacklistData;
@@ -41,6 +43,7 @@ import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
 import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.spring.controller.beebot.GuildController;
 import com.safjnest.spring.exception.ApiExceptionHandler;
+import com.safjnest.utils.twitch.TwitchClient.Streamer;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -133,6 +136,53 @@ public class GuildEditingTest {
         assertTrue(database.readGuildAlerts("1").isEmpty());
         assertEquals("10", settings.channels().get(0).get("id"));
         assertEquals(true, settings.roles().get(0).get("assignable"));
+    }
+
+    @Test
+    public void deletesOnlyTheAddressedSettingsAndChecksAuthorizationBeforeStorage() throws java.lang.Exception {
+        controller.updateSettings("1", AUTH, JSON.readTree("""
+            {"leave":{"message":"Ciao"},"welcome":{"message":"Benvenuto"},"reward":{"5":{},"6":{}},
+             "channels":{"10":{"experienceEnabled":false}},"twitch":{"123":{}}}
+            """));
+        List<String> retired = new ArrayList<>();
+        GuildController routes = new GuildController(cache, id -> discord, (context, id) -> {
+            if (!id.equals("1"))
+                throw new Exception(Type.FORBIDDEN, "guild_forbidden", "Guild access denied");
+        }, context -> List.of(), subscriptions::add, streamer -> {
+            assertNull(cache.withGuildData("1", guild -> guild.findAlert(AlertType.TWITCH, streamer)));
+            retired.add(streamer);
+        }, login -> new Streamer("123", login, "Streamer"));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(routes).setControllerAdvice(new ApiExceptionHandler()).build();
+
+        String base = "/api/beebot/guilds/1";
+        mvc.perform(delete("/api/beebot/guilds/3/alerts/leave").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isForbidden());
+        mvc.perform(delete(base + "/alerts/all").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isNotFound());
+
+        failDelete.set(true);
+        mvc.perform(delete(base + "/alerts/leave").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isServiceUnavailable());
+        assertNotNull(cache.withGuildData("1", guild -> guild.findAlert(AlertType.LEAVE, null)));
+        failDelete.set(false);
+
+        for (String path : List.of("/alerts/leave", "/alerts/reward/5", "/alerts/twitch/123", "/settings/channels/10")) {
+            mvc.perform(delete(base + path).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)).andExpect(status().isNoContent());
+            mvc.perform(delete(base + path).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)).andExpect(status().isNoContent());
+        }
+
+        assertEquals(List.of("123"), retired);
+        JsonNode updated = JSON.valueToTree(routes.getGuild("1", AUTH));
+        JsonNode settings = updated.path("settings");
+        assertFalse(settings.path("leave").path("exists").asBoolean());
+        assertTrue(settings.path("welcome").path("exists").asBoolean());
+        assertFalse(settings.path("reward").has("5"));
+        assertTrue(settings.path("reward").has("6"));
+        assertFalse(settings.path("channels").has("10"));
+
+        String response = mvc.perform(get(base + "/alerts/twitch/lookup").param("login", "streamer")
+            .requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertEquals("123", JSON.readTree(response).path("id").asText());
     }
 
     @Test

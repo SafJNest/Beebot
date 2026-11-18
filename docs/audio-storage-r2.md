@@ -39,6 +39,9 @@ The bot stages the Discord attachment and measures its duration with the same
 local media detection used by the player. It inserts the sound and its tags in
 one SQL transaction, uploads the object with the generated ID and commits before
 acknowledging success. A failed upload rolls back the sound and tag writes.
+The [multipart sound upload API](api/beebot-sounds.md#upload-a-sound) uses the
+same storage path. The dashboard caps the file at 3.9 MB to leave room for
+multipart headers within the [Vercel Edge request limit](https://vercel.com/docs/functions/runtimes/edge/edge-functions.rsc).
 Discord's playing embed and all Sound API responses read `sound.duration_ms`.
 
 R2 object metadata contains `id`, `guild-id`, `user-id`, `extension`, `public`,
@@ -65,5 +68,7 @@ soundboard is new. Older R2 objects are retained.
 
 Both soundboard display commands read the nullable `soundboard.thumbnail_key`
 column and show the bot avatar when the key is missing.
+The [soundboard API](api/beebot-sounds.md#soundboards) reads the same key and
+uses the same format checks and upload routine when replacing a cover.
 
 External images and response-specific attachments retain their existing sources.

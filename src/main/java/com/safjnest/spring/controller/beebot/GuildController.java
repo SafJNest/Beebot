@@ -48,6 +48,8 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,6 +57,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -76,6 +80,8 @@ public class GuildController {
     private final Function<AuthContext, List<Server>> guildDirectory;
 
     private final Consumer<String> registerTwitch;
+    private final Consumer<String> unregisterTwitch;
+    private final Function<String, TwitchClient.Streamer> twitchLookup;
 
     @Autowired
     public GuildController(Environment environment) {
@@ -93,6 +99,13 @@ public class GuildController {
     public GuildController(GuildCache cache, Function<String, Guild> discordGuilds,
             BiConsumer<AuthContext, String> guildAccess, Function<AuthContext, List<Server>> guildDirectory,
             Consumer<String> registerTwitch) {
+        this(cache, discordGuilds, guildAccess, guildDirectory, registerTwitch,
+            TwitchClient::unregisterIfUnused, TwitchClient::lookupStreamer);
+    }
+
+    public GuildController(GuildCache cache, Function<String, Guild> discordGuilds,
+            BiConsumer<AuthContext, String> guildAccess, Function<AuthContext, List<Server>> guildDirectory,
+            Consumer<String> registerTwitch, Consumer<String> unregisterTwitch, Function<String, TwitchClient.Streamer> twitchLookup) {
         this.cache = cache;
 
         this.discordGuilds = discordGuilds;
@@ -100,6 +113,8 @@ public class GuildController {
         this.guildDirectory = guildDirectory;
 
         this.registerTwitch = registerTwitch;
+        this.unregisterTwitch = unregisterTwitch;
+        this.twitchLookup = twitchLookup;
     }
 
     @ModelAttribute
@@ -182,7 +197,83 @@ public class GuildController {
         return results;
     }
 
+    @DeleteMapping("/guilds/{guildId}/alerts/{type}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSingleAlert(@PathVariable("guildId") String guildId, @PathVariable("type") String type,
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
+        authorizeSettings(context, guildId);
+        if (!SINGLE_ALERTS.contains(type))
+            throw new Exception(Type.NOT_FOUND, "alert_not_found", "Unknown alert type");
+
+        deleteAlert(guildId, type(type), null);
+    }
+
+    @DeleteMapping("/guilds/{guildId}/alerts/reward/{level}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteReward(@PathVariable("guildId") String guildId, @PathVariable("level") String level,
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
+        authorizeSettings(context, guildId);
+        if (!isRewardLevel(level))
+            throw Exception.invalidRequest("Reward level must be between 1 and 100");
+
+        deleteAlert(guildId, AlertType.REWARD, level);
+    }
+
+    @DeleteMapping("/guilds/{guildId}/alerts/twitch/{streamerId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTwitch(@PathVariable("guildId") String guildId, @PathVariable("streamerId") String streamerId,
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
+        authorizeSettings(context, guildId);
+        if (!isStreamerId(streamerId))
+            throw Exception.invalidRequest("Invalid streamer ID");
+
+        boolean deleted = deleteAlert(guildId, AlertType.TWITCH, streamerId);
+        if (deleted)
+            unregisterTwitch.accept(streamerId);
+    }
+
+    @DeleteMapping("/guilds/{guildId}/settings/channels/{channelId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteChannelSettings(@PathVariable("guildId") String guildId, @PathVariable("channelId") String channelId,
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
+        authorizeSettings(context, guildId);
+        if (!isGuildId(channelId))
+            throw Exception.invalidRequest("Invalid channel ID");
+
+        if (!withGuild(guildId, guild -> guild.deleteChannelData(channelId)))
+            throw settingsUnavailable();
+    }
+
+    @GetMapping("/guilds/{guildId}/alerts/twitch/lookup")
+    public TwitchClient.Streamer lookupTwitch(@PathVariable("guildId") String guildId, @RequestParam("login") String login,
+            @RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
+        authorizeSettings(context, guildId);
+
+        return twitchLookup.apply(login);
+    }
+
     // ================================================================================================================
+
+    private void authorizeSettings(AuthContext context, String guildId) {
+        requireAdministrator(context, guildId);
+        requireGuild(guildId);
+    }
+
+    private boolean deleteAlert(String guildId, AlertType type, String key) {
+        return withGuild(guildId, guild -> {
+            AlertData alert = guild.findAlert(type, key);
+            if (alert == null)
+                return false;
+            if (!guild.deleteAlert(alert))
+                throw settingsUnavailable();
+
+            return true;
+        });
+    }
+
+    private Exception settingsUnavailable() {
+        return new Exception(Type.UNAVAILABLE, "settings_unavailable", "Guild settings storage is unavailable");
+    }
 
     private void requireAdministrator(AuthContext context, String guildId) {
         if (context == null || context.user() == null)
@@ -218,7 +309,7 @@ public class GuildController {
         try {
             return cache.withGuildData(id, operation);
         } catch (IllegalStateException exception) {
-            throw new Exception(Type.UNAVAILABLE, "settings_unavailable", "Guild settings storage is unavailable");
+            throw settingsUnavailable();
         }
     }
 
@@ -276,12 +367,12 @@ public class GuildController {
         for (Map.Entry<String, JsonNode> entry : value.properties()) {
             String key = entry.getKey();
 
-            if (block.equals("reward") && (!key.matches("[1-9][0-9]{0,2}") || Integer.parseInt(key) > MAX_REWARD_LEVEL)) {
+            if (block.equals("reward") && !isRewardLevel(key)) {
                 results.put(key, failure(key, "invalid_level", "Il livello deve essere compreso tra 1 e 100", null));
                 continue;
             }
 
-            if (!block.equals("reward") && !key.matches("[1-9][0-9]{0,31}")) {
+            if (!block.equals("reward") && !isStreamerId(key)) {
                 results.put(key, failure(key, "invalid_id", "Identificativo non valido", null));
                 continue;
             }
@@ -292,6 +383,14 @@ public class GuildController {
         }
 
         return results;
+    }
+
+    private boolean isRewardLevel(String level) {
+        return level.matches("[1-9][0-9]{0,2}") && Integer.parseInt(level) <= MAX_REWARD_LEVEL;
+    }
+
+    private boolean isStreamerId(String id) {
+        return id.matches("[1-9][0-9]{0,31}");
     }
 
     private Result updateAlert(Guild discord, AlertType type, String key, JsonNode body) {

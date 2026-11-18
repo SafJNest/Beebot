@@ -1,10 +1,6 @@
 package com.safjnest.bot.commands.audio.sound;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.concurrent.TimeUnit;
 import java.util.LinkedHashSet;
 import java.util.Arrays;
@@ -16,6 +12,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -59,17 +56,15 @@ public class SoundUpload extends SlashCommand{
     
     @Override
     protected void execute(SlashCommandEvent event) {
-        String name = event.getOption("name").getAsString().trim();
         Attachment attachment = event.getOption("file").getAsAttachment();
+        String name;
+        String format;
 
-        if (name.isEmpty() || name.length() > 255 || name.matches("[0-9]+")) {
-            event.deferReply(true).addContent("Invalid sound name.").queue();
-            return;
-        }
-
-        String extension = attachment.getFileExtension();
-        if (extension == null || !List.of("mp3", "opus").contains(extension.toLowerCase(Locale.ROOT))) {
-            event.deferReply(true).addContent("Only upload the sound in **mp3** or **opus** format.").queue();
+        try {
+            name = Sound.normalizeName(event.getOption("name").getAsString());
+            format = SoundFiles.uploadExtension(attachment.getFileName());
+        } catch (com.safjnest.exception.Exception failure) {
+            event.deferReply(true).addContent(failure.getMessage()).queue();
             return;
         }
 
@@ -89,7 +84,6 @@ public class SoundUpload extends SlashCommand{
         }
 
         boolean isPublic = event.getOption("public") == null || event.getOption("public").getAsBoolean();
-        String format = extension.toLowerCase(Locale.ROOT);
         List<String> tagNames = List.copyOf(tags);
 
         event.deferReply(false).queue(hook -> Thread.startVirtualThread(
@@ -100,21 +94,9 @@ public class SoundUpload extends SlashCommand{
 
     private void upload(SlashCommandEvent event, InteractionHook hook, String name, Attachment attachment,
             String extension, boolean isPublic, List<String> tags) {
-        Path staged = null;
-
-        try {
-            staged = Files.createTempFile("beebot-upload-", "." + extension);
-            try (InputStream input = attachment.getProxy().download().get(30, TimeUnit.SECONDS)) {
-                if (Files.copy(input, staged, StandardCopyOption.REPLACE_EXISTING) == 0)
-                    throw new IOException("Empty attachment");
-            }
-
-            Path source = staged;
-            SoundFiles files = SoundFiles.getInstance();
-            long duration = files.inspectDuration(source, extension);
-
-            BotDB.get().insertSound(name, event.getGuild().getId(), event.getUser().getId(), extension, isPublic,
-                duration, tags, sound -> files.upload(sound, source));
+        try (InputStream input = attachment.getProxy().download().get(30, TimeUnit.SECONDS)) {
+            SoundFiles.getInstance().create(BotDB.get(), name, event.getGuild().getId(), event.getUser().getId(), extension,
+                isPublic, tags, input);
 
             hook.editOriginal("Sound uploaded succesfully").queue();
         } catch (InterruptedException exception) {
@@ -131,14 +113,6 @@ public class SoundUpload extends SlashCommand{
         } catch (Exception exception) {
             LOG.warn("Sound upload failed", exception);
             hook.editOriginal("Could not upload the sound.").queue();
-        } finally {
-            if (staged != null) {
-                try {
-                    Files.deleteIfExists(staged);
-                } catch (IOException exception) {
-                    LOG.warn("Could not remove sound upload staging file", exception);
-                }
-            }
         }
     }
 }

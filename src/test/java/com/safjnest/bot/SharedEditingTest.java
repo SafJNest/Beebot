@@ -1,9 +1,12 @@
 package com.safjnest.bot;
 
 import static org.junit.Assert.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.lang.reflect.Proxy;
@@ -45,11 +48,13 @@ import com.safjnest.sound.model.Tag;
 import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.spring.controller.beebot.MeController;
 import com.safjnest.spring.controller.beebot.SoundController;
+import com.safjnest.spring.controller.beebot.SoundboardController;
 import com.safjnest.spring.exception.ApiExceptionHandler;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -82,13 +87,14 @@ public class SharedEditingTest {
                 "CREATE TABLE automated_action (id INT, guild_id VARCHAR(19), action INT, action_role VARCHAR(19), action_time BIGINT, infractions INT, infractions_time BIGINT)",
                 "CREATE TABLE member (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19) REFERENCES guild(guild_id), user_id VARCHAR(19), experience INT DEFAULT 0, level INT DEFAULT 1, messages INT DEFAULT 0, update_time INT DEFAULT 60, UNIQUE(guild_id, user_id))",
                 "CREATE TABLE alias (id INT AUTO_INCREMENT PRIMARY KEY, user_id VARCHAR(19), name VARCHAR(100), command VARCHAR(500))",
-                "CREATE TABLE sound (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(100), extension VARCHAR(10), public BOOLEAN, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, duration_ms BIGINT, plays INT DEFAULT 0, likes INT DEFAULT 0, dislikes INT DEFAULT 0)",
+                "CREATE TABLE sound (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), extension VARCHAR(10), public BOOLEAN, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, duration_ms BIGINT, plays INT DEFAULT 0, likes INT DEFAULT 0, dislikes INT DEFAULT 0)",
                 "CREATE TABLE tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))",
                 "CREATE TABLE tag_sounds (sound_id INT REFERENCES sound(id) ON DELETE CASCADE, tag_id INT REFERENCES tag(id))",
                 "CREATE TABLE greeting (user_id VARCHAR(19), guild_id VARCHAR(19), sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY(user_id, guild_id))",
                 "CREATE TABLE sound_interactions (sound_id INT REFERENCES sound(id) ON DELETE CASCADE, user_id VARCHAR(19), value INT, PRIMARY KEY(sound_id, user_id))",
                 "CREATE TABLE sound_history (id INT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, user_id VARCHAR(19), guild_id VARCHAR(19), time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, source INT)",
-                "CREATE TABLE soundboard_sounds (id INT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE)",
+                "CREATE TABLE soundboard (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), thumbnail_key VARCHAR(128))",
+                "CREATE TABLE soundboard_sounds (id INT REFERENCES soundboard(id) ON DELETE CASCADE, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY (id, sound_id))",
                 "INSERT INTO guild(guild_id) VALUES ('1'), ('3')",
                 "INSERT INTO channel(guild_id, channel_id) VALUES ('1', '100'), ('3', '100')",
                 "INSERT INTO sound(id, guild_id, user_id, name, extension, public) VALUES (10, '1', '2', 'first', 'mp3', TRUE), (11, '1', '2', 'second', 'opus', FALSE), (12, '3', '9', 'other', 'mp3', FALSE)"
@@ -195,6 +201,57 @@ public class SharedEditingTest {
         })));
         assertEquals("first", row("SELECT name FROM sound WHERE id = 10").get("name"));
         assertEquals(0, row("SELECT COUNT(*) AS n FROM tag WHERE name = 'new tag'").getAsInt("n"));
+    }
+
+    @Test
+    public void soundboardRoutesScopeReadsAndMutationsToTheGuildAndOwner() throws java.lang.Exception {
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SoundboardController(sounds, database))
+            .setControllerAdvice(new ApiExceptionHandler()).build();
+        String path = "/api/beebot/guilds/1/soundboards";
+        String createBody = "{\"name\":\"Arcade\",\"soundIds\":[\"10\",\"10\"]}";
+
+        String created = mvc.perform(post(path).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)
+            .contentType(MediaType.APPLICATION_JSON).content(createBody))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        JsonNode detail = JSON.readTree(created);
+        String id = detail.path("board").path("id").asText();
+        assertEquals(1, detail.path("board").path("soundCount").asInt());
+        assertEquals("10", detail.path("sounds").get(0).path("id").asText());
+
+        mvc.perform(post(path).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH).contentType(MediaType.APPLICATION_JSON).content(createBody))
+            .andExpect(status().isConflict());
+        mvc.perform(get("/api/beebot/guilds/3/soundboards/" + id).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isNotFound());
+
+        AuthContext other = new AuthContext(null, "other", "encrypted", Long.MAX_VALUE,
+            new AuthUser("9", "other", null, null));
+        mvc.perform(delete(path + "/" + id).requestAttr(AuthFilter.AUTH_CONTEXT, other)).andExpect(status().isForbidden());
+        mvc.perform(put(path + "/" + id + "/sounds/12").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isNotFound());
+        mvc.perform(put(path + "/" + id + "/sounds/11").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isNoContent());
+        mvc.perform(delete(path + "/" + id + "/sounds/10").requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isNoContent());
+        mvc.perform(patch(path + "/" + id).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Arcade 2\"}")).andExpect(status().isOk());
+        mvc.perform(delete(path + "/" + id).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)).andExpect(status().isNoContent());
+        mvc.perform(get(path + "/" + id).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void multipartUploadRejectsInvalidAudioAndUnauthorizedGuilds() throws java.lang.Exception {
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(soundController).setControllerAdvice(new ApiExceptionHandler()).build();
+        MockMultipartFile metadata = new MockMultipartFile("metadata", "metadata.json", "application/json",
+            "{\"name\":\"New upload\",\"tags\":[\"test\"]}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        MockMultipartFile audio = new MockMultipartFile("file", "test.mp3", "audio/mpeg", new byte[] {1, 2, 3});
+
+        mvc.perform(multipart("/api/beebot/guilds/4/sounds").file(audio).file(metadata).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isForbidden());
+        mvc.perform(multipart("/api/beebot/guilds/1/sounds").file(audio).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isBadRequest());
+        mvc.perform(multipart("/api/beebot/guilds/1/sounds").file(audio).file(metadata).requestAttr(AuthFilter.AUTH_CONTEXT, AUTH))
+            .andExpect(status().isBadRequest());
+        assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'New upload'").getAsInt("n"));
     }
 
     @Test

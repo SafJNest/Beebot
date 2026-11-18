@@ -76,11 +76,96 @@ All analytics use one streaming SQL history read per block of up to 500 sound ID
 
 ## Writes
 
-`PATCH /sounds/{soundId}` accepts a nonempty object with any of `name`, `public`, `tags`. Omitted fields stay unchanged. Name is trimmed, nonblank, at most 100 characters, not numeric-only; duplicates in the existing uploader/original-guild namespace are rejected. Public is boolean. Tags replace the set, `[]` clears it, at most five nonblank names of at most 255 characters, normalized to lowercase and deduplicated. Unknown/read-only fields and nulls are rejected. Only the uploader may edit. The entire patch is atomic. Response is the updated canonical Sound.
+### Upload a sound
+
+`POST /guilds/{guildId}/sounds` accepts `multipart/form-data`. Send an MP3 or Opus in `file` and an `application/json` part named `metadata`. The caller must belong to the guild and share it with the bot. Beebot derives the uploader from authentication. `name` is required, `public` defaults to true and `tags` defaults to an empty list. The direct API accepts files up to 25 MiB.
+
+```sh
+curl -X POST "$BEEBOT_BASE/guilds/123/sounds" \
+  -H "X-API-Key: $BEEBOT_API_KEY" \
+  -H "Authorization: Bearer $BEEBOT_SESSION" \
+  -F 'file=@airhorn.mp3;type=audio/mpeg' \
+  -F 'metadata={"name":"Airhorn","public":true,"tags":["arcade"]};type=application/json'
+```
+
+`201 Created` includes `Location: /api/beebot/sounds/42` and a canonical `Sound` response. The shared Discord and HTTP upload path validates the audio, persists the measured duration, writes the file and commits before returning success. A file storage failure rolls back the catalog write.
+
+```json
+{
+  "id": "42",
+  "name": "Airhorn",
+  "guildId": "123",
+  "userId": "456",
+  "uploader": {"id":"456","name":"Luna","avatarUrl":null},
+  "public": true,
+  "createdAt": "2026-11-18T10:00:00Z",
+  "url": "https://cdn.example.com/sounds/42.mp3",
+  "durationMs": 2088,
+  "tags": [{"id":"1","name":"arcade"}],
+  "plays": 0,
+  "listeners": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "myPlays": 0,
+  "likedByMe": false,
+  "dislikedByMe": false,
+  "ownedByMe": true,
+  "canEdit": true,
+  "canDelete": true,
+  "soundboardCount": 0
+}
+```
+
+### Edit, delete, and vote
+
+`PATCH /sounds/{soundId}` accepts a nonempty object with any of `name`, `public`, `tags`. Omitted fields stay unchanged. Name validation is shared with upload. Names are trimmed, nonblank, non-numeric and limited to 255 characters. Duplicates in the existing uploader/original-guild namespace are rejected. Public is boolean. Tags replace the set, `[]` clears it, at most five nonblank names of at most 255 characters, normalized to lowercase and deduplicated. Unknown/read-only fields and nulls are rejected. Only the uploader may edit. The entire patch is atomic. Response is the updated canonical Sound.
 
 `DELETE /sounds/{soundId}` permits the uploader or an Administrator/owner of the original guild. Manage Server alone is insufficient for deletion. Response is 204 with no body.
 
 `PATCH /sounds/{soundId}/like` and `/dislike` accept exactly `{ "enabled": true|false }`. Enabling replaces the opposite vote. Disabling removes only that vote and leaves an opposite vote intact. Writes lock the sound and atomically update interaction and counts. Response: `{soundId,likes,dislikes,likedByMe,dislikedByMe}`. Requests are idempotent.
+
+## Soundboards
+
+Guild routes require membership and bot presence. Creation records the caller as uploader. Rename, sound changes, cover replacement and board deletion require the uploader or the guild owner or Administrator. An ID under a different guild returns 404. A board can contain public sounds and private sounds belonging to its own guild. Detail responses use canonical `Sound` objects filtered by current sound visibility. `soundCount` counts stored associations and can exceed the number of visible sounds in the detail.
+
+| Call | Request body | Success response |
+| --- | --- | --- |
+| `GET /guilds/123/soundboards` | Empty | `200`, array of boards |
+| `GET /guilds/123/soundboards/7` | Empty | `200`, `{board,sounds}` |
+| `POST /guilds/123/soundboards` | `{"name":"Arcade","soundIds":["42"]}` | `201`, `{board,sounds}` and `Location: /api/beebot/guilds/123/soundboards/7` |
+| `PATCH /guilds/123/soundboards/7` | `{"name":"Arcade remix"}` | `200`, updated `{board,sounds}` |
+| `PUT /guilds/123/soundboards/7/sounds/42` | Empty | `204 No Content` |
+| `DELETE /guilds/123/soundboards/7/sounds/42` | Empty | `204 No Content` |
+| `PUT /guilds/123/soundboards/7/thumbnail` | Multipart part `file` | `200`, `{"thumbnailUrl":"https://cdn.example.com/soundboard/thumbnail/7/ddea3344-4853-433d-ac8e-ad97aba7b919.png"}` |
+| `DELETE /guilds/123/soundboards/7` | Empty | `204 No Content` |
+
+Example `GET /guilds/123/soundboards` response.
+
+```json
+[
+  {"id":"7","guildId":"123","userId":"456","name":"Arcade","thumbnailUrl":null,"soundCount":1,"canEdit":true}
+]
+```
+
+For detail, creation and rename, `board` is the same object and `sounds` is an array of the full canonical upload response shape above. An empty board detail, for example after removing the last sound, is valid.
+
+```json
+{
+  "board": {"id":"7","guildId":"123","userId":"456","name":"Arcade","thumbnailUrl":null,"soundCount":0,"canEdit":true},
+  "sounds": []
+}
+```
+
+Creation takes 1–20 distinct IDs. A duplicate name or an addition above the limit returns 409. Adding an existing association or removing an absent one is safe to retry. Removing the final sound through the API keeps the board. Deleting the board removes its associations and preserves the individual sounds and the existing cover object.
+
+```sh
+curl -X PUT "$BEEBOT_BASE/guilds/123/soundboards/7/thumbnail" \
+  -H "X-API-Key: $BEEBOT_API_KEY" \
+  -H "Authorization: Bearer $BEEBOT_SESSION" \
+  -F 'file=@cover.png;type=image/png'
+```
+
+The cover accepts PNG, JPEG and GIF up to 1 MiB. Follow the [R2 storage contract](../audio-storage-r2.md) for file retention and credentials.
 
 ## Profile and greet settings
 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Properties;
 import java.util.Map;
 
+import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.catalina.Context;
@@ -29,6 +30,8 @@ public class SpringServer {
     private static final String SERVLET_NAME = "dispatcher";
     private static final String SERVLET_MAPPING = "/";
     private static final int LOAD_ON_STARTUP = 1;
+    private static final long MAX_UPLOAD_BYTES = 25L * 1024 * 1024;
+    private static final long MULTIPART_OVERHEAD_BYTES = 64L * 1024;
 
     private final Tomcat tomcat;
 
@@ -81,6 +84,8 @@ public class SpringServer {
         Wrapper servlet = Tomcat.addServlet(context, SERVLET_NAME, dispatcherServlet);
         servlet.setLoadOnStartup(LOAD_ON_STARTUP);
         servlet.setAsyncSupported(true);
+        servlet.setMultipartConfigElement(new MultipartConfigElement("", MAX_UPLOAD_BYTES,
+            MAX_UPLOAD_BYTES + MULTIPART_OVERHEAD_BYTES, 0));
 
         context.addServletMappingDecoded(SERVLET_MAPPING, SERVLET_NAME);
     }

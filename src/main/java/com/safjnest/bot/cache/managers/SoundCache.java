@@ -1,5 +1,7 @@
 package com.safjnest.bot.cache.managers;
 
+import java.io.InputStream;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Ticker;
@@ -250,6 +252,23 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
         if (!context.guilds().containsKey(guild))
             throw new Exception(Type.FORBIDDEN, "guild_forbidden", "Guild membership and bot presence required");
+    }
+
+    public String create(Context context, String guild, String name, String extension,
+            boolean isPublic, List<String> tags, InputStream input) {
+        requireGuild(context, guild);
+
+        return SoundFiles.getInstance().create(database, name, guild, context.userId(), extension, isPublic, tags, input);
+    }
+
+    public List<Sound> soundboardSounds(Context context, String id) {
+        List<QueryRecord> rows = new ArrayList<>();
+        for (QueryRecord row : database.readSoundboardSounds(id)) {
+            if (BotDB.isSoundVisible(row, context.userId(), context.guilds().keySet()))
+                rows.add(row);
+        }
+
+        return responses(context, rows, database.readSoundTags(rowIds(rows)));
     }
 
     public GuildSounds guildSounds(Context context, String guild, SoundPeriod period) {

@@ -1,6 +1,6 @@
 # Beebot guild settings
 
-Base URL: `https://api.safjnest.com/api/beebot`. Both endpoints accept application `X-API-Key` plus `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` alone, through the existing [authentication flow](beebot-auth.md). Each request checks the requested guild ID against the per-session authorized list shared by `/me`, `/guilds` and the `/servers` alias. Owners and members with Administrator or Manage Server permission are allowed. The list has a 60-second Redis/in-memory cache and single-flight loading; valid cache hits do not contact Discord. The bot must be present. Responses use `Cache-Control: no-store`.
+Base URL: `https://api.safjnest.com/api/beebot`. These endpoints accept application `X-API-Key` plus `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` alone, through the existing [authentication flow](beebot-auth.md). Each request checks the requested guild ID against the per-session authorized list shared by `/me`, `/guilds` and the `/servers` alias. Owners and members with Administrator or Manage Server permission are allowed. The list has a 60-second Redis/in-memory cache and single-flight loading; valid cache hits do not contact Discord. The bot must be present. Responses use `Cache-Control: no-store`.
 
 ## GET /guilds/{guildId}
 
@@ -129,6 +129,32 @@ An alert can save successfully with `valid: false`: operational `problems` are d
 Twitch registration runs after commit and is retried on subsequent updates to that streamer. If it fails, status is `saved_with_errors`, the committed alert is returned and `errors` contains `twitch_subscription_failed`. Do not interpret this status as rollback. External registration and SQL cannot share a transaction.
 
 Malformed JSON, missing body, non-object/empty root or invalid guild ID returns 400. Invalid credentials return 401, missing owner/Administrator/Manage Server access 403, absent bot 404, and unavailable SQL 503. Discord-backed authorization retains the existing authentication error statuses. Request-level errors use the authentication `{ code, message }` shape (plus `retryAfter` and a `Retry-After` header on Discord 429). There is no request-wide transaction: a dependency outage after earlier commits does not undo those commits.
+
+## Delete one alert or channel override
+
+| Call | Request body | Success response |
+| --- | --- | --- |
+| `DELETE /guilds/123/alerts/welcome` | Empty | `204 No Content` |
+| `DELETE /guilds/123/alerts/leave` | Empty | `204 No Content` |
+| `DELETE /guilds/123/alerts/boost` | Empty | `204 No Content` |
+| `DELETE /guilds/123/alerts/levelUp` | Empty | `204 No Content` |
+| `DELETE /guilds/123/alerts/reward/5` | Empty | `204 No Content` |
+| `DELETE /guilds/123/alerts/twitch/456` | Empty | `204 No Content` |
+| `DELETE /guilds/123/settings/channels/789` | Empty | `204 No Content` |
+
+Each request addresses one entry. An already absent entry also returns 204. A channel override removal restores the defaults for that channel. `GuildData` changes its cached objects after the database write succeeds. The prepared SQL scopes removal to the requested guild even when the target ID is known.
+
+Twitch checks for other guilds following the streamer after the commit. It removes the external subscription only when no guild still follows the streamer. A cleanup failure returns 503 with `twitch_unsubscribe_failed`, and the removed guild alert stays removed.
+
+## Look up a Twitch streamer
+
+`GET /guilds/123/alerts/twitch/lookup?login=arcade` takes no body. It returns 200 with the Twitch account ID and public display fields. Invalid input returns 400, an unknown login 404 and an upstream failure 503.
+
+```json
+{"id":"456","login":"arcade","displayName":"Arcade"}
+```
+
+To create a Twitch alert or reward, use the existing `POST /guilds/123/settings` with a configured key. For example, `{"twitch":{"456":{}},"reward":{"5":{}}}` creates entries with the initial defaults. The response contains an independent result under `twitch.456` and `reward.5`.
 
 ## Storage and compatibility
 

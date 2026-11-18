@@ -47,14 +47,18 @@ public final class SoundboardThumbnails {
             throw new IllegalArgumentException("Invalid thumbnail size");
 
         try (InputStream source = attachment.getProxy().download().get(30, TimeUnit.SECONDS)) {
-            byte[] bytes = source.readNBytes(MAX_ATTACHMENT_BYTES + 1);
-            if (bytes.length > MAX_ATTACHMENT_BYTES)
-                throw new IllegalArgumentException("Invalid thumbnail size");
-
-            return identify(bytes);
+            return read(source);
         } catch (ExecutionException | TimeoutException exception) {
             throw new IOException("Could not download soundboard thumbnail", exception);
         }
+    }
+
+    public static Image read(InputStream source) throws IOException {
+        byte[] bytes = source.readNBytes(MAX_ATTACHMENT_BYTES + 1);
+        if (bytes.length > MAX_ATTACHMENT_BYTES)
+            throw new IllegalArgumentException("Invalid thumbnail size");
+
+        return identify(bytes);
     }
 
     public String upload(String soundboardId, Image image) {

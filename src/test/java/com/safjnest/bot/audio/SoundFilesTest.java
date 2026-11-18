@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.bot.model.BotSettings.JsonSettings;
 import com.safjnest.database.R2;
 import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 
@@ -46,6 +48,41 @@ public class SoundFilesTest {
         Path broken = temporary.newFile("broken.mp3").toPath();
         Files.writeString(broken, "not audio");
         assertThrows(IOException.class, () -> files.inspectDuration(broken, "mp3"));
+    }
+
+    @Test
+    public void sharedUploadMeasuresBeforeWritingAndPublishesUsingTheGeneratedId() throws IOException {
+        Path directory = temporary.newFolder().toPath();
+        SoundFiles files = new SoundFiles(directory, new R2(null), null, "sounds/",
+            (key, target) -> fail("A local upload should not download a file"));
+        BotDB database = new BotDB() {
+            @Override
+            public String insertSound(String name, String guildId, String userId, String extension, boolean isPublic,
+                    long duration, List<String> tags, Consumer<Sound> store) {
+                assertEquals(List.of("arcade"), tags);
+                assertEquals(2088, duration);
+                assertEquals("Ping", name);
+
+                QueryRecord row = new QueryRecord();
+                row.put("id", "42");
+                row.put("guild_id", guildId);
+                row.put("user_id", userId);
+                row.put("extension", extension);
+                row.put("name", name);
+                row.put("duration_ms", duration);
+
+                store.accept(new Sound(row, List.of()));
+
+                return "42";
+            }
+        };
+        Path fixture = Path.of("rsc/sounds/10.mp3");
+
+        try (java.io.InputStream source = Files.newInputStream(fixture)) {
+            assertEquals("42", files.create(database, "Ping", "1", "2", "mp3", true, List.of("arcade"), source));
+        }
+
+        assertEquals(-1, Files.mismatch(fixture, directory.resolve("42.mp3")));
     }
 
     @Test

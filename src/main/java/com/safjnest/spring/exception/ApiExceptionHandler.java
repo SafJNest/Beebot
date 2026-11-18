@@ -15,6 +15,9 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -59,6 +62,16 @@ public final class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> invalidBody(HttpMessageNotReadableException exception, HttpServletRequest request) {
         return ApiErrors.from(request, HttpStatus.BAD_REQUEST, "invalid_request", "Invalid JSON request body");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<?> uploadTooLarge(MaxUploadSizeExceededException exception, HttpServletRequest request) {
+        return ApiErrors.from(request, HttpStatus.PAYLOAD_TOO_LARGE, "upload_too_large", "Upload exceeds the size limit");
+    }
+
+    @ExceptionHandler({MultipartException.class, MissingServletRequestPartException.class})
+    public ResponseEntity<?> invalidUpload(java.lang.Exception exception, HttpServletRequest request) {
+        return ApiErrors.from(request, HttpStatus.BAD_REQUEST, "invalid_request", "Invalid multipart body or missing part");
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

@@ -22,6 +22,8 @@ import com.safjnest.exception.Exception.Type;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public class Sound {
+    public static final int MAX_NAME_LENGTH = 255;
+
     @JsonProperty("id")
     private final String ID;
     @JsonProperty("guildId")
@@ -63,6 +65,14 @@ public class Sound {
     @JsonProperty private boolean canEdit;
     @JsonProperty private boolean canDelete;
     @JsonProperty private long soundboardCount;
+
+    public static String normalizeName(String value) {
+        String name = value.strip();
+        if (name.isEmpty() || name.length() > MAX_NAME_LENGTH || name.matches("[0-9]+"))
+            throw Exception.invalidRequest("Invalid sound name");
+
+        return name;
+    }
 
     public static Sound forResponse(QueryRecord current, List<Tag> tags, QueryRecord extra,
             String viewerId, boolean administrator, String url, Map<String, Object> uploader) {
