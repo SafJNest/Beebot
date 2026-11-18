@@ -377,9 +377,12 @@ greet. `database.R2` condivide URL CDN, download e upload S3.
 Le copie locali vengono mantenute e tutte le letture usano il CDN configurato.
 I dettagli dell'upload e dei setting sono in [Asset storage on R2](../audio-storage-r2.md).
 Le copertine delle soundboard usano lo stesso bucket. `SoundboardThumbnails`
-carica le immagini e coordina la migrazione dai BLOB. `BotDB` salva la chiave
-per la quale l'upload è riuscito e `SoundEmbed` usa il CDN.
-
+carica le immagini, `BotDB` salva la chiave dopo l'upload e `SoundEmbed` usa
+il CDN.
+La durata dei suoni è calcolata prima dell'upload e letta da SQL da API ed
+embed. R2 riceve i metadati della riga e dei tag durante upload e modifica.
+Il lookup per nome o ID usa query preparate e una sola regola di visibilità
+per i comandi, con il contesto della gilda corrente.
 
 
 ## Sequenza di implementazione proposta

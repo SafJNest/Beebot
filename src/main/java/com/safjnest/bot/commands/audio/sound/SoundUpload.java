@@ -6,15 +6,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.TimeUnit;
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.audio.SoundFiles;
-import com.safjnest.bot.cache.managers.SoundCache;
-import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.BotCommand;
@@ -57,47 +57,49 @@ public class SoundUpload extends SlashCommand{
         commandData.setThings(this);
     }
     
-	@Override
-	protected void execute(SlashCommandEvent event) {
-        String soundName = event.getOption("name").getAsString();
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        String name = event.getOption("name").getAsString().trim();
         Attachment attachment = event.getOption("file").getAsAttachment();
 
-        boolean isPublic;
-        if(event.getOption("public") != null)
-            isPublic = event.getOption("public").getAsBoolean();
-        else
-            isPublic = true;
-        
-        if(soundName.matches("[0123456789]*")){
-            event.reply("You can't use a name that only contains numbers.");
+        if (name.isEmpty() || name.length() > 255 || name.matches("[0-9]+")) {
+            event.deferReply(true).addContent("Invalid sound name.").queue();
             return;
         }
 
-        if(!attachment.getFileExtension().equals("mp3") && !attachment.getFileExtension().equals("opus")){
+        String extension = attachment.getFileExtension();
+        if (extension == null || !List.of("mp3", "opus").contains(extension.toLowerCase(Locale.ROOT))) {
             event.deferReply(true).addContent("Only upload the sound in **mp3** or **opus** format.").queue();
             return;
         }
 
-        List<QueryRecord> sounds = BotDB.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
+        Set<String> tags = new LinkedHashSet<>();
+        for (int i = 1; i <= Tag.MAX_TAG_SOUND; i++) {
+            String option = "tag-" + i;
+            if (event.getOption(option) == null)
+                continue;
 
-        if(!sounds.isEmpty()) {
-            for(QueryRecord sound : sounds) {
-                if(sound.get("guild_id").equals(event.getGuild().getId()))
-                    event.deferReply(true).addContent("That name is already in use by you.").queue();
-                if(sound.get("user_id").equals(event.getMember().getId()))
-                    event.deferReply(true).addContent("That name is already in use in this guild.").queue();
+            String tag = event.getOption(option).getAsString().trim().toLowerCase(Locale.ROOT);
+            if (tag.length() > 255) {
+                event.deferReply(true).addContent("Invalid sound tag.").queue();
+                return;
             }
-            return;
+            if (!tag.isEmpty())
+                tags.add(tag);
         }
 
+        boolean isPublic = event.getOption("public") == null || event.getOption("public").getAsBoolean();
+        String format = extension.toLowerCase(Locale.ROOT);
+        List<String> tagNames = List.copyOf(tags);
+
         event.deferReply(false).queue(hook -> Thread.startVirtualThread(
-            () -> upload(event, hook, soundName, attachment, isPublic)));
+            () -> upload(event, hook, name, attachment, format, isPublic, tagNames)));
     }
 
     /* -------------------------------------------------------------------------- */
 
-    private void upload(SlashCommandEvent event, InteractionHook hook, String name, Attachment attachment, boolean isPublic) {
-        String extension = attachment.getFileExtension();
+    private void upload(SlashCommandEvent event, InteractionHook hook, String name, Attachment attachment,
+            String extension, boolean isPublic, List<String> tags) {
         Path staged = null;
 
         try {
@@ -108,26 +110,23 @@ public class SoundUpload extends SlashCommand{
             }
 
             Path source = staged;
-            String id = BotDB.get().insertSound(name, event.getGuild().getId(), event.getUser().getId(), extension, isPublic,
-                soundId -> SoundFiles.getInstance().upload(soundId, extension, source));
+            SoundFiles files = SoundFiles.getInstance();
+            long duration = files.inspectDuration(source, extension);
 
-            List<Tag> tags = new ArrayList<>();
-            for (int i = 1; i <= Tag.MAX_TAG_SOUND; i++) {
-                String option = "tag-" + i;
-                if (event.getOption(option) == null)
-                    continue;
-
-                String tagName = event.getOption(option).getAsString();
-                if (!tagName.isEmpty())
-                    tags.add(new Tag(BotDB.insertTag(tagName), tagName));
-            }
-
-            if (!tags.isEmpty())
-                SoundCache.withSound(id, sound -> sound.setTags(tags));
+            BotDB.get().insertSound(name, event.getGuild().getId(), event.getUser().getId(), extension, isPublic,
+                duration, tags, sound -> files.upload(sound, source));
 
             hook.editOriginal("Sound uploaded succesfully").queue();
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
+            hook.editOriginal("Could not upload the sound.").queue();
+        } catch (com.safjnest.exception.Exception exception) {
+            if ("duplicate_sound_name".equals(exception.getCode())) {
+                hook.editOriginal("That sound name is already in use.").queue();
+                return;
+            }
+
+            LOG.warn("Sound upload failed", exception);
             hook.editOriginal("Could not upload the sound.").queue();
         } catch (Exception exception) {
             LOG.warn("Sound upload failed", exception);

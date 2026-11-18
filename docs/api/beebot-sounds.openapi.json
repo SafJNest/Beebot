@@ -2253,6 +2253,8 @@
           },
           "durationMs": {
             "type": "integer",
+            "format": "int64",
+            "description": "Persisted playback duration in milliseconds. Null when the row has no persisted duration.",
             "nullable": true
           },
           "tags": {

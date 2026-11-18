@@ -8,8 +8,8 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.audio.SoundFiles;
-import com.safjnest.database.sql.QueryRecord;
-import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.bot.cache.managers.SoundCache;
+import com.safjnest.sound.model.Sound;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -38,42 +38,26 @@ public class SoundDownload extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String fileName = event.getOption("sound").getAsString();
-        String message = null;
-
-        List<QueryRecord> sounds = fileName.matches("\\d+")
-                           ? BotDB.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
-                           : BotDB.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
-
-        if(sounds.isEmpty()) {
-            event.deferReply(true).addContent("Couldn't find a sound with that name/id.");
+        String lookup = event.getOption("sound").getAsString();
+        String guildId = event.getGuild().getId();
+        List<Sound> matches = SoundCache.findSoundMatches(lookup, guildId, event.getUser().getId());
+        Sound sound = SoundCache.chooseSound(matches, guildId);
+        if (sound == null) {
+            event.deferReply(true).addContent("Couldn't find a sound with that name/id.").queue();
             return;
         }
 
-        QueryRecord toDownload = null;
+        String description = "**" + sound.getName() + " (ID: " + sound.getId() + ")**";
+        String message;
+        if (matches.size() == 1)
+            message = "Downloaded sound " + description;
+        else if (guildId.equals(sound.getGuildId()))
+            message = "Downloaded sound " + description + " from this guild.";
+        else
+            message = "Downloaded a random sound named " + description;
 
-        if(sounds.size() == 1) {
-            toDownload = sounds.get(0);
-            message = "Downloaded sound **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")**";
-        }
-        else {
-            for(QueryRecord sound : sounds) {
-                if(sound.get("guild_id").equals(event.getGuild().getId())) {
-                    toDownload = sound;
-                    message = "Downloaded sound **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** from this guild.";
-                }
-            }
-        }
-        if(toDownload == null) {
-            toDownload = sounds.get((int)(Math.random() * sounds.size()));
-            message = "Downloaded a random sound named **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** ";
-        }
-
-        String id = toDownload.get("id");
-        String extension = toDownload.get("extension");
-        String response = message;
-
-        event.deferReply(false).queue(hook -> Thread.startVirtualThread(() -> sendFile(hook, response, id, extension)));
+        event.deferReply(false).queue(hook -> Thread.startVirtualThread(
+            () -> sendFile(hook, message, sound.getId(), sound.getExtension())));
     }
 
     /* -------------------------------------------------------------------------- */

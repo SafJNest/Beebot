@@ -12,13 +12,13 @@ import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.bot.audio.types.AudioType;
 import com.safjnest.bot.cache.managers.SoundCache;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public class Sound {
@@ -50,8 +50,6 @@ public class Sound {
     private long revision;
     private boolean deleted;
 
-    private AudioTrack track;
-
     private volatile List<Tag> tags;
 
     @JsonProperty private Map<String, Object> uploader;
@@ -66,12 +64,11 @@ public class Sound {
     @JsonProperty private boolean canDelete;
     @JsonProperty private long soundboardCount;
 
-    public static Sound forResponse(Sound source, QueryRecord current, List<Tag> tags, QueryRecord extra,
+    public static Sound forResponse(QueryRecord current, List<Tag> tags, QueryRecord extra,
             String viewerId, boolean administrator, String url, Map<String, Object> uploader) {
         Sound result = new Sound(current, tags);
         result.uploader = uploader;
         result.url = url;
-        result.durationMs = source.durationMs;
 
         result.listeners = extra.getAsLong("listeners");
         result.myPlays = extra.getAsLong("my_plays");
@@ -134,6 +131,7 @@ public class Sound {
         this.extension = data.get("extension");
         this.isPublic = data.getAsBoolean("public");
         this.timestamp = data.getAsTimestamp("time");
+        this.durationMs = readDuration(data);
 
         this.plays = data.getAsInt("plays");
         this.likes = data.getAsInt("likes");
@@ -191,7 +189,7 @@ public class Sound {
             if (original.deleted || revision != original.revision)
                 return false;
 
-            List<Tag> savedTags = database.saveSound(this, userId);
+            List<Tag> savedTags = database.saveSound(this, userId, SoundFiles.getInstance()::syncMetadata);
 
             original.name = name;
             original.isPublic = isPublic;
@@ -219,6 +217,7 @@ public class Sound {
         name = refreshedName;
         isPublic = refreshedPublic;
         tags = refreshedTags;
+        durationMs = readDuration(current);
 
         plays = current.getAsInt("plays");
         likes = current.getAsInt("likes");
@@ -260,8 +259,8 @@ public class Sound {
         return timestamp.getTime() / 1000;
     }
 
-    public synchronized AudioTrack getAsTrack() {
-        return track;
+    public Long getDurationMs() {
+        return durationMs;
     }
 
     public List<Tag> getTags() {
@@ -308,11 +307,6 @@ public class Sound {
         } catch (Exception exception) {
             return false;
         }
-    }
-
-    public synchronized void setTrack(AudioTrack track) {
-        this.track = track;
-        this.durationMs = track == null ? null : track.getDuration();
     }
 
     public String getFormattedTags() {
@@ -403,14 +397,6 @@ public class Sound {
         return currentVote(userId) == -1;
     }
 
-    public boolean delete() {
-        try {
-            return delete(USER_ID, Set.of());
-        } catch (Exception exception) {
-            return false;
-        }
-    }
-
     public synchronized boolean delete(String userId, Set<String> administrators) {
         if (deleted || original != null)
             return false;
@@ -429,6 +415,12 @@ public class Sound {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private static Long readDuration(QueryRecord row) {
+        long duration = row.getAsLong("duration_ms");
+
+        return duration > 0 ? duration : null;
+    }
 
     private synchronized boolean change(Consumer<Sound> mutation) {
         if (original != null) {

@@ -7,6 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.safjnest.bot.model.BotSettings.R2Settings;
@@ -19,6 +20,10 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public final class R2 implements AutoCloseable {
@@ -36,7 +41,7 @@ public final class R2 implements AutoCloseable {
         this(cdnBase, null);
     }
 
-    private R2(URI cdnBase, S3Client client) {
+    R2(URI cdnBase, S3Client client) {
         this.cdnBase = cdnBase;
         this.client = client;
     }
@@ -77,12 +82,31 @@ public final class R2 implements AutoCloseable {
         return client != null;
     }
 
-    public void upload(String bucket, String key, Path source, String contentType) {
-        upload(bucket, key, RequestBody.fromFile(source), contentType);
+    public void upload(String bucket, String key, Path source, String contentType, Map<String, String> metadata) {
+        upload(bucket, key, RequestBody.fromFile(source), contentType, metadata);
     }
 
     public void upload(String bucket, String key, byte[] source, String contentType) {
-        upload(bucket, key, RequestBody.fromBytes(source), contentType);
+        upload(bucket, key, RequestBody.fromBytes(source), contentType, Map.of());
+    }
+
+    public void updateMetadata(String bucket, String key, Map<String, String> values) {
+        HeadObjectResponse previous = head(bucket, key);
+        Map<String, String> metadata = new HashMap<>(previous.metadata());
+        metadata.putAll(values);
+        if (metadata.equals(previous.metadata()))
+            return;
+
+        CopyObjectRequest.Builder request = CopyObjectRequest.builder()
+            .sourceBucket(bucket).sourceKey(key).destinationBucket(bucket).destinationKey(key)
+            .copySourceIfMatch(previous.eTag()).metadataDirective(MetadataDirective.REPLACE).metadata(metadata)
+            .contentType(previous.contentType()).cacheControl(previous.cacheControl())
+            .contentDisposition(previous.contentDisposition()).contentEncoding(previous.contentEncoding())
+            .contentLanguage(previous.contentLanguage()).expires(previous.expires());
+        if (previous.storageClass() != null)
+            request.storageClass(previous.storageClassAsString());
+
+        client.copyObject(request.build());
     }
 
     @Override
@@ -93,12 +117,23 @@ public final class R2 implements AutoCloseable {
 
     /* -------------------------------------------------------------------------- */
 
-    private void upload(String bucket, String key, RequestBody source, String contentType) {
+    private HeadObjectResponse head(String bucket, String key) {
+        requireClient();
+
+        return client.headObject(HeadObjectRequest.builder().bucket(bucket).key(key).build());
+    }
+
+    private void upload(String bucket, String key, RequestBody source, String contentType, Map<String, String> metadata) {
+        requireClient();
+
+        PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType)
+            .metadata(metadata).build();
+        client.putObject(request, source);
+    }
+
+    private void requireClient() {
         if (client == null)
             throw new IllegalStateException("R2 upload credentials are missing in settings.r2");
-
-        PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).contentType(contentType).build();
-        client.putObject(request, source);
     }
 
     private static S3Client uploadClient(R2Settings settings) {

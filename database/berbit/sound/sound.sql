@@ -7,6 +7,7 @@ CREATE TABLE
     `extension` varchar(4) NOT NULL,
     `public` tinyint(1) DEFAULT 0,
     `time` timestamp NULL DEFAULT NULL,
+    `duration_ms` bigint DEFAULT NULL,
     `plays` int NOT NULL DEFAULT 0,
     `likes` int NOT NULL DEFAULT 0,
     `dislikes` int NOT NULL DEFAULT 0,

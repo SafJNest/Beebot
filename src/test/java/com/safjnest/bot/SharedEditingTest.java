@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -81,7 +82,7 @@ public class SharedEditingTest {
                 "CREATE TABLE automated_action (id INT, guild_id VARCHAR(19), action INT, action_role VARCHAR(19), action_time BIGINT, infractions INT, infractions_time BIGINT)",
                 "CREATE TABLE member (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19) REFERENCES guild(guild_id), user_id VARCHAR(19), experience INT DEFAULT 0, level INT DEFAULT 1, messages INT DEFAULT 0, update_time INT DEFAULT 60, UNIQUE(guild_id, user_id))",
                 "CREATE TABLE alias (id INT AUTO_INCREMENT PRIMARY KEY, user_id VARCHAR(19), name VARCHAR(100), command VARCHAR(500))",
-                "CREATE TABLE sound (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(100), extension VARCHAR(10), public BOOLEAN, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, plays INT DEFAULT 0, likes INT DEFAULT 0, dislikes INT DEFAULT 0)",
+                "CREATE TABLE sound (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(100), extension VARCHAR(10), public BOOLEAN, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, duration_ms BIGINT, plays INT DEFAULT 0, likes INT DEFAULT 0, dislikes INT DEFAULT 0)",
                 "CREATE TABLE tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))",
                 "CREATE TABLE tag_sounds (sound_id INT REFERENCES sound(id) ON DELETE CASCADE, tag_id INT REFERENCES tag(id))",
                 "CREATE TABLE greeting (user_id VARCHAR(19), guild_id VARCHAR(19), sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY(user_id, guild_id))",
@@ -148,23 +149,68 @@ public class SharedEditingTest {
         failedSql.set("INSERT INTO sound");
 
         assertThrows(Exception.class, () -> database.insertSound("new sound", "1", "2", "mp3", true,
-            id -> uploads.incrementAndGet()));
+            2088, List.of("arcade"), sound -> uploads.incrementAndGet()));
         assertEquals(0, uploads.get());
 
         failedSql.set(null);
         IllegalStateException uploadFailure = new IllegalStateException("R2 unavailable");
         assertSame(uploadFailure, assertThrows(IllegalStateException.class,
-            () -> database.insertSound("new sound", "1", "2", "mp3", true, id -> {
+            () -> database.insertSound("new sound", "1", "2", "mp3", true, 2088, List.of("arcade"), sound -> {
                 uploads.incrementAndGet();
                 assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'new sound'").getAsInt("n"));
                 throw uploadFailure;
             })));
         assertEquals(1, uploads.get());
         assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'new sound'").getAsInt("n"));
+        assertEquals(0, row("SELECT COUNT(*) AS n FROM tag WHERE name = 'arcade'").getAsInt("n"));
 
-        String id = database.insertSound("new sound", "1", "2", "mp3", true, key -> uploads.incrementAndGet());
+        String id = database.insertSound("new sound", "1", "2", "mp3", true, 2088, List.of("arcade"), sound -> {
+            uploads.incrementAndGet();
+            assertEquals(Long.valueOf(2088), sound.getDurationMs());
+            assertEquals("arcade", sound.getTags().getFirst().getName());
+            assertTrue(sound.getTags().getFirst().isStored());
+        });
         assertEquals(2, uploads.get());
         assertEquals(id, row("SELECT id FROM sound WHERE name = 'new sound'").get("id"));
+        assertEquals(2088, row("SELECT duration_ms FROM sound WHERE name = 'new sound'").getAsLong("duration_ms"));
+        assertTrue(JSON.valueToTree(soundController.sound(AUTH, "10")).get("durationMs").isNull());
+        assertEquals(2088, JSON.valueToTree(soundController.sound(AUTH, id)).get("durationMs").asLong());
+
+        Exception duplicate = assertThrows(Exception.class, () -> database.insertSound("new sound", "1", "2", "mp3", true,
+            2088, List.of("arcade"), sound -> fail("Duplicate sound was uploaded")));
+        assertEquals("duplicate_sound_name", duplicate.getCode());
+    }
+
+    @Test
+    public void failedMetadataCopyRollsBackEdits() {
+        Sound edit = sound().deferEdit();
+        edit.setName("new name");
+        edit.setTagNames(List.of("new tag"));
+
+        IllegalStateException copyFailure = new IllegalStateException("R2 unavailable");
+        assertSame(copyFailure, assertThrows(IllegalStateException.class, () -> database.saveSound(edit, "2", snapshot -> {
+            assertEquals("new name", snapshot.getName());
+            assertEquals("new tag", snapshot.getTags().getFirst().getName());
+            throw copyFailure;
+        })));
+        assertEquals("first", row("SELECT name FROM sound WHERE id = 10").get("name"));
+        assertEquals(0, row("SELECT COUNT(*) AS n FROM tag WHERE name = 'new tag'").getAsInt("n"));
+    }
+
+    @Test
+    public void soundLookupTreatsNamesLiterallyAndKeepsGuildScope() throws java.lang.Exception {
+        try (Connection connection = connection(); PreparedStatement statement = connection.prepareStatement(
+                "UPDATE sound SET name = ? WHERE id IN (10, 12)")) {
+            statement.setString(1, "L'été 100%");
+            statement.executeUpdate();
+        }
+
+        assertEquals(List.of("10"), database.findSoundIds("L'été 100%", "1", "2"));
+        assertEquals(List.of("10", "12"), database.findSoundIds("L'été 100%", "3", "9"));
+        assertEquals(List.of(), database.findSoundIds("12", "1", "2"));
+        assertEquals(List.of(), database.findSoundIds("999999", "1", "2"));
+        assertEquals(List.of(), database.findSoundIds("9999999999999999999", "1", "2"));
+        assertEquals(List.of("10"), database.searchSoundIds("%", null, "1", "2"));
     }
 
     @Test
@@ -511,7 +557,8 @@ public class SharedEditingTest {
         assertEquals(Type.FORBIDDEN, assertThrows(Exception.class,
             () -> sound.delete("9", Set.of())).getType());
         failedSql.set("DELETE FROM sound WHERE");
-        assertFalse(sound.delete());
+        assertEquals(Type.UNAVAILABLE, assertThrows(Exception.class,
+            () -> sound.delete("2", Set.of())).getType());
         failedSql.set(null);
         assertTrue(sound.delete("9", Set.of("1")));
         assertFalse(sound.setName("deleted"));

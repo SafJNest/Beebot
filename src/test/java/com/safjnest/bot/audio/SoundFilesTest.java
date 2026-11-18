@@ -2,10 +2,15 @@ package com.safjnest.bot.audio;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,6 +18,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -21,11 +27,61 @@ import org.junit.rules.TemporaryFolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.bot.model.BotSettings.JsonSettings;
 import com.safjnest.database.R2;
+import com.safjnest.database.sql.QueryRecord;
+import com.safjnest.sound.model.Sound;
+import com.safjnest.sound.model.Tag;
 
 public class SoundFilesTest {
 
     @Rule
     public final TemporaryFolder temporary = new TemporaryFolder();
+
+    @Test
+    public void inspectsMp3AndOpusLikeThePlayerAndRejectsInvalidFiles() throws IOException {
+        SoundFiles files = SoundFiles.getInstance();
+        assertEquals(2088, files.inspectDuration(Path.of("rsc/sounds/10.mp3"), "mp3"));
+        assertEquals(29024, files.inspectDuration(Path.of("rsc/sounds/100.opus"), "opus"));
+        assertThrows(IOException.class, () -> files.inspectDuration(Path.of("rsc/sounds/88.wav"), "mp3"));
+
+        Path broken = temporary.newFile("broken.mp3").toPath();
+        Files.writeString(broken, "not audio");
+        assertThrows(IOException.class, () -> files.inspectDuration(broken, "mp3"));
+    }
+
+    @Test
+    public void objectMetadataKeepsUnicodeTagsAndAllCatalogColumns() throws IOException {
+        QueryRecord row = new QueryRecord();
+        row.put("id", "10");
+        row.put("user_id", "2");
+        row.put("guild_id", "1");
+        row.put("name", "L'été 🎵");
+        row.put("extension", "mp3");
+        row.put("public", true);
+        row.put("time", java.sql.Timestamp.from(java.time.Instant.parse("2025-01-02T03:04:05Z")));
+        row.put("duration_ms", 2088);
+        row.put("plays", 15);
+        row.put("likes", 2);
+        row.put("dislikes", 1);
+        List<Tag> tags = List.of(new Tag(11, "caffè"), new Tag());
+        Map<String, String> metadata = SoundFiles.metadata(new Sound(row, tags));
+
+        assertEquals("2088", metadata.get("duration-ms"));
+        assertEquals("10", metadata.get("id"));
+        assertEquals("2", metadata.get("user-id"));
+        assertEquals("1", metadata.get("guild-id"));
+        assertEquals("mp3", metadata.get("extension"));
+        assertEquals("true", metadata.get("public"));
+        assertEquals("2025-01-02T03:04:05Z", metadata.get("created-at"));
+        assertEquals("15", metadata.get("plays"));
+        assertEquals("2", metadata.get("likes"));
+        assertEquals("1", metadata.get("dislikes"));
+        assertEquals("L'été 🎵", new String(Base64.getUrlDecoder().decode(metadata.get("name-base64")), StandardCharsets.UTF_8));
+        byte[] encoded = Base64.getUrlDecoder().decode(metadata.get("tags-gzip-base64"));
+        try (GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(encoded))) {
+            ObjectMapper json = new ObjectMapper();
+            assertEquals(json.readTree("[{\"id\":\"11\",\"name\":\"caffè\"}]"), json.readTree(input));
+        }
+    }
 
     @Test
     public void concurrentRequestsShareOneCompletedDownload() throws java.lang.Exception {

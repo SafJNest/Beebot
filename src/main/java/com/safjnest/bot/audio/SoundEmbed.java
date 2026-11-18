@@ -1,6 +1,5 @@
 package com.safjnest.bot.audio;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +30,6 @@ import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
-import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SoundEmbed {
 
@@ -119,19 +117,8 @@ public class SoundEmbed {
                 + Bot.getJDA().getUserById(sound.getUserId()).getName()
                 + "```", true);
 
-        String formattedDuration = "";
-        try {
-            if (sound.getAsTrack() != null)
-                formattedDuration = SafJNest.getFormattedDuration(sound.getAsTrack().getDuration());
-            else if (sound.getExtension().equals("opus"))
-                formattedDuration = SafJNest
-                        .getFormattedDuration((Math.round(SoundCache.getOpusDuration(SoundFiles.getInstance().localPath(sound).toString()))) * 1000);
-            else
-                formattedDuration = SafJNest
-                        .getFormattedDuration((Math.round(SoundCache.getMP3Duration(SoundFiles.getInstance().localPath(sound).toString()))) * 1000);
-        } catch (IOException | IllegalArgumentException e) {
-            formattedDuration = "Error";
-        }
+        Long durationMs = sound.getDurationMs();
+        String formattedDuration = durationMs == null ? "Unknown" : SafJNest.getFormattedDuration(durationMs);
 
         eb.addField("Lenght", "```"
                 + formattedDuration
@@ -246,8 +233,6 @@ public class SoundEmbed {
         String url = thumbnailUrl(board);
         if (url != null)
             return Thumbnail.fromUrl(url);
-        if (hasLegacyThumbnail(board))
-            return Thumbnail.fromFile(FileUpload.fromData(board.legacyThumbnail(), "thumbnail.png"));
 
         return Thumbnail.fromUrl(avatarUrl);
     }
@@ -290,17 +275,13 @@ public class SoundEmbed {
 
         List<Sound> sounds = getSoundboardSounds(soundboardId);
         String url = thumbnailUrl(board);
-        boolean attach = url == null && hasLegacyThumbnail(board);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName() + " requested:", "https://github.com/SafJNest",
                 event.getAuthor().getAvatarUrl());
         eb.setTitle("**" + board.name() + "**");
 
-        if (attach)
-            eb.setThumbnail("attachment://thumbnail.png");
-        else
-            eb.setThumbnail(url != null ? url : Bot.getJDA().getSelfUser().getAvatarUrl());
+        eb.setThumbnail(url != null ? url : Bot.getJDA().getSelfUser().getAvatarUrl());
 
         eb.setDescription("Press a button to play a sound");
         eb.setColor(Bot.getColor());
@@ -317,19 +298,11 @@ public class SoundEmbed {
             }
         }
 
-        if (attach)
-            event.getChannel().sendMessageEmbeds(eb.build())
-                    .addFiles(FileUpload.fromData(board.legacyThumbnail(), "thumbnail.png")).setComponents(rows).queue();
-        else
-            event.getChannel().sendMessageEmbeds(eb.build()).setComponents(rows).queue();
+        event.getChannel().sendMessageEmbeds(eb.build()).setComponents(rows).queue();
     }
 
     private static String thumbnailUrl(SoundboardData board) {
         return board.thumbnailKey() == null ? null : R2.getInstance().url(board.thumbnailKey());
-    }
-
-    private static boolean hasLegacyThumbnail(SoundboardData board) {
-        return board.legacyThumbnail() != null && board.legacyThumbnail().length > 0;
     }
 
     public static EmbedBuilder getGreetViewEmbed(String userId, String guildId) {

@@ -35,12 +35,24 @@ same local file directory. On a miss, the bot finishes the download in a
 staging file before publishing the local copy. Simultaneous requests for the
 same file share the result. The local copy remains on the VPS.
 
-An upload first stages the Discord attachment. SQL then inserts one row and
-allocates the ID. The bot uploads the object with that ID before committing the
-row and acknowledging success. An upload failure rolls back the SQL insert.
-If R2 accepts a PUT and the subsequent SQL commit fails, the object may remain
-without a row. Sound deletion affects the catalog, and existing files are
-retained both on the VPS and in R2.
+The bot stages the Discord attachment and measures its duration with the same
+local media detection used by the player. It inserts the sound and its tags in
+one SQL transaction, uploads the object with the generated ID and commits before
+acknowledging success. A failed upload rolls back the sound and tag writes.
+Discord's playing embed and all Sound API responses read `sound.duration_ms`.
+
+R2 object metadata contains `id`, `guild-id`, `user-id`, `extension`, `public`,
+`created-at`, `duration-ms`, `plays`, `likes`, `dislikes`, `name-base64` and
+`tags-gzip-base64`. The name is UTF-8 encoded as unpadded Base64URL. Tags are
+gzip-compressed UTF-8 JSON with ID and name, then encoded as unpadded Base64URL.
+The object metadata is a snapshot on upload and edit. MariaDB owns
+the live play and vote counts and the underlying history. Metadata edits write
+SQL and update the existing R2 object's metadata before committing. A failed
+R2 update rolls back the edit. If R2 succeeds and SQL commit fails, object
+metadata can diverge until the next successful edit. A failed creation commit
+can leave an orphan object. Sound deletion removes the catalog entry and keeps
+both the VPS file and the R2 object. Sound uploads require a nullable
+`sound.duration_ms` column of type `BIGINT`.
 
 ## Soundboard thumbnails
 
@@ -51,18 +63,7 @@ be served immediately. The row stores `thumbnail_key` after upload succeeds. A
 failed upload leaves the previous cover in place, and rejects creation if the
 soundboard is new. Older R2 objects are retained.
 
-To migrate existing covers:
-
-1. Make sure the Beebot database has the nullable `soundboard.thumbnail_key`
-   column and deploy the new bot to every instance writing to it. Both display
-   commands can still render legacy covers during the migration.
-2. Run `!migrate-soundboard-thumbnails --dry-run` as the bot owner in a channel
-   using the server's command prefix. Run it without `--dry-run` to upload.
-   The command reads the image bytes from MariaDB, leaves the BLOBs in place and
-   skips rows with a key. It reports failed IDs and can be run again. A user
-   replacement takes precedence over a migration of the same cover.
-3. When the pending count is zero and the CDN URLs have been verified, the
-   legacy `soundboard.thumbnail` column can be removed. The bot can display
-   boards and report the pending count after the column is gone.
+Both soundboard display commands read the nullable `soundboard.thumbnail_key`
+column and show the bot avatar when the key is missing.
 
 External images and response-specific attachments retain their existing sources.

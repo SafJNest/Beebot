@@ -3,7 +3,6 @@ package com.safjnest.bot.cache.managers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Ticker;
-import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.App;
 import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.bot.cache.CacheAdapter;
@@ -19,18 +18,11 @@ import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.ValidationUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -43,12 +35,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
-import org.gagravarr.ogg.OggFile;
-import org.gagravarr.opus.OpusFile;
-import org.gagravarr.opus.OpusStatistics;
 
 public class SoundCache extends CacheAdapter<String, Sound> {
 
@@ -114,23 +102,24 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return instance;
     }
 
-    public static Sound getSoundByString(String regex, Guild guild, User user) {
-        List<QueryRecord> sounds = regex.matches("[0123456789]*")
-        ? BotDB.getSoundsById(regex, guild.getId(), user.getId())
-        : BotDB.getSoundsByName(regex, guild.getId(), user.getId());
-        if(sounds.isEmpty()) {
+    public static Sound getSoundByString(String lookup, Guild guild, User user) {
+        return chooseSound(findSoundMatches(lookup, guild.getId(), user.getId()), guild.getId());
+    }
+
+    public static List<Sound> findSoundMatches(String lookup, String guildId, String userId) {
+        return instance.getOrLoadAll(instance.database.findSoundIds(lookup, guildId, userId));
+    }
+
+    public static Sound chooseSound(List<Sound> sounds, String guildId) {
+        if (sounds.isEmpty())
             return null;
+
+        for (Sound sound : sounds) {
+            if (guildId.equals(sound.getGuildId()))
+                return sound;
         }
-        QueryRecord toPlay = null;
-        for(QueryRecord sound : sounds) {
-            if(sound.get("guild_id").equals(guild.getId())) {
-                toPlay = sound;
-                break;
-            }
-        }
-        if(toPlay == null)
-        toPlay = sounds.get((int)(Math.random() * sounds.size()));
-        return getSoundById(toPlay.get("id"));
+
+        return sounds.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(sounds.size()));
     }
 
     public static Sound getSoundById(String soundId) {
@@ -194,9 +183,9 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return instance.withAll(ids, operation);
     }
 
-    public static boolean deleteSound(String id) {
+    public static boolean deleteSound(String id, String userId, Set<String> administrators) {
         try {
-            boolean saved = instance.with(id, Sound::delete);
+            boolean saved = instance.with(id, sound -> sound.delete(userId, administrators));
             if (saved)
                 instance.remove(id);
 
@@ -206,36 +195,10 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         }
     }
 
-    public static List<Sound> searchSound(String regex) {
-        return searchSound(regex, null);
+    public static List<Sound> searchSound(String query, String author, String guildId, String userId) {
+        return instance.getOrLoadAll(instance.database.searchSoundIds(query, author, guildId, userId));
     }
 
-    public static List<Sound> searchSound(String regex, String author) {
-        List<QueryRecord> result = author == null ? BotDB.extremeSoundResearch(regex) : BotDB.extremeSoundResearch(regex, author);
-        List<String> soundIds = new ArrayList<>();
-        for (QueryRecord row : result) soundIds.add(row.get("id"));
-        List<Sound> sounds = getSoundsByIds(soundIds.toArray(new String[0]));
-        final Pattern pattern = Pattern.compile(regex);
-        Comparator<Sound> byRelevance = (Sound s1, Sound s2) -> {
-            boolean s1Matches = pattern.matcher(s1.getName()).find();
-            boolean s2Matches = pattern.matcher(s2.getName()).find();
-            if (s1Matches && !s2Matches) {
-                return -1;
-            }
-            else if (!s1Matches && s2Matches) {
-                return 1;
-            }
-            int viewComparison = Integer.compare(s2.getGlobalPlays(), s1.getGlobalPlays());
-            if (viewComparison != 0) {
-                return viewComparison;
-            }
-            return Integer.compare(s2.getLikes(), s1.getLikes());
-        };
-        Collections.sort(sounds, byRelevance);
-        int reduceTo = sounds.size() > 25 ? 25 : sounds.size();
-        sounds = sounds.subList(0, reduceTo);
-        return sounds;
-    }
     //      ███        ▄████████    ▄██████▄
     //  ▀█████████▄   ███    ███   ███    ███
     //     ▀███▀▀██   ███    ███   ███    █▀
@@ -246,16 +209,6 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     //     ▄████▀     ███    █▀    ████████▀
     //
 
-    public static Tag getTagById(String tag_id) {
-        QueryRecord tagData = BotDB.getTag(tag_id);
-        if (tagData == null) return null;
-        return new Tag(tagData.getAsInt("id"), tagData.get("name"));
-    }
-
-    public static Tag getTagByName(String tag_name) {
-        int tag_id = BotDB.insertTag(tag_name.toLowerCase());
-        return getTagById(String.valueOf(tag_id));
-    }
     //     ▄████████  ▄█   ▄█          ▄████████
     //    ███    ███ ███  ███         ███    ███
     //    ███    █▀  ███▌ ███         ███    █▀
@@ -265,42 +218,6 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     //    ███        ███  ███▌    ▄   ███    ███
     //    ███        █▀   █████▄▄██   ██████████
     //                    ▀
-
-    public static OpusFile getOpus(String path) throws IOException {
-        File initialFile = new File(path);
-        InputStream targetStream = new FileInputStream(initialFile);
-        OggFile ogg = new OggFile(targetStream);
-        return new OpusFile(ogg);
-    }
-
-    public static double getOpusDuration(OpusFile opus) throws IOException {
-        OpusStatistics stats = null;
-        stats = new OpusStatistics(opus);
-        stats.calculate();
-        return stats.getDurationSeconds();
-    }
-
-    public static double getOpusDuration(String path) throws IOException {
-        OpusFile opus = getOpus(path);
-        return getOpusDuration(opus);
-    }
-
-    public static long getMP3Duration(String filePath) {
-        try {
-            Mp3File mp3file = new Mp3File(filePath);
-            if (mp3file.hasId3v2Tag()) {
-                // Duration in seconds
-                return mp3file.getLengthInSeconds();
-            }
-            else {
-                throw new java.lang.Exception("MP3 file does not have an ID3v2 tag.");
-            }
-        }
-        catch (java.lang.Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
 
     public record Context(String userId, Map<String, DiscordApi.GuildAccess> guilds) {
     }
@@ -640,36 +557,13 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         for (QueryRecord extra : extras)
             extraById.put(extra.get("id"), extra);
 
-        List<Sound> sounds = getOrLoadAll(ids, missing -> {
-            Set<String> needed = new HashSet<>(missing);
-            Map<String, Sound> loaded = new HashMap<>();
-
-            for (QueryRecord row : rows) {
-                String id = row.get("id");
-                if (needed.contains(id))
-                    loaded.put(id, new Sound(row, tags(id, tagRows, true), database, this::invalidateSelections));
-            }
-
-            return loaded;
-        });
-
-        Map<String, Sound> byId = new HashMap<>();
-
-        for (Sound sound : sounds)
-            byId.put(sound.getId(), sound);
-
         List<Sound> result = new ArrayList<>();
         for (QueryRecord row : rows) {
             String id = row.get("id");
             String guildId = row.get("guild_id");
             boolean administrator = context.guilds().containsKey(guildId) && context.guilds().get(guildId).administrator();
-            Sound source = byId.get(id);
-
-            if (source == null)
-                source = new Sound(row, tags(id, tagRows, true), database, this::invalidateSelections);
-
             String url = SoundFiles.getInstance().playbackUrl(id, row.get("extension"), cdnUrl);
-            result.add(Sound.forResponse(source, row, tags(id, tagRows, false),
+            result.add(Sound.forResponse(row, tags(id, tagRows, false),
                 extraById.getOrDefault(id, new QueryRecord()), context.userId(), administrator, url,
                 access.user(row.get("user_id"))));
         }

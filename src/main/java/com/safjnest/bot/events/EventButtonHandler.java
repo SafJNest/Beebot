@@ -399,7 +399,7 @@ public class EventButtonHandler extends ListenerAdapter {
         PlayerManager pm = PlayerManager.get();
         Guild guild = event.getGuild();
 
-        Sound sound = SoundCache.getSoundById(soundId);
+        Sound sound = SoundCache.getSoundByString(soundId, guild, event.getUser());
         if (sound == null) {
             event.reply("Sound file is unavailable.").setEphemeral(true).queue();
             return;
@@ -464,6 +464,10 @@ public class EventButtonHandler extends ListenerAdapter {
         String soundId = getButtonData(event.getButton()).value2().trim();
         String tagId = event.getButton().getCustomId().split("-", 4)[3];
         Sound soundData = SoundCache.getSoundById(soundId);
+        if (soundData == null) {
+            event.reply("Sound not found.").setEphemeral(true).queue();
+            return;
+        }
 
         boolean tagSwitch = true;
         switch (args) {
@@ -483,23 +487,20 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "delete":
-                SoundCache.withSound(soundId, current -> {
-                    List<Tag> tags = current.getTags();
+                int selectedTag = Integer.parseInt(tagId);
+                SoundCustomize.saveEdit(event, soundId, draft -> {
+                    List<Tag> tags = draft.getTags();
+                    for (int index = 0; index < tags.size(); index++) {
+                        if (tags.get(index).getId() == selectedTag) {
+                            tags.set(index, new Tag());
 
-                    for (int i = 0; i < tags.size(); i++) {
-                        if (tags.get(i).getId() == Integer.parseInt(tagId)) {
-                            tags.set(i, new Tag());
-                            break;
+                            return draft.setTags(tags);
                         }
                     }
 
-                    Sound edit = current.deferEdit();
-                    edit.setTags(tags);
-
-                    return edit.update(event.getUser().getId());
+                    return false;
                 });
-                tagSwitch = false;
-                break;
+                return;
             default:
                 break;
         }
@@ -522,7 +523,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Sound soundData = SoundCache.getSoundById(soundId);
         int tagId = 0;
 
-        if (!soundData.getUserId().equals(event.getUser().getId())) {
+        if (soundData == null || !soundData.getUserId().equals(event.getUser().getId())) {
             event.deferReply(true).addContent("You can only modify your own sounds").queue();
             return;
         }
@@ -543,16 +544,16 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "private":
-                SoundCache.withSound(soundId, current -> {
-                    Sound edit = current.deferEdit();
-                    edit.setPublic(!current.isPublic());
-
-                    return edit.update(event.getUser().getId());
-                });
-                break;
+                SoundCustomize.saveEdit(event, soundId, draft -> draft.setPublic(!draft.isPublic()));
+                return;
             case "delete":
-                String response = SoundCache.deleteSound(soundId) ? "Sound deleted" : "Error deleting sound";
-                event.deferReply(true).addContent(response).queue();
+                boolean deleted;
+                try {
+                    deleted = SoundCache.deleteSound(soundId, event.getUser().getId(), java.util.Set.of());
+                } catch (com.safjnest.exception.Exception exception) {
+                    deleted = false;
+                }
+                event.deferReply(true).addContent(deleted ? "Sound deleted" : "Error deleting sound").queue();
                 return;
             case "tag":
                 if (clicked.getStyle() == ButtonStyle.PRIMARY) tagId = Integer.parseInt(clicked.getCustomId().split("-")[3]);

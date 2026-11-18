@@ -159,7 +159,6 @@ public class PlaySound extends SlashCommand{
 
             Sound played = SoundCache.withSound(sound.getId(), current -> {
                 current.increaseUserPlays(author.getId(), guild.getId());
-                current.setTrack(track);
 
                 return current;
             });

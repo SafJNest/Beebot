@@ -1,22 +1,50 @@
 package com.safjnest.bot.audio;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
+import org.gagravarr.ogg.OggFile;
+import org.gagravarr.opus.OpusFile;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.bot.model.BotSettings.R2Settings;
 import com.safjnest.database.R2;
+import com.safjnest.exception.Exception;
+import com.safjnest.exception.Exception.Type;
 import com.safjnest.sound.model.Sound;
+import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.ValidationUtils;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
+import com.sedmelluq.discord.lavaplayer.source.local.LocalSeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
 public final class SoundFiles {
 
     private static final Path LEGACY_DIRECTORY = Path.of("rsc", "sounds");
     private static final String DEFAULT_PREFIX = "sounds/";
     private static final String UNAVAILABLE = "Sound file is unavailable.";
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final Base64.Encoder BASE64 = Base64.getUrlEncoder().withoutPadding();
 
     private static volatile SoundFiles instance = new SoundFiles(LEGACY_DIRECTORY, R2.getInstance(), null, DEFAULT_PREFIX);
 
@@ -65,10 +93,6 @@ public final class SoundFiles {
         return instance;
     }
 
-    public Path localPath(Sound sound) {
-        return directory.resolve(fileName(sound.getId(), sound.getExtension()));
-    }
-
     public Path resolve(Sound sound) throws IOException {
         return resolve(sound.getId(), sound.getExtension());
     }
@@ -92,11 +116,42 @@ public final class SoundFiles {
         }
     }
 
-    public void upload(String id, String extension, Path source) {
-        String fileName = fileName(id, extension);
+    public long inspectDuration(Path source, String extension) throws IOException {
+        String format = extension.toLowerCase(Locale.ROOT);
+        String container = switch (format) {
+            case "mp3" -> format;
+            case "opus" -> "ogg";
+            default -> throw new IOException("Unsupported sound format: " + extension);
+        };
+
+        if (format.equals("opus")) {
+            try (InputStream input = Files.newInputStream(source); OpusFile opus = new OpusFile(new OggFile(input))) {
+                if (opus.getInfo() == null)
+                    throw new IOException("Missing Opus header");
+            }
+        }
+
+        try (LocalSeekableInputStream input = new LocalSeekableInputStream(source.toFile())) {
+            AudioReference reference = new AudioReference(source.toString(), null);
+            MediaContainerDetectionResult detected = new MediaContainerDetection(MediaContainerRegistry.DEFAULT_REGISTRY,
+                reference, input, MediaContainerHints.from(null, format)).detectContainer();
+            if (detected == null || !detected.isSupportedFile() || !container.equals(detected.getContainerDescriptor().probe.getName()))
+                throw new IOException("Invalid " + format + " sound");
+
+            AudioTrackInfo info = detected.getTrackInfo();
+            if (info.isStream || info.length <= 0 || info.length == Units.DURATION_MS_UNKNOWN)
+                throw new IOException("Sound duration is unavailable");
+
+            return info.length;
+        }
+    }
+
+    public void upload(Sound sound, Path source) {
+        String extension = sound.getExtension();
+        String fileName = fileName(sound.getId(), extension);
         if (storage.isEnabled()) {
             String contentType = extension.equalsIgnoreCase("mp3") ? "audio/mpeg" : "audio/ogg";
-            storage.upload(bucket, prefix + fileName, source, contentType);
+            storage.upload(bucket, prefix + fileName, source, contentType, metadata(sound));
             return;
         }
 
@@ -104,6 +159,17 @@ public final class SoundFiles {
             publish(directory.resolve(fileName), partial -> Files.copy(source, partial, StandardCopyOption.REPLACE_EXISTING));
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
+        }
+    }
+
+    public void syncMetadata(Sound sound) {
+        if (!storage.isEnabled())
+            return;
+
+        try {
+            storage.updateMetadata(bucket, prefix + fileName(sound.getId(), sound.getExtension()), metadata(sound));
+        } catch (RuntimeException failure) {
+            throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound metadata storage is unavailable", failure, null);
         }
     }
 
@@ -121,6 +187,45 @@ public final class SoundFiles {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    static Map<String, String> metadata(Sound sound) {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("id", sound.getId());
+        values.put("guild-id", sound.getGuildId());
+        values.put("user-id", sound.getUserId());
+        values.put("name-base64", BASE64.encodeToString(sound.getName().getBytes(StandardCharsets.UTF_8)));
+        values.put("extension", sound.getExtension());
+        values.put("public", Boolean.toString(sound.isPublic()));
+        if (sound.getCreatedAt() != null)
+            values.put("created-at", sound.getCreatedAt());
+        if (sound.getDurationMs() != null)
+            values.put("duration-ms", sound.getDurationMs().toString());
+
+        values.put("plays", Integer.toString(sound.getGlobalPlays()));
+        values.put("likes", Integer.toString(sound.getLikes()));
+        values.put("dislikes", Integer.toString(sound.getDislikes()));
+
+        List<Tag> tags = new ArrayList<>();
+        for (Tag tag : sound.getTags()) {
+            if (tag.isStored())
+                tags.add(tag);
+        }
+        tags.sort(Comparator.comparingInt(Tag::getId));
+        values.put("tags-gzip-base64", encodeTags(tags));
+
+        return values;
+    }
+
+    private static String encodeTags(List<Tag> tags) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (GZIPOutputStream compressed = new GZIPOutputStream(buffer)) {
+            compressed.write(JSON.writeValueAsBytes(tags));
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+
+        return BASE64.encodeToString(buffer.toByteArray());
+    }
 
     private static String fileName(String id, String extension) {
         if (!ValidationUtils.isDecimalId(id) || extension == null || !extension.matches("[a-zA-Z0-9]+"))

@@ -16,7 +16,7 @@ All detail, list and greet responses contain the existing `com.safjnest.sound.mo
   "public": true,
   "createdAt": "2026-03-02T10:00:00Z",
   "url": "https://cdn.example.com/sounds/42.mp3",
-  "durationMs": null,
+  "durationMs": 2088,
   "tags": [{ "id": "1", "name": "meme" }],
   "plays": 2140,
   "listeners": 728,
@@ -32,7 +32,7 @@ All detail, list and greet responses contain the existing `com.safjnest.sound.mo
 }
 ```
 
-Counts in Sound are global/all time. `listeners` counts distinct users associated with recorded plays, not everyone present in the voice channel. `myPlays` counts the caller's recorded plays. Uploader display data comes from the Discord cache; unavailable names are `Unknown`, avatars null. `durationMs` is currently null unless already known; no file decoding is performed during JSON serialization. `createdAt` can be null for legacy records.
+Counts in Sound are global/all time. `listeners` counts distinct users associated with recorded plays, not everyone present in the voice channel. `myPlays` counts the caller's recorded plays. Uploader display data comes from the Discord cache; unavailable names are `Unknown`, avatars null. `durationMs` is the playback duration from MariaDB, in milliseconds. It is available immediately after upload, including on a cold cache, and is null when the row has no persisted duration. `createdAt` can be null for legacy records.
 
 With R2 enabled, `url` is the CDN base from `rsc/settings.json` plus the sound object key, `sounds/{id}.{extension}` by default. The bot uses the same URL on a local-file cache miss. All sounds use the same CDN URL scheme. API authorization continues to govern API responses, while the CDN serves the underlying file directly. With R2 disabled, Spring's existing `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
 

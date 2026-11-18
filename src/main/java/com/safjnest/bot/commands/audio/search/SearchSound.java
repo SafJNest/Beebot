@@ -63,7 +63,7 @@ public class SearchSound extends SlashCommand {
         String query = event.getOption("query").getAsString();
         String author = event.getOption("author") == null ? null : event.getOption("author").getAsUser().getId();
 
-        List<Sound> sounds = SoundCache.searchSound(query, author);
+        List<Sound> sounds = SoundCache.searchSound(query, author, event.getGuild().getId(), event.getUser().getId());
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor("Search by" + event.getUser().getName(), "https://discord.com/users/" + event.getUser().getId(), event.getUser().getEffectiveAvatarUrl());
@@ -148,7 +148,7 @@ public class SearchSound extends SlashCommand {
                 }
     
                 List<String> selected = event.getValues();
-                Sound sound = SoundCache.getSoundById(selected.get(0));
+                Sound sound = SoundCache.getSoundByString(selected.get(0), guild, event.getUser());
     
                 event.deferEdit().queue(hook -> PlayerManager.get().loadSound(guild, sound,
                     new ResultHandler(slashEvent, hook, sound)));

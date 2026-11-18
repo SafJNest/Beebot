@@ -7,6 +7,7 @@ import com.safjnest.lol.model.summoner.Summoner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import com.safjnest.bot.audio.SoundEmbed;
 import com.safjnest.bot.commands.audio.sound.SoundCustomize;
@@ -95,47 +96,37 @@ public class EventModalInteractionHandler extends ListenerAdapter {
     }
 
     private static void sound(ModalInteractionEvent event) {
-        String soundId = event.getModalId().split("-", 2)[1];
+        String id = event.getModalId().split("-", 2)[1];
+        String name = event.getValue("sound-name").getAsString().trim();
+        if (name.isEmpty() || name.length() > 100 || name.matches("[0-9]+")) {
+            event.reply("Invalid sound name.").setEphemeral(true).queue();
+            return;
+        }
 
-        EmbedBuilder eb = null;
-        Sound sound = SoundCache.getSoundById(soundId);
-        String newName = event.getValue("sound-name").getAsString();
-        SoundCache.withSound(soundId, current -> {
-            Sound edit = current.deferEdit();
-            edit.setName(newName);
-
-            return edit.update(event.getUser().getId());
-        });
-
-        eb = SoundCustomize.getEmbed(event.getUser(), sound);
-        event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId)).queue();
+        SoundCustomize.saveEdit(event, id, draft -> draft.setName(name));
     }
 
     private static void tag(ModalInteractionEvent event) {
-        String soundId = event.getModalId().split("-", 2)[1];
+        String[] ids = event.getModalId().split("-", 3);
+        String name = event.getValue("tag-name").getAsString().trim().toLowerCase(Locale.ROOT);
+        if (name.length() > 255) {
+            event.reply("Invalid sound tag.").setEphemeral(true).queue();
+            return;
+        }
 
-        EmbedBuilder eb = null;
-        Sound sound = SoundCache.getSoundById(soundId.split("-")[0]);
-        String newTagName = event.getValue("tag-name").getAsString();
-        Tag tag = SoundCache.getTagByName(newTagName);
-        SoundCache.withSound(sound.getId(), current -> {
-            List<Tag> tags = current.getTags();
+        int tagId = Integer.parseInt(ids[2]);
+        SoundCustomize.saveEdit(event, ids[1], draft -> {
+            List<Tag> tags = draft.getTags();
+            for (int index = 0; index < tags.size(); index++) {
+                if (tags.get(index).getId() == tagId) {
+                    tags.set(index, new Tag(0, name));
 
-            for (int i = 0; i < tags.size(); i++) {
-                if (tags.get(i).getId() == Integer.parseInt(soundId.split("-")[1])) {
-                    tags.set(i, tag);
-                    break;
+                    return draft.setTags(tags);
                 }
             }
 
-            Sound edit = current.deferEdit();
-            edit.setTags(tags);
-
-            return edit.update(event.getUser().getId());
+            return false;
         });
-
-        eb = SoundCustomize.getEmbed(event.getUser(), sound);
-        event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId.split("-")[0])).queue();
     }
 
     private static void twitch(ModalInteractionEvent event) {
