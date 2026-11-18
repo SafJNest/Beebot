@@ -1,4 +1,4 @@
-package com.safjnest.storage;
+package com.safjnest.database;
 
 import java.io.IOException;
 import java.net.URI;
@@ -21,22 +21,22 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-public final class R2Storage implements AutoCloseable {
+public final class R2 implements AutoCloseable {
 
     private static final Duration UPLOAD_TIMEOUT = Duration.ofSeconds(15);
     private static final Duration DOWNLOAD_TIMEOUT = Duration.ofSeconds(20);
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
-    private static volatile R2Storage instance = new R2Storage(null);
+    private static volatile R2 instance = new R2(null);
 
     private final URI cdnBase;
     private final S3Client client;
 
-    public R2Storage(URI cdnBase) {
+    public R2(URI cdnBase) {
         this(cdnBase, null);
     }
 
-    private R2Storage(URI cdnBase, S3Client client) {
+    private R2(URI cdnBase, S3Client client) {
         this.cdnBase = cdnBase;
         this.client = client;
     }
@@ -46,10 +46,10 @@ public final class R2Storage implements AutoCloseable {
             return;
 
         URI cdnBase = cdnBase(settings.cdnUrl());
-        instance = new R2Storage(cdnBase, uploadClient(settings));
+        instance = new R2(cdnBase, uploadClient(settings));
     }
 
-    public static R2Storage getInstance() {
+    public static R2 getInstance() {
         return instance;
     }
 

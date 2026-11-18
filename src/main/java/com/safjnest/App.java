@@ -9,6 +9,7 @@ import com.safjnest.bot.Bot;
 import com.safjnest.bot.audio.SoundFiles;
 import com.safjnest.bot.model.BotSettings.R2Settings;
 import com.safjnest.bot.model.BotSettings.Settings;
+import com.safjnest.database.R2;
 import com.safjnest.database.nosql.MongoDB;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.scheduler.ComputeScheduler;
@@ -16,7 +17,6 @@ import com.safjnest.lol.queue.scheduler.RiotScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.spring.SpringServer;
-import com.safjnest.storage.R2Storage;
 import com.safjnest.status.SystemMetricsSampler;
 import com.safjnest.status.log.BotLogger;
 import com.safjnest.utils.SafJNest;
@@ -38,7 +38,7 @@ public class App {
 
         settings = SettingsLoader.getSettings();
         R2Settings r2 = settings.getJsonSettings().getR2();
-        R2Storage.configure(r2);
+        R2.configure(r2);
         SoundFiles.configure(r2);
 
         runSpring();
@@ -91,7 +91,7 @@ public class App {
         SyncScheduler.shutdown();
         ComputeScheduler.shutdown();
         RiotScheduler.shutdown();
-        R2Storage.getInstance().close();
+        R2.getInstance().close();
         MongoDB.close();
     }
 

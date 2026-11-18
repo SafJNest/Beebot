@@ -20,7 +20,7 @@ import org.junit.rules.TemporaryFolder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.bot.model.BotSettings.JsonSettings;
-import com.safjnest.storage.R2Storage;
+import com.safjnest.database.R2;
 
 public class SoundFilesTest {
 
@@ -36,7 +36,7 @@ public class SoundFilesTest {
         CountDownLatch finish = new CountDownLatch(1);
 
         String cdn = "https://cdn.example/";
-        SoundFiles files = new SoundFiles(directory, new R2Storage(URI.create(cdn)), null, "sounds/", (key, partial) -> {
+        SoundFiles files = new SoundFiles(directory, new R2(URI.create(cdn)), null, "sounds/", (key, partial) -> {
             assertEquals("sounds/41.opus", key);
             requests.incrementAndGet();
             Files.writeString(partial, "a");
@@ -77,7 +77,7 @@ public class SoundFilesTest {
     public void failedDownloadLeavesNoFileAndCanBeRetried() throws IOException {
         Path directory = temporary.newFolder().toPath();
         AtomicInteger requests = new AtomicInteger();
-        R2Storage storage = new R2Storage(URI.create("https://cdn.example/"));
+        R2 storage = new R2(URI.create("https://cdn.example/"));
         SoundFiles files = new SoundFiles(directory, storage, null, "", (key, partial) -> {
             assertEquals("41.mp3", key);
             if (requests.incrementAndGet() == 1) {

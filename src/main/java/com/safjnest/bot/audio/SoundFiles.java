@@ -8,8 +8,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 
 import com.safjnest.bot.model.BotSettings.R2Settings;
+import com.safjnest.database.R2;
 import com.safjnest.sound.model.Sound;
-import com.safjnest.storage.R2Storage;
 import com.safjnest.utils.ValidationUtils;
 
 public final class SoundFiles {
@@ -18,20 +18,20 @@ public final class SoundFiles {
     private static final String DEFAULT_PREFIX = "sounds/";
     private static final String UNAVAILABLE = "Sound file is unavailable.";
 
-    private static volatile SoundFiles instance = new SoundFiles(LEGACY_DIRECTORY, R2Storage.getInstance(), null, DEFAULT_PREFIX);
+    private static volatile SoundFiles instance = new SoundFiles(LEGACY_DIRECTORY, R2.getInstance(), null, DEFAULT_PREFIX);
 
     private final Path directory;
-    private final R2Storage storage;
+    private final R2 storage;
     private final Download download;
     private final String bucket;
     private final String prefix;
     private final Object[] downloadLocks = new Object[64];
 
-    private SoundFiles(Path directory, R2Storage storage, String bucket, String prefix) {
+    private SoundFiles(Path directory, R2 storage, String bucket, String prefix) {
         this(directory, storage, bucket, prefix, storage::download);
     }
 
-    SoundFiles(Path directory, R2Storage storage, String bucket, String prefix, Download download) {
+    SoundFiles(Path directory, R2 storage, String bucket, String prefix, Download download) {
         this.directory = directory;
         this.storage = storage;
         this.download = download;
@@ -58,7 +58,7 @@ public final class SoundFiles {
         String configuredDirectory = settings.soundDirectory();
         Path directory = configuredDirectory == null || configuredDirectory.isBlank()
             ? Path.of("rsc", "cache", "sounds") : Path.of(configuredDirectory);
-        instance = new SoundFiles(directory, R2Storage.getInstance(), bucket, prefix);
+        instance = new SoundFiles(directory, R2.getInstance(), bucket, prefix);
     }
 
     public static SoundFiles getInstance() {

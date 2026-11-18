@@ -6,7 +6,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.Bot;
-import com.safjnest.storage.R2Storage;
+import com.safjnest.database.R2;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -49,7 +49,7 @@ public class Msg extends SlashCommand {
         String title = "NEW MESSAGE FROM " + event.getMember().getEffectiveName();
         
         String img = "punto.jpg";
-        String cdnImage = R2Storage.getInstance().url("assets/" + img);
+        String cdnImage = R2.getInstance().url("assets/" + img);
         boolean anonymous = event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean();
 
         EmbedBuilder eb = new EmbedBuilder();
