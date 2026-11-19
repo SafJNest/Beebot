@@ -20,7 +20,7 @@ Use the existing CDN base URL and match `soundPrefix` to the uploaded object
 keys. An empty prefix gives new keys such as `123/123.mp3` and recognizes old keys such as `123.mp3`. The default
 prefix is `sounds/`. Requests use the same CDN base for `/assets/punto.jpg`.
 New uploads use `sounds/<id>/<id>.<ext>`. MariaDB stores the R2 key in
-`sound.audio_key`. A null key keeps the previous flat path
+`sound.url`. A null key keeps the previous flat path
 `sounds/<id>.<ext>` until that sound is migrated.
 
 The CDN URL is sufficient for reading. To enable uploads, fill `soundBucket`,
@@ -47,8 +47,9 @@ multipart headers within the [Vercel Edge request limit](https://vercel.com/docs
 Discord's playing embed and all Sound API responses read `sound.duration_ms`.
 
 R2 object metadata contains `id`, `guild-id`, `user-id`, `extension`, `public`,
-`created-at`, `duration-ms`, `plays`, `likes`, `dislikes`, `name-base64` and
-`tags-gzip-base64`. The name is UTF-8 encoded as unpadded Base64URL. Tags are
+`created-at`, `duration-ms`, `plays`, `likes`, `dislikes`, `name-base64`,
+`description-base64` when present, and `tags-gzip-base64`. The name and
+description are UTF-8 encoded as unpadded Base64URL. Tags are
 gzip-compressed UTF-8 JSON with ID and name, then encoded as unpadded Base64URL.
 The object metadata is a snapshot on upload and edit. MariaDB owns
 the live play and vote counts and the underlying history. Metadata edits write
@@ -64,11 +65,11 @@ both the VPS file and the R2 object. Sound uploads require a nullable
 Saved soundboards use the same `soundBucket` and CDN. The object key is
 `soundboard/thumbnail/<soundboardId>/<uuid>.<ext>` for PNG, JPEG or GIF. A new
 attachment is limited to 1 MiB. Each replacement assigns a fresh URL so it can
-be served immediately. The row stores `thumbnail_key` after upload succeeds. A
+be served immediately. The row stores `thumbnail` after upload succeeds. A
 failed upload leaves the previous cover in place, and rejects creation if the
 soundboard is new. Older R2 objects are retained.
 
-Both soundboard display commands read the nullable `soundboard.thumbnail_key`
+Both soundboard display commands read the nullable `soundboard.thumbnail`
 column and show the bot avatar when the key is missing.
 The [soundboard API](api/beebot-sounds.md#soundboards) reads the same key and
 uses the same format checks and upload routine when replacing a cover.
@@ -81,13 +82,15 @@ Audio and covers share the same bucket and CDN as soundboard thumbnails.
 For sound `1` with the default prefix, the audio is `sounds/1/1.mp3`
 and a cover is `sounds/1/thumbnail-<filename>.png`. New cover uploads use
 a unique filename and the same size and format validation as soundboard
-thumbnails. MariaDB stores the reference in `sound.image_key`.
+thumbnails. MariaDB stores the reference in `sound.thumbnail`.
+These database columns contain object keys relative to the configured CDN.
+The API builds the full URLs returned to clients.
 Catalog access still follows SQL visibility. A direct CDN link can be
 opened by anyone who has it.
 
 ### Move existing sounds to their ID prefix
 
-After applying [003](../database/berbit/sound/003-sound-community.sql),
+After the [sound schema cutover](api/beebot-sounds.md#schema-cutover),
 the owner can run these commands on the bot.
 
 - `!test sound migrate-storage` previews the number of audio and cover

@@ -78,8 +78,8 @@ public final class SoundStorageMigration {
 
     private StorageKeys copy(QueryRecord sound, Totals totals) {
         String soundId = sound.get("id");
-        String audioKey = sound.get("audio_key");
-        String imageKey = sound.get("image_key");
+        String audioKey = sound.get("url");
+        String imageKey = sound.get("thumbnail");
 
         Transfer audio = audioTransfer(sound);
         if (audio != null) {
@@ -105,7 +105,7 @@ public final class SoundStorageMigration {
     private Transfer audioTransfer(QueryRecord sound) {
         String id = sound.get("id");
         String extension = sound.get("extension");
-        String current = sound.get("audio_key");
+        String current = sound.get("url");
         String target = files.audioKey(id, extension);
         if (target.equals(current))
             return null;
@@ -115,11 +115,11 @@ public final class SoundStorageMigration {
 
     private String imageSource(QueryRecord sound) {
         String id = sound.get("id");
-        String current = sound.get("image_key");
+        String current = sound.get("thumbnail");
         if (current != null && files.isSoundImageKey(id, current))
             return null;
 
-        return current == null ? sound.get("board_image_key") : current;
+        return current == null ? sound.get("board_thumbnail") : current;
     }
 
     private record Transfer(String source, String target) {}

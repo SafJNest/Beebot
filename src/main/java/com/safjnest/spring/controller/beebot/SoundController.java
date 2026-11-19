@@ -77,7 +77,7 @@ public class SoundController {
             throw Exception.invalidRequest("Sound metadata with name required");
 
         for (Map.Entry<String, JsonNode> field : metadata.properties()) {
-            if (!Set.of("name", "public", "tags").contains(field.getKey()))
+            if (!Set.of("name", "description", "public", "tags").contains(field.getKey()))
                 throw Exception.invalidRequest("Unknown sound field");
         }
 
@@ -85,13 +85,14 @@ public class SoundController {
             throw Exception.invalidRequest("public must be boolean");
 
         String name = Sound.normalizeName(metadata.get("name").asText());
+        String description = Sound.normalizeDescription(description(metadata.get("description")));
         String extension = SoundFiles.uploadExtension(file.getOriginalFilename());
         boolean isPublic = metadata.path("public").asBoolean(true);
         List<String> tags = metadata.has("tags") ? parseTags(metadata.get("tags")) : List.of();
 
         String id;
         try (InputStream input = file.getInputStream()) {
-            id = sounds.create(context, guildId, name, extension, isPublic, tags, input);
+            id = sounds.create(context, guildId, name, description, extension, isPublic, tags, input);
         }
 
         return ResponseEntity.created(URI.create("/api/beebot/sounds/" + id)).body(sounds.sound(context, id));
@@ -218,6 +219,7 @@ public class SoundController {
 
                     edit.setName(Sound.normalizeName(value.asText()));
                 }
+                case "description" -> edit.setDescription(description(value));
                 case "public" -> {
                     if (!value.isBoolean())
                         throw Exception.invalidRequest("public must be boolean");
@@ -228,6 +230,15 @@ public class SoundController {
                 default -> throw Exception.invalidRequest("Unknown sound field");
             }
         }
+    }
+
+    private String description(JsonNode value) {
+        if (value == null || value.isNull())
+            return null;
+        if (!value.isTextual())
+            throw Exception.invalidRequest("Sound description must be text or null");
+
+        return value.asText();
     }
 
     private List<String> parseTags(JsonNode value) {

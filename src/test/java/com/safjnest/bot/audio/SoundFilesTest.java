@@ -57,11 +57,12 @@ public class SoundFilesTest {
             (key, target) -> fail("A local upload should not download a file"));
         BotDB database = new BotDB() {
             @Override
-            public String insertSound(String name, String guildId, String userId, String extension, boolean isPublic,
+            public String insertSound(String name, String description, String guildId, String userId, String extension, boolean isPublic,
                     long duration, List<String> tags, Function<Sound, String> store) {
                 assertEquals(List.of("arcade"), tags);
                 assertEquals(2088, duration);
                 assertEquals("Ping", name);
+                assertEquals("A ping", description);
 
                 QueryRecord row = new QueryRecord();
                 row.put("id", "42");
@@ -79,7 +80,7 @@ public class SoundFilesTest {
         Path fixture = Path.of("rsc/sounds/10.mp3");
 
         try (java.io.InputStream source = Files.newInputStream(fixture)) {
-            assertEquals("42", files.create(database, "Ping", "1", "2", "mp3", true, List.of("arcade"), source));
+            assertEquals("42", files.create(database, "Ping", "A ping", "1", "2", "mp3", true, List.of("arcade"), source));
         }
 
         assertEquals(-1, Files.mismatch(fixture, directory.resolve("42.mp3")));
@@ -92,6 +93,7 @@ public class SoundFilesTest {
         row.put("user_id", "2");
         row.put("guild_id", "1");
         row.put("name", "L'été 🎵");
+        row.put("description", "Recorded in été 🎵");
         row.put("extension", "mp3");
         row.put("public", true);
         row.put("time", java.sql.Timestamp.from(java.time.Instant.parse("2025-01-02T03:04:05Z")));
@@ -113,6 +115,8 @@ public class SoundFilesTest {
         assertEquals("2", metadata.get("likes"));
         assertEquals("1", metadata.get("dislikes"));
         assertEquals("L'été 🎵", new String(Base64.getUrlDecoder().decode(metadata.get("name-base64")), StandardCharsets.UTF_8));
+        assertEquals("Recorded in été 🎵",
+            new String(Base64.getUrlDecoder().decode(metadata.get("description-base64")), StandardCharsets.UTF_8));
         byte[] encoded = Base64.getUrlDecoder().decode(metadata.get("tags-gzip-base64"));
         try (GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(encoded))) {
             ObjectMapper json = new ObjectMapper();
@@ -177,10 +181,10 @@ public class SoundFilesTest {
         QueryRecord row = new QueryRecord();
         row.put("id", "1");
         row.put("extension", "mp3");
-        row.put("audio_key", "sounds/1/1.mp3");
+        row.put("url", "sounds/1/1.mp3");
 
         assertEquals("audio", Files.readString(files.resolve(new Sound(row, List.of()))));
-        assertEquals("https://cdn.example/sounds/1/1.mp3", files.playbackUrl("1", "mp3", row.get("audio_key"), null));
+        assertEquals("https://cdn.example/sounds/1/1.mp3", files.playbackUrl("1", "mp3", row.get("url"), null));
         assertEquals("sounds/1/thumbnail-cover.png", files.migratedImageKey("1", "soundboard/thumbnail/2/cover.png"));
     }
 

@@ -213,6 +213,9 @@
                         "minLength": 1,
                         "maxLength": 32
                       },
+                      "description": {
+                        "$ref": "#/components/schemas/SoundDescription"
+                      },
                       "public": {
                         "type": "boolean",
                         "default": true
@@ -704,6 +707,9 @@
                     "minLength": 1,
                     "maxLength": 32
                   },
+                  "description": {
+                    "$ref": "#/components/schemas/SoundDescription"
+                  },
                   "public": {
                     "type": "boolean"
                   },
@@ -720,6 +726,7 @@
               },
               "example": {
                 "name": "airhorn nuovo",
+                "description": "A short airhorn blast.",
                 "public": true,
                 "tags": [
                   "meme"
@@ -3198,7 +3205,7 @@
               "type": "string",
               "maxLength": 255
             },
-            "description": "Case-insensitive substring of the sound name."
+            "description": "Case-insensitive substring of the sound name or any of its tags."
           },
           {
             "name": "tag",
@@ -3256,7 +3263,7 @@
                 "mostDisliked"
               ]
             },
-            "description": "Defaults to relevance with q, popular otherwise."
+            "description": "Defaults to relevance with q, popular otherwise. Popular, mostLiked and mostDisliked sort by total plays, likes and dislikes, respectively, in descending order."
           },
           {
             "name": "limit",
@@ -4180,6 +4187,12 @@
   },
   "components": {
     "schemas": {
+      "SoundDescription": {
+        "type": "string",
+        "nullable": true,
+        "maxLength": 500,
+        "description": "Optional sound description. On write, null or blank clears the description."
+      },
       "Sound": {
         "type": "object",
         "properties": {
@@ -4188,6 +4201,9 @@
           },
           "name": {
             "type": "string"
+          },
+          "description": {
+            "$ref": "#/components/schemas/SoundDescription"
           },
           "guildId": {
             "type": "string"
@@ -4281,6 +4297,7 @@
         "required": [
           "id",
           "name",
+          "description",
           "guildId",
           "userId",
           "uploader",
@@ -4484,6 +4501,9 @@
           "name": {
             "type": "string"
           },
+          "description": {
+            "$ref": "#/components/schemas/SoundDescription"
+          },
           "public": {
             "type": "boolean"
           },
@@ -4549,6 +4569,7 @@
         "required": [
           "id",
           "name",
+          "description",
           "public",
           "createdAt",
           "durationMs",

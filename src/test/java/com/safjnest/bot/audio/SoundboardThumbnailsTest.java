@@ -33,7 +33,7 @@ public class SoundboardThumbnailsTest {
             statement.execute("""
                 CREATE TABLE soundboard (
                     id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), guild_id VARCHAR(19), user_id VARCHAR(19),
-                    thumbnail_key VARCHAR(128)
+                    thumbnail VARCHAR(128)
                 )
                 """);
             statement.execute("CREATE TABLE sound (id INT PRIMARY KEY)");

@@ -21,7 +21,7 @@ public final class SoundCatalog {
     public record Search(String q, String tag, String uploaderId, Long minDurationMs, Long maxDurationMs,
             Sort sort, Integer limit, String cursor) {}
 
-    public record Card(String id, String name, @JsonProperty("public") boolean isPublic, String createdAt, Long durationMs,
+    public record Card(String id, String name, String description, @JsonProperty("public") boolean isPublic, String createdAt, Long durationMs,
             String audioUrl, String imageUrl, Map<String, Object> uploader, List<Tag> tags,
             long plays, long listeners, long likes, long dislikes, long commentCount, @JsonInclude(JsonInclude.Include.NON_NULL) Viewer viewer) {}
 

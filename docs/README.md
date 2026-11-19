@@ -2,6 +2,7 @@
 
 - [Developer handbook](HANDBOOK.md) — repository conventions and change workflows.
 - [Architecture](architecture/README.md) — ownership and accepted ADRs.
+- [LoL HTTP caching analysis](architecture/lol-http-cache-analysis.md) — Cloudflare, profile refresh and cache policy by endpoint.
 - [Agreed repository reorganization plan](architecture/repository-review.md) — final package layout, file moves, shared bot/API flow, exclusions and implementation sequence.
 - [HTTP API](api/lol-api.md) — endpoint index and contracts.
 - [MongoDB](mongo/README.md) — LoL persistence and migration.

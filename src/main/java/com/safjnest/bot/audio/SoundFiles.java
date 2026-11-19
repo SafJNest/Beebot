@@ -162,7 +162,7 @@ public final class SoundFiles {
         return extension;
     }
 
-    public String create(BotDB database, String name, String guildId, String userId, String extension,
+    public String create(BotDB database, String name, String description, String guildId, String userId, String extension,
             boolean isPublic, List<String> tags, InputStream input) {
         Path staged = null;
 
@@ -179,7 +179,7 @@ public final class SoundFiles {
             }
 
             Path source = staged;
-            return database.insertSound(name, guildId, userId, extension, isPublic, duration, tags,
+            return database.insertSound(name, description, guildId, userId, extension, isPublic, duration, tags,
                 sound -> upload(sound, source));
         } catch (Exception failure) {
             throw failure;
@@ -313,6 +313,9 @@ public final class SoundFiles {
         values.put("guild-id", sound.getGuildId());
         values.put("user-id", sound.getUserId());
         values.put("name-base64", BASE64.encodeToString(sound.getName().getBytes(StandardCharsets.UTF_8)));
+        if (sound.getDescription() != null)
+            values.put("description-base64", BASE64.encodeToString(sound.getDescription().getBytes(StandardCharsets.UTF_8)));
+
         values.put("extension", sound.getExtension());
         values.put("public", Boolean.toString(sound.isPublic()));
         if (sound.getCreatedAt() != null)

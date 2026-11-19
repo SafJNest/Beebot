@@ -220,9 +220,9 @@ public class BotDB extends AbstractDB {
             + " ORDER BY s.plays DESC, s.likes DESC, s.id LIMIT 25", arguments.toArray()));
     }
 
-    public String insertSound(String name, String guildId, String userId, String extension, boolean isPublic,
+    public String insertSound(String name, String description, String guildId, String userId, String extension, boolean isPublic,
             long durationMs, List<String> tags, Function<Sound, String> storeFile) {
-        String sql = "INSERT INTO sound(name, guild_id, user_id, extension, public, time, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO sound(name, description, guild_id, user_id, extension, public, time, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String id;
 
         try (SoundSession session = connectSound()) {
@@ -234,7 +234,7 @@ public class BotDB extends AbstractDB {
                         name, guildId, userId).isEmpty())
                     throw new Exception(Type.INVALID_REQUEST, "duplicate_sound_name", "Sound name is already in use");
 
-                bindSound(statement, new Object[] {name, guildId, userId, extension, isPublic, Timestamp.from(Instant.now()), durationMs});
+                bindSound(statement, new Object[] {name, description, guildId, userId, extension, isPublic, Timestamp.from(Instant.now()), durationMs});
                 if (statement.executeUpdate() != 1)
                     throw new SQLException("Sound insert did not create one row");
 
@@ -248,7 +248,7 @@ public class BotDB extends AbstractDB {
                 List<Tag> savedTags = saveSoundTags(connection, id, tags);
                 String key = storeFile.apply(new Sound(lockSound(connection, id), savedTags));
                 if (key != null)
-                    soundExecute(connection, "UPDATE sound SET audio_key=? WHERE id=?", key, id);
+                    soundExecute(connection, "UPDATE sound SET url=? WHERE id=?", key, id);
 
                 connection.commit();
             } catch (SQLException | RuntimeException failure) {
@@ -349,16 +349,16 @@ public class BotDB extends AbstractDB {
 
     public List<QueryRecord> readSoundboards(String guildId) {
         return readSoundRows("""
-            SELECT b.id, b.name, b.guild_id, b.user_id, b.thumbnail_key, COUNT(s.sound_id) AS sound_count
+            SELECT b.id, b.name, b.guild_id, b.user_id, b.thumbnail, COUNT(s.sound_id) AS sound_count
             FROM soundboard b LEFT JOIN soundboard_sounds s ON b.id = s.id
-            WHERE b.guild_id = ? GROUP BY b.id, b.name, b.guild_id, b.user_id, b.thumbnail_key
+            WHERE b.guild_id = ? GROUP BY b.id, b.name, b.guild_id, b.user_id, b.thumbnail
             ORDER BY b.name, b.id
             """, guildId);
     }
 
     public QueryRecord readSoundboard(String guildId, String id) {
         List<QueryRecord> rows = readSoundRows("""
-            SELECT b.id, b.name, b.guild_id, b.user_id, b.thumbnail_key,
+            SELECT b.id, b.name, b.guild_id, b.user_id, b.thumbnail,
                    (SELECT COUNT(*) FROM soundboard_sounds s WHERE s.id = b.id) AS sound_count
             FROM soundboard b WHERE b.guild_id = ? AND b.id = ?
             """, guildId, id);
@@ -377,14 +377,14 @@ public class BotDB extends AbstractDB {
 
     public SoundboardData getSoundboardByID(String id) {
         try (SoundSession session = connectSound();
-                PreparedStatement statement = session.connection().prepareStatement("SELECT name, thumbnail_key FROM soundboard WHERE id = ?")) {
+                PreparedStatement statement = session.connection().prepareStatement("SELECT name, thumbnail FROM soundboard WHERE id = ?")) {
             statement.setString(1, id);
 
             try (ResultSet rows = statement.executeQuery()) {
                 if (!rows.next())
                     return null;
 
-                return new SoundboardData(rows.getString("name"), rows.getString("thumbnail_key"));
+                return new SoundboardData(rows.getString("name"), rows.getString("thumbnail"));
             }
         } catch (SQLException exception) {
             throw soundUnavailable(exception);
@@ -451,7 +451,7 @@ public class BotDB extends AbstractDB {
         String[] key = new String[1];
         changeSoundboard(id, access, connection -> {
             key[0] = upload.apply(id);
-            soundExecute(connection, "UPDATE soundboard SET thumbnail_key = ? WHERE id = ?", key[0], id);
+            soundExecute(connection, "UPDATE soundboard SET thumbnail = ? WHERE id = ?", key[0], id);
         });
 
         return key[0];
@@ -490,7 +490,7 @@ public class BotDB extends AbstractDB {
                 if (uploadThumbnail != null) {
                     String key = uploadThumbnail.apply(id);
                     try (PreparedStatement statement = connection.prepareStatement(
-                            "UPDATE soundboard SET thumbnail_key = ? WHERE id = ?")) {
+                            "UPDATE soundboard SET thumbnail = ? WHERE id = ?")) {
                         statement.setString(1, key);
                         statement.setString(2, id);
                         if (statement.executeUpdate() != 1)
@@ -517,7 +517,7 @@ public class BotDB extends AbstractDB {
 
     public boolean updateSoundboardThumbnail(String id, String guildId, String userId, String key) {
         return writeSoundboardThumbnail(
-            "UPDATE soundboard SET thumbnail_key = ? WHERE id = ? AND (guild_id = ? OR user_id = ?)",
+            "UPDATE soundboard SET thumbnail = ? WHERE id = ? AND (guild_id = ? OR user_id = ?)",
             key, id, guildId, userId);
     }
 
@@ -1992,8 +1992,8 @@ public class BotDB extends AbstractDB {
                     edit.getId(), edit.getName(), current.get("guild_id"), userId).isEmpty())
                 throw new Exception(Type.INVALID_REQUEST, "duplicate_sound_name", "Sound name is already in use");
 
-            soundExecute(connection, "UPDATE sound SET name = ?, public = ? WHERE id = ?",
-                edit.getName(), edit.isPublic(), edit.getId());
+            soundExecute(connection, "UPDATE sound SET name = ?, description = ?, public = ? WHERE id = ?",
+                edit.getName(), edit.getDescription(), edit.isPublic(), edit.getId());
             soundExecute(connection, "DELETE FROM tag_sounds WHERE sound_id = ?", edit.getId());
 
             List<String> names = new ArrayList<>();
@@ -2004,6 +2004,7 @@ public class BotDB extends AbstractDB {
 
             saved.addAll(saveSoundTags(connection, edit.getId(), names));
             current.put("name", edit.getName());
+            current.put("description", edit.getDescription());
             current.put("public", edit.isPublic());
             synchronize.accept(new Sound(current, saved));
         });

@@ -27,8 +27,8 @@ import com.safjnest.sound.model.SoundVote;
 public final class SoundDB {
 
     private static final String BOARD_IMAGE = """
-        SELECT b.thumbnail_key FROM soundboard_sounds bs JOIN soundboard b ON b.id=bs.id
-        WHERE bs.sound_id=? AND b.thumbnail_key IS NOT NULL AND b.thumbnail_key<>''
+        SELECT b.thumbnail FROM soundboard_sounds bs JOIN soundboard b ON b.id=bs.id
+        WHERE bs.sound_id=? AND b.thumbnail IS NOT NULL AND b.thumbnail<>''
         ORDER BY b.id LIMIT 1
         """;
 
@@ -46,11 +46,11 @@ public final class SoundDB {
 
     public List<QueryRecord> storagePage(String after, int size) {
         return database.readSoundRows("""
-            SELECT s.id, s.extension, s.audio_key, s.image_key, (
-                SELECT b.thumbnail_key FROM soundboard_sounds bs JOIN soundboard b ON b.id=bs.id
-                WHERE bs.sound_id=s.id AND b.thumbnail_key IS NOT NULL AND b.thumbnail_key<>''
+            SELECT s.id, s.extension, s.url, s.thumbnail, (
+                SELECT b.thumbnail FROM soundboard_sounds bs JOIN soundboard b ON b.id=bs.id
+                WHERE bs.sound_id=s.id AND b.thumbnail IS NOT NULL AND b.thumbnail<>''
                 ORDER BY b.id LIMIT 1
-            ) AS board_image_key
+            ) AS board_thumbnail
             FROM sound s WHERE s.id>? ORDER BY s.id LIMIT ?
             """, after, size);
     }
@@ -62,14 +62,14 @@ public final class SoundDB {
     public boolean migrateStorage(String id, Function<QueryRecord, StorageKeys> transfer) {
         return database.writeSound(connection -> {
             QueryRecord sound = database.lockSound(connection, id);
-            List<QueryRecord> boards = sound.get("image_key") == null
+            List<QueryRecord> boards = sound.get("thumbnail") == null
                 ? database.soundQuery(connection, BOARD_IMAGE, id) : List.of();
             StorageKeys keys = transfer.apply(storageRow(sound, boards));
 
-            if (Objects.equals(sound.get("audio_key"), keys.audio()) && Objects.equals(sound.get("image_key"), keys.image()))
+            if (Objects.equals(sound.get("url"), keys.audio()) && Objects.equals(sound.get("thumbnail"), keys.image()))
                 return false;
 
-            database.soundExecute(connection, "UPDATE sound SET audio_key=?, image_key=? WHERE id=?", keys.audio(), keys.image(), id);
+            database.soundExecute(connection, "UPDATE sound SET url=?, thumbnail=? WHERE id=?", keys.audio(), keys.image(), id);
 
             return true;
         });
@@ -112,8 +112,15 @@ public final class SoundDB {
         }
 
         if (!filter.q().isEmpty()) {
-            sql.append(" AND LOWER(s.name) LIKE ? ESCAPE '!'");
-            values.add("%" + BotDB.escapeSoundQuery(filter.q()) + "%");
+            String pattern = "%" + BotDB.escapeSoundQuery(filter.q()) + "%";
+            sql.append("""
+                 AND (LOWER(s.name) LIKE ? ESCAPE '!' OR EXISTS (
+                    SELECT 1 FROM tag_sounds ts JOIN tag t ON t.id=ts.tag_id
+                    WHERE ts.sound_id=s.id AND LOWER(t.name) LIKE ? ESCAPE '!'
+                ))
+                """);
+            values.add(pattern);
+            values.add(pattern);
         }
 
         if (!filter.tag().isEmpty()) {
@@ -202,7 +209,7 @@ public final class SoundDB {
     public QueryRecord creator(String userId) {
         return database.readSoundRows("""
             SELECT COUNT(*) AS sound_count, MIN(time) AS first_upload,
-                SUM(plays) AS plays, SUM(likes) AS likes, SUM(dislikes) AS dislikes, SUM(comment_count) AS comment_count
+                SUM(plays) AS plays, SUM(likes) AS likes, SUM(dislikes) AS dislikes, SUM(comments) AS comments
             FROM sound WHERE public=1 AND user_id=?
             """, userId).getFirst();
     }
@@ -283,12 +290,12 @@ public final class SoundDB {
                 throw commentMissing();
 
             String id = insertComment(connection, soundId, authorId, parentId, text);
-            database.soundExecute(connection, "UPDATE sound SET comment_count=comment_count+1 WHERE id=?", soundId);
+            database.soundExecute(connection, "UPDATE sound SET comments=comments+1 WHERE id=?", soundId);
 
             if (parentId != null)
-                database.soundExecute(connection, "UPDATE sound_comment SET reply_count=reply_count+1 WHERE id=?", parentId);
+                database.soundExecute(connection, "UPDATE sound_comment SET replies=replies+1 WHERE id=?", parentId);
 
-            return new CommentChange(commentForViewer(connection, soundId, id, authorId), sound.getAsLong("comment_count") + 1, null);
+            return new CommentChange(commentForViewer(connection, soundId, id, authorId), sound.getAsLong("comments") + 1, null);
         });
     }
 
@@ -299,7 +306,7 @@ public final class SoundDB {
             if (current.get("deleted_at") != null)
                 throw commentMissing();
 
-            if (edit.text() != null && !viewer.equals(current.get("author_id")))
+            if (edit.text() != null && !viewer.equals(current.get("user_id")))
                 throw commentForbidden();
             if ((edit.pinned() != null || edit.hearted() != null) && !viewer.equals(sound.get("user_id")))
                 throw commentForbidden();
@@ -315,7 +322,7 @@ public final class SoundDB {
             if (edit.pinned() != null)
                 previous = setPin(connection, soundId, id, edit.pinned());
 
-            return new CommentChange(commentForViewer(connection, soundId, id, viewer), sound.getAsLong("comment_count"), previous);
+            return new CommentChange(commentForViewer(connection, soundId, id, viewer), sound.getAsLong("comments"), previous);
         });
     }
 
@@ -325,13 +332,13 @@ public final class SoundDB {
             QueryRecord current = comment(connection, soundId, id);
             if (current.get("deleted_at") != null)
                 throw commentMissing();
-            if (!viewer.equals(current.get("author_id")))
+            if (!viewer.equals(current.get("user_id")))
                 throw commentForbidden();
 
-            database.soundExecute(connection, "UPDATE sound SET comment_count=comment_count-1 WHERE id=?", soundId);
+            database.soundExecute(connection, "UPDATE sound SET comments=comments-1 WHERE id=?", soundId);
             QueryRecord placeholder = null;
 
-            if (current.getAsLong("reply_count") == 0) {
+            if (current.getAsLong("replies") == 0) {
                 deleteEmptyBranch(connection, soundId, current);
             } else {
                 database.soundExecute(connection, """
@@ -342,7 +349,7 @@ public final class SoundDB {
                 placeholder = commentForViewer(connection, soundId, id, viewer);
             }
 
-            return new CommentChange(placeholder, sound.getAsLong("comment_count") - 1, null);
+            return new CommentChange(placeholder, sound.getAsLong("comments") - 1, null);
         });
     }
 
@@ -373,9 +380,9 @@ public final class SoundDB {
             if (!viewer.equals(sound.get("user_id")))
                 throw new Exception(Type.FORBIDDEN, "sound_forbidden", "Only the uploader can edit this sound");
 
-            database.soundExecute(connection, "UPDATE sound SET image_key=? WHERE id=?", key, soundId);
+            database.soundExecute(connection, "UPDATE sound SET thumbnail=? WHERE id=?", key, soundId);
 
-            return sound.get("image_key");
+            return sound.get("thumbnail");
         });
     }
 
@@ -402,7 +409,7 @@ public final class SoundDB {
 
     private static QueryRecord storageRow(QueryRecord sound, List<QueryRecord> boards) {
         if (!boards.isEmpty())
-            sound.put("board_image_key", boards.getFirst().get("thumbnail_key"));
+            sound.put("board_thumbnail", boards.getFirst().get("thumbnail"));
 
         return sound;
     }
@@ -475,7 +482,7 @@ public final class SoundDB {
 
     private String insertComment(Connection connection, String soundId, String author, String parent, String text) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO sound_comment(sound_id,author_id,parent_id,body) VALUES (?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO sound_comment(sound_id,user_id,parent_id,body) VALUES (?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
             database.bindSound(statement, new Object[]{soundId, author, parent, text});
             statement.executeUpdate();
 
@@ -511,9 +518,9 @@ public final class SoundDB {
             if (parent == null)
                 return;
 
-            database.soundExecute(connection, "UPDATE sound_comment SET reply_count=reply_count-1 WHERE id=?", parent);
+            database.soundExecute(connection, "UPDATE sound_comment SET replies=replies-1 WHERE id=?", parent);
             current = comment(connection, soundId, parent);
-            if (current.get("deleted_at") == null || current.getAsLong("reply_count") > 0)
+            if (current.get("deleted_at") == null || current.getAsLong("replies") > 0)
                 return;
         }
     }

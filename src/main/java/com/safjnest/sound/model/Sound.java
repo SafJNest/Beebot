@@ -24,6 +24,7 @@ import com.safjnest.exception.Exception.Type;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 public class Sound {
     public static final int MAX_NAME_LENGTH = 32;
+    public static final int MAX_DESCRIPTION_LENGTH = 500;
 
     @JsonProperty("id")
     private final String ID;
@@ -34,6 +35,8 @@ public class Sound {
 
     @JsonProperty("name")
     private volatile String name;
+    @JsonProperty("description")
+    private volatile String description;
     private String extension;
     private volatile String audioKey;
     private volatile String imageKey;
@@ -75,6 +78,14 @@ public class Sound {
             throw Exception.invalidRequest("Invalid sound name");
 
         return name;
+    }
+
+    public static String normalizeDescription(String value) {
+        String description = value == null ? "" : value.strip();
+        if (description.codePointCount(0, description.length()) > MAX_DESCRIPTION_LENGTH)
+            throw Exception.invalidRequest("Sound description must be at most 500 characters");
+
+        return description.isEmpty() ? null : description;
     }
 
     public static Sound forResponse(QueryRecord current, List<Tag> tags, QueryRecord extra,
@@ -141,9 +152,10 @@ public class Sound {
         this.USER_ID = data.get("user_id");
 
         this.name = data.get("name");
+        this.description = data.get("description");
         this.extension = data.get("extension");
-        this.audioKey = data.get("audio_key");
-        this.imageKey = data.get("image_key");
+        this.audioKey = data.get("url");
+        this.imageKey = data.get("thumbnail");
         this.isPublic = data.getAsBoolean("public");
         this.timestamp = data.getAsTimestamp("time");
         this.durationMs = readDuration(data);
@@ -164,6 +176,7 @@ public class Sound {
         this.catalogChanged = original.catalogChanged;
 
         this.name = original.name;
+        this.description = original.description;
         this.isPublic = original.isPublic;
         this.tags = copyTags(original.tags);
 
@@ -209,6 +222,7 @@ public class Sound {
             List<Tag> savedTags = database.saveSound(this, userId, SoundFiles.getInstance()::syncMetadata);
 
             original.name = name;
+            original.description = description;
             original.isPublic = isPublic;
             original.tags = copyTags(savedTags);
             original.revision++;
@@ -224,19 +238,22 @@ public class Sound {
             throw new IllegalStateException("Cannot refresh this sound");
 
         String refreshedName = current.get("name");
+        String refreshedDescription = current.get("description");
         boolean refreshedPublic = current.getAsBoolean("public");
         List<Tag> refreshedTags = copyTags(currentTags);
 
         boolean metadataChanged = !Objects.equals(name, refreshedName)
+            || !Objects.equals(description, refreshedDescription)
             || isPublic != refreshedPublic
             || !getTagSet(tags).equals(getTagSet(refreshedTags));
 
         name = refreshedName;
+        description = refreshedDescription;
         isPublic = refreshedPublic;
         tags = refreshedTags;
         durationMs = readDuration(current);
-        audioKey = current.get("audio_key");
-        imageKey = current.get("image_key");
+        audioKey = current.get("url");
+        imageKey = current.get("thumbnail");
 
         plays = current.getAsInt("plays");
         likes = current.getAsInt("likes");
@@ -260,6 +277,10 @@ public class Sound {
 
     public String getName() {
         return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public String getAudioKey() {
@@ -300,6 +321,12 @@ public class Sound {
 
     public boolean setName(String name) {
         return change(edit -> edit.name = normalizeName(name));
+    }
+
+    public boolean setDescription(String value) {
+        String normalized = normalizeDescription(value);
+
+        return change(edit -> edit.description = normalized);
     }
 
     public boolean setPublic(boolean isPublic) {
@@ -451,7 +478,7 @@ public class Sound {
         deleted = true;
         revision++;
         catalogChanged.run();
-        SoundFiles.getInstance().deleteImage(removed.get("image_key"));
+        SoundFiles.getInstance().deleteImage(removed.get("thumbnail"));
 
         return true;
     }

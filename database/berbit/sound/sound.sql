@@ -2,6 +2,7 @@ CREATE TABLE
   `sound` (
     `id` smallint(6) NOT NULL AUTO_INCREMENT,
     `name` varchar(255) NOT NULL,
+    `description` varchar(500) CHARACTER SET utf8mb4 DEFAULT NULL,
     `guild_id` varchar(19) NOT NULL,
     `user_id` varchar(19) NOT NULL,
     `extension` varchar(4) NOT NULL,

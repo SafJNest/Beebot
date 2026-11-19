@@ -129,7 +129,7 @@ public final class SoundService {
         QueryRecord totals = sounds.creator(id);
 
         return new SoundCatalog.Creator(discord.user(id), timestamp(totals, "first_upload"), totals.getAsLong("sound_count"),
-            totals.getAsLong("plays"), totals.getAsLong("likes"), totals.getAsLong("dislikes"), totals.getAsLong("comment_count"));
+            totals.getAsLong("plays"), totals.getAsLong("likes"), totals.getAsLong("dislikes"), totals.getAsLong("comments"));
     }
 
     public SoundCatalog.Page<SoundComment> comments(String soundId, String viewer, String parentId,
@@ -288,11 +288,11 @@ public final class SoundService {
             SoundCatalog.Viewer personal = viewer == null ? null : new SoundCatalog.Viewer(viewer.equals(uploaderId), vote);
             long duration = row.getAsLong("duration_ms");
 
-            cards.put(id, new SoundCatalog.Card(id, row.get("name"), row.getAsBoolean("public"), timestamp(row, "time"),
-                duration > 0 ? duration : null, cache.playbackUrl(row), SoundFiles.getInstance().imageUrl(row.get("image_key")),
+            cards.put(id, new SoundCatalog.Card(id, row.get("name"), row.get("description"), row.getAsBoolean("public"), timestamp(row, "time"),
+                duration > 0 ? duration : null, cache.playbackUrl(row), SoundFiles.getInstance().imageUrl(row.get("thumbnail")),
                 uploaders.computeIfAbsent(uploaderId, discord::user), List.copyOf(tags.getOrDefault(id, List.of())),
                 row.getAsLong("plays"), listeners, row.getAsLong("likes"), row.getAsLong("dislikes"),
-                row.getAsLong("comment_count"), personal));
+                row.getAsLong("comments"), personal));
         }
 
         return cards;
@@ -318,14 +318,14 @@ public final class SoundService {
 
     private SoundComment comment(QueryRecord row, String viewer, Map<String, Map<String, Object>> users) {
         boolean deleted = row.get("deleted_at") != null;
-        String author = row.get("author_id");
+        String author = row.get("user_id");
         SoundComment.Viewer personal = viewer == null || deleted ? null
             : new SoundComment.Viewer(viewer.equals(author), SoundVote.fromValue(row.getAsInt("vote")));
 
         return new SoundComment(row.get("id"), row.get("sound_id"), row.get("parent_id"),
             deleted ? null : users.computeIfAbsent(author, discord::user), row.get("body"), timestamp(row, "created_at"),
             deleted ? null : timestamp(row, "edited_at"), deleted, row.getAsBoolean("pinned"), row.getAsBoolean("hearted"),
-            row.getAsLong("likes"), row.getAsLong("reply_count"), !deleted && author.equals(row.get("uploader_id")), personal);
+            row.getAsLong("likes"), row.getAsLong("replies"), !deleted && author.equals(row.get("uploader_id")), personal);
     }
 
     private static SoundCatalog.Search normalize(SoundCatalog.Search request) {
@@ -472,7 +472,7 @@ public final class SoundService {
     private void removeUnreferencedImage(SoundFiles files, String soundId, String key) {
         try {
             for (QueryRecord row : database.readSounds(List.of(soundId))) {
-                if (key.equals(row.get("image_key")))
+                if (key.equals(row.get("thumbnail")))
                     return;
             }
 

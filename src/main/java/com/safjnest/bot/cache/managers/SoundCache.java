@@ -88,7 +88,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public String playbackUrl(QueryRecord sound) {
-        return SoundFiles.getInstance().playbackUrl(sound.get("id"), sound.get("extension"), sound.get("audio_key"), cdnUrl);
+        return SoundFiles.getInstance().playbackUrl(sound.get("id"), sound.get("extension"), sound.get("url"), cdnUrl);
     }
 
     public void setCdnUrl(String value) {
@@ -258,11 +258,11 @@ public class SoundCache extends CacheAdapter<String, Sound> {
             throw new Exception(Type.FORBIDDEN, "guild_forbidden", "Guild membership and bot presence required");
     }
 
-    public String create(Context context, String guild, String name, String extension,
+    public String create(Context context, String guild, String name, String description, String extension,
             boolean isPublic, List<String> tags, InputStream input) {
         requireGuild(context, guild);
 
-        return SoundFiles.getInstance().create(database, name, guild, context.userId(), extension, isPublic, tags, input);
+        return SoundFiles.getInstance().create(database, name, description, guild, context.userId(), extension, isPublic, tags, input);
     }
 
     public List<Sound> soundboardSounds(Context context, String id) {

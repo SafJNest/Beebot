@@ -187,7 +187,7 @@ public class SoundboardController {
 
     private Soundboard board(SoundboardAccess access, QueryRecord row) {
         String userId = row.get("user_id");
-        String key = row.get("thumbnail_key");
+        String key = row.get("thumbnail");
         String thumbnail = key == null || key.isBlank() ? null : R2.getInstance().url(key);
         boolean canEdit = access.administrator() || access.userId().equals(userId);
 

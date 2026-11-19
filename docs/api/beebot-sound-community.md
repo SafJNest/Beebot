@@ -114,7 +114,7 @@ facoltativi e si combinano tra loro.
 
 | Parametro | Tipo e valori | Default e comportamento |
 | --- | --- | --- |
-| `q` | Stringa, max 255 caratteri | Assente o vuota equivale a nessuna ricerca per nome. Match parziale, maiuscole ignorate. |
+| `q` | Stringa, max 255 caratteri | Cerca una sottostringa nel nome del suono o in uno dei suoi tag, ignorando le maiuscole. Se omesso o vuoto, il filtro non si applica. |
 | `tag` | Nome esatto del tag, stringa non vuota, max 255 caratteri | Omettere per tutti i tag. Maiuscole ignorate. |
 | `uploaderId` | ID Discord come stringa | Omettere per tutti i creator. |
 | `minDurationMs` | Intero `>= 0` | Limite inferiore incluso. |
@@ -123,8 +123,10 @@ facoltativi e si combinano tra loro.
 | `limit` | Intero da 1 a 100 | 20. Omettere il valore di default. |
 | `cursor` | Stringa restituita da `nextCursor` | Omettere per la prima pagina. Ripetere gli stessi filtri e sort quando si avanza. |
 
-`relevance` ordina nome esatto, prefisso, sottostringa, poi riproduzioni.
-`popular` ordina per play totali. Con sessione, solo la prima pagina
+`relevance` mette prima il nome esatto, poi il prefisso del nome, poi i match
+parziali sul nome o sui tag. A parità usa le riproduzioni totali.
+`popular`, `mostLiked` e `mostDisliked` ordinano rispettivamente per play,
+like e dislike totali decrescenti. Con sessione, solo la prima pagina
 può contenere fino a 5 risultati in `mine`, filtrati con gli stessi criteri
 e comprensivi dei propri privati. `items` contiene esclusivamente risultati
 pubblici. Lo stesso suono pubblico può comparire in entrambe le liste.
@@ -136,6 +138,7 @@ Esempi:
 ```text
 GET /public/sounds
 GET /public/sounds?tag=arcade
+GET /public/sounds?q=brizz&sort=mostLiked
 GET /public/sounds?q=air&minDurationMs=1000&maxDurationMs=5000
 GET /public/sounds?uploaderId=456&sort=newest
 GET /public/sounds?tag=arcade&cursor=<nextCursor>
@@ -189,6 +192,7 @@ type Viewer = { ownedByMe: boolean; vote: Vote }
 type SoundCard = {
   id: Id
   name: string
+  description: string | null
   public: boolean
   createdAt: DateTime | null
   durationMs: number | null
@@ -332,7 +336,7 @@ versione del backend sono indicati anche se il controller esiste già.
 | `GET /sounds/{soundId}` | Vuoto | `200 LegacySound` | Da sostituire con la scheda pubblica |
 | `GET /sounds` | `q`, `tag`, `sort`, `order`, `limit` | `200 { sounds: LegacySound[], limit: number }` | Da sostituire con il catalogo pubblico |
 | `GET /tags` | `q` obbligatorio | `200 { tags: Tag[] }` | Da sostituire con i suggerimenti |
-| `PATCH /sounds/{soundId}` | Oggetto parziale con `name`, `public`, `tags` | `200 LegacySound` | Attivo |
+| `PATCH /sounds/{soundId}` | Oggetto parziale con `name`, `description`, `public`, `tags` | `200 LegacySound` | Attivo |
 | `DELETE /sounds/{soundId}` | Vuoto | `204` | Attivo |
 | `PATCH /sounds/{soundId}/like` | `{ "enabled": true }` o `{ "enabled": false }` | `200 LegacyVote` | Da sostituire con il PUT |
 | `PATCH /sounds/{soundId}/dislike` | Stesso body | `200 LegacyVote` | Da sostituire con il PUT |
@@ -341,16 +345,16 @@ versione del backend sono indicati anche se il controller esiste già.
 
 Upload e raccolta di gilda richiedono che il chiamante e il bot condividano
 `guildId`. Per l'upload invia `file` binario MP3 o Opus e una parte
-`metadata` con tipo `application/json`. I soli campi sono `name`
-obbligatorio, `public` facoltativo con default `true`, `tags`
-facoltativo con default `[]`.
+`metadata` con tipo `application/json`. I campi sono `name` obbligatorio,
+`description` facoltativa, `public` facoltativo con default `true` e
+`tags` facoltativo con default `[]`.
 
 ```ts
 const form = new FormData()
 form.append('file', audioFile, audioFile.name)
 form.append(
   'metadata',
-  new Blob([JSON.stringify({ name: 'Airhorn', public: true, tags: ['meme'] })], {
+  new Blob([JSON.stringify({ name: 'Airhorn', description: 'A short airhorn blast.', public: true, tags: ['meme'] })], {
     type: 'application/json',
   }),
   'metadata.json',
@@ -365,7 +369,9 @@ accettava 255 caratteri e i vecchi nomi lunghi rimangono leggibili. I tag
 sono al massimo cinque stringhe non vuote, ognuna di max 255 caratteri,
 normalizzate in minuscolo e deduplicate. Per esempio
 `{"name":"Airhorn v2","public":false,"tags":[]}` è una PATCH valida e
-svuota i tag. I campi omessi restano invariati e ogni campo nella PATCH
+svuota i tag. La descrizione accetta fino a 500 caratteri Unicode dopo il
+trim e può contenere più righe. `{"description":null}` o una descrizione
+vuota la cancella. I campi omessi restano invariati e ogni campo nella PATCH
 richiede un tipo valido. `Location` per l'upload è
 `/api/beebot/sounds/{soundId}` nella rotta attuale.
 
@@ -395,6 +401,7 @@ I vecchi audio CDN possono continuare a esistere.
 type LegacySound = {
   id: Id
   name: string
+  description: string | null
   guildId: Id
   userId: Id
   uploader: PublicUser

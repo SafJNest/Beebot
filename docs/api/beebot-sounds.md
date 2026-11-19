@@ -39,7 +39,7 @@ Existing sound detail, library and greet responses contain the `com.safjnest.sou
 
 Counts in Sound are global/all time. `listeners` counts distinct users associated with recorded plays, not everyone present in the voice channel. `myPlays` counts the caller's recorded plays. Uploader display data comes from the Discord cache; unavailable names are `Unknown`, avatars null. `durationMs` is the playback duration from MariaDB, in milliseconds. It is available immediately after upload, including on a cold cache, and is null when the row has no persisted duration. `createdAt` can be null for legacy records.
 
-With R2 enabled, `url` combines the CDN base with the stored `audio_key`, normally `sounds/{id}/{id}.{extension}`. Rows awaiting migration use the original flat key. The bot resolves the same R2 key on a local-file cache miss. API authorization governs metadata responses and the CDN serves audio directly. With R2 disabled, Spring's `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
+With R2 enabled, the HTTP `url` combines the CDN base with the R2 object key stored in `sound.url`, normally `sounds/{id}/{id}.{extension}`. Rows awaiting migration use the original flat key. The bot resolves the same R2 key on a local-file cache miss. API authorization governs metadata responses and the CDN serves audio directly. With R2 disabled, Spring's `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
 
 Deletion removes the sound and dependent rows from SQL and invalidates the metadata and selection caches. The R2 object and the VPS file are retained.
 
@@ -83,7 +83,7 @@ All analytics use one streaming SQL history read per block of up to 500 sound ID
 
 ### Upload a sound
 
-`POST /guilds/{guildId}/sounds` accepts `multipart/form-data`. Send an MP3 or Opus in `file` and an `application/json` part named `metadata`. The caller must belong to the guild and share it with the bot. Beebot derives the uploader from authentication. `name` is required (maximum 32 characters), `public` defaults to true and `tags` defaults to an empty list. The direct API accepts files up to 25 MiB.
+`POST /guilds/{guildId}/sounds` accepts `multipart/form-data`. Send an MP3 or Opus in `file` and an `application/json` part named `metadata`. The caller must belong to the guild and share it with the bot. Beebot derives the uploader from authentication. `name` is required (maximum 32 characters), `description` is optional, `public` defaults to true and `tags` defaults to an empty list. The direct API accepts files up to 25 MiB.
 
 ```sh
 curl -X POST "$BEEBOT_BASE/guilds/123/sounds" \
@@ -123,7 +123,9 @@ curl -X POST "$BEEBOT_BASE/guilds/123/sounds" \
 
 ### Edit, delete, and vote
 
-`PATCH /sounds/{soundId}` accepts a nonempty object with any of `name`, `public`, `tags`. Omitted fields stay unchanged. Name validation is shared with upload. Names are trimmed, nonblank, non-numeric and limited to 32 characters. Previously stored longer names remain readable. Duplicates in the existing uploader/original-guild namespace are rejected. Public is boolean. Tags replace the set, `[]` clears it, at most five nonblank names of at most 255 characters, normalized to lowercase and deduplicated. Unknown/read-only fields and nulls are rejected. Only the uploader may edit. The entire patch is atomic. Response is the updated canonical Sound.
+`PATCH /sounds/{soundId}` accepts a nonempty object with any of `name`, `description`, `public`, `tags`. Omitted fields stay unchanged. Name validation is shared with upload. Names are trimmed, nonblank, non-numeric and limited to 32 characters. Previously stored longer names remain readable. Duplicates in the existing uploader/original-guild namespace are rejected. Public is boolean. Tags replace the set, `[]` clears it, at most five nonblank names of at most 255 characters, normalized to lowercase and deduplicated. Only `description` accepts `null`. A blank description also clears it. Upload and edit trim descriptions and accept up to 500 Unicode code points. Only the uploader may edit. The entire patch is atomic. Response is the updated canonical Sound.
+
+Apply the [sound schema cutover](#schema-cutover) before running the updated backend. Existing sounds have `description: null` in both the dashboard and public responses until the uploader adds text.
 
 `DELETE /sounds/{soundId}` permits the uploader or an Administrator/owner of the original guild. Manage Server alone is insufficient for deletion. Response is 204 with no body.
 
@@ -289,6 +291,22 @@ and after. The new foreign keys use the actual type of `sound.id`. The migration
 `audio_key` and `image_key`. Existing flat audio references stay usable until
 the [storage migration command](../audio-storage-r2.md#move-existing-sounds-to-their-id-prefix)
 verifies the R2 copy and saves the new key.
+
+For databases using the original community column names, apply
+[004](../../database/berbit/sound/004-sound-description.sql) and
+[005](../../database/berbit/sound/005-sound-columns.sql) before starting the
+updated application. The backend reads `sound.url`, `sound.thumbnail`,
+`sound.comments`, `sound_comment.user_id`, `sound_comment.replies` and
+`soundboard.thumbnail`. The URL and thumbnail columns still store relative
+R2 object keys. The HTTP contract keeps its current field names.
+
+If an old soundboard table has both `thumbnail_key` and the legacy BLOB
+`thumbnail`, first rename the BLOB with
+`ALTER TABLE soundboard RENAME COLUMN thumbnail TO thumbnail_legacy`.
+The 005 migration then renames the key column and preserves both values.
+For a database such as canary with all current column names, apply only
+the `MODIFY COLUMN description` to `utf8mb4` when the column inherits
+`latin1`. The current names already satisfy the backend queries.
 
 `sound_history` is renamed to `sound_play` in place. Old IDs, times, sources
 and assigned guilds carry over. `channel_id` and `playback_id` start as null.

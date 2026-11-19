@@ -1,4 +1,5 @@
 -- Apply after 001 and 002, with the bot and API stopped. See docs/api/beebot-sounds.md.
+-- For installations with the renamed columns, start from 004 and 005.
 -- Use the real sound ID type: older installations and exported schemas differ.
 SELECT COLUMN_TYPE INTO @sound_id_type
 FROM information_schema.COLUMNS

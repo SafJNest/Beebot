@@ -95,7 +95,7 @@ public class SoundUpload extends SlashCommand{
     private void upload(SlashCommandEvent event, InteractionHook hook, String name, Attachment attachment,
             String extension, boolean isPublic, List<String> tags) {
         try (InputStream input = attachment.getProxy().download().get(30, TimeUnit.SECONDS)) {
-            SoundFiles.getInstance().create(BotDB.get(), name, event.getGuild().getId(), event.getUser().getId(), extension,
+            SoundFiles.getInstance().create(BotDB.get(), name, null, event.getGuild().getId(), event.getUser().getId(), extension,
                 isPublic, tags, input);
 
             hook.editOriginal("Sound uploaded succesfully").queue();

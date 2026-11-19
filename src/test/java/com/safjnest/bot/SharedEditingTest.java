@@ -100,14 +100,14 @@ public class SharedEditingTest {
                 "CREATE TABLE automated_action (id INT, guild_id VARCHAR(19), action INT, action_role VARCHAR(19), action_time BIGINT, infractions INT, infractions_time BIGINT)",
                 "CREATE TABLE member (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19) REFERENCES guild(guild_id), user_id VARCHAR(19), experience INT DEFAULT 0, level INT DEFAULT 1, messages INT DEFAULT 0, update_time INT DEFAULT 60, UNIQUE(guild_id, user_id))",
                 "CREATE TABLE alias (id INT AUTO_INCREMENT PRIMARY KEY, user_id VARCHAR(19), name VARCHAR(100), command VARCHAR(500))",
-                "CREATE TABLE sound (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), extension VARCHAR(10), public BOOLEAN, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, duration_ms BIGINT, plays INT DEFAULT 0, likes INT DEFAULT 0, dislikes INT DEFAULT 0, audio_key VARCHAR(255), image_key VARCHAR(255), comment_count INT DEFAULT 0)",
+                "CREATE TABLE sound (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), description VARCHAR(500), extension VARCHAR(10), public BOOLEAN, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, duration_ms BIGINT, plays INT DEFAULT 0, likes INT DEFAULT 0, dislikes INT DEFAULT 0, url VARCHAR(255), thumbnail VARCHAR(255), comments INT DEFAULT 0)",
                 "CREATE TABLE tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))",
                 "CREATE TABLE tag_sounds (sound_id INT REFERENCES sound(id) ON DELETE CASCADE, tag_id INT REFERENCES tag(id))",
                 "CREATE TABLE greeting (user_id VARCHAR(19), guild_id VARCHAR(19), sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY(user_id, guild_id))",
-                "CREATE TABLE sound_comment (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, parent_id BIGINT, author_id VARCHAR(19), body VARCHAR(2000), created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP, edited_at TIMESTAMP(6), deleted_at TIMESTAMP(6), pinned BOOLEAN DEFAULT FALSE, hearted BOOLEAN DEFAULT FALSE, likes INT DEFAULT 0, dislikes INT DEFAULT 0, reply_count INT DEFAULT 0)",
+                "CREATE TABLE sound_comment (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, parent_id BIGINT, user_id VARCHAR(19), body VARCHAR(2000), created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP, edited_at TIMESTAMP(6), deleted_at TIMESTAMP(6), pinned BOOLEAN DEFAULT FALSE, hearted BOOLEAN DEFAULT FALSE, likes INT DEFAULT 0, dislikes INT DEFAULT 0, replies INT DEFAULT 0)",
                 "CREATE TABLE sound_vote (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, comment_id BIGINT REFERENCES sound_comment(id) ON DELETE CASCADE, user_id VARCHAR(19), value INT, UNIQUE(sound_id,user_id), UNIQUE(comment_id,user_id), CHECK ((sound_id IS NULL) <> (comment_id IS NULL)), CHECK (value IN (-1, 1)))",
                 "CREATE TABLE sound_play (id INT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, user_id VARCHAR(19), guild_id VARCHAR(19), channel_id VARCHAR(19), playback_id VARCHAR(36), time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, source INT, UNIQUE(sound_id, playback_id))",
-                "CREATE TABLE soundboard (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), thumbnail_key VARCHAR(128))",
+                "CREATE TABLE soundboard (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), thumbnail VARCHAR(128))",
                 "CREATE TABLE soundboard_sounds (id INT REFERENCES soundboard(id) ON DELETE CASCADE, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY (id, sound_id))",
                 "INSERT INTO guild(guild_id) VALUES ('1'), ('3')",
                 "INSERT INTO channel(guild_id, channel_id) VALUES ('1', '100'), ('3', '100')",
@@ -168,7 +168,7 @@ public class SharedEditingTest {
         AtomicInteger uploads = new AtomicInteger();
         failedSql.set("INSERT INTO sound");
 
-        assertThrows(Exception.class, () -> database.insertSound("new sound", "1", "2", "mp3", true,
+        assertThrows(Exception.class, () -> database.insertSound("new sound", null, "1", "2", "mp3", true,
             2088, List.of("arcade"), sound -> {
                 uploads.incrementAndGet();
 
@@ -179,7 +179,7 @@ public class SharedEditingTest {
         failedSql.set(null);
         IllegalStateException uploadFailure = new IllegalStateException("R2 unavailable");
         assertSame(uploadFailure, assertThrows(IllegalStateException.class,
-            () -> database.insertSound("new sound", "1", "2", "mp3", true, 2088, List.of("arcade"), sound -> {
+            () -> database.insertSound("new sound", null, "1", "2", "mp3", true, 2088, List.of("arcade"), sound -> {
                 uploads.incrementAndGet();
                 assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'new sound'").getAsInt("n"));
                 throw uploadFailure;
@@ -188,9 +188,10 @@ public class SharedEditingTest {
         assertEquals(0, row("SELECT COUNT(*) AS n FROM sound WHERE name = 'new sound'").getAsInt("n"));
         assertEquals(0, row("SELECT COUNT(*) AS n FROM tag WHERE name = 'arcade'").getAsInt("n"));
 
-        String id = database.insertSound("new sound", "1", "2", "mp3", true, 2088, List.of("arcade"), sound -> {
+        String id = database.insertSound("new sound", "First description", "1", "2", "mp3", true, 2088, List.of("arcade"), sound -> {
             uploads.incrementAndGet();
             assertEquals(Long.valueOf(2088), sound.getDurationMs());
+            assertEquals("First description", sound.getDescription());
             assertEquals("arcade", sound.getTags().getFirst().getName());
             assertTrue(sound.getTags().getFirst().isStored());
 
@@ -198,12 +199,13 @@ public class SharedEditingTest {
         });
         assertEquals(2, uploads.get());
         assertEquals(id, row("SELECT id FROM sound WHERE name = 'new sound'").get("id"));
-        assertEquals("sounds/" + id + "/" + id + ".mp3", row("SELECT audio_key FROM sound WHERE id=" + id).get("audio_key"));
+        assertEquals("sounds/" + id + "/" + id + ".mp3", row("SELECT url FROM sound WHERE id=" + id).get("url"));
         assertEquals(2088, row("SELECT duration_ms FROM sound WHERE name = 'new sound'").getAsLong("duration_ms"));
         assertTrue(JSON.valueToTree(soundController.sound(AUTH, "10")).get("durationMs").isNull());
         assertEquals(2088, JSON.valueToTree(soundController.sound(AUTH, id)).get("durationMs").asLong());
+        assertEquals("First description", community().get(id, null).description());
 
-        Exception duplicate = assertThrows(Exception.class, () -> database.insertSound("new sound", "1", "2", "mp3", true,
+        Exception duplicate = assertThrows(Exception.class, () -> database.insertSound("new sound", null, "1", "2", "mp3", true,
             2088, List.of("arcade"), sound -> {
                 fail("Duplicate sound was uploaded");
 
@@ -214,43 +216,46 @@ public class SharedEditingTest {
 
     @Test
     public void storageMigrationUsesFirstBoardCoverAndPersistsOnlySuccessfulTransfers() {
-        execute("INSERT INTO soundboard(id, guild_id, user_id, name, thumbnail_key) VALUES "
+        execute("INSERT INTO soundboard(id, guild_id, user_id, name, thumbnail) VALUES "
             + "(1,'1','2','no cover',NULL),(2,'1','2','first cover','first.png'),(3,'1','2','second cover','second.png')");
         execute("INSERT INTO soundboard_sounds(id,sound_id) VALUES (1,10),(2,10),(3,10)");
         SoundDB storage = database.communitySounds();
 
         List<QueryRecord> plan = storage.storagePage("0", 20);
-        assertEquals("first.png", plan.getFirst().get("board_image_key"));
-        assertNull(plan.get(1).get("board_image_key"));
+        assertEquals("first.png", plan.getFirst().get("board_thumbnail"));
+        assertNull(plan.get(1).get("board_thumbnail"));
         assertThrows(IllegalStateException.class, () -> storage.migrateStorage("10", current -> {
             throw new IllegalStateException("R2 copy failed");
         }));
-        assertNull(storage.storageRecord("10").get("audio_key"));
+        assertNull(storage.storageRecord("10").get("url"));
 
         assertTrue(storage.migrateStorage("10", current -> {
-            assertEquals("first.png", current.get("board_image_key"));
+            assertEquals("first.png", current.get("board_thumbnail"));
 
             return new StorageKeys("sounds/10/10.mp3", "sounds/10/thumbnail-first.png");
         }));
-        assertEquals("sounds/10/10.mp3", storage.storageRecord("10").get("audio_key"));
-        assertEquals("sounds/10/thumbnail-first.png", storage.storageRecord("10").get("image_key"));
+        assertEquals("sounds/10/10.mp3", storage.storageRecord("10").get("url"));
+        assertEquals("sounds/10/thumbnail-first.png", storage.storageRecord("10").get("thumbnail"));
         assertFalse(storage.migrateStorage("10", current -> new StorageKeys(
-            current.get("audio_key"), current.get("image_key"))));
+            current.get("url"), current.get("thumbnail"))));
     }
 
     @Test
     public void failedMetadataCopyRollsBackEdits() {
         Sound edit = sound().deferEdit();
         edit.setName("new name");
+        edit.setDescription("new description");
         edit.setTagNames(List.of("new tag"));
 
         IllegalStateException copyFailure = new IllegalStateException("R2 unavailable");
         assertSame(copyFailure, assertThrows(IllegalStateException.class, () -> database.saveSound(edit, "2", snapshot -> {
             assertEquals("new name", snapshot.getName());
+            assertEquals("new description", snapshot.getDescription());
             assertEquals("new tag", snapshot.getTags().getFirst().getName());
             throw copyFailure;
         })));
         assertEquals("first", row("SELECT name FROM sound WHERE id = 10").get("name"));
+        assertNull(row("SELECT description FROM sound WHERE id = 10").get("description"));
         assertEquals(0, row("SELECT COUNT(*) AS n FROM tag WHERE name = 'new tag'").getAsInt("n"));
     }
 
@@ -393,14 +398,35 @@ public class SharedEditingTest {
     public void botAndApiObserveTheSameSoundAndOmittedFieldsSurvive() throws java.lang.Exception {
         Sound sound = sound();
         assertTrue(sound.setTagNames(List.of("kept")));
+        assertTrue(sound.setDescription(" Kept description 🎵 "));
         Sound response = soundController.patch(AUTH, "10", json("{\"name\":\"api\"}"));
 
         assertEquals("api", sound.getName());
         assertEquals("api", response.getName());
         assertSame(sound, sound());
         assertEquals("kept", response.getJsonTags().get(0).getName());
+        assertEquals("Kept description 🎵", response.getDescription());
+        assertEquals("Kept description 🎵", community().get("10", null).description());
         assertTrue(sound.setPublic(false));
         assertFalse(soundController.sound(AUTH, "10").isPublic());
+    }
+
+    @Test
+    public void soundDescriptionPatchValidatesAndClearsTheSharedValue() throws java.lang.Exception {
+        Sound sound = sound();
+        Sound updated = soundController.patch(AUTH, "10", json("{\"description\":\"  A clip.  \"}"));
+        assertEquals("A clip.", updated.getDescription());
+        assertEquals("A clip.", sound.getDescription());
+        assertEquals("A clip.", row("SELECT description FROM sound WHERE id=10").get("description"));
+
+        assertThrows(Exception.class, () -> soundController.patch(AUTH, "10", json("{\"description\":42}")));
+        assertThrows(Exception.class, () -> soundController.patch(AUTH, "10",
+            json("{\"description\":\"" + "🎵".repeat(Sound.MAX_DESCRIPTION_LENGTH + 1) + "\"}")));
+        assertEquals("A clip.", sound.getDescription());
+
+        soundController.patch(AUTH, "10", json("{\"description\":null}"));
+        assertNull(sound.getDescription());
+        assertNull(community().get("10", null).description());
     }
 
     @Test
@@ -473,7 +499,8 @@ public class SharedEditingTest {
         assertEquals(List.of("11", "10"), service.search(null, "2").mine().stream().map(SoundCatalog.Card::id).toList());
         assertEquals(List.of("11"), service.search(filter("second", null, null, null), "2").mine().stream()
             .map(SoundCatalog.Card::id).toList());
-        assertTrue(service.search(filter("arcade", null, null, null), "2").mine().isEmpty());
+        assertEquals(List.of("10"), service.search(filter("arcade", null, null, null), "2").mine().stream()
+            .map(SoundCatalog.Card::id).toList());
 
         SoundCatalog.Results first = service.search(filter("first", null, 1, null), "2");
         assertEquals("10", first.items().getFirst().id());
@@ -486,6 +513,39 @@ public class SharedEditingTest {
         assertEquals("14", service.suggestions("ar", null).sounds().getFirst().id());
         assertEquals(1, service.creator("2").soundCount());
         assertEquals(3, service.explore(null).latest().size());
+    }
+
+    @Test
+    public void publicCatalogSearchMatchesNamesAndTagsWithMetricSorts() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        String path = "/api/beebot/public/sounds";
+
+        execute("UPDATE sound SET name='Brizz', plays=9 WHERE id=10");
+        execute("INSERT INTO sound(id, guild_id, user_id, name, extension, public, likes, dislikes) VALUES "
+            + "(13, '1', '9', 'reaction', 'mp3', TRUE, 7, 1), (14, '1', '9', 'clip', 'mp3', TRUE, 1, 7)");
+        execute("INSERT INTO tag(id,name) VALUES (1,'Some Brizz clips'), (2,'BRIZZ20%')");
+        execute("INSERT INTO tag_sounds(sound_id,tag_id) VALUES (11,1), (12,1), (13,1), (13,2), (14,1)");
+
+        JsonNode likes = communityJson(mvc, get(path).param("q", "BRIZZ").param("sort", "mostLiked")
+            .header("X-API-Key", "application").header("Authorization", "Bearer owner"), 200);
+        assertEquals(3, likes.get("items").size());
+        assertEquals("13", likes.at("/items/0/id").asText());
+        assertEquals("11", likes.at("/mine/0/id").asText());
+
+        JsonNode dislikes = communityJson(mvc, get(path).param("q", "brizz").param("sort", "mostDisliked")
+            .header("X-API-Key", "application"), 200);
+        assertEquals("14", dislikes.at("/items/0/id").asText());
+
+        JsonNode first = communityJson(mvc, get(path).param("q", "brizz").param("sort", "popular").param("limit", "1")
+            .header("X-API-Key", "application"), 200);
+        assertEquals("10", first.at("/items/0/id").asText());
+        JsonNode next = communityJson(mvc, get(path).param("q", "brizz").param("sort", "popular")
+            .param("cursor", first.get("nextCursor").asText()).header("X-API-Key", "application"), 200);
+        assertEquals(2, next.get("items").size());
+
+        JsonNode literal = communityJson(mvc, get(path).param("q", "%").header("X-API-Key", "application"), 200);
+        assertEquals(1, literal.get("items").size());
+        assertEquals("13", literal.at("/items/0/id").asText());
     }
 
     @Test
