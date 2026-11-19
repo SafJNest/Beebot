@@ -36,6 +36,7 @@ public class Sound {
     private volatile String name;
     private String extension;
     private volatile String audioKey;
+    private volatile String imageKey;
     @JsonProperty("public")
     private volatile boolean isPublic;
     private Timestamp timestamp;
@@ -142,6 +143,7 @@ public class Sound {
         this.name = data.get("name");
         this.extension = data.get("extension");
         this.audioKey = data.get("audio_key");
+        this.imageKey = data.get("image_key");
         this.isPublic = data.getAsBoolean("public");
         this.timestamp = data.getAsTimestamp("time");
         this.durationMs = readDuration(data);
@@ -167,6 +169,7 @@ public class Sound {
 
         this.extension = original.extension;
         this.audioKey = original.audioKey;
+        this.imageKey = original.imageKey;
         this.timestamp = original.timestamp;
         this.durationMs = original.durationMs;
 
@@ -233,6 +236,7 @@ public class Sound {
         tags = refreshedTags;
         durationMs = readDuration(current);
         audioKey = current.get("audio_key");
+        imageKey = current.get("image_key");
 
         plays = current.getAsInt("plays");
         likes = current.getAsInt("likes");
@@ -260,6 +264,10 @@ public class Sound {
 
     public String getAudioKey() {
         return audioKey;
+    }
+
+    public String getImageKey() {
+        return imageKey;
     }
 
     public String getExtension() {
