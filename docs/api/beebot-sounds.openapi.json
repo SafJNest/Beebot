@@ -3,7 +3,7 @@
   "info": {
     "title": "Beebot Sounds API",
     "version": "1.0.0",
-    "description": "Canonical Sound, SQL analytics, ID-only Redis query cache and personal greet settings. See beebot-sounds.md for privacy and aggregation rules."
+    "description": "Sound catalog, comments, votes, web playback, soundboards and authenticated sound management. See beebot-sound-community.md for the frontend contract."
   },
   "servers": [
     {
@@ -581,7 +581,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       },
       "patch": {
         "operationId": "soundOperation9",
@@ -971,7 +972,8 @@
             }
           }
         },
-        "description": "At least one nonblank q or tag is required."
+        "description": "At least one nonblank q or tag is required.",
+        "deprecated": true
       }
     },
     "/tags": {
@@ -1068,7 +1070,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/guilds/{guildId}/sounds/analytics": {
@@ -1999,7 +2002,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/sounds/{soundId}/dislike": {
@@ -2105,7 +2109,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/me": {
@@ -3128,6 +3133,1049 @@
           }
         }
       }
+    },
+    "/public/sounds/explore": {
+      "get": {
+        "operationId": "explorePublicSounds",
+        "summary": "Read trending, latest and popular tags",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundExplore"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/public/sounds": {
+      "get": {
+        "operationId": "searchPublicSounds",
+        "summary": "Search the public catalog and optionally include own matches",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": "Case-insensitive substring of the sound name."
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "description": "Exact tag name."
+          },
+          {
+            "name": "uploaderId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "minDurationMs",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "description": "Inclusive lower bound in milliseconds."
+          },
+          {
+            "name": "maxDurationMs",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
+            "description": "Inclusive upper bound in milliseconds."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "popular",
+                "newest",
+                "mostLiked",
+                "mostDisliked"
+              ]
+            },
+            "description": "Defaults to relevance with q, popular otherwise."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Opaque cursor returned by the previous page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "42",
+                      "name": "Airhorn",
+                      "public": true,
+                      "createdAt": "2026-11-01T10:00:00Z",
+                      "durationMs": 2088,
+                      "audioUrl": "https://cdn.example.com/sounds/42/42.mp3",
+                      "imageUrl": null,
+                      "uploader": {
+                        "id": "456",
+                        "name": "Luna",
+                        "avatarUrl": null
+                      },
+                      "tags": [
+                        {
+                          "id": "1",
+                          "name": "meme"
+                        }
+                      ],
+                      "plays": 18,
+                      "listeners": 7,
+                      "likes": 4,
+                      "dislikes": 1,
+                      "commentCount": 2
+                    }
+                  ],
+                  "mine": [],
+                  "nextCursor": null
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/public/sounds/suggestions": {
+      "get": {
+        "operationId": "suggestPublicSounds",
+        "summary": "Suggest up to five sounds and three tags",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundSuggestions"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/public/sounds/{soundId}": {
+      "get": {
+        "operationId": "getPublicSound",
+        "summary": "Get a sound card",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundCard"
+                },
+                "example": {
+                  "id": "42",
+                  "name": "Airhorn",
+                  "public": true,
+                  "createdAt": "2026-11-01T10:00:00Z",
+                  "durationMs": 2088,
+                  "audioUrl": "https://cdn.example.com/sounds/42/42.mp3",
+                  "imageUrl": null,
+                  "uploader": {
+                    "id": "456",
+                    "name": "Luna",
+                    "avatarUrl": null
+                  },
+                  "tags": [
+                    {
+                      "id": "1",
+                      "name": "meme"
+                    }
+                  ],
+                  "plays": 18,
+                  "listeners": 7,
+                  "likes": 4,
+                  "dislikes": 1,
+                  "commentCount": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/public/sounds/{soundId}/comments": {
+      "get": {
+        "operationId": "getPublicSoundComments",
+        "summary": "Read a page of root comments or direct replies",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "parentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "description": "Omit for root comments."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "top",
+              "enum": [
+                "top",
+                "newest",
+                "oldest",
+                "mostDisliked"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Opaque cursor returned by the previous page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "7",
+                      "soundId": "42",
+                      "parentId": null,
+                      "author": {
+                        "id": "456",
+                        "name": "Luna",
+                        "avatarUrl": null
+                      },
+                      "text": "Nice!",
+                      "createdAt": "2026-11-02T10:00:00Z",
+                      "editedAt": null,
+                      "deleted": false,
+                      "pinned": true,
+                      "hearted": false,
+                      "likes": 3,
+                      "replyCount": 1,
+                      "uploader": true
+                    }
+                  ],
+                  "nextCursor": null
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/public/users/{userId}": {
+      "get": {
+        "operationId": "getPublicSoundCreator",
+        "summary": "Get totals for a creator’s public sounds",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundCreator"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/public/sounds/{soundId}/plays": {
+      "post": {
+        "operationId": "recordPublicSoundPlay",
+        "summary": "Record a playback with a retry-safe UUID",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "playbackId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "playbackId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "playbackId": "00f1704e-970b-4fae-8144-5e4af3db24e5"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/comments": {
+      "post": {
+        "operationId": "createSoundComment",
+        "summary": "Create a comment or a reply",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,18}$"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "text": "Nice!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/comments/{commentId}": {
+      "patch": {
+        "operationId": "editSoundComment",
+        "summary": "Edit text, pinned state or hearted state",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "hearted": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false,
+                "minProperties": 1
+              },
+              "example": {
+                "pinned": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/CommunityForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSoundComment",
+        "summary": "Delete a comment and return the updated count",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentRemoval"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/CommunityForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/vote": {
+      "put": {
+        "operationId": "setSoundVote",
+        "summary": "Set or clear the authenticated user’s sound vote",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vote": {
+                    "type": "string",
+                    "enum": [
+                      "LIKE",
+                      "DISLIKE",
+                      null
+                    ],
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "vote"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "vote": "LIKE"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundVoteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/comments/{commentId}/vote": {
+      "put": {
+        "operationId": "setSoundCommentVote",
+        "summary": "Set or clear the authenticated user’s comment vote",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vote": {
+                    "type": "string",
+                    "enum": [
+                      "LIKE",
+                      "DISLIKE",
+                      null
+                    ],
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "vote"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "vote": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentVoteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/sounds/{soundId}/image": {
+      "put": {
+        "operationId": "putSoundImage",
+        "summary": "Upload or replace a sound cover",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PNG, JPEG or GIF, up to 1 MiB."
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundImage"
+                },
+                "example": {
+                  "imageUrl": "https://cdn.example.com/sounds/42/thumbnail-cover.png"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/CommunityForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/CommunityUploadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSoundImage",
+        "summary": "Remove a sound cover",
+        "parameters": [
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/CommunityForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3277,6 +4325,11 @@
           },
           "message": {
             "type": "string"
+          },
+          "retryAfter": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Retry delay in seconds when available."
           }
         },
         "required": [
@@ -3375,6 +4428,542 @@
           "sounds"
         ],
         "additionalProperties": false
+      },
+      "CommunityUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatarUrl"
+        ],
+        "additionalProperties": false
+      },
+      "SoundViewer": {
+        "type": "object",
+        "properties": {
+          "ownedByMe": {
+            "type": "boolean"
+          },
+          "vote": {
+            "type": "string",
+            "enum": [
+              "LIKE",
+              "DISLIKE",
+              null
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "ownedByMe",
+          "vote"
+        ],
+        "additionalProperties": false
+      },
+      "SoundCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "nullable": true
+          },
+          "audioUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "uploader": {
+            "$ref": "#/components/schemas/CommunityUser"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "plays": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "listeners": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "dislikes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "commentCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "viewer": {
+            "$ref": "#/components/schemas/SoundViewer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "public",
+          "createdAt",
+          "durationMs",
+          "audioUrl",
+          "imageUrl",
+          "uploader",
+          "tags",
+          "plays",
+          "listeners",
+          "likes",
+          "dislikes",
+          "commentCount"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundCard"
+            }
+          },
+          "mine": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundCard"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "mine",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "CommunityTagCount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "soundCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "soundCount"
+        ],
+        "additionalProperties": false
+      },
+      "SoundExplore": {
+        "type": "object",
+        "properties": {
+          "popularTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityTagCount"
+            }
+          },
+          "trending": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundCard"
+            }
+          },
+          "latest": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundCard"
+            }
+          }
+        },
+        "required": [
+          "popularTags",
+          "trending",
+          "latest"
+        ],
+        "additionalProperties": false
+      },
+      "SoundSuggestions": {
+        "type": "object",
+        "properties": {
+          "sounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundCard"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityTagCount"
+            }
+          }
+        },
+        "required": [
+          "sounds",
+          "tags"
+        ],
+        "additionalProperties": false
+      },
+      "SoundCreator": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/CommunityUser"
+          },
+          "uploadingSince": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "soundCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "plays": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "dislikes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "commentCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "user",
+          "uploadingSince",
+          "soundCount",
+          "plays",
+          "likes",
+          "dislikes",
+          "commentCount"
+        ],
+        "additionalProperties": false
+      },
+      "SoundComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "soundId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "parentId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "nullable": true
+          },
+          "author": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CommunityUser"
+              },
+              {
+                "type": "object",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              }
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "hearted": {
+            "type": "boolean"
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "replyCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "uploader": {
+            "type": "boolean"
+          },
+          "viewer": {
+            "$ref": "#/components/schemas/SoundViewer"
+          }
+        },
+        "required": [
+          "id",
+          "soundId",
+          "parentId",
+          "author",
+          "text",
+          "createdAt",
+          "editedAt",
+          "deleted",
+          "pinned",
+          "hearted",
+          "likes",
+          "replyCount",
+          "uploader"
+        ],
+        "additionalProperties": false
+      },
+      "CommentPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundComment"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "CommentChange": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "$ref": "#/components/schemas/SoundComment"
+          },
+          "commentCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "previousPinnedId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "nullable": true
+          }
+        },
+        "required": [
+          "comment",
+          "commentCount",
+          "previousPinnedId"
+        ],
+        "additionalProperties": false
+      },
+      "CommentRemoval": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SoundComment"
+              },
+              {
+                "type": "object",
+                "nullable": true,
+                "enum": [
+                  null
+                ]
+              }
+            ]
+          },
+          "commentCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "comment",
+          "commentCount"
+        ],
+        "additionalProperties": false
+      },
+      "SoundVoteResult": {
+        "type": "object",
+        "properties": {
+          "soundId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "commentId": {
+            "type": "string",
+            "enum": [
+              null
+            ],
+            "nullable": true
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "dislikes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "vote": {
+            "type": "string",
+            "enum": [
+              "LIKE",
+              "DISLIKE",
+              null
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "soundId",
+          "commentId",
+          "likes",
+          "dislikes",
+          "vote"
+        ],
+        "additionalProperties": false
+      },
+      "CommentVoteResult": {
+        "type": "object",
+        "properties": {
+          "soundId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "commentId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "vote": {
+            "type": "string",
+            "enum": [
+              "LIKE",
+              "DISLIKE",
+              null
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "soundId",
+          "commentId",
+          "likes",
+          "vote"
+        ],
+        "additionalProperties": false
+      },
+      "SoundImage": {
+        "type": "object",
+        "properties": {
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "imageUrl"
+        ],
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
@@ -3391,6 +4980,78 @@
       "Session": {
         "type": "http",
         "scheme": "bearer"
+      }
+    },
+    "responses": {
+      "CommunityInvalidRequest": {
+        "description": "Invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "CommunityUnauthenticated": {
+        "description": "Invalid API key or session",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "CommunityForbidden": {
+        "description": "Insufficient privileges",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "CommunityNotFound": {
+        "description": "Sound or comment not found or not visible",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "CommunityUploadTooLarge": {
+        "description": "Upload too large",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "CommunityUnsupportedMediaType": {
+        "description": "Unsupported request content type",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "CommunityUnavailable": {
+        "description": "Storage or authentication unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       }
     }
   }

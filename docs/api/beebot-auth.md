@@ -1,6 +1,13 @@
 # Beebot dashboard authentication
 
-The base URL is `https://api.safjnest.com/api/beebot`. A servlet filter protects every `/api/beebot` route. The only pre-session exceptions are the exact POST endpoints `/auth/discord/authorize` and `/auth/session`; these still require `X-API-Key`. Other requests accept either an application `X-API-Key` together with `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` by itself as described below. LoL routes remain public.
+The base URL is `https://api.safjnest.com/api/beebot`. A servlet filter protects every `/api/beebot` route. The exact POST endpoints `/auth/discord/authorize` and `/auth/session`
+require a generic `X-API-Key` and run before login. Requests under
+`/api/beebot/public/` require an API key and accept a generic key without
+a session. A supplied bearer is always checked on those public routes.
+The remaining routes accept a generic key and a session bearer, or a
+personal key by itself. A personal key also identifies the caller on
+the public routes. See the [frontend contract](beebot-sound-community.md)
+for route permissions.
 
 Qwik generates a random URL-safe state and stores it in a short-lived Secure HttpOnly cookie. Its server calls `POST /auth/discord/authorize` with JSON `{ "state": "...", "redirectUri": "https://safjnest.com/auth/callback/" }`. The response `{ "authorizationUrl": "...", "expiresIn": 600 }` redirects the browser to Discord with scopes `identify guilds`. The exact callback is associated with the application key and must also be registered with Discord.
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.safjnest.discord.auth.DiscordAuthService;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
+import com.safjnest.discord.auth.DiscordAuthService.SessionPolicy;
 import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
 import com.safjnest.spring.exception.ApiErrors;
@@ -22,7 +23,7 @@ public final class AuthFilter implements Filter {
 
     @FunctionalInterface
     public interface Verifier {
-        AuthContext verify(String key, String bearer, boolean sessionRequired);
+        AuthContext verify(String key, String bearer, SessionPolicy policy);
     }
 
     private final Verifier verifier;
@@ -56,11 +57,8 @@ public final class AuthFilter implements Filter {
             return;
         }
 
-        boolean preSession = "POST".equals(http.getMethod())
-            && ("/api/beebot/auth/discord/authorize".equals(path) || "/api/beebot/auth/session".equals(path));
-
         try {
-            AuthContext context = verifier.verify(http.getHeader("X-API-Key"), http.getHeader("Authorization"), !preSession);
+            AuthContext context = verifier.verify(http.getHeader("X-API-Key"), http.getHeader("Authorization"), policy(http.getMethod(), path));
             http.setAttribute(AUTH_CONTEXT, context);
         } catch (Exception exception) {
             ApiErrors.write(http, result, exception);
@@ -70,4 +68,15 @@ public final class AuthFilter implements Filter {
 
         chain.doFilter(request, response);
     }
+    private SessionPolicy policy(String method, String path) {
+        if (path.startsWith("/api/beebot/public/"))
+            return SessionPolicy.OPTIONAL;
+
+        if ("POST".equals(method) && ("/api/beebot/auth/discord/authorize".equals(path)
+                || "/api/beebot/auth/session".equals(path)))
+            return SessionPolicy.LOGIN;
+
+        return SessionPolicy.REQUIRED;
+    }
+
 }

@@ -1,10 +1,15 @@
 # Sounds, analytics and personal greet settings
 
-Base path: `/api/beebot`. Authentication is the existing application key plus user session, or personal key alone. Responses use `Cache-Control: no-store`. IDs are strings. See [authentication](beebot-auth.md), [request/response examples](beebot-sounds-examples.json), and [OpenAPI](beebot-sounds.openapi.json).
+The base path is `/api/beebot`. Authenticated routes use an application key
+and user session, or a personal key. Public catalog routes accept an
+application key with an optional user session. Responses use
+`Cache-Control: no-store`. IDs are strings. See [authentication](beebot-auth.md),
+[request and response examples](beebot-sounds-examples.json), and
+[OpenAPI](beebot-sounds.openapi.json).
 
 ## Canonical Sound
 
-All detail, list and greet responses contain the existing `com.safjnest.sound.model.Sound`. Response copies carry viewer-specific data; cached objects never carry a viewer identity. JSON fields are explicit, so paths, audio tracks, padded empty tags and operational getters are not exposed.
+Existing sound detail, library and greet responses contain the `com.safjnest.sound.model.Sound`. Response copies carry viewer-specific data; cached objects never carry a viewer identity. JSON fields are explicit, so paths, audio tracks, padded empty tags and operational getters are not exposed.
 
 ```json
 {
@@ -244,9 +249,11 @@ Debug logs report membership resolution time (`Sound memberships`), history rows
 
 ## Sound community backend
 
-The new methods live in `SoundService`. Existing HTTP routes continue to use
-their current contracts. The [next HTTP contract](beebot-sound-community.md)
-lists the paths the dashboard can prepare against.
+`SoundCommunityController` exposes the catalog, comments, votes, web
+plays and sound images via `SoundService`. The [frontend HTTP contract](beebot-sound-community.md)
+covers authentication, filters and both public and viewer-specific
+responses. Legacy reads and PATCH vote routes are still available to
+existing dashboard callers and are marked deprecated in OpenAPI.
 
 - `SoundDB` shares BotDB's prepared statements, read session and lock on the
   sound row. Bot, current HTTP and community vote writes all use `sound_vote`.

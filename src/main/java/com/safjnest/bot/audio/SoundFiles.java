@@ -42,6 +42,8 @@ import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
+import software.amazon.awssdk.core.exception.SdkException;
+
 public final class SoundFiles {
 
     private static final Logger LOG = LoggerFactory.getLogger(SoundFiles.class);
@@ -215,7 +217,11 @@ public final class SoundFiles {
             throw Exception.invalidRequest("Invalid sound ID");
 
         String key = prefix + soundId + "/thumbnail-" + UUID.randomUUID() + "." + image.extension();
-        storage.upload(requireBucket(), key, image.bytes(), image.contentType());
+        try {
+            storage.upload(requireBucket(), key, image.bytes(), image.contentType());
+        } catch (SdkException failure) {
+            throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound image storage is unavailable", failure, null);
+        }
 
         return key;
     }

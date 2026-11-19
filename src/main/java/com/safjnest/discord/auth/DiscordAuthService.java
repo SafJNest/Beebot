@@ -32,6 +32,12 @@ public final class DiscordAuthService {
         boolean delete(String key);
     }
 
+    public enum SessionPolicy {
+        LOGIN,
+        OPTIONAL,
+        REQUIRED
+    }
+
     public record AuthContext(ApiKey client, String sessionHash, String encryptedToken, long expiresAt, AuthUser user) {
         public boolean personal() {
             return client.type() == ApiKey.Type.PERSONAL;
@@ -195,17 +201,21 @@ public final class DiscordAuthService {
         guildCache.invalidate(context);
     }
 
-    public AuthContext authenticate(String apiKey, String authorization, boolean sessionRequired) {
+    public AuthContext authenticate(String apiKey, String authorization, SessionPolicy policy) {
         ApiKey key = requireApiKey(apiKey);
 
         return switch (key.type()) {
             case PERSONAL -> {
-                if (!sessionRequired)
+                if (policy == SessionPolicy.LOGIN)
                     throw failure(Type.FORBIDDEN, "personal_key_not_allowed", "Personal keys cannot create OAuth sessions");
 
                 yield requirePersonalSession(key, authorization);
             }
-            case GENERIC -> sessionRequired ? requireSession(key, authorization) : new AuthContext(key, null, null, 0, null);
+            case GENERIC -> switch (policy) {
+                case LOGIN -> anonymous(key);
+                case OPTIONAL -> authorization == null ? anonymous(key) : requireSession(key, authorization);
+                case REQUIRED -> requireSession(key, authorization);
+            };
         };
     }
 
@@ -226,6 +236,10 @@ public final class DiscordAuthService {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private AuthContext anonymous(ApiKey key) {
+        return new AuthContext(key, null, null, 0, null);
+    }
 
     private List<Server> loadServers(AuthContext context) {
         if (context.personal())

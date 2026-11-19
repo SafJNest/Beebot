@@ -25,6 +25,7 @@ import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordApi.DiscordToken;
 import com.safjnest.discord.auth.DiscordApi.Server;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
+import com.safjnest.discord.auth.DiscordAuthService.SessionPolicy;
 import com.safjnest.discord.guild.DiscordGuildCache;
 import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
@@ -87,10 +88,10 @@ public class DiscordAuthServiceTest {
 
     @Test
     public void genericKeyRequiresSessionOnProtectedRoutes() {
-        AuthContext beforeLogin = auth.authenticate(GENERIC_KEY, null, false);
+        AuthContext beforeLogin = auth.authenticate(GENERIC_KEY, null, SessionPolicy.LOGIN);
         assertNull(beforeLogin.user());
         assertFalse(beforeLogin.personal());
-        assertEquals("invalid_session", assertThrows(Exception.class, () -> auth.authenticate(GENERIC_KEY, null, true)).getCode());
+        assertEquals("invalid_session", assertThrows(Exception.class, () -> auth.authenticate(GENERIC_KEY, null, SessionPolicy.REQUIRED)).getCode());
 
         AuthContext context = session();
         assertEquals(USER, context.user());
@@ -98,8 +99,27 @@ public class DiscordAuthServiceTest {
     }
 
     @Test
+    public void publicRequestsRequireApplicationKeyAndValidateAnySuppliedBearer() {
+        assertNull(auth.authenticate(GENERIC_KEY, null, SessionPolicy.OPTIONAL).user());
+        assertEquals(USER, auth.authenticate(GENERIC_KEY, "Bearer " + SESSION, SessionPolicy.OPTIONAL).user());
+        assertEquals(USER, auth.authenticate(PERSONAL_KEY, null, SessionPolicy.OPTIONAL).user());
+
+        assertEquals("invalid_api_key", assertThrows(Exception.class,
+            () -> auth.authenticate(null, null, SessionPolicy.OPTIONAL)).getCode());
+        assertEquals("invalid_session", assertThrows(Exception.class,
+            () -> auth.authenticate(GENERIC_KEY, "", SessionPolicy.OPTIONAL)).getCode());
+        assertEquals("invalid_session", assertThrows(Exception.class,
+            () -> auth.authenticate(GENERIC_KEY, "Bearer " + "x".repeat(43), SessionPolicy.OPTIONAL)).getCode());
+
+        auth.logout(session());
+        assertEquals("invalid_session", assertThrows(Exception.class,
+            () -> auth.authenticate(GENERIC_KEY, "Bearer " + SESSION, SessionPolicy.OPTIONAL)).getCode());
+        assertNull(auth.authenticate(GENERIC_KEY, null, SessionPolicy.OPTIONAL).user());
+    }
+
+    @Test
     public void personalKeyNeedsNoOauthAndRejectsBearerAndLoginRoutes() {
-        AuthContext context = auth.authenticate(PERSONAL_KEY, null, true);
+        AuthContext context = auth.authenticate(PERSONAL_KEY, null, SessionPolicy.REQUIRED);
         assertTrue(context.personal());
         assertEquals(USER, context.user());
         assertEquals(Long.MAX_VALUE, context.expiresAt());
@@ -107,9 +127,9 @@ public class DiscordAuthServiceTest {
         assertEquals("personal", context.sessionHash());
 
         assertEquals("invalid_personal_key", assertThrows(Exception.class,
-            () -> auth.authenticate(PERSONAL_KEY, "Bearer " + SESSION, true)).getCode());
+            () -> auth.authenticate(PERSONAL_KEY, "Bearer " + SESSION, SessionPolicy.REQUIRED)).getCode());
         assertEquals("personal_key_not_allowed", assertThrows(Exception.class,
-            () -> auth.authenticate(PERSONAL_KEY, null, false)).getCode());
+            () -> auth.authenticate(PERSONAL_KEY, null, SessionPolicy.LOGIN)).getCode());
         assertEquals(0, discord.oauthCalls);
     }
 
@@ -131,7 +151,7 @@ public class DiscordAuthServiceTest {
 
         database.createClient("other", "other", CryptoUtils.sha256("d".repeat(43)), REDIRECT);
         assertEquals("invalid_session", assertThrows(Exception.class,
-            () -> auth.authenticate("d".repeat(43), "Bearer " + SESSION, true)).getCode());
+            () -> auth.authenticate("d".repeat(43), "Bearer " + SESSION, SessionPolicy.REQUIRED)).getCode());
     }
 
     @Test
@@ -178,8 +198,8 @@ public class DiscordAuthServiceTest {
 
     @Test
     public void missingOrRevokedKeyIsUnauthorized() throws java.lang.Exception {
-        assertEquals("invalid_api_key", assertThrows(Exception.class, () -> auth.authenticate("short", null, false)).getCode());
-        assertEquals("invalid_api_key", assertThrows(Exception.class, () -> auth.authenticate("z".repeat(43), null, false)).getCode());
+        assertEquals("invalid_api_key", assertThrows(Exception.class, () -> auth.authenticate("short", null, SessionPolicy.LOGIN)).getCode());
+        assertEquals("invalid_api_key", assertThrows(Exception.class, () -> auth.authenticate("z".repeat(43), null, SessionPolicy.LOGIN)).getCode());
         execute("UPDATE api_key SET active = FALSE WHERE id = 'generic'");
 
         assertEquals(Type.UNAUTHENTICATED, assertThrows(Exception.class, this::session).getType());
@@ -201,7 +221,7 @@ public class DiscordAuthServiceTest {
     @Test
     public void personalDirectoryWorksWithoutOauthConfiguration() {
         DiscordAuthService personal = new DiscordAuthService(database, store, discord, guildCache, "test:", null, null, null);
-        AuthContext context = personal.authenticate(PERSONAL_KEY, null, true);
+        AuthContext context = personal.authenticate(PERSONAL_KEY, null, SessionPolicy.REQUIRED);
         personal.requireAdministrator(context, "1");
         assertEquals(discord.servers, personal.servers(context));
 
@@ -238,15 +258,15 @@ public class DiscordAuthServiceTest {
 
     @Test
     public void personalLogoutRevokesTheKey() {
-        AuthContext context = auth.authenticate(PERSONAL_KEY, null, true);
+        AuthContext context = auth.authenticate(PERSONAL_KEY, null, SessionPolicy.REQUIRED);
         auth.logout(context);
 
-        assertEquals("invalid_api_key", assertThrows(Exception.class, () -> auth.authenticate(PERSONAL_KEY, null, true)).getCode());
+        assertEquals("invalid_api_key", assertThrows(Exception.class, () -> auth.authenticate(PERSONAL_KEY, null, SessionPolicy.REQUIRED)).getCode());
     }
 
     @Test
     public void oauthTransactionIsConsumedOnceAndTokenStaysEncrypted() {
-        AuthContext beforeLogin = auth.authenticate(GENERIC_KEY, null, false);
+        AuthContext beforeLogin = auth.authenticate(GENERIC_KEY, null, SessionPolicy.LOGIN);
         String state = "s".repeat(32);
         auth.authorize(beforeLogin, state, REDIRECT);
         DiscordAuthService.Session created = auth.exchangeSession(beforeLogin, "code", state, REDIRECT);
@@ -289,7 +309,7 @@ public class DiscordAuthServiceTest {
 
     @Test
     public void expiredTransactionAndUnapprovedRedirectStopBeforeDiscord() {
-        AuthContext context = auth.authenticate(GENERIC_KEY, null, false);
+        AuthContext context = auth.authenticate(GENERIC_KEY, null, SessionPolicy.LOGIN);
         String state = "s".repeat(32);
         database.createTransaction(CryptoUtils.sha256(state), "generic", REDIRECT, 0);
 
@@ -328,7 +348,7 @@ public class DiscordAuthServiceTest {
     }
 
     private AuthContext session() {
-        return auth.authenticate(GENERIC_KEY, "Bearer " + SESSION, true);
+        return auth.authenticate(GENERIC_KEY, "Bearer " + SESSION, SessionPolicy.REQUIRED);
     }
 
     private MockHttpServletResponse filteredRequest(String key) throws java.lang.Exception {

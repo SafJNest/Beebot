@@ -18,7 +18,7 @@ import net.dv8tion.jda.api.entities.Message.Attachment;
 
 public final class SoundboardThumbnails {
 
-    private static final int MAX_ATTACHMENT_BYTES = 1024 * 1024;
+    public static final int MAX_ATTACHMENT_BYTES = 1024 * 1024;
     private static final byte[] PNG_HEADER = {(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
     private static final byte[] JPEG_HEADER = {(byte) 0xff, (byte) 0xd8, (byte) 0xff};
     private static final byte[] GIF_87_HEADER = "GIF87a".getBytes(StandardCharsets.US_ASCII);

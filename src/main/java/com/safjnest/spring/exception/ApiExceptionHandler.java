@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -72,6 +73,15 @@ public final class ApiExceptionHandler {
     @ExceptionHandler({MultipartException.class, MissingServletRequestPartException.class})
     public ResponseEntity<?> invalidUpload(java.lang.Exception exception, HttpServletRequest request) {
         return ApiErrors.from(request, HttpStatus.BAD_REQUEST, "invalid_request", "Invalid multipart body or missing part");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<?> unsupportedMediaType(HttpMediaTypeNotSupportedException exception, HttpServletRequest request) {
+        if (!ApiErrors.isBeebot(request))
+            return unexpected(exception, request);
+
+        return ApiErrors.from(request, HttpStatus.UNSUPPORTED_MEDIA_TYPE, "unsupported_media_type",
+            "Unsupported request content type");
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

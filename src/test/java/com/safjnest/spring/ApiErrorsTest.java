@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safjnest.discord.auth.DiscordAuthService.SessionPolicy;
 import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
 import com.safjnest.lol.model.ApiResult;
@@ -165,23 +166,25 @@ public class ApiErrorsTest {
     }
 
     @Test
-    public void filterRequiresSessionExceptForTheTwoPostLoginRoutes() throws java.lang.Exception {
-        List<Boolean> required = new ArrayList<>();
+    public void filterSeparatesLoginOptionalAndProtectedRoutes() throws java.lang.Exception {
+        List<SessionPolicy> policies = new ArrayList<>();
         AuthFilter filter = new AuthFilter((key, bearer, session) -> {
-            required.add(session);
+            policies.add(session);
             assertEquals("key", key);
             assertEquals("Bearer token", bearer);
             return null;
         });
 
-        for (String path : List.of("/api/beebot/auth/discord/authorize", "/api/beebot/auth/session", "/api/beebot/auth/logout", "/api/beebot/me")) {
+        for (String path : List.of("/api/beebot/auth/discord/authorize", "/api/beebot/auth/session", "/api/beebot/auth/logout", "/api/beebot/me",
+                "/api/beebot/public/sounds/42/plays", "/api/beebot/public-elsewhere/sounds")) {
             MockHttpServletRequest request = request("POST", path);
             request.addHeader("X-API-Key", "key");
             request.addHeader("Authorization", "Bearer token");
             filter.doFilter(request, new MockHttpServletResponse(), (incoming, response) -> {});
         }
 
-        assertEquals(List.of(false, false, true, true), required);
+        assertEquals(List.of(SessionPolicy.LOGIN, SessionPolicy.LOGIN, SessionPolicy.REQUIRED,
+            SessionPolicy.REQUIRED, SessionPolicy.OPTIONAL, SessionPolicy.REQUIRED), policies);
     }
 
     @Test

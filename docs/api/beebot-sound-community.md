@@ -1,8 +1,8 @@
 # API Beebot per il frontend
 
 Contratto per il sito dei suoni e il dashboard Beebot. Include le rotte già
-esposte dal backend, il contratto della prossima fase e le chiamate che
-verranno sostituite. Tutti gli esempi usano ID e credenziali fittizi.
+esposte dal backend e le chiamate che verranno sostituite quando il
+dashboard passerà al nuovo contratto. Tutti gli esempi usano ID e credenziali fittizi.
 
 - [URL e token](#base-url-accesso-e-stato)
 - [Nuove rotte di catalogo, ricerca, commenti, voti e play](#nuovo-catalogo-e-interazioni)
@@ -25,8 +25,8 @@ questa base da `BEEBOT_API_URL` e la chiave applicativa da `BEEBOT_API_KEY`.
 | **Login** | Utente prima della sessione | `X-API-Key: <applicationKey>`. |
 | **CDN** | Chi ha l'URL dell'oggetto | Il browser usa l'URL così com'è. |
 
-**Pubblico** indica che il login è facoltativo. Per le nuove rotte `/public`
-il contratto proposto mantiene la chiave applicativa sul server Qwik. Il
+**Pubblico** indica che il login è facoltativo. Sulle rotte `/public`
+il server Qwik custodisce e invia la chiave applicativa. Il
 browser usa loader, azioni o route del frontend sul proprio dominio. Il
 server legge il cookie HttpOnly `beebot_session` e inoltra il bearer quando
 serve. Per `/public` usa una chiamata ad accesso facoltativo che può
@@ -34,15 +34,15 @@ raggiungere Beebot anche senza cookie. Le rotte con **Sessione** continuano
 a usare il flusso autenticato esistente. Un bearer inviato ma scaduto o
 invalido dà `401`, anche su `/public`.
 
-I client di servizio possono usare una chiave personale sulle attuali rotte
-protette con il solo header `X-API-Key`. Il sito usa la chiave applicativa.
+I client di servizio possono usare una chiave personale con il solo
+header `X-API-Key` sia sulle rotte pubbliche sia su quelle protette. La
+chiave personale identifica l'utente anche sulle pubbliche. Il sito usa
+la chiave applicativa.
 Una chiave personale con bearer viene rifiutata. Le rotte **Login** accettano
 la chiave applicativa.
 
 - **Attivo** significa che la rotta esiste nel checkout backend. Il deploy
   effettivo dipende dall'ambiente indicato in `BEEBOT_API_URL`.
-- **Previsto** significa che il frontend può usare il contratto per mock e
-  implementazione, in attesa del collegamento HTTP.
 - **Da sostituire** significa che la rotta è attiva oggi e uscirà al passaggio
   del frontend alle nuove chiamate.
 
@@ -80,13 +80,13 @@ Usa `code` per la logica. Esempi attivi sono `invalid_session`,
 `sound_forbidden`, `duplicate_sound_name` (`400`),
 `duplicate_soundboard_name`, `soundboard_full`, `sound_storage_unavailable`
 e `discord_rate_limited` (`503`). Commenti e immagini riusano il formato.
-Le richieste con sessione usano `Cache-Control: no-store`. La cache condivisa
-delle letture `/public` riguarda solo richieste ospite. TTL e regole CDN
-restano da configurare.
+Oggi tutte le risposte Beebot, incluse quelle ospite, usano
+`Cache-Control: no-store`. Una futura cache condivisa delle letture
+`/public` riguarderà soltanto le richieste ospite.
 
 ## Nuovo catalogo e interazioni
 
-Tutte le rotte di questa sezione sono **previste**.
+Tutte le rotte di questa sezione sono **attive**.
 
 ### Letture pubbliche
 
@@ -317,7 +317,7 @@ type CommentVoteResult = { soundId: Id; commentId: Id; likes: number; vote: Vote
 
 Il frontend può aggiornare i contatori dalla risposta della scrittura. Se
 `previousPinnedId` è valorizzato, il pin su quell'altro commento va rimosso.
-Per i nuovi adapter, i campi estranei ai body qui descritti vanno rifiutati.
+I body JSON di queste operazioni rifiutano i campi estranei.
 
 ## Suoni già esposti
 
@@ -756,10 +756,9 @@ configurazione, con codici quali `missing_channel`, `missing_message`,
 
 ## Passaggio al nuovo contratto
 
-- Sito pubblico e commenti possono partire da mock delle rotte **previste**.
-  Il toggle o la configurazione dell'ambiente decide quando passare alla
-  nuova API. Un `404` di un suono privato resta un esito normale
-  della rotta pubblica.
+- Il sito pubblico e i commenti usano le rotte di questo contratto quando
+  l'ambiente Beebot esegue la nuova versione. Un `404` di un suono
+  privato resta un esito normale della rotta pubblica.
 - Per il dashboard riusa upload, board, analytics, sessione e impostazioni.
   La nuova scheda usa `SoundCard`; le raccolte e le mutazioni già attive
   mantengono `LegacySound`. Le letture e i voti da sostituire cambiano

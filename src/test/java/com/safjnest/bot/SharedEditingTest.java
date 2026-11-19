@@ -47,6 +47,7 @@ import com.safjnest.exception.Exception;
 import com.safjnest.exception.Exception.Type;
 import com.safjnest.discord.auth.DiscordApi.AuthUser;
 import com.safjnest.discord.auth.DiscordAuthService.AuthContext;
+import com.safjnest.discord.auth.DiscordAuthService.SessionPolicy;
 import com.safjnest.discord.auth.DiscordApi;
 import com.safjnest.sound.SoundService;
 import com.safjnest.sound.model.Sound;
@@ -56,15 +57,18 @@ import com.safjnest.sound.model.SoundVote;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.spring.controller.beebot.MeController;
+import com.safjnest.spring.controller.beebot.SoundCommunityController;
 import com.safjnest.spring.controller.beebot.SoundController;
 import com.safjnest.spring.controller.beebot.SoundboardController;
 import com.safjnest.spring.exception.ApiExceptionHandler;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 public class SharedEditingTest {
@@ -566,6 +570,174 @@ public class SharedEditingTest {
         assertEquals(1, events.stream().filter(play -> "100".equals(play.channelId())).count());
         assertEquals(1, service.get("10", null).listeners());
         assertEquals(3, service.explore(null).trending().getFirst().plays());
+    }
+
+    @Test
+    public void communityCatalogHttpRoutesSeparateAnonymousAndPersonalizedResponses() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        String publicApi = "/api/beebot/public";
+
+        mvc.perform(get(publicApi + "/sounds")).andExpect(status().isUnauthorized());
+        JsonNode guest = communityJson(mvc, get(publicApi + "/sounds").header("X-API-Key", "application"), 200);
+        assertEquals("10", guest.at("/items/0/id").asText());
+        assertFalse(guest.at("/items/0").has("viewer"));
+        assertTrue(guest.get("mine").isEmpty());
+
+        JsonNode owner = communityJson(mvc, get(publicApi + "/sounds").param("q", "second")
+            .param("sort", "mostLiked").param("limit", "1")
+            .header("X-API-Key", "application").header("Authorization", "Bearer owner"), 200);
+        assertTrue(owner.get("items").isEmpty());
+        assertEquals("11", owner.at("/mine/0/id").asText());
+        assertTrue(owner.at("/mine/0/viewer/ownedByMe").asBoolean());
+
+        JsonNode card = communityJson(mvc, get(publicApi + "/sounds/10").header("X-API-Key", "application"), 200);
+        assertTrue(card.get("public").asBoolean());
+        assertFalse(card.has("isPublic"));
+        assertEquals(0, card.get("commentCount").asInt());
+        mvc.perform(get(publicApi + "/sounds/11").header("X-API-Key", "application"))
+            .andExpect(status().isNotFound());
+        mvc.perform(get(publicApi + "/sounds/11").header("X-API-Key", "application").header("Authorization", "Bearer owner"))
+            .andExpect(status().isOk());
+        mvc.perform(get(publicApi + "/sounds/10").header("X-API-Key", "application").header("Authorization", "Bearer expired"))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(get(publicApi + "/sounds").param("sort", "MOST_LIKED").header("X-API-Key", "application"))
+            .andExpect(status().isBadRequest());
+
+        JsonNode explore = communityJson(mvc, get(publicApi + "/sounds/explore").header("X-API-Key", "application"), 200);
+        assertEquals("10", explore.at("/latest/0/id").asText());
+        JsonNode suggestions = communityJson(mvc, get(publicApi + "/sounds/suggestions").param("q", "fir")
+            .header("X-API-Key", "application"), 200);
+        assertEquals("10", suggestions.at("/sounds/0/id").asText());
+        mvc.perform(get(publicApi + "/sounds/suggestions").header("X-API-Key", "application"))
+            .andExpect(status().isBadRequest());
+
+        JsonNode creator = communityJson(mvc, get(publicApi + "/users/2").header("X-API-Key", "application"), 200);
+        assertEquals(1, creator.get("soundCount").asInt());
+    }
+
+    @Test
+    public void communityCommentAndVoteHttpRoutesValidateIdentityAndPayloads() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        String soundPath = "/api/beebot/sounds/10";
+        String comments = soundPath + "/comments";
+        String publicComments = "/api/beebot/public/sounds/10/comments";
+        String key = "application";
+        String owner = "Bearer owner";
+        String other = "Bearer other";
+
+        mvc.perform(post(comments).header("X-API-Key", key).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"text\":\"Hello\"}")).andExpect(status().isUnauthorized());
+        mvc.perform(post(comments).header("X-API-Key", key).header("Authorization", owner)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Hello\",\"authorId\":\"9\"}"))
+            .andExpect(status().isBadRequest());
+
+        JsonNode created = communityJson(mvc, post(comments).header("X-API-Key", key).header("Authorization", owner)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Hello\"}"), 201);
+        String root = created.at("/comment/id").asText();
+        assertEquals("2", created.at("/comment/author/id").asText());
+        assertEquals(1, created.get("commentCount").asInt());
+
+        JsonNode reply = communityJson(mvc, post(comments).header("X-API-Key", key).header("Authorization", other)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Reply\",\"parentId\":\"" + root + "\"}"), 201);
+        assertEquals(root, reply.at("/comment/parentId").asText());
+
+        mvc.perform(patch(comments + "/" + root).header("X-API-Key", key).header("Authorization", other)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"pinned\":true}")).andExpect(status().isForbidden());
+        mvc.perform(patch(comments + "/" + root).header("X-API-Key", key).header("Authorization", owner)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"pinned\":null}")).andExpect(status().isBadRequest());
+        JsonNode pinned = communityJson(mvc, patch(comments + "/" + root)
+            .header("X-API-Key", key).header("Authorization", owner)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Updated\",\"pinned\":true,\"hearted\":true}"), 200);
+        assertTrue(pinned.at("/comment/pinned").asBoolean());
+        assertEquals("Updated", pinned.at("/comment/text").asText());
+
+        JsonNode roots = communityJson(mvc, get(publicComments).param("sort", "mostDisliked").header("X-API-Key", key), 200);
+        assertEquals(root, roots.at("/items/0/id").asText());
+        assertFalse(roots.at("/items/0").has("viewer"));
+        JsonNode thread = communityJson(mvc, get(publicComments).param("parentId", root).header("X-API-Key", key), 200);
+        assertEquals(reply.at("/comment/id"), thread.at("/items/0/id"));
+
+        JsonNode vote = communityJson(mvc, put(comments + "/" + root + "/vote").header("X-API-Key", key)
+            .header("Authorization", other).contentType(MediaType.APPLICATION_JSON).content("{\"vote\":\"DISLIKE\"}"), 200);
+        assertEquals(root, vote.get("commentId").asText());
+        assertEquals("DISLIKE", vote.get("vote").asText());
+        assertFalse(vote.has("dislikes"));
+
+        JsonNode soundVote = communityJson(mvc, put(soundPath + "/vote").header("X-API-Key", key)
+            .header("Authorization", other).contentType(MediaType.APPLICATION_JSON).content("{\"vote\":\"LIKE\"}"), 200);
+        assertEquals(1, soundVote.get("likes").asInt());
+        assertTrue(soundVote.get("commentId").isNull());
+        JsonNode cleared = communityJson(mvc, put(soundPath + "/vote").header("X-API-Key", key)
+            .header("Authorization", other).contentType(MediaType.APPLICATION_JSON).content("{\"vote\":null}"), 200);
+        assertTrue(cleared.get("vote").isNull());
+        assertEquals(0, cleared.get("likes").asInt());
+
+        JsonNode removed = communityJson(mvc, delete(comments + "/" + root).header("X-API-Key", key)
+            .header("Authorization", owner), 200);
+        assertTrue(removed.at("/comment/deleted").asBoolean());
+        assertEquals(1, removed.get("commentCount").asInt());
+    }
+
+    @Test
+    public void communityPlayHttpAcceptsGuestsAndKeepsRetriesIdempotent() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        String path = "/api/beebot/public/sounds/10/plays";
+        String body = "{\"playbackId\":\"" + UUID.randomUUID() + "\"}";
+
+        for (int retry = 0; retry < 2; retry++) {
+            mvc.perform(post(path).header("X-API-Key", "application").contentType(MediaType.APPLICATION_JSON)
+                    .content(body)).andExpect(status().isNoContent());
+        }
+        assertEquals(1, row("SELECT plays FROM sound WHERE id=10").getAsInt("plays"));
+
+        mvc.perform(post(path).header("X-API-Key", "application").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playbackId\":\"1-1-1-1-1\"}")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/beebot/public/sounds/11/plays").header("X-API-Key", "application")
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void communityImageHttpChecksOwnershipMultipartAndSize() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        String path = "/api/beebot/sounds/10/image";
+        MockMultipartFile invalid = new MockMultipartFile("file", "bad.png", "image/png", new byte[]{1, 2});
+        MockMultipartFile oversized = new MockMultipartFile("file", "big.png", "image/png", new byte[1024 * 1024 + 1]);
+
+        mvc.perform(put(path).header("X-API-Key", "application").header("Authorization", "Bearer owner")
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isUnsupportedMediaType());
+        mvc.perform(multipart(HttpMethod.PUT, path).header("X-API-Key", "application")
+                .header("Authorization", "Bearer owner")).andExpect(status().isBadRequest());
+        mvc.perform(multipart(HttpMethod.PUT, path).file(invalid).header("X-API-Key", "application")
+                .header("Authorization", "Bearer other")).andExpect(status().isForbidden());
+        mvc.perform(multipart(HttpMethod.PUT, path).file(invalid).header("X-API-Key", "application")
+                .header("Authorization", "Bearer owner")).andExpect(status().isBadRequest());
+        mvc.perform(multipart(HttpMethod.PUT, path).file(oversized).header("X-API-Key", "application")
+                .header("Authorization", "Bearer owner")).andExpect(status().isPayloadTooLarge());
+        mvc.perform(delete(path).header("X-API-Key", "application").header("Authorization", "Bearer owner"))
+            .andExpect(status().isNoContent());
+    }
+
+    private MockMvc communityMvc() {
+        return MockMvcBuilders.standaloneSetup(new SoundCommunityController(community()), soundController)
+            .setControllerAdvice(new ApiExceptionHandler())
+            .addFilters(new AuthFilter((key, bearer, policy) -> {
+                if (!"application".equals(key))
+                    throw new Exception(Type.UNAUTHENTICATED, "invalid_api_key", "Application key required");
+                if ("Bearer owner".equals(bearer))
+                    return AUTH;
+                if ("Bearer other".equals(bearer))
+                    return new AuthContext(null, "other", null, Long.MAX_VALUE, new AuthUser("9", "other", null, null));
+                if (bearer == null && policy == SessionPolicy.OPTIONAL)
+                    return new AuthContext(null, null, null, 0, null);
+
+                throw new Exception(Type.UNAUTHENTICATED, "invalid_session", "User session required");
+            })).build();
+    }
+
+    private JsonNode communityJson(MockMvc mvc, RequestBuilder request, int expectedStatus) throws java.lang.Exception {
+        return JSON.readTree(mvc.perform(request).andExpect(status().is(expectedStatus))
+            .andExpect(result -> assertEquals("no-store", result.getResponse().getHeader("Cache-Control")))
+            .andReturn().getResponse().getContentAsString());
     }
 
     private SoundService community() {

@@ -155,7 +155,7 @@ public class GuildController {
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("id", role.getId());
             entry.put("name", role.getName());
-            entry.put("color", role.getColors().getPrimary().getRGB());
+            entry.put("color", role.getColors().getPrimary());
             entry.put("position", role.getPosition());
             entry.put("managed", role.isManaged());
             entry.put("assignable", canManageRoles && !role.isManaged() && !role.isPublicRole() && self.canInteract(role));

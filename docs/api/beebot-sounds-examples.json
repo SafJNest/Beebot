@@ -1147,6 +1147,119 @@
         "code": "invalid_request",
         "message": "Specify q or tag"
       }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/public/sounds"
+      },
+      "status": 200,
+      "response": {
+        "items": [
+          {
+            "id": "42",
+            "name": "Airhorn",
+            "public": true,
+            "createdAt": "2026-11-01T10:00:00Z",
+            "durationMs": 2088,
+            "audioUrl": "https://cdn.example.com/sounds/42/42.mp3",
+            "imageUrl": null,
+            "uploader": {
+              "id": "456",
+              "name": "Luna",
+              "avatarUrl": null
+            },
+            "tags": [
+              {
+                "id": "1",
+                "name": "meme"
+              }
+            ],
+            "plays": 18,
+            "listeners": 7,
+            "likes": 4,
+            "dislikes": 1,
+            "commentCount": 2
+          }
+        ],
+        "mine": [],
+        "nextCursor": null
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "/api/beebot/public/sounds/42/comments"
+      },
+      "status": 200,
+      "response": {
+        "items": [
+          {
+            "id": "7",
+            "soundId": "42",
+            "parentId": null,
+            "author": {
+              "id": "456",
+              "name": "Luna",
+              "avatarUrl": null
+            },
+            "text": "Nice!",
+            "createdAt": "2026-11-02T10:00:00Z",
+            "editedAt": null,
+            "deleted": false,
+            "pinned": true,
+            "hearted": false,
+            "likes": 3,
+            "replyCount": 1,
+            "uploader": true
+          }
+        ],
+        "nextCursor": null
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "url": "/api/beebot/public/sounds/42/plays",
+        "body": {
+          "playbackId": "00f1704e-970b-4fae-8144-5e4af3db24e5"
+        }
+      },
+      "status": 204,
+      "response": null
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "url": "/api/beebot/sounds/42/vote",
+        "body": {
+          "vote": "LIKE"
+        }
+      },
+      "status": 200,
+      "response": {
+        "soundId": "42",
+        "commentId": null,
+        "likes": 5,
+        "dislikes": 1,
+        "vote": "LIKE"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "url": "/api/beebot/sounds/42/comments/7/vote",
+        "body": {
+          "vote": null
+        }
+      },
+      "status": 200,
+      "response": {
+        "soundId": "42",
+        "commentId": "7",
+        "likes": 3,
+        "vote": null
+      }
     }
   ]
 }
