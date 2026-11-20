@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.bot.model.BotSettings.JsonSettings;
+import com.safjnest.config.ServiceSettings;
 import com.safjnest.database.R2;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
@@ -229,9 +229,9 @@ public class SoundFilesTest {
     @Test
     public void jsonSettingsReadUploadCredentialsWithoutSerializingThem() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JsonSettings settings = mapper.readValue("""
+        ServiceSettings settings = mapper.readValue("""
             {"r2":{"enabled":true,"cdnUrl":"https://cdn.example","accessKeyId":"test-key","secretAccessKey":"test-secret"}}
-            """, JsonSettings.class);
+            """, ServiceSettings.class);
 
         assertTrue(settings.getR2().enabled());
         assertEquals("https://cdn.example", settings.getR2().cdnUrl());

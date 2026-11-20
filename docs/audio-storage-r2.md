@@ -1,19 +1,21 @@
 # Beebot asset storage on R2
 
-Add the `r2` block to the existing `settings` object in `rsc/settings.json`.
-This is local deployment configuration. Restart Beebot after editing it.
+Add the `r2` block under `services` in the instance configuration selected by
+`BEEBOT_CONFIG`. Legacy deployments put the same block under `settings` in
+`rsc/settings.json`. Restart Beebot after editing it. See
+[configuration and credential files](configuration.md).
 
-```json
-"r2": {
-  "enabled": true,
-  "cdnUrl": "https://cdn.example.com",
-  "soundPrefix": "sounds/",
-  "soundDirectory": "rsc/cache/sounds",
-  "soundBucket": "",
-  "accountId": "",
-  "accessKeyId": "",
-  "secretAccessKey": ""
-}
+```yaml
+services:
+  r2:
+    enabled: true
+    cdnUrl: "https://cdn.example.com"
+    soundPrefix: sounds/
+    soundDirectory: rsc/cache/sounds
+    soundBucket: ""
+    accountId: ""
+    accessKeyId: ""
+    secretAccessKey: ""
 ```
 
 Use the existing CDN base URL and match `soundPrefix` to the uploaded object
@@ -26,11 +28,11 @@ metadata edits use `sounds/<id>/<id>.<ext>`. MariaDB records that key in
 The CDN URL is sufficient for reading. To enable uploads, fill `soundBucket`,
 `accountId`, `accessKeyId`, and `secretAccessKey` with the R2 S3 credentials for
 that bucket. With all credentials empty, CDN reads work and upload attempts
-fail without committing a sound row. Keep these values in the ignored local
-settings file. See [Cloudflare's R2 token documentation](https://developers.cloudflare.com/r2/api/tokens/).
+fail without committing a sound row. Use credential references for the access
+keys. See [Cloudflare's R2 token documentation](https://developers.cloudflare.com/r2/api/tokens/).
 
 When `enabled` is false or the block is absent, audio commands use the legacy
-local directory `rsc/sounds` and the API uses the existing Spring `CDN_URL`.
+local directory `rsc/sounds` and the API uses `api.cdnUrl` when configured.
 
 Playback, replay, soundboard buttons, greets and Discord downloads share the
 same local file directory. On a miss, the bot finishes the download in a

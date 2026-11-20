@@ -46,7 +46,6 @@ import net.dv8tion.jda.api.entities.channel.attribute.IPositionableChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -84,11 +83,9 @@ public class GuildController {
     private final Function<String, TwitchClient.Streamer> twitchLookup;
 
     @Autowired
-    public GuildController(Environment environment) {
+    public GuildController(DiscordAuthService auth) {
         this(GuildCache.getInstance(), id -> Bot.getJDA() == null ? null : Bot.getJDA().getGuildById(id),
-            new DiscordAuthService(environment.getProperty("DISCORD_CLIENT_ID"), environment.getProperty("DISCORD_CLIENT_SECRET"),
-                environment.getProperty("AUTH_ENCRYPTION_KEY")),
-            TwitchClient::registerSubEvent);
+            auth, TwitchClient::registerSubEvent);
     }
 
     private GuildController(GuildCache cache, Function<String, Guild> discordGuilds,

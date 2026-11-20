@@ -1,4 +1,4 @@
-package com.safjnest.bot.model.BotSettings;
+package com.safjnest.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

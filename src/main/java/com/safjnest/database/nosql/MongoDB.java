@@ -59,7 +59,7 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ArenaBuildData;
 import com.safjnest.lol.model.ChampionIndexable;
 import com.safjnest.lol.model.ProfileIndexable;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.safjnest.lol.model.competitive.CompetitiveEntry;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
@@ -203,7 +203,7 @@ public final class MongoDB {
 
     public static synchronized MongoClient getClient() {
         if (client == null) {
-            String uri = SettingsLoader.getSettings().getJsonSettings().getMongo();
+            String uri = Settings.get().services().getMongo();
             if (uri == null || uri.isBlank()) throw new IllegalStateException(MONGO_URI_ERROR);
             ConnectionString connection = new ConnectionString(uri);
             if (connection.getDatabase() != null && !connection.getDatabase().isBlank()) {

@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.safjnest.bot.model.BotSettings.R2Settings;
+import com.safjnest.config.R2Settings;
 import com.safjnest.utils.HttpUtils;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.safjnest.database.sql.AbstractDB;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.safjnest.utils.spotify.model.SpotifyAlbum;
 import com.safjnest.utils.spotify.model.SpotifyArtist;
 import com.safjnest.utils.spotify.model.SpotifyTrack;
@@ -32,7 +32,7 @@ public class SpotifyDB extends AbstractDB {
 
     @Override
 	protected String getDatabase() {
-        return SettingsLoader.getSettings().getJsonSettings().getSpotifyDatabase().getDatabaseName();
+        return Settings.get().services().getSpotifyDatabase().getDatabaseName();
 	}
 
     public static SpotifyDB get() {

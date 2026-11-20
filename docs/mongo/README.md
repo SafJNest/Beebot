@@ -82,9 +82,9 @@ state from these files.
 
 ## Configuration
 
-`rsc/settings.json` holds the server-level Mongo URI; the URI does not name the
-application database. Do not log or commit real credentials. Tests use the
-database selected by `App.isTesting()` and current `MongoDB` constants.
+`services.mongo` in the [instance configuration](../configuration.md) supplies
+the server-level Mongo URI. Tests use the database selected by `App.isTesting()`
+and current `MongoDB` constants.
 
 `match_events` uses Mongo's native WiredTiger Zstandard compression. Structured
 models remain BSON; event payloads are stored separately from matches.

@@ -10,7 +10,7 @@ import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.PermissionHandler;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -44,7 +44,7 @@ public class PlaylistAddSong extends SlashCommand{
 
         String userId = event.getUser().getId();
         Integer maxPlaylistSize = !PermissionHandler.isUntouchable(userId)
-                ? (!PermissionHandler.isPremium(userId) ? SettingsLoader.getSettings().getBotSettings().getMaxFreePlaylistSize() : SettingsLoader.getSettings().getBotSettings().getMaxPremiumPlaylistSize())
+                ? (!PermissionHandler.isPremium(userId) ? Settings.get().bot().getMaxFreePlaylistSize() : Settings.get().bot().getMaxPremiumPlaylistSize())
                 : Integer.valueOf(Integer.MAX_VALUE);
 
         AudioTrack track = PlayerManager.get().createTrack(event.getGuild(), url);

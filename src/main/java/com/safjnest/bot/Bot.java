@@ -60,14 +60,14 @@ import com.safjnest.bot.commands.queue.*;
 import com.safjnest.bot.commands.settings.*;
 import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.bot.events.*;
-import com.safjnest.bot.model.BotSettings.BotSettings;
+import com.safjnest.config.BotSettings;
 import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
 import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.lol.message.LeagueEventHandler;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.status.log.BotLogger;
 import com.safjnest.utils.AutomatedActionTimer;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 
 import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 
@@ -106,7 +106,7 @@ public class Bot {
         //fastest way to comment
         //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
 
-        settings = SettingsLoader.getSettings().getBotSettings();
+        settings = Settings.get().bot();
 
         BotLogger.warning(settings.getInfo());
 

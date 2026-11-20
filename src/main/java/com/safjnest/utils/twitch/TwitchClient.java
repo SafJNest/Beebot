@@ -23,7 +23,7 @@ import com.safjnest.bot.cache.managers.GenericCache;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.exception.Exception.Type;
 import com.safjnest.status.log.BotLogger;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 
 public class TwitchClient {
     private static final Pattern LOGIN = Pattern.compile("[a-zA-Z0-9_]{1,25}");
@@ -41,8 +41,8 @@ public class TwitchClient {
 
     static {
         
-        TwitchClient.clientId = SettingsLoader.getSettings().getJsonSettings().getTwitch().getClientId();
-        TwitchClient.clientSecret = SettingsLoader.getSettings().getJsonSettings().getTwitch().getClientSecret();
+        TwitchClient.clientId = Settings.get().services().getTwitch().getClientId();
+        TwitchClient.clientSecret = Settings.get().services().getTwitch().getClientSecret();
 
         streamersCache = new GenericCache<String, User>(100, 1, TimeUnit.MINUTES, String.class, User.class);
     }

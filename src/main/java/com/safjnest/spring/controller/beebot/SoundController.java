@@ -20,8 +20,6 @@ import com.safjnest.sound.SoundPeriod;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.spring.config.AuthFilter;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,10 +44,8 @@ public class SoundController {
 
     private final SoundCache sounds;
 
-    @Autowired
-    public SoundController(Environment environment) {
+    public SoundController() {
         this(SoundCache.getInstance());
-        sounds.setCdnUrl(environment.getProperty("CDN_URL", ""));
     }
 
     public SoundController(SoundCache sounds) {

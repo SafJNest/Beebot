@@ -1,8 +1,6 @@
 package com.safjnest.spring;
 
 import java.io.File;
-import java.util.Properties;
-import java.util.Map;
 
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,12 +13,12 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
-import com.safjnest.spring.config.LolApiConfig;
+import com.safjnest.bot.cache.managers.SoundCache;
+import com.safjnest.config.Settings;
 import com.safjnest.discord.auth.DiscordAuthService;
 import com.safjnest.spring.config.AuthFilter;
+import com.safjnest.spring.config.LolApiConfig;
 
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 
@@ -39,20 +37,20 @@ public class SpringServer {
         this.tomcat = tomcat;
     }
 
-    public static SpringServer start(int port) throws Exception {
-        return start(port, new Properties());
-    }
+    public static SpringServer start(Settings.Api api) throws Exception {
+        Settings.Discord discord = api.discord();
+        DiscordAuthService auth = discord == null ? new DiscordAuthService()
+            : new DiscordAuthService(discord.clientId(), discord.clientSecret(), discord.encryptionKey());
+        SoundCache.getInstance().setCdnUrl(api.cdnUrl());
 
-    public static SpringServer start(int port, Properties properties) throws Exception {
         Tomcat tomcat = new Tomcat();
-        tomcat.setPort(port);
+        tomcat.setPort(api.port());
         tomcat.getConnector();
 
         Context context = tomcat.addContext(CONTEXT_PATH, new File(".").getAbsolutePath());
         FilterDef filter = new FilterDef();
         filter.setFilterName("beebotAuth");
-        filter.setFilter(new AuthFilter(new DiscordAuthService(properties.getProperty("DISCORD_CLIENT_ID"),
-            properties.getProperty("DISCORD_CLIENT_SECRET"), properties.getProperty("AUTH_ENCRYPTION_KEY"))::authenticate));
+        filter.setFilter(new AuthFilter(auth::authenticate));
         filter.setAsyncSupported("true");
         context.addFilterDef(filter);
         FilterMap mapping = new FilterMap();
@@ -64,7 +62,7 @@ public class SpringServer {
         mapping.setDispatcher("INCLUDE");
         mapping.setDispatcher("ERROR");
         context.addFilterMap(mapping);
-        registerDispatcher(context, properties);
+        registerDispatcher(context, auth);
 
         tomcat.start();
         return new SpringServer(tomcat);
@@ -75,9 +73,9 @@ public class SpringServer {
         tomcat.destroy();
     }
 
-    private static void registerDispatcher(Context context, Properties properties) {
+    private static void registerDispatcher(Context context, DiscordAuthService auth) {
         AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
-        applyProperties(applicationContext.getEnvironment(), properties);
+        applicationContext.addBeanFactoryPostProcessor(factory -> factory.registerSingleton("discordAuthService", auth));
         applicationContext.register(LolApiConfig.class);
 
         DispatcherServlet dispatcherServlet = new ApiDispatcherServlet(applicationContext);
@@ -88,15 +86,6 @@ public class SpringServer {
             MAX_UPLOAD_BYTES + MULTIPART_OVERHEAD_BYTES, 0));
 
         context.addServletMappingDecoded(SERVLET_MAPPING, SERVLET_NAME);
-    }
-
-    static void applyProperties(ConfigurableEnvironment environment, Properties properties) {
-        environment.getPropertySources().addFirst(new MapPropertySource("beebotSpringProperties",
-            Map.of("DISCORD_CLIENT_ID", properties.getProperty("DISCORD_CLIENT_ID", ""),
-                "DISCORD_CLIENT_SECRET", properties.getProperty("DISCORD_CLIENT_SECRET", ""),
-                "AUTH_ENCRYPTION_KEY", properties.getProperty("AUTH_ENCRYPTION_KEY", ""),
-                "AUTH_ALLOWED_REDIRECT_URIS", properties.getProperty("AUTH_ALLOWED_REDIRECT_URIS", ""),
-                "CDN_URL", properties.getProperty("CDN_URL", environment.getProperty("CDN_URL", "")))));
     }
 
     private static final class ApiDispatcherServlet extends DispatcherServlet {

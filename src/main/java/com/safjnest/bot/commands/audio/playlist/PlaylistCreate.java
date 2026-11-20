@@ -11,7 +11,7 @@ import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.PermissionHandler;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -45,11 +45,11 @@ public class PlaylistCreate extends SlashCommand{
         String userId = event.getUser().getId();
 
         Integer maxPlaylists = !PermissionHandler.isUntouchable(userId)
-                ? (!PermissionHandler.isPremium(userId) ? SettingsLoader.getSettings().getBotSettings().getMaxFreePlaylists() : SettingsLoader.getSettings().getBotSettings().getMaxPremiumPlaylists())
+                ? (!PermissionHandler.isPremium(userId) ? Settings.get().bot().getMaxFreePlaylists() : Settings.get().bot().getMaxPremiumPlaylists())
                 : Integer.valueOf(Integer.MAX_VALUE);
 
         Integer maxPlaylistSize = !PermissionHandler.isUntouchable(userId)
-                ? (!PermissionHandler.isPremium(userId) ? SettingsLoader.getSettings().getBotSettings().getMaxFreePlaylistSize() : SettingsLoader.getSettings().getBotSettings().getMaxPremiumPlaylistSize())
+                ? (!PermissionHandler.isPremium(userId) ? Settings.get().bot().getMaxFreePlaylistSize() : Settings.get().bot().getMaxPremiumPlaylistSize())
                 : Integer.valueOf(Integer.MAX_VALUE);
 
         List<QueryRecord> userPlaylists = BotDB.getPlaylists(userId);

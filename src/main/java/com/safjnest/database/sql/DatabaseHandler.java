@@ -6,8 +6,8 @@ import java.sql.Statement;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import com.safjnest.bot.model.BotSettings.DatabaseSettings;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.DatabaseSettings;
+import com.safjnest.config.Settings;
 
 
 // TheAllHandler che gestisce connessioni e quuery a livello query e cose varie
@@ -28,7 +28,7 @@ public class DatabaseHandler {
             e.printStackTrace();
         }
 
-        DatabaseSettings settings = SettingsLoader.getSettings().getJsonSettings().getDatabase();
+        DatabaseSettings settings = Settings.get().services().getDatabase();
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:mariadb://" + settings.getHost() + "/?autoReconnect=true");

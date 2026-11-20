@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.bot.model.BotSettings.R2Settings;
+import com.safjnest.config.R2Settings;
 import com.safjnest.database.R2;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.exception.Exception;

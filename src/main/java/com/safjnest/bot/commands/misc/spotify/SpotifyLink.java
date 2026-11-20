@@ -4,7 +4,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 
@@ -26,7 +26,7 @@ public class SpotifyLink extends SlashCommand{
     
     @Override
     protected void execute(SlashCommandEvent event) {
-        String clientId = SettingsLoader.getSettings().getJsonSettings().getSpotifyApi().getClientId();
+        String clientId = Settings.get().services().getSpotifyApi().getClientId();
         //String redirectUri = "http://127.0.0.1:3001/spotify/callback";
         String redirectUri = "https://safjnest.com/spotify/callback";
         String scope = "user-top-read";

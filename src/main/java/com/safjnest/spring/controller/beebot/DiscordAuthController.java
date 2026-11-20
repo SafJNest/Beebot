@@ -9,8 +9,6 @@ import com.safjnest.exception.Exception.Type;
 import com.safjnest.spring.config.AuthFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -29,16 +27,6 @@ public class DiscordAuthController {
     public record ExchangeRequest(String code, String state, String redirectUri) {}
 
     private final DiscordAuthService auth;
-
-    public DiscordAuthController() {
-        this(new DiscordAuthService());
-    }
-
-    @Autowired
-    public DiscordAuthController(Environment environment) {
-        this(new DiscordAuthService(environment.getProperty("DISCORD_CLIENT_ID"), environment.getProperty("DISCORD_CLIENT_SECRET"),
-            environment.getProperty("AUTH_ENCRYPTION_KEY")));
-    }
 
     public DiscordAuthController(DiscordAuthService auth) {
         this.auth = auth;

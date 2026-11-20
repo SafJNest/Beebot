@@ -20,11 +20,11 @@ import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.github.topi314.lavasrc.mirror.DefaultMirroringAudioTrackResolver;
 import com.github.topi314.lavasrc.spotify.SpotifySourceManager;
 import com.safjnest.App;
-import com.safjnest.bot.model.BotSettings.LavalinkSettings;
-import com.safjnest.bot.model.BotSettings.PoTokenSettings;
-import com.safjnest.bot.model.BotSettings.SpotifySettings;
+import com.safjnest.config.LavalinkSettings;
+import com.safjnest.config.PoTokenSettings;
+import com.safjnest.config.SpotifySettings;
 import com.safjnest.sound.model.Sound;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
@@ -81,7 +81,7 @@ public class PlayerManager {
     private void registerYoutube() {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
-        LavalinkSettings lavalinkSettings = SettingsLoader.getSettings().getJsonSettings().getLavalink();
+        LavalinkSettings lavalinkSettings = Settings.get().services().getLavalink();
 
         if(!App.isTesting() && lavalinkSettings.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(lavalinkSettings.getIpv6block());
@@ -94,7 +94,7 @@ public class PlayerManager {
         }
 
         if (lavalinkSettings.isPotokenEnabled()) {
-            PoTokenSettings poTokenSettings = lavalinkSettings.getTokens().get(SettingsLoader.getSettings().getConfig().getHost());
+            PoTokenSettings poTokenSettings = lavalinkSettings.getTokens().get(Settings.get().runtime().host());
             Web.setPoTokenAndVisitorData(poTokenSettings.getPotoken(), poTokenSettings.getVisitordata());
         }
 
@@ -102,7 +102,7 @@ public class PlayerManager {
     }
 
     private void registerSpotify() {
-        SpotifySettings spotifySettings = SettingsLoader.getSettings().getJsonSettings().getSpotify();
+        SpotifySettings spotifySettings = Settings.get().services().getSpotify();
         SpotifySourceManager spotify = new SpotifySourceManager(
                 spotifySettings.getClientId(),
                 spotifySettings.getClientSecret(),

@@ -47,7 +47,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.utils.HttpUtils;
 import com.safjnest.utils.SafJNest;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -82,7 +82,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     static {
 
-        LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
+        LeagueHandler.riotApi = new R4J(new APICredentials(Settings.get().services().getRiot().getKey()));
         DataCall.setCacheProvider(EmptyCacheProvider.INSTANCE);
         LeagueHandler.patch = PatchUtils.getPatch() + ".1";
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";

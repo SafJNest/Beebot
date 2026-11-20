@@ -9,9 +9,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.safjnest.bot.model.BotSettings.R2Settings;
+import com.safjnest.config.R2Settings;
 import com.safjnest.database.R2;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.safjnest.utils.ValidationUtils;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
@@ -33,7 +33,7 @@ public final class SoundboardThumbnails {
     public record Image(byte[] bytes, String extension, String contentType) {}
 
     public static SoundboardThumbnails configured() {
-        R2Settings settings = SettingsLoader.getSettings().getJsonSettings().getR2();
+        R2Settings settings = Settings.get().services().getR2();
         R2 storage = R2.getInstance();
         if (settings == null || !storage.canUpload())
             throw new IllegalStateException("R2 upload credentials are required for soundboard thumbnails");

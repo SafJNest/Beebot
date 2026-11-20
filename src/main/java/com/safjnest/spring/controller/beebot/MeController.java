@@ -23,7 +23,6 @@ import com.safjnest.spring.config.AuthFilter;
 import com.safjnest.utils.ValidationUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,10 +47,8 @@ public class MeController {
     public record GreetError(String field, String code, String message) {}
 
     @Autowired
-    public MeController(Environment environment) {
-        this(new DiscordAuthService(environment.getProperty("DISCORD_CLIENT_ID"), environment.getProperty("DISCORD_CLIENT_SECRET"),
-                environment.getProperty("AUTH_ENCRYPTION_KEY")),
-            SoundCache.getInstance(), UserCache.getInstance(), BotDB.get());
+    public MeController(DiscordAuthService auth) {
+        this(auth, SoundCache.getInstance(), UserCache.getInstance(), BotDB.get());
     }
 
     public MeController(DiscordAuthService auth, SoundCache sounds, UserCache users, BotDB database) {

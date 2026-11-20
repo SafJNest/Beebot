@@ -43,7 +43,7 @@ import com.safjnest.database.sql.QueryRecordParser;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.ParseUtils;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -84,9 +84,7 @@ public class BotDB extends AbstractDB {
 
     @Override
 	protected String getDatabase() {
-        return SettingsLoader.getSettings().getConfig().isTesting() 
-            ? SettingsLoader.getSettings().getJsonSettings().getTestDatabase().getDatabaseName()
-            :  SettingsLoader.getSettings().getJsonSettings().getDatabase().getDatabaseName();
+		return Settings.get().botDatabaseName();
 	}
 
     public static BotDB get() {

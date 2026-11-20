@@ -17,6 +17,7 @@
     <java.version>25</java.version>
     <spring.version>7.0.8</spring.version>
     <tomcat.version>11.0.10</tomcat.version>
+    <jackson.version>2.21.4</jackson.version>
   </properties>
 
   <profiles>
@@ -131,12 +132,17 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.21.4</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.21.4</version>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>

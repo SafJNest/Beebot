@@ -7,7 +7,7 @@ import java.sql.Timestamp;
 
 import com.safjnest.database.sql.AbstractDB;
 import com.safjnest.database.sql.QueryRecord;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.config.Settings;
 import com.safjnest.utils.spotify.SpotifyTokenManager;
 
 public class WebsiteDB extends AbstractDB {
@@ -19,7 +19,7 @@ public class WebsiteDB extends AbstractDB {
 
     @Override
 	protected String getDatabase() {
-        return SettingsLoader.getSettings().getJsonSettings().getTestWebsiteDatabase().getDatabaseName();
+        return Settings.get().services().getTestWebsiteDatabase().getDatabaseName();
 	}
 
     public static WebsiteDB get() {

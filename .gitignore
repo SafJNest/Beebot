@@ -48,6 +48,8 @@ l4j8cache/
 .DS_Store
 
 rsc/settings.json
+rsc/beebot.local.json
+/beebot.yml
 
 config.properties
 
