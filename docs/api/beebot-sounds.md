@@ -288,9 +288,8 @@ Run the new [003 migration](../../database/berbit/sound/003-sound-community.sql)
 after the historical migrations, in one MariaDB session with the old bot and
 API stopped. Apply it to a restored copy first and record the totals before
 and after. The new foreign keys use the actual type of `sound.id`. The migration adds
-`audio_key` and `image_key`. Existing flat audio references stay usable until
-the [storage migration command](../audio-storage-r2.md#move-existing-sounds-to-their-id-prefix)
-verifies the R2 copy and saves the new key.
+`audio_key` and `image_key`. The application uses the canonical object layout
+described in the [R2 storage contract](../audio-storage-r2.md#sound-audio-and-covers).
 
 For databases using the original community column names, apply
 [004](../../database/berbit/sound/004-sound-description.sql) and
@@ -337,9 +336,7 @@ supply the parent ID or `-` for roots, followed by the returned cursor.
 `post`, `reply`, `edit`, `pin`, `heart`, `delete`, `vote` and `play`
 write only with the test database configuration. Repeating
 `!test sound play 42 <uuid>` checks deduplication. The command reports
-results to the owner in a direct message. The `migrate-storage` operation
-previews storage candidates by default. `migrate-storage apply` explicitly
-runs the migration on the database and bucket configured for that bot.
+results to the owner in a direct message.
 
 ## Validation evidence
 

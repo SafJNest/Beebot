@@ -9,10 +9,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.safjnest.bot.audio.types.AudioType;
@@ -35,32 +33,6 @@ public final class SoundDB {
     public record Position(long rank, long score, long id) {}
 
     public record CommentChange(QueryRecord row, long commentCount, String previousPinnedId) {}
-
-    public record StorageKeys(String audio, String image) {}
-
-    public List<QueryRecord> storagePage(String after, int size) {
-        return database.readSoundRows("""
-            SELECT id, extension, url, thumbnail FROM sound WHERE id>? ORDER BY id LIMIT ?
-            """, after, size);
-    }
-
-    public QueryRecord storageRecord(String id) {
-        return soundRow(id);
-    }
-
-    public boolean migrateStorage(String id, Function<QueryRecord, StorageKeys> transfer) {
-        return database.writeSound(connection -> {
-            QueryRecord sound = database.lockSound(connection, id);
-            StorageKeys keys = transfer.apply(sound);
-
-            if (Objects.equals(sound.get("url"), keys.audio()) && Objects.equals(sound.get("thumbnail"), keys.image()))
-                return false;
-
-            database.soundExecute(connection, "UPDATE sound SET url=?, thumbnail=? WHERE id=?", keys.audio(), keys.image(), id);
-
-            return true;
-        });
-    }
 
     public <T> T read(Supplier<T> work) {
         return database.withSoundReadSession(work);

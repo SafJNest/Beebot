@@ -5,12 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
-import com.safjnest.bot.audio.SoundStorageMigration;
 import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.bot.cache.managers.UserCache;
 import com.safjnest.bot.model.guild.BlacklistData;
@@ -47,7 +45,6 @@ import com.safjnest.sound.model.SoundVote;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.PermissionHandler;
 import com.safjnest.utils.CommandsLoader;
-import com.safjnest.utils.ValidationUtils;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -69,8 +66,6 @@ public class Test extends Command {
     private static final List<String> MIGRATION_OPERATIONS = List.of(
         "fix-tracked", "rankprogress [runId]"
     );
-
-    private static final AtomicBoolean SOUND_MIGRATION_RUNNING = new AtomicBoolean();
 
     public Test() {
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -174,12 +169,6 @@ public class Test extends Command {
         String[] values = arguments.length == 2 ? arguments[1].strip().split("\\s+", 2) : new String[0];
         String operation = values.length > 0 ? values[0].toLowerCase(Locale.ROOT) : "";
         String input = values.length == 2 ? values[1] : "";
-        if ("migrate-storage".equals(operation)) {
-            migrateSoundStorage(event, input);
-
-            return;
-        }
-
         String[] parts = input.split("\\s+", 3);
         String viewer = event.getAuthor().getId();
         SoundService sounds = SoundService.getInstance();
@@ -246,8 +235,7 @@ public class Test extends Command {
                 }
                 default -> "Usage: !test sound explore | search [q] | suggest <q> | get <sound> | creator <user>"
                     + " | comments <sound> [parent|-] [cursor] | post <sound> <text> | reply/edit <sound> <comment> <text>"
-                    + " | pin/heart/delete <sound> <comment> | vote <sound> <comment|-> <like|dislike|none> | play <sound> [uuid]"
-                    + " | migrate-storage [preview|apply|prune] [sound]";
+                    + " | pin/heart/delete <sound> <comment> | vote <sound> <comment|-> <like|dislike|none> | play <sound> [uuid]";
             };
 
             event.replyInDm(result);
@@ -256,42 +244,6 @@ public class Test extends Command {
         } catch (IllegalArgumentException | IndexOutOfBoundsException failure) {
             event.replyInDm("Invalid sound test arguments. Use !test sound for usage.");
         }
-    }
-
-    private static void migrateSoundStorage(CommandEvent event, String input) {
-        String[] args = input.isBlank() ? new String[]{"preview"} : input.split("\\s+");
-        SoundStorageMigration.Mode mode = switch (args[0]) {
-            case "preview" -> SoundStorageMigration.Mode.PREVIEW;
-            case "apply" -> SoundStorageMigration.Mode.APPLY;
-            case "prune" -> SoundStorageMigration.Mode.PRUNE;
-            default -> null;
-        };
-        String id = args.length == 2 ? args[1] : null;
-        if (mode == null || args.length > 2 || (id != null && !ValidationUtils.isDecimalId(id))) {
-            event.replyInDm("Usage: !test sound migrate-storage [preview|apply|prune] [sound]");
-
-            return;
-        }
-
-        if (!SOUND_MIGRATION_RUNNING.compareAndSet(false, true)) {
-            event.replyInDm("A sound storage migration is already running.");
-
-            return;
-        }
-
-        Thread.startVirtualThread(() -> {
-            try {
-                SoundStorageMigration.Report result = new SoundStorageMigration().run(id, mode);
-
-                event.replyInDm(mode + " — audio=" + result.audio() + ", thumbnails=" + result.thumbnails()
-                    + ", updated sounds=" + result.updated() + ", removed flat audio=" + result.removed()
-                    + ", failures=" + result.failed());
-            } catch (RuntimeException failure) {
-                event.replyInDm("Sound storage migration failed: " + failure.getMessage());
-            } finally {
-                SOUND_MIGRATION_RUNNING.set(false);
-            }
-        });
     }
 
     private static String testComment(SoundComment.Change result) {

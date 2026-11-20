@@ -21,7 +21,7 @@ keys. The default prefix is `sounds/`. An empty prefix gives audio keys such
 as `123/123.mp3` and cover keys such as `123/cover.png`. Requests use the same
 CDN base for `/assets/punto.jpg`. Upload, CDN playback, bot downloads and
 metadata edits use `sounds/<id>/<id>.<ext>`. MariaDB records that key in
-`sound.url`. The storage migration uses the stored key to find older objects.
+`sound.url`.
 
 The CDN URL is sufficient for reading. To enable uploads, fill `soundBucket`,
 `accountId`, `accessKeyId`, and `secretAccessKey` with the R2 S3 credentials for
@@ -87,31 +87,3 @@ These database columns contain object keys relative to the configured CDN.
 The API builds the full URLs returned to clients.
 Catalog access still follows SQL visibility. A direct CDN link can be
 opened by anyone who has it.
-
-### Consolidate existing audio and covers
-
-After the [sound schema cutover](api/beebot-sounds.md#schema-cutover),
-the owner can run these commands on the bot.
-
-- `!test sound migrate-storage` previews the number of audio and cover
-  references eligible for migration. It reads MariaDB only.
-- `!test sound migrate-storage apply 42` migrates one sound.
-- `!test sound migrate-storage apply` migrates all catalogued sounds,
-  in batches. The command replies with counts and logs individual failures.
-- `!test sound migrate-storage prune` removes verified flat duplicates for
-  catalogued sounds after all bot and API instances use the canonical keys.
-  Append a sound ID to run it on a single sound.
-
-Run `apply` in the environment that owns the catalog before serving the new
-keys. It copies audio from the previous key, using `sounds/<id>.<ext>` for rows
-without a key, and verifies the destination before updating MariaDB. It can
-be rerun after a partial failure. Existing destination objects must match the
-source content. The command moves the cover referenced by `sound.thumbnail`
-when it lives outside the sound's prefix. Sounds without a cover keep a null
-key. Soundboard covers remain attached to their own soundboards.
-
-Run `prune` after `apply` and the deployment are complete. It checks the
-canonical key in MariaDB and verifies equal audio at the destination before
-deleting its flat duplicate. Once removed from R2, old CDN URLs can still be
-served from cache until expiry or purge. Clear any cached 404s on the new URLs
-if they were requested before copying. [R2 cache consistency](https://developers.cloudflare.com/r2/reference/consistency/#caching)

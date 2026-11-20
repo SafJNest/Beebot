@@ -254,44 +254,20 @@ public final class SoundFiles {
         return soundPrefix(id) + fileName(id, extension);
     }
 
-    String flatAudioKey(String id, String extension) {
-        return prefix + fileName(id, extension);
-    }
-
     boolean isSoundImageKey(String id, String key) {
         String directory = soundPrefix(id);
 
         return key != null && key.startsWith(directory) && key.substring(directory.length()).matches(IMAGE_FILENAME);
     }
 
-    String migratedImageKey(String id, String source) {
-        String filename = source.substring(source.lastIndexOf('/') + 1);
-        if (!filename.matches(IMAGE_FILENAME))
-            throw new IllegalArgumentException("Unsupported soundboard thumbnail key");
+    /* -------------------------------------------------------------------------- */
 
-        return soundPrefix(id) + filename;
-    }
-
-    void copy(String source, String target) {
-        storage.copyVerified(requireBucket(), source, target);
-    }
-
-    boolean hasObject(String key) {
-        return storage.hasObject(requireBucket(), key);
-    }
-
-    boolean pruneFlatAudio(String id, String extension) {
-        return storage.deleteVerifiedDuplicate(requireBucket(), flatAudioKey(id, extension), audioKey(id, extension));
-    }
-
-    String requireBucket() {
+    private String requireBucket() {
         if (bucket == null || bucket.isBlank() || !storage.canUpload())
             throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "R2 sound bucket and credentials are required");
 
         return bucket;
     }
-
-    /* -------------------------------------------------------------------------- */
 
     private String soundPrefix(String soundId) {
         return prefix + soundId + "/";

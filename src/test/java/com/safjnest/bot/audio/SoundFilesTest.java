@@ -193,8 +193,6 @@ public class SoundFilesTest {
             "beebot", "sounds/", (key, target) -> fail("Key generation should not download a file"));
 
         assertEquals("sounds/1/1.mp3", files.audioKey("1", "mp3"));
-        assertEquals("sounds/1.mp3", files.flatAudioKey("1", "mp3"));
-        assertEquals("sounds/1/cover.png", files.migratedImageKey("1", "soundboard/thumbnail/2/cover.png"));
 
         assertTrue(files.isSoundImageKey("1", "sounds/1/123.jpg"));
         assertTrue(files.isSoundImageKey("1", "sounds/1/thumbnail-cover.png"));
