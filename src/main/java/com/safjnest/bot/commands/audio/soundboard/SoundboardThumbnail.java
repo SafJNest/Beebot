@@ -8,9 +8,10 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.audio.SoundboardThumbnails;
 import com.safjnest.bot.audio.SoundboardThumbnails.Image;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.database.sql.database.BotDB.SoundboardAccess;
+import com.safjnest.exception.Exception;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
-import com.safjnest.utils.ValidationUtils;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -46,28 +47,27 @@ public class SoundboardThumbnail extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String id = event.getOption("soundboard_name").getAsString();
-        String guildId = event.getGuild().getId();
-        String userId = event.getUser().getId();
-
-        if (!ValidationUtils.isDecimalId(id) || !BotDB.soundboardExists(id, guildId, userId)) {
-            event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
+        SoundboardAccess access;
+        try {
+            access = Soundboard.editAccess(event, id);
+        } catch (Exception failure) {
+            event.deferReply(true).addContent(failure.getMessage()).queue();
             return;
         }
 
         Attachment attachment = event.getOption("thumbnail").getAsAttachment();
         event.deferReply(false).queue(hook -> Thread.startVirtualThread(
-            () -> update(hook, id, guildId, userId, attachment)));
+            () -> update(hook, id, access, attachment)));
     }
 
     /* -------------------------------------------------------------------------- */
 
-    private void update(InteractionHook hook, String id, String guildId, String userId, Attachment attachment) {
+    private void update(InteractionHook hook, String id, SoundboardAccess access, Attachment attachment) {
         try {
             Image image = SoundboardThumbnails.download(attachment);
-            String key = SoundboardThumbnails.configured().upload(id, image);
-            boolean saved = BotDB.get().updateSoundboardThumbnail(id, guildId, userId, key);
+            BotDB.get().replaceSoundboardThumbnail(id, access, boardId -> SoundboardThumbnails.configured().upload(boardId, image));
 
-            hook.editOriginal(saved ? "Thumbnail updated correctly." : "Error updating thumbnail.").queue();
+            hook.editOriginal("Thumbnail updated correctly.").queue();
         } catch (IllegalArgumentException exception) {
             hook.editOriginal("Invalid thumbnail.").queue();
         } catch (InterruptedException exception) {

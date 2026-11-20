@@ -265,14 +265,25 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return SoundFiles.getInstance().create(database, name, description, guild, context.userId(), extension, isPublic, tags, input);
     }
 
-    public List<Sound> soundboardSounds(Context context, String id) {
+    public List<Sound> soundboardSounds(Context context, QueryRecord board) {
+        List<QueryRecord> rows = soundboardRows(board, context.userId(), context.guilds().keySet(), false);
+
+        return responses(context, rows, database.readSoundTags(rowIds(rows)));
+    }
+
+    public List<QueryRecord> soundboardRows(QueryRecord board, String viewer, Set<String> accessibleGuilds, boolean publicView) {
         List<QueryRecord> rows = new ArrayList<>();
-        for (QueryRecord row : database.readSoundboardSounds(id)) {
-            if (BotDB.isSoundVisible(row, context.userId(), context.guilds().keySet()))
+        String guildId = board.get("guild_id");
+        Set<String> guilds = guildId != null && accessibleGuilds.contains(guildId) ? Set.of(guildId) : Set.of();
+
+        for (QueryRecord row : database.readSoundboardSounds(board.get("id"))) {
+            boolean visible = publicView && board.getAsBoolean("public")
+                ? row.getAsBoolean("public") : BotDB.isSoundVisible(row, viewer, guilds);
+            if (visible)
                 rows.add(row);
         }
 
-        return responses(context, rows, database.readSoundTags(rowIds(rows)));
+        return rows;
     }
 
     public GuildSounds guildSounds(Context context, String guild, SoundPeriod period) {

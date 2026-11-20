@@ -8,6 +8,11 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.audio.SoundEmbed;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.database.sql.database.BotDB.SoundboardAccess;
+import com.safjnest.exception.Exception;
+import com.safjnest.utils.ValidationUtils;
+
+import net.dv8tion.jda.api.Permission;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -36,6 +41,14 @@ public class Soundboard extends SlashCommand{
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
         
         commandData.setThings(this);
+    }
+
+    public static SoundboardAccess editAccess(SlashCommandEvent event, String id) {
+        if (!ValidationUtils.isDecimalId(id) || id.startsWith("0"))
+            throw Exception.invalidRequest("Invalid soundboard ID");
+
+        return BotDB.get().soundboardEditAccess(id, event.getUser().getId(), event.getGuild().getId(),
+            event.getMember().hasPermission(Permission.ADMINISTRATOR));
     }
 
 	@Override

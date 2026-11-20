@@ -98,7 +98,7 @@ public class Sound {
         result.likedByMe = extra.getAsInt("vote") == 1;
         result.dislikedByMe = extra.getAsInt("vote") == -1;
 
-        result.ownedByMe = viewerId.equals(result.USER_ID);
+        result.ownedByMe = viewerId != null && viewerId.equals(result.USER_ID);
         result.canEdit = result.ownedByMe;
         result.canDelete = result.ownedByMe || administrator;
         result.soundboardCount = extra.getAsLong("boards");
@@ -346,12 +346,16 @@ public class Sound {
         return increaseUserPlays(userId, guildId, null, source);
     }
 
-    public synchronized boolean increaseUserPlays(String userId, String guildId, String channelId, AudioType source) {
+    public boolean increaseUserPlays(String userId, String guildId, String channelId, AudioType source) {
+        return increaseUserPlays(userId, guildId, channelId, source, null);
+    }
+
+    public synchronized boolean increaseUserPlays(String userId, String guildId, String channelId, AudioType source, String soundboardId) {
         if (deleted || original != null)
             return false;
 
         try {
-            plays = database.recordSoundPlay(ID, userId, guildId, channelId, source.ordinal());
+            plays = database.recordSoundPlay(ID, userId, guildId, channelId, source.ordinal(), soundboardId);
 
             return true;
         } catch (Exception exception) {
@@ -359,9 +363,9 @@ public class Sound {
         }
     }
 
-    public synchronized int recordWebPlay(String userId, UUID playbackId) {
+    public synchronized int recordWebPlay(String userId, UUID playbackId, String soundboardId, Set<String> guilds) {
         requireCurrent();
-        plays = database.communitySounds().recordWebPlay(ID, userId, playbackId);
+        plays = database.communitySounds().recordWebPlay(ID, userId, playbackId, soundboardId, guilds);
 
         return plays;
     }

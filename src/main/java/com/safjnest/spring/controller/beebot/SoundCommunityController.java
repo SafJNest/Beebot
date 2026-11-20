@@ -15,6 +15,9 @@ import com.safjnest.sound.SoundService;
 import com.safjnest.sound.model.SoundCatalog;
 import com.safjnest.sound.model.SoundComment;
 import com.safjnest.sound.model.SoundVote;
+import com.safjnest.sound.model.SoundTarget;
+import com.safjnest.sound.model.Soundboard;
+import com.safjnest.utils.ValidationUtils;
 import com.safjnest.spring.config.AuthFilter;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +77,14 @@ public final class SoundCommunityController {
         return sounds.search(filter, viewer(auth));
     }
 
+    @GetMapping("/public/soundboards")
+    public SoundCatalog.Page<Soundboard> searchSoundboards(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+            @RequestParam(name = "q", required = false) String query,
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "cursor", required = false) String cursor) {
+        return sounds.searchSoundboards(query, viewer(auth), limit, cursor);
+    }
+
     @GetMapping("/public/sounds/suggestions")
     public SoundCatalog.Suggestions suggestions(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
             @RequestParam("q") String query) {
@@ -86,14 +97,14 @@ public final class SoundCommunityController {
         return sounds.get(soundId, viewer(auth));
     }
 
-    @GetMapping("/public/sounds/{soundId}/comments")
+    @GetMapping({"/public/sounds/{soundId}/comments", "/public/soundboards/{boardId}/comments"})
     public SoundCatalog.Page<SoundComment> comments(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("soundId") String soundId,
+            @PathVariable Map<String, String> path,
             @RequestParam(name = "parentId", required = false) String parentId,
             @RequestParam(name = "sort", required = false) String sort,
             @RequestParam(name = "limit", required = false) Integer limit,
             @RequestParam(name = "cursor", required = false) String cursor) {
-        return sounds.comments(soundId, viewer(auth), parentId, commentSort(sort), limit, cursor);
+        return sounds.comments(resource(path), viewer(auth), parentId, commentSort(sort), limit, cursor);
     }
 
     @GetMapping("/public/users/{userId}")
@@ -105,50 +116,51 @@ public final class SoundCommunityController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void recordPlay(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
             @PathVariable("soundId") String soundId, @RequestBody JsonNode body) {
-        requireFields(body, "playbackId");
+        requireFields(body, "playbackId", "soundboardId");
         String id = text(body, "playbackId");
 
-        sounds.recordWebPlay(soundId, viewer(auth), playbackId(id));
+        String boardId = body.has("soundboardId") ? text(body, "soundboardId") : null;
+        sounds.recordWebPlay(soundId, viewer(auth), playbackId(id), boardId);
     }
 
-    @PostMapping(path = "/sounds/{soundId}/comments", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = {"/sounds/{soundId}/comments", "/soundboards/{boardId}/comments"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public SoundComment.Change createComment(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("soundId") String soundId, @RequestBody JsonNode body) {
+            @PathVariable Map<String, String> path, @RequestBody JsonNode body) {
         requireFields(body, "text", "parentId");
         String parent = body.has("parentId") ? text(body, "parentId") : null;
 
-        return sounds.addComment(soundId, user(auth), parent, text(body, "text"));
+        return sounds.addComment(resource(path), user(auth), parent, text(body, "text"));
     }
 
-    @PatchMapping(path = "/sounds/{soundId}/comments/{commentId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(path = {"/sounds/{soundId}/comments/{commentId}", "/soundboards/{boardId}/comments/{commentId}"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     public SoundComment.Change editComment(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("soundId") String soundId, @PathVariable("commentId") String commentId,
+            @PathVariable Map<String, String> path, @PathVariable("commentId") String commentId,
             @RequestBody JsonNode body) {
         requireFields(body, "text", "pinned", "hearted");
         SoundComment.Edit edit = new SoundComment.Edit(body.has("text") ? text(body, "text") : null,
             flag(body, "pinned"), flag(body, "hearted"));
 
-        return sounds.editComment(soundId, commentId, user(auth), edit);
+        return sounds.editComment(resource(path), commentId, user(auth), edit);
     }
 
-    @DeleteMapping("/sounds/{soundId}/comments/{commentId}")
+    @DeleteMapping({"/sounds/{soundId}/comments/{commentId}", "/soundboards/{boardId}/comments/{commentId}"})
     public SoundComment.Removal deleteComment(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("soundId") String soundId, @PathVariable("commentId") String commentId) {
-        return sounds.deleteComment(soundId, commentId, user(auth));
+            @PathVariable Map<String, String> path, @PathVariable("commentId") String commentId) {
+        return sounds.deleteComment(resource(path), commentId, user(auth));
     }
 
-    @PutMapping(path = "/sounds/{soundId}/vote", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = {"/sounds/{soundId}/vote", "/soundboards/{boardId}/vote"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     public SoundVote.Result voteSound(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("soundId") String soundId, @RequestBody JsonNode body) {
-        return sounds.vote(soundId, null, user(auth), vote(body));
+            @PathVariable Map<String, String> path, @RequestBody JsonNode body) {
+        return vote(path, null, user(auth), vote(body));
     }
 
-    @PutMapping(path = "/sounds/{soundId}/comments/{commentId}/vote", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = {"/sounds/{soundId}/comments/{commentId}/vote", "/soundboards/{boardId}/comments/{commentId}/vote"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     public SoundVote.Result voteComment(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("soundId") String soundId, @PathVariable("commentId") String commentId,
+            @PathVariable Map<String, String> path, @PathVariable("commentId") String commentId,
             @RequestBody JsonNode body) {
-        return sounds.vote(soundId, commentId, user(auth), vote(body));
+        return vote(path, commentId, user(auth), vote(body));
     }
 
     @PutMapping(path = "/sounds/{soundId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -172,6 +184,28 @@ public final class SoundCommunityController {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private SoundTarget resource(Map<String, String> path) {
+        String board = path.get("boardId");
+        String targetId = board == null ? path.get("soundId") : board;
+        if (!ValidationUtils.isDecimalId(targetId) || board != null && targetId.startsWith("0"))
+            throw Exception.invalidRequest("Invalid ID");
+
+        try {
+            String id = Long.toString(Long.parseLong(targetId));
+            return board == null ? SoundTarget.sound(id) : SoundTarget.soundboard(id);
+        } catch (NumberFormatException failure) {
+            throw Exception.invalidRequest("Invalid ID");
+        }
+    }
+
+    private SoundVote.Result vote(Map<String, String> path, String commentId, String viewer, SoundVote vote) {
+        SoundTarget target = resource(path);
+        if (target.soundboard())
+            return sounds.voteSoundboard(target.id(), commentId, viewer, vote);
+
+        return sounds.vote(target.id(), commentId, viewer, vote);
+    }
 
     private String viewer(AuthContext auth) {
         return auth.user() == null ? null : auth.user().id();
@@ -239,7 +273,7 @@ public final class SoundCommunityController {
 
     private SoundVote vote(JsonNode body) {
         requireFields(body, "vote");
-        if (body.get("vote").isNull())
+        if (body.path("vote").isNull())
             return null;
 
         return switch (text(body, "vote")) {

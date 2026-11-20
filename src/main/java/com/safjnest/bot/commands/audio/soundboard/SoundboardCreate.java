@@ -2,7 +2,7 @@ package com.safjnest.bot.commands.audio.soundboard;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -57,7 +57,7 @@ public class SoundboardCreate extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        Set<String> soundIds = new HashSet<>();
+        Set<String> soundIds = new LinkedHashSet<>();
         for (OptionMapping option : event.getOptions()) {
             if (option.getName().startsWith("sound-"))
                 soundIds.add(option.getAsString());
@@ -71,8 +71,19 @@ public class SoundboardCreate extends SlashCommand{
         String[] ids = soundIds.toArray(String[]::new);
         OptionMapping nameOption = event.getOption("name");
         if (nameOption == null) {
-            List<Sound> sounds = SoundCache.getSoundsByIds(ids);
-            SoundEmbed.composeSoundboard(event, sounds).queue();
+            String guildId = event.getGuild().getId();
+            String viewer = event.getUser().getId();
+            List<Sound> visible = new ArrayList<>();
+            for (Sound sound : SoundCache.getSoundsByIds(ids)) {
+                if (sound.isPublic() || guildId.equals(sound.getGuildId()) || viewer.equals(sound.getUserId()))
+                    visible.add(sound);
+            }
+            if (visible.isEmpty()) {
+                event.deferReply(true).addContent("No visible sounds found.").queue();
+                return;
+            }
+
+            SoundEmbed.composeSoundboard(event, visible).queue();
             return;
         }
 
@@ -103,8 +114,7 @@ public class SoundboardCreate extends SlashCommand{
             }
 
             String id = BotDB.get().insertSoundBoard(name, guildId, userId, upload, soundIds);
-            List<Sound> sounds = SoundCache.getSoundsByIds(soundIds);
-            SoundEmbed.showCreatedSoundboard(hook, id, sounds);
+            SoundEmbed.showCreatedSoundboard(hook, id, guildId);
         } catch (IllegalArgumentException exception) {
             hook.editOriginal("Invalid thumbnail.").queue();
         } catch (InterruptedException exception) {

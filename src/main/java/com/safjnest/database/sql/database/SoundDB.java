@@ -21,6 +21,7 @@ import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.SoundCatalog;
 import com.safjnest.sound.model.SoundComment;
 import com.safjnest.sound.model.SoundVote;
+import com.safjnest.sound.model.SoundTarget;
 
 public final class SoundDB {
 
@@ -45,7 +46,7 @@ public final class SoundDB {
         return sound;
     }
 
-    public List<QueryRecord> search(SoundCatalog.Search filter, String ownerId, Position after, int limit) {
+    public List<QueryRecord> search(SoundCatalog.Search filter, String viewer, Position after, int limit) {
         List<Object> values = new ArrayList<>();
         String rank = "0";
         if (!filter.q().isEmpty() && filter.sort() == SoundCatalog.Sort.RELEVANCE) {
@@ -63,12 +64,12 @@ public final class SoundDB {
 
         StringBuilder sql = new StringBuilder("SELECT * FROM (SELECT s.*, ")
             .append(rank).append(" AS sort_rank, ").append(score).append(" AS sort_score FROM sound s WHERE ");
-        if (ownerId == null) {
-            sql.append("s.public=1");
-        } else {
-            sql.append("s.user_id=?");
-            values.add(ownerId);
+        sql.append("(s.public=1");
+        if (viewer != null) {
+            sql.append(" OR s.user_id=?");
+            values.add(viewer);
         }
+        sql.append(")");
 
         if (!filter.q().isEmpty()) {
             String pattern = "%" + BotDB.escapeSoundQuery(filter.q()) + "%";
@@ -173,21 +174,20 @@ public final class SoundDB {
             """, userId).getFirst();
     }
 
-    public QueryRecord pinned(String soundId, String viewerId) {
-        List<QueryRecord> rows = database.readSoundRows(commentProjection() + """
-            WHERE c.sound_id=? AND c.parent_id IS NULL AND c.pinned=1 AND c.deleted_at IS NULL
-            """, viewerId, soundId);
+    public QueryRecord pinned(SoundTarget resource, String viewerId) {
+        List<QueryRecord> rows = database.readSoundRows(commentProjection(resource) + " WHERE c." + column(resource)
+            + "=? AND c.parent_id IS NULL AND c.pinned=1 AND c.deleted_at IS NULL", viewerId, resource.id());
 
         return rows.isEmpty() ? null : rows.getFirst();
     }
 
-    public List<QueryRecord> comments(String soundId, String parentId, String viewerId, String excludeId,
+    public List<QueryRecord> comments(SoundTarget resource, String parentId, String viewerId, String excludeId,
             SoundComment.Sort sort, Position after, int limit) {
         List<Object> args = new ArrayList<>();
         args.add(viewerId);
-        args.add(soundId);
+        args.add(resource.id());
 
-        StringBuilder sql = new StringBuilder(commentProjection()).append("WHERE c.sound_id=? AND ");
+        StringBuilder sql = new StringBuilder(commentProjection(resource)).append("WHERE c.").append(column(resource)).append("=? AND ");
         if (parentId == null) {
             sql.append("c.parent_id IS NULL AND c.pinned=0");
         } else {
@@ -237,31 +237,31 @@ public final class SoundDB {
         return database.readSoundRows(sql.toString(), args.toArray());
     }
 
-    public void requireParent(String soundId, String parentId) {
-        if (database.readSoundRows("SELECT id FROM sound_comment WHERE sound_id=? AND id=?", soundId, parentId).isEmpty())
+    public void requireParent(SoundTarget resource, String parentId) {
+        if (database.readSoundRows("SELECT id FROM sound_comment WHERE " + column(resource) + "=? AND id=?", resource.id(), parentId).isEmpty())
             throw commentMissing();
     }
 
-    public CommentChange addComment(String soundId, String authorId, String parentId, String text) {
+    public CommentChange addComment(SoundTarget resource, String authorId, String parentId, String text, Set<String> guilds) {
         return database.writeSound(connection -> {
-            QueryRecord sound = lockVisible(connection, soundId, authorId);
-            if (parentId != null && comment(connection, soundId, parentId).get("deleted_at") != null)
+            QueryRecord sound = lockResource(connection, resource, authorId, guilds);
+            if (parentId != null && comment(connection, resource, parentId).get("deleted_at") != null)
                 throw commentMissing();
 
-            String id = insertComment(connection, soundId, authorId, parentId, text);
-            database.soundExecute(connection, "UPDATE sound SET comments=comments+1 WHERE id=?", soundId);
+            String id = insertComment(connection, resource, authorId, parentId, text);
+            database.soundExecute(connection, "UPDATE " + table(resource) + " SET comments=comments+1 WHERE id=?", resource.id());
 
             if (parentId != null)
                 database.soundExecute(connection, "UPDATE sound_comment SET replies=replies+1 WHERE id=?", parentId);
 
-            return new CommentChange(commentForViewer(connection, soundId, id, authorId), sound.getAsLong("comments") + 1, null);
+            return new CommentChange(commentForViewer(connection, resource, id, authorId), sound.getAsLong("comments") + 1, null);
         });
     }
 
-    public CommentChange editComment(String soundId, String id, String viewer, SoundComment.Edit edit) {
+    public CommentChange editComment(SoundTarget resource, String id, String viewer, SoundComment.Edit edit, Set<String> guilds) {
         return database.writeSound(connection -> {
-            QueryRecord sound = lockVisible(connection, soundId, viewer);
-            QueryRecord current = comment(connection, soundId, id);
+            QueryRecord sound = lockResource(connection, resource, viewer, guilds);
+            QueryRecord current = comment(connection, resource, id);
             if (current.get("deleted_at") != null)
                 throw commentMissing();
 
@@ -279,33 +279,33 @@ public final class SoundDB {
 
             String previous = null;
             if (edit.pinned() != null)
-                previous = setPin(connection, soundId, id, edit.pinned());
+                previous = setPin(connection, resource, id, edit.pinned());
 
-            return new CommentChange(commentForViewer(connection, soundId, id, viewer), sound.getAsLong("comments"), previous);
+            return new CommentChange(commentForViewer(connection, resource, id, viewer), sound.getAsLong("comments"), previous);
         });
     }
 
-    public CommentChange deleteComment(String soundId, String id, String viewer) {
+    public CommentChange deleteComment(SoundTarget resource, String id, String viewer, Set<String> guilds) {
         return database.writeSound(connection -> {
-            QueryRecord sound = lockVisible(connection, soundId, viewer);
-            QueryRecord current = comment(connection, soundId, id);
+            QueryRecord sound = lockResource(connection, resource, viewer, guilds);
+            QueryRecord current = comment(connection, resource, id);
             if (current.get("deleted_at") != null)
                 throw commentMissing();
             if (!viewer.equals(current.get("user_id")))
                 throw commentForbidden();
 
-            database.soundExecute(connection, "UPDATE sound SET comments=comments-1 WHERE id=?", soundId);
+            database.soundExecute(connection, "UPDATE " + table(resource) + " SET comments=comments-1 WHERE id=?", resource.id());
             QueryRecord placeholder = null;
 
             if (current.getAsLong("replies") == 0) {
-                deleteEmptyBranch(connection, soundId, current);
+                deleteEmptyBranch(connection, resource, current);
             } else {
                 database.soundExecute(connection, """
                     UPDATE sound_comment SET body=NULL, deleted_at=CURRENT_TIMESTAMP(6), pinned=0, hearted=0, likes=0, dislikes=0
                     WHERE id=?
                     """, id);
                 database.soundExecute(connection, "DELETE FROM sound_vote WHERE comment_id=?", id);
-                placeholder = commentForViewer(connection, soundId, id, viewer);
+                placeholder = commentForViewer(connection, resource, id, viewer);
             }
 
             return new CommentChange(placeholder, sound.getAsLong("comments") - 1, null);
@@ -313,23 +313,32 @@ public final class SoundDB {
     }
 
     public SoundVote.Result vote(String soundId, String commentId, String viewer, SoundVote vote) {
+        return vote(SoundTarget.sound(soundId), commentId, viewer, vote, Set.of());
+    }
+
+    public SoundVote.Result vote(SoundTarget resource, String commentId, String viewer, SoundVote vote, Set<String> guilds) {
         return database.writeSound(connection -> {
-            QueryRecord sound = lockVisible(connection, soundId, viewer);
-            QueryRecord target = commentId == null ? sound : comment(connection, soundId, commentId);
+            QueryRecord sound = lockResource(connection, resource, viewer, guilds);
+            QueryRecord target = commentId == null ? sound : comment(connection, resource, commentId);
 
             if (target.get("deleted_at") != null)
                 throw commentMissing();
 
-            return writeVote(database, connection, soundId, commentId, target, viewer,
+            return writeVote(database, connection, resource, commentId, target, viewer,
                 vote == null ? 0 : vote.getValue(), null);
         });
     }
 
-    public int recordWebPlay(String soundId, String viewer, UUID playbackId) {
+    public int recordWebPlay(String soundId, String viewer, UUID playbackId, String boardId, Set<String> guilds) {
         return database.writeSound(connection -> {
-            QueryRecord sound = lockVisible(connection, soundId, viewer);
+            QueryRecord board = database.lockSoundboardPlayback(connection, boardId, soundId, viewer, guilds);
+            QueryRecord sound = database.lockSound(connection, soundId);
+            if (board == null)
+                requireVisibility(sound, viewer);
+            else
+                BotDB.requireSoundboardSoundVisibility(board, sound, viewer, guilds);
 
-            return database.insertSoundPlay(connection, sound, viewer, null, null, AudioType.WEB.ordinal(), playbackId.toString());
+            return database.insertSoundPlay(connection, sound, viewer, null, null, AudioType.WEB.ordinal(), playbackId.toString(), boardId);
         });
     }
 
@@ -351,7 +360,7 @@ public final class SoundDB {
             throw Exception.invalidRequest("Invalid vote");
 
         String id = sound.get("id");
-        SoundVote.Result saved = writeVote(database, connection, id, null, sound, viewer, enabled ? value : 0, enabled ? null : value);
+        SoundVote.Result saved = writeVote(database, connection, SoundTarget.sound(id), null, sound, viewer, enabled ? value : 0, enabled ? null : value);
 
         return new Sound.Vote(id, saved.likes(), saved.dislikes(), saved.vote() == SoundVote.LIKE, saved.vote() == SoundVote.DISLIKE);
     }
@@ -366,10 +375,10 @@ public final class SoundDB {
         return rows.getFirst();
     }
 
-    private static SoundVote.Result writeVote(BotDB database, Connection connection, String soundId,
+    private static SoundVote.Result writeVote(BotDB database, Connection connection, SoundTarget resource,
             String commentId, QueryRecord target, String viewer, int value, Integer removeOnly) throws SQLException {
-        String column = commentId == null ? "sound_id" : "comment_id";
-        String id = commentId == null ? soundId : commentId;
+        String column = commentId == null ? column(resource) : "comment_id";
+        String id = commentId == null ? resource.id() : commentId;
         List<QueryRecord> rows = database.soundQuery(connection,
             "SELECT value FROM sound_vote WHERE " + column + "=? AND user_id=?", id, viewer);
         int old = rows.isEmpty() ? 0 : rows.getFirst().getAsInt("value");
@@ -378,7 +387,7 @@ public final class SoundDB {
         long dislikes = target.getAsLong("dislikes");
 
         if (old == next)
-            return new SoundVote.Result(soundId, commentId, likes, commentId == null ? dislikes : null, SoundVote.fromValue(next));
+            return voteResult(resource, commentId, likes, dislikes, next);
 
         if (next == 0) {
             database.soundExecute(connection, "DELETE FROM sound_vote WHERE " + column + "=? AND user_id=?", id, viewer);
@@ -390,10 +399,33 @@ public final class SoundDB {
 
         likes += delta(old, next, 1);
         dislikes += delta(old, next, -1);
-        String table = commentId == null ? "sound" : "sound_comment";
-        database.soundExecute(connection, "UPDATE " + table + " SET likes=?, dislikes=? WHERE id=?", likes, dislikes, id);
+        String table = commentId == null ? table(resource) : "sound_comment";
+        if (resource.soundboard() && commentId == null)
+            database.soundExecute(connection, "UPDATE soundboard SET likes=? WHERE id=?", likes, id);
+        else
+            database.soundExecute(connection, "UPDATE " + table + " SET likes=?, dislikes=? WHERE id=?", likes, dislikes, id);
 
-        return new SoundVote.Result(soundId, commentId, likes, commentId == null ? dislikes : null, SoundVote.fromValue(next));
+        return voteResult(resource, commentId, likes, dislikes, next);
+    }
+
+    private static SoundVote.Result voteResult(SoundTarget resource, String commentId, long likes, long dislikes, int vote) {
+        return new SoundVote.Result(resource.soundboard() ? null : resource.id(), resource.soundboard() ? resource.id() : null,
+            commentId, likes, !resource.soundboard() && commentId == null ? dislikes : null, SoundVote.fromValue(vote));
+    }
+
+    private static String table(SoundTarget target) {
+        return target.soundboard() ? "soundboard" : "sound";
+    }
+
+    private static String column(SoundTarget target) {
+        return target.soundboard() ? "soundboard_id" : "sound_id";
+    }
+
+    private QueryRecord lockResource(Connection connection, SoundTarget target, String viewer, Set<String> guilds) throws SQLException {
+        if (target.soundboard())
+            return database.lockVisibleSoundboard(connection, target.id(), viewer, guilds);
+
+        return lockVisible(connection, target.id(), viewer);
     }
 
     private static int delta(int old, int next, int expected) {
@@ -412,30 +444,28 @@ public final class SoundDB {
             throw soundMissing();
     }
 
-    private static String commentProjection() {
-        return """
-            SELECT c.*, s.user_id AS uploader_id, v.value AS vote
-            FROM sound_comment c JOIN sound s ON s.id=c.sound_id
-            LEFT JOIN sound_vote v ON v.comment_id=c.id AND v.user_id=?
-            """;
+    private static String commentProjection(SoundTarget resource) {
+        return "SELECT c.*, s.user_id AS uploader_id, v.value AS vote FROM sound_comment c JOIN "
+            + table(resource) + " s ON s.id=c." + column(resource)
+            + " LEFT JOIN sound_vote v ON v.comment_id=c.id AND v.user_id=? ";
     }
 
-    private QueryRecord commentForViewer(Connection connection, String soundId, String id, String viewer) throws SQLException {
-        return database.soundQuery(connection, commentProjection() + "WHERE c.sound_id=? AND c.id=?", viewer, soundId, id).getFirst();
+    private QueryRecord commentForViewer(Connection connection, SoundTarget resource, String id, String viewer) throws SQLException {
+        return database.soundQuery(connection, commentProjection(resource) + "WHERE c." + column(resource) + "=? AND c.id=?", viewer, resource.id(), id).getFirst();
     }
 
-    private QueryRecord comment(Connection connection, String soundId, String id) throws SQLException {
-        List<QueryRecord> rows = database.soundQuery(connection, "SELECT * FROM sound_comment WHERE sound_id=? AND id=?", soundId, id);
+    private QueryRecord comment(Connection connection, SoundTarget resource, String id) throws SQLException {
+        List<QueryRecord> rows = database.soundQuery(connection, "SELECT * FROM sound_comment WHERE " + column(resource) + "=? AND id=?", resource.id(), id);
         if (rows.isEmpty())
             throw commentMissing();
 
         return rows.getFirst();
     }
 
-    private String insertComment(Connection connection, String soundId, String author, String parent, String text) throws SQLException {
+    private String insertComment(Connection connection, SoundTarget resource, String author, String parent, String text) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO sound_comment(sound_id,user_id,parent_id,body) VALUES (?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
-            database.bindSound(statement, new Object[]{soundId, author, parent, text});
+                "INSERT INTO sound_comment(" + column(resource) + ",user_id,parent_id,body) VALUES (?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
+            database.bindSound(statement, new Object[]{resource.id(), author, parent, text});
             statement.executeUpdate();
 
             try (ResultSet keys = statement.getGeneratedKeys()) {
@@ -447,14 +477,14 @@ public final class SoundDB {
         }
     }
 
-    private String setPin(Connection connection, String soundId, String id, boolean pinned) throws SQLException {
+    private String setPin(Connection connection, SoundTarget resource, String id, boolean pinned) throws SQLException {
         String previous = null;
         if (pinned) {
             List<QueryRecord> rows = database.soundQuery(connection,
-                "SELECT id FROM sound_comment WHERE sound_id=? AND pinned=1 AND id<>?", soundId, id);
+                "SELECT id FROM sound_comment WHERE " + column(resource) + "=? AND pinned=1 AND id<>?", resource.id(), id);
             if (!rows.isEmpty()) {
                 previous = rows.getFirst().get("id");
-                database.soundExecute(connection, "UPDATE sound_comment SET pinned=0 WHERE sound_id=? AND pinned=1 AND id<>?", soundId, id);
+                database.soundExecute(connection, "UPDATE sound_comment SET pinned=0 WHERE " + column(resource) + "=? AND pinned=1 AND id<>?", resource.id(), id);
             }
         }
 
@@ -463,7 +493,7 @@ public final class SoundDB {
         return previous;
     }
 
-    private void deleteEmptyBranch(Connection connection, String soundId, QueryRecord current) throws SQLException {
+    private void deleteEmptyBranch(Connection connection, SoundTarget resource, QueryRecord current) throws SQLException {
         while (true) {
             database.soundExecute(connection, "DELETE FROM sound_comment WHERE id=?", current.get("id"));
             String parent = current.get("parent_id");
@@ -471,7 +501,7 @@ public final class SoundDB {
                 return;
 
             database.soundExecute(connection, "UPDATE sound_comment SET replies=replies-1 WHERE id=?", parent);
-            current = comment(connection, soundId, parent);
+            current = comment(connection, resource, parent);
             if (current.get("deleted_at") == null || current.getAsLong("replies") > 0)
                 return;
         }

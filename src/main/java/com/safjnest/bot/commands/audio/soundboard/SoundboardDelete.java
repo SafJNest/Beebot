@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.exception.Exception;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -34,16 +35,15 @@ public class SoundboardDelete extends SlashCommand{
         commandData.setThings(this);
     }
 
-	@Override
-	protected void execute(SlashCommandEvent event) {
-        String soundboardID = event.getOption("name").getAsString();
-        if(!BotDB.soundboardExists(soundboardID, event.getGuild().getId(), event.getUser().getId())) {
-            event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
-            return;
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        String boardId = event.getOption("name").getAsString();
+
+        try {
+            BotDB.get().removeSoundboard(boardId, Soundboard.editAccess(event, boardId));
+            event.deferReply(false).addContent("Soundboard deleted correctly.").queue();
+        } catch (Exception failure) {
+            event.deferReply(true).addContent(failure.getMessage()).queue();
         }
-        
-        BotDB.deleteSoundboard(soundboardID);
-        
-        event.deferReply(false).addContent("Soundboard deleted correctly.").queue();
-    }    
+    }
 }

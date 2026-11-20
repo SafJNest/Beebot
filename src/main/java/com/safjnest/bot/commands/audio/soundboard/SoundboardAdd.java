@@ -1,12 +1,13 @@
 package com.safjnest.bot.commands.audio.soundboard;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.exception.Exception;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -43,39 +44,24 @@ public class SoundboardAdd extends SlashCommand{
         commandData.setThings(this);
     }
 
-	@Override
-	protected void execute(SlashCommandEvent event) {
-        Set<String> soundIDs = new HashSet<String>();
-        for(OptionMapping option : event.getOptions())
-            if(option != null && !option.getName().equals("soundboard_name"))
-                soundIDs.add(option.getAsString());
-
-        if(soundIDs.isEmpty()) {
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        String boardId = event.getOption("soundboard_name").getAsString();
+        Set<String> ids = new LinkedHashSet<>();
+        for (OptionMapping option : event.getOptions()) {
+            if (option.getName().startsWith("sound-"))
+                ids.add(option.getAsString());
+        }
+        if (ids.isEmpty()) {
             event.deferReply(true).addContent("You need to insert at least a sound.").queue();
             return;
         }
 
-        String soundboardName = event.getOption("soundboard_name").getAsString();
-        if(!BotDB.soundboardExists(soundboardName, event.getGuild().getId(), event.getUser().getId())) {
-            event.deferReply(true).addContent("A soundboard with that name does not exist in this guild.").queue();
-            return;
+        try {
+            BotDB.get().addSoundsToBoard(boardId, Soundboard.editAccess(event, boardId), ids);
+            event.deferReply(false).addContent("Sound added correctly").queue();
+        } catch (Exception failure) {
+            event.deferReply(true).addContent(failure.getMessage()).queue();
         }
-
-        String soundboardID = event.getOption("soundboard_name").getAsString();
-        int soundCount = BotDB.getSoundInSoundboardCount(soundboardID);
-
-        if(soundCount >= maxSounds) {
-            event.deferReply(true).addContent("The soundboard is already full.").queue();
-            return;
-        }
-
-        if(soundCount + soundIDs.size() > maxSounds) {
-            event.deferReply(true).addContent("Too many sounds, the soundboard contains " + soundCount + "/" + maxSounds + " sounds and you tried to add " + soundIDs.size() + " sounds.").queue();
-            return;
-        }
-
-        BotDB.insertSoundsInSoundBoard(soundboardID, soundIDs.toArray(new String[0]));
-
-        event.deferReply(false).addContent("Sound added correctly").queue();
-    }    
+    }
 }

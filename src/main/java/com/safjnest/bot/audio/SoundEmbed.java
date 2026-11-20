@@ -2,6 +2,7 @@ package com.safjnest.bot.audio;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -14,6 +15,7 @@ import com.safjnest.database.R2;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.database.sql.database.BotDB.SoundboardData;
+import com.safjnest.exception.Exception;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.SafJNest;
@@ -193,39 +195,54 @@ public class SoundEmbed {
     // ███ ████████▀
     // ███ ███
 
-    public static List<Sound> getSoundboardSounds(String soundboardID) {
-        List<QueryRecord> sounds = BotDB.getSoundsFromSoundBoard(soundboardID);
-        List<String> soundIds = new ArrayList<>();
-        for (QueryRecord sound : sounds) soundIds.add(sound.get("sound_id"));
-        return SoundCache.getSoundsByIds(soundIds.toArray(new String[0]));
+    private static List<Sound> getSoundboardSounds(QueryRecord board, String viewer, Set<String> guilds) {
+        List<String> ids = new ArrayList<>();
+        SoundCache cache = SoundCache.getInstance();
+        for (QueryRecord sound : cache.soundboardRows(board, viewer, guilds, true))
+            ids.add(sound.get("id"));
+
+        return cache.load(ids);
     }
 
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardId) {
-        SoundboardData board = BotDB.get().getSoundboardByID(soundboardId);
-        if (board == null)
+        String viewer = event.getUser().getId();
+        String guildId = event.getGuild().getId();
+        Set<String> guilds = Set.of(guildId);
+        QueryRecord board;
+        try {
+            board = BotDB.get().visibleSoundboard(soundboardId, viewer, guilds);
+        } catch (Exception failure) {
             return event.deferReply(true).setContent("Soundboard not found");
+        }
+        boolean personal = !board.getAsBoolean("public") && !guildId.equals(board.get("guild_id"));
+        Set<String> contentScope = guildId.equals(board.get("guild_id")) ? guilds : Set.of();
+        Thumbnail thumbnail = soundboardThumbnail(new SoundboardData(board.get("name"), board.get("thumbnail")),
+            event.getJDA().getSelfUser().getAvatarUrl());
+        List<Container> components = soundboardComponents(thumbnail, getSoundboardSounds(board, personal ? viewer : null, contentScope), soundboardId);
 
-        Thumbnail thumbnail = soundboardThumbnail(board, event.getJDA().getSelfUser().getAvatarUrl());
-        List<Container> components = soundboardComponents(thumbnail, getSoundboardSounds(soundboardId));
-
-        return event.deferReply().addComponents(components).useComponentsV2();
+        return event.deferReply(personal).addComponents(components).useComponentsV2();
     }
 
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, List<Sound> sounds) {
         Thumbnail thumbnail = Thumbnail.fromUrl(event.getJDA().getSelfUser().getAvatarUrl());
 
-        return event.deferReply().addComponents(soundboardComponents(thumbnail, sounds)).useComponentsV2();
-    }
-
-    public static void showCreatedSoundboard(InteractionHook hook, String soundboardId, List<Sound> sounds) {
-        SoundboardData board = BotDB.get().getSoundboardByID(soundboardId);
-        if (board == null) {
-            hook.editOriginal("Soundboard not found").queue();
-            return;
+        boolean personal = false;
+        for (Sound sound : sounds) {
+            if (!sound.isPublic() && !event.getGuild().getId().equals(sound.getGuildId())) {
+                personal = true;
+                break;
+            }
         }
 
-        Thumbnail thumbnail = soundboardThumbnail(board, hook.getJDA().getSelfUser().getAvatarUrl());
-        List<Container> components = soundboardComponents(thumbnail, sounds);
+        return event.deferReply(personal).addComponents(soundboardComponents(thumbnail, sounds, null)).useComponentsV2();
+    }
+
+    public static void showCreatedSoundboard(InteractionHook hook, String soundboardId, String guildId) {
+        QueryRecord board = BotDB.get().visibleSoundboard(soundboardId, null, Set.of(guildId));
+        Thumbnail thumbnail = soundboardThumbnail(new SoundboardData(board.get("name"), board.get("thumbnail")),
+            hook.getJDA().getSelfUser().getAvatarUrl());
+        List<Sound> sounds = getSoundboardSounds(board, null, Set.of(guildId));
+        List<Container> components = soundboardComponents(thumbnail, sounds, soundboardId);
 
         hook.editOriginalComponents(components).useComponentsV2().queue();
     }
@@ -238,7 +255,7 @@ public class SoundEmbed {
         return Thumbnail.fromUrl(avatarUrl);
     }
 
-    private static List<Container> soundboardComponents(Thumbnail thumbnail, List<Sound> sounds) {
+    private static List<Container> soundboardComponents(Thumbnail thumbnail, List<Sound> sounds, String boardId) {
         List<Container> containers = new ArrayList<>();
         List<ContainerChildComponent> children = new ArrayList<>();
 
@@ -251,12 +268,15 @@ public class SoundEmbed {
 
         List<Button> buttons = new ArrayList<>();
         for (int i = 0; i < sounds.size(); i++) {
-            buttons.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(), sounds.get(i).getName()));
+            buttons.add(soundboardButton(sounds.get(i), boardId));
             if (buttons.size() == 5 || i == sounds.size() - 1) {
                 children.add(ActionRow.of(buttons));
                 buttons = new ArrayList<>();
             }
         }
+        if (children.isEmpty())
+            return containers;
+
         containers.add(Container.of(children).withAccentColor(Bot.getColor()));
 
         Button random = Button.primary("soundboard-random", " ")
@@ -268,13 +288,22 @@ public class SoundEmbed {
     }
 
     public static void composeSoundboard(CommandEvent event, String soundboardId) {
-        SoundboardData board = BotDB.get().getSoundboardByID(soundboardId);
-        if (board == null) {
+        String guildId = event.getGuild().getId();
+        Set<String> guilds = Set.of(guildId);
+        QueryRecord data;
+        try {
+            data = BotDB.get().visibleSoundboard(soundboardId, event.getAuthor().getId(), guilds);
+        } catch (Exception failure) {
             event.reply("Soundboard not found");
             return;
         }
+        if (!data.getAsBoolean("public") && !guildId.equals(data.get("guild_id"))) {
+            event.reply("Use /soundboard play to open a personal soundboard.");
+            return;
+        }
 
-        List<Sound> sounds = getSoundboardSounds(soundboardId);
+        List<Sound> sounds = getSoundboardSounds(data, null, guilds);
+        SoundboardData board = new SoundboardData(data.get("name"), data.get("thumbnail"));
         String url = thumbnailUrl(board);
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -291,8 +320,7 @@ public class SoundEmbed {
         List<MessageTopLevelComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
         for (int i = 0; i < sounds.size(); i++) {
-            row.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(),
-                    sounds.get(i).getName()));
+            row.add(soundboardButton(sounds.get(i), soundboardId));
             if (row.size() == 5 || i == sounds.size() - 1) {
                 rows.add(ActionRow.of(row));
                 row = new ArrayList<>();
@@ -300,6 +328,14 @@ public class SoundEmbed {
         }
 
         event.getChannel().sendMessageEmbeds(eb.build()).setComponents(rows).queue();
+    }
+
+    private static Button soundboardButton(Sound sound, String boardId) {
+        String id = "soundboard-" + sound.getId() + "." + sound.getExtension();
+        if (boardId != null)
+            id += "-" + boardId;
+
+        return Button.primary(id, sound.getName());
     }
 
     private static String thumbnailUrl(SoundboardData board) {

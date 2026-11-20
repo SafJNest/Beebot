@@ -4,7 +4,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-public record SoundComment(String id, String soundId, String parentId, Map<String, Object> author,
+public record SoundComment(String id, @JsonInclude(JsonInclude.Include.NON_NULL) String soundId,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String soundboardId, String parentId, Map<String, Object> author,
         String text, String createdAt, String editedAt, boolean deleted, boolean pinned, boolean hearted,
         long likes, long replyCount, boolean uploader, @JsonInclude(JsonInclude.Include.NON_NULL) Viewer viewer) {
 

@@ -52,9 +52,12 @@ import net.dv8tion.jda.api.modals.Modal;
 
     @Override
     public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {
-      if (!event.getMessage().isUsingComponentsV2()) return;
-
       String type = event.getComponentId().split("-")[0];
+      if (!event.getMessage().isUsingComponentsV2() && !"soundboard".equals(type))
+        return;
+
+      if (!event.getComponentId().contains("-"))
+        return;
       String innerType = event.getComponentId().split("-", 3)[1];
       String args = event.getComponentId().split("-", 3).length > 2 ? event.getComponentId().split("-", 3)[2] : "";
 
@@ -75,7 +78,7 @@ import net.dv8tion.jda.api.modals.Modal;
           spotify(event, innerType, args);
           break;
         case "soundboard":
-          soundboard(event, innerType, args);
+          soundboard(event, innerType);
         default:
           break;
       }
@@ -270,42 +273,54 @@ import net.dv8tion.jda.api.modals.Modal;
           .queue();
     }
 
-      private void soundboard(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+      private void soundboard(GenericComponentInteractionCreateEvent event, String innerType) {
         Guild guild = event.getGuild();
-        System.out.println(args);
-        String sound_id = innerType.split("\\.")[0];
-
         List<Button> buttons = EventUtils.getButtons(event).stream()
-          .filter(b -> b.getCustomId().startsWith("soundboard-") && !b.getCustomId().endsWith("-stop") && !b.getCustomId().endsWith("-random"))
-          .collect(Collectors.toList());
-        
+            .filter(button -> button.getCustomId() != null && button.getCustomId().startsWith("soundboard-")
+                && button.getCustomId().contains("."))
+            .toList();
+
         PlayerManager pm = PlayerManager.get();
-        switch (innerType) {
-            case "stop":
-                pm.getGuildMusicManager(guild).getTrackScheduler().stop();
-                return;
-            case "random":
-                int randomIndex = (int) (Math.random() * buttons.size());
-                sound_id = buttons.get(randomIndex).getCustomId().split("-")[1].split("\\.")[0];
-                break;
-            default: 
-                break;
+        if ("stop".equals(innerType)) {
+            pm.getGuildMusicManager(guild).getTrackScheduler().stop();
+            return;
         }
 
-        final String id = sound_id;
+        String selected = event.getComponentId();
+        if ("random".equals(innerType)) {
+            if (buttons.isEmpty())
+                return;
+
+            selected = buttons.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(buttons.size())).getCustomId();
+        }
+
+        String[] fields = selected.split("-", 3);
+        String id = fields[1].split("\\.")[0];
+        String boardId = fields.length == 3 ? fields[2] : null;
+        if (!id.matches("[1-9][0-9]*") || boardId != null && !boardId.matches("[1-9][0-9]*"))
+            return;
+
+        Sound sound = SoundCache.getSoundByString(id, guild, event.getUser());
+        if (sound == null) {
+            event.getHook().sendMessage("Sound not found").setEphemeral(true).queue();
+            return;
+        }
 
         MessageComponentTree tree = event.getMessage().getComponentTree();
-        for (Button button : buttons) {
-          button = button.withStyle(ButtonStyle.PRIMARY);
-          if (button.getCustomId().startsWith("soundboard-" + id + "."))
-            button = button.withStyle(ButtonStyle.SUCCESS);
-          tree = tree.replace(ComponentReplacer.byUniqueId(button.getUniqueId(), button));
+        if (event.getMessage().isUsingComponentsV2()) {
+            for (Button original : buttons) {
+                boolean current = original.getCustomId().startsWith("soundboard-" + id + ".");
+                Button button = original.withStyle(current ? ButtonStyle.SUCCESS : ButtonStyle.PRIMARY);
+                tree = tree.replace(ComponentReplacer.byUniqueId(button.getUniqueId(), button));
+            }
         }
 
         TextChannel textChannel = event.getChannel().asTextChannel();
         AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
-
-        Sound sound = SoundCache.getSoundById(id);
+        if (audioChannel == null) {
+            event.getHook().sendMessage("Join a voice channel to play this sound.").setEphemeral(true).queue();
+            return;
+        }
 
         final MessageComponentTree finalTree = tree;
 
@@ -319,10 +334,16 @@ import net.dv8tion.jda.api.modals.Modal;
                     playbackChannel = audioChannel;
 
                 String channelId = playbackChannel == null ? null : playbackChannel.getId();
-                SoundCache.withSound(id, current -> current.increaseUserPlays(event.getMember().getId(), guild.getId(), channelId, AudioType.SOUNDBOARD));
+                boolean saved = SoundCache.withSound(id, current -> current.increaseUserPlays(
+                    event.getMember().getId(), guild.getId(), channelId, AudioType.SOUNDBOARD, boardId));
+                if (!saved && boardId != null) {
+                    event.getHook().sendMessage("Sound is no longer available on this soundboard").setEphemeral(true).queue();
+                    return;
+                }
                 track.setUserData(new TrackData(AudioType.SOUNDBOARD));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUNDBOARD);
-                event.getHook().editOriginalComponents(finalTree).useComponentsV2().queue();
+                if (event.getMessage().isUsingComponentsV2())
+                    event.getHook().editOriginalComponents(finalTree).useComponentsV2().queue();
             }
 
             @Override

@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import com.safjnest.database.sql.database.BotDB;
 import com.safjnest.database.sql.database.BotDB.SoundboardData;
+import com.safjnest.database.sql.database.BotDB.SoundboardAccess;
 import com.safjnest.exception.Exception;
 
 public class SoundboardThumbnailsTest {
@@ -33,13 +34,15 @@ public class SoundboardThumbnailsTest {
             statement.execute("""
                 CREATE TABLE soundboard (
                     id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), guild_id VARCHAR(19), user_id VARCHAR(19),
-                    thumbnail VARCHAR(128)
+                    thumbnail VARCHAR(128), public BOOLEAN DEFAULT FALSE, sort_mode VARCHAR(12)
                 )
                 """);
-            statement.execute("CREATE TABLE sound (id INT PRIMARY KEY)");
-            statement.execute("INSERT INTO sound VALUES (1)");
+            statement.execute("CREATE TABLE guild (guild_id VARCHAR(19) PRIMARY KEY)");
+            statement.execute("INSERT INTO guild VALUES ('1')");
+            statement.execute("CREATE TABLE sound (id INT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), public BOOLEAN)");
+            statement.execute("INSERT INTO sound VALUES (1,'1','2',TRUE)");
             statement.execute("""
-                CREATE TABLE soundboard_sounds (id INT REFERENCES soundboard(id), sound_id INT REFERENCES sound(id))
+                CREATE TABLE soundboard_sounds (id INT REFERENCES soundboard(id), sound_id INT REFERENCES sound(id), position INT NOT NULL)
                 """);
         }
     }
@@ -74,9 +77,9 @@ public class SoundboardThumbnailsTest {
 
         String replacement = thumbnails.upload(id, cover);
         assertNotEquals(saved.thumbnailKey(), replacement);
-        assertFalse(database.updateSoundboardThumbnail(id, "3", "9", replacement));
+        assertThrows(Exception.class, () -> database.replaceSoundboardThumbnail(id, new SoundboardAccess("3", "9", true), ignored -> replacement));
         assertEquals(saved, database.getSoundboardByID(id));
-        assertTrue(database.updateSoundboardThumbnail(id, "1", "9", replacement));
+        assertEquals(replacement, database.replaceSoundboardThumbnail(id, new SoundboardAccess("1", "9", true), ignored -> replacement));
         assertEquals(new SoundboardData("New cover", replacement), database.getSoundboardByID(id));
     }
 

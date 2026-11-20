@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -35,6 +36,8 @@ import com.safjnest.sound.model.Sound;
 import com.safjnest.sound.model.SoundCatalog;
 import com.safjnest.sound.model.SoundComment;
 import com.safjnest.sound.model.SoundVote;
+import com.safjnest.sound.model.SoundTarget;
+import com.safjnest.sound.model.Soundboard;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.ValidationUtils;
 
@@ -82,19 +85,46 @@ public final class SoundService {
     public SoundCatalog.Results search(SoundCatalog.Search request, String viewer) {
         SoundCatalog.Search filter = normalize(request);
         String scope = scope("catalog", filter.q(), filter.tag(), filter.uploaderId(), filter.minDurationMs(),
-            filter.maxDurationMs(), filter.sort());
+            filter.maxDurationMs(), filter.sort(), viewer);
         Cursor after = decode(filter.cursor(), scope);
 
         return sounds.read(() -> {
             Position position = after == null ? null : after.position();
-            List<QueryRecord> rows = sounds.search(filter, null, position, filter.limit() + 1);
+            List<QueryRecord> rows = sounds.search(filter, viewer, position, filter.limit() + 1);
             List<QueryRecord> items = rows.subList(0, Math.min(rows.size(), filter.limit()));
-            List<QueryRecord> mine = viewer == null || after != null ? List.of() : sounds.search(filter, viewer, null, MINE_SIZE);
 
-            Map<String, SoundCatalog.Card> cards = cardsById(items, mine, viewer);
             String next = rows.size() > filter.limit() ? encode(scope, catalogPosition(items.getLast()), null) : null;
 
-            return new SoundCatalog.Results(orderedCards(items, cards), orderedCards(mine, cards), next);
+            return new SoundCatalog.Results(cards(items, viewer), List.of(), next);
+        });
+    }
+
+    public SoundCatalog.Page<Soundboard> searchSoundboards(String query, String viewer, Integer pageSize, String cursor) {
+        String q = normalizeText(query);
+        int limit = limit(pageSize);
+        String scope = scope("soundboards", q, viewer);
+        Cursor after = decode(cursor, scope);
+        List<QueryRecord> rows = database.searchSoundboards(q, viewer, after == null ? null : after.position(), limit + 1);
+        List<Soundboard> items = new ArrayList<>();
+        List<QueryRecord> page = rows.subList(0, Math.min(rows.size(), limit));
+
+        for (QueryRecord row : page)
+            items.add(Soundboard.fromRow(row, viewer != null && viewer.equals(row.get("user_id")), false, false));
+
+        String next = rows.size() > limit ? encode(scope, catalogPosition(page.getLast()), null) : null;
+
+        return new SoundCatalog.Page<>(List.copyOf(items), next);
+    }
+
+    public Soundboard.PublicDetail publicSoundboard(String boardId, String viewer) {
+        String id = id(boardId);
+        return sounds.read(() -> {
+            QueryRecord row = database.readSoundboard(id, viewer, true);
+            Set<String> guilds = boardGuilds(row, viewer);
+            BotDB.requireSoundboardVisibility(row, viewer, guilds);
+
+            Soundboard board = Soundboard.fromRow(row, viewer != null && viewer.equals(row.get("user_id")), false, viewer != null);
+            return new Soundboard.PublicDetail(board, cards(cache.soundboardRows(row, viewer, guilds, true), viewer));
         });
     }
 
@@ -134,25 +164,34 @@ public final class SoundService {
 
     public SoundCatalog.Page<SoundComment> comments(String soundId, String viewer, String parentId,
             SoundComment.Sort order, Integer pageSize, String cursor) {
-        String id = id(soundId);
+        return comments(SoundTarget.sound(id(soundId)), viewer, parentId, order, pageSize, cursor);
+    }
+
+    public SoundCatalog.Page<SoundComment> comments(SoundTarget target, String viewer, String parentId,
+            SoundComment.Sort order, Integer pageSize, String cursor) {
         String parent = parentId == null ? null : id(parentId);
         SoundComment.Sort sort = order == null ? SoundComment.Sort.TOP : order;
         int limit = limit(pageSize);
-        String scope = scope("comments", id, parent, sort);
+        String scope = scope("comments", target.soundboard(), target.id(), parent, sort);
         Cursor after = decode(cursor, scope);
 
         return sounds.read(() -> {
-            sounds.visibleSound(id, viewer);
+            if (target.soundboard()) {
+                QueryRecord row = database.readSoundboard(target.id(), null, false);
+                BotDB.requireSoundboardVisibility(row, viewer, boardGuilds(row, viewer));
+            } else {
+                sounds.visibleSound(target.id(), viewer);
+            }
 
             if (parent != null)
-                sounds.requireParent(id, parent);
+                sounds.requireParent(target, parent);
 
-            QueryRecord pinned = parent == null && after == null ? sounds.pinned(id, viewer) : null;
+            QueryRecord pinned = parent == null && after == null ? sounds.pinned(target, viewer) : null;
             String pinnedId = after == null ? pinned == null ? null : pinned.get("id") : after.pinnedId();
             Position position = after != null && after.position().id() > 0 ? after.position() : null;
             int remaining = pinned == null ? limit : limit - 1;
 
-            List<QueryRecord> rows = sounds.comments(id, parent, viewer, pinnedId, sort, position, remaining + 1);
+            List<QueryRecord> rows = sounds.comments(target, parent, viewer, pinnedId, sort, position, remaining + 1);
             List<SoundComment> items = new ArrayList<>();
             Map<String, Map<String, Object>> authors = new HashMap<>();
 
@@ -173,28 +212,40 @@ public final class SoundService {
     }
 
     public SoundComment.Change addComment(String soundId, String viewer, String parentId, String text) {
+        return addComment(SoundTarget.sound(id(soundId)), viewer, parentId, text);
+    }
+
+    public SoundComment.Change addComment(SoundTarget target, String viewer, String parentId, String text) {
         String actor = requireUser(viewer);
         String parent = parentId == null ? null : id(parentId);
-        CommentChange result = sounds.addComment(id(soundId), actor, parent, commentText(text));
+        CommentChange result = sounds.addComment(target, actor, parent, commentText(text), interactionGuilds(target, actor));
 
         return new SoundComment.Change(comment(result.row(), actor, new HashMap<>()), result.commentCount(), null);
     }
 
     public SoundComment.Change editComment(String soundId, String commentId, String viewer, SoundComment.Edit edit) {
+        return editComment(SoundTarget.sound(id(soundId)), commentId, viewer, edit);
+    }
+
+    public SoundComment.Change editComment(SoundTarget target, String commentId, String viewer, SoundComment.Edit edit) {
         String actor = requireUser(viewer);
         if (edit == null || edit.text() == null && edit.pinned() == null && edit.hearted() == null)
             throw Exception.invalidRequest("Specify at least one comment field");
 
         SoundComment.Edit normalized = new SoundComment.Edit(edit.text() == null ? null : commentText(edit.text()),
             edit.pinned(), edit.hearted());
-        CommentChange result = sounds.editComment(id(soundId), id(commentId), actor, normalized);
+        CommentChange result = sounds.editComment(target, id(commentId), actor, normalized, interactionGuilds(target, actor));
 
         return new SoundComment.Change(comment(result.row(), actor, new HashMap<>()), result.commentCount(), result.previousPinnedId());
     }
 
     public SoundComment.Removal deleteComment(String soundId, String commentId, String viewer) {
+        return deleteComment(SoundTarget.sound(id(soundId)), commentId, viewer);
+    }
+
+    public SoundComment.Removal deleteComment(SoundTarget target, String commentId, String viewer) {
         String actor = requireUser(viewer);
-        CommentChange result = sounds.deleteComment(id(soundId), id(commentId), actor);
+        CommentChange result = sounds.deleteComment(target, id(commentId), actor, interactionGuilds(target, actor));
         SoundComment placeholder = result.row() == null ? null : comment(result.row(), actor, new HashMap<>());
 
         return new SoundComment.Removal(placeholder, result.commentCount());
@@ -210,13 +261,28 @@ public final class SoundService {
         return sounds.vote(id, target, actor, vote);
     }
 
+    public SoundVote.Result voteSoundboard(String boardId, String commentId, String viewer, SoundVote vote) {
+        String actor = requireUser(viewer);
+        SoundTarget target = SoundTarget.soundboard(id(boardId));
+        if (commentId == null && vote == SoundVote.DISLIKE)
+            throw Exception.invalidRequest("A soundboard vote must be LIKE or null");
+
+        return sounds.vote(target, commentId == null ? null : id(commentId), actor, vote, interactionGuilds(target, actor));
+    }
+
     public int recordWebPlay(String soundId, String viewer, UUID playbackId) {
+        return recordWebPlay(soundId, viewer, playbackId, null);
+    }
+
+    public int recordWebPlay(String soundId, String viewer, UUID playbackId, String soundboardId) {
         if (playbackId == null)
             throw Exception.invalidRequest("A playback ID is required");
 
         String user = viewer == null ? null : requireUser(viewer);
+        String board = soundboardId == null ? null : id(soundboardId);
+        Set<String> guilds = board == null ? Set.of() : boardGuilds(board, user);
 
-        return withSound(id(soundId), sound -> sound.recordWebPlay(user, playbackId));
+        return withSound(id(soundId), sound -> sound.recordWebPlay(user, playbackId, board, guilds));
     }
 
     public String putImage(String soundId, String viewer, InputStream input) throws IOException {
@@ -256,6 +322,24 @@ public final class SoundService {
         } catch (NoSuchElementException failure) {
             throw new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
         }
+    }
+
+    private Set<String> interactionGuilds(SoundTarget target, String viewer) {
+        return target.soundboard() ? boardGuilds(target.id(), viewer) : Set.of();
+    }
+
+    private Set<String> boardGuilds(String id, String viewer) {
+        if (viewer == null)
+            return Set.of();
+
+        return boardGuilds(database.readSoundboard(id, null, false), viewer);
+    }
+
+    private Set<String> boardGuilds(QueryRecord row, String viewer) {
+        if (viewer == null || row.getAsBoolean("public") || row.get("guild_id") == null)
+            return Set.of();
+
+        return cache.context(viewer).guilds().keySet();
     }
 
     private List<SoundCatalog.Card> cards(List<QueryRecord> rows, String viewer) {
@@ -323,7 +407,7 @@ public final class SoundService {
         SoundComment.Viewer personal = viewer == null || deleted ? null
             : new SoundComment.Viewer(viewer.equals(author), SoundVote.fromValue(row.getAsInt("vote")));
 
-        return new SoundComment(row.get("id"), row.get("sound_id"), row.get("parent_id"),
+        return new SoundComment(row.get("id"), row.get("sound_id"), row.get("soundboard_id"), row.get("parent_id"),
             deleted ? null : users.computeIfAbsent(author, discord::user), row.get("body"), timestamp(row, "created_at"),
             deleted ? null : timestamp(row, "edited_at"), deleted, row.getAsBoolean("pinned"), row.getAsBoolean("hearted"),
             row.getAsLong("likes"), row.getAsLong("replies"), !deleted && author.equals(row.get("uploader_id")), personal);

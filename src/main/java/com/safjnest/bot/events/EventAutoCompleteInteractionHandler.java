@@ -1,5 +1,7 @@
 package com.safjnest.bot.events;
 
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.ArrayList;
@@ -307,14 +309,14 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> soundboard(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         
-        List<QueryRecord> soundboards = null;
-        if (!isFocused) soundboards = BotDB.getRandomSoundboard(e.getGuild().getId(), e.getUser().getId());
-        else soundboards = BotDB.getFocusedSoundboard(e.getGuild().getId(), e.getUser().getId(), value);
-
-        for (QueryRecord soundboard : soundboards) {
-            String server_name = Bot.getJDA().getGuildById(soundboard.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(soundboard.get("guild_id")).getName();
-            String label = soundboard.get("name") + " (" + server_name + ")";
-            choices.add(new Choice(label, soundboard.get("id")));
+        boolean edit = !"soundboard play".equals(e.getFullCommandName());
+        boolean administrator = e.getMember().hasPermission(Permission.ADMINISTRATOR);
+        List<QueryRecord> boards = BotDB.get().discordSoundboards(e.getGuild().getId(), e.getUser().getId(), edit, administrator, value);
+        for (QueryRecord board : boards) {
+            String guildId = board.get("guild_id");
+            Guild guild = guildId == null ? null : e.getJDA().getGuildById(guildId);
+            String label = guild == null ? board.get("name") : board.get("name") + " (" + guild.getName() + ")";
+            choices.add(new Choice(PermissionHandler.ellipsis(label, 100), board.get("id")));
         }
 
         return choices;
@@ -329,15 +331,28 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         String soundboardId = e.getOption("name").getAsString();
 
-        List<QueryRecord> sounds = null;
+        if (!soundboardId.matches("[1-9][0-9]*"))
+            return choices;
+        try {
+            BotDB.get().soundboardEditAccess(soundboardId, e.getUser().getId(), e.getGuild().getId(),
+                e.getMember().hasPermission(Permission.ADMINISTRATOR));
+        } catch (com.safjnest.exception.Exception failure) {
+            return choices;
+        }
 
-        if (isFocused) sounds = BotDB.getFocusedSoundFromSounboard(soundboardId, value);
-        else sounds = BotDB.getSoundsFromSoundBoard(soundboardId);
+        String viewer = e.getUser().getId();
+        String guildId = e.getGuild().getId();
+        BotDB database = BotDB.get();
+        for (QueryRecord sound : database.readSoundboardSounds(soundboardId)) {
+            String name = sound.get("name");
+            if (!BotDB.isSoundVisible(sound, viewer, java.util.Set.of(guildId))
+                    || isFocused && !name.regionMatches(true, 0, value, 0, value.length()))
+                continue;
 
-        for (QueryRecord sound : sounds) {
-            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
-            String label = sound.get("name") + " (" + server_name + ")";
-            choices.add(new Choice(label, sound.get("sound_id")));
+            String sourceId = sound.get("guild_id");
+            Guild source = sourceId == null ? null : e.getJDA().getGuildById(sourceId);
+            String label = name + " (" + (source == null ? "Unknown" : source.getName()) + ")";
+            choices.add(new Choice(PermissionHandler.ellipsis(label, 100), sound.get("id")));
         }
 
         return choices;

@@ -133,6 +133,9 @@ Apply the [sound schema cutover](#schema-cutover) before running the updated bac
 
 ## Soundboards
 
+See [the soundboard contract](beebot-soundboards.md) for personal boards,
+visibility, ordering, interactions and exact request and response shapes.
+
 Guild routes require membership and bot presence. Creation records the caller as uploader. Rename, sound changes, cover replacement and board deletion require the uploader or the guild owner or Administrator. An ID under a different guild returns 404. A board can contain public sounds and private sounds belonging to its own guild. Detail responses use canonical `Sound` objects filtered by current sound visibility. `soundCount` counts stored associations and can exceed the number of visible sounds in the detail.
 
 | Call | Request body | Success response |

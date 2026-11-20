@@ -126,12 +126,11 @@ facoltativi e si combinano tra loro.
 `relevance` mette prima il nome esatto, poi il prefisso del nome, poi i match
 parziali sul nome o sui tag. A parità usa le riproduzioni totali.
 `popular`, `mostLiked` e `mostDisliked` ordinano rispettivamente per play,
-like e dislike totali decrescenti. Con sessione, solo la prima pagina
-può contenere fino a 5 risultati in `mine`, filtrati con gli stessi criteri
-e comprensivi dei propri privati. `items` contiene esclusivamente risultati
-pubblici. Lo stesso suono pubblico può comparire in entrambe le liste.
-Il cursore riguarda `items` e `null` indica l'ultima pagina. Per un nuovo
-filtro riparti dalla prima pagina.
+like e dislike totali decrescenti. Con sessione `items` contiene anche i
+propri privati, ordinati con gli stessi criteri. `mine` è sempre vuoto e
+rimane presente per compatibilità. Il cursore riguarda `items` e `null`
+indica l'ultima pagina. Riparti dalla prima pagina se cambiano filtri,
+ordinamento o sessione.
 
 Esempi:
 
@@ -279,7 +278,7 @@ Con sessione la stessa scheda aggiunge per esempio
 
 | Metodo e percorso | Accesso | Body | Risposta |
 | --- | --- | --- | --- |
-| `POST /public/sounds/{soundId}/plays` | Pubblico | `{ "playbackId": "<UUID>" }` | `204` |
+| `POST /public/sounds/{soundId}/plays` | Pubblico | `{ "playbackId": "<UUID>" }` con `soundboardId` facoltativo | `204` |
 | `POST /sounds/{soundId}/comments` | Sessione | `{"text":"Ciao"}` oppure `{"text":"Risposta","parentId":"7"}` | `201 CommentChange` |
 | `PATCH /sounds/{soundId}/comments/{commentId}` | Sessione | Oggetto parziale con `text`, `pinned` o `hearted` | `200 CommentChange` |
 | `DELETE /sounds/{soundId}/comments/{commentId}` | Sessione | Vuoto | `200 CommentRemoval` |
@@ -519,6 +518,9 @@ riproduzioni web anonime entrano nei totali e nella sorgente `WEB`.
 
 ## Soundboard di gilda
 
+La [specifica soundboard](beebot-soundboards.md) descrive anche le board
+personali, la ricerca, l’ordine, la modifica e le interazioni.
+
 Rotte **attive**, tutte con **Sessione**. La lettura richiede normale
 membership e bot presente. Qualunque membro autorizzato può creare una
 soundboard. Le scritture su una soundboard esistente richiedono il suo
@@ -545,8 +547,13 @@ type Soundboard = {
   thumbnailUrl: string | null
   soundCount: number
   canEdit: boolean
+  public: boolean
+  sortMode: 'NAME_ASC' | 'NAME_DESC' | 'MANUAL'
+  likes: number
+  plays: number
+  commentCount: number
 }
-type SoundboardDetail = { board: Soundboard; sounds: LegacySound[] }
+type SoundboardDetail = { board: Soundboard; sounds: LegacySound[]; soundIds?: Id[] }
 ```
 
 Il nome è trimmato, max 255 caratteri, non vuoto e non interamente

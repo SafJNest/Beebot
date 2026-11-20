@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.exception.Exception;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -35,25 +36,16 @@ public class SoundboardRemove extends SlashCommand{
         commandData.setThings(this);
     }
 
-	@Override
-	protected void execute(SlashCommandEvent event) {
-        String soundID = event.getOption("sound_remove").getAsString();
-        String soundboardID = event.getOption("name").getAsString();
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        String soundId = event.getOption("sound_remove").getAsString();
+        String boardId = event.getOption("name").getAsString();
 
-        if(!BotDB.soundboardExists(soundboardID, event.getGuild().getId(), event.getUser().getId())) {
-            event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
-            return;
+        try {
+            BotDB.get().removeSoundFromBoard(boardId, Soundboard.editAccess(event, boardId), soundId);
+            event.deferReply(false).addContent("Sound deleted correctly.").queue();
+        } catch (Exception failure) {
+            event.deferReply(true).addContent(failure.getMessage()).queue();
         }
-
-        if(!BotDB.deleteSoundFromSoundboard(soundboardID, soundID)){
-            event.deferReply(false).addContent("Error deleting sound.").queue();
-            return;
-        }
-        if(BotDB.getSoundInSoundboardCount(soundboardID) == 1){
-            BotDB.deleteSoundboard(soundboardID);
-            event.deferReply(false).addContent("The soundboard has been deleted because it was empty.").queue();
-            return;
-        }
-        event.deferReply(false).addContent("Sound deleted correctly.").queue();
-    }    
+    }
 }

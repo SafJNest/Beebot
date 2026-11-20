@@ -24,5 +24,7 @@ public enum SoundVote {
         };
     }
 
-    public record Result(String soundId, String commentId, long likes, @JsonInclude(JsonInclude.Include.NON_NULL) Long dislikes, SoundVote vote) {}
+    public record Result(@JsonInclude(JsonInclude.Include.NON_NULL) String soundId,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String soundboardId, String commentId, long likes,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Long dislikes, SoundVote vote) {}
 }

@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,6 +42,8 @@ import com.safjnest.database.sql.AbstractDB;
 import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.database.sql.QueryRecordParser;
 import com.safjnest.sound.model.Sound;
+import com.safjnest.sound.model.Soundboard.Edit;
+import com.safjnest.sound.model.Soundboard.SortMode;
 import com.safjnest.sound.model.Tag;
 import com.safjnest.utils.ParseUtils;
 import com.safjnest.config.Settings;
@@ -52,6 +55,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
  * of the biggest caterpies ever made
  */
 public class BotDB extends AbstractDB {
+    private static final String BOARD_COUNT = "(SELECT COUNT(*) FROM soundboard_sounds ss WHERE ss.id=b.id) AS sound_count";
     private static final int CACHE_BATCH_SIZE = 500;
     public static final int MAX_SOUNDBOARD_SOUNDS = 25;
 
@@ -316,29 +320,21 @@ public class BotDB extends AbstractDB {
         return instance.lineQuery("select count(id) as sum from sound_play where user_id = '" + user_id + "';").get("sum");
     }
 
-    public static QueryRecord searchSoundboard(String string, String guild_id, String user_id) {
-        return instance.lineQuery("SELECT id from soundboard WHERE (ID = '" + string + "' OR name = '" + string + "') AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "')");
+    public static QueryRecord searchSoundboard(String lookup, String guildId, String userId) {
+        String column = lookup.matches("[1-9][0-9]*") ? "id" : "name";
+        List<QueryRecord> rows = instance.readSoundRows("SELECT id FROM soundboard WHERE " + column
+            + "=? AND (public=1 OR guild_id=? OR user_id=?) ORDER BY id LIMIT 1", lookup, guildId, userId);
+
+        return rows.isEmpty() ? new QueryRecord() : rows.getFirst();
     }
 
     public static boolean soundboardExists(String name, String guildId) {
-        try (SoundSession session = instance.connectSound()) {
-            return !instance.soundQuery(session.connection(), "SELECT id FROM soundboard WHERE name = ? AND guild_id = ?",
-                name, guildId).isEmpty();
-        } catch (SQLException exception) {
-            throw instance.soundUnavailable(exception);
-        }
+        return !instance.readSoundRows("SELECT id FROM soundboard WHERE name=? AND guild_id=?", name, guildId).isEmpty();
     }
 
-    public static boolean soundboardExists(String id, String guild_id, String user_id) {
-        return !instance.lineQuery("SELECT id from soundboard WHERE ID = '" + id + "' AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "')").isEmpty();
-    }
-
-    public static int getSoundInSoundboardCount(String id) {
-        return instance.lineQuery("SELECT count(sound_id) as cont FROM soundboard_sounds WHERE id = '" + id + "'").getAsInt("count");
-    }
-
-    public static List<QueryRecord> getSoundsFromSoundBoard(String id) {
-        return instance.query("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "' order by name");
+    public static boolean soundboardExists(String id, String guildId, String userId) {
+        return !instance.readSoundRows("SELECT id FROM soundboard WHERE id=? AND "
+            + "(public=1 OR guild_id=? OR user_id=?)", id, guildId, userId).isEmpty();
     }
 
     public record SoundboardData(String name, String thumbnailKey) {}
@@ -346,30 +342,104 @@ public class BotDB extends AbstractDB {
     public record SoundboardAccess(String guildId, String userId, boolean administrator) {}
 
     public List<QueryRecord> readSoundboards(String guildId) {
-        return readSoundRows("""
-            SELECT b.id, b.name, b.guild_id, b.user_id, b.thumbnail, COUNT(s.sound_id) AS sound_count
-            FROM soundboard b LEFT JOIN soundboard_sounds s ON b.id = s.id
-            WHERE b.guild_id = ? GROUP BY b.id, b.name, b.guild_id, b.user_id, b.thumbnail
-            ORDER BY b.name, b.id
-            """, guildId);
+        return readSoundRows("SELECT b.*, " + BOARD_COUNT
+            + " FROM soundboard b WHERE b.guild_id=? ORDER BY b.name,b.id", guildId);
+    }
+
+    public List<QueryRecord> readPersonalSoundboards(String userId) {
+        return readSoundRows("SELECT b.*, " + BOARD_COUNT
+            + " FROM soundboard b WHERE b.guild_id IS NULL AND b.user_id=? ORDER BY b.name,b.id", userId);
     }
 
     public QueryRecord readSoundboard(String guildId, String id) {
-        List<QueryRecord> rows = readSoundRows("""
-            SELECT b.id, b.name, b.guild_id, b.user_id, b.thumbnail,
-                   (SELECT COUNT(*) FROM soundboard_sounds s WHERE s.id = b.id) AS sound_count
-            FROM soundboard b WHERE b.guild_id = ? AND b.id = ?
-            """, guildId, id);
+        QueryRecord row = readSoundboard(id, null, false);
+        if (!Objects.equals(guildId, row.get("guild_id")))
+            throw soundboardMissing();
+
+        return row;
+    }
+
+    public QueryRecord readSoundboard(String id, String viewer, boolean includeVote) {
+        List<QueryRecord> rows;
+        if (includeVote && viewer != null) {
+            rows = readSoundRows("SELECT b.*, " + BOARD_COUNT + ", v.value AS vote FROM soundboard b "
+                + "LEFT JOIN sound_vote v ON v.soundboard_id=b.id AND v.user_id=? WHERE b.id=?", viewer, id);
+        } else {
+            rows = readSoundRows("SELECT b.*, " + BOARD_COUNT + " FROM soundboard b WHERE b.id=?", id);
+        }
+
         if (rows.isEmpty())
             throw soundboardMissing();
 
         return rows.getFirst();
     }
 
+    public QueryRecord visibleSoundboard(String id, String viewer, Set<String> guilds) {
+        QueryRecord row = readSoundboard(id, viewer, false);
+        requireSoundboardVisibility(row, viewer, guilds);
+
+        return row;
+    }
+
+    public SoundboardAccess soundboardEditAccess(String id, String userId, String currentGuild, boolean administrator) {
+        QueryRecord row = readSoundboard(id, null, false);
+        String guildId = row.get("guild_id");
+        boolean canAdminister = administrator && guildId != null && guildId.equals(currentGuild);
+        if (!canAdminister && !userId.equals(row.get("user_id")))
+            throw new Exception(Type.FORBIDDEN, "soundboard_forbidden", "Only the uploader or a guild administrator may edit this soundboard");
+
+        return new SoundboardAccess(guildId, userId, canAdminister);
+    }
+
+    public List<QueryRecord> searchSoundboards(String query, String viewer, SoundDB.Position after, int limit) {
+        List<Object> args = new ArrayList<>();
+        String rank = "0";
+        if (!query.isEmpty()) {
+            rank = "CASE WHEN LOWER(b.name)=? THEN 2 WHEN LOWER(b.name) LIKE ? ESCAPE '!' THEN 1 ELSE 0 END";
+            args.add(query);
+            args.add(escapeSoundQuery(query) + "%");
+        }
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM (SELECT b.id,b.guild_id,b.user_id,b.name,b.thumbnail,")
+            .append("b.public,b.sort_mode,b.likes,b.plays,b.comments, ").append(rank)
+            .append(" AS sort_rank, 0 AS sort_score FROM soundboard b WHERE (b.public=1");
+        if (viewer != null) {
+            sql.append(" OR b.user_id=?");
+            args.add(viewer);
+        }
+
+        sql.append(")");
+        if (!query.isEmpty()) {
+            sql.append(" AND LOWER(b.name) LIKE ? ESCAPE '!'");
+            args.add("%" + escapeSoundQuery(query) + "%");
+        }
+
+        sql.append(") ranked");
+        if (after != null) {
+            sql.append(" WHERE (sort_rank < ? OR (sort_rank = ? AND id < ?))");
+            args.add(after.rank());
+            args.add(after.rank());
+            args.add(after.id());
+        }
+
+        sql.append(" ORDER BY sort_rank DESC,id DESC LIMIT ?");
+        args.add(limit);
+
+        return readSoundRows(sql.toString(), args.toArray());
+    }
+
+    public List<String> readSoundboardSoundIds(String id) {
+        return soundIds(readSoundRows("SELECT sound_id AS id FROM soundboard_sounds WHERE id=? ORDER BY position,sound_id", id));
+    }
+
     public List<QueryRecord> readSoundboardSounds(String id) {
         return readSoundRows("""
-            SELECT s.* FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id
-            WHERE ss.id = ? ORDER BY s.name, s.id
+            SELECT s.*, s.id AS sound_id FROM soundboard_sounds ss
+            JOIN soundboard b ON b.id=ss.id JOIN sound s ON s.id=ss.sound_id
+            WHERE b.id=?
+            ORDER BY CASE WHEN b.sort_mode='MANUAL' THEN ss.position END,
+                CASE WHEN b.sort_mode='NAME_ASC' THEN s.name END ASC,
+                CASE WHEN b.sort_mode='NAME_DESC' THEN s.name END DESC, s.id
             """, id);
     }
 
@@ -389,154 +459,129 @@ public class BotDB extends AbstractDB {
         }
     }
 
-    public static List<QueryRecord> getRandomSoundboard(String guild_id, String user_id) {
-        return instance.query("SELECT name, id, guild_id FROM soundboard WHERE guild_id = '" + guild_id + "' OR user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
-    }
+    public List<QueryRecord> discordSoundboards(String guildId, String userId, boolean edit, boolean administrator, String query) {
+        String visibility = edit ? "(user_id=? OR (guild_id=? AND ?=TRUE))" : "(user_id=? OR guild_id=? OR public=1)";
+        List<Object> args = new ArrayList<>(List.of(userId, guildId));
+        if (edit)
+            args.add(administrator);
 
-    public static List<QueryRecord> getFocusedSoundboard(String guild_id, String user_id, String like){
-        return instance.query("SELECT name, id, guild_id FROM soundboard WHERE name LIKE '" + like + "%' AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "') ORDER BY RAND() LIMIT 25;");
-    }
+        String sql = "SELECT name,id,guild_id FROM soundboard WHERE " + visibility;
+        if (query != null && !query.isBlank()) {
+            sql += " AND name LIKE ? ESCAPE '!'";
+            args.add(escapeSoundQuery(query) + "%");
+        }
 
-    public static List<QueryRecord> getFocusedSoundFromSounboard(String id, String like){
-        return instance.query("SELECT s.name as name, s.id as sound_id, s.guild_id as guild_id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id + "' ORDER BY RAND() LIMIT 25;");
+        return readSoundRows(sql + " ORDER BY name,id LIMIT 25", args.toArray());
     }
 
     public String insertSoundBoard(String name, String guildId, String userId, Function<String, String> uploadThumbnail,
             String... soundIds) {
-        return insertSoundboard(name, guildId, userId, uploadThumbnail, List.of(soundIds), false);
+        return insertSoundboard(new Edit(name, false, SortMode.NAME_ASC, List.of(soundIds)),
+            new SoundboardAccess(guildId, userId, false), uploadThumbnail);
     }
 
-    public String createSoundboard(String name, SoundboardAccess access, List<String> soundIds) {
-        return insertSoundboard(name, access.guildId(), access.userId(), null, soundIds, true);
+    public String createSoundboard(Edit edit, SoundboardAccess access) {
+        return insertSoundboard(edit, access, null);
     }
 
-    public void renameSoundboard(String id, SoundboardAccess access, String name) {
+    public void editSoundboard(String id, SoundboardAccess access, Edit edit) {
         soundTransaction(connection -> {
-            lockSoundboardGuild(connection, access.guildId());
-            QueryRecord current = lockSoundboard(connection, id, access);
-            if (current.get("name").equals(name))
-                return;
+            String guildId = access.guildId();
+            if (edit.name() != null && guildId != null)
+                lockSoundboardGuild(connection, guildId);
 
-            requireUniqueSoundboardName(connection, name, access.guildId(), id);
-            soundExecute(connection, "UPDATE soundboard SET name = ? WHERE id = ?", name, id);
+            QueryRecord current = lockSoundboard(connection, id, access);
+            String owner = current.get("user_id");
+            String name = edit.name() == null ? current.get("name") : edit.name();
+            boolean isPublic = edit.isPublic() == null ? current.getAsBoolean("public") : edit.isPublic();
+            String sort = edit.sortMode() == null ? current.get("sort_mode") : edit.sortMode().name();
+            if (!name.equals(current.get("name")))
+                requireUniqueSoundboardName(connection, name, guildId, owner, id);
+
+            List<String> ids = edit.soundIds();
+            if (ids == null && isPublic && !current.getAsBoolean("public"))
+                ids = boardSoundIds(connection, id);
+
+            if (ids != null)
+                requireSoundboardSounds(connection, ids, guildId, owner, isPublic);
+
+            try {
+                soundExecute(connection, "UPDATE soundboard SET name=?,public=?,sort_mode=? WHERE id=?", name, isPublic, sort, id);
+            } catch (SQLException failure) {
+                if (failure.getErrorCode() == 1062)
+                    throw duplicateSoundboard();
+
+                throw failure;
+            }
+            if (edit.soundIds() != null)
+                replaceSoundboardSounds(connection, id, edit.soundIds());
         });
     }
 
     public void addSoundToBoard(String id, SoundboardAccess access, String soundId) {
-        changeSoundboard(id, access, connection -> {
-            List<String> current = soundIds(soundQuery(connection,
-                "SELECT sound_id AS id FROM soundboard_sounds WHERE id = ?", id));
-            if (current.contains(soundId))
+        addSoundsToBoard(id, access, List.of(soundId));
+    }
+
+    public void addSoundsToBoard(String id, SoundboardAccess access, Collection<String> soundIds) {
+        soundTransaction(connection -> {
+            QueryRecord board = lockSoundboard(connection, id, access);
+            List<String> current = new ArrayList<>(boardSoundIds(connection, id));
+            List<String> added = new ArrayList<>();
+            for (String soundId : soundIds) {
+                if (!current.contains(soundId)) {
+                    current.add(soundId);
+                    added.add(soundId);
+                }
+            }
+
+            if (added.isEmpty())
                 return;
-            if (current.size() >= MAX_SOUNDBOARD_SOUNDS)
+            if (current.size() > MAX_SOUNDBOARD_SOUNDS)
                 throw new Exception(Type.CONFLICT, "soundboard_full", "Soundboard is full");
 
-            requireSoundboardSound(connection, soundId, access.guildId());
-            soundExecute(connection, "INSERT INTO soundboard_sounds (id, sound_id) VALUES (?, ?)", id, soundId);
+            requireSoundboardSounds(connection, added, board.get("guild_id"), board.get("user_id"), board.getAsBoolean("public"));
+            replaceSoundboardSounds(connection, id, current);
         });
     }
 
     public void removeSoundFromBoard(String id, SoundboardAccess access, String soundId) {
         changeSoundboard(id, access, connection ->
-            soundExecute(connection, "DELETE FROM soundboard_sounds WHERE id = ? AND sound_id = ?", id, soundId));
+            soundExecute(connection, "DELETE FROM soundboard_sounds WHERE id=? AND sound_id=?", id, soundId));
     }
 
     public void removeSoundboard(String id, SoundboardAccess access) {
-        changeSoundboard(id, access, connection -> soundExecute(connection, "DELETE FROM soundboard WHERE id = ?", id));
+        changeSoundboard(id, access, connection -> soundExecute(connection, "DELETE FROM soundboard WHERE id=?", id));
     }
 
     public String replaceSoundboardThumbnail(String id, SoundboardAccess access, Function<String, String> upload) {
-        String[] key = new String[1];
-        changeSoundboard(id, access, connection -> {
-            key[0] = upload.apply(id);
-            soundExecute(connection, "UPDATE soundboard SET thumbnail = ? WHERE id = ?", key[0], id);
+        return writeSound(connection -> {
+            lockSoundboard(connection, id, access);
+            String key = upload.apply(id);
+            soundExecute(connection, "UPDATE soundboard SET thumbnail=? WHERE id=?", key, id);
+
+            return key;
         });
-
-        return key[0];
     }
 
-    private String insertSoundboard(String name, String guildId, String userId, Function<String, String> uploadThumbnail,
-            List<String> soundIds, boolean webRequest) {
-        if (soundIds.isEmpty() || soundIds.size() > MAX_SOUNDBOARD_SOUNDS)
-            throw Exception.invalidRequest("Soundboard requires 1 to 20 sounds");
+    private String insertSoundboard(Edit edit, SoundboardAccess access, Function<String, String> uploadThumbnail) {
+        if (edit.soundIds() == null || edit.soundIds().isEmpty() || edit.soundIds().size() > MAX_SOUNDBOARD_SOUNDS)
+            throw Exception.invalidRequest("Soundboard requires 1 to " + MAX_SOUNDBOARD_SOUNDS + " sounds");
 
-        try (SoundSession session = connectSound()) {
-            Connection connection = session.connection();
-            connection.setAutoCommit(false);
+        return writeSound(connection -> {
+            if (access.guildId() != null)
+                lockSoundboardGuild(connection, access.guildId());
 
-            try {
-                if (webRequest) {
-                    lockSoundboardGuild(connection, guildId);
-                    requireUniqueSoundboardName(connection, name, guildId, null);
-                    List<String> orderedIds = new ArrayList<>(soundIds);
-                    Collections.sort(orderedIds);
-                    for (String soundId : orderedIds)
-                        requireSoundboardSound(connection, soundId, guildId);
-                }
+            requireUniqueSoundboardName(connection, edit.name(), access.guildId(), access.userId(), null);
+            boolean isPublic = Boolean.TRUE.equals(edit.isPublic());
+            requireSoundboardSounds(connection, edit.soundIds(), access.guildId(), access.userId(), isPublic);
 
-                String id = insertSoundboardRow(connection, name, guildId, userId);
-                try (PreparedStatement statement = connection.prepareStatement(
-                        "INSERT INTO soundboard_sounds (id, sound_id) VALUES (?, ?)")) {
-                    for (String soundId : soundIds) {
-                        statement.setString(1, id);
-                        statement.setString(2, soundId);
-                        statement.addBatch();
-                    }
-                    statement.executeBatch();
-                }
+            String id = insertSoundboardRow(connection, edit, access, isPublic);
+            replaceSoundboardSounds(connection, id, edit.soundIds());
+            if (uploadThumbnail != null)
+                soundExecute(connection, "UPDATE soundboard SET thumbnail=? WHERE id=?", uploadThumbnail.apply(id), id);
 
-                if (uploadThumbnail != null) {
-                    String key = uploadThumbnail.apply(id);
-                    try (PreparedStatement statement = connection.prepareStatement(
-                            "UPDATE soundboard SET thumbnail = ? WHERE id = ?")) {
-                        statement.setString(1, key);
-                        statement.setString(2, id);
-                        if (statement.executeUpdate() != 1)
-                            throw new SQLException("Soundboard thumbnail update failed");
-                    }
-                }
-
-                connection.commit();
-
-                return id;
-            } catch (SQLException | RuntimeException failure) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackFailure) {
-                    failure.addSuppressed(rollbackFailure);
-                }
-
-                throw failure;
-            }
-        } catch (SQLException exception) {
-            throw soundUnavailable(exception);
-        }
-    }
-
-    public boolean updateSoundboardThumbnail(String id, String guildId, String userId, String key) {
-        return writeSoundboardThumbnail(
-            "UPDATE soundboard SET thumbnail = ? WHERE id = ? AND (guild_id = ? OR user_id = ?)",
-            key, id, guildId, userId);
-    }
-
-    public static boolean insertSoundsInSoundBoard(String id, String... sound_ids) {
-        if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
-
-        StringBuilder sb = new StringBuilder();
-        for(String sound_id : sound_ids) {
-            sb.append("('" + id + "', '" + sound_id + "'), ");
-        }
-        sb.setLength(sb.length() - 2);
-
-        return instance.defaultQuery("INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + "; ");
-    }
-
-    public static boolean deleteSoundboard(String id) {
-        return instance.defaultQuery("DELETE FROM soundboard WHERE id = '" + id + "'");
-    }
-
-    public static boolean deleteSoundFromSoundboard(String id, String sound_id) {
-        return instance.defaultQuery("DELETE FROM soundboard_sounds WHERE id = '" + id + "' AND sound_id = '" + sound_id + "'");
+            return id;
+        });
     }
 
     public static QueryRecord getDefaultVoice(String guild_id) {
@@ -2062,23 +2107,52 @@ public class BotDB extends AbstractDB {
     }
 
     public int recordSoundPlay(String id, String userId, String guildId, String channelId, int source) {
-        return writeSound(connection -> {
-            QueryRecord sound = lockSound(connection, id);
+        return recordSoundPlay(id, userId, guildId, channelId, source, null);
+    }
 
-            return insertSoundPlay(connection, sound, userId, guildId, channelId, source, null);
+    public int recordSoundPlay(String id, String userId, String guildId, String channelId, int source, String boardId) {
+        return writeSound(connection -> {
+            Set<String> guilds = guildId == null ? Set.of() : Set.of(guildId);
+            QueryRecord board = lockSoundboardPlayback(connection, boardId, id, userId, guilds);
+            QueryRecord sound = lockSound(connection, id);
+            if (board != null)
+                requireSoundboardSoundVisibility(board, sound, userId, guilds);
+
+            return insertSoundPlay(connection, sound, userId, guildId, channelId, source, null, boardId);
         });
     }
 
+    QueryRecord lockSoundboardPlayback(Connection connection, String boardId, String soundId, String userId,
+            Set<String> guilds) throws SQLException {
+        if (boardId == null)
+            return null;
+
+        QueryRecord board = lockVisibleSoundboard(connection, boardId, userId, guilds);
+        if (soundQuery(connection, "SELECT id FROM soundboard_sounds WHERE id=? AND sound_id=?", boardId, soundId).isEmpty())
+            throw soundMissing();
+
+        return board;
+    }
+
+    static void requireSoundboardSoundVisibility(QueryRecord board, QueryRecord sound, String userId, Set<String> guilds) {
+        String guildId = board.get("guild_id");
+        Set<String> scope = guildId != null && guilds.contains(guildId) ? Set.of(guildId) : Set.of();
+        if (board.getAsBoolean("public") ? !sound.getAsBoolean("public") : !isSoundVisible(sound, userId, scope))
+            throw soundMissing();
+    }
+
     int insertSoundPlay(Connection connection, QueryRecord sound, String userId, String guildId,
-            String channelId, int source, String playbackId) throws SQLException {
+            String channelId, int source, String playbackId, String boardId) throws SQLException {
         String id = sound.get("id");
         if (playbackId != null && !soundQuery(connection,
                 "SELECT id FROM sound_play WHERE sound_id=? AND playback_id=?", id, playbackId).isEmpty())
             return sound.getAsInt("plays");
 
-        soundExecute(connection, "INSERT INTO sound_play(user_id,sound_id,guild_id,channel_id,source,playback_id) VALUES (?,?,?,?,?,?)",
-            userId, id, guildId, channelId, source, playbackId);
+        soundExecute(connection, "INSERT INTO sound_play(user_id,sound_id,guild_id,channel_id,source,playback_id,soundboard_id) VALUES (?,?,?,?,?,?,?)",
+            userId, id, guildId, channelId, source, playbackId, boardId);
         soundExecute(connection, "UPDATE sound SET plays=plays+1 WHERE id=?", id);
+        if (boardId != null)
+            soundExecute(connection, "UPDATE soundboard SET plays=plays+1 WHERE id=?", boardId);
 
         return sound.getAsInt("plays") + 1;
     }
@@ -2360,19 +2434,46 @@ public class BotDB extends AbstractDB {
         }
     }
 
-    private String insertSoundboardRow(Connection connection, String name, String guildId, String userId) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO soundboard (name, guild_id, user_id) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-            bindSound(statement, new Object[] {name, guildId, userId});
+    private String insertSoundboardRow(Connection connection, Edit edit, SoundboardAccess access, boolean isPublic) throws SQLException {
+        String sql = "INSERT INTO soundboard (name,guild_id,user_id,public,sort_mode) VALUES (?,?,?,?,?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            SortMode sort = edit.sortMode() == null ? SortMode.NAME_ASC : edit.sortMode();
+            bindSound(statement, new Object[] {edit.name(), access.guildId(), access.userId(), isPublic, sort.name()});
             if (statement.executeUpdate() != 1)
                 throw new SQLException("Soundboard insert did not create one row");
 
             try (ResultSet keys = statement.getGeneratedKeys()) {
-                if (!keys.next() || keys.getLong(1) <= 0)
+                if (!keys.next())
                     throw new SQLException("Soundboard insert did not return an ID");
 
                 return keys.getString(1);
             }
+        } catch (SQLException failure) {
+            if (failure.getErrorCode() == 1062)
+                throw duplicateSoundboard();
+
+            throw failure;
+        }
+    }
+
+    private List<String> boardSoundIds(Connection connection, String id) throws SQLException {
+        return soundIds(soundQuery(connection,
+            "SELECT sound_id AS id FROM soundboard_sounds WHERE id=? ORDER BY position,sound_id", id));
+    }
+
+    private void replaceSoundboardSounds(Connection connection, String id, List<String> ids) throws SQLException {
+        soundExecute(connection, "DELETE FROM soundboard_sounds WHERE id=?", id);
+        if (ids.isEmpty())
+            return;
+
+        try (PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO soundboard_sounds (id,sound_id,position) VALUES (?,?,?)")) {
+            int position = 1;
+            for (String soundId : ids) {
+                bindSound(statement, new Object[] {id, soundId, position++});
+                statement.addBatch();
+            }
+            statement.executeBatch();
         }
     }
 
@@ -2384,16 +2485,33 @@ public class BotDB extends AbstractDB {
     }
 
     private QueryRecord lockSoundboard(Connection connection, String id, SoundboardAccess access) throws SQLException {
-        List<QueryRecord> rows = soundQuery(connection,
-            "SELECT name, user_id FROM soundboard WHERE guild_id = ? AND id = ? FOR UPDATE", access.guildId(), id);
+        QueryRecord row = soundboardForUpdate(connection, id);
+        if (!Objects.equals(access.guildId(), row.get("guild_id")))
+            throw soundboardMissing();
+        if (!access.administrator() && !access.userId().equals(row.get("user_id")))
+            throw new Exception(Type.FORBIDDEN, "soundboard_forbidden", "Only the uploader or a guild administrator may edit this soundboard");
+
+        return row;
+    }
+
+    QueryRecord lockVisibleSoundboard(Connection connection, String id, String viewer, Set<String> guilds) throws SQLException {
+        QueryRecord row = soundboardForUpdate(connection, id);
+        requireSoundboardVisibility(row, viewer, guilds);
+
+        return row;
+    }
+
+    private QueryRecord soundboardForUpdate(Connection connection, String id) throws SQLException {
+        List<QueryRecord> rows = soundQuery(connection, "SELECT * FROM soundboard WHERE id=? FOR UPDATE", id);
         if (rows.isEmpty())
             throw soundboardMissing();
 
-        QueryRecord current = rows.getFirst();
-        if (!access.administrator() && !access.userId().equals(current.get("user_id")))
-            throw new Exception(Type.FORBIDDEN, "soundboard_forbidden", "Only the uploader or a guild administrator may edit this soundboard");
+        return rows.getFirst();
+    }
 
-        return current;
+    public static void requireSoundboardVisibility(QueryRecord row, String viewer, Set<String> guilds) {
+        if (!isSoundVisible(row, viewer, guilds))
+            throw soundboardMissing();
     }
 
     private void lockSoundboardGuild(Connection connection, String guildId) throws SQLException {
@@ -2401,48 +2519,49 @@ public class BotDB extends AbstractDB {
             throw new Exception(Type.NOT_FOUND, "guild_not_found", "Guild is not stored");
     }
 
-    private void requireUniqueSoundboardName(Connection connection, String name, String guildId, String exceptId) throws SQLException {
-        List<QueryRecord> rows = soundQuery(connection, "SELECT id FROM soundboard WHERE guild_id = ? AND name = ?", guildId, name);
+    private void requireUniqueSoundboardName(Connection connection, String name, String guildId, String owner, String exceptId) throws SQLException {
+        String scope = guildId == null ? "guild_id IS NULL AND user_id=?" : "guild_id=?";
+        List<QueryRecord> rows = soundQuery(connection, "SELECT id FROM soundboard WHERE " + scope + " AND name=?",
+            guildId == null ? owner : guildId, name);
+
         for (QueryRecord row : rows) {
             if (!row.get("id").equals(exceptId))
-                throw new Exception(Type.CONFLICT, "duplicate_soundboard_name", "Soundboard name is already in use");
+                throw duplicateSoundboard();
         }
     }
 
-    private void requireSoundboardSound(Connection connection, String soundId, String guildId) throws SQLException {
-        QueryRecord sound = lockSound(connection, soundId);
-        if (!sound.getAsBoolean("public") && !guildId.equals(sound.get("guild_id")))
+    private void requireSoundboardSounds(Connection connection, List<String> ids, String guildId, String owner,
+            boolean isPublic) throws SQLException {
+        if (ids.size() > MAX_SOUNDBOARD_SOUNDS || new LinkedHashSet<>(ids).size() != ids.size())
+            throw Exception.invalidRequest("Invalid soundboard sound list");
+
+        if (ids.isEmpty())
+            return;
+
+        List<QueryRecord> rows = soundQuery(connection,
+            "SELECT id,guild_id,user_id,public FROM sound WHERE id IN (" + soundMarks(ids.size()) + ") ORDER BY id FOR UPDATE",
+            ids.toArray());
+        if (rows.size() != ids.size())
             throw soundMissing();
+
+        for (QueryRecord sound : rows) {
+            if (sound.getAsBoolean("public"))
+                continue;
+            if (guildId == null ? !owner.equals(sound.get("user_id")) : !guildId.equals(sound.get("guild_id")))
+                throw soundMissing();
+            if (isPublic)
+                throw new Exception(Type.CONFLICT, "private_sound_in_public_board", "A public soundboard requires public sounds");
+        }
     }
 
-    private Exception soundboardMissing() {
+    private static Exception duplicateSoundboard() {
+        return new Exception(Type.CONFLICT, "duplicate_soundboard_name", "Soundboard name is already in use");
+    }
+
+    private static Exception soundboardMissing() {
         return new Exception(Type.NOT_FOUND, "soundboard_not_found", "Soundboard not found");
     }
 
-    private boolean writeSoundboardThumbnail(String sql, Object... args) {
-        try (SoundSession session = connectSound()) {
-            Connection connection = session.connection();
-            connection.setAutoCommit(false);
-
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                bindSound(statement, args);
-                boolean changed = statement.executeUpdate() == 1;
-                connection.commit();
-
-                return changed;
-            } catch (SQLException failure) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackFailure) {
-                    failure.addSuppressed(rollbackFailure);
-                }
-
-                throw failure;
-            }
-        } catch (SQLException exception) {
-            throw soundUnavailable(exception);
-        }
-    }
 
     private List<String> soundIds(List<QueryRecord> rows) {
         List<String> ids = new ArrayList<>(rows.size());
@@ -2546,7 +2665,7 @@ public class BotDB extends AbstractDB {
         return new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound storage is unavailable", cause, null);
     }
 
-    private Exception soundMissing() {
+    private static Exception soundMissing() {
         return new Exception(Type.NOT_FOUND, "sound_not_found", "Sound not found");
     }
 

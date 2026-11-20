@@ -2454,6 +2454,19 @@
                       "type": "string",
                       "example": "123"
                     }
+                  },
+                  "public": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "sortMode": {
+                    "type": "string",
+                    "enum": [
+                      "NAME_ASC",
+                      "NAME_DESC",
+                      "MANUAL"
+                    ],
+                    "default": "NAME_ASC"
                   }
                 },
                 "required": [
@@ -2666,12 +2679,31 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255
+                  },
+                  "public": {
+                    "type": "boolean"
+                  },
+                  "sortMode": {
+                    "type": "string",
+                    "enum": [
+                      "NAME_ASC",
+                      "NAME_DESC",
+                      "MANUAL"
+                    ],
+                    "default": "NAME_ASC"
+                  },
+                  "soundIds": {
+                    "type": "array",
+                    "maxItems": 25,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,18}$"
+                    }
                   }
                 },
-                "required": [
-                  "name"
-                ],
-                "additionalProperties": false
+                "additionalProperties": false,
+                "minProperties": 1
               }
             }
           }
@@ -3183,7 +3215,7 @@
     "/public/sounds": {
       "get": {
         "operationId": "searchPublicSounds",
-        "summary": "Search the public catalog and optionally include own matches",
+        "summary": "Search public and caller-owned sounds in a single ordered list",
         "security": [
           {
             "ApplicationKey": []
@@ -3338,7 +3370,8 @@
           "503": {
             "$ref": "#/components/responses/CommunityUnavailable"
           }
-        }
+        },
+        "description": "The cursor is scoped to the search filters and the viewer. The compatibility mine array is always empty."
       }
     },
     "/public/sounds/suggestions": {
@@ -3680,6 +3713,10 @@
                   "playbackId": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "soundboardId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,18}$"
                   }
                 },
                 "required": [
@@ -4183,6 +4220,1434 @@
           }
         }
       }
+    },
+    "/me/soundboards": {
+      "get": {
+        "operationId": "listPersonalSoundboards",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Guild soundboards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Soundboard"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPersonalSoundboard",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "soundIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 25,
+                    "items": {
+                      "type": "string",
+                      "example": "123"
+                    },
+                    "uniqueItems": true
+                  },
+                  "public": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "sortMode": {
+                    "type": "string",
+                    "enum": [
+                      "NAME_ASC",
+                      "NAME_DESC",
+                      "MANUAL"
+                    ],
+                    "default": "NAME_ASC"
+                  }
+                },
+                "required": [
+                  "name",
+                  "soundIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Soundboard created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundboardDetail"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "Created resource path",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soundboards/{id}": {
+      "get": {
+        "operationId": "getManagedSoundboard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Soundboard with visible sounds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundboardDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "editSoundboard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "public": {
+                    "type": "boolean"
+                  },
+                  "sortMode": {
+                    "type": "string",
+                    "enum": [
+                      "NAME_ASC",
+                      "NAME_DESC",
+                      "MANUAL"
+                    ],
+                    "default": "NAME_ASC"
+                  },
+                  "soundIds": {
+                    "type": "array",
+                    "maxItems": 25,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,18}$"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "minProperties": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Soundboard with visible sounds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundboardDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteManagedSoundboard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soundboards/{id}/sounds/{soundId}": {
+      "put": {
+        "operationId": "addManagedSoundboardSound",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          },
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeManagedSoundboardSound",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          },
+          {
+            "name": "soundId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soundboards/{id}/thumbnail": {
+      "put": {
+        "operationId": "putManagedSoundboardThumbnail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated thumbnail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "thumbnailUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "thumbnailUrl"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/soundboards": {
+      "get": {
+        "operationId": "searchPublicSoundboards",
+        "summary": "Search public and caller-owned soundboards",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": "Case-insensitive substring of the soundboard name."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Opaque cursor returned by the previous page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundboardPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "7",
+                      "guildId": null,
+                      "userId": "456",
+                      "name": "Arcade",
+                      "thumbnailUrl": null,
+                      "canEdit": false,
+                      "public": true,
+                      "sortMode": "MANUAL",
+                      "likes": 12,
+                      "plays": 42,
+                      "commentCount": 3
+                    }
+                  ],
+                  "nextCursor": null
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        },
+        "description": "The cursor is scoped to the search filters and the viewer. The compatibility mine array is always empty."
+      }
+    },
+    "/public/soundboards/{id}": {
+      "get": {
+        "operationId": "getPublicSoundboard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Soundboard with visible sounds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSoundboardDetail"
+                },
+                "example": {
+                  "board": {
+                    "id": "7",
+                    "guildId": null,
+                    "userId": "456",
+                    "name": "Arcade",
+                    "thumbnailUrl": null,
+                    "canEdit": false,
+                    "public": true,
+                    "sortMode": "MANUAL",
+                    "likes": 12,
+                    "plays": 42,
+                    "commentCount": 3
+                  },
+                  "sounds": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ]
+      }
+    },
+    "/public/soundboards/{id}/comments": {
+      "get": {
+        "operationId": "getPublicSoundboardComments",
+        "summary": "Read a page of root comments or direct replies",
+        "security": [
+          {
+            "ApplicationKey": []
+          },
+          {
+            "ApplicationKey": [],
+            "Session": []
+          },
+          {
+            "PersonalKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "parentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "description": "Omit for root comments."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "top",
+              "enum": [
+                "top",
+                "newest",
+                "oldest",
+                "mostDisliked"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Opaque cursor returned by the previous page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": "7",
+                      "soundboardId": "42",
+                      "parentId": null,
+                      "author": {
+                        "id": "456",
+                        "name": "Luna",
+                        "avatarUrl": null
+                      },
+                      "text": "Nice!",
+                      "createdAt": "2026-11-02T10:00:00Z",
+                      "editedAt": null,
+                      "deleted": false,
+                      "pinned": true,
+                      "hearted": false,
+                      "likes": 3,
+                      "replyCount": 1,
+                      "uploader": true
+                    }
+                  ],
+                  "nextCursor": null
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/soundboards/{id}/comments": {
+      "post": {
+        "operationId": "createSoundboardComment",
+        "summary": "Create a comment or a reply",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,18}$"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "text": "Nice!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/soundboards/{id}/comments/{commentId}": {
+      "patch": {
+        "operationId": "editSoundboardComment",
+        "summary": "Edit text, pinned state or hearted state",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "hearted": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false,
+                "minProperties": 1
+              },
+              "example": {
+                "pinned": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/CommunityForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSoundboardComment",
+        "summary": "Delete a comment and return the updated count",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentRemoval"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/CommunityForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/soundboards/{id}/vote": {
+      "put": {
+        "operationId": "voteSoundboard",
+        "summary": "Set or clear the authenticated user’s sound vote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vote": {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      "LIKE",
+                      null
+                    ]
+                  }
+                },
+                "required": [
+                  "vote"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "vote": "LIKE"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundboardVoteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
+    },
+    "/soundboards/{id}/comments/{commentId}/vote": {
+      "put": {
+        "operationId": "voteSoundboardComment",
+        "summary": "Set or clear the authenticated user’s comment vote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vote": {
+                    "type": "string",
+                    "enum": [
+                      "LIKE",
+                      "DISLIKE",
+                      null
+                    ],
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "vote"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "vote": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundboardCommentVoteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CommunityInvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/CommunityUnauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/CommunityNotFound"
+          },
+          "415": {
+            "$ref": "#/components/responses/CommunityUnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/CommunityUnavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4392,7 +5857,8 @@
           },
           "guildId": {
             "type": "string",
-            "example": "123"
+            "example": "123",
+            "nullable": true
           },
           "userId": {
             "type": "string",
@@ -4414,6 +5880,50 @@
           },
           "canEdit": {
             "type": "boolean"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "sortMode": {
+            "type": "string",
+            "enum": [
+              "NAME_ASC",
+              "NAME_DESC",
+              "MANUAL"
+            ],
+            "default": "NAME_ASC"
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "plays": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "commentCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "viewer": {
+            "type": "object",
+            "properties": {
+              "vote": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  "LIKE",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "vote"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -4422,8 +5932,12 @@
           "userId",
           "name",
           "thumbnailUrl",
-          "soundCount",
-          "canEdit"
+          "canEdit",
+          "public",
+          "sortMode",
+          "likes",
+          "plays",
+          "commentCount"
         ],
         "additionalProperties": false
       },
@@ -4438,6 +5952,14 @@
             "items": {
               "$ref": "#/components/schemas/Sound"
             }
+          },
+          "soundIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "description": "Stored manual order. Returned to board editors."
           }
         },
         "required": [
@@ -4598,7 +6120,9 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SoundCard"
-            }
+            },
+            "description": "Compatibility field. Always empty.",
+            "maxItems": 0
           },
           "nextCursor": {
             "type": "string",
@@ -4803,11 +6327,14 @@
           },
           "viewer": {
             "$ref": "#/components/schemas/SoundViewer"
+          },
+          "soundboardId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
           }
         },
         "required": [
           "id",
-          "soundId",
           "parentId",
           "author",
           "text",
@@ -4820,7 +6347,19 @@
           "replyCount",
           "uploader"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "soundId"
+            ]
+          },
+          {
+            "required": [
+              "soundboardId"
+            ]
+          }
+        ]
       },
       "CommentPage": {
         "type": "object",
@@ -4983,6 +6522,116 @@
         },
         "required": [
           "imageUrl"
+        ],
+        "additionalProperties": false
+      },
+      "PublicSoundboardDetail": {
+        "type": "object",
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/Soundboard"
+          },
+          "sounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoundCard"
+            }
+          }
+        },
+        "required": [
+          "board",
+          "sounds"
+        ],
+        "additionalProperties": false
+      },
+      "SoundboardPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Soundboard"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "SoundboardVoteResult": {
+        "type": "object",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "enum": [
+              null
+            ],
+            "nullable": true
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "vote": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "LIKE",
+              null
+            ]
+          },
+          "soundboardId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "commentId",
+          "likes",
+          "vote",
+          "soundboardId"
+        ],
+        "additionalProperties": false
+      },
+      "SoundboardCommentVoteResult": {
+        "type": "object",
+        "properties": {
+          "commentId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "likes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "vote": {
+            "type": "string",
+            "enum": [
+              "LIKE",
+              "DISLIKE",
+              null
+            ],
+            "nullable": true
+          },
+          "soundboardId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "soundboardId",
+          "commentId",
+          "likes",
+          "vote"
         ],
         "additionalProperties": false
       }

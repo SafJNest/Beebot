@@ -102,11 +102,11 @@ public class SharedEditingTest {
                 "CREATE TABLE tag (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))",
                 "CREATE TABLE tag_sounds (sound_id INT REFERENCES sound(id) ON DELETE CASCADE, tag_id INT REFERENCES tag(id))",
                 "CREATE TABLE greeting (user_id VARCHAR(19), guild_id VARCHAR(19), sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY(user_id, guild_id))",
-                "CREATE TABLE sound_comment (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, parent_id BIGINT, user_id VARCHAR(19), body VARCHAR(2000), created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP, edited_at TIMESTAMP(6), deleted_at TIMESTAMP(6), pinned BOOLEAN DEFAULT FALSE, hearted BOOLEAN DEFAULT FALSE, likes INT DEFAULT 0, dislikes INT DEFAULT 0, replies INT DEFAULT 0)",
-                "CREATE TABLE sound_vote (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, comment_id BIGINT REFERENCES sound_comment(id) ON DELETE CASCADE, user_id VARCHAR(19), value INT, UNIQUE(sound_id,user_id), UNIQUE(comment_id,user_id), CHECK ((sound_id IS NULL) <> (comment_id IS NULL)), CHECK (value IN (-1, 1)))",
-                "CREATE TABLE sound_play (id INT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, user_id VARCHAR(19), guild_id VARCHAR(19), channel_id VARCHAR(19), playback_id VARCHAR(36), time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, source INT, UNIQUE(sound_id, playback_id))",
-                "CREATE TABLE soundboard (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), thumbnail VARCHAR(128))",
-                "CREATE TABLE soundboard_sounds (id INT REFERENCES soundboard(id) ON DELETE CASCADE, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, PRIMARY KEY (id, sound_id))",
+                "CREATE TABLE soundboard (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), user_id VARCHAR(19), name VARCHAR(255), thumbnail VARCHAR(128), public BOOLEAN DEFAULT FALSE, sort_mode VARCHAR(12) DEFAULT 'NAME_ASC', likes BIGINT DEFAULT 0, plays BIGINT DEFAULT 0, comments BIGINT DEFAULT 0)",
+                "CREATE TABLE sound_comment (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, soundboard_id INT REFERENCES soundboard(id) ON DELETE CASCADE, parent_id BIGINT, user_id VARCHAR(19), body VARCHAR(2000), created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP, edited_at TIMESTAMP(6), deleted_at TIMESTAMP(6), pinned BOOLEAN DEFAULT FALSE, hearted BOOLEAN DEFAULT FALSE, likes INT DEFAULT 0, dislikes INT DEFAULT 0, replies INT DEFAULT 0)",
+                "CREATE TABLE sound_vote (id BIGINT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, soundboard_id INT REFERENCES soundboard(id) ON DELETE CASCADE, comment_id BIGINT REFERENCES sound_comment(id) ON DELETE CASCADE, user_id VARCHAR(19), value INT, UNIQUE(sound_id,user_id), UNIQUE(comment_id,user_id), UNIQUE(soundboard_id,user_id), CHECK ((CASE WHEN sound_id IS NULL THEN 0 ELSE 1 END) + (CASE WHEN soundboard_id IS NULL THEN 0 ELSE 1 END) + (CASE WHEN comment_id IS NULL THEN 0 ELSE 1 END) = 1), CHECK (value IN (-1, 1)))",
+                "CREATE TABLE sound_play (id INT AUTO_INCREMENT PRIMARY KEY, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, soundboard_id INT REFERENCES soundboard(id) ON DELETE SET NULL, user_id VARCHAR(19), guild_id VARCHAR(19), channel_id VARCHAR(19), playback_id VARCHAR(36), time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, source INT, UNIQUE(sound_id, playback_id))",
+                "CREATE TABLE soundboard_sounds (id INT REFERENCES soundboard(id) ON DELETE CASCADE, sound_id INT REFERENCES sound(id) ON DELETE CASCADE, position INT NOT NULL, PRIMARY KEY (id, sound_id), UNIQUE(id,position))",
                 "INSERT INTO guild(guild_id) VALUES ('1'), ('3')",
                 "INSERT INTO channel(guild_id, channel_id) VALUES ('1', '100'), ('3', '100')",
                 "INSERT INTO sound(id, guild_id, user_id, name, extension, public) VALUES (10, '1', '2', 'first', 'mp3', TRUE), (11, '1', '2', 'second', 'opus', FALSE), (12, '3', '9', 'other', 'mp3', FALSE)"
@@ -233,7 +233,7 @@ public class SharedEditingTest {
 
     @Test
     public void soundboardRoutesScopeReadsAndMutationsToTheGuildAndOwner() throws java.lang.Exception {
-        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SoundboardController(sounds, database))
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SoundboardController(sounds, database, community()))
             .setControllerAdvice(new ApiExceptionHandler()).build();
         String path = "/api/beebot/guilds/1/soundboards";
         String createBody = "{\"name\":\"Arcade\",\"soundIds\":[\"10\",\"10\"]}";
@@ -468,10 +468,11 @@ public class SharedEditingTest {
         assertEquals("sound_not_found", assertThrows(Exception.class, () -> service.get("11", "9")).getCode());
         assertTrue(service.get("11", "2").viewer().ownedByMe());
         assertEquals(List.of("14", "13", "10"), service.search(null, null).items().stream().map(SoundCatalog.Card::id).toList());
-        assertEquals(List.of("11", "10"), service.search(null, "2").mine().stream().map(SoundCatalog.Card::id).toList());
-        assertEquals(List.of("11"), service.search(filter("second", null, null, null), "2").mine().stream()
+        assertEquals(List.of("14", "13", "11", "10"), service.search(null, "2").items().stream().map(SoundCatalog.Card::id).toList());
+        assertTrue(service.search(null, "2").mine().isEmpty());
+        assertEquals(List.of("11"), service.search(filter("second", null, null, null), "2").items().stream()
             .map(SoundCatalog.Card::id).toList());
-        assertEquals(List.of("10"), service.search(filter("arcade", null, null, null), "2").mine().stream()
+        assertEquals(List.of("14", "13", "10"), service.search(filter("arcade", null, null, null), "2").items().stream()
             .map(SoundCatalog.Card::id).toList());
 
         SoundCatalog.Results first = service.search(filter("first", null, 1, null), "2");
@@ -500,9 +501,10 @@ public class SharedEditingTest {
 
         JsonNode likes = communityJson(mvc, get(path).param("q", "BRIZZ").param("sort", "mostLiked")
             .header("X-API-Key", "application").header("Authorization", "Bearer owner"), 200);
-        assertEquals(3, likes.get("items").size());
+        assertEquals(4, likes.get("items").size());
         assertEquals("13", likes.at("/items/0/id").asText());
-        assertEquals("11", likes.at("/mine/0/id").asText());
+        assertEquals("11", likes.at("/items/2/id").asText());
+        assertTrue(likes.get("mine").isEmpty());
 
         JsonNode dislikes = communityJson(mvc, get(path).param("q", "brizz").param("sort", "mostDisliked")
             .header("X-API-Key", "application"), 200);
@@ -618,9 +620,9 @@ public class SharedEditingTest {
         JsonNode owner = communityJson(mvc, get(publicApi + "/sounds").param("q", "second")
             .param("sort", "mostLiked").param("limit", "1")
             .header("X-API-Key", "application").header("Authorization", "Bearer owner"), 200);
-        assertTrue(owner.get("items").isEmpty());
-        assertEquals("11", owner.at("/mine/0/id").asText());
-        assertTrue(owner.at("/mine/0/viewer/ownedByMe").asBoolean());
+        assertTrue(owner.get("mine").isEmpty());
+        assertEquals("11", owner.at("/items/0/id").asText());
+        assertTrue(owner.at("/items/0/viewer/ownedByMe").asBoolean());
 
         JsonNode card = communityJson(mvc, get(publicApi + "/sounds/10").header("X-API-Key", "application"), 200);
         assertTrue(card.get("public").asBoolean());
@@ -749,8 +751,112 @@ public class SharedEditingTest {
             .andExpect(status().isNoContent());
     }
 
+    @Test
+    public void personalSoundboardSearchAndEditHaveIndependentVisibilityAndOrder() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        execute("INSERT INTO sound(id,guild_id,user_id,name,extension,public) VALUES (13,'1','9','aaa','mp3',TRUE)");
+        String personal = "/api/beebot/me/soundboards";
+        String catalog = "/api/beebot/public/soundboards";
+
+        JsonNode created = communityJson(mvc, post(personal).header("X-API-Key", "application").header("Authorization", "Bearer owner")
+            .contentType(MediaType.APPLICATION_JSON).content("""
+                {"name":"Arcade","sortMode":"MANUAL","soundIds":["11","13","10"]}
+                """), 201);
+        String id = created.at("/board/id").asText();
+        String manage = "/api/beebot/soundboards/" + id;
+        assertTrue(created.at("/board/guildId").isNull());
+        assertEquals("11", created.at("/sounds/0/id").asText());
+
+        assertEquals(0, communityJson(mvc, get(catalog).header("X-API-Key", "application"), 200).get("items").size());
+        JsonNode owner = communityJson(mvc, get(catalog).param("q", "ARCADE").header("X-API-Key", "application")
+            .header("Authorization", "Bearer owner"), 200);
+        assertEquals(id, owner.at("/items/0/id").asText());
+        assertFalse(owner.at("/items/0").has("soundCount"));
+
+        mvc.perform(get(catalog + "/" + id).header("X-API-Key", "application")).andExpect(status().isNotFound());
+        mvc.perform(patch(manage).header("X-API-Key", "application").header("Authorization", "Bearer other")
+            .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Cannot edit\"}")).andExpect(status().isNotFound());
+        mvc.perform(patch(manage).header("X-API-Key", "application").header("Authorization", "Bearer owner")
+            .contentType(MediaType.APPLICATION_JSON).content("{\"public\":true}")).andExpect(status().isConflict());
+
+        JsonNode alphabetical = communityJson(mvc, patch(manage).header("X-API-Key", "application")
+            .header("Authorization", "Bearer owner").contentType(MediaType.APPLICATION_JSON).content("""
+                {"public":true,"sortMode":"NAME_ASC","soundIds":["10","13"]}
+                """), 200);
+        assertEquals("13", alphabetical.at("/sounds/0/id").asText());
+        assertEquals("10", alphabetical.at("/soundIds/0").asText());
+
+        JsonNode manual = communityJson(mvc, patch(manage).header("X-API-Key", "application")
+            .header("Authorization", "Bearer owner").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"sortMode\":\"MANUAL\"}"), 200);
+        assertEquals("10", manual.at("/sounds/0/id").asText());
+
+        execute("UPDATE sound SET public=FALSE WHERE id=13");
+        JsonNode detail = communityJson(mvc, get(catalog + "/" + id).header("X-API-Key", "application"), 200);
+        assertEquals(1, detail.get("sounds").size());
+        assertFalse(detail.has("soundIds"));
+    }
+
+    @Test
+    public void boardInteractionsShareTablesAndPlayRetriesPreserveBothCounts() throws java.lang.Exception {
+        MockMvc mvc = communityMvc();
+        JsonNode created = communityJson(mvc, post("/api/beebot/me/soundboards").header("X-API-Key", "application")
+            .header("Authorization", "Bearer owner").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"name\":\"Shared\",\"soundIds\":[\"10\"],\"public\":true}"), 201);
+        String id = created.at("/board/id").asText();
+        String manage = "/api/beebot/soundboards/" + id;
+        String read = "/api/beebot/public/soundboards/" + id;
+
+        JsonNode comment = communityJson(mvc, post(manage + "/comments").header("X-API-Key", "application")
+            .header("Authorization", "Bearer other").contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Great\"}"), 201);
+        assertEquals(id, comment.at("/comment/soundboardId").asText());
+        assertFalse(comment.path("comment").has("soundId"));
+        assertEquals(1, comment.path("commentCount").asInt());
+        String commentId = comment.at("/comment/id").asText();
+        String soundComments = "/api/beebot/sounds/10/comments";
+        mvc.perform(post(soundComments).header("X-API-Key", "application").header("Authorization", "Bearer owner")
+            .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Wrong thread\",\"parentId\":\"" + commentId + "\"}"))
+            .andExpect(status().isNotFound());
+
+        for (int retry = 0; retry < 2; retry++) {
+            JsonNode like = communityJson(mvc, put(manage + "/vote").header("X-API-Key", "application")
+                .header("Authorization", "Bearer other").contentType(MediaType.APPLICATION_JSON).content("{\"vote\":\"LIKE\"}"), 200);
+            assertEquals(id, like.path("soundboardId").asText());
+            assertEquals(1, like.path("likes").asInt());
+        }
+        JsonNode voted = communityJson(mvc, put(manage + "/comments/" + commentId + "/vote")
+            .header("X-API-Key", "application").header("Authorization", "Bearer owner")
+            .contentType(MediaType.APPLICATION_JSON).content("{\"vote\":\"LIKE\"}"), 200);
+        assertEquals(commentId, voted.path("commentId").asText());
+        assertEquals(1, voted.path("likes").asInt());
+
+        UUID playbackId = UUID.randomUUID();
+        String play = "{\"playbackId\":\"" + playbackId + "\",\"soundboardId\":\"" + id + "\"}";
+        for (int retry = 0; retry < 2; retry++) {
+            mvc.perform(post("/api/beebot/public/sounds/10/plays").header("X-API-Key", "application")
+                .contentType(MediaType.APPLICATION_JSON).content(play)).andExpect(status().isNoContent());
+        }
+        mvc.perform(post("/api/beebot/public/sounds/11/plays").header("X-API-Key", "application")
+            .contentType(MediaType.APPLICATION_JSON).content(play)).andExpect(status().isNotFound());
+
+        JsonNode detail = communityJson(mvc, get(read).header("X-API-Key", "application")
+            .header("Authorization", "Bearer other"), 200);
+        assertEquals(1, detail.at("/board/plays").asInt());
+        assertEquals("LIKE", detail.at("/board/viewer/vote").asText());
+        assertEquals(1, detail.at("/board/commentCount").asInt());
+        assertEquals(1, row("SELECT plays FROM sound WHERE id=10").getAsInt("plays"));
+        assertEquals(id, row("SELECT soundboard_id FROM sound_play").get("soundboard_id"));
+
+        mvc.perform(delete(manage).header("X-API-Key", "application").header("Authorization", "Bearer owner"))
+            .andExpect(status().isNoContent());
+        assertNull(row("SELECT soundboard_id FROM sound_play").get("soundboard_id"));
+        assertEquals(1, row("SELECT COUNT(*) AS n FROM sound_play").getAsInt("n"));
+        assertEquals(0, row("SELECT COUNT(*) AS n FROM sound_comment").getAsInt("n"));
+        assertEquals(0, row("SELECT COUNT(*) AS n FROM sound_vote").getAsInt("n"));
+    }
+
     private MockMvc communityMvc() {
-        return MockMvcBuilders.standaloneSetup(new SoundCommunityController(community()), soundController)
+        return MockMvcBuilders.standaloneSetup(new SoundCommunityController(community()), soundController, new SoundboardController(sounds, database, community()))
             .setControllerAdvice(new ApiExceptionHandler())
             .addFilters(new AuthFilter((key, bearer, policy) -> {
                 if (!"application".equals(key))
