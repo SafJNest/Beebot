@@ -12,6 +12,7 @@ import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
@@ -34,9 +35,10 @@ public class SoundboardAdd extends SlashCommand{
 
         this.options = new ArrayList<>();
         this.options.add(new OptionData(OptionType.STRING, "soundboard_name", "Soundboard to add the sound(s) to.", true).setAutoComplete(true));
-        for(int i = 1; i <= maxSounds-1; i++) {
+
+        int soundOptions = Math.min(maxSounds, CommandData.MAX_OPTIONS - this.options.size());
+        for (int i = 1; i <= soundOptions; i++)
             this.options.add(new OptionData(OptionType.STRING, "sound-" + i, "Sound " + i, false).setAutoComplete(true));
-        }
 
         commandData.setThings(this);
     }
@@ -67,7 +69,7 @@ public class SoundboardAdd extends SlashCommand{
             return;
         }
 
-        if(soundCount + soundIDs.size() >= maxSounds) {
+        if(soundCount + soundIDs.size() > maxSounds) {
             event.deferReply(true).addContent("Too many sounds, the soundboard contains " + soundCount + "/" + maxSounds + " sounds and you tried to add " + soundIDs.size() + " sounds.").queue();
             return;
         }

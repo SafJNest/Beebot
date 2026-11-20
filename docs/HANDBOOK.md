@@ -75,6 +75,10 @@ Register the command in `rsc/commands.json` and its `SlashCommand` class. Reuse
 existing identity lookup, message types and rendering. Keep computation in the
 owning service and preserve the existing presentation.
 
+Use `help` for the short command description and add `longhelp` when examples,
+limits or prerequisites help the reader. Every registered subcommand needs its
+own entry under `children`. Remove the entry when retiring a command.
+
 ### 5.2 New HTTP endpoint
 
 Discord dashboard authentication and its `/beebot` endpoints are documented in

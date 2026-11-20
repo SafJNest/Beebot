@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
@@ -31,7 +32,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 3.0
  */
 public class SoundboardCreate extends SlashCommand{
-    private static final int maxSounds = BotDB.MAX_SOUNDBOARD_SOUNDS;
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SoundboardCreate.class);
 
     public SoundboardCreate(String father){
@@ -48,9 +48,9 @@ public class SoundboardCreate extends SlashCommand{
         this.options.add(new OptionData(OptionType.STRING, "name", "Leave blank to not save the soundboard.", false));
         this.options.add(new OptionData(OptionType.ATTACHMENT, "thumbnail", "Thumbnail for the soundboard.", false));
 
-        for(int i = 1; i <= maxSounds; i++) {
+        int soundOptions = Math.min(BotDB.MAX_SOUNDBOARD_SOUNDS, CommandData.MAX_OPTIONS - this.options.size());
+        for (int i = 1; i <= soundOptions; i++)
             this.options.add(new OptionData(OptionType.STRING, "sound-" + i, "Sound " + i, false).setAutoComplete(true));
-        }
         
         commandData.setThings(this);
     }
