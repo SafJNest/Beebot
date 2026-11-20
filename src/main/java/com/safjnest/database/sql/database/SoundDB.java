@@ -26,12 +26,6 @@ import com.safjnest.sound.model.SoundVote;
 
 public final class SoundDB {
 
-    private static final String BOARD_IMAGE = """
-        SELECT b.thumbnail FROM soundboard_sounds bs JOIN soundboard b ON b.id=bs.id
-        WHERE bs.sound_id=? AND b.thumbnail IS NOT NULL AND b.thumbnail<>''
-        ORDER BY b.id LIMIT 1
-        """;
-
     private final BotDB database;
 
     public SoundDB(BotDB database) {
@@ -46,25 +40,18 @@ public final class SoundDB {
 
     public List<QueryRecord> storagePage(String after, int size) {
         return database.readSoundRows("""
-            SELECT s.id, s.extension, s.url, s.thumbnail, (
-                SELECT b.thumbnail FROM soundboard_sounds bs JOIN soundboard b ON b.id=bs.id
-                WHERE bs.sound_id=s.id AND b.thumbnail IS NOT NULL AND b.thumbnail<>''
-                ORDER BY b.id LIMIT 1
-            ) AS board_thumbnail
-            FROM sound s WHERE s.id>? ORDER BY s.id LIMIT ?
+            SELECT id, extension, url, thumbnail FROM sound WHERE id>? ORDER BY id LIMIT ?
             """, after, size);
     }
 
     public QueryRecord storageRecord(String id) {
-        return read(() -> storageRow(soundRow(id), database.readSoundRows(BOARD_IMAGE, id)));
+        return soundRow(id);
     }
 
     public boolean migrateStorage(String id, Function<QueryRecord, StorageKeys> transfer) {
         return database.writeSound(connection -> {
             QueryRecord sound = database.lockSound(connection, id);
-            List<QueryRecord> boards = sound.get("thumbnail") == null
-                ? database.soundQuery(connection, BOARD_IMAGE, id) : List.of();
-            StorageKeys keys = transfer.apply(storageRow(sound, boards));
+            StorageKeys keys = transfer.apply(sound);
 
             if (Objects.equals(sound.get("url"), keys.audio()) && Objects.equals(sound.get("thumbnail"), keys.image()))
                 return false;
@@ -405,13 +392,6 @@ public final class SoundDB {
             throw soundMissing();
 
         return rows.getFirst();
-    }
-
-    private static QueryRecord storageRow(QueryRecord sound, List<QueryRecord> boards) {
-        if (!boards.isEmpty())
-            sound.put("board_thumbnail", boards.getFirst().get("thumbnail"));
-
-        return sound;
     }
 
     private static SoundVote.Result writeVote(BotDB database, Connection connection, String soundId,

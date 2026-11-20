@@ -24,13 +24,13 @@ public final class SoundStorageMigration {
         this.database = BotDB.get().communitySounds();
     }
 
-    public Report run(String soundId, boolean apply) {
-        if (apply)
+    public Report run(String soundId, Mode mode) {
+        if (mode != Mode.PREVIEW)
             files.requireBucket();
 
         Totals totals = new Totals();
         if (soundId != null) {
-            process(database.storageRecord(soundId), apply, totals);
+            process(database.storageRecord(soundId), mode, totals);
 
             return totals.report();
         }
@@ -43,27 +43,37 @@ public final class SoundStorageMigration {
                 return totals.report();
 
             for (QueryRecord row : rows)
-                process(row, apply, totals);
+                process(row, mode, totals);
 
             after = rows.getLast().get("id");
         }
     }
 
-    public record Report(int audio, int thumbnails, int updated, int failed) {}
+    public enum Mode { PREVIEW, APPLY, PRUNE }
+
+    public record Report(int audio, int thumbnails, int updated, int removed, int failed) {}
 
     /* -------------------------------------------------------------------------- */
 
-    private void process(QueryRecord sound, boolean apply, Totals totals) {
+    private void process(QueryRecord sound, Mode mode, Totals totals) {
         String id = sound.get("id");
 
         try {
+            if (mode == Mode.PRUNE) {
+                prune(sound, totals);
+
+                return;
+            }
+
             Transfer audio = audioTransfer(sound);
             String image = imageSource(sound);
             if (audio != null)
                 totals.audio++;
             if (image != null)
                 totals.thumbnails++;
-            if (!apply || audio == null && image == null)
+            if (mode == Mode.PREVIEW)
+                return;
+            if (audio == null && image == null && files.hasObject(files.audioKey(id, sound.get("extension"))))
                 return;
 
             if (database.migrateStorage(id, current -> copy(current, totals))) {
@@ -83,8 +93,14 @@ public final class SoundStorageMigration {
 
         Transfer audio = audioTransfer(sound);
         if (audio != null) {
-            files.copy(audio.source(), audio.target());
+            if (audioKey != null || files.hasObject(audio.source()))
+                files.copy(audio.source(), audio.target());
+            else if (!files.hasObject(audio.target()))
+                throw new IllegalStateException("Missing R2 audio for sound " + soundId);
+
             audioKey = audio.target();
+        } else if (!files.hasObject(audioKey)) {
+            files.copy(files.flatAudioKey(soundId, sound.get("extension")), audioKey);
         }
 
         try {
@@ -110,7 +126,7 @@ public final class SoundStorageMigration {
         if (target.equals(current))
             return null;
 
-        return new Transfer(current == null ? files.legacyAudioKey(id, extension) : current, target);
+        return new Transfer(current == null ? files.flatAudioKey(id, extension) : current, target);
     }
 
     private String imageSource(QueryRecord sound) {
@@ -119,7 +135,17 @@ public final class SoundStorageMigration {
         if (current != null && files.isSoundImageKey(id, current))
             return null;
 
-        return current == null ? sound.get("board_thumbnail") : current;
+        return current == null || current.isBlank() ? null : current;
+    }
+
+    private void prune(QueryRecord sound, Totals totals) {
+        String id = sound.get("id");
+        String extension = sound.get("extension");
+        if (!files.audioKey(id, extension).equals(sound.get("url")))
+            throw new IllegalStateException("Sound still needs migration: " + id);
+
+        if (files.pruneFlatAudio(id, extension))
+            totals.removed++;
     }
 
     private record Transfer(String source, String target) {}
@@ -128,10 +154,11 @@ public final class SoundStorageMigration {
         private int audio;
         private int thumbnails;
         private int updated;
+        private int removed;
         private int failed;
 
         private Report report() {
-            return new Report(audio, thumbnails, updated, failed);
+            return new Report(audio, thumbnails, updated, removed, failed);
         }
     }
 }

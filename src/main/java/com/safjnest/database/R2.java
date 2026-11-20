@@ -129,6 +129,31 @@ public final class R2 implements AutoCloseable {
         client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
     }
 
+    public boolean hasObject(String bucket, String key) {
+        HeadObjectResponse object = headIfPresent(bucket, key);
+
+        return object != null && object.contentLength() != null && object.contentLength() > 0;
+    }
+
+    public boolean deleteVerifiedDuplicate(String bucket, String source, String target) {
+        if (source.equals(target))
+            throw new IllegalArgumentException("Source and destination must differ");
+
+        HeadObjectResponse original = headIfPresent(bucket, source);
+        if (original == null)
+            return false;
+
+        HeadObjectResponse current = head(bucket, target);
+        if (original.contentLength() == null || original.contentLength() <= 0
+                || !original.contentLength().equals(current.contentLength())
+                || (original.eTag() == null || !original.eTag().equals(current.eTag())) && !sameContent(bucket, source, target))
+            throw new IllegalStateException("Different R2 object exists at " + target);
+
+        delete(bucket, source);
+
+        return true;
+    }
+
     public void updateMetadata(String bucket, String key, Map<String, String> values) {
         HeadObjectResponse previous = head(bucket, key);
         Map<String, String> metadata = new HashMap<>(previous.metadata());

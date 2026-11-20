@@ -49,6 +49,7 @@ public final class SoundFiles {
     private static final Logger LOG = LoggerFactory.getLogger(SoundFiles.class);
     private static final Path LEGACY_DIRECTORY = Path.of("rsc", "sounds");
     private static final String DEFAULT_PREFIX = "sounds/";
+    private static final String IMAGE_FILENAME = "[a-zA-Z0-9_-]+\\.(?i:png|jpe?g|gif)";
     private static final String UNAVAILABLE = "Sound file is unavailable.";
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Base64.Encoder BASE64 = Base64.getUrlEncoder().withoutPadding();
@@ -101,10 +102,10 @@ public final class SoundFiles {
     }
 
     public Path resolve(Sound sound) throws IOException {
-        return resolve(sound.getId(), sound.getExtension(), sound.getAudioKey());
+        return resolve(sound.getId(), sound.getExtension());
     }
 
-    Path resolve(String id, String extension, String key) throws IOException {
+    Path resolve(String id, String extension) throws IOException {
         String fileName = fileName(id, extension);
         Path target = directory.resolve(fileName);
         if (isReady(target))
@@ -117,7 +118,7 @@ public final class SoundFiles {
             if (isReady(target))
                 return target;
 
-            publish(target, partial -> download.write(key == null ? prefix + fileName : key, partial));
+            publish(target, partial -> download.write(audioKey(id, extension), partial));
 
             return target;
         }
@@ -201,11 +202,7 @@ public final class SoundFiles {
             return;
 
         try {
-            String key = sound.getAudioKey();
-            if (key == null)
-                key = legacyAudioKey(sound.getId(), sound.getExtension());
-
-            storage.updateMetadata(bucket, key, metadata(sound));
+            storage.updateMetadata(bucket, audioKey(sound.getId(), sound.getExtension()), metadata(sound));
         } catch (RuntimeException failure) {
             throw new Exception(Type.UNAVAILABLE, "sound_storage_unavailable", "Sound metadata storage is unavailable", failure, null);
         }
@@ -216,7 +213,7 @@ public final class SoundFiles {
         if (!ValidationUtils.isDecimalId(soundId))
             throw Exception.invalidRequest("Invalid sound ID");
 
-        String key = prefix + soundId + "/thumbnail-" + UUID.randomUUID() + "." + image.extension();
+        String key = soundPrefix(soundId) + UUID.randomUUID() + "." + image.extension();
         try {
             storage.upload(requireBucket(), key, image.bytes(), image.contentType());
         } catch (SdkException failure) {
@@ -226,12 +223,12 @@ public final class SoundFiles {
         return key;
     }
 
-    public String imageUrl(String key) {
-        return key == null ? null : storage.url(key);
+    public String imageUrl(String soundId, String key) {
+        return isSoundImageKey(soundId, key) ? storage.url(key) : null;
     }
 
-    public void deleteImage(String key) {
-        if (key == null)
+    public void deleteImage(String soundId, String key) {
+        if (!isSoundImageKey(soundId, key))
             return;
 
         try {
@@ -241,41 +238,50 @@ public final class SoundFiles {
         }
     }
 
-    public String playbackUrl(String id, String extension, String key, String legacyCdn) {
+    public String playbackUrl(String id, String extension, String legacyCdn) {
         if (extension == null || !extension.matches("[a-zA-Z0-9]+") || !ValidationUtils.isDecimalId(id))
             return null;
 
-        String fileName = fileName(id, extension);
         if (storage.isEnabled())
-            return storage.url(key == null ? prefix + fileName : key);
+            return storage.url(audioKey(id, extension));
         if (legacyCdn == null || legacyCdn.isBlank())
             return null;
 
-        return legacyCdn.replaceAll("/+$", "") + "/sounds/" + fileName;
+        return legacyCdn.replaceAll("/+$", "") + "/sounds/" + fileName(id, extension);
     }
 
     String audioKey(String id, String extension) {
-        return prefix + id + "/" + fileName(id, extension);
+        return soundPrefix(id) + fileName(id, extension);
     }
 
-    String legacyAudioKey(String id, String extension) {
+    String flatAudioKey(String id, String extension) {
         return prefix + fileName(id, extension);
     }
 
     boolean isSoundImageKey(String id, String key) {
-        return key.startsWith(prefix + id + "/thumbnail-");
+        String directory = soundPrefix(id);
+
+        return key != null && key.startsWith(directory) && key.substring(directory.length()).matches(IMAGE_FILENAME);
     }
 
     String migratedImageKey(String id, String source) {
         String filename = source.substring(source.lastIndexOf('/') + 1);
-        if (!filename.matches("[a-zA-Z0-9_-]+\\.(?i:png|jpe?g|gif)"))
+        if (!filename.matches(IMAGE_FILENAME))
             throw new IllegalArgumentException("Unsupported soundboard thumbnail key");
 
-        return prefix + id + "/thumbnail-" + filename;
+        return soundPrefix(id) + filename;
     }
 
     void copy(String source, String target) {
         storage.copyVerified(requireBucket(), source, target);
+    }
+
+    boolean hasObject(String key) {
+        return storage.hasObject(requireBucket(), key);
+    }
+
+    boolean pruneFlatAudio(String id, String extension) {
+        return storage.deleteVerifiedDuplicate(requireBucket(), flatAudioKey(id, extension), audioKey(id, extension));
     }
 
     String requireBucket() {
@@ -286,6 +292,10 @@ public final class SoundFiles {
     }
 
     /* -------------------------------------------------------------------------- */
+
+    private String soundPrefix(String soundId) {
+        return prefix + soundId + "/";
+    }
 
     private String upload(Sound sound, Path source) {
         String extension = sound.getExtension();

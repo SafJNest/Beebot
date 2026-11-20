@@ -104,7 +104,7 @@
                       },
                       "public": true,
                       "createdAt": "2026-03-02T10:00:00Z",
-                      "url": "https://cdn.example.com/sounds/42.mp3",
+                      "url": "https://cdn.example.com/sounds/42/42.mp3",
                       "durationMs": null,
                       "tags": [
                         {
@@ -398,7 +398,7 @@
                           },
                           "public": true,
                           "createdAt": "2026-03-02T10:00:00Z",
-                          "url": "https://cdn.example.com/sounds/42.mp3",
+                          "url": "https://cdn.example.com/sounds/42/42.mp3",
                           "durationMs": null,
                           "tags": [
                             {
@@ -511,7 +511,7 @@
                   },
                   "public": true,
                   "createdAt": "2026-03-02T10:00:00Z",
-                  "url": "https://cdn.example.com/sounds/42.mp3",
+                  "url": "https://cdn.example.com/sounds/42/42.mp3",
                   "durationMs": null,
                   "tags": [
                     {
@@ -619,7 +619,7 @@
                   },
                   "public": true,
                   "createdAt": "2026-03-02T10:00:00Z",
-                  "url": "https://cdn.example.com/sounds/42.mp3",
+                  "url": "https://cdn.example.com/sounds/42/42.mp3",
                   "durationMs": null,
                   "tags": [
                     {
@@ -902,7 +902,7 @@
                       },
                       "public": true,
                       "createdAt": "2026-03-02T10:00:00Z",
-                      "url": "https://cdn.example.com/sounds/42.mp3",
+                      "url": "https://cdn.example.com/sounds/42/42.mp3",
                       "durationMs": null,
                       "tags": [
                         {
@@ -2153,7 +2153,7 @@
                       },
                       "public": true,
                       "createdAt": "2026-03-02T10:00:00Z",
-                      "url": "https://cdn.example.com/sounds/42.mp3",
+                      "url": "https://cdn.example.com/sounds/42/42.mp3",
                       "durationMs": null,
                       "tags": [
                         {
@@ -4120,7 +4120,7 @@
                   "$ref": "#/components/schemas/SoundImage"
                 },
                 "example": {
-                  "imageUrl": "https://cdn.example.com/sounds/42/thumbnail-cover.png"
+                  "imageUrl": "https://cdn.example.com/sounds/42/cover.png"
                 }
               }
             }

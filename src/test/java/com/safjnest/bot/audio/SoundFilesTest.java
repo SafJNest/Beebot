@@ -134,7 +134,7 @@ public class SoundFilesTest {
 
         String cdn = "https://cdn.example/";
         SoundFiles files = new SoundFiles(directory, new R2(URI.create(cdn)), null, "sounds/", (key, partial) -> {
-            assertEquals("sounds/41.opus", key);
+            assertEquals("sounds/41/41.opus", key);
             requests.incrementAndGet();
             Files.writeString(partial, "a");
             started.countDown();
@@ -151,8 +151,8 @@ public class SoundFilesTest {
         });
 
         try (ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor()) {
-            Future<Path> first = worker.submit(() -> files.resolve("41", "opus", null));
-            Future<Path> second = worker.submit(() -> files.resolve("41", "opus", null));
+            Future<Path> first = worker.submit(() -> files.resolve("41", "opus"));
+            Future<Path> second = worker.submit(() -> files.resolve("41", "opus"));
 
             try {
                 assertTrue(started.await(5, TimeUnit.SECONDS));
@@ -164,14 +164,14 @@ public class SoundFilesTest {
             assertEquals(target, first.get(5, TimeUnit.SECONDS));
             assertEquals(target, second.get(5, TimeUnit.SECONDS));
             assertEquals("ab", Files.readString(target));
-            assertEquals(target, files.resolve("41", "opus", null));
+            assertEquals(target, files.resolve("41", "opus"));
             assertEquals(1, requests.get());
-            assertEquals(cdn + "sounds/41.opus", files.playbackUrl("41", "opus", null, "https://old.example"));
+            assertEquals(cdn + "sounds/41/41.opus", files.playbackUrl("41", "opus", "https://old.example"));
         }
     }
 
     @Test
-    public void migratedAudioUsesStoredKeyForCdnAndBotDownload() throws IOException {
+    public void storedFlatAudioKeyDoesNotAffectBotDownloadsOrCdnUrls() throws IOException {
         Path directory = temporary.newFolder().toPath();
         R2 storage = new R2(URI.create("https://cdn.example/"));
         SoundFiles files = new SoundFiles(directory, storage, "beebot", "sounds/", (key, target) -> {
@@ -181,11 +181,27 @@ public class SoundFilesTest {
         QueryRecord row = new QueryRecord();
         row.put("id", "1");
         row.put("extension", "mp3");
-        row.put("url", "sounds/1/1.mp3");
+        row.put("url", "sounds/1.mp3");
 
         assertEquals("audio", Files.readString(files.resolve(new Sound(row, List.of()))));
-        assertEquals("https://cdn.example/sounds/1/1.mp3", files.playbackUrl("1", "mp3", row.get("url"), null));
-        assertEquals("sounds/1/thumbnail-cover.png", files.migratedImageKey("1", "soundboard/thumbnail/2/cover.png"));
+        assertEquals("https://cdn.example/sounds/1/1.mp3", files.playbackUrl("1", "mp3", null));
+    }
+
+    @Test
+    public void audioAndCoversShareTheSoundDirectory() {
+        SoundFiles files = new SoundFiles(temporary.getRoot().toPath(), new R2(URI.create("https://cdn.example/")),
+            "beebot", "sounds/", (key, target) -> fail("Key generation should not download a file"));
+
+        assertEquals("sounds/1/1.mp3", files.audioKey("1", "mp3"));
+        assertEquals("sounds/1.mp3", files.flatAudioKey("1", "mp3"));
+        assertEquals("sounds/1/cover.png", files.migratedImageKey("1", "soundboard/thumbnail/2/cover.png"));
+
+        assertTrue(files.isSoundImageKey("1", "sounds/1/123.jpg"));
+        assertTrue(files.isSoundImageKey("1", "sounds/1/thumbnail-cover.png"));
+        assertFalse(files.isSoundImageKey("1", "sounds/1/1.mp3"));
+        assertFalse(files.isSoundImageKey("1", "sounds/11/123.jpg"));
+        assertEquals("https://cdn.example/sounds/1/123.jpg", files.imageUrl("1", "sounds/1/123.jpg"));
+        assertNull(files.imageUrl("1", "soundboard/thumbnail/2/cover.png"));
     }
 
     @Test
@@ -194,7 +210,7 @@ public class SoundFilesTest {
         AtomicInteger requests = new AtomicInteger();
         R2 storage = new R2(URI.create("https://cdn.example/"));
         SoundFiles files = new SoundFiles(directory, storage, null, "", (key, partial) -> {
-            assertEquals("41.mp3", key);
+            assertEquals("41/41.mp3", key);
             if (requests.incrementAndGet() == 1) {
                 Files.writeString(partial, "partial audio");
                 throw new IOException("CDN unavailable");
@@ -203,12 +219,12 @@ public class SoundFilesTest {
             Files.writeString(partial, "audio");
         });
 
-        assertThrows(IOException.class, () -> files.resolve("41", "mp3", null));
+        assertThrows(IOException.class, () -> files.resolve("41", "mp3"));
         try (Stream<Path> entries = Files.list(directory)) {
             assertEquals(0, entries.count());
         }
 
-        assertEquals("audio", Files.readString(files.resolve("41", "mp3", null)));
+        assertEquals("audio", Files.readString(files.resolve("41", "mp3")));
         assertEquals(2, requests.get());
     }
 

@@ -88,7 +88,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public String playbackUrl(QueryRecord sound) {
-        return SoundFiles.getInstance().playbackUrl(sound.get("id"), sound.get("extension"), sound.get("url"), cdnUrl);
+        return SoundFiles.getInstance().playbackUrl(sound.get("id"), sound.get("extension"), cdnUrl);
     }
 
     public void setCdnUrl(String value) {

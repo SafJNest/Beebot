@@ -39,7 +39,7 @@ Existing sound detail, library and greet responses contain the `com.safjnest.sou
 
 Counts in Sound are global/all time. `listeners` counts distinct users associated with recorded plays, not everyone present in the voice channel. `myPlays` counts the caller's recorded plays. Uploader display data comes from the Discord cache; unavailable names are `Unknown`, avatars null. `durationMs` is the playback duration from MariaDB, in milliseconds. It is available immediately after upload, including on a cold cache, and is null when the row has no persisted duration. `createdAt` can be null for legacy records.
 
-With R2 enabled, the HTTP `url` combines the CDN base with the R2 object key stored in `sound.url`, normally `sounds/{id}/{id}.{extension}`. Rows awaiting migration use the original flat key. The bot resolves the same R2 key on a local-file cache miss. API authorization governs metadata responses and the CDN serves audio directly. With R2 disabled, Spring's `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
+With R2 enabled, the HTTP `url` combines the CDN base with the canonical key `sounds/{id}/{id}.{extension}`. The bot resolves the same key on a local-file cache miss. API authorization governs metadata responses and the CDN serves audio directly. With R2 disabled, Spring's `CDN_URL` supplies the legacy URL and the bot uses `rsc/sounds`. With neither configured, `url` is null. See [R2 configuration and file handling](../audio-storage-r2.md).
 
 Deletion removes the sound and dependent rows from SQL and invalidates the metadata and selection caches. The R2 object and the VPS file are retained.
 

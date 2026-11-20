@@ -215,27 +215,29 @@ public class SharedEditingTest {
     }
 
     @Test
-    public void storageMigrationUsesFirstBoardCoverAndPersistsOnlySuccessfulTransfers() {
+    public void storageMigrationUsesOnlyTheSoundCoverAndPersistsOnlySuccessfulTransfers() {
         execute("INSERT INTO soundboard(id, guild_id, user_id, name, thumbnail) VALUES "
             + "(1,'1','2','no cover',NULL),(2,'1','2','first cover','first.png'),(3,'1','2','second cover','second.png')");
         execute("INSERT INTO soundboard_sounds(id,sound_id) VALUES (1,10),(2,10),(3,10)");
         SoundDB storage = database.communitySounds();
 
         List<QueryRecord> plan = storage.storagePage("0", 20);
-        assertEquals("first.png", plan.getFirst().get("board_thumbnail"));
-        assertNull(plan.get(1).get("board_thumbnail"));
+        assertNull(plan.getFirst().get("thumbnail"));
+        execute("UPDATE sound SET thumbnail='existing.png' WHERE id=10");
+
         assertThrows(IllegalStateException.class, () -> storage.migrateStorage("10", current -> {
             throw new IllegalStateException("R2 copy failed");
         }));
         assertNull(storage.storageRecord("10").get("url"));
+        assertEquals("existing.png", storage.storageRecord("10").get("thumbnail"));
 
         assertTrue(storage.migrateStorage("10", current -> {
-            assertEquals("first.png", current.get("board_thumbnail"));
+            assertEquals("existing.png", current.get("thumbnail"));
 
-            return new StorageKeys("sounds/10/10.mp3", "sounds/10/thumbnail-first.png");
+            return new StorageKeys("sounds/10/10.mp3", "sounds/10/existing.png");
         }));
         assertEquals("sounds/10/10.mp3", storage.storageRecord("10").get("url"));
-        assertEquals("sounds/10/thumbnail-first.png", storage.storageRecord("10").get("thumbnail"));
+        assertEquals("sounds/10/existing.png", storage.storageRecord("10").get("thumbnail"));
         assertFalse(storage.migrateStorage("10", current -> new StorageKeys(
             current.get("url"), current.get("thumbnail"))));
     }

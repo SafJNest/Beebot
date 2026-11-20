@@ -246,8 +246,8 @@ usare come ordinamento e lo stato personale può essere `DISLIKE`.
 
 `audioUrl` e `imageUrl` sono URL CDN completi, ad esempio
 `https://cdn.example.com/sounds/42/42.mp3` e
-`https://cdn.example.com/sounds/42/thumbnail-cover.png`. Usa il valore
-restituito, così funzionano anche le chiavi precedenti. Se il link è già
+`https://cdn.example.com/sounds/42/cover.png`. Usa il valore
+restituito dall'API. Se il link è già
 noto, il CDN può servirlo direttamente a prescindere dalla visibilità della
 scheda. Una copertina assente è `imageUrl: null`.
 

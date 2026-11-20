@@ -237,14 +237,15 @@ public final class SoundService {
             throw failure;
         }
 
-        files.deleteImage(previous);
+        files.deleteImage(id, previous);
 
-        return files.imageUrl(key);
+        return files.imageUrl(id, key);
     }
 
     public void deleteImage(String soundId, String viewer) {
-        String previous = sounds.saveImage(id(soundId), requireUser(viewer), null);
-        SoundFiles.getInstance().deleteImage(previous);
+        String id = id(soundId);
+        String previous = sounds.saveImage(id, requireUser(viewer), null);
+        SoundFiles.getInstance().deleteImage(id, previous);
     }
 
     /* -------------------------------------------------------------------------- */
@@ -289,7 +290,7 @@ public final class SoundService {
             long duration = row.getAsLong("duration_ms");
 
             cards.put(id, new SoundCatalog.Card(id, row.get("name"), row.get("description"), row.getAsBoolean("public"), timestamp(row, "time"),
-                duration > 0 ? duration : null, cache.playbackUrl(row), SoundFiles.getInstance().imageUrl(row.get("thumbnail")),
+                duration > 0 ? duration : null, cache.playbackUrl(row), SoundFiles.getInstance().imageUrl(id, row.get("thumbnail")),
                 uploaders.computeIfAbsent(uploaderId, discord::user), List.copyOf(tags.getOrDefault(id, List.of())),
                 row.getAsLong("plays"), listeners, row.getAsLong("likes"), row.getAsLong("dislikes"),
                 row.getAsLong("comments"), personal));
@@ -476,7 +477,7 @@ public final class SoundService {
                     return;
             }
 
-            files.deleteImage(key);
+            files.deleteImage(soundId, key);
         } catch (RuntimeException failure) {
             LOG.warn("Could not verify whether sound image {} is referenced", key, failure);
         }

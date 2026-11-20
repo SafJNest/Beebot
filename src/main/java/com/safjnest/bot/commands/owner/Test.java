@@ -247,7 +247,7 @@ public class Test extends Command {
                 default -> "Usage: !test sound explore | search [q] | suggest <q> | get <sound> | creator <user>"
                     + " | comments <sound> [parent|-] [cursor] | post <sound> <text> | reply/edit <sound> <comment> <text>"
                     + " | pin/heart/delete <sound> <comment> | vote <sound> <comment|-> <like|dislike|none> | play <sound> [uuid]"
-                    + " | migrate-storage [preview|apply] [sound]";
+                    + " | migrate-storage [preview|apply|prune] [sound]";
             };
 
             event.replyInDm(result);
@@ -260,10 +260,15 @@ public class Test extends Command {
 
     private static void migrateSoundStorage(CommandEvent event, String input) {
         String[] args = input.isBlank() ? new String[]{"preview"} : input.split("\\s+");
-        boolean apply = "apply".equals(args[0]);
+        SoundStorageMigration.Mode mode = switch (args[0]) {
+            case "preview" -> SoundStorageMigration.Mode.PREVIEW;
+            case "apply" -> SoundStorageMigration.Mode.APPLY;
+            case "prune" -> SoundStorageMigration.Mode.PRUNE;
+            default -> null;
+        };
         String id = args.length == 2 ? args[1] : null;
-        if ((!apply && !"preview".equals(args[0])) || args.length > 2 || (id != null && !ValidationUtils.isDecimalId(id))) {
-            event.replyInDm("Usage: !test sound migrate-storage [preview|apply] [sound]");
+        if (mode == null || args.length > 2 || (id != null && !ValidationUtils.isDecimalId(id))) {
+            event.replyInDm("Usage: !test sound migrate-storage [preview|apply|prune] [sound]");
 
             return;
         }
@@ -276,11 +281,11 @@ public class Test extends Command {
 
         Thread.startVirtualThread(() -> {
             try {
-                SoundStorageMigration.Report result = new SoundStorageMigration().run(id, apply);
-                String mode = apply ? "Applied" : "Preview";
+                SoundStorageMigration.Report result = new SoundStorageMigration().run(id, mode);
 
                 event.replyInDm(mode + " — audio=" + result.audio() + ", thumbnails=" + result.thumbnails()
-                    + ", updated sounds=" + result.updated() + ", failures=" + result.failed());
+                    + ", updated sounds=" + result.updated() + ", removed flat audio=" + result.removed()
+                    + ", failures=" + result.failed());
             } catch (RuntimeException failure) {
                 event.replyInDm("Sound storage migration failed: " + failure.getMessage());
             } finally {

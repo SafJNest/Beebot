@@ -38,7 +38,6 @@ public class Sound {
     @JsonProperty("description")
     private volatile String description;
     private String extension;
-    private volatile String audioKey;
     private volatile String imageKey;
     @JsonProperty("public")
     private volatile boolean isPublic;
@@ -154,7 +153,6 @@ public class Sound {
         this.name = data.get("name");
         this.description = data.get("description");
         this.extension = data.get("extension");
-        this.audioKey = data.get("url");
         this.imageKey = data.get("thumbnail");
         this.isPublic = data.getAsBoolean("public");
         this.timestamp = data.getAsTimestamp("time");
@@ -181,7 +179,6 @@ public class Sound {
         this.tags = copyTags(original.tags);
 
         this.extension = original.extension;
-        this.audioKey = original.audioKey;
         this.imageKey = original.imageKey;
         this.timestamp = original.timestamp;
         this.durationMs = original.durationMs;
@@ -252,7 +249,6 @@ public class Sound {
         isPublic = refreshedPublic;
         tags = refreshedTags;
         durationMs = readDuration(current);
-        audioKey = current.get("url");
         imageKey = current.get("thumbnail");
 
         plays = current.getAsInt("plays");
@@ -281,10 +277,6 @@ public class Sound {
 
     public String getDescription() {
         return description;
-    }
-
-    public String getAudioKey() {
-        return audioKey;
     }
 
     public String getImageKey() {
@@ -478,7 +470,7 @@ public class Sound {
         deleted = true;
         revision++;
         catalogChanged.run();
-        SoundFiles.getInstance().deleteImage(removed.get("thumbnail"));
+        SoundFiles.getInstance().deleteImage(ID, removed.get("thumbnail"));
 
         return true;
     }

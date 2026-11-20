@@ -17,11 +17,11 @@ This is local deployment configuration. Restart Beebot after editing it.
 ```
 
 Use the existing CDN base URL and match `soundPrefix` to the uploaded object
-keys. An empty prefix gives new keys such as `123/123.mp3` and recognizes old keys such as `123.mp3`. The default
-prefix is `sounds/`. Requests use the same CDN base for `/assets/punto.jpg`.
-New uploads use `sounds/<id>/<id>.<ext>`. MariaDB stores the R2 key in
-`sound.url`. A null key keeps the previous flat path
-`sounds/<id>.<ext>` until that sound is migrated.
+keys. The default prefix is `sounds/`. An empty prefix gives audio keys such
+as `123/123.mp3` and cover keys such as `123/cover.png`. Requests use the same
+CDN base for `/assets/punto.jpg`. Upload, CDN playback, bot downloads and
+metadata edits use `sounds/<id>/<id>.<ext>`. MariaDB records that key in
+`sound.url`. The storage migration uses the stored key to find older objects.
 
 The CDN URL is sufficient for reading. To enable uploads, fill `soundBucket`,
 `accountId`, `accessKeyId`, and `secretAccessKey` with the R2 S3 credentials for
@@ -79,16 +79,16 @@ External images and response-specific attachments retain their existing sources.
 ## Sound audio and covers
 
 Audio and covers share the same bucket and CDN as soundboard thumbnails.
-For sound `1` with the default prefix, the audio is `sounds/1/1.mp3`
-and a cover is `sounds/1/thumbnail-<filename>.png`. New cover uploads use
-a unique filename and the same size and format validation as soundboard
-thumbnails. MariaDB stores the reference in `sound.thumbnail`.
+For sound `1` with the default prefix, the audio is `sounds/1/1.mp3`.
+Its cover, when present, uses `sounds/1/<uuid>.<ext>` and the same size and
+format validation as soundboard thumbnails. MariaDB stores the cover key in
+`sound.thumbnail`.
 These database columns contain object keys relative to the configured CDN.
 The API builds the full URLs returned to clients.
 Catalog access still follows SQL visibility. A direct CDN link can be
 opened by anyone who has it.
 
-### Move existing sounds to their ID prefix
+### Consolidate existing audio and covers
 
 After the [sound schema cutover](api/beebot-sounds.md#schema-cutover),
 the owner can run these commands on the bot.
@@ -98,11 +98,20 @@ the owner can run these commands on the bot.
 - `!test sound migrate-storage apply 42` migrates one sound.
 - `!test sound migrate-storage apply` migrates all catalogued sounds,
   in batches. The command replies with counts and logs individual failures.
+- `!test sound migrate-storage prune` removes verified flat duplicates for
+  catalogued sounds after all bot and API instances use the canonical keys.
+  Append a sound ID to run it on a single sound.
 
-The command verifies the R2 copy before updating MariaDB. It can be run
-again after a partial failure. Existing objects at destination keys
-must match the source content. The old audio keys remain available for
-existing links. An existing sound cover takes priority. Otherwise the
-command copies the cover from the first associated soundboard with a
-thumbnail, in ascending ID order. Sounds with no available cover keep a
-null image key. Soundboard covers stay at their existing keys.
+Run `apply` in the environment that owns the catalog before serving the new
+keys. It copies audio from the previous key, using `sounds/<id>.<ext>` for rows
+without a key, and verifies the destination before updating MariaDB. It can
+be rerun after a partial failure. Existing destination objects must match the
+source content. The command moves the cover referenced by `sound.thumbnail`
+when it lives outside the sound's prefix. Sounds without a cover keep a null
+key. Soundboard covers remain attached to their own soundboards.
+
+Run `prune` after `apply` and the deployment are complete. It checks the
+canonical key in MariaDB and verifies equal audio at the destination before
+deleting its flat duplicate. Once removed from R2, old CDN URLs can still be
+served from cache until expiry or purge. Clear any cached 404s on the new URLs
+if they were requested before copying. [R2 cache consistency](https://developers.cloudflare.com/r2/reference/consistency/#caching)

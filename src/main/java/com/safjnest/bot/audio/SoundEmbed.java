@@ -111,10 +111,8 @@ public class SoundEmbed {
         eb.setDescription("```" + sound.getName() + " (ID: " + sound.getId() + ") "
                 + ((sound.isPublic()) ? ":public:" : ":private:") + "```");
         eb.setColor(Bot.getColor());
-        String thumbnail = sound.getImageKey() == null
-                ? Bot.getJDA().getSelfUser().getAvatarUrl()
-                : SoundFiles.getInstance().imageUrl(sound.getImageKey());
-        eb.setThumbnail(thumbnail);
+        String thumbnail = SoundFiles.getInstance().imageUrl(sound.getId(), sound.getImageKey());
+        eb.setThumbnail(thumbnail == null ? Bot.getJDA().getSelfUser().getAvatarUrl() : thumbnail);
 
         eb.addField("Author", "```"
                 + Bot.getJDA().getUserById(sound.getUserId()).getName()
