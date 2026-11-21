@@ -13,6 +13,38 @@ architecture decision. Report conflicts rather than silently changing owners.
 For LoL code changes, check CodeGraph status, sync a stale index, then inspect
 the affected symbol and its impact before editing.
 
+### 1.1 Graphify
+
+Graphify provides a local architecture report and an interactive view of Beebot.
+Install it once with `uv` and Python 3.11.5–3.14. The `sql` extra indexes the
+schema and migration files in `database/`. From the repository root, install
+Graphify and build the graph.
+
+```sh
+uv tool install 'graphifyy[sql]==0.9.114'
+graphify extract . --code-only && graphify cluster-only . --no-label
+```
+
+Run `graphify update .` after switching branches or changing source files. Add
+`--force` after changing ignore rules or when Graphify refuses to replace an
+older graph after source deletions. The local workflow needs no model or API
+key. Semantic extraction of docs and media requires a separate run with a model.
+
+Open `graphify-out/graph.html` for the interactive map or
+`graphify-out/GRAPH_REPORT.md` for the summary. The map groups large graphs by
+community and loads its visualization library from a CDN. Git ignores the
+generated files. Graphify honors `.gitignore` and uses `.graphifyignore` to
+exclude archived code, media and resource fixtures.
+
+```sh
+graphify explain getSoundById
+graphify affected getSoundById --relation calls --depth 1
+```
+
+CodeGraph remains the reference for source snippets, call paths and impact
+checks. A Graphify path can include containment or import edges, so check the
+edge types before interpreting it as a chain of calls.
+
 ## 2. Core contracts
 
 - Canonical LoL success models live in `lol.model`; Spring owns controllers,

@@ -1,10 +1,10 @@
 # Revisione del core League of Legends
 
-Branch `the-dashboard` a `94f8d16d`, confrontato con `main` a `bf0f9d77`.
+Branch `the-dashboard` a `9c6e74b0`, confrontato con `main` a `bf0f9d77`. La prima lettura dei flussi LoL era su `94f8d16d`. Il commit successivo riguarda soundboard, suoni e i relativi handler. I sorgenti dei flussi LoL qui citati sono identici nei due commit.
 
 Il refactor più utile per LoL è dare a Discord, HTTP e tracker un percorso condiviso verso lo stesso dato: stessa identità, un proprietario della scrittura, proiezioni ricostruibili e un solo lavoro in corso per risultato. Il problema più urgente è che alcuni flussi scrivono più rappresentazioni dello stesso fatto e, se si interrompono, il retry può scambiare la prima rappresentazione per un'operazione conclusa. Subito dopo viene il lavoro ripetuto nelle letture, anche con Redis caldo.
 
-Il branch ha migliorato i confini dei package, la traduzione degli errori HTTP e il riuso delle conversioni. La maggior parte dei cambiamenti nei servizi LoL è costituita da import, nomi e pulizia locale. La coda e i principali percorsi di aggregazione sono in larga parte ereditati. Riconoscendo i rename, `MongoDB.java` passa da 4.430 a 4.349 righe con similarità Git del 98%. La regressione di processo è concreta: il diff dei test contiene **84 file rimossi e 20 aggiunti**. Tra i rimossi ci sono **51 sotto `src/test/java/com/safjnest/lol`**, oltre a test Mongo, Redis e HTTP LoL. I 207 test del checkout attuale passano su Java 25 e coprono soprattutto il lavoro Beebot. I file di partenza per i contratti LoL sono ancora recuperabili da `main`. [Piano Beebot](repository-review.md) · [Contratti LoL](README.md)
+Il branch ha migliorato i confini dei package, la traduzione degli errori HTTP e il riuso delle conversioni. La maggior parte dei cambiamenti nei servizi LoL è costituita da import, nomi e pulizia locale. La coda e i principali percorsi di aggregazione sono in larga parte ereditati. Riconoscendo i rename, `MongoDB.java` passa da 4.430 a 4.349 righe con similarità Git del 98%. Il diff dei test contiene **84 file rimossi e 20 aggiunti**. Tra i rimossi ci sono **51 sotto `src/test/java/com/safjnest/lol`**, oltre a test Mongo, Redis e HTTP LoL. I 209 test del checkout attuale passano su Java 25 e coprono soprattutto il lavoro Beebot. Ho rieseguito in isolamento anche 32 test LoL recuperati da `main`: passano tutti sul codice attuale. [Piano Beebot](repository-review.md) · [Contratti LoL](README.md)
 
 ## Cosa trasferire da GuildCache
 
@@ -312,6 +312,40 @@ Moments[] moments = moments(adjusted);
 
 Il passaggio quadratico diventa lineare in righe × metriche. Il sort finale e la mediana restano, con la loro complessità. Conservare la stessa gestione di non-finiti, minGames, denominatori e pesi. Confrontare score e ordinamento prima/dopo su gruppi a una riga, molte righe, campioni mancanti e valori identici. `ProfileMatchups.withMinGames` crea le foglie che il ranking modifica. Proteggere quella precedenza prima di riusare snapshot in memoria.
 
+Ho compilato il frammento nella classe originale in una directory temporanea. Tutti i sei test storici del ranking passano col frammento inserito. La prova copre i casi delle fixture, inclusi ordinamento, shrink dei campioni piccoli e metriche mancanti.
+
+#### Due miglioramenti locali a record e conversione timeline
+
+`ProfileRecordAnalyzer.Accumulator` tiene il miglior risultato per metrica. È una buona struttura: conserva poche righe anche con uno storico lungo. Oggi crea però un `ProfileRecord` e può risolvere il suo MMR prima di scoprire che il candidato perde. Si può confrontare prima la tripla che decide l'ordine, mantenendo `HIGHEST`/`LOWEST`, timestamp ascendente e ID come ultimo tie-break. Inoltre `accept` può risolvere il participant ID una volta e passarne il valore ai metodi sui kill e sugli obiettivi. Riunire le visite agli eventi soltanto se le fixture confermano gli stessi minimi e la stessa distinzione giocatore/squadra. [ProfileRecordAnalyzer](../../src/main/java/com/safjnest/lol/service/ProfileRecordAnalyzer.java#L36) · [Factory ProfileRecord](../../src/main/java/com/safjnest/lol/model/record/ProfileRecord.java#L39)
+
+```java
+private static boolean before(
+    RecordMetric metric, long value, long occurredAt, String matchId, ProfileRecord current
+) {
+    if (current == null)
+        return true;
+
+    if (value != current.value)
+        return metric.order() == RecordOrder.HIGHEST ? value > current.value : value < current.value;
+
+    if (occurredAt != current.occurredAt)
+        return occurredAt < current.occurredAt;
+
+    return matchId.compareTo(current.matchId) < 0;
+}
+```
+
+`Accumulator.add` può chiamare `before(metric, value, match.timeStart, match.gameId, records.get(metric))` dopo le guardie e costruire la riga soltanto se questa entra nell'aggregato. I quattro test storici dell'analizzatore passano anche con questa variante compilata separatamente.
+
+`Tracker.toCanonicalParticipant` usa `createJSONBuild`, che crea un `JSONObject`, lo converte in stringa e lo passa a `ParticipantBuildCodec.apply`, che lo riparsa. Il primo passo riusa l'overload già esistente e toglie una serializzazione più un parsing da ogni partecipante del percorso. Il secondo passo introdurrebbe un input tipizzato, privato alla conversione Riot, al posto di `Map<String, HashMap<String, String>>` e delle liste separate da virgole. Si può fare partendo da item/rune e verificando ogni gruppo contro il `Participant` e il BSON esistenti. Il percorso owner `rebuildTimelineEvents` usa la stessa analisi con parametri diversi e va incluso prima di spostare il codice. [Tracker](../../src/main/java/com/safjnest/lol/tracker/Tracker.java#L348) · [Parser della build](../../src/main/java/com/safjnest/lol/tracker/Tracker.java#L363) · [Codec](../../src/main/java/com/safjnest/lol/utils/ParticipantBuildCodec.java#L12)
+
+```java
+if (matchData != null && !matchData.isEmpty())
+    ParticipantBuildCodec.apply(participant, createBuildObject(matchData));
+```
+
+`createBuildObject` conserva il body esistente e ritorna `json` direttamente. Prima di eliminare `createJSONBuild`, verificare eventuali chiamanti fuori dal percorso indicizzato. Provare fixture standard, support item, rune, Arena e timeline assente. Lo stesso principio può togliere il giro stringa → parse in `fromR4J` quando si costruiscono gli eventi canonici.
+
 ### 14. Leaderboard, paginazione e ranking contestuale
 
 Il bulk delle statistiche per shard di `buildPage`, il batch delle posizioni Redis e l'ordinamento deterministico Mongo sono buoni esempi di riuso. Il sorted set viene costruito per batch e promosso con rename. Rimane una finestra da coprire: un rank cambia mentre la temporanea si costruisce e il segmento finale ancora non esiste. `changeSegment` aggiorna la proiezione Redis solo se trova il segmento pubblicato. Il rename è atomico per il lettore, ma non riconcilia ciò che è cambiato durante la scansione. Verificare la race in un test con due connessioni. Una generazione di segmento può catturare un checkpoint e applicare rilettura o delta prima di pubblicare. `CompetitiveService` resta la fonte di ricostruzione. [LeaderboardService](../../src/main/java/com/safjnest/lol/service/LeaderboardService.java#L485) · [Pubblicazione Redis](../../src/main/java/com/safjnest/database/redis/RedisClient.java#L444) · [ADR ranking](adr/0015-contextual-ranking.md)
@@ -389,7 +423,7 @@ Il frammento va in `FacetsService` come parte di una lettura asincrona con un ex
 
 | Sorgente | Cosa succede oggi | Prima misura |
 |---|---|---|
-| Matrice champion e build | I batch Mongo sono limitati e i contatori distinti restano vivi fino alla proiezione. Le firme possono crescere con le combinazioni osservate. | Heap dopo GC, allocazioni per match, numero di bucket e firme per patch, durata, dimensione BSON di output. |
+| Matrice champion e build | I batch Mongo sono limitati e i contatori distinti restano vivi fino alla proiezione. Le firme possono crescere con le combinazioni osservate. Arena conserva anche ogni ID accettato nell'accumulatore per rifiutare i duplicati. Usi contemporanei di più accumulatori possono mantenere lo stesso ID in più scope. | Heap dopo GC, allocazioni per match, numero di bucket, ID Arena e firme per patch, durata e dimensione BSON. Un eventuale spostamento della deduplica richiede una garanzia equivalente del lettore. |
 | `MatchMemoryUtils.release` | Visita e svuota grafi mutabili. Può anticipare il distacco di riferimenti e ha un costo proprio. Se una vista conserva una parte del grafo, può alterarla. | JFR durante una matrice e fixture su ownership degli oggetti prima di sostituirlo con semplici confini di vita. |
 | `findSeasonSummonerPuuids` e indexables | Il primo raccoglie tutti i PUUID di stagione prima del refresh. Gli indexables materializzano l'intera lista prima del JSON. | Cardinalità, byte di risposta e memoria con richieste concorrenti. Valutare iterazione per batch per job e cache snapshot o streaming per API a payload invariato. |
 | Export training | Il cursor è chiuso e il JSON è streaming. Il batch è 10.000 documenti e ogni sample passa da una stringa JSON e da un flush. Un client lento tiene occupata la lettura più a lungo. | Byte per batch, durata del cursore, allocazioni e tempo con un consumer lento. Riutilizzare Jackson per scrittura incrementale e raggruppare i flush, mantenendo lo stesso oggetto JSON. |
@@ -460,7 +494,8 @@ Per i componenti Discord, `Bot` registra sia `EventButtonHandler` sia `LeagueEve
 
 Sono state censite tutte le **25 rotte LoL** e la rotta di status collegata, le 20 classi di `lol.service` e i 155 file Java sotto `lol`. L'inventario strutturale CodeGraph include 2.009 simboli metodo tra LoL, i suoi controller e i tre file centrali Mongo/Redis; il conteggio comprende overload e metodi interni. La revisione ha seguito i percorsi sopra e ha letto i metodi decisivi per ciascun rilievo. Il singolo getter, utility, comando e metodo Mongo fuori da quei percorsi è stato censito e richiede una revisione individuale se entra in una fase attuativa. Il totale dell'indice non è un conteggio di metodi revisionati.
 
-- `mvn -o clean test` su Java 25. **207 test, zero errori e zero fallimenti**.
+- `mvn -o clean test` su Java 25. **209 test, zero errori e zero fallimenti** su `9c6e74b0`.
+- **32 test LoL** da `main` eseguiti sul branch in una directory temporanea, tra ranking matchup, tier list, build standard, Arena e record profilo. Tutti passati. **6 test del ranking e 4 dei record** passati anche compilando separatamente le varianti degli esempi.
 - Prova Java locale di `buildMatchFilter`. Il caso incrementale ha prodotto `timeStart >= 2001` e `timeEnd <= 4000`. Controllate anche le diverse semantiche delle chiavi di due periodi e l'accettazione di statistiche profilate vuote.
 - Prova Java locale del registry. La callback sincrona ha osservato il lock preso. Dopo fine e rilascio il job è sparito dal registry.
 - Restano da misurare latenza e picchi su Mongo, Redis, Riot e sulla JVM del bot. Le implicazioni su RAM indicano percorsi o riferimenti osservati nel codice. I valori effettivi richiedono carico rappresentativo e misure.

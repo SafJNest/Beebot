@@ -30,6 +30,7 @@ node_modules/
 .agents/
 .claude/
 .codegraph/
+/graphify-out/
 .codex/
 .cursor/
 .opencode/

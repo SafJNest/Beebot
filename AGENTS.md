@@ -116,6 +116,10 @@ Global agents (Cursor / Claude Code / Codex / Opencode) live in `.agents/agents/
 
 CodeGraph is mandatory: no LoL change without up-to-date `explore`/`impact`. If `codegraph status` reports a stale or missing index, the agent must sync before proceeding.
 
+Use [Graphify](docs/HANDBOOK.md#11-graphify) for architecture overviews and
+subsystem maps. Refresh its local graph before relying on it. Use CodeGraph for
+structural code questions and LoL impact checks.
+
 Agents must stop and report a conflict instead of silently changing an ADR or an unrelated owner.
 
 ## Refactoring Beebot
