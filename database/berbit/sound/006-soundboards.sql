@@ -1,6 +1,6 @@
 -- Apply once after 005 with the bot and API stopped.
 -- Types match the 005 MariaDB dump: soundboard.id SMALLINT signed, sound.id INT UNSIGNED.
-ALTER TABLE soundboard DROP FOREIGN KEY soundboard_relation_1;
+ALTER TABLE soundboard DROP FOREIGN KEY IF EXISTS soundboard_relation_1;
 
 ALTER TABLE soundboard
     MODIFY COLUMN guild_id VARCHAR(19) DEFAULT NULL,
@@ -15,7 +15,7 @@ ALTER TABLE soundboard
     ADD KEY soundboard_public_id (public, id),
     ADD KEY soundboard_guild_name (guild_id, name),
     ADD CONSTRAINT soundboard_relation_1 FOREIGN KEY (guild_id)
-        REFERENCES guild(guild_id) ON DELETE CASCADE ON UPDATE CASCADE;
+        REFERENCES guild(guild_id) ON DELETE CASCADE ON UPDATE RESTRICT;
 
 ALTER TABLE soundboard_sounds ADD COLUMN position SMALLINT UNSIGNED DEFAULT NULL;
 
@@ -30,7 +30,7 @@ ALTER TABLE soundboard_sounds
     MODIFY COLUMN position SMALLINT UNSIGNED NOT NULL,
     ADD UNIQUE KEY soundboard_position (id, position);
 
-ALTER TABLE sound_comment DROP FOREIGN KEY sound_comment_sound_fk;
+ALTER TABLE sound_comment DROP FOREIGN KEY IF EXISTS sound_comment_sound_fk;
 
 ALTER TABLE sound_comment
     MODIFY COLUMN sound_id INT UNSIGNED DEFAULT NULL,
@@ -40,7 +40,7 @@ ALTER TABLE sound_comment
     ADD KEY soundboard_comment_dislikes (soundboard_id, parent_id, dislikes, created_at, id),
     ADD KEY soundboard_comment_pin (soundboard_id, pinned),
     ADD CONSTRAINT sound_comment_sound_fk FOREIGN KEY (sound_id)
-        REFERENCES sound(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        REFERENCES sound(id) ON DELETE CASCADE ON UPDATE RESTRICT,
     ADD CONSTRAINT sound_comment_soundboard_fk FOREIGN KEY (soundboard_id)
         REFERENCES soundboard(id) ON DELETE CASCADE,
     ADD CONSTRAINT sound_comment_resource CHECK ((sound_id IS NOT NULL) + (soundboard_id IS NOT NULL) = 1);
