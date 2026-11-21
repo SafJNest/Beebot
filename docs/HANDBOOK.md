@@ -81,7 +81,8 @@ own entry under `children`. Remove the entry when retiring a command.
 
 For fixed slash options declared under a child, use `options` entries with
 `name`, `type` (a JDA `OptionType`), `description` and an optional `required`
-boolean. The slash class reads them from `BotCommand.getOptions()`.
+boolean. String options can include `choices` with a display `name` and a string
+`value`. The slash class reads configured options from `BotCommand.getOptions()`.
 
 ### 5.2 New HTTP endpoint
 

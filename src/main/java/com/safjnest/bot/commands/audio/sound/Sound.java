@@ -24,7 +24,8 @@ public class Sound extends SlashCommand {
 
         String father = this.getClass().getSimpleName().replace("Slash", "");
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SoundCustomize(father), new SoundDelete(father), new SoundDownload(father), new SoundOverlap(father), new SoundUpload(father));
+        Collections.addAll(slashCommandsList, new SoundCustomize(father), new SoundDelete(father), new SoundDownload(father),
+            new SoundEffect(father), new SoundOverlap(father), new SoundReset(father), new SoundUpload(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);

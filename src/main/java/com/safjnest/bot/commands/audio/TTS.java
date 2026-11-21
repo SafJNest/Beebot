@@ -103,7 +103,8 @@ public class TTS extends SlashCommand{
         if(!file.exists())
             file.mkdirs();
  
-        pm.loadItemOrdered(guild, TTSHandler.makeSpeechBytes(speech, voice, language), new ResultHandler(event, voice, defaultVoice, language));
+        ResultHandler result = new ResultHandler(event, voice, defaultVoice, language);
+        event.deferReply(false).queue(hook -> Thread.startVirtualThread(() -> result.loadSpeech(speech)));
     }
 
     @Override
@@ -177,7 +178,7 @@ public class TTS extends SlashCommand{
         if(!file.exists())
             file.mkdirs();
 
-        pm.loadItemOrdered(guild, TTSHandler.makeSpeechBytes(speech, voice, language), new ResultHandler(event, voice, defaultVoice, language));
+        new ResultHandler(event, voice, defaultVoice, language).loadSpeech(speech);
     }
 
     private class ResultHandler implements AudioLoadResultHandler {
@@ -254,16 +255,20 @@ public class TTS extends SlashCommand{
             reply(throwable.getMessage());
         }
 
+        private void loadSpeech(String speech) {
+            pm.loadItemOrdered(guild, TTSHandler.makeSpeechBytes(speech, voice, language), this);
+        }
+
         private void reply(String message) {
             if(slashEvent != null)
-                slashEvent.deferReply(false).addContent(message).queue();
+                slashEvent.getHook().editOriginal(message).queue();
             else
                 commandEvent.reply(message);
         }
 
         private void reply(EmbedBuilder eb) {
             if(slashEvent != null)
-                slashEvent.deferReply(false).addEmbeds(eb.build()).queue();
+                slashEvent.getHook().editOriginalEmbeds(eb.build()).queue();
             else
                 commandEvent.reply(eb.build());
         }

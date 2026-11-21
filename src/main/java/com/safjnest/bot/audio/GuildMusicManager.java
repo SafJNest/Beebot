@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BooleanSupplier;
 
+import com.safjnest.bot.audio.AudioEffects.Effect;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
@@ -25,11 +26,14 @@ public class GuildMusicManager {
     private final TrackScheduler trackScheduler;
     private final AudioForwarder audioForwarder;
 
+    private volatile Effect soundEffect;
+
     record SoundPlayback(UUID id, AudioPlayer player) {}
 
     public GuildMusicManager(AudioPlayerManager manager, BooleanSupplier overlapSound) {
         this.manager = manager;
         this.overlapSound = overlapSound;
+        this.soundEffect = Effect.NONE;
 
         AudioPlayer musicPlayer = manager.createPlayer();
         trackScheduler = new TrackScheduler(musicPlayer, this::playSound, this::stopEffects);
@@ -44,6 +48,14 @@ public class GuildMusicManager {
 
     public AudioForwarder getAudioForwarder() {
         return audioForwarder;
+    }
+
+    public Effect getSoundEffect() {
+        return soundEffect;
+    }
+
+    public void setSoundEffect(Effect effect) {
+        soundEffect = Objects.requireNonNull(effect);
     }
 
     public synchronized UUID playSound(AudioTrack track) {

@@ -20,6 +20,7 @@ import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.github.topi314.lavasrc.mirror.DefaultMirroringAudioTrackResolver;
 import com.github.topi314.lavasrc.spotify.SpotifySourceManager;
 import com.safjnest.App;
+import com.safjnest.bot.audio.AudioEffects.Effect;
 import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.config.LavalinkSettings;
@@ -157,10 +158,13 @@ public class PlayerManager {
             return;
         }
 
+        GuildMusicManager music = getGuildMusicManager(guild);
+        AudioLoadResultHandler playback = withSoundEffect(music.getSoundEffect(), handler);
+
         Thread.startVirtualThread(() -> {
             try {
                 String file = SoundFiles.getInstance().resolve(sound).toString();
-                loadItemOrdered(guild, file, handler);
+                audioPlayerManager.loadItemOrdered(music, file, playback);
             } catch (IOException | IllegalArgumentException exception) {
                 handler.loadFailed(new FriendlyException("Sound file is unavailable.", FriendlyException.Severity.COMMON, exception));
             }
@@ -205,7 +209,7 @@ public class PlayerManager {
         try {
             AudioTrack track = createTrackFromBytes(trackData, "TTS Audio");
             if (track != null) {
-                resultHandler.trackLoaded(track);
+                withSoundEffect(getGuildMusicManager(guild).getSoundEffect(), resultHandler).trackLoaded(track);
             } else {
                 resultHandler.noMatches();
             }
@@ -350,6 +354,43 @@ public class PlayerManager {
 
     public AudioLyrics loadLyrics(AudioTrack track) {
         return lyricsManager.loadLyrics(track);
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    private AudioLoadResultHandler withSoundEffect(Effect effect, AudioLoadResultHandler handler) {
+        if (effect == Effect.NONE)
+            return handler;
+
+        return new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                AudioTrack rendered;
+                try {
+                    rendered = AudioEffects.apply(audioPlayerManager, track, effect);
+                } catch (FriendlyException exception) {
+                    handler.loadFailed(exception);
+                    return;
+                }
+
+                handler.trackLoaded(rendered);
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {
+                handler.playlistLoaded(playlist);
+            }
+
+            @Override
+            public void noMatches() {
+                handler.noMatches();
+            }
+
+            @Override
+            public void loadFailed(FriendlyException exception) {
+                handler.loadFailed(exception);
+            }
+        };
     }
 
 }

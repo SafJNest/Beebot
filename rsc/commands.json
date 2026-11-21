@@ -113,6 +113,24 @@
                 "longhelp": "Change the name, tags or visibility of a sound you own.",
                 "category": "Audio"
             },
+            "effect": {
+                "help": "Select an effect for new sounds and TTS in this server.",
+                "longhelp": "Set a temporary effect for new sounds and TTS up to 60 seconds. Use /sound reset to clear it.",
+                "options": [
+                    {
+                        "name": "preset",
+                        "type": "STRING",
+                        "description": "Sound effect",
+                        "required": true,
+                        "choices": [
+                            { "name": "Reverse", "value": "REVERSE" },
+                            { "name": "Telephone", "value": "TELEPHONE" },
+                            { "name": "Echo", "value": "ECHO" },
+                            { "name": "Reverb", "value": "REVERB" }
+                        ]
+                    }
+                ]
+            },
             "overlap": {
                 "help": "Enable or disable sound overlap for this server.",
                 "longhelp": "Allow multiple sound effects to play at the same time. Requires Manage Server.",
@@ -124,6 +142,10 @@
                         "required": true
                     }
                 ]
+            },
+            "reset": {
+                "help": "Reset the temporary sound effect.",
+                "longhelp": "Clear the effect for new sounds and TTS in this server."
             }
         }
     },

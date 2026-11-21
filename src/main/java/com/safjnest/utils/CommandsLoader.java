@@ -122,7 +122,16 @@ public class CommandsLoader {
             String description = (String) option.get("description");
             boolean required = Boolean.TRUE.equals(option.get("required"));
 
-            result.add(new OptionData(type, name, description, required));
+            OptionData data = new OptionData(type, name, description, required);
+            JSONArray choices = (JSONArray) option.get("choices");
+            if (choices != null) {
+                for (Object entryChoice : choices) {
+                    JSONObject choice = (JSONObject) entryChoice;
+                    data.addChoice((String) choice.get("name"), (String) choice.get("value"));
+                }
+            }
+
+            result.add(data);
         }
 
         return result;

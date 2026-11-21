@@ -86,6 +86,8 @@ Message strings have a maximum of 2000 characters. Empty messages are allowed. N
 
 Unknown fields, read-only fields, unknown blocks, bad references and incorrect types are reported against the relevant block/item. The `warning` block is read-only; its future write endpoint is outside this change. Arrays cannot replace keyed collections. Omitted collection entries remain unchanged. This endpoint does not delete alerts or collection entries; alerts can be disabled.
 
+On Discord, `/voice` sets the default voice. The voice autocomplete in `/voice` and `/tts` searches the full catalog by voice name or language code and returns up to 25 matches.
+
 To allow sound effects to overlap, send `{"general":{"overlapSound":true}}`.
 On Discord, members with the Manage Server permission can save the same setting with `/sound overlap enabled:true` or `/sound overlap enabled:false`.
 The guild uses the saved value on the next sound. With `false`, starting an

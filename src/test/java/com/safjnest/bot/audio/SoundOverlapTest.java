@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -25,6 +26,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
+import com.safjnest.bot.audio.AudioEffects.Effect;
 import com.safjnest.bot.audio.types.AudioType;
 import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
 import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkDecoder;
@@ -163,6 +165,108 @@ public class SoundOverlapTest {
     }
 
     @Test
+    public void reversesTheWholeClipWhileKeepingTheStereoChannelsTogether() throws IOException, InterruptedException {
+        ByteBuffer samples = ByteBuffer.allocate(2 * FRAME_BYTES).order(ByteOrder.LITTLE_ENDIAN);
+        for (int index = 0; index < SAMPLES_PER_CHANNEL; index++) {
+            samples.putShort((short) 900);
+            samples.putShort((short) -300);
+        }
+
+        for (int index = 0; index < SAMPLES_PER_CHANNEL; index++) {
+            samples.putShort((short) 2100);
+            samples.putShort((short) 600);
+        }
+
+        AudioTrack track = AudioEffects.apply(players, load(writeWave(samples.array())), Effect.REVERSE);
+        guild.getTrackScheduler().play(track, AudioType.SOUND);
+        awaitBuffered(track, 2);
+
+        assertFrame(2100, 600);
+        assertFrame(900, -300);
+    }
+
+    @Test
+    public void echoPlaysItsTailAfterTheOriginalClip() throws IOException, InterruptedException {
+        AudioTrack track = AudioEffects.apply(players, load(wave(12000, -8000, 1)), Effect.ECHO);
+        guild.getTrackScheduler().play(track, AudioType.SOUND);
+        awaitBuffered(track, 28);
+
+        assertEquals(560, track.getDuration());
+        assertFrame(7800, -5200);
+
+        for (int index = 0; index < 8; index++)
+            assertFrame(0, 0);
+
+        assertFrame(2880, -1920);
+    }
+
+    @Test
+    public void telephoneCentersTheVoiceAndCutsBassAndTreble() throws IOException, InterruptedException {
+        int voice = telephonePeak(1_200);
+        int bass = telephonePeak(120);
+        int treble = telephonePeak(8_000);
+
+        assertTrue("the voice band stays audible", voice > 5_000);
+        assertTrue("bass is well below the voice band", bass < voice / 4);
+        assertTrue("treble is well below the voice band", treble < voice / 3);
+    }
+
+    @Test
+    public void reverbLeavesADenseStereoTailThatDecays() throws IOException, InterruptedException {
+        AudioTrack reverb = AudioEffects.apply(players, load(wave(12000, 12000, 1)), Effect.REVERB);
+        guild.getTrackScheduler().play(reverb, AudioType.SOUND);
+        awaitBuffered(reverb, 56);
+        assertEquals(1_120, reverb.getDuration());
+
+        assertNotNull(guild.getAudioForwarder().mixFrame());
+
+        int audibleBlocks = 0;
+        int earlyPeak = 0;
+        int latePeak = 0;
+        boolean stereo = false;
+
+        for (int block = 0; block < 55; block++) {
+            ShortBuffer tail = guild.getAudioForwarder().mixFrame();
+            assertNotNull(tail);
+
+            int peak = 0;
+            while (tail.hasRemaining()) {
+                int left = tail.get();
+                int right = tail.get();
+                peak = Math.max(peak, Math.max(Math.abs(left), Math.abs(right)));
+                stereo |= left != right;
+            }
+
+            if (block < 15) {
+                earlyPeak = Math.max(earlyPeak, peak);
+                if (peak > 20)
+                    audibleBlocks++;
+            }
+
+            if (block >= 40)
+                latePeak = Math.max(latePeak, peak);
+        }
+
+        assertTrue("the start of the tail has sound in consecutive blocks", audibleBlocks >= 14);
+        assertTrue("the room tail becomes quieter", latePeak < earlyPeak / 10);
+        assertTrue("the room spreads the signal across both channels", stereo);
+    }
+
+    @Test
+    public void selectingAndClearingEffectsOnlyChangesTheCurrentGuild() throws IOException {
+        GuildMusicManager otherGuild = new GuildMusicManager(players, () -> false);
+        assertEquals(Effect.NONE, guild.getSoundEffect());
+
+        guild.setSoundEffect(Effect.REVERSE);
+        assertEquals(Effect.REVERSE, guild.getSoundEffect());
+        assertEquals(Effect.NONE, otherGuild.getSoundEffect());
+
+        guild.setSoundEffect(Effect.NONE);
+        AudioTrack original = load(wave(900, -300, 1));
+        assertSame(original, AudioEffects.apply(players, original, guild.getSoundEffect()));
+    }
+
+    @Test
     public void twentyFiveEffectsMixWithoutClippingAndReleaseOnCompletion() throws IOException, InterruptedException {
         overlap.set(true);
         File sound = wave(2500, -1000, 2);
@@ -238,6 +342,36 @@ public class SoundOverlapTest {
         return track;
     }
 
+    private int telephonePeak(int frequency) throws IOException, InterruptedException {
+        int blocks = 6;
+        ByteBuffer pcm = ByteBuffer.allocate(blocks * FRAME_BYTES).order(ByteOrder.LITTLE_ENDIAN);
+        for (int index = 0; index < blocks * SAMPLES_PER_CHANNEL; index++) {
+            double phase = 2 * Math.PI * frequency * index / PCM.getSampleRate();
+            short sample = (short) Math.round(12_000 * Math.sin(phase));
+            pcm.putShort(sample);
+            pcm.putShort((short) (sample / 2));
+        }
+
+        AudioTrack telephone = AudioEffects.apply(players, load(writeWave(pcm.array())), Effect.TELEPHONE);
+        guild.getTrackScheduler().play(telephone, AudioType.SOUND);
+        awaitBuffered(telephone, blocks);
+
+        for (int index = 0; index < blocks - 1; index++)
+            assertNotNull(guild.getAudioForwarder().mixFrame());
+
+        ShortBuffer filtered = guild.getAudioForwarder().mixFrame();
+        assertNotNull(filtered);
+
+        int peak = 0;
+        while (filtered.hasRemaining()) {
+            int left = filtered.get();
+            assertEquals(left, filtered.get());
+            peak = Math.max(peak, Math.abs(left));
+        }
+
+        return peak;
+    }
+
     private File wave(int left, int right, int frames) throws IOException {
         ByteBuffer samples = ByteBuffer.allocate(frames * FRAME_BYTES).order(ByteOrder.LITTLE_ENDIAN);
         while (samples.hasRemaining()) {
@@ -245,9 +379,13 @@ public class SoundOverlapTest {
             samples.putShort((short) right);
         }
 
+        return writeWave(samples.array());
+    }
+
+    private File writeWave(byte[] pcm) throws IOException {
         AudioFormat wav = new AudioFormat(PCM.getSampleRate(), PCM.getSampleSizeInBits(), PCM.getChannels(), true, false);
         File file = files.newFile(UUID.randomUUID() + ".wav");
-        try (AudioInputStream stream = new AudioInputStream(new ByteArrayInputStream(samples.array()), wav, frames * SAMPLES_PER_CHANNEL)) {
+        try (AudioInputStream stream = new AudioInputStream(new ByteArrayInputStream(pcm), wav, pcm.length / wav.getFrameSize())) {
             AudioSystem.write(stream, AudioFileFormat.Type.WAVE, file);
         }
 

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.PermissionHandler;
@@ -41,18 +42,24 @@ import com.safjnest.lol.service.StaticDataService;
 import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
+    private static final int MAX_CHOICES = 25;
+
     private boolean isFocused;
     private String value;
 
-    private final int MAX_CHOICES = 25;
-
     @Override
-    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {        
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
+        String query = e.getFocusedOption().getValue();
+        if (e.getFocusedOption().getName().equals("voice")) {
+            e.replyChoices(voiceChoices(query)).queue();
+            return;
+        }
+
         ArrayList<Choice> choices = new ArrayList<>();
         String name = e.getName();
 
-        this.isFocused = !e.getFocusedOption().getValue().isEmpty();
-        this.value = e.getFocusedOption().getValue();
+        this.isFocused = !query.isEmpty();
+        this.value = query;
 
         if (e.getFullCommandName().equals("soundboard create") 
             || e.getFocusedOption().getName().startsWith("sound-"))
@@ -75,9 +82,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         else if (e.getFullCommandName().equals("bugsnotifier"))
             name = "help";
-
-        else if (e.getFocusedOption().getName().equals("voice"))
-            name = "tts";
 
         else if (e.getFocusedOption().getName().equals("role_remove"))
             name = "alert_role";
@@ -146,9 +150,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
             case "greet":
                 choices = greet(e);
-                break;
-            case "tts":
-                choices = tts(e);
                 break;
             case "jumpto":
                 choices = jump(e);
@@ -377,21 +378,22 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     }
 
 
-    private ArrayList<Choice> tts(CommandAutoCompleteInteractionEvent e) {
+    static ArrayList<Choice> voiceChoices(String input) {
+        String query = input.strip().toLowerCase(Locale.ROOT);
         ArrayList<Choice> choices = new ArrayList<>();
         List<String[]> voices = TTSVoices.getVoiceArray();
 
-        if (isFocused) {
-            for (int i = 0; i < 25; i++) {
-                String[] voice = voices.get(i);
-                if ((voice[0] + " " + voice[1]).toLowerCase().contains(value.toLowerCase()))
-                    choices.add(new Choice(voice[0] + " - " + voice[1], voice[1]));
-            }
-        }
-        else {
+        if (query.isEmpty())
             Collections.shuffle(voices);
-            for (int i = 0; i < 25; i++)
-                choices.add(new Choice(voices.get(i)[0] + " - " + voices.get(i)[1], voices.get(i)[1]));
+
+        for (String[] voice : voices) {
+            String searchable = (voice[0] + " " + voice[1]).toLowerCase(Locale.ROOT);
+            if (!searchable.contains(query))
+                continue;
+
+            choices.add(new Choice(voice[0] + " - " + voice[1], voice[1]));
+            if (choices.size() == MAX_CHOICES)
+                break;
         }
 
         return choices;
