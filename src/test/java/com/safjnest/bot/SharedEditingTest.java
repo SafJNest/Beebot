@@ -639,6 +639,12 @@ public class SharedEditingTest {
 
         JsonNode explore = communityJson(mvc, get(publicApi + "/sounds/explore").header("X-API-Key", "application"), 200);
         assertEquals("10", explore.at("/latest/0/id").asText());
+        JsonNode tagsOnly = communityJson(mvc, get(publicApi + "/sounds/explore").param("tagsOnly", "true")
+            .header("X-API-Key", "application"), 200);
+        assertEquals(explore.get("popularTags"), tagsOnly.get("popularTags"));
+        assertEquals(0, tagsOnly.get("latest").size());
+        assertEquals(0, tagsOnly.get("trending").size());
+
         JsonNode suggestions = communityJson(mvc, get(publicApi + "/sounds/suggestions").param("q", "fir")
             .header("X-API-Key", "application"), 200);
         assertEquals("10", suggestions.at("/sounds/0/id").asText());
@@ -766,6 +772,20 @@ public class SharedEditingTest {
         String manage = "/api/beebot/soundboards/" + id;
         assertTrue(created.at("/board/guildId").isNull());
         assertEquals("11", created.at("/sounds/0/id").asText());
+
+        String guild = "/api/beebot/guilds/1/soundboards";
+        JsonNode guildBoard = communityJson(mvc, post(guild).header("X-API-Key", "application").header("Authorization", "Bearer owner")
+            .contentType(MediaType.APPLICATION_JSON).content("""
+                {"name":"Discord board","public":false,"soundIds":["10"]}
+                """), 201);
+        JsonNode ownBoards = communityJson(mvc, get(personal).header("X-API-Key", "application")
+            .header("Authorization", "Bearer owner"), 200);
+        assertEquals(2, ownBoards.size());
+        assertEquals(id, ownBoards.at("/0/id").asText());
+        assertEquals(guildBoard.at("/board/id"), ownBoards.at("/1/id"));
+        assertEquals("1", ownBoards.at("/1/guildId").asText());
+        assertEquals(0, communityJson(mvc, get(personal).header("X-API-Key", "application")
+            .header("Authorization", "Bearer other"), 200).size());
 
         assertEquals(0, communityJson(mvc, get(catalog).header("X-API-Key", "application"), 200).get("items").size());
         JsonNode owner = communityJson(mvc, get(catalog).param("q", "ARCADE").header("X-API-Key", "application")

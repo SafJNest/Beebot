@@ -109,6 +109,19 @@ public class SoundAnalyticsTest {
     }
 
     @Test
+    public void guildLibraryOverviewSharesTheSummaryReadAndMatchesTheAnalyticsRanking() {
+        Fixture fixture = fixture(plays());
+        SoundPeriod period = period("UTC");
+        JsonNode summary = json(fixture.analytics.getSummary(sounds(), "2", "1", period, true));
+        assertEquals(1, fixture.database.reads);
+
+        JsonNode analytics = json(fixture.analytics.getGuildAnalytics(sounds(), "2", "1", period, MEMBERSHIPS));
+        assertEquals(analytics.at("/summary/plays"), summary.get("plays"));
+        assertEquals(analytics.get("topSounds"), summary.at("/overview/topSounds"));
+        assertEquals(analytics.at("/users/0"), summary.at("/overview/topListener"));
+    }
+
+    @Test
     public void preservesPrivacyAndDeduplicatesListenersAcrossGuilds() {
         Fixture fixture = fixture(plays());
         JsonNode response = json(fixture.analytics.getSoundAnalytics(sounds().get(0), "2", null, period("UTC"), MEMBERSHIPS));

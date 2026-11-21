@@ -320,16 +320,17 @@ public class DiscordAuthServiceTest {
     }
 
     @Test
-    public void guildRoutesKeepUrlsAliasesAndPayloadAfterMovingController() throws java.lang.Exception {
+    public void guildDirectoryUsesOneRouteAndReturnsTheSamePayload() throws java.lang.Exception {
         AuthContext context = session();
         GuildController guilds = new GuildController(null, id -> null, auth::requireAdministrator, auth::servers, id -> {});
         MockMvc mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(auth), guilds)
             .setControllerAdvice(new ApiExceptionHandler()).build();
 
-        for (String path : List.of("/api/beebot/guilds", "/api/beebot/servers"))
-            mvc.perform(get(path).requestAttr(AuthFilter.AUTH_CONTEXT, context))
-                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
-                .andExpect(jsonValue("/0/id", "1")).andExpect(jsonValue("/0/name", "Guild"));
+        mvc.perform(get("/api/beebot/guilds").requestAttr(AuthFilter.AUTH_CONTEXT, context))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(jsonValue("/0/id", "1")).andExpect(jsonValue("/0/name", "Guild"));
+        mvc.perform(get("/api/beebot/servers").requestAttr(AuthFilter.AUTH_CONTEXT, context))
+            .andExpect(status().isNotFound());
 
         mvc.perform(post("/api/beebot/auth/discord/authorize").requestAttr(AuthFilter.AUTH_CONTEXT, context))
             .andExpect(status().isBadRequest()).andExpect(jsonValue("/code", "invalid_request"));

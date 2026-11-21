@@ -59,9 +59,13 @@ public class SoundController {
 
     @GetMapping("/guilds/{guildId}/sounds")
     public SoundCache.GuildSounds guildSounds(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
-            @PathVariable("guildId") String guildId,@RequestParam(name="period", defaultValue="30d") String period,@RequestParam(name="timezone", defaultValue="Europe/Rome") String timezone) {
+            @PathVariable("guildId") String guildId,
+            @RequestParam(name = "period", defaultValue = "30d") String period,
+            @RequestParam(name = "timezone", defaultValue = "Europe/Rome") String timezone,
+            @RequestParam(name = "overview", defaultValue = "false") boolean overview) {
         SoundCache.Context context = context(auth);
-        return sounds.guildSounds(context,guildId,period(context,period,timezone,null,null,null));
+
+        return sounds.guildSounds(context, guildId, period(context, period, timezone, null, null, null), overview);
     }
 
     @PostMapping(path = "/guilds/{guildId}/sounds", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

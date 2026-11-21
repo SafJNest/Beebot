@@ -119,7 +119,7 @@ public class GuildController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
     }
 
-    @GetMapping({"/guilds", "/servers"})
+    @GetMapping("/guilds")
     public List<Server> servers(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext context) {
         return guildDirectory.apply(context);
     }

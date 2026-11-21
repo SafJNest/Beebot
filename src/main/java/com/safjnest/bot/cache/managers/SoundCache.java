@@ -286,7 +286,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
         return rows;
     }
 
-    public GuildSounds guildSounds(Context context, String guild, SoundPeriod period) {
+    public GuildSounds guildSounds(Context context, String guild, SoundPeriod period, boolean overview) {
         return readRequest("guildSounds", () -> {
             requireGuild(context, guild);
 
@@ -301,7 +301,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
             }
 
             GuildCounts counts = new GuildCounts(rows.size(), mine, rows.size() - mine);
-            Map<String, Object> summary = analytics.getSummary(rows, context.userId(), guild, period);
+            Map<String, Object> summary = analytics.getSummary(rows, context.userId(), guild, period, overview);
 
             return new GuildSounds(guild, counts, tagCounts(tagRows), summary, sounds);
         });

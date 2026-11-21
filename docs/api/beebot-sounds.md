@@ -47,7 +47,7 @@ Deletion removes the sound and dependent rows from SQL and invalidates the metad
 
 | Method | Path | Parameters / result |
 | --- | --- | --- |
-| GET | `/guilds/{guildId}/sounds` | `period`, `timezone`; `{guildId, counts:{all,mine,others}, tags, summary, sounds}` |
+| GET | `/guilds/{guildId}/sounds` | `period`, `timezone`, `overview`; `{guildId, counts:{all,mine,others}, tags, summary, sounds}` |
 | GET | `/sounds/me` | `period`, `timezone`; `{counts:{all}, tags, summary, guilds:{guildId:{name,sounds}}}` |
 | GET | `/sounds/{soundId}` | One canonical Sound |
 | GET | `/sounds` | At least one of `q`, `tag`; `{sounds,limit}` |
@@ -56,6 +56,8 @@ Deletion removes the sound and dependent rows from SQL and invalidates the metad
 Guild lists contain only sounds originally uploaded in that guild. They require ordinary membership and bot presence, not administrator access. Personal lists include all sounds uploaded by the caller and group by original guild; the group name is null if the caller no longer belongs. Lists are complete, ordered by global plays descending and numeric ID ascending. `tags` contains `{id,name,soundCount}` for all sounds in the collection.
 
 Guild summary counts only plays of those sounds recorded in that guild during the interval. Personal summary counts plays globally for the caller's uploaded sounds. Both provide `period`, `plays`, `listeners`, `myPlays`, `likes`, `dislikes`, `soundCount`, `averagePlaysPerListener`, `previousPlays` and `playsChangePercent`. Likes/dislikes are current global totals, not interval events. Listener totals are distinct across the entire collection.
+
+The guild library accepts `overview=true` to include `summary.overview` with `topSounds` (up to five `{soundId,plays}` entries) and `topListener` (`{user,plays,soundCount}` or null). The same history read supplies the summary and the rankings. The default omits the overview.
 
 Search accepts a literal case-insensitive substring `q` and exact case-insensitive tag name `tag`, combined with AND. Empty/blank values do not satisfy the required filter. `sort` is `plays` (default), `likes` or `dislikes`; `order` is `desc` (default) or `asc`; `limit` is 1–100, default 100. Query/tag length is at most 255 characters. Search has no pagination in v1. Visibility: public sounds, caller-owned sounds, and private sounds from guilds the caller belongs to. The same visibility applies to detail and prefix tag search. Tag search is alphabetical, maximum 100, and does not create tags.
 

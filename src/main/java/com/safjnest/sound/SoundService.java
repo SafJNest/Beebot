@@ -142,6 +142,10 @@ public final class SoundService {
         });
     }
 
+    public SoundCatalog.Explore exploreTags() {
+        return new SoundCatalog.Explore(tags(sounds.tags(null, null, EXPLORE_SIZE)), List.of(), List.of());
+    }
+
     public SoundCatalog.Suggestions suggestions(String query, String viewer) {
         String q = normalizeText(query);
         if (q.isEmpty())

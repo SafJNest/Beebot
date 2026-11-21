@@ -23,6 +23,7 @@
     "/guilds/{guildId}/sounds": {
       "get": {
         "operationId": "soundOperation0",
+        "description": "Set overview=true to include summary.overview with topSounds and a nullable topListener.",
         "parameters": [
           {
             "name": "guildId",
@@ -54,6 +55,15 @@
             "schema": {
               "type": "string",
               "default": "Europe/Rome"
+            }
+          },
+          {
+            "name": "overview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -3177,6 +3187,18 @@
       "get": {
         "operationId": "explorePublicSounds",
         "summary": "Read trending, latest and popular tags",
+        "parameters": [
+          {
+            "name": "tagsOnly",
+            "in": "query",
+            "required": false,
+            "description": "Read popular tags and return empty trending and latest arrays.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
         "security": [
           {
             "ApplicationKey": []
@@ -4227,7 +4249,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Guild soundboards",
+            "description": "Soundboards authored by the current user, including guild soundboards.",
             "content": {
               "application/json": {
                 "schema": {

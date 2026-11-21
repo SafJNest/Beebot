@@ -69,7 +69,7 @@ il dettaglio gestionale. `soundCount` è presente sulle rotte gestionali.
 
 | Chiamata | Body | Risposta |
 | --- | --- | --- |
-| `GET /me/soundboards` | Nessuno | `200 Soundboard[]` delle board senza gilda dell'utente |
+| `GET /me/soundboards` | Nessuno | `200 Soundboard[]` delle board di cui l'utente è autore, incluse quelle collegate a una gilda |
 | `POST /me/soundboards` | `name`, `soundIds`, opzionali `public` e `sortMode` | `201 {board,sounds,soundIds}` con `Location` |
 | `GET /guilds/{guildId}/soundboards` | Nessuno | `200 Soundboard[]` |
 | `POST /guilds/{guildId}/soundboards` | Stesso body di creazione | `201 {board,sounds,soundIds}` con `Location` |

@@ -346,9 +346,9 @@ public class BotDB extends AbstractDB {
             + " FROM soundboard b WHERE b.guild_id=? ORDER BY b.name,b.id", guildId);
     }
 
-    public List<QueryRecord> readPersonalSoundboards(String userId) {
+    public List<QueryRecord> readOwnedSoundboards(String userId) {
         return readSoundRows("SELECT b.*, " + BOARD_COUNT
-            + " FROM soundboard b WHERE b.guild_id IS NULL AND b.user_id=? ORDER BY b.name,b.id", userId);
+            + " FROM soundboard b WHERE b.user_id=? ORDER BY b.name,b.id", userId);
     }
 
     public QueryRecord readSoundboard(String guildId, String id) {

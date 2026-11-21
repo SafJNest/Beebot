@@ -90,7 +90,7 @@ public class SoundboardController {
         List<QueryRecord> rows;
         boolean administrator = false;
         if (guildId == null) {
-            rows = database.readPersonalSoundboards(actor);
+            rows = database.readOwnedSoundboards(actor);
         } else {
             Context context = context(auth, guildId);
             administrator = context.guilds().get(guildId).administrator();

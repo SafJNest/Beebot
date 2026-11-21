@@ -48,13 +48,28 @@ public final class SoundAnalytics {
     public record RankedSound(String soundId, long plays) {}
     public record LikedSound(String soundId, long likes) {}
 
+    public record GuildOverview(List<RankedSound> topSounds, Listener topListener) {}
+
     public record HistoryPlay(String id, String playedAt, String guildId, String source) {}
     public record PersonalHistory(long plays, List<HistoryPlay> history, String nextCursor) {}
 
     public Map<String, Object> getSummary(List<QueryRecord> sounds, String userId, String guildId, SoundPeriod period) {
-        SoundHistory history = loadHistory(sounds, guildId, userId, period, false);
+        return getSummary(sounds, userId, guildId, period, false);
+    }
 
-        return buildSummary(sounds, userId, period, history);
+    public Map<String, Object> getSummary(List<QueryRecord> sounds, String userId, String guildId,
+            SoundPeriod period, boolean overview) {
+        SoundHistory history = loadHistory(sounds, guildId, userId, period, false);
+        Map<String, Object> summary = buildSummary(sounds, userId, period, history);
+
+        if (overview) {
+            List<Listener> leaders = buildLeaderboard(history.getTotals(), 1);
+            Listener topListener = leaders.isEmpty() ? null : leaders.getFirst();
+
+            summary.put("overview", new GuildOverview(buildTopPlayedSounds(sounds, history), topListener));
+        }
+
+        return summary;
     }
 
     public Map<String, Object> getGuildAnalytics(List<QueryRecord> sounds, String userId, String guildId,
@@ -302,13 +317,17 @@ public final class SoundAnalytics {
     }
 
     private List<Listener> buildLeaderboard(Group group) {
+        return buildLeaderboard(group, Integer.MAX_VALUE);
+    }
+
+    private List<Listener> buildLeaderboard(Group group, int limit) {
         Map<String, UserTotals> counts = group.getUserTotals();
         List<String> ids = new ArrayList<>(counts.keySet());
         ids.sort(Comparator.<String>comparingLong(id -> counts.get(id).plays()).reversed()
             .thenComparing(Comparator.naturalOrder()));
 
         List<Listener> result = new ArrayList<>();
-        for (String id : ids) {
+        for (String id : ids.subList(0, Math.min(ids.size(), limit))) {
             UserTotals user = counts.get(id);
             result.add(new Listener(access.user(id), user.plays(), user.soundCount()));
         }

@@ -57,8 +57,9 @@ public final class SoundCommunityController {
     public record Image(String imageUrl) {}
 
     @GetMapping("/public/sounds/explore")
-    public SoundCatalog.Explore explore(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth) {
-        return sounds.explore(viewer(auth));
+    public SoundCatalog.Explore explore(@RequestAttribute(AuthFilter.AUTH_CONTEXT) AuthContext auth,
+            @RequestParam(name = "tagsOnly", defaultValue = "false") boolean tagsOnly) {
+        return tagsOnly ? sounds.exploreTags() : sounds.explore(viewer(auth));
     }
 
     @GetMapping("/public/sounds")

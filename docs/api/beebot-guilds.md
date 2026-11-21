@@ -1,6 +1,6 @@
 # Beebot guild settings
 
-Base URL: `https://api.safjnest.com/api/beebot`. These endpoints accept application `X-API-Key` plus `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` alone, through the existing [authentication flow](beebot-auth.md). Each request checks the requested guild ID against the per-session authorized list shared by `/me`, `/guilds` and the `/servers` alias. Owners and members with Administrator or Manage Server permission are allowed. The list has a 60-second Redis/in-memory cache and single-flight loading; valid cache hits do not contact Discord. The bot must be present. Responses use `Cache-Control: no-store`.
+Base URL: `https://api.safjnest.com/api/beebot`. These endpoints accept application `X-API-Key` plus `Authorization: Bearer <sessionToken>`, or a personal `X-API-Key` alone, through the existing [authentication flow](beebot-auth.md). Each request checks the requested guild ID against the per-session authorized list shared by `/me` and `/guilds`. Owners and members with Administrator or Manage Server permission are allowed. The list has a 60-second Redis/in-memory cache and single-flight loading; valid cache hits do not contact Discord. The bot must be present. Responses use `Cache-Control: no-store`.
 
 ## GET /guilds/{guildId}
 
@@ -163,7 +163,7 @@ Uses existing guild, channel, alert, alert_role, alert_twitch, alert_reward and 
 LoL controllers, models, Mongo collections, Redis caches, command registration and Discord presentation are unchanged. No shard fan-out or queued progress reporting is required for these guild configuration operations.
 
 
-The directory endpoints `/guilds` and `/servers` now belong to `GuildController`,
+The directory endpoint `/guilds` belongs to `GuildController`,
 with their existing array response. `DiscordAuthService` supplies that directory
 and the administrative check through the unchanged `DiscordGuildCache`.
 Request failures use the shared application exception and `ApiErrors` /

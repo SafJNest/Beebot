@@ -27,13 +27,12 @@ Discord redirects the browser to Qwik's callback with its temporary code and sta
 
 `MeController` owns `/me` and `/me/settings`; credential and session behavior is unchanged. `greets` maps configured scope IDs (`"0"` globally) to canonical Sound objects. `POST /me/settings` updates these settings with independent results per scope; see [Sounds and greet settings](beebot-sounds.md). Ordinary membership for audio is verified separately from the administrative server list.
 
-`GET /guilds` returns a JSON array directly (`[{ "id": "1", "name": "Guild", "iconUrl": null, "owner": true }]`); `GET /servers` remains an alias with the same array response. There is no `{servers: ...}` wrapper on these two list endpoints. All three routes use the same authorized list for the authenticated session. Owners and members with Administrator **or Manage Server** permission are included. OAuth lists may include guilds without the bot; personal keys list only guilds shared with the bot. `iconUrl` is a Discord HTTPS CDN URL or null. The profile comes from the session/issued personal key, with no extra `/users/@me` request per page.
+`GET /guilds` returns a JSON array directly (`[{ "id": "1", "name": "Guild", "iconUrl": null, "owner": true }]`). It uses the same authorized list as `GET /me`. Owners and members with Administrator **or Manage Server** permission are included. OAuth lists may include guilds without the bot; personal keys list only guilds shared with the bot. `iconUrl` is a Discord HTTPS CDN URL or null. The profile comes from the session/issued personal key, with no extra `/users/@me` request per page. Clients using the former `/servers` alias should call `/guilds`.
 
-`GuildController` owns `/guilds` and `/servers`, while `DiscordAuthController`
+`GuildController` owns `/guilds`, while `DiscordAuthController`
 owns only the three authentication POST endpoints. `DiscordAuthService` owns
 both session operations and the shared authorized directory, using the existing
-`DiscordGuildCache`; there is no separate guild service. HTTP URLs, array shape,
-profile shape and permission policy are unchanged.
+`DiscordGuildCache`.
 
 The guild list is cached for 60 seconds. Keys include the user, application, session identity and a hash of the encrypted Discord credential; separate users, sessions and changed credentials cannot reuse each other's entries. Redis is preferred, with an in-memory fallback that retains the original expiry. A Redis miss after recovery never trusts an older memory entry. Concurrent requests share a single load per cache identity; Redis generation/lease checks coordinate separate application instances and fence invalidated or expired loaders. During a Redis outage, coordination is local to each process. A new session or changed token uses a new identity; logout invalidates the old identity and any in-flight publication. There is currently no token-refresh endpoint; any future in-place token replacement must invalidate the previous context before replacing it. Errors are not cached or automatically retried.
 
@@ -112,7 +111,7 @@ GET /api/beebot/me
 X-API-Key: <personalKey>
 ```
 
-The same header works for `GET /guilds`, its `/servers` alias, `GET /guilds/{guildId}` and `POST /guilds/{guildId}/settings`. Omit `Authorization`: combining a personal key with a bearer token returns 401. Personal keys cannot start or exchange OAuth login transactions (403 on the pre-session routes).
+The same header works for `GET /guilds`, `GET /guilds/{guildId}` and `POST /guilds/{guildId}/settings`. Omit `Authorization`: combining a personal key with a bearer token returns 401. Personal keys cannot start or exchange OAuth login transactions (403 on the pre-session routes).
 
 Every key lookup reads authoritative SQL, including the current type. Revocation takes effect on subsequent requests without waiting for cache expiry. `POST /auth/logout` revokes the personal key. Invalid/revoked keys return 401; unavailable SQL returns 503. Personal keys are not removed by generic OAuth session cleanup.
 

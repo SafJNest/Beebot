@@ -92,7 +92,7 @@ Tutte le rotte di questa sezione sono **attive**.
 
 | Metodo e percorso | Query | Risposta |
 | --- | --- | --- |
-| `GET /public/sounds/explore` | Vuota | `200 Explore` |
+| `GET /public/sounds/explore` | `tagsOnly` facoltativo, default `false` | `200 Explore` |
 | `GET /public/sounds` | Filtri del catalogo sotto | `200 CatalogPage` |
 | `GET /public/sounds/suggestions` | `q` obbligatorio | `200 Suggestions` |
 | `GET /public/sounds/{soundId}` | Vuota | `200 SoundCard` |
@@ -108,6 +108,10 @@ Un creator senza upload pubblici ha contatori a zero. Se il profilo
 Discord manca in cache, il nome visualizzato può essere `Unknown`.
 
 #### Filtri del catalogo
+
+`GET /public/sounds/explore?tagsOnly=true` legge i tag popolari e
+restituisce `latest` e `trending` come array vuoti. La richiesta senza
+parametri restituisce tutte e tre le sezioni.
 
 `GET /public/sounds` senza query è la prima pagina. Tutti i filtri sono
 facoltativi e si combinano tra loro.
@@ -329,7 +333,7 @@ versione del backend sono indicati anche se il controller esiste già.
 
 | Metodo e percorso | Query o body | Risposta | Stato |
 | --- | --- | --- | --- |
-| `GET /guilds/{guildId}/sounds` | `period`, `timezone` | `200 GuildSoundLibrary` | Attivo |
+| `GET /guilds/{guildId}/sounds` | `period`, `timezone`, `overview` | `200 GuildSoundLibrary` | Attivo |
 | `POST /guilds/{guildId}/sounds` | Multipart `file` e `metadata` | `201 LegacySound`, header `Location` | Attivo |
 | `GET /sounds/me` | `period`, `timezone` | `200 MySoundLibrary` | Attivo |
 | `GET /sounds/{soundId}` | Vuoto | `200 LegacySound` | Da sostituire con la scheda pubblica |
@@ -578,7 +582,6 @@ Tutte le seguenti rotte sono **attive** e hanno query vuota.
 | `POST /auth/logout` | Sessione | Vuoto | `204` |
 | `GET /me` | Sessione | Vuoto | `200 { user: AuthUser, servers: Server[], greets: Record<Id, LegacySound> }` |
 | `GET /guilds` | Sessione | Vuoto | `200 Server[]` |
-| `GET /servers` | Sessione | Vuoto | `200 Server[]`, alias di `/guilds` |
 | `POST /me/settings` | Sessione | `{ "greets": { "0": "42", "123": "73", "789": null } }` | `200 { greets: Record<Id, GreetResult> }` |
 
 ```ts
@@ -601,7 +604,7 @@ Secure in HTTPS e SameSite=Lax, fino a `expiresAt`. Al logout revoca e
 svuota il cookie. La sessione dura al massimo otto ore, entro la scadenza
 del token Discord.
 
-`/me.servers`, `/guilds` e `/servers` usano la directory amministrativa
+`/me.servers` e `/guilds` usano la directory amministrativa
 di owner, Administrator e Manage Server. Per la normale membership dei
 suoni fa fede la singola rotta. `greets` contiene solo i greet
 effettivamente configurati e visibili. Il globale (`"0"`) ammette suoni
