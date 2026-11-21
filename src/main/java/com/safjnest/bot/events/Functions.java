@@ -6,6 +6,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.bot.audio.GuildMusicManager;
 import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.audio.TrackData;
 import com.safjnest.bot.audio.types.AudioType;
@@ -370,9 +371,10 @@ public class Functions {
 
     public static void handleBotLeave(Guild guild) {
         guild.getAudioManager().closeAudioConnection();
-        
-        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().clearQueue();
-        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().deleteMessage();
+
+        GuildMusicManager music = PlayerManager.get().getGuildMusicManager(guild);
+        music.resetPlayback();
+        music.getTrackScheduler().deleteMessage();
     }
 
 

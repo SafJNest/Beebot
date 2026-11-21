@@ -8,7 +8,7 @@ Returns `{ id, name, iconUrl, channels, roles, settings }`.
 
 - `channels`: all guild channels known to JDA, including `CATEGORY` entries. Each has string `id`, `name`, `type` (JDA channel type name), nullable string `parentId` (category ID), and nullable numeric `position` (Discord's raw channel position). Categories and uncategorized channels have a null `parentId`; `position` is null for channel types without a position.
 - `roles`: guild roles with string `id`, `name`, numeric `color`, numeric `position`, boolean `managed` and boolean `assignable`. `assignable` requires the bot's Manage Roles permission, a role below its highest role, and a role that is neither managed nor `@everyone`. It reflects the current Discord state and may change before use.
-- `settings.general`: `prefix`, `experienceEnabled`, `voice`, derived read-only `language`, and `leagueShard` as its enum name, for example `EUW1`.
+- `settings.general` includes `prefix`, `experienceEnabled`, `voice`, derived read-only `language`, `leagueShard` as its enum name, and the boolean `overlapSound`.
 - `settings.blacklist`: `enabled`, `threshold`, nullable `channelId`.
 - `settings.channels`: persisted channel overrides indexed by channel ID, with `experienceEnabled`, `experienceModifier`, `statisticsEnabled`, and nullable `leagueShard`. Channels without a row use the bot defaults: experience and statistics enabled, modifier 1, inherited guild shard.
 - `settings.welcome`, `leave`, `boost`, `levelUp`: alert state described below.
@@ -73,7 +73,7 @@ Writable fields:
 
 | Block | Fields |
 | --- | --- |
-| `general` | `prefix` (1–32 characters), `experienceEnabled` (boolean), `voice` (existing TTS voice name), `leagueShard` (enum name) |
+| `general` | `prefix` (1–32 characters), `experienceEnabled` (boolean), `voice` (existing TTS voice name), `leagueShard` (enum name), `overlapSound` (boolean, default `false`) |
 | `blacklist` | `enabled` (boolean), `threshold` (integer 0–127), `channelId` (text channel ID or null) |
 | `channels.{channelId}` | `experienceEnabled`, `statisticsEnabled` (booleans), `experienceModifier` (finite nonnegative number), `leagueShard` (enum name or null to inherit) |
 | `welcome`, `boost` | `message`, `privateMessage`, `channelId`, `enabled`, `sendType`, `roleIds` |
@@ -85,6 +85,12 @@ Writable fields:
 Message strings have a maximum of 2000 characters. Empty messages are allowed. Null clears `message` to `""`, `privateMessage` to SQL null, and nullable channel/role references to SQL null. Other fields reject null. `sendType` is `CHANNEL`, `PRIVATE` or `BOTH`. `roleIds` is an array of up to 25 role IDs: when present it replaces that alert's roles; `[]` removes them. Role IDs are deduplicated. Channels and roles must belong to the guild; fixed alert/blacklist channels must be text channels. IDs are JSON strings. Twitch streamer IDs are numeric strings up to 32 digits; reward keys are canonical integer strings 1–100. Streamer identity is supplied by ID, not resolved by name. Level-up/reward have no fixed channel. Channel shard ordinal zero is the existing inheritance sentinel and must be represented by null.
 
 Unknown fields, read-only fields, unknown blocks, bad references and incorrect types are reported against the relevant block/item. The `warning` block is read-only; its future write endpoint is outside this change. Arrays cannot replace keyed collections. Omitted collection entries remain unchanged. This endpoint does not delete alerts or collection entries; alerts can be disabled.
+
+To allow sound effects to overlap, send `{"general":{"overlapSound":true}}`.
+On Discord, members with the Manage Server permission can save the same setting with `/sound overlap enabled:true` or `/sound overlap enabled:false`.
+The guild uses the saved value on the next sound. With `false`, starting an
+effect stops the previous effects. With `true`, they finish independently.
+Changing the setting has no effect on the music queue.
 
 ### Results and independent transactions
 
@@ -158,7 +164,7 @@ To create a Twitch alert or reward, use the existing `POST /guilds/123/settings`
 
 ## Storage and compatibility
 
-Uses existing guild, channel, alert, alert_role, alert_twitch, alert_reward and automated_action tables via `BotDB`, with prepared statements and explicit per-block/item transactions. The former `GuildService`/`GuildSettingsDB` path has been removed. No new migration or database is introduced. The database must already support the columns used by current bot code (`alert.private_message`, `alert.send_type`, `channel.league_shard`); some historical SQL dumps in this repository omit them. No schema changes are executed automatically.
+Uses existing guild, channel, alert, alert_role, alert_twitch, alert_reward and automated_action tables via `BotDB`, with prepared statements and explicit per-block/item transactions. Apply [001-sound-overlap.sql](../../database/berbit/setting/001-sound-overlap.sql) before running this version on an existing database. The database must also support `alert.private_message`, `alert.send_type` and `channel.league_shard`. Schema migrations are applied manually.
 
 LoL controllers, models, Mongo collections, Redis caches, command registration and Discord presentation are unchanged. No shard fan-out or queued progress reporting is required for these guild configuration operations.
 

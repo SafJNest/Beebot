@@ -12,6 +12,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.audio.tts.TTSHandler;
 import com.safjnest.bot.audio.tts.TTSVoices;
+import com.safjnest.bot.audio.types.AudioType;
 import com.safjnest.bot.Bot;
 import com.safjnest.bot.cache.managers.GuildCache;
 import com.safjnest.bot.model.guild.GuildData;
@@ -210,7 +211,7 @@ public class TTS extends SlashCommand{
         
         @Override
         public void trackLoaded(AudioTrack track) {
-            pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
+            pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 

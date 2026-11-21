@@ -553,6 +553,7 @@ public class GuildController {
 
             switch (field) {
                 case "experienceEnabled" -> bool(field, value, errors, edit::setExpSystem);
+                case "overlapSound" -> bool(field, value, errors, edit::setOverlapSound);
                 case "prefix" -> {
                     if (value.isTextual() && !value.textValue().isEmpty() && value.textValue().length() <= MAX_PREFIX_LENGTH)
                         edit.setPrefix(value.textValue());

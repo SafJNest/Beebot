@@ -93,7 +93,7 @@ public class SharedEditingTest {
 
         try (Connection connection = connection()) {
             for (String sql : List.of(
-                "CREATE TABLE guild (guild_id VARCHAR(19) PRIMARY KEY, prefix VARCHAR(32) DEFAULT '!', name_tts VARCHAR(19), language_tts VARCHAR(19), exp_enabled BOOLEAN DEFAULT TRUE, threshold INT DEFAULT 0, blacklist_channel VARCHAR(19), blacklist_enabled BOOLEAN DEFAULT FALSE, league_shard INT DEFAULT 3)",
+                "CREATE TABLE guild (guild_id VARCHAR(19) PRIMARY KEY, prefix VARCHAR(32) DEFAULT '!', name_tts VARCHAR(19), language_tts VARCHAR(19), exp_enabled BOOLEAN DEFAULT TRUE, threshold INT DEFAULT 0, blacklist_channel VARCHAR(19), blacklist_enabled BOOLEAN DEFAULT FALSE, league_shard INT DEFAULT 3, overlap_sound BOOLEAN NOT NULL DEFAULT FALSE)",
                 "CREATE TABLE channel (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19), channel_id VARCHAR(19), exp_modifier DOUBLE DEFAULT 1, exp_enabled BOOLEAN DEFAULT TRUE, stats_enabled BOOLEAN DEFAULT TRUE, league_shard INT DEFAULT 0)",
                 "CREATE TABLE automated_action (id INT, guild_id VARCHAR(19), action INT, action_role VARCHAR(19), action_time BIGINT, infractions INT, infractions_time BIGINT)",
                 "CREATE TABLE member (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19) REFERENCES guild(guild_id), user_id VARCHAR(19), experience INT DEFAULT 0, level INT DEFAULT 1, messages INT DEFAULT 0, update_time INT DEFAULT 60, UNIQUE(guild_id, user_id))",

@@ -31,6 +31,7 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.App;
+import com.safjnest.bot.audio.PlayerManager;
 import com.safjnest.bot.commands.audio.Connect;
 import com.safjnest.bot.commands.audio.Disconnect;
 import com.safjnest.bot.commands.audio.Stop;
@@ -241,6 +242,7 @@ public class Bot {
         }
         JDA_EVENT_EXECUTOR.close();
         JDA_CALLBACK_EXECUTOR.close();
+        PlayerManager.resetGuildPlayback();
     }
 
     public static JDA getJDA() {

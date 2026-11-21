@@ -9,5 +9,6 @@ CREATE TABLE
     `blacklist_channel` varchar(19) DEFAULT NULL,
     `blacklist_enabled` tinyint(1) NOT NULL DEFAULT 0,
     `league_shard` tinyint(4) NOT NULL DEFAULT 3,
+    `overlap_sound` tinyint(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (`guild_id`)
   ) ENGINE = InnoDB DEFAULT CHARSET = latin1

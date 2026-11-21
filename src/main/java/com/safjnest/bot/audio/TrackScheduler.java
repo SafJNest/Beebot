@@ -18,6 +18,7 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
@@ -41,6 +42,8 @@ import com.github.kiulian.downloader.model.videos.formats.Format;
 public class TrackScheduler extends AudioEventAdapter {
     private static final double MAX_YT_DOWNLOAD_SIZE = 5;
     private final AudioPlayer player;
+    private final Consumer<AudioTrack> playSound;
+    private final Runnable stopEffects;
 
     private final LinkedList<AudioTrack> queue;
     private LinkedList<AudioTrack> unshuffledQueue;
@@ -48,18 +51,18 @@ public class TrackScheduler extends AudioEventAdapter {
     private int currentTrackIndex;
 
     private boolean isRepeat;
-    private boolean isForced;
     private boolean isQueuePaused;
 
     private QueueMessage lastMessageSent;
 
-    public TrackScheduler(AudioPlayer player) {
+    public TrackScheduler(AudioPlayer player, Consumer<AudioTrack> playSound, Runnable stopEffects) {
         this.player = player;
+        this.playSound = playSound;
+        this.stopEffects = stopEffects;
         this.queue = new LinkedList<>();
         this.currentTrackIndex = -1;
         this.unshuffledQueue = null;
         this.isRepeat = false;
-        this.isForced = false;
         this.isQueuePaused = false;
         this.lastMessageSent = null;
     }
@@ -131,8 +134,10 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void play(AudioTrack track, AudioType type) {
-        isForced = (type != AudioType.AUDIO);
-        play(track, isForced);
+        if (type == AudioType.AUDIO)
+            play(track);
+        else
+            playSound.accept(track);
     }
 
 
@@ -154,7 +159,6 @@ public class TrackScheduler extends AudioEventAdapter {
         
         currentTrackIndex = -1;
         unshuffledQueue = null;
-        isForced = false;
         isRepeat = false;
     }
 
@@ -196,6 +200,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void stop() {
+        stopEffects.run();
         player.stopTrack();
         setIndex(-1);
     }
@@ -302,15 +307,12 @@ public class TrackScheduler extends AudioEventAdapter {
             /*
             System.out.println("track: " + track.getInfo().title 
                           + " | isRepeat: " + isRepeat 
-                          + " | isForced: " + isForced 
                           + " | isQueuePaused: " + isQueuePaused 
                           + " | isQueuable: " + isQueueable(track) 
                           + " | current position: " + (queue.get(currentTrackIndex) != null ? queue.get(currentTrackIndex).getPosition() : 0)
                           + " | toMove: " + toMove 
                           + " | position: " + trackPosition);
             */
-
-            isForced = false;
 
             AudioTrack toPlay = moveCursor(toMove);
 
@@ -322,13 +324,6 @@ public class TrackScheduler extends AudioEventAdapter {
         // STOPPED: The player was stopped.
         if (endReason == AudioTrackEndReason.STOPPED) {
             
-        }
-
-        // REPLACED: Another track started playing while this had not finished
-        if(endReason == AudioTrackEndReason.REPLACED) {
-            if(isForced && isQueueable(track)) {
-                queue.set(currentTrackIndex, track);
-            }
         }
 
         //terminator3LeMacchineRibelli(endReason);
@@ -364,8 +359,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public String toString() {
-        return "TrackScheduler [currentTrackIndex=" + currentTrackIndex + ", isRepeat=" + isRepeat + ", isForced=" 
-            + isForced + ", isQueuePaused=" + isQueuePaused + ",\nqueue(" + queue.size() + ")=" + queue.toString() +"]";
+        return "TrackScheduler [currentTrackIndex=" + currentTrackIndex + ", isRepeat=" + isRepeat
+            + ", isQueuePaused=" + isQueuePaused + ",\nqueue(" + queue.size() + ")=" + queue.toString() + "]";
     }
 
 

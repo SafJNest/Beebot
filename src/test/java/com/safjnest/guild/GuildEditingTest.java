@@ -84,7 +84,7 @@ public class GuildEditingTest {
 
         try (Connection connection = connection()) {
             for (String sql : List.of(
-                "CREATE TABLE guild (guild_id VARCHAR(19) PRIMARY KEY, prefix VARCHAR(32) DEFAULT '!', name_tts VARCHAR(19), language_tts VARCHAR(19), exp_enabled BOOLEAN DEFAULT TRUE, threshold TINYINT DEFAULT 0, blacklist_channel VARCHAR(19), blacklist_enabled BOOLEAN DEFAULT FALSE, league_shard TINYINT DEFAULT 3)",
+                "CREATE TABLE guild (guild_id VARCHAR(19) PRIMARY KEY, prefix VARCHAR(32) DEFAULT '!', name_tts VARCHAR(19), language_tts VARCHAR(19), exp_enabled BOOLEAN DEFAULT TRUE, threshold TINYINT DEFAULT 0, blacklist_channel VARCHAR(19), blacklist_enabled BOOLEAN DEFAULT FALSE, league_shard TINYINT DEFAULT 3, overlap_sound BOOLEAN NOT NULL DEFAULT FALSE)",
                 "CREATE TABLE channel (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19) REFERENCES guild(guild_id), channel_id VARCHAR(19), exp_modifier DOUBLE DEFAULT 1, exp_enabled BOOLEAN DEFAULT TRUE, stats_enabled BOOLEAN DEFAULT TRUE, league_shard TINYINT DEFAULT 0)",
                 "CREATE TABLE alert (id INT AUTO_INCREMENT PRIMARY KEY, guild_id VARCHAR(19) REFERENCES guild(guild_id), message VARCHAR(2000), private_message VARCHAR(2000), channel VARCHAR(19), enabled BOOLEAN, send_type INT, type INT)",
                 "CREATE TABLE alert_twitch (id INT AUTO_INCREMENT PRIMARY KEY, alert_id INT REFERENCES alert(id), streamer_id VARCHAR(32), role_id VARCHAR(19))",
@@ -136,6 +136,32 @@ public class GuildEditingTest {
         assertTrue(database.readGuildAlerts("1").isEmpty());
         assertEquals("10", settings.channels().get(0).get("id"));
         assertEquals(true, settings.roles().get(0).get("assignable"));
+    }
+
+    @Test
+    public void soundOverlapUsesTheExistingBooleanSettingAndSurvivesReload() throws java.lang.Exception {
+        JsonNode defaults = JSON.valueToTree(controller.getGuild("1", AUTH));
+        assertTrue(defaults.at("/settings/general/overlapSound").isBoolean());
+        assertFalse(defaults.at("/settings/general/overlapSound").asBoolean());
+
+        Map<String, Object> saved = controller.updateSettings("1", AUTH,
+            JSON.readTree("{\"general\":{\"overlapSound\":true}}"));
+        assertEquals("ok", ((Result) saved.get("general")).status());
+        assertTrue(guild().isOverlapSound());
+        assertTrue(database.readGuildData(List.of("1")).getFirst().getAsBoolean("overlap_sound"));
+
+        GuildCache reloaded = new GuildCache(database, () -> "!");
+        assertTrue(reloaded.withGuildData("1", GuildData::isOverlapSound));
+
+        Map<String, Object> invalid = controller.updateSettings("1", AUTH,
+            JSON.readTree("{\"general\":{\"overlapSound\":\"false\"}}"));
+        assertEquals("error", ((Result) invalid.get("general")).status());
+        assertTrue(guild().isOverlapSound());
+
+        assertTrue(cache.withGuildData("1", guild -> guild.setOverlapSound(false)));
+        JsonNode updated = JSON.valueToTree(controller.getGuild("1", AUTH));
+        assertFalse(updated.at("/settings/general/overlapSound").asBoolean());
+        assertFalse(database.readGuildData(List.of("1")).getFirst().getAsBoolean("overlap_sound"));
     }
 
     @Test

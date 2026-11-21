@@ -589,12 +589,12 @@ public class BotDB extends AbstractDB {
     }
 
     public static List<QueryRecord> getGuildData(){
-        String query = "SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild;";
+        String query = "SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard, overlap_sound FROM guild;";
         return instance.query(query);
     }
 
     public static QueryRecord getGuildData(String guild_id) {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
+        String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard, overlap_sound FROM guild WHERE guild_id = '" + guild_id + "';";
         return instance.lineQuery(query);
     }
 
@@ -603,7 +603,7 @@ public class BotDB extends AbstractDB {
     }
 
     public List<QueryRecord> readGuildData(Collection<String> guildIds) {
-        return cacheRows("SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id IN (%s)", guildIds);
+        return cacheRows("SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard, overlap_sound FROM guild WHERE guild_id IN (%s)", guildIds);
     }
 
     public static List<QueryRecord> getChannelData(Collection<String> guildIds) {
@@ -1668,9 +1668,9 @@ public class BotDB extends AbstractDB {
             lockGuild(connection, edit.getId(), edit.getPrefix());
 
             guildExecute(connection,
-                "UPDATE guild SET prefix = ?, exp_enabled = ?, name_tts = ?, language_tts = ?, league_shard = ? WHERE guild_id = ?",
+                "UPDATE guild SET prefix = ?, exp_enabled = ?, name_tts = ?, language_tts = ?, league_shard = ?, overlap_sound = ? WHERE guild_id = ?",
                 edit.getPrefix(), edit.isExperienceEnabled(), edit.getVoice(), edit.getLanguage(),
-                edit.getLeagueShard().ordinal(), edit.getId());
+                edit.getLeagueShard().ordinal(), edit.isOverlapSound(), edit.getId());
 
             return null;
         });

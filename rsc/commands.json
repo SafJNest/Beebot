@@ -112,6 +112,18 @@
                 "help": "Edit a sound you own.",
                 "longhelp": "Change the name, tags or visibility of a sound you own.",
                 "category": "Audio"
+            },
+            "overlap": {
+                "help": "Enable or disable sound overlap for this server.",
+                "longhelp": "Allow multiple sound effects to play at the same time. Requires Manage Server.",
+                "options": [
+                    {
+                        "name": "enabled",
+                        "type": "BOOLEAN",
+                        "description": "Whether sound effects can overlap",
+                        "required": true
+                    }
+                ]
             }
         }
     },

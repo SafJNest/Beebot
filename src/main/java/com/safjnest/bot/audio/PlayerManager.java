@@ -1,7 +1,7 @@
 package com.safjnest.bot.audio;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.List;
 import java.util.ArrayList;
@@ -20,11 +20,14 @@ import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.github.topi314.lavasrc.mirror.DefaultMirroringAudioTrackResolver;
 import com.github.topi314.lavasrc.spotify.SpotifySourceManager;
 import com.safjnest.App;
+import com.safjnest.bot.cache.managers.GuildCache;
+import com.safjnest.bot.model.guild.GuildData;
 import com.safjnest.config.LavalinkSettings;
 import com.safjnest.config.PoTokenSettings;
 import com.safjnest.config.SpotifySettings;
 import com.safjnest.sound.model.Sound;
 import com.safjnest.config.Settings;
+import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
@@ -57,9 +60,9 @@ import net.dv8tion.jda.api.entities.Guild;
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
 public class PlayerManager {
-    private static PlayerManager INSTANCE;
-    private Map<String, GuildMusicManager> guildMusicManagers = new HashMap<>();
-    private AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
+    private static volatile PlayerManager instance;
+    private final Map<String, GuildMusicManager> guildMusicManagers = new ConcurrentHashMap<>();
+    private final AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
     LyricsManager lyricsManager;
     //private LavalinkClient lavalink; //i hope we dont have to use this bullshit
 
@@ -68,6 +71,7 @@ public class PlayerManager {
         //lavalink.addNode(new NodeOptions.Builder("beebot", URI.create(settingsLoader.getLavalinkHost()), settingsLoader.getLavalinkPassword(), null, 0).build());
 
         lyricsManager = new LyricsManager();
+        audioPlayerManager.getConfiguration().setOutputFormat(StandardAudioDataFormats.DISCORD_PCM_S16_BE);
 
         registerYoutube();
         registerSpotify();
@@ -116,13 +120,28 @@ public class PlayerManager {
         audioPlayerManager.registerSourceManager(spotify);
     }
 
-    public static PlayerManager get() {
-        return INSTANCE == null ? (INSTANCE = new PlayerManager()) : INSTANCE;
+    public static synchronized PlayerManager get() {
+        if (instance == null)
+            instance = new PlayerManager();
+
+        return instance;
+    }
+
+    public static void resetGuildPlayback() {
+        PlayerManager manager = instance;
+        if (manager == null)
+            return;
+
+        for (GuildMusicManager music : manager.guildMusicManagers.values())
+            music.resetPlayback();
+
+        manager.guildMusicManagers.clear();
     }
 
     public GuildMusicManager getGuildMusicManager(Guild guild) {
         return guildMusicManagers.computeIfAbsent(guild.getId(), (identifier) -> {
-            GuildMusicManager musicManager = new GuildMusicManager(audioPlayerManager);
+            GuildMusicManager musicManager = new GuildMusicManager(audioPlayerManager,
+                () -> GuildCache.withGuild(identifier, GuildData::isOverlapSound));
             guild.getAudioManager().setSendingHandler(musicManager.getAudioForwarder());
             return musicManager;
         });

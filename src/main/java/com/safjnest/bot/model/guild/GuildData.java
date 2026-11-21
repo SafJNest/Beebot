@@ -48,6 +48,7 @@ public class GuildData {
     private String prefix;
 
     private boolean experience;
+    private boolean overlapSound;
 
     private String voice;
     private String language;
@@ -101,6 +102,7 @@ public class GuildData {
 
         this.prefix = defaultPrefix;
         this.experience = true;
+        this.overlapSound = false;
 
         this.voice = "John";
         this.language = "en-us";
@@ -123,6 +125,7 @@ public class GuildData {
 
         this.prefix = row.get("prefix");
         this.experience = row.getAsBoolean("exp_enabled");
+        this.overlapSound = row.getAsBoolean("overlap_sound");
 
         this.voice = row.get("name_tts") == null ? "John" : row.get("name_tts");
         this.language = row.get("language_tts") == null ? "en-us" : row.get("language_tts");
@@ -152,6 +155,7 @@ public class GuildData {
         this(original.ID, original.prefix, original.database);
 
         this.experience = original.experience;
+        this.overlapSound = original.overlapSound;
 
         this.voice = original.voice;
         this.language = original.language;
@@ -209,6 +213,7 @@ public class GuildData {
 
             original.prefix = prefix;
             original.experience = experience;
+            original.overlapSound = overlapSound;
 
             original.voice = voice;
             original.language = language;
@@ -247,12 +252,20 @@ public class GuildData {
         return experience;
     }
 
+    public synchronized boolean isOverlapSound() {
+        return overlapSound;
+    }
+
     public boolean setPrefix(String prefix) {
         return change(edit -> edit.prefix = prefix);
     }
 
     public boolean setExpSystem(boolean enabled) {
         return change(edit -> edit.experience = enabled);
+    }
+
+    public boolean setOverlapSound(boolean enabled) {
+        return change(edit -> edit.overlapSound = enabled);
     }
 
     public synchronized LeagueShard getLeagueShard() {
@@ -685,6 +698,7 @@ public class GuildData {
         general.put("voice", voice);
         general.put("language", language);
         general.put("leagueShard", leagueShard.name());
+        general.put("overlapSound", overlapSound);
 
         Map<String, Object> channelStates = new LinkedHashMap<>();
         List<ChannelData> orderedChannels = new ArrayList<>(channels.values());
