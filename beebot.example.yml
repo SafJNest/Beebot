@@ -1,0 +1,92 @@
+# Copy to beebot.yml for local use. Set BEEBOT_CONFIG for deployed instances.
+# Values prefixed with credential: refer to files supplied by the service manager.
+runtime:
+  # Test behavior and database selection are independent of the Discord bot profile.
+  testing: false
+  host: production
+  # Select a profile from the bot section below.
+  bot: beebot
+
+api:
+  # Port used by embedded Tomcat. Match the port in the reverse proxy.
+  port: 8096
+  # Include this block when using Discord OAuth. Keep the same key across restarts.
+  discord:
+    clientId: "123456789012345678"
+    clientSecret: "credential:discord-oauth-secret"
+    encryptionKey: "credential:auth-encryption-key"
+    allowedRedirectUris: "https://example.com/auth/callback/"
+
+bot:
+  beebot:
+    name: Beebot
+    discordToken: "credential:discord-bot-token"
+    embedColor: "#FFC645"
+    prefix: "!"
+    activity: "{0}help"
+    ownerId: "123456789012345678"
+    coOwnersIds: []
+    helpWord: help
+    maxPrime: 10
+    maxFreePlaylists: 5
+    maxFreePlaylistSize: 25
+    maxPremiumPlaylists: 20
+    maxPremiumPlaylistSize: 100
+    info: Beebot
+
+  canary:
+    name: Beebot Canary
+    discordToken: "credential:discord-canary-token"
+    embedColor: "#FFC645"
+    prefix: "!"
+    activity: "{0}help"
+    ownerId: "123456789012345678"
+    coOwnersIds: []
+    helpWord: help
+    maxPrime: 10
+    maxFreePlaylists: 5
+    maxFreePlaylistSize: 25
+    maxPremiumPlaylists: 20
+    maxPremiumPlaylistSize: 100
+    info: Beebot Canary
+
+services:
+  # Main MariaDB connection. Set databaseName to the catalog for this instance.
+  database:
+    host: "127.0.0.1:3306"
+    databaseName: berbit
+    username: beebot
+    password: "credential:mariadb-password"
+
+  mongo: "credential:mongodb-uri"
+  riot:
+    key: "credential:riot-key"
+
+  twitch:
+    clientId: replace-with-twitch-client-id
+    clientSecret: "credential:twitch-client-secret"
+
+  # Playback and Discord account linking use separate Spotify settings.
+  spotify:
+    clientId: replace-with-spotify-playback-client-id
+    clientSecret: "credential:spotify-playback-client-secret"
+    countryCode: IT
+
+  spotifyApi:
+    clientId: replace-with-spotify-link-client-id
+    clientSecret: "credential:spotify-link-client-secret"
+
+  lavalink:
+    potokenEnabled: false
+    rotorEnabled: false
+
+  r2:
+    # Add cdnUrl for reads and R2 credentials for uploads when enabling storage.
+    enabled: false
+    soundBucket: beebot
+    soundPrefix: sounds/
+    soundDirectory: rsc/cache/sounds
+
+  ttsApiKey: "credential:tts-key"
+  weatherApiKey: "credential:weather-key"
+  nasaApiKey: "credential:nasa-key"

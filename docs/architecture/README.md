@@ -4,17 +4,30 @@ This directory contains accepted architecture decisions for the LoL domain.
 Repository-wide implementation rules live in [`AGENTS.md`](../../AGENTS.md);
 operational steps live in the [developer handbook](../HANDBOOK.md).
 
+The [agreed repository reorganization plan](repository-review.md) records the
+decisions discussed with the owner. The owner confirmed the current `bot`,
+`database`, `discord`, `lol`, `sound`, `spring`, `status` and `utils` layout on
+17 November 2026, including authentication in `discord.auth`. The document
+records the completed package moves and the six implementation steps through
+the alignment of authentication queries in `AuthDB`. It is the canonical plan
+for this work and does not amend an accepted ADR.
+
+The [refactor workflow](refactor-workflow.md) records the practices and examples
+from that work for future changes and for the `beebot agent` agent.
+
 ## Ownership
 
 - `lol.model` owns canonical LoL success models.
 - `lol.service` owns domain reads, writes, cache coordination and composition.
 - `lol.queue` owns job registration and scheduling; `lol.tracker` owns periodic
   tracking.
-- `nosql.MongoDB` owns canonical Mongo persistence and the rebuildable
+- `database.nosql.MongoDB` owns canonical Mongo persistence and the rebuildable
   `match_facets` participant projection. Match insert/upsert maintains it;
   `!test export-match-search` rebuilds it from Mongo. LoL no longer accesses
   MariaDB, including historical migrations.
 - Spring owns HTTP controllers, configuration and error representations.
+  `exception.Exception` owns application failures without Spring;
+  `spring.exception.ApiErrors` and `ApiExceptionHandler` own HTTP adaptation.
 - `AggregateService` owns indicative count/distribution snapshots in Mongo
   `aggregates` and their Redis caches; see [aggregate snapshots](../mongo/16-aggregates.md).
 - Redis stores disposable caches and derived indexes.
@@ -23,7 +36,7 @@ The current scheduler contract is [ADR-0014](adr/0014-global-job-scheduler.md).
 The profile aggregate identity and ownership are summarized in
 [`profile-statistics-source-of-truth.md`](profile-statistics-source-of-truth.md).
 Mongo persistence details are in [`docs/mongo`](../mongo/README.md); CHERRY
-build ownership is in [`docs/arena-build`](../arena-build/README.md).
+build ownership is in [`docs/arena-build`](../arena-build/contracts.md).
 The Mongo match-facets projection is documented in
 [`docs/mongo/15-match-facets-projection.md`](../mongo/15-match-facets-projection.md).
 

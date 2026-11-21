@@ -1,0 +1,2 @@
+ALTER TABLE guild
+    ADD COLUMN overlap_sound TINYINT(1) NOT NULL DEFAULT 0;

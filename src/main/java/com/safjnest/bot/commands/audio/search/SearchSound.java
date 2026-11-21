@@ -1,0 +1,204 @@
+package com.safjnest.bot.commands.audio.search;
+
+import java.util.Arrays;
+import java.util.List;
+
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.bot.audio.PlayerManager;
+import com.safjnest.bot.audio.SoundEmbed;
+import com.safjnest.bot.audio.types.AudioType;
+import com.safjnest.bot.Bot;
+import com.safjnest.bot.cache.managers.SoundCache;
+import com.safjnest.sound.model.Sound;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.PermissionHandler;
+import com.safjnest.utils.SafJNest;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+/**
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 8.0
+ */
+public class SearchSound extends SlashCommand {
+
+    public SearchSound(String father) {
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "query", "What are you looking for", true),
+            new OptionData(OptionType.USER, "author", "Who uploaded the sound", false)
+        );
+
+        commandData.setThings(this);
+    }
+
+   
+
+	@Override
+	protected void execute(SlashCommandEvent event) {
+        String query = event.getOption("query").getAsString();
+        String author = event.getOption("author") == null ? null : event.getOption("author").getAsUser().getId();
+
+        List<Sound> sounds = SoundCache.searchSound(query, author, event.getGuild().getId(), event.getUser().getId());
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor("Search by" + event.getUser().getName(), "https://discord.com/users/" + event.getUser().getId(), event.getUser().getEffectiveAvatarUrl());
+        eb.setTitle("Search for: " + query);
+
+        if (sounds.isEmpty()) {
+            eb.setDescription("No results found");
+            eb.setColor(Bot.getColor());
+            event.replyEmbeds(eb.build()).queue();
+            return;
+        }
+
+        int count = 1;
+        StringBuilder field1 = new StringBuilder();
+        StringBuilder field2 = new StringBuilder();
+        
+        for (Sound sound : sounds) {
+            String label = sound.getName();
+
+            if (count <= 15) {
+                field1.append("`").append(count).append("` ").append(label).append("\n");
+            } else if (count <= 25) {
+                field2.append("`").append(count).append("` ").append(label).append("\n");
+            }
+            count++;
+        }
+        
+        eb.addField(" ", field1.toString(), true);
+        if (field2.length() > 0) {
+            eb.addBlankField(true);
+            eb.addField(" ", field2.toString(), true);
+        }
+
+        eb.setColor(Bot.getColor());
+
+        String menuId = "menu:" + event.getUser().getId() + "-" + SafJNest.getJSalt(4);
+        StringSelectMenu.Builder mb = StringSelectMenu.create(menuId);
+
+        count = 1;
+        for (Sound sound : sounds) {
+            String label = count + " - " + sound.getName();
+            String description = Bot.getJDA().getGuildById(sound.getGuildId()).getName() + " by " + Bot.getJDA().getUserById(sound.getUserId()).getName() + " - " + sound.getGlobalPlays() + " plays " + sound.getLikes() + "/" + sound.getDislikes();
+            label = PermissionHandler.ellipsis(label, 100);
+            mb.addOption(label, sound.getId(), description);
+            count++;
+        }
+        MenuListener fileListener = new MenuListener(event, mb.getCustomId());
+        event.getJDA().addEventListener(fileListener);
+
+        event.replyEmbeds(eb.build())
+             .addComponents(ActionRow.of(mb.build())).queue();
+
+        
+    } 
+
+    private class MenuListener extends ListenerAdapter {
+        
+        private SlashCommandEvent slashEvent;
+        private String menuID;
+    
+        public MenuListener(SlashCommandEvent slashEvent, String menuID) {
+            this.slashEvent = slashEvent;
+            this.menuID = menuID;
+        }
+    
+        @Override
+        public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+            if (event.getComponentId().equals(menuID)) {
+                Guild guild = event.getGuild();
+            
+                AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+                AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
+    
+                if(myChannel == null){
+                    event.deferReply(true).addContent("You need to be in a voice channel to use this command.").queue();
+                    return;
+                }
+        
+                if(botChannel != null && (myChannel != botChannel)){
+                    event.deferReply(true).addContent("The bot is already being used in another voice channel.").queue();
+                    return;
+                }
+    
+                List<String> selected = event.getValues();
+                Sound sound = SoundCache.getSoundByString(selected.get(0), guild, event.getUser());
+    
+                event.deferEdit().queue(hook -> PlayerManager.get().loadSound(guild, sound,
+                    new ResultHandler(slashEvent, hook, sound)));
+                
+            }
+        }
+    
+        private class ResultHandler implements AudioLoadResultHandler {
+            private final InteractionHook hook;
+            private final Guild guild;
+            private final Member author;
+            private final Sound sound;
+            
+            private ResultHandler(SlashCommandEvent event, InteractionHook hook, Sound sound) {
+                this.hook = hook;
+                this.guild = event.getGuild();
+                this.author = event.getMember();
+                this.sound = sound;
+            }
+            
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
+    
+                AudioChannel channel = author.getVoiceState().getChannel();
+
+                guild.getAudioManager().openAudioConnection(channel);
+                String channelId = channel == null ? null : channel.getId();
+    
+                Sound played = SoundCache.withSound(sound.getId(), current -> {
+                    current.increaseUserPlays(author.getId(), guild.getId(), channelId, AudioType.AUDIO);
+
+                    return current;
+                });
+                    
+                hook.editOriginalEmbeds(SoundEmbed.getSoundEmbed(played, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(played)).queue();
+            }
+    
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {}
+    
+            @Override
+            public void noMatches() {
+                hook.sendMessage("No matches").setEphemeral(true).queue();
+            }
+    
+            @Override
+            public void loadFailed(FriendlyException throwable) {
+                hook.sendMessage(throwable.getMessage()).setEphemeral(true).queue();
+            }
+        }
+    }
+}

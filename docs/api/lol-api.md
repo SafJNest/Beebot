@@ -1,5 +1,7 @@
 # LoL HTTP API
 
+The separate Discord dashboard API (`/api/beebot/me` and `/api/beebot/guilds`) is documented in [Beebot authentication](beebot-auth.md). Guild configuration is documented in [Beebot guild settings](beebot-guilds.md).
+
 Index of the public LoL HTTP documentation. The documentation is organized
 by scope and each endpoint has a dedicated file with the same template:
 
@@ -22,7 +24,7 @@ Examples use `http://localhost:8080` as the base URL.
 - [Live game](summoner/livegame.md) — `GET /api/lol/{shard}/livegame/{puuid}` and `GET /api/lol/{shard}/livegame-by-name/{gameName}/{tagLine}`
 - [Match list](summoner/matches.md) — `GET /api/lol/{shard}/profile/{puuid}/matches`; complete matches with bans and participants, without timeline; supports `season=current|previous|all` as a shortcut for the time bounds. The [single-match detail](match/detail.md) returns the same match plus timeline `events`.
 - [Match facets](summoner/match-facets.md) — `GET /api/lol/{shard}/profile/{puuid}/facets`; supports repeated filter values for disjunctive counts.
-- [Rank history](lol-api/summoner/rank-history.md) — `GET /api/lol/{shard}/profile/{puuid}/rank-history`; supports Solo/Duo, Flex and Premade.
+- [Rank history](summoner/rank-history.md) — `GET /api/lol/{shard}/profile/{puuid}/rank-history`; supports Solo/Duo, Flex and Premade.
 - [Activity](summoner/activity.md) — `GET /api/lol/{shard}/profile/{puuid}/activity`
 - [Matchups](summoner/matchups.md) — `GET /api/lol/{shard}/profile/{puuid}/matchups`
 - [Profile indexables](summoner/indexables.md) — `GET /api/lol/profile/indexables`
@@ -83,6 +85,15 @@ Examples use `http://localhost:8080` as the base URL.
 | `204` | Refresh completed, or ignored due to cooldown. |
 | `405` | HTTP method not supported. |
 | `500` | Unexpected server error. |
+
+HTTP failures are handled by the shared `spring.exception.ApiExceptionHandler`
+and mapped by `ApiErrors`; the existing record is now nested as
+`ApiErrors.LolApiError`. Its fields, null metadata and endpoint-specific codes
+remain unchanged. Invalid JSON bodies return sanitized `400 invalid_request`,
+including when the failure occurs before controller invocation. Unexpected Java
+exceptions remain sanitized `500 internal_error`. `LolApiResponses` retains the
+existing READY/PARTIAL/PENDING/NOT_FOUND mapping, success models and metadata.
+This is HTTP infrastructure work; no LoL domain or persistence change is required.
 
 `202` responses always use the same format, with scope-specific code
 and message. For example:
@@ -151,3 +162,17 @@ and Arena build availability uses data presence. Timestamps can queue background
 refreshes; readers do not require all eight subteam ID counters or placement
 buckets. There are no version fields or version-based cache guards. Other queues, jobs
 and Discord presentation remain unchanged. No live rebuild/explain is claimed.
+
+
+## Shared conversion and transport implementation
+
+`LolApiParameters` retains HTTP validation and messages while reusing
+`utils.ParseUtils`: page strings remain exact integers without whitespace trim,
+season years allow trim, and enum validation keeps its uppercase policy. Invalid
+inputs still return 400 rather than a fallback value. LoL keys retain their
+wildcard/encoding rules in `FilterCodec`; generic conversions no longer depend
+on `lol.utils.NumberUtils`. Canonical models, filters, keys, payloads and ApiResult
+states are unchanged, so no endpoint/schema migration is required.
+Data Dragon version/rune requests continue through `HttpUtils.readUrl`, now backed
+by the same request/sending mechanism used by Discord, with their existing
+5-second connection and 10-second request timeouts and IO failure behavior.

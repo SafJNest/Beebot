@@ -11,7 +11,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.queue.QueueHandler;
 import com.safjnest.lol.queue.job.Job;
@@ -22,10 +24,7 @@ import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
-import com.safjnest.utils.log.BotLogger;
+import com.safjnest.status.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

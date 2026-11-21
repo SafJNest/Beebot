@@ -30,7 +30,7 @@
 
 - [ ] `git diff --check` clean
 - [ ] Tests: `mvn test -Dtest=<Area>Test` or `N/A — reason`
-- [ ] No secrets in commits (`rsc/settings.json`, URI, credentials)
+- [ ] No secrets in commits (`beebot.yml`, legacy settings, credentials)
 
 ## Handoff
 

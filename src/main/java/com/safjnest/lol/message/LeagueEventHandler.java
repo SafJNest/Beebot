@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.core.events.EventButtonHandler;
-import com.safjnest.core.events.EventUtils;
 import com.safjnest.lol.service.MatchService;
 import com.safjnest.lol.service.SummonerService;
 import com.safjnest.lol.utils.ChampionUtils;
@@ -13,7 +11,6 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.SafJNest;
-import com.safjnest.core.cache.managers.UserCache;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.label.Label;
@@ -31,6 +28,10 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+
+import com.safjnest.bot.cache.managers.UserCache;
+import com.safjnest.bot.events.EventButtonHandler;
+import com.safjnest.bot.events.EventUtils;
 import com.safjnest.lol.model.summoner.Summoner;
 
 public class LeagueEventHandler extends EventButtonHandler {
@@ -60,7 +61,9 @@ public class LeagueEventHandler extends EventButtonHandler {
     }
 
     @Override
-    public void onButtonInteraction(ButtonInteractionEvent event) { return; }
+    public void onButtonInteraction(ButtonInteractionEvent event) {
+        return;
+    }
 
     @Override
     public void onModalInteraction(ModalInteractionEvent event) {

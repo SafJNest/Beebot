@@ -1,6 +1,6 @@
 CREATE TABLE
   `sound_interactions` (
-    `sound_id` int(10) unsigned NOT NULL,
+    `sound_id` smallint(6) NOT NULL,
     `user_id` varchar(19) NOT NULL,
     `value` tinyint(4) NOT NULL DEFAULT 0,
     PRIMARY KEY (`sound_id`, `user_id`),

@@ -5,8 +5,8 @@ import org.springframework.web.client.RestTemplate;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.safjnest.sql.database.WebsiteDB;
-import com.safjnest.utils.SettingsLoader;
+import com.safjnest.database.sql.database.WebsiteDB;
+import com.safjnest.config.Settings;
 
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;
@@ -16,8 +16,8 @@ import java.util.Base64;
 
 public class SpotifyTokenManager {
     private static final String TOKEN_URL = "https://accounts.spotify.com/api/token";
-    private static final String CLIENT_ID = SettingsLoader.getSettings().getJsonSettings().getSpotifyApi().getClientId(); // Replace with your client ID
-    private static final String CLIENT_SECRET = SettingsLoader.getSettings().getJsonSettings().getSpotifyApi().getClientSecret(); // Replace with your client secret
+    private static final String CLIENT_ID = Settings.get().services().getSpotifyApi().getClientId(); // Replace with your client ID
+    private static final String CLIENT_SECRET = Settings.get().services().getSpotifyApi().getClientSecret(); // Replace with your client secret
 
     private static String accessToken = null;
     private static long tokenExpirationTime = 0;

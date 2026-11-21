@@ -9,7 +9,7 @@ import com.safjnest.lol.queue.job.Job;
 import com.safjnest.lol.queue.job.JobPriority;
 import com.safjnest.lol.queue.scheduler.AbstractScheduler;
 import com.safjnest.lol.queue.scheduler.SyncScheduler;
-import com.safjnest.utils.log.BotLogger;
+import com.safjnest.status.log.BotLogger;
 
 public final class Router {
 

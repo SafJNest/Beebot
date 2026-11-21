@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
+import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.QueryRecord;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;

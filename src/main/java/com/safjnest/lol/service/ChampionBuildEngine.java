@@ -1,5 +1,7 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.sql.QueryRecord;
 import com.safjnest.lol.champion.BuildSignature;
 import com.safjnest.lol.champion.ChampionBuildData;
 import com.safjnest.lol.champion.ChampionBuildProvider;
@@ -9,8 +11,6 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.MatchMemoryUtils;
 import com.safjnest.lol.utils.ChampionBuildTimelineUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.sql.QueryRecord;
 
 import java.util.ArrayList;
 import java.util.Comparator;

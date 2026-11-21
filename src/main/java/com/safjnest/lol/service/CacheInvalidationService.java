@@ -2,8 +2,8 @@ package com.safjnest.lol.service;
 
 import java.util.List;
 
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;

@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
 import com.safjnest.lol.service.StaticDataService;
 
 import net.dv8tion.jda.api.entities.emoji.Emoji;

@@ -2,7 +2,7 @@ package com.safjnest.lol.utils;
 
 import java.util.List;
 
-import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.bot.model.customemoji.CustomEmojiHandler;
 
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;

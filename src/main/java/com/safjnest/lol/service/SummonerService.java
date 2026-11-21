@@ -12,6 +12,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.match.LiveGame;
@@ -27,9 +30,6 @@ import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.utils.LeagueConstants;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
-import com.safjnest.nosql.MongoDB;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
 
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 

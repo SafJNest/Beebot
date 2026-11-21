@@ -27,7 +27,16 @@ target/
 index/
 node_modules/
 
+.agents/
+.claude/
+.codegraph/
+/graphify-out/
+.codex/
+.cursor/
+.opencode/
+
 rsc/Upload/*
+rsc/cache/
 rsc/tts/*
 .fleet/
 .idea/
@@ -40,6 +49,8 @@ l4j8cache/
 .DS_Store
 
 rsc/settings.json
+rsc/beebot.local.json
+/beebot.yml
 
 config.properties
 

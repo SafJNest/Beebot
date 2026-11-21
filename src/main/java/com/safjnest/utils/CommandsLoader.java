@@ -10,6 +10,9 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
 /**
  * Contains the methods to read the JSON file with all the commands descriptions.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -56,7 +59,13 @@ public class CommandsLoader {
                         String childLongHelp = (String) child.get("longhelp");
                         childLongHelp = (childLongHelp == null || childLongHelp.isBlank()) ? childHelp : childLongHelp;
                         int childCooldown = (child.get("cooldown") == null) ? 0 : Integer.valueOf((String) child.get("cooldown"));
-                        commands.get(name).addChild(new BotCommand(childName, category, childHelp, childLongHelp, null, null, childCooldown, commands.get(name)));
+                        BotCommand childCommand = new BotCommand(childName, category, childHelp, childLongHelp, null, null, childCooldown, commands.get(name));
+
+                        JSONArray options = (JSONArray) child.get("options");
+                        if (options != null)
+                            childCommand.setOptions(readOptions(options));
+
+                        commands.get(name).addChild(childCommand);
                     });
                 }
             });
@@ -101,5 +110,30 @@ public class CommandsLoader {
         }
 
         return filteredCommandsLIST;
+    }
+
+    private static List<OptionData> readOptions(JSONArray options) {
+        List<OptionData> result = new ArrayList<>();
+
+        for (Object entry : options) {
+            JSONObject option = (JSONObject) entry;
+            OptionType type = OptionType.valueOf((String) option.get("type"));
+            String name = (String) option.get("name");
+            String description = (String) option.get("description");
+            boolean required = Boolean.TRUE.equals(option.get("required"));
+
+            OptionData data = new OptionData(type, name, description, required);
+            JSONArray choices = (JSONArray) option.get("choices");
+            if (choices != null) {
+                for (Object entryChoice : choices) {
+                    JSONObject choice = (JSONObject) entryChoice;
+                    data.addChoice((String) choice.get("name"), (String) choice.get("value"));
+                }
+            }
+
+            result.add(data);
+        }
+
+        return result;
     }
 }

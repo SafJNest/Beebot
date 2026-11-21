@@ -6,10 +6,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.model.status.LeagueMetrics;
-import com.safjnest.nosql.MongoDB;
 import com.safjnest.lol.service.AggregateService;
-import com.safjnest.redis.RedisKey;
 
 public final class LeagueMetricsStore {
 

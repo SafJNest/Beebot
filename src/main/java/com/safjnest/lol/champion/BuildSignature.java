@@ -1,6 +1,6 @@
 package com.safjnest.lol.champion;
 
-import com.safjnest.lol.utils.NumberUtils;
+import com.safjnest.utils.ParseUtils;
 
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
@@ -84,7 +84,7 @@ public record BuildSignature(
         List<Integer> augmentIds = new ArrayList<>();
         if (augmentsJson != null && augmentsJson.length() > 0) {
             for (int i = 0; i < augmentsJson.length(); i++) {
-                int id = BuildUtils.parseAnyInt(augmentsJson.opt(i));
+                int id = ParseUtils.parseInt(augmentsJson.opt(i));
                 if (id != 0) augmentIds.add(id);
             }
         }
@@ -92,7 +92,7 @@ public record BuildSignature(
         List<Integer> summonerSpellIds = new ArrayList<>();
         if (summonerSpellsJson != null && summonerSpellsJson.length() > 0) {
             for (int i = 0; i < summonerSpellsJson.length(); i++) {
-                int id = BuildUtils.parseAnyInt(summonerSpellsJson.opt(i));
+                int id = ParseUtils.parseInt(summonerSpellsJson.opt(i));
                 if (id != 0) summonerSpellIds.add(id);
             }
         }
@@ -131,8 +131,8 @@ public record BuildSignature(
         for (int level = 0; level < 18; level++) emptySkillOrder.add(0);
         return new BuildSignature(
                 parts.length > 0 ? BuildUtils.parseDashList(parts[0]) : List.of(),
-                NumberUtils.parseInt(parts[1]),
-                NumberUtils.parseInt(parts[2]),
+                ParseUtils.parseInt(parts[1]),
+                ParseUtils.parseInt(parts[2]),
                 parts.length > 3 ? BuildUtils.parseDashList(parts[3]) : List.of(),
                 parts.length > 4 ? BuildUtils.parseDashList(parts[4]) : List.of(),
                 parts.length > 5 ? decodeSpellOrderSegment(parts[5]) : emptySkillOrder,

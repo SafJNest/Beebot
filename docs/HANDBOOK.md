@@ -13,6 +13,38 @@ architecture decision. Report conflicts rather than silently changing owners.
 For LoL code changes, check CodeGraph status, sync a stale index, then inspect
 the affected symbol and its impact before editing.
 
+### 1.1 Graphify
+
+Graphify provides a local architecture report and an interactive view of Beebot.
+Install it once with `uv` and Python 3.11.5–3.14. The `sql` extra indexes the
+schema and migration files in `database/`. From the repository root, install
+Graphify and build the graph.
+
+```sh
+uv tool install 'graphifyy[sql]==0.9.114'
+graphify extract . --code-only && graphify cluster-only . --no-label
+```
+
+Run `graphify update .` after switching branches or changing source files. Add
+`--force` after changing ignore rules or when Graphify refuses to replace an
+older graph after source deletions. The local workflow needs no model or API
+key. Semantic extraction of docs and media requires a separate run with a model.
+
+Open `graphify-out/graph.html` for the interactive map or
+`graphify-out/GRAPH_REPORT.md` for the summary. The map groups large graphs by
+community and loads its visualization library from a CDN. Git ignores the
+generated files. Graphify honors `.gitignore` and uses `.graphifyignore` to
+exclude archived code, media and resource fixtures.
+
+```sh
+graphify explain getSoundById
+graphify affected getSoundById --relation calls --depth 1
+```
+
+CodeGraph remains the reference for source snippets, call paths and impact
+checks. A Graphify path can include containment or import edges, so check the
+edge types before interpreting it as a chain of calls.
+
 ## 2. Core contracts
 
 - Canonical LoL success models live in `lol.model`; Spring owns controllers,
@@ -75,12 +107,80 @@ Register the command in `rsc/commands.json` and its `SlashCommand` class. Reuse
 existing identity lookup, message types and rendering. Keep computation in the
 owning service and preserve the existing presentation.
 
+Use `help` for the short command description and add `longhelp` when examples,
+limits or prerequisites help the reader. Every registered subcommand needs its
+own entry under `children`. Remove the entry when retiring a command.
+
+For fixed slash options declared under a child, use `options` entries with
+`name`, `type` (a JDA `OptionType`), `description` and an optional `required`
+boolean. String options can include `choices` with a display `name` and a string
+`value`. The slash class reads configured options from `BotCommand.getOptions()`.
+
 ### 5.2 New HTTP endpoint
+
+Discord dashboard authentication and its `/beebot` endpoints are documented in
+[Beebot dashboard authentication](api/beebot-auth.md). `AuthDB` selects the
+`auth` database and stores OAuth transactions and sessions. Redis is an optional
+cache; protected requests accept the application API key plus user bearer token,
+or a permanent personal API key linked to the issuing Discord user. Generate it
+with `!test generate personalkey <name>` after manually applying
+`database/auth/003-api-key-types.sql`; revoke it with `!test revoke personalkey <name>`.
+Both key types live in `api_key`: `ApiKey` is the canonical typed key model and `AuthDB` owns persistence, generation and revocation. Authentication resolves either credential type into `DiscordAuthService.AuthContext`. Key generation and revocation are restricted to Untouchables and Epria; other `test` operations remain owner/co-owner only.
+
+Keep authentication SQL in `AuthDB`. Key and session reads use
+`QueryRecordParser.fromRow()` and map named columns to `ApiKey` and `AuthDB.Session`.
+Full session reads and `SELECT 1` cache checks share the same validity conditions.
+
+`GET /beebot/me` returns `{user, servers, greets}` from `MeController`; `POST /beebot/me/settings` belongs to the same controller. `GET /beebot/guilds` returns a plain `List<DiscordApi.Server>` (JSON array). Records are nested in their owning API, service or controller rather than split into record-only files. `DiscordApi` owns Discord HTTP/JDA access and image URLs; `DiscordAuthService` shares the authorized list between these endpoints and single-guild GET/POST. `DiscordGuildCache` stores it for 60 seconds in Redis with process-local fallback, single-flight loading and invalidation fencing. Personal keys use JDA caches before any missing-member lookup; OAuth uses one `/users/@me/guilds?limit=200` request per successful cache load. SQL continues to decide credential/session revocation. Logout invalidates the guild list. Owner, Administrator and Manage Server grant access. Discord rate limits return `discord_rate_limited` with retry metadata; see the API page for error details.
+
+`GuildController` owns `/guilds`; `DiscordAuthController` owns
+only authorize, session and logout. `MeController` retains its profile routes.
+Application failures use `com.safjnest.exception.Exception` with a nested category,
+code, caller message and optional cause/retry. Keep Spring types out of auth,
+models and storage failures. When importing that class, qualify generic Java
+catches/signatures as `java.lang.Exception`. `ApiErrors` maps HTTP status, headers
+and the existing Beebot/LoL envelopes; `ApiExceptionHandler` is the single advice,
+and `AuthFilter` uses the same mapper, including `Retry-After` and retry seconds.
+Routing/framework errors select their envelope by request scope. `LolApiResponses`
+still owns `ApiResult` state mapping and uses `ApiErrors.LolApiError` for 202.
+
+Guild dashboard reads and partial updates are documented in
+[Beebot guild settings](api/beebot-guilds.md). Bot and API use the same
+`GuildCache` objects. Under `GuildCache.withGuild`, call `deferEdit()` on the
+specific model, apply setters and call `update()`. The private edit saves all
+fields of that block through prepared `BotDB` queries in one transaction, then
+publishes to the original object only after commit. Normal setters remain
+immediately persistent. Failed or stale edits return `false`; create a new edit
+for another update. General settings, blacklist, each channel and each alert are
+separate units. `GuildData.deferEdit()` covers general settings only. Alert roles
+and Twitch/reward fields share their alert's transaction. Response records and
+copied settings snapshots live in `GuildData`; operational problems come from
+`AlertData`. Own writes keep the existing cache object. Twitch registration runs
+after commit and outside the guild lock. Warning actions are read-only here.
 
 Use the existing scope controller where possible. Parse every path and query
 parameter with `LolApiParameters`, call the owning service and return canonical
 models through `LolApiResponses`. Update the endpoint page and API index when
 the public contract changes.
+
+User aliases and greets use `UserCache.withUser` and the persistent `UserData`
+methods. Each greet scope is an independent transaction; API writes retain the
+same object. `getAllGreets()` completes lazy settings loading and returns a copy.
+Sound metadata writes use `SoundCache.withSound`, `deferEdit()`, setters and
+`update()`; the API passes the authenticated actor to the update. `Sound` owns
+votes, play increments and deletion; derived selection invalidation follows the
+commit. SQL lives in `BotDB`, including the former `SoundDB` streaming/read-session
+operations. `Sound` reads personal plays and votes through
+`BotDB.readSoundUserPlays` and `readSoundInteraction`, never SQL literals. A
+metadata refresh invalidates pending edits only when name, visibility or the tag
+set changed; tag order, empty slots and play/vote counters do not count. Successful
+metadata saves still consume the draft. `Tag` is immutable: an empty name is an
+unused slot, ID zero with a name is new, and a positive ID with a name is stored.
+Keep the five Discord slots and omit only empty slots from JSON; internal state
+predicates are not API fields. These changes preserve HTTP and presentation.
+For XP use `GuildCache.receiveExperience`: `MemberData` coordinates
+cooldown, calculation, counts and persistence; inspect its saved/leveled-up result
+before sending rewards. Keep Discord calls outside the coordinated operation.
 
 ### 5.3 New service
 
@@ -194,9 +294,9 @@ The scan excludes nonexistent division V; an existing V checkpoint resumes at
 the corresponding division IV. A first run
 without checkpoint documents is initialized from the latest operator-provided
 regional progress snapshot; a later run starts from the beginning after every
-region has completed. The latest operator-provided snapshot seeds BR1 at Silver IV
-page 293, EUN1 at Silver IV page 36, EUW1 at Bronze IV page 506, KR at Bronze II
-page 377, LA1 at Silver II page 98 and NA1 at Bronze II page 336. These pages
+region has completed. The latest operator-provided snapshot seeds BR1 at Silver III
+page 37, EUN1 at Silver IV page 178, EUW1 at Bronze IV page 658, KR at Bronze I
+page 36, LA1 at Silver I page 96 and NA1 at Bronze I page 92. These pages
 are repeated. LA2, TR1, VN2 and previously completed regions stay completed.
 The seeds apply only when no checkpoint documents exist and do not overwrite
 existing Mongo checkpoints. This internal change leaves the public API and presentation unchanged. All-rank
@@ -244,5 +344,64 @@ The unique profile identity index is `profile_statistics_identity` on
 ## Arena builds
 
 CHERRY uses the existing champion API and build flow. Its approved schema and
-processing rules live in [`docs/arena-build`](arena-build/README.md) and
+processing rules live in [`docs/arena-build`](arena-build/contracts.md) and
 ADR-0012.
+
+## Local bot caches
+
+`bot.cache.CacheAdapter` owns the instance-local Caffeine backing and the shared
+single/bulk loading protocol for guilds, users and sounds. `GenericCache` reuses
+this base. Use `GuildCache.withGuild`, `UserCache.withUser` or
+`SoundCache.withSound` for migrated mutable operations; callbacks retain the
+entry and synchronize on the object. Plural `withGuilds`/`withUsers`/`withSounds`
+retain every entry but require the individual owner's lock for mutations.
+Keep Discord calls and response serialization outside the object's lock.
+
+Bulk loads query only missing IDs and reuse in-flight loads. Guilds hydrate
+channels/actions in batches; users hydrate aliases. The new SQL reads use
+prepared statements and `QueryRecord`, with at most 500 IDs per statement.
+Invalidation fences publication by an older load; active participants finish
+before that entry is discarded. Cache map/list views do not expose the backing
+for direct writes. Old raw object getters remain compatible but do not retain an
+entry beyond the getter call. Guild settings, blacklist, channels and alerts now
+use scoped operations and copied snapshots (plan step 2). Do not mutate maps
+returned by `GuildData`; use its creation/deletion methods. User/greet and sound
+writes now use those same scoped objects (step 3). Member XP uses the retained
+guild entry and a coordinated operation on the member; authentication caches
+retain their separate policies.
+See the [implementation plan](architecture/repository-review.md).
+
+## Audio API operations
+
+Sounds HTTP routes use `SoundCache` for object loading, typed list responses and ID-only Redis selections, `SoundController` and `MeController` for HTTP parsing, `Sound`/`UserData` for shared writes, canonical `Sound` response copies, and `BotDB` prepared SQL (streamed history grouped in Java on one read session). They use ordinary membership rather than the administrative guild directory. `SoundFiles` coordinates local audio files and uses `R2Storage` for the CDN and object uploads. See [the audio API contract](api/beebot-sounds.md) and [R2 deployment settings](audio-storage-r2.md).
+
+
+## Sound statistics
+
+`com.safjnest.sound.SoundAnalytics` owns `getSummary`, `getGuildAnalytics`,
+`getSoundAnalytics` and `getUserAnalytics`. `SoundCache` reuses these methods.
+`SoundHistory` is a package-private in-memory accumulator: it indexes typed counts
+by sound/guild and keeps only the newest 101 personal events per sound. Keep SQL
+streaming in `BotDB`, cursor encoding in `SoundPeriod` and source resolution in
+`AudioType.getFromOrdinal`. Response builders preserve the documented JSON and
+privacy rules; add characterization checks before changing their behavior.
+
+
+## Shared HTTP and parsing
+
+`HttpUtils` owns reusable transports, GET/form request construction and sending.
+`HttpUtils.Transport` returns the complete Java `HttpResponse<String>`; provider
+code interprets status, headers and body. Sending restores an interrupted thread's
+flag before rethrowing. Data Dragon/rune and Spotify facades retain their current
+5-second connect / 10-second request timeouts and header-aware text decoding.
+`DiscordApi` retains its 15-second timeouts, explicit UTF-8 and Discord error/retry
+policy, using the same construction/sending code. Keep OAuth fields ordered.
+
+`utils.ParseUtils` owns the numeric/enum conversions previously shared through
+`lol.utils.NumberUtils` and `BuildUtils.parseAnyInt`. Use `parseIntExactOrNull`
+where whitespace must remain invalid, `parseIntOrNull` where trim is allowed,
+and the tolerant conversions only where fallback is part of the existing data
+contract. `longValue` accepts only Number. `FilterCodec` owns wildcard/key meaning;
+`LolApiParameters` owns HTTP validation and messages. Arena integrity/range rules
+and QueryRecord SQL parsing keep their existing owners. These are internal changes:
+HTTP contracts, persisted shapes and Discord presentation remain unchanged.

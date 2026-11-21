@@ -1,0 +1,37 @@
+package com.safjnest.bot.commands.queue;
+
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.bot.audio.QueueHandler;
+import com.safjnest.bot.audio.types.EmbedType;
+import com.safjnest.bot.audio.types.ReplyType;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+
+public class Queue extends SlashCommand {
+    
+    public Queue() {
+        this.name = this.getClass().getSimpleName().toLowerCase();
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
+        commandData.setThings(this);
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        QueueHandler.sendEmbed(event, EmbedType.QUEUE);
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        QueueHandler.sendEmbed(event, EmbedType.QUEUE, ReplyType.REPLY);
+    }
+}

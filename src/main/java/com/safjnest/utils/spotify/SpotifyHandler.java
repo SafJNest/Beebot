@@ -16,15 +16,15 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.model.spotify.SpotifyTrackStreaming;
-import com.safjnest.sql.database.SpotifyDB;
-import com.safjnest.sql.database.WebsiteDB;
 import com.safjnest.utils.HttpUtils;
+import com.safjnest.utils.spotify.model.SpotifyAlbum;
+import com.safjnest.utils.spotify.model.SpotifyArtist;
+import com.safjnest.utils.spotify.model.SpotifyTrack;
+import com.safjnest.utils.spotify.model.SpotifyTrackStreaming;
 import com.safjnest.utils.spotify.type.SpotifyMessageType;
 import com.safjnest.utils.spotify.type.SpotifyTimeRange;
-import com.safjnest.model.spotify.SpotifyAlbum;
-import com.safjnest.model.spotify.SpotifyArtist;
-import com.safjnest.model.spotify.SpotifyTrack;
+import com.safjnest.database.sql.database.SpotifyDB;
+import com.safjnest.database.sql.database.WebsiteDB;
 
 //nome
 //artista

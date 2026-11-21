@@ -9,8 +9,8 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.safjnest.database.nosql.AbstractEntity;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.nosql.AbstractEntity;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

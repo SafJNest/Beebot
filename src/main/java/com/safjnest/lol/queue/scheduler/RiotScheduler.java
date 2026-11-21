@@ -1,6 +1,6 @@
 package com.safjnest.lol.queue.scheduler;
 
-import com.safjnest.utils.log.BotLogger;
+import com.safjnest.status.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 

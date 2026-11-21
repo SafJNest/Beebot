@@ -2,6 +2,7 @@ package com.safjnest.utils.twitch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -18,11 +19,14 @@ import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
 import com.safjnest.App;
-import com.safjnest.core.cache.managers.GenericCache;
-import com.safjnest.utils.SettingsLoader;
-import com.safjnest.utils.log.BotLogger;
+import com.safjnest.bot.cache.managers.GenericCache;
+import com.safjnest.database.sql.database.BotDB;
+import com.safjnest.exception.Exception.Type;
+import com.safjnest.status.log.BotLogger;
+import com.safjnest.config.Settings;
 
 public class TwitchClient {
+    private static final Pattern LOGIN = Pattern.compile("[a-zA-Z0-9_]{1,25}");
     private static String clientId;
     private static String clientSecret;
 
@@ -37,8 +41,8 @@ public class TwitchClient {
 
     static {
         
-        TwitchClient.clientId = SettingsLoader.getSettings().getJsonSettings().getTwitch().getClientId();
-        TwitchClient.clientSecret = SettingsLoader.getSettings().getJsonSettings().getTwitch().getClientSecret();
+        TwitchClient.clientId = Settings.get().services().getTwitch().getClientId();
+        TwitchClient.clientSecret = Settings.get().services().getTwitch().getClientSecret();
 
         streamersCache = new GenericCache<String, User>(100, 1, TimeUnit.MINUTES, String.class, User.class);
     }
@@ -96,7 +100,10 @@ public class TwitchClient {
         TwitchClient.getClient().getHelix().updateConduit(null, conduitId, 1).execute();
     }
 
-    public static void registerSubEvent(String streamerId) {        
+    public static synchronized void registerSubEvent(String streamerId) {
+        if (BotDB.getTwitchSubscriptions(streamerId).isEmpty())
+            return;
+
         if(client.getHelix().getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions().size() > 0) 
             return;
         
@@ -111,6 +118,16 @@ public class TwitchClient {
 
         BotLogger.trace("[TWITCH] Unregistering subscription for " + streamerId);
         conduit.unregister(subs.get(0));
+    }
+
+    public static synchronized void unregisterIfUnused(String streamerId) {
+        try {
+            if (BotDB.getTwitchSubscriptions(streamerId).isEmpty())
+                unregisterSubEvent(streamerId);
+        } catch (RuntimeException failure) {
+            throw new com.safjnest.exception.Exception(Type.UNAVAILABLE, "twitch_unsubscribe_failed",
+                "Twitch alert was removed but subscription cleanup failed", failure, null);
+        }
     }
 
     public static List<IEventSubscription> getRegisteredSubEvents() {
@@ -129,6 +146,26 @@ public class TwitchClient {
         streamersCache.put(user.getId(), user);
 
         return user;
+    }
+
+    public record Streamer(String id, String login, String displayName) {}
+
+    public static Streamer lookupStreamer(String login) {
+        String normalized = login.strip().toLowerCase(Locale.ROOT);
+        if (!LOGIN.matcher(normalized).matches())
+            throw com.safjnest.exception.Exception.invalidRequest("Invalid Twitch login");
+
+        User user;
+        try {
+            user = getStreamerByName(normalized);
+        } catch (RuntimeException failure) {
+            throw new com.safjnest.exception.Exception(Type.UNAVAILABLE, "twitch_unavailable", "Twitch lookup failed", failure, null);
+        }
+
+        if (user == null)
+            throw new com.safjnest.exception.Exception(Type.NOT_FOUND, "streamer_not_found", "Twitch streamer not found");
+
+        return new Streamer(user.getId(), user.getLogin(), user.getDisplayName());
     }
 
     public static List<User> getStreamersById(List<String> streamerIds) {

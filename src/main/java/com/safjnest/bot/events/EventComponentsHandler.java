@@ -1,0 +1,399 @@
+package com.safjnest.bot.events;
+
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.safjnest.bot.audio.PlayerManager;
+import com.safjnest.bot.audio.TrackData;
+import com.safjnest.bot.audio.types.AudioType;
+import com.safjnest.bot.commands.members.Blacklist;
+import com.safjnest.bot.model.guild.ChannelData;
+import com.safjnest.bot.model.guild.GuildData;
+import com.safjnest.bot.model.guild.alert.AlertData;
+import com.safjnest.bot.model.guild.alert.AlertSendType;
+import com.safjnest.bot.model.guild.alert.AlertType;
+import com.safjnest.sound.model.Sound;
+import com.safjnest.bot.cache.managers.GuildCache;
+import com.safjnest.bot.cache.managers.SoundCache;
+import com.safjnest.utils.AlertMessage;
+import com.safjnest.utils.spotify.SpotifyMessage;
+import com.safjnest.utils.spotify.type.SpotifyMessageType;
+import com.safjnest.utils.spotify.type.SpotifyTimeRange;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.label.Label;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.components.textinput.TextInput;
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.components.tree.MessageComponentTree;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.IMentionable;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.modals.Modal;
+
+  public class EventComponentsHandler extends ListenerAdapter {
+
+    @Override
+    public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {
+      String type = event.getComponentId().split("-")[0];
+      if (!event.getMessage().isUsingComponentsV2() && !"soundboard".equals(type))
+        return;
+
+      if (!event.getComponentId().contains("-"))
+        return;
+      String innerType = event.getComponentId().split("-", 3)[1];
+      String args = event.getComponentId().split("-", 3).length > 2 ? event.getComponentId().split("-", 3)[2] : "";
+
+      switch (type) {
+        case "alert":
+          alert(event, innerType, args);
+          return;
+        case "blacklist":
+          blacklist(event, innerType, args);
+          return;
+        default:
+          break;
+      }
+
+      event.deferEdit().queue();
+      switch (type) {
+        case "spotify":
+          spotify(event, innerType, args);
+          break;
+        case "soundboard":
+          soundboard(event, innerType);
+        default:
+          break;
+      }
+    }
+
+
+    private void spotify(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+      List<Object> oldTimeMsgInfo = SpotifyMessage.getMsgInfo(event.getMessage());
+      String userId = (String) oldTimeMsgInfo.get(0);
+      SpotifyMessageType currentType = (SpotifyMessageType) oldTimeMsgInfo.get(1);
+      int currentIndex = (int) oldTimeMsgInfo.get(2);
+      SpotifyTimeRange timeRange = (SpotifyTimeRange) oldTimeMsgInfo.get(3);
+
+      if (event instanceof StringSelectInteractionEvent selectEvent) {
+        String selectedValue = selectEvent.getValues().get(0);
+        timeRange = SpotifyTimeRange.fromApiLabel(selectedValue);
+        currentIndex = 0;
+      }
+
+      
+      switch (innerType) {
+        case "left":
+          if (currentIndex > 0)
+            currentIndex -= 5;
+          break;
+        case "right":
+          currentIndex += 5;
+          break;
+        case "type":
+          currentType = SpotifyMessageType.valueOf(args.toUpperCase());
+          currentIndex = 0;
+          break;
+        default:
+          break;
+      }
+
+      SpotifyMessage.send(event.getHook(), 
+        userId, 
+        currentType, 
+        currentIndex, 
+        timeRange
+      );
+    }
+
+
+    private void alert(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+      String alertId = "";
+      int rewardLevel = 0;
+      for (Button button : EventUtils.getButtons(event)) {
+        if (button.getCustomId().startsWith("alert-type-") && button.getStyle() == ButtonStyle.SUCCESS) 
+          alertId = button.getCustomId().split("-")[3];
+        if (button.getCustomId().startsWith("alert-reward-")) 
+          rewardLevel = Integer.parseInt(button.getCustomId().split("-")[2]);
+      }
+
+      GuildData guild = GuildCache.getGuild(event.getGuild());
+      AlertData alert = guild.getAlertByID(alertId);
+      AlertType type = alert != null ? alert.getType() : null;
+
+      ChannelData channelData = null;
+      for (EntitySelectMenu menu : EventUtils.getChannelMenu(event.getMessage().getComponents())) {
+        if (menu.getCustomId().startsWith("alert-levelchannel-") && menu.getDefaultValues().size() > 0) {
+          channelData = guild.getChannelData(menu.getDefaultValues().get(0).getId());
+        }
+      }
+
+
+
+      String selectedAlertId = alertId;
+      String selectedChannelId = channelData == null ? null : channelData.getRoomId();
+
+      EntitySelectInteractionEvent entityEvent;
+      Modal modal;
+
+      switch (innerType) {
+        case "send":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(),
+            cached -> cached.getAlertByID(selectedAlertId).setSendType(AlertSendType.valueOf(args.toUpperCase())));
+          break;
+        case "role":
+          event.deferEdit().queue();
+          entityEvent = (EntitySelectInteractionEvent) event;
+          List<String> roles = new ArrayList<>();
+          for (IMentionable entity : entityEvent.getValues()) {
+            roles.add(entity.getId());
+          }
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setRoles(roles));
+          break;
+        case "channel":
+          event.deferEdit().queue();
+          entityEvent = (EntitySelectInteractionEvent) event;
+          String channelId = entityEvent.getChannelId();
+
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setAlertChannel(channelId));
+          break;
+        case "levelchannel":
+          event.deferEdit().queue();
+          entityEvent = (EntitySelectInteractionEvent) event;
+          channelData = guild.getChannelData(entityEvent.getValues().get(0).getId());
+          break;
+        case "togglechannel":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(), cached -> {
+            ChannelData channel = cached.getChannelData(selectedChannelId);
+
+            return channel.enableExperience(!channel.isExpSystemEnabled());
+          });
+          break;
+        case "modifier":
+          TextInput modifierInput = TextInput.create("alert-modifier", TextInputStyle.SHORT)
+          .setPlaceholder("1.2")
+          .setRequired(true)
+          .build();
+          modal = Modal.create("alert-" + alertId, "Modify Alert message")
+                  .addComponents(Label.of("Change how much exp its gained in the channel", modifierInput))
+                  .build();
+
+          event.replyModal(modal).queue();
+          break;
+        case "modal":
+              TextInput messageInput = TextInput.create("alert-message-" + args, TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("Hi #user, welcome in #server")
+                    .setRequired(false)
+                    .setMaxLength(1500)
+                    .build();
+                modal = Modal.create("alert-" + alertId, "Modify Alert message")
+                        .addComponents(Label.of("Alert Message, leave blank to remove", messageInput))
+                        .build();
+
+                event.replyModal(modal).queue();
+          return;      
+        case "type":
+          event.deferEdit().queue();
+          type = AlertType.valueOf(args.split("-")[0].toUpperCase());
+          AlertType selectedType = type;
+          alert = GuildCache.withGuild(guild.getId(), cached -> cached.createAlert(selectedType, null, edit -> {}));
+          break;
+        case "disable":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setEnabled(false));
+          break;
+        case "enable":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(), cached -> cached.getAlertByID(selectedAlertId).setEnabled(true));
+          break;
+        case "delete":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(), cached -> cached.deleteAlert(cached.getAlertByID(selectedAlertId)));
+          
+          Container delete = Container.of(TextDisplay.of("Alert deleted correctly")).withAccentColor(Color.GREEN);
+          event.getMessage().editMessageComponents(delete)
+            .useComponentsV2()
+            .queue();
+          return;
+        case "experience":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(),
+            cached -> cached.setExpSystem(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER));
+          break;
+        case "lower":
+          event.deferEdit().queue();
+          alert = guild.getLowerReward(rewardLevel);
+          break;
+        case "higher":
+          event.deferEdit().queue();
+          alert = guild.getHigherReward(rewardLevel);
+          break;
+        case "createReward":
+              TextInput rewardInputLevel = TextInput.create("reward-level", TextInputStyle.SHORT)
+                    .setPlaceholder("117")
+                    .setMinLength(1)
+                    .setRequired(true)
+                    .build();
+                modal = Modal.create("reward-" + alertId, "Modify Alert message")
+                        .addComponents(Label.of("Select a new reward level", rewardInputLevel))
+                        .build();
+
+                event.replyModal(modal).queue();
+          return;
+        case "temporary":
+          event.deferEdit().queue();
+          GuildCache.withGuild(guild.getId(),
+            cached -> cached.getAlertByID(selectedAlertId).asReward().setTemporary(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER));
+          break;
+        default:
+          break;
+      }
+
+      event.getMessage().editMessageComponents(AlertMessage.build(guild, alert, channelData))
+          .useComponentsV2()
+          .queue();
+    }
+
+      private void soundboard(GenericComponentInteractionCreateEvent event, String innerType) {
+        Guild guild = event.getGuild();
+        List<Button> buttons = EventUtils.getButtons(event).stream()
+            .filter(button -> button.getCustomId() != null && button.getCustomId().startsWith("soundboard-")
+                && button.getCustomId().contains("."))
+            .toList();
+
+        PlayerManager pm = PlayerManager.get();
+        if ("stop".equals(innerType)) {
+            pm.getGuildMusicManager(guild).getTrackScheduler().stop();
+            return;
+        }
+
+        String selected = event.getComponentId();
+        if ("random".equals(innerType)) {
+            if (buttons.isEmpty())
+                return;
+
+            selected = buttons.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(buttons.size())).getCustomId();
+        }
+
+        String[] fields = selected.split("-", 3);
+        String id = fields[1].split("\\.")[0];
+        String boardId = fields.length == 3 ? fields[2] : null;
+        if (!id.matches("[1-9][0-9]*") || boardId != null && !boardId.matches("[1-9][0-9]*"))
+            return;
+
+        Sound sound = SoundCache.getSoundByString(id, guild, event.getUser());
+        if (sound == null) {
+            event.getHook().sendMessage("Sound not found").setEphemeral(true).queue();
+            return;
+        }
+
+        MessageComponentTree tree = event.getMessage().getComponentTree();
+        if (event.getMessage().isUsingComponentsV2()) {
+            for (Button original : buttons) {
+                boolean current = original.getCustomId().startsWith("soundboard-" + id + ".");
+                Button button = original.withStyle(current ? ButtonStyle.SUCCESS : ButtonStyle.PRIMARY);
+                tree = tree.replace(ComponentReplacer.byUniqueId(button.getUniqueId(), button));
+            }
+        }
+
+        TextChannel textChannel = event.getChannel().asTextChannel();
+        AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
+        if (audioChannel == null) {
+            event.getHook().sendMessage("Join a voice channel to play this sound.").setEphemeral(true).queue();
+            return;
+        }
+
+        final MessageComponentTree finalTree = tree;
+
+        pm.loadSound(guild, sound, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
+
+                AudioChannel playbackChannel = guild.getAudioManager().getConnectedChannel();
+                if (playbackChannel == null)
+                    playbackChannel = audioChannel;
+
+                String channelId = playbackChannel == null ? null : playbackChannel.getId();
+                boolean saved = SoundCache.withSound(id, current -> current.increaseUserPlays(
+                    event.getMember().getId(), guild.getId(), channelId, AudioType.SOUNDBOARD, boardId));
+                if (!saved && boardId != null) {
+                    event.getHook().sendMessage("Sound is no longer available on this soundboard").setEphemeral(true).queue();
+                    return;
+                }
+                track.setUserData(new TrackData(AudioType.SOUNDBOARD));
+                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUNDBOARD);
+                if (event.getMessage().isUsingComponentsV2())
+                    event.getHook().editOriginalComponents(finalTree).useComponentsV2().queue();
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {}
+
+            @Override
+            public void noMatches() {
+                textChannel.sendMessage("File not found").queue();
+            }
+
+            @Override
+            public void loadFailed(FriendlyException throwable) {
+                System.out.println("error: " + throwable.getMessage());
+            }
+        });
+
+    }
+
+    private void blacklist(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+      GuildData guild = GuildCache.getGuild(event.getGuild());
+
+      switch (innerType) {
+        case "toggle":
+          GuildCache.withGuild(guild.getId(), cached -> cached.setBlacklistEnabled(!cached.blacklistEnabled()));
+          break;
+        case "channel":
+          EntitySelectInteractionEvent entityEvent = (EntitySelectInteractionEvent) event;
+          String channelId = entityEvent.getValues().get(0).getId();
+
+          GuildCache.withGuild(guild.getId(), cached -> cached.setBlackChannel(channelId));
+          break;
+        case "threshold":
+          TextInput input = TextInput.create("blacklist-threshold", TextInputStyle.SHORT)
+            .setPlaceholder("3")
+            .setMinLength(1)
+            .setRequired(true)
+            .build();
+          Modal modal = Modal.create("blacklist", "Modify Blacklist")
+            .addComponents(Label.of("Select a threshold", input))
+            .build();
+
+          event.replyModal(modal).queue();
+        return;
+      }
+
+      event.deferEdit().queue();
+      event.getMessage().editMessageComponents(Blacklist.getMessage(guild))
+          .useComponentsV2()
+          .queue();
+
+    }
+
+}

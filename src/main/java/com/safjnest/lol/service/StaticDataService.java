@@ -6,10 +6,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.safjnest.database.redis.RedisClient;
+import com.safjnest.database.redis.RedisKey;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.PatchUtils;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
 import com.safjnest.utils.JsonCodec;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;

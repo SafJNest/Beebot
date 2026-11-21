@@ -1,0 +1,771 @@
+package com.safjnest.bot.commands.owner;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.App;
+import com.safjnest.bot.cache.managers.GuildCache;
+import com.safjnest.bot.cache.managers.UserCache;
+import com.safjnest.bot.model.guild.BlacklistData;
+import com.safjnest.bot.model.guild.ChannelData;
+import com.safjnest.bot.model.guild.alert.AlertData;
+import com.safjnest.bot.model.guild.alert.AlertKey;
+import com.safjnest.database.nosql.MongoDB;
+import com.safjnest.database.nosql.MongoMigration;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.match.MatchFacetQuery;
+import com.safjnest.lol.model.statistics.ProfileMatchups;
+import com.safjnest.lol.queue.QueueHandler;
+import com.safjnest.lol.queue.scheduler.ComputeScheduler;
+import com.safjnest.lol.queue.scheduler.DatabaseWorkerType;
+import com.safjnest.lol.queue.scheduler.RiotScheduler;
+import com.safjnest.lol.queue.scheduler.SyncScheduler;
+import com.safjnest.lol.service.ChampionService;
+import com.safjnest.lol.service.AggregateService;
+import com.safjnest.lol.service.CompetitiveService;
+import com.safjnest.lol.service.FacetsService;
+import com.safjnest.lol.service.LeaderboardService;
+import com.safjnest.lol.service.MatchService;
+import com.safjnest.lol.service.ProfileRecordService;
+import com.safjnest.lol.service.ProfileService;
+import com.safjnest.lol.service.SummonerService;
+import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.tracker.TrackerScheduler;
+import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.MatchMemoryUtils;
+import com.safjnest.sound.SoundService;
+import com.safjnest.sound.model.SoundCatalog;
+import com.safjnest.sound.model.SoundComment;
+import com.safjnest.sound.model.SoundVote;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.PermissionHandler;
+import com.safjnest.utils.CommandsLoader;
+
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
+import org.json.JSONObject;
+
+public class Test extends Command {
+
+    private static final int TIMELINE_NULL_STOP_THRESHOLD = 10;
+    private static final long TIMELINE_REQUEST_DELAY_MILLIS = 400L;
+    private static final long PATCH_TIMELINE_REQUEST_DELAY_MILLIS = 500L;
+    private static final List<String> REGENERATION_OPERATIONS = List.of(
+        "profiles", "competitive", "aggregates", "records", "mastery-records", "champions", "indexables", "all"
+    );
+    private static final List<String> AUDIT_OPERATIONS = List.of("mastery-records");
+    private static final List<String> MIGRATION_OPERATIONS = List.of(
+        "fix-tracked", "rankprogress [runId]"
+    );
+
+    public Test() {
+        this.name = this.getClass().getSimpleName().toLowerCase();
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+        this.hidden = true;
+        commandData.setThings(this);
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        String[] arguments = event.getArgs().trim().split("\\s+", 2);
+        String operation = arguments.length == 0 ? "" : arguments[0].toLowerCase();
+        if (!canExecute(event, operation, arguments)) return;
+
+        switch (operation) {
+            case "list" -> event.reply("gc | tracking | log | ranking | regenerate <"
+                + String.join("|", REGENERATION_OPERATIONS) + "> | 13 | 14 | getblacklist | getserver | queue"
+                + " | pushsamplegame [GameQueueType] | pushsamplegamecherry | pushsamplegamearam | pushhighelo"
+                + " | retrieveallgames <summoner> | retrieveallgamesfast <summoner> | getrank | getallrank | highstats"
+                + " | audit <" + String.join("|", AUDIT_OPERATIONS) + "> | migrate [" + String.join(" | ", MIGRATION_OPERATIONS)
+                + "] | regenerate aggregates [all|" + String.join("|", AggregateService.types())
+                + "] | regenerate champion [patch] | export-match-search | fix-timeline <puuid> | fix-timeline-patch <patch> | test-matchups <puuid> <shard>"
+                + " | sound <operation> | generate apikey <name> | revoke apikey <name> | generate personalkey <name> | revoke personalkey <name> | cleanup auth");
+            case "gc" -> {
+                System.gc();
+                event.reply("Garbage collection requested.");
+            }
+            case "tracking" -> {
+                boolean enabled = App.toggleTracking();
+                if (enabled) TrackerScheduler.scheduleIfEnabled();
+                event.reply("Tracker scheduling " + (enabled ? "enabled" : "disabled") + ".");
+            }
+            case "log" -> event.reply("Riot scheduler logging "
+                + (RiotScheduler.toggleLogging() ? "enabled" : "disabled") + ".");
+            case "ranking" -> replyRankingStatus(event);
+            case "generate" -> manageApiKey(event, arguments, true);
+            case "revoke" -> manageApiKey(event, arguments, false);
+            case "cleanup" -> cleanupAuth(event, arguments);
+            case "13" -> printGuildCache(event);
+            case "14" -> warmGuildCaches(event);
+            case "getblacklist" -> System.out.println(GuildCache.getGuildOrPut(event.getGuild().getId()).getBlacklistData());
+            case "getserver" -> event.reply("```json\\n"
+                + new JSONObject(GuildCache.getGuildOrPut(event.getGuild().getId()).getChannels()) + "```");
+            case "queue" -> event.reply("Queued jobs=" + QueueHandler.snapshot().size() + ".");
+            case "pushsamplegame" -> {
+                GameQueueType queue = null;
+                if (arguments.length > 1 && !arguments[1].isBlank()) {
+                    try {
+                        queue = GameQueueType.valueOf(arguments[1].trim().toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException exception) {
+                        event.reply("Usage: !test pushsamplegame [GameQueueType].");
+                        return;
+                    }
+                }
+                queueSampleGames(event, queue);
+            }
+            case "pushsamplegamecherry" -> queueSampleGames(event, GameQueueType.CHERRY);
+            case "pushsamplegamearam" -> queueSampleGames(event, GameQueueType.ARAM);
+            case "pushhighelo", "getrank" -> queueHighElo(event);
+            case "getallrank" -> queueAllRanks(event);
+            case "retrieveallgames" -> queueMatchHistory(event, arguments, null);
+            case "retrieveallgamesfast" -> queueMatchHistory(event, arguments, GameQueueType.values());
+            case "highstats" -> queueHighEloStatistics(event);
+            case "regenerate", "regen" -> queueRegeneration(event, arguments);
+            case "audit" -> queueAudit(event, arguments);
+            case "migrate" -> queueMigration(event, arguments);
+            case "fix-timeline" -> queueTimelineRepair(event, arguments);
+            case "fix-timeline-patch" -> queueTimelinePatchRepair(event, arguments);
+            case "sound" -> testSound(event, arguments);
+            case "test-matchups" -> queueMatchupRegeneration(event, arguments);
+            case "export-match-search" -> startMatchSearchExport(event);
+            default -> event.reply("Usage: !test regenerate <"
+                + String.join("|", REGENERATION_OPERATIONS) + "> | !test migrate [" + String.join("|", MIGRATION_OPERATIONS)
+                + "] | !test fix-timeline <puuid> | !test fix-timeline-patch <patch>"
+                + " | !test test-matchups <puuid> <shard> | !test export-match-search.");
+        }
+    }
+
+    // ============================================================================
+
+    static boolean canExecute(CommandEvent event, String operation, String[] arguments) {
+        if (("generate".equals(operation) || "revoke".equals(operation)) && arguments.length > 1) {
+            String keyType = arguments[1].trim().split("\\s+", 2)[0];
+            if ("apikey".equalsIgnoreCase(keyType) || "personalkey".equalsIgnoreCase(keyType)) {
+                String userId = event.getAuthor().getId();
+                if (PermissionHandler.isUntouchable(userId) || PermissionHandler.isEpria(userId)) return true;
+                event.replyInDm("Who do you think you are? 🤨");
+                return false;
+            }
+        }
+        return event.isOwner();
+    }
+
+    private static void testSound(CommandEvent event, String[] arguments) {
+        String[] values = arguments.length == 2 ? arguments[1].strip().split("\\s+", 2) : new String[0];
+        String operation = values.length > 0 ? values[0].toLowerCase(Locale.ROOT) : "";
+        String input = values.length == 2 ? values[1] : "";
+        String[] parts = input.split("\\s+", 3);
+        String viewer = event.getAuthor().getId();
+        SoundService sounds = SoundService.getInstance();
+
+        try {
+            if (List.of("post", "reply", "edit", "pin", "heart", "delete", "vote", "play").contains(operation)
+                    && !App.isTesting()) {
+                event.reply("Sound writes are available only with the test database.");
+
+                return;
+            }
+
+            String result = switch (operation) {
+                case "explore" -> {
+                    SoundCatalog.Explore page = sounds.explore(null);
+
+                    yield "Trending=" + page.trending().size() + ", latest=" + page.latest().size()
+                        + ", tags=" + page.popularTags().size();
+                }
+                case "search" -> {
+                    SoundCatalog.Results page = sounds.search(new SoundCatalog.Search(input, null, null, null, null, null, null, null), viewer);
+
+                    yield "Public=" + page.items().size() + ", mine=" + page.mine().size() + ", next=" + page.nextCursor();
+                }
+                case "suggest" -> {
+                    SoundCatalog.Suggestions matches = sounds.suggestions(input, viewer);
+
+                    yield "Sounds=" + matches.sounds().size() + ", tags=" + matches.tags().size();
+                }
+                case "get" -> {
+                    SoundCatalog.Card sound = sounds.get(input, viewer);
+
+                    yield "Sound " + sound.id() + ", durationMs=" + sound.durationMs() + ", comments=" + sound.commentCount();
+                }
+                case "creator" -> {
+                    SoundCatalog.Creator creator = sounds.creator(input);
+
+                    yield "Public sounds=" + creator.soundCount() + ", plays=" + creator.plays() + ", comments=" + creator.commentCount();
+                }
+                case "comments" -> {
+                    String parent = parts.length > 1 && !"-".equals(parts[1]) ? parts[1] : null;
+                    SoundCatalog.Page<SoundComment> page = sounds.comments(parts[0], viewer, parent, null, null,
+                        parts.length == 3 ? parts[2] : null);
+
+                    yield "Comments=" + page.items().stream().map(SoundComment::id).toList() + ", next=" + page.nextCursor();
+                }
+                case "post" -> testComment(sounds.addComment(parts[0], viewer, null, input.substring(parts[0].length()).strip()));
+                case "reply" -> testComment(sounds.addComment(parts[0], viewer, parts[1], parts[2]));
+                case "edit" -> testComment(sounds.editComment(parts[0], parts[1], viewer, new SoundComment.Edit(parts[2], null, null)));
+                case "pin" -> testComment(sounds.editComment(parts[0], parts[1], viewer, new SoundComment.Edit(null, true, null)));
+                case "heart" -> testComment(sounds.editComment(parts[0], parts[1], viewer, new SoundComment.Edit(null, null, true)));
+                case "delete" -> "Comments=" + sounds.deleteComment(parts[0], parts[1], viewer).commentCount();
+                case "vote" -> {
+                    String comment = "-".equals(parts[1]) ? null : parts[1];
+                    SoundVote vote = "none".equalsIgnoreCase(parts[2]) ? null : SoundVote.valueOf(parts[2].toUpperCase(Locale.ROOT));
+                    SoundVote.Result resultVote = sounds.vote(parts[0], comment, viewer, vote);
+
+                    yield "Vote=" + resultVote.vote() + ", likes=" + resultVote.likes();
+                }
+                case "play" -> {
+                    UUID playbackId = parts.length > 1 ? UUID.fromString(parts[1]) : UUID.randomUUID();
+
+                    yield "Plays=" + sounds.recordWebPlay(parts[0], viewer, playbackId) + ", playbackId=" + playbackId;
+                }
+                default -> "Usage: !test sound explore | search [q] | suggest <q> | get <sound> | creator <user>"
+                    + " | comments <sound> [parent|-] [cursor] | post <sound> <text> | reply/edit <sound> <comment> <text>"
+                    + " | pin/heart/delete <sound> <comment> | vote <sound> <comment|-> <like|dislike|none> | play <sound> [uuid]";
+            };
+
+            event.replyInDm(result);
+        } catch (com.safjnest.exception.Exception failure) {
+            event.replyInDm(failure.getCode() + " — " + failure.getMessage());
+        } catch (IllegalArgumentException | IndexOutOfBoundsException failure) {
+            event.replyInDm("Invalid sound test arguments. Use !test sound for usage.");
+        }
+    }
+
+    private static String testComment(SoundComment.Change result) {
+        return "Comment " + result.comment().id() + ", total=" + result.commentCount();
+    }
+
+    private static void cleanupAuth(CommandEvent event, String[] arguments) {
+        if (arguments.length != 2 || !"auth".equalsIgnoreCase(arguments[1].trim())) {
+            event.reply("Usage: !test cleanup auth.");
+            return;
+        }
+        try {
+            com.safjnest.database.sql.database.AuthDB database = com.safjnest.database.sql.database.AuthDB.get();
+            long now = System.currentTimeMillis();
+            int sessions = database.cleanupSessions(now);
+            int transactions = database.cleanupTransactions(now);
+            event.reply("Removed " + sessions + " expired or revoked sessions and " + transactions
+                + " expired login transactions. Repeat if either count is 1000.");
+        } catch (RuntimeException failure) { event.reply("Authentication session cleanup failed."); }
+    }
+
+    private static void manageApiKey(CommandEvent event, String[] arguments, boolean generate) {
+        String[] values = arguments.length < 2 ? new String[0] : arguments[1].trim().split("\\s+");
+        if (values.length != 2 || !("apikey".equalsIgnoreCase(values[0]) || "personalkey".equalsIgnoreCase(values[0]))
+                || !values[1].matches("[A-Za-z0-9_-]{1,100}")) {
+            event.reply("Usage: !test " + (generate ? "generate" : "revoke") + " <apikey|personalkey> <name>.");
+            return;
+        }
+        String name = values[1];
+        boolean personal = "personalkey".equalsIgnoreCase(values[0]);
+        String type = personal ? "Personal key" : "Application key";
+        com.safjnest.database.sql.database.AuthDB service = com.safjnest.database.sql.database.AuthDB.get();
+        boolean created = false;
+        try {
+            if (!generate) {
+                boolean revoked = personal ? service.revokePersonalKey(name) : service.revokeClient(name) != null;
+                event.reply(revoked ? type + " revoked." : "Active " + type.toLowerCase(Locale.ROOT) + " not found.");
+                return;
+            }
+            net.dv8tion.jda.api.entities.User author = event.getAuthor();
+            String key = personal
+                ? service.generatePersonal(name, new com.safjnest.discord.auth.DiscordApi.AuthUser(
+                    author.getId(), author.getName(), author.getGlobalName(), author.getEffectiveAvatarUrl()))
+                : service.generate(name, App.getAuthAllowedRedirectUris());
+            created = true;
+            event.getAuthor().openPrivateChannel().queue(channel -> channel.sendMessage(type + " for " + name + ": `" + key + "`").queue(
+                sent -> event.reply(type + " delivered privately."),
+                failure -> keyDeliveryFailed(event, service, name, personal)
+            ), failure -> keyDeliveryFailed(event, service, name, personal));
+        } catch (RuntimeException failure) {
+            if (created) keyDeliveryFailed(event, service, name, personal);
+            else event.reply(type + " operation failed.");
+        }
+    }
+
+    private static void keyDeliveryFailed(CommandEvent event, com.safjnest.database.sql.database.AuthDB service, String name, boolean personal) {
+        try {
+            if (personal) service.revokePersonalKey(name);
+            else service.revokeClient(name);
+        } catch (RuntimeException ignored) { }
+        event.reply("Private delivery failed; key cannot be retrieved.");
+    }
+
+    private static void queueRegeneration(CommandEvent event, String[] arguments) {
+        String[] options = arguments.length < 2 ? new String[0] : arguments[1].trim().toLowerCase(Locale.ROOT).split("\\s+");
+        String operation = options.length == 0 ? "" : options[0];
+        if ("champion".equals(operation) || "champions".equals(operation)) {
+            if (options.length > 2 || (options.length == 2 && !options[1].matches("\\d+\\.\\d+"))) {
+                event.reply("Usage: !test regenerate champion [patch], for example 16.20.");
+                return;
+            }
+            String patch = options.length == 2 ? options[1] : new Filter().patch();
+            ComputeScheduler.enqueueChampionDataRefresh(patch);
+            event.reply("Regeneration champions queued for patch=" + patch + ".");
+            return;
+        }
+        String aggregateType = options.length < 2 ? "all" : options[1];
+        if (!REGENERATION_OPERATIONS.contains(operation)) {
+            event.reply("Usage: !test regenerate <" + String.join("|", REGENERATION_OPERATIONS) + ">.");
+            return;
+        }
+        if (options.length > ("aggregates".equals(operation) ? 2 : 1)
+                || ("aggregates".equals(operation) && !"all".equals(aggregateType) && !AggregateService.types().contains(aggregateType))) {
+            event.reply("Usage: !test regenerate aggregates [all|" + String.join("|", AggregateService.types()) + "].");
+            return;
+        }
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-regenerate:" + operation + ("aggregates".equals(operation) ? ":" + aggregateType : ""),
+            "owner regenerate " + operation + ("aggregates".equals(operation) ? " " + aggregateType : ""), job -> {
+                if ("aggregates".equals(operation)) AggregateService.enqueueRebuild(aggregateType);
+                else regenerate(operation);
+                return null;
+            });
+        event.reply("Regeneration " + operation + " queued.");
+    }
+
+    private static void queueMigration(CommandEvent event, String[] arguments) {
+        String migrationInput = arguments.length < 2 ? "" : arguments[1].trim();
+        if (migrationInput.isBlank()) {
+            event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
+            return;
+        }
+        String[] migrationArguments = migrationInput.split("\\s+", 2);
+        String migration = migrationArguments[0].toLowerCase();
+        switch (migration) {
+            case "fix-tracked" -> queueMigrationOperation(event, "fix-tracked", "Tracked RankProgress rebuild", MongoMigration::rebuildTrackedRankProgress);
+            case "rankprogress" -> queueRankProgressMigration(event, migrationArguments);
+            default -> event.reply("Usage: !test migrate [" + String.join("|", MIGRATION_OPERATIONS) + "].");
+        }
+    }
+
+    private static void queueAudit(CommandEvent event, String[] arguments) {
+        String operation = arguments.length < 2 ? "" : arguments[1].trim().toLowerCase();
+        if (!AUDIT_OPERATIONS.contains(operation)) {
+            event.reply("Usage: !test audit <" + String.join("|", AUDIT_OPERATIONS) + ">.");
+            return;
+        }
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-audit:" + operation, "owner audit " + operation, job -> {
+                System.out.println("[Mastery records audit] " + MongoDB.masteryRecordsSpaceAudit().toJson());
+                return null;
+            });
+        event.reply("Audit " + operation + " queued.");
+    }
+
+    private static void queueMigrationOperation(CommandEvent event, String operation, String label, Runnable migration) {
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-migration:" + operation, "owner migration " + operation, job -> {
+                migration.run();
+                return null;
+            });
+        event.reply(label + " queued.");
+    }
+
+    private static void queueRankProgressMigration(CommandEvent event, String[] arguments) {
+        String runId = arguments.length < 2 || arguments[1].isBlank() ? "rankprogress-v1" : arguments[1].trim();
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO,
+            "owner-migration:rankprogress:" + runId, "owner RankProgress migration " + runId, job -> {
+                MongoMigration.migrateRankProgress(new MongoMigration.Options(false, 500_000, runId, true));
+                return null;
+            });
+        event.reply("RankProgress migration queued: run=" + runId + ".");
+    }
+
+    private static void printGuildCache(CommandEvent event) {
+        HashMap<AlertKey<?>, AlertData> alerts = GuildCache.getGuildOrPut(event.getGuild().getId()).getAlerts();
+        event.reply("```json\\n" + GuildCache.getGuildOrPut(event.getGuild().getId()) + "```");
+        event.reply("```json\\n" + new JSONObject(alerts) + "```");
+        BlacklistData blacklist = GuildCache.getGuildOrPut(event.getGuild().getId()).getBlacklistData();
+        event.reply("```json\\n" + blacklist + "```");
+        HashMap<String, ChannelData> channels = GuildCache.getGuildOrPut(event.getGuild().getId()).getChannels();
+        event.reply("```json\\n" + new JSONObject(channels) + "```");
+        event.reply("```json\\n" + new JSONObject(GuildCache.getGuildOrPut(event.getGuild().getId()).getMembers()) + "```");
+        event.reply("```json\\n" + new JSONObject(GuildCache.getGuildOrPut(event.getGuild().getId()).getActionsWithId()) + "```");
+    }
+
+    private static void warmGuildCaches(CommandEvent event) {
+        for (Guild guild : event.getJDA().getGuilds()) {
+            GuildCache.getGuildOrPut(guild.getId()).getAlerts();
+            GuildCache.getGuildOrPut(guild.getId()).getBlacklistData();
+            for (GuildChannel channel : guild.getChannels())
+                GuildCache.getGuildOrPut(guild.getId()).getChannelData(channel.getId());
+            for (Member member : guild.getMembers()) {
+                GuildCache.getGuildOrPut(guild.getId()).getMemberData(member.getId());
+                UserCache.getUser(member.getId());
+            }
+        }
+        event.reply("Done");
+    }
+
+    private static void queueSampleGames(CommandEvent event, GameQueueType queue) {
+        String queueName = queue == null ? "ALL" : queue.name();
+        QueueHandler.background(SyncScheduler.class, null, "owner-sample-games:" + queueName,
+            "owner sample games " + queueName, job -> {
+                TrackerScheduler.retrieveSampleGames(queue);
+                return null;
+            });
+        event.reply("Sample game retrieval queued: " + (queue == null ? "all queues" : queue.name()) + ".");
+    }
+
+    private static void queueTimelineRepair(CommandEvent event, String[] arguments) {
+        if (arguments.length < 2 || arguments[1].isBlank()) {
+            event.reply("Usage: !test fix-timeline <puuid>.");
+            return;
+        }
+        String puuid = arguments[1].trim();
+        QueueHandler.background(SyncScheduler.class, null, "owner-fix-timeline:" + puuid,
+            "owner fix timeline " + puuid, job -> {
+                Filter filter = Filter.summoner(0, 0);
+                long total = FacetsService.count(puuid);
+                int[] counts = new int[3];
+                System.out.println("[Fix timelines] puuid=" + puuid + " total=" + total);
+                job.setProgressTotal((int) Math.min(Integer.MAX_VALUE, total));
+                job.phase("TIMELINES");
+                int[] step = {0};
+                int[] missingTimelineStreak = {0};
+                MongoDB.forEachProfileStatisticsMatchWhile(puuid, null, filter, 0, 0, true, match -> {
+                    int current = ++step[0];
+                    String gameId = match.gameId;
+                    String itemId = gameId == null || gameId.isBlank() ? "missing-game-id:" + current : gameId;
+                    job.trackItem(itemId);
+                    job.currentItem(current + "/" + total + " Fetching timeline " + itemId);
+                    System.out.println("[Fix timelines] " + current + "/" + total + " match=" + itemId);
+                    if (gameId == null || gameId.isBlank()) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        missingTimelineStreak[0] = 0;
+                        MatchMemoryUtils.release(match);
+                        return true;
+                    }
+                    LOLTimeline timeline = null;
+                    try {
+                        if (match.leagueShard == null) {
+                            counts[1]++;
+                            job.missing(itemId);
+                            missingTimelineStreak[0] = 0;
+                            return true;
+                        }
+                        timeline = MatchService.getTimeline(gameId, match.leagueShard);
+                        Thread.sleep(TIMELINE_REQUEST_DELAY_MILLIS);
+                        if (timeline == null) {
+                            counts[1]++;
+                            job.missing(itemId);
+                            int consecutiveMissing = ++missingTimelineStreak[0];
+                            boolean stop = consecutiveMissing >= TIMELINE_NULL_STOP_THRESHOLD;
+                            job.currentItem(current + "/" + total + (stop
+                                ? " Stopping after " + consecutiveMissing + " consecutive missing timelines "
+                                : " Timeline unavailable ") + itemId);
+                            if (stop) System.out.println("[Fix timelines] stopping after " + consecutiveMissing
+                                + " consecutive missing timelines at match=" + gameId);
+                            return !stop;
+                        }
+                        missingTimelineStreak[0] = 0;
+                        Map<String, Object> refreshedEvents = Tracker.rebuildTimelineEvents(timeline);
+                        if (refreshedEvents == null || refreshedEvents.isEmpty()) {
+                            counts[2]++;
+                            job.failed(itemId);
+                            return true;
+                        }
+                        MongoDB.updateMatchEvents(gameId, refreshedEvents);
+                        counts[0]++;
+                        job.done(itemId);
+                    } catch (Exception exception) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        missingTimelineStreak[0] = 0;
+                        System.err.println("[Fix timelines] failed match=" + gameId + " error=" + exception.getMessage());
+                    } finally {
+                        MatchService.clearTimelineCache(gameId, match.leagueShard);
+                        MatchMemoryUtils.release(timeline);
+                        MatchMemoryUtils.release(match);
+                    }
+                    return true;
+                });
+                System.out.println("[Fix timelines] puuid=" + puuid + " total=" + total
+                    + " completed=" + (counts[0] + counts[1] + counts[2])
+                    + " updated=" + counts[0] + " missing=" + counts[1] + " failed=" + counts[2]);
+                return null;
+            }).whenComplete((ignored, failure) -> {
+                if (failure == null) System.out.println("[Fix timelines] job completed puuid=" + puuid);
+                else System.err.println("[Fix timelines] job failed puuid=" + puuid + " error=" + failure.getMessage());
+            });
+        event.reply("Timeline repair queued for PUUID " + puuid + ".");
+    }
+
+    private static void queueTimelinePatchRepair(CommandEvent event, String[] arguments) {
+        if (arguments.length < 2 || !arguments[1].trim().matches("\\d+\\.\\d+")) {
+            event.reply("Usage: !test fix-timeline-patch <patch> (example: 16.19).");
+            return;
+        }
+        String patch = arguments[1].trim();
+        List<LeagueShard> shards = MongoDB.findTimelineRegionsByPatch(patch);
+        if (shards.isEmpty()) {
+            event.reply("No stored matches found for patch " + patch + ".");
+            return;
+        }
+        for (LeagueShard shard : shards) queueTimelinePatchRepair(patch, shard);
+        event.reply("Timeline repair queued for patch " + patch + " across " + shards.size() + " regions.");
+    }
+
+    private static void queueTimelinePatchRepair(String patch, LeagueShard shard) {
+        QueueHandler.background(SyncScheduler.class, shard,
+            "owner-fix-timeline-patch:" + patch + ":" + shard.name(),
+            "owner fix timeline patch=" + patch + " region=" + shard.name(), job -> {
+                long total = MongoDB.countMatchesByPatch(patch, shard);
+                int progressTotal = (int) Math.min(Integer.MAX_VALUE, total);
+                int[] counts = new int[3];
+                int[] step = {0};
+                System.out.println("[Fix timelines] region=" + shard.name() + " total=" + total);
+                job.setProgressTotal(progressTotal);
+                job.phase("TIMELINES");
+                MongoDB.forEachTimelineMatchByPatch(patch, shard, gameId -> {
+                    int current = ++step[0];
+                    String itemId = gameId == null || gameId.isBlank() ? "missing-game-id:" + current : gameId;
+                    job.trackItem(itemId);
+                    job.currentItem(current + "/" + total + " Fetching timeline " + itemId);
+                    System.out.println("[Fix timelines] " + shard.name() + " " + current + "/" + total
+                        + " match=" + itemId);
+                    if (gameId == null || gameId.isBlank()) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        return;
+                    }
+
+                    LOLTimeline timeline = null;
+                    try {
+                        timeline = MatchService.getTimeline(gameId, shard);
+                        if (timeline == null) {
+                            counts[1]++;
+                            job.missing(itemId);
+                            return;
+                        }
+                        Map<String, Object> refreshedEvents = Tracker.rebuildTimelineEvents(timeline);
+                        if (refreshedEvents == null || refreshedEvents.isEmpty()) {
+                            counts[2]++;
+                            job.failed(itemId);
+                            return;
+                        }
+                        MongoDB.updateMatchEvents(gameId, refreshedEvents);
+                        counts[0]++;
+                        job.done(itemId);
+                    } catch (Exception exception) {
+                        counts[2]++;
+                        job.failed(itemId);
+                        System.err.println("[Fix timelines] region=" + shard.name() + " match=" + gameId
+                            + " error=" + exception.getMessage());
+                    } finally {
+                        try {
+                            Thread.sleep(PATCH_TIMELINE_REQUEST_DELAY_MILLIS);
+                        } catch (InterruptedException exception) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException("Timeline repair interrupted", exception);
+                        } finally {
+                            MatchService.clearTimelineCache(gameId, shard);
+                            MatchMemoryUtils.release(timeline);
+                        }
+                    }
+                });
+                System.out.println("[Fix timelines] region=" + shard.name() + " patch=" + patch + " total=" + total
+                    + " completed=" + (counts[0] + counts[1] + counts[2])
+                    + " updated=" + counts[0] + " missing=" + counts[1] + " failed=" + counts[2]);
+                return null;
+            }).whenComplete((ignored, failure) -> {
+                if (failure == null) System.out.println("[Fix timelines] job completed region=" + shard.name()
+                    + " patch=" + patch);
+                else System.err.println("[Fix timelines] job failed region=" + shard.name()
+                    + " patch=" + patch + " error=" + failure.getMessage());
+            });
+    }
+
+    private static void queueMatchupRegeneration(CommandEvent event, String[] arguments) {
+        if (arguments.length < 2 || arguments[1].isBlank()) {
+            event.reply("Usage: !test test-matchups <puuid> <shard>.");
+            return;
+        }
+        String[] matchupArguments = arguments[1].trim().split("\\s+", 2);
+        if (matchupArguments.length < 2 || matchupArguments[0].isBlank()) {
+            event.reply("Usage: !test test-matchups <puuid> <shard>.");
+            return;
+        }
+        String puuid = matchupArguments[0];
+        LeagueShard shard;
+        try {
+            shard = LeagueShard.valueOf(matchupArguments[1].trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            event.reply("Unknown shard. Usage: !test test-matchups <puuid> <shard>.");
+            return;
+        }
+        Filter filter = Filter.summoner(0, System.currentTimeMillis());
+        MatchFacetQuery countFilter = new MatchFacetQuery(
+            shard, List.of(), List.of(), List.of(), List.of(), filter.timeStart(), filter.timeEnd(), null, List.of());
+        String jobKey = "owner-test-matchups:" + shard.name() + ":" + puuid;
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, jobKey,
+            "owner test matchups " + shard.name() + " " + puuid, job -> {
+                long matchesFound = FacetsService.count(puuid, countFilter);
+                job.setProgressTotal((int) Math.min(Integer.MAX_VALUE, matchesFound));
+                job.phase("MATCHUPS");
+                if (matchesFound == 0) return "No matches found for this PUUID and shard.";
+                boolean generated = new ProfileService().generateMatchups(puuid, shard, filter);
+                ProfileMatchups matchups = generated ? MongoDB.findProfileMatchups(puuid, filter) : null;
+                int championBuckets = matchups == null || matchups.champions() == null
+                    ? 0 : matchups.champions().size();
+                return "Read " + matchesFound + " matches; champion buckets=" + championBuckets
+                    + "; saved=" + generated + ".";
+            }).whenComplete((result, failure) -> {
+                if (failure == null) event.reply("Matchup regeneration for " + puuid + " on " + shard.name()
+                    + ": " + result);
+            });
+        event.reply("Matchup regeneration queued for PUUID " + puuid + " on " + shard.name()
+            + " (all match history).");
+    }
+
+    private static void startMatchSearchExport(CommandEvent event) {
+        new Thread(() -> {
+            try {
+                long total = MongoDB.estimatedMatchDocumentCount();
+                long[] counts = new long[3];
+                event.reply("Match search export started: estimated total=" + total + ".");
+                MongoDB.forEachSearchMatch(match -> {
+                    int rows = MongoDB.insertFacets(match);
+                    counts[0]++;
+                    counts[1] += rows;
+                    if (rows == 0) counts[2]++;
+                });
+                String summary = "total=" + counts[0] + "; completed=" + (counts[0] - counts[2])
+                    + "; missing=" + counts[2] + "; participantRows=" + counts[1];
+                event.reply("Match search export completed: " + summary + ".");
+            } catch (RuntimeException failure) {
+                event.reply("Match search export failed: " + failure.getMessage() + ".");
+            }
+        }, "match-search-export").start();
+    }
+
+    private static void queueHighElo(CommandEvent event) {
+        QueueHandler.background(SyncScheduler.class, null, "owner-high-elo", "owner high elo retrieval", job -> {
+            TrackerScheduler.retrieveHighEloEntries();
+            return null;
+        });
+        event.reply("High-elo retrieval queued.");
+    }
+
+    private static void queueAllRanks(CommandEvent event) {
+        QueueHandler.background(SyncScheduler.class, null, "owner-all-ranks", "owner all rank retrieval", job -> {
+            TrackerScheduler.retrieveAllEntries();
+            return null;
+        });
+        event.reply("All-rank retrieval queued.");
+    }
+
+    private static void queueMatchHistory(CommandEvent event, String[] arguments, GameQueueType[] queues) {
+        if (arguments.length < 2 || arguments[1].isBlank()) {
+            event.reply("Usage: !test " + (queues == null ? "retrieveallgames" : "retrieveallgamesfast") + " <summoner>.");
+            return;
+        }
+        String summonerName = arguments[1].trim();
+        LeagueShard shard = GuildCache.getGuild(event.getGuild()).getLeagueShard(event.getChannel().getId());
+        QueueHandler.background(SyncScheduler.class, shard, "owner-match-history:" + shard.name() + ":" + summonerName,
+            "owner match history " + summonerName, job -> {
+                no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner =
+                    SummonerService.getRiotSummoner(summonerName, shard, job.priority());
+                if (queues == null) MatchService.importHistory(summoner, null, job.priority());
+                else for (GameQueueType queue : queues) MatchService.importHistory(summoner, queue, job.priority());
+                return null;
+            });
+        event.reply("Match history retrieval queued for " + summonerName + ".");
+    }
+
+    private static void queueHighEloStatistics(CommandEvent event) {
+        QueueHandler.background(ComputeScheduler.class, DatabaseWorkerType.MONGO, "owner-high-elo-statistics",
+            "owner high elo statistics", job -> {
+                new LeaderboardService().rebuildHighEloAndTrackedProfileStatistics();
+                return null;
+            });
+        event.reply("High-elo statistics rebuild queued.");
+    }
+
+    private static void regenerate(String operation) {
+        switch (operation) {
+            case "profiles" -> regenerateProfiles();
+            case "competitive" -> regenerateCompetitive();
+            case "aggregates" -> AggregateService.enqueueRebuild("all");
+            case "records" -> regenerateRecords();
+            case "mastery-records" -> regenerateMasteryRecords();
+            case "champions" -> regenerateChampions();
+            case "indexables" -> regenerateIndexables();
+            case "all" -> {
+                regenerateProfiles();
+                regenerateCompetitive();
+                regenerateRecords();
+                regenerateMasteryRecords();
+                regenerateChampions();
+                regenerateIndexables();
+                AggregateService.enqueueRebuild("all");
+            }
+            default -> throw new IllegalArgumentException("Unsupported regeneration operation: " + operation);
+        }
+    }
+
+    private static void regenerateProfiles() {
+        ProfileService profileService = new ProfileService();
+        int refreshed = 0;
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
+            int result = profileService.refreshAll(shard, true);
+            if (result > 0) refreshed += result;
+        }
+        System.out.println("[Regenerate profiles] refreshed=" + refreshed);
+    }
+
+    private static void regenerateCompetitive() {
+        var competitive = CompetitiveService.rebuild();
+        System.out.println("[Regenerate competitive] entries=" + competitive.entries()
+            + " removed=" + competitive.removed());
+    }
+
+    private static void regenerateRecords() {
+        ProfileService profileService = new ProfileService();
+        int refreshed = 0;
+        for (LeagueShard shard : LeagueShardUtils.getActives())
+            refreshed += profileService.refreshAllRecords(shard);
+        System.out.println("[Regenerate records] refreshed=" + refreshed);
+    }
+
+    private static void regenerateMasteryRecords() {
+        ProfileRecordService profileRecordService = new ProfileRecordService();
+        int refreshed = 0;
+        for (LeagueShard shard : LeagueShardUtils.getActives()) refreshed += profileRecordService.regenerateMasteries(shard);
+        System.out.println("[Regenerate mastery records] refreshed=" + refreshed);
+    }
+
+    private static void regenerateChampions() {
+        ComputeScheduler.enqueueChampionDataRefresh();
+    }
+
+    private static void regenerateIndexables() {
+        int champions = new ChampionService().refreshIndexables().size();
+        int profiles = new ProfileService().refreshIndexables().size();
+        System.out.println("[Regenerate indexables] champions=" + champions + " profiles=" + profiles);
+    }
+
+    private static void replyRankingStatus(CommandEvent event) {
+        LeaderboardService.IndexStatus leaderboard = LeaderboardService.indexStatus();
+        event.reply("Leaderboard segments=" + leaderboard.segments() + " memoryBytes=" + leaderboard.memoryBytes());
+    }
+
+}
